@@ -11,11 +11,13 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
-from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
+from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -23,12 +25,10 @@ from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
-from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
 from dbt_platform_helper.utils.versioning import parse_version
-from dbt_platform_helper.utils.versioning import string_version
 from dbt_platform_helper.utils.versioning import validate_template_version
 from dbt_platform_helper.utils.versioning import validate_version_compatibility
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -37,10 +37,10 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 @pytest.mark.parametrize(
     "suite",
     [
-        ("v1.2.3", (1, 2, 3)),
-        ("1.2.3", (1, 2, 3)),
-        ("v0.1-TEST", (0, 1, -1)),
-        ("TEST-0.2", (-1, 0, 2)),
+        ("v1.2.3", SemanticVersion(1, 2, 3)),
+        ("1.2.3", SemanticVersion(1, 2, 3)),
+        ("v0.1-TEST", SemanticVersion(0, 1, -1)),
+        ("TEST-0.2", SemanticVersion(-1, 0, 2)),
         ("unknown", None),
         (None, None),
     ],
@@ -48,20 +48,6 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 def test_parsing_version_numbers(suite):
     input_version, expected_version = suite
     assert parse_version(input_version) == expected_version
-
-
-@pytest.mark.parametrize(
-    "suite",
-    [
-        ((1, 2, 3), "1.2.3"),
-        ((0, 1, -1), "0.1.-1"),
-        ((-1, 0, 2), "-1.0.2"),
-        (None, "unknown"),
-    ],
-)
-def test_stringify_version_numbers(suite):
-    input_version, expected_version = suite
-    assert string_version(input_version) == expected_version
 
 
 class MockGithubReleaseResponse:
@@ -72,7 +58,7 @@ class MockGithubReleaseResponse:
 
 @patch("requests.get", return_value=MockGithubReleaseResponse())
 def test_get_github_version_from_releases(request_get):
-    assert get_github_released_version("test/repo") == (1, 1, 1)
+    assert get_github_released_version("test/repo") == SemanticVersion(1, 1, 1)
     request_get.assert_called_once_with("https://api.github.com/repos/test/repo/releases/latest")
 
 
@@ -84,23 +70,23 @@ class MockGithubTagResponse:
 
 @patch("requests.get", return_value=MockGithubTagResponse())
 def test_get_github_version_from_tags(request_get):
-    assert get_github_released_version("test/repo", True) == (1, 2, 3)
+    assert get_github_released_version("test/repo", True) == SemanticVersion(1, 2, 3)
     request_get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
 
 
 @pytest.mark.parametrize(
     "version_check",
     [
-        ((1, 40, 0), (1, 30, 0), IncompatibleMinorVersionException),
-        ((1, 40, 0), (2, 1, 0), IncompatibleMajorVersionException),
-        ((0, 2, 40), (0, 1, 30), IncompatibleMajorVersionException),
-        ((0, 1, 40), (0, 1, 30), IncompatibleMajorVersionException),
+        (SemanticVersion(1, 40, 0), SemanticVersion(1, 30, 0), IncompatibleMinorVersionException),
+        (SemanticVersion(1, 40, 0), SemanticVersion(2, 1, 0), IncompatibleMajorVersionException),
+        (SemanticVersion(0, 2, 40), SemanticVersion(0, 1, 30), IncompatibleMajorVersionException),
+        (SemanticVersion(0, 1, 40), SemanticVersion(0, 1, 30), IncompatibleMajorVersionException),
     ],
 )
 def test_validate_version_compatability(
     version_check: Tuple[
-        Tuple[int, int, int],
-        Tuple[int, int, int],
+        SemanticVersion,
+        SemanticVersion,
         Type[BaseException],
     ]
 ):
@@ -125,7 +111,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
     with pytest.raises(raises) as exception:
         template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
-        validate_template_version((10, 10, 10), template_path)
+        validate_template_version(SemanticVersion(10, 10, 10), template_path)
 
     if message:
         assert (message % template_path) == str(exception.value)
@@ -149,8 +135,12 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 def test_check_platform_helper_version_needs_update(
     version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersions((1, 0, 0), (1, 0, 0))
-    version_compatibility.side_effect = expected_exception((1, 0, 0), (1, 0, 0))
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+        SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
+    )
+    version_compatibility.side_effect = expected_exception(
+        SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
+    )
 
     check_platform_helper_version_needs_update()
 
@@ -191,14 +181,17 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+        local_version=SemanticVersion(1, 0, 1),
+        platform_helper_file_version=SemanticVersion(1, 0, 0),
     )
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 
@@ -212,11 +205,14 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     get_file_app_versions, secho, mock_running_as_installed_package
 ):
     get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+        local_version=SemanticVersion(1, 0, 1),
+        platform_helper_file_version=SemanticVersion(1, 0, 0),
     )
     mock_running_as_installed_package.return_value = False
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_not_called()
 
@@ -230,16 +226,18 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=(1, 0, 1),
+        local_version=SemanticVersion(1, 0, 1),
         platform_helper_file_version=None,
-        platform_config_default=(1, 0, 0),
+        platform_config_default=SemanticVersion(1, 0, 0),
     )
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 
@@ -271,10 +269,10 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_plat
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == (1, 1, 1)
-    assert versions.latest_release == (2, 3, 4)
-    assert versions.platform_helper_file_version == (5, 6, 7)
-    assert versions.platform_config_default == (10, 2, 0)
+    assert versions.local_version == SemanticVersion(1, 1, 1)
+    assert versions.latest_release == SemanticVersion(2, 3, 4)
+    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.platform_config_default == SemanticVersion(10, 2, 0)
     assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
 
@@ -292,9 +290,9 @@ def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == (1, 1, 1)
-    assert versions.latest_release == (2, 3, 4)
-    assert versions.platform_helper_file_version == (5, 6, 7)
+    assert versions.local_version == SemanticVersion(1, 1, 1)
+    assert versions.latest_release == SemanticVersion(2, 3, 4)
+    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == None
     assert versions.pipeline_overrides == {}
 
@@ -315,10 +313,10 @@ def test_get_platform_helper_versions_with_invalid_config(
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == (1, 1, 1)
-    assert versions.latest_release == (2, 3, 4)
-    assert versions.platform_helper_file_version == (5, 6, 7)
-    assert versions.platform_config_default == (1, 2, 3)
+    assert versions.local_version == SemanticVersion(1, 1, 1)
+    assert versions.latest_release == SemanticVersion(2, 3, 4)
+    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.platform_config_default == SemanticVersion(1, 2, 3)
     assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
@@ -385,24 +383,30 @@ def test_platform_helper_version_warnings(
 
 
 @patch("subprocess.run")
-@patch("dbt_platform_helper.utils.versioning.get_github_released_version", return_value=(2, 0, 0))
+@patch(
+    "dbt_platform_helper.utils.versioning.get_github_released_version",
+    return_value=SemanticVersion(2, 0, 0),
+)
 def test_get_copilot_versions(mock_get_github_released_version, mock_run):
     mock_run.return_value.stdout = b"1.0.0"
 
     versions = get_copilot_versions()
 
-    assert versions.local_version == (1, 0, 0)
-    assert versions.latest_release == (2, 0, 0)
+    assert versions.local_version == SemanticVersion(1, 0, 0)
+    assert versions.latest_release == SemanticVersion(2, 0, 0)
 
 
 @patch("subprocess.run")
-@patch("dbt_platform_helper.utils.versioning.get_github_released_version", return_value=(2, 0, 0))
+@patch(
+    "dbt_platform_helper.utils.versioning.get_github_released_version",
+    return_value=SemanticVersion(2, 0, 0),
+)
 def test_get_aws_versions(mock_get_github_released_version, mock_run):
     mock_run.return_value.stdout = b"aws-cli/1.0.0"
     versions = get_aws_versions()
 
-    assert versions.local_version == (1, 0, 0)
-    assert versions.latest_release == (2, 0, 0)
+    assert versions.local_version == SemanticVersion(1, 0, 0)
+    assert versions.latest_release == SemanticVersion(2, 0, 0)
 
 
 @pytest.mark.parametrize(
@@ -440,9 +444,11 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    required_version = get_required_platform_helper_version()
+    required_version = RequiredVersion()
 
-    assert required_version == expected_version
+    result = required_version.get_required_platform_helper_version()
+
+    assert result == expected_version
 
 
 @pytest.mark.parametrize(
@@ -488,9 +494,11 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    required_version = get_required_platform_helper_version("main")
+    required_version = RequiredVersion()
 
-    assert required_version == expected_version
+    result = required_version.get_required_platform_helper_version("main")
+
+    assert result == expected_version
 
 
 @patch("click.secho")
@@ -507,11 +515,11 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     }
     mock_version.return_value = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
+    # TODO need to inject the config provider instead of relying on FS
+    required_version = RequiredVersion()
 
-    with pytest.raises(SystemExit) as ex:
-        get_required_platform_helper_version("main")
-
-    assert ex.value.code == 1
+    with pytest.raises(PlatformException):
+        required_version.get_required_platform_helper_version("main")
 
     secho.assert_called_with(
         f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
@@ -529,8 +537,10 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     mock_version,
     secho,
 ):
-    result = get_required_platform_helper_version(
-        versions=PlatformHelperVersions(platform_config_default=(1, 2, 3))
+    required_version = RequiredVersion()
+
+    result = required_version.get_required_platform_helper_version(
+        versions=PlatformHelperVersions(platform_config_default=SemanticVersion(1, 2, 3))
     )
 
     assert result == "1.2.3"
@@ -555,3 +565,60 @@ def test_determine_terraform_platform_modules_version(
         )
         == expected_version
     )
+
+
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
+    mock_latest_release, fakefs
+):
+    default_version = "1.2.3"
+    platform_config = {
+        "application": "my-app",
+        "default_versions": {"platform-helper": default_version},
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {
+                "versions": {"platform-helper": "1.1.1"},
+                "slack_channel": "abc",
+                "trigger_on_push": True,
+                "environments": {"dev": None},
+            }
+        },
+    }
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+
+    result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+
+    assert result == default_version
+
+
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+class TestVersionCommandWithInvalidConfig:
+    DEFAULT_VERSION = "1.2.3"
+    INVALID_CONFIG = {
+        "default_versions": {"platform-helper": DEFAULT_VERSION},
+        "a_bogus_field_that_invalidates_config": "foo",
+    }
+
+    def test_works_given_invalid_config(self, mock_latest_release, fakefs):
+        default_version = "1.2.3"
+        platform_config = self.INVALID_CONFIG
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+
+        result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+
+        assert result == default_version
+
+    def test_pipeline_override_given_invalid_config(self, mock_latest_release, fakefs):
+        pipeline_override_version = "1.1.1"
+        platform_config = self.INVALID_CONFIG
+        platform_config["environment_pipelines"] = {
+            "main": {
+                "versions": {"platform-helper": pipeline_override_version},
+            }
+        }
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+
+        result = RequiredVersion().get_required_platform_helper_version("main")
+
+        assert result == pipeline_override_version

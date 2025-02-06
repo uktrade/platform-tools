@@ -115,7 +115,7 @@ def deployment():
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(latest_release))
+            ].format(version=latest_release)
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -124,7 +124,7 @@ def deployment():
             compatible = False
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=versioning.string_version(latest_release))
+            ].format(version=latest_release)
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -144,11 +144,7 @@ def deployment():
         addons_templates_table.add_row(
             [
                 template_file.relative_to("."),
-                (
-                    maybe
-                    if latest_compatible_symbol is maybe
-                    else versioning.string_version(generated_with_version)
-                ),
+                (maybe if latest_compatible_symbol is maybe else str(generated_with_version)),
                 local_compatible_symbol,
                 latest_compatible_symbol,
             ]
@@ -191,24 +187,24 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     tool_versions_table.add_row(
         [
             "aws",
-            versioning.string_version(local_aws_version),
-            versioning.string_version(aws_latest_release),
+            str(local_aws_version),
+            str(aws_latest_release),
             no if local_aws_version != aws_latest_release else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "copilot",
-            versioning.string_version(local_copilot_version),
-            versioning.string_version(copilot_latest_release),
+            str(local_copilot_version),
+            str(copilot_latest_release),
             no if local_copilot_version != copilot_latest_release else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "dbt-platform-helper",
-            versioning.string_version(local_version),
-            versioning.string_version(latest_release),
+            str(local_version),
+            str(latest_release),
             no if local_version != latest_release else yes,
         ]
     )
@@ -218,19 +214,19 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     if local_aws_version != aws_latest_release and "install-aws" not in recommendations:
         recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS CLI",
-            version=versioning.string_version(aws_latest_release),
+            version=str(aws_latest_release),
         )
 
     if local_copilot_version != copilot_latest_release and "install-copilot" not in recommendations:
         recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS Copilot",
-            version=versioning.string_version(copilot_latest_release),
+            version=str(copilot_latest_release),
         )
 
     if local_version != latest_release:
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=versioning.string_version(latest_release))
+        ].format(version=str(latest_release))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]
