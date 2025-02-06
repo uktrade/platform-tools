@@ -856,8 +856,7 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 
 [↩ Parent](#platform-helper)
 
-    Contains subcommands for getting version information about the
-        current project.
+    Contains subcommands for getting version information about the current project.
 
 ## Usage
 
