@@ -1,7 +1,6 @@
 from copy import deepcopy
 from pathlib import Path
 
-import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -9,8 +8,10 @@ from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProviderException
+from dbt_platform_helper.providers.yaml_file import InvalidYamlException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -104,13 +105,10 @@ class ConfigProvider:
 
     def _read_config_file_contents(self):
         if Path(PLATFORM_CONFIG_FILE).exists():
-            return Path(PLATFORM_CONFIG_FILE).read_text()
+            return YamlFileProvider.load(PLATFORM_CONFIG_FILE)
 
     def load_unvalidated_config_file(self):
-        file_contents = self._read_config_file_contents()
-        if not file_contents:
-            return {}
         try:
-            return yaml.safe_load(file_contents)
-        except yaml.parser.ParserError:
+            return self._read_config_file_contents()
+        except (FileNotFoundException, InvalidYamlException, DuplicateKeysException):
             return {}
