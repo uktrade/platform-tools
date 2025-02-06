@@ -527,3 +527,21 @@ class TestCodebasePipelineValidations:
             % re.escape(str(requires_image))
         )
         assert re.match(exp, error, re.DOTALL)
+
+    # def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(fakefs):
+    #         fakefs.create_file(
+    #             Path(PLATFORM_CONFIG_FILE),
+    #             contents="""
+    #     test:
+    #         some_key: some_value
+    #     """,
+    #         )
+    #         config = load_unvalidated_config_file()
+
+    #         assert config == {"test": {"some_key": "some_value"}}
+
+    # def test_load_unvalidated_config_file_returns_empty_dict_given_invalid_yaml(fakefs):
+    #         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="{")
+    #         config = load_unvalidated_config_file()
+
+    #         assert config == {}
