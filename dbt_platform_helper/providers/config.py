@@ -1,6 +1,7 @@
 from copy import deepcopy
 from pathlib import Path
 
+import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -100,3 +101,16 @@ class ConfigProvider:
         enriched_config["environments"] = defaulted_envs
 
         return enriched_config
+
+    def _read_config_file_contents(self):
+        if Path(PLATFORM_CONFIG_FILE).exists():
+            return Path(PLATFORM_CONFIG_FILE).read_text()
+
+    def load_unvalidated_config_file(self):
+        file_contents = self._read_config_file_contents()
+        if not file_contents:
+            return {}
+        try:
+            return yaml.safe_load(file_contents)
+        except yaml.parser.ParserError:
+            return {}
