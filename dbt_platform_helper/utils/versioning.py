@@ -98,7 +98,7 @@ class RequiredVersion:
                 f"WARNING: You are running platform-helper v{string_version(local_version)} against "
                 f"v{string_version(platform_helper_file_version)} specified by {PLATFORM_HELPER_VERSION_FILE}."
             )
-            click.secho(message, fg="red")
+            self.io.warn(message)
 
 
 # Stringify the VersionTuple for output purposes

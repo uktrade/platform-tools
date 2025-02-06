@@ -200,7 +200,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 
@@ -245,7 +245,7 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 
