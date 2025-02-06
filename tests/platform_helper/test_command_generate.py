@@ -42,7 +42,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 
     mock_secho.assert_called_once_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 

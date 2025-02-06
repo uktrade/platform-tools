@@ -1,70 +1,58 @@
-import re
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.version import VersionCommand
+from dbt_platform_helper.commands.version import get_platform_helper_for_project
+from dbt_platform_helper.platform_exception import PlatformException
 
 
-@pytest.mark.usefixtures("create_valid_platform_config_file")
-class TestVersionCommandWithValidConfig:
-    @patch("dbt_platform_helper.commands.version.get_required_platform_helper_version")
+class TestVersionCommand:
+    @patch(
+        "dbt_platform_helper.commands.version.RequiredVersion.get_required_platform_helper_version"
+    )
+    @patch("click.secho")
     def test_calls_versioning_function_and_prints_returned_version(
         self,
-        mock_get_required_platform_helper_version,
+        mock_click,
+        mock_required_version,
     ):
-        mock_get_required_platform_helper_version.return_value = "1.2.3"
+        mock_required_version.return_value = "1.2.3"
 
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, [])
+        result = CliRunner().invoke(get_platform_helper_for_project, [])
 
-        assert len(mock_get_required_platform_helper_version.mock_calls) == 1
-        assert mock_get_required_platform_helper_version.mock_calls[0].args == (None,)
         assert result.exit_code == 0
-        assert re.match(r"\s*1\.2\.3\s*", result.output)
+        mock_required_version.assert_called_with(None)
+        mock_click.assert_called_with("1.2.3")
 
-    @patch("dbt_platform_helper.commands.version.get_required_platform_helper_version")
+    @patch(
+        "dbt_platform_helper.commands.version.RequiredVersion.get_required_platform_helper_version"
+    )
+    @patch("click.secho")
     def test_calls_versioning_function_and_prints_returned_version_with_pipeline_override(
         self,
-        mock_get_required_platform_helper_version,
+        mock_click,
+        mock_required_version,
     ):
-        mock_get_required_platform_helper_version.return_value = "1.2.3"
+        mock_required_version.return_value = "1.2.3"
 
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "main"])
+        result = CliRunner().invoke(get_platform_helper_for_project, ["--pipeline", "main"])
 
-        assert len(mock_get_required_platform_helper_version.mock_calls) == 1
-        assert mock_get_required_platform_helper_version.mock_calls[0].args == ("main",)
         assert result.exit_code == 0
-        assert re.match(r"\s*1\.2\.3\s*", result.output)
+        mock_required_version.assert_called_with("main")
+        mock_click.assert_called_with("1.2.3")
 
-    @patch("dbt_platform_helper.commands.version.get_required_platform_helper_version")
-    def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
+    @patch(
+        "dbt_platform_helper.commands.version.RequiredVersion.get_required_platform_helper_version"
+    )
+    @patch("click.secho")
+    def test_prints_error_message_if_exception_is_thrown_by_get_required_platform_helper_version(
         self,
-        mock_get_required_platform_helper_version,
+        mock_click,
+        mock_required_version,
     ):
-        mock_get_required_platform_helper_version.return_value = "1.2.3"
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "bogus"])
+        mock_required_version.side_effect = PlatformException("Something bad happened")
 
-        assert result.exit_code == 0
-        assert result.output == "1.2.3\n"
+        result = CliRunner().invoke(get_platform_helper_for_project, ["--pipeline", "main"])
 
-
-@pytest.mark.usefixtures("create_invalid_platform_config_file")
-@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
-class TestVersionCommandWithInvalidConfig:
-    def test_works_given_invalid_config(self, mock_latest_release):
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, [])
-
-        assert result.exit_code == 0
-        assert result.output == "1.2.3\n"
-
-    def test_pipeline_override_given_invalid_config(self, mock_latest_release):
-        command = VersionCommand().command
-        result = CliRunner().invoke(command, ["--pipeline", "prod-main"])
-
-        assert result.exit_code == 0
-        assert result.output == "9.0.9\n"
+        assert result.exit_code == 1
+        mock_click.assert_called_with("Error: Something bad happened", err=True, fg="red")
