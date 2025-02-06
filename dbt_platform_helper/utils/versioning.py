@@ -4,7 +4,6 @@ import subprocess
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
-from typing import Tuple
 from typing import Union
 
 import click
@@ -93,7 +92,7 @@ class RequiredVersion:
             self.io.warn(message)
 
 
-# Creates a VersionTuple from a string.  VersionTuples are used
+# Creates a SemanticVersion from a string.  SemanticVersion are used
 # internally to store versioning info from strings output by the command line
 # Could be a provider hiding in here.
 def parse_version(input_version: Union[str, None]) -> SemanticVersion:
@@ -150,7 +149,7 @@ def get_aws_versions() -> VersionStatus:
 
 # TODO To be moved somewhere that will be really obvious it's making a network call so we
 # don't make unneccessary calls in tests etc.
-def get_github_released_version(repository: str, tags: bool = False) -> Tuple[int, int, int]:
+def get_github_released_version(repository: str, tags: bool = False) -> SemanticVersion:
     if tags:
         tags_list = requests.get(f"https://api.github.com/repos/{repository}/tags").json()
         versions = [parse_version(v["name"]) for v in tags_list]
@@ -163,7 +162,7 @@ def get_github_released_version(repository: str, tags: bool = False) -> Tuple[in
 
 # TODO To be moved somewhere that will be really obvious it's making a network call so we
 # don't make unneccessary calls in tests etc.
-def _get_latest_release():
+def _get_latest_release() -> SemanticVersion:
     package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
     released_versions = package_info["releases"].keys()
     parsed_released_versions = [parse_version(v) for v in released_versions]
@@ -252,29 +251,6 @@ def _process_version_file_warnings(versions: PlatformHelperVersions):
 
 
 # Generic function can stay utility for now
-def validate_version_compatibility(app_version: SemanticVersion, check_version: SemanticVersion):
-    app_major, app_minor, app_patch = app_version.major, app_version.minor, app_version.patch
-    check_major, check_minor, check_patch = (
-        check_version.major,
-        check_version.minor,
-        check_version.patch,
-    )
-    app_version_as_string = str(app_version)
-    check_version_as_string = str(check_version)
-
-    if (app_major == 0 and check_major == 0) and (
-        app_minor != check_minor or app_patch != check_patch
-    ):
-        raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
-
-    if app_major != check_major:
-        raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
-
-    if app_minor != check_minor:
-        raise IncompatibleMinorVersionException(app_version_as_string, check_version_as_string)
-
-
-# Generic function can stay utility for now
 def check_version_on_file_compatibility(
     app_version: SemanticVersion, file_version: SemanticVersion
 ):
@@ -299,9 +275,8 @@ def get_template_generated_with_version(template_file_path: str) -> SemanticVers
 
 # TODO Only used in config command.  Move to config domain.  Move tests also.
 def validate_template_version(app_version: SemanticVersion, template_file_path: str):
-    validate_version_compatibility(
-        app_version,
-        get_template_generated_with_version(template_file_path),
+    app_version.validate_version_compatibility(
+        get_template_generated_with_version(template_file_path)
     )
 
 
@@ -319,7 +294,7 @@ def check_platform_helper_version_needs_update():
         "--upgrade dbt-platform-helper`."
     )
     try:
-        validate_version_compatibility(local_version, latest_release)
+        local_version.validate_version_compatibility(latest_release)
     except IncompatibleMajorVersionException:
         click.secho(message, fg="red")
     except IncompatibleMinorVersionException:

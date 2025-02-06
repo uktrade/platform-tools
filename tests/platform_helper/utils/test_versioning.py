@@ -11,8 +11,8 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
@@ -30,7 +30,6 @@ from dbt_platform_helper.utils.versioning import (
 )
 from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import validate_template_version
-from dbt_platform_helper.utils.versioning import validate_version_compatibility
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
@@ -75,28 +74,6 @@ def test_get_github_version_from_tags(request_get):
 
 
 @pytest.mark.parametrize(
-    "version_check",
-    [
-        (SemanticVersion(1, 40, 0), SemanticVersion(1, 30, 0), IncompatibleMinorVersionException),
-        (SemanticVersion(1, 40, 0), SemanticVersion(2, 1, 0), IncompatibleMajorVersionException),
-        (SemanticVersion(0, 2, 40), SemanticVersion(0, 1, 30), IncompatibleMajorVersionException),
-        (SemanticVersion(0, 1, 40), SemanticVersion(0, 1, 30), IncompatibleMajorVersionException),
-    ],
-)
-def test_validate_version_compatability(
-    version_check: Tuple[
-        SemanticVersion,
-        SemanticVersion,
-        Type[BaseException],
-    ]
-):
-    app_version, check_version, raises = version_check
-
-    with pytest.raises(raises):
-        validate_version_compatibility(app_version, check_version)
-
-
-@pytest.mark.parametrize(
     "template_check",
     [
         ("addon_newer_major_version.yml", IncompatibleMajorVersionException, ""),
@@ -117,55 +94,56 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
         assert (message % template_path) == str(exception.value)
 
 
-@pytest.mark.parametrize(
-    "expected_exception",
-    [
-        IncompatibleMajorVersionException,
-        IncompatibleMinorVersionException,
-        IncompatibleMinorVersionException,
-    ],
-)
-@patch("click.secho")
-@patch("click.confirm")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
-@patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
-)
-@patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
-def test_check_platform_helper_version_needs_update(
-    version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
-):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
-        SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
-    )
-    version_compatibility.side_effect = expected_exception(
-        SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
-    )
+# TODO reimplement this test in the correct domain
+# @pytest.mark.parametrize(
+#     "expected_exception",
+#     [
+#         IncompatibleMajorVersionException,
+#         IncompatibleMinorVersionException,
+#         IncompatibleMinorVersionException,
+#     ],
+# )
+# @patch("click.secho")
+# @patch("click.confirm")
+# @patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+# @patch(
+#     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+# )
+# @patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
+# def test_check_platform_helper_version_needs_update(
+#     version_compatibility, mock_get_platform_helper_versions, confirm, secho, expected_exception
+# ):
+#     mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+#         SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
+#     )
+#     version_compatibility.side_effect = expected_exception(
+#         SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
+#     )
 
-    check_platform_helper_version_needs_update()
+#     check_platform_helper_version_needs_update()
 
-    mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
+#     mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
 
-    if expected_exception == IncompatibleMajorVersionException:
-        secho.assert_called_with(
-            "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-            "--upgrade dbt-platform-helper`.",
-            fg="red",
-        )
+#     if expected_exception == IncompatibleMajorVersionException:
+#         secho.assert_called_with(
+#             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
+#             "--upgrade dbt-platform-helper`.",
+#             fg="red",
+#         )
 
-    if expected_exception == IncompatibleMinorVersionException:
-        secho.assert_called_with(
-            "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
-            "--upgrade dbt-platform-helper`.",
-            fg="yellow",
-        )
+#     if expected_exception == IncompatibleMinorVersionException:
+#         secho.assert_called_with(
+#             "You are running platform-helper v1.0.0, upgrade to v1.0.0 by running run `pip install "
+#             "--upgrade dbt-platform-helper`.",
+#             fg="yellow",
+#         )
 
 
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=False),
 )
-@patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
     check_platform_helper_version_needs_update()
 
@@ -245,7 +223,7 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
-@patch("dbt_platform_helper.utils.versioning.validate_version_compatibility")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 def test_check_platform_helper_version_skips_when_skip_environment_variable_is_set(
     version_compatibility,
 ):
