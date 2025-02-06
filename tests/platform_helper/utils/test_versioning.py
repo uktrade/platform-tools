@@ -11,11 +11,12 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import PlatformHelperVersions
-from dbt_platform_helper.utils.versioning import check_platform_helper_version_mismatch
+from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
 )
@@ -23,7 +24,6 @@ from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
-from dbt_platform_helper.utils.versioning import get_required_platform_helper_version
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
@@ -194,11 +194,13 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
         local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
     )
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 
@@ -216,7 +218,9 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
     mock_running_as_installed_package.return_value = False
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_not_called()
 
@@ -235,11 +239,13 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
         platform_config_default=(1, 0, 0),
     )
 
-    check_platform_helper_version_mismatch()
+    required_version = RequiredVersion()
+
+    required_version.check_platform_helper_version_mismatch()
 
     secho.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+        fg="magenta",
     )
 
 
@@ -440,9 +446,11 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    required_version = get_required_platform_helper_version()
+    required_version = RequiredVersion()
 
-    assert required_version == expected_version
+    result = required_version.get_required_platform_helper_version()
+
+    assert result == expected_version
 
 
 @pytest.mark.parametrize(
@@ -488,9 +496,11 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    required_version = get_required_platform_helper_version("main")
+    required_version = RequiredVersion()
 
-    assert required_version == expected_version
+    result = required_version.get_required_platform_helper_version("main")
+
+    assert result == expected_version
 
 
 @patch("click.secho")
@@ -507,11 +517,11 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     }
     mock_version.return_value = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
+    # TODO need to inject the config provider instead of relying on FS
+    required_version = RequiredVersion()
 
-    with pytest.raises(SystemExit) as ex:
-        get_required_platform_helper_version("main")
-
-    assert ex.value.code == 1
+    with pytest.raises(PlatformException):
+        required_version.get_required_platform_helper_version("main")
 
     secho.assert_called_with(
         f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
@@ -529,7 +539,9 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     mock_version,
     secho,
 ):
-    result = get_required_platform_helper_version(
+    required_version = RequiredVersion()
+
+    result = required_version.get_required_platform_helper_version(
         versions=PlatformHelperVersions(platform_config_default=(1, 2, 3))
     )
 
@@ -555,3 +567,60 @@ def test_determine_terraform_platform_modules_version(
         )
         == expected_version
     )
+
+
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
+    mock_latest_release, fakefs
+):
+    default_version = "1.2.3"
+    platform_config = {
+        "application": "my-app",
+        "default_versions": {"platform-helper": default_version},
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {
+                "versions": {"platform-helper": "1.1.1"},
+                "slack_channel": "abc",
+                "trigger_on_push": True,
+                "environments": {"dev": None},
+            }
+        },
+    }
+    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+
+    result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+
+    assert result == default_version
+
+
+@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+class TestVersionCommandWithInvalidConfig:
+    DEFAULT_VERSION = "1.2.3"
+    INVALID_CONFIG = {
+        "default_versions": {"platform-helper": DEFAULT_VERSION},
+        "a_bogus_field_that_invalidates_config": "foo",
+    }
+
+    def test_works_given_invalid_config(self, mock_latest_release, fakefs):
+        default_version = "1.2.3"
+        platform_config = self.INVALID_CONFIG
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+
+        result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+
+        assert result == default_version
+
+    def test_pipeline_override_given_invalid_config(self, mock_latest_release, fakefs):
+        pipeline_override_version = "1.1.1"
+        platform_config = self.INVALID_CONFIG
+        platform_config["environment_pipelines"] = {
+            "main": {
+                "versions": {"platform-helper": pipeline_override_version},
+            }
+        }
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+
+        result = RequiredVersion().get_required_platform_helper_version("main")
+
+        assert result == pipeline_override_version
