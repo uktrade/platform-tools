@@ -160,9 +160,10 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_moved(terraform, platform_config):
+        extensions_comment = "Moved extensions-tf to just extensions - this block tells terraform this. Can be removed once all services have moved to the new naming."
         terraform["moved"] = [
             {
-                "//": "Moved extensions-tf to just extensions - this block tells terraform this. Can be removed once all services have moved to the new naming.",
+                "//": extensions_comment,
                 "from": "module.extensions-tf",
                 "to": "module.extensions",
             }
@@ -174,6 +175,8 @@ class TerraformManifestProvider:
             for extension_name, extension in extensions.items()
             if extension["type"] == "s3"
         ]
+        s3_comment = "S3 bucket resources are now indexed. Can be removed once all services have moved to terraform-platform-modules 5.x."
+
         for name in s3_extension_names:
             resources = [
                 "aws_s3_bucket_server_side_encryption_configuration.encryption-config",
@@ -185,7 +188,7 @@ class TerraformManifestProvider:
             for move in moves:
                 terraform["moved"].append(
                     {
-                        "//": "",
+                        "//": s3_comment,
                         "from": move,
                         "to": f"{move}[0]",
                     }
