@@ -60,6 +60,12 @@ class ConfigProvider:
 
         return self.config
 
+    def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
+        try:
+            return self.file_provider.load(path)
+        except (FileNotFoundException, InvalidYamlException, DuplicateKeysException):
+            return {}
+
     # TODO this general function should be moved out of ConfigProvider
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
@@ -102,9 +108,3 @@ class ConfigProvider:
         enriched_config["environments"] = defaulted_envs
 
         return enriched_config
-
-    def load_unvalidated_config_file(self):
-        try:
-            return self.file_provider.load(PLATFORM_CONFIG_FILE)
-        except (FileNotFoundException, InvalidYamlException, DuplicateKeysException):
-            return {}
