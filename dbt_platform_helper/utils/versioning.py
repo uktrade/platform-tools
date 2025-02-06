@@ -275,9 +275,7 @@ def get_template_generated_with_version(template_file_path: str) -> SemanticVers
 
 # TODO Only used in config command.  Move to config domain.  Move tests also.
 def validate_template_version(app_version: SemanticVersion, template_file_path: str):
-    app_version.validate_version_compatibility(
-        get_template_generated_with_version(template_file_path)
-    )
+    app_version.validate_compatibility_with(get_template_generated_with_version(template_file_path))
 
 
 # TODO called at the beginning of every command.  This is platform-version base functionality
@@ -294,7 +292,7 @@ def check_platform_helper_version_needs_update():
         "--upgrade dbt-platform-helper`."
     )
     try:
-        local_version.validate_version_compatibility(latest_release)
+        local_version.validate_compatibility_with(latest_release)
     except IncompatibleMajorVersionException:
         click.secho(message, fg="red")
     except IncompatibleMinorVersionException:

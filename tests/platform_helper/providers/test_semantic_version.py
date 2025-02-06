@@ -50,8 +50,8 @@ class TestSemanticVersion:
             ),
         ],
     )
-    def test_validate_version_compatability(self, version_check):
+    def test_validate_compatability_with(self, version_check):
         app_version, check_version, raises = version_check
 
         with pytest.raises(raises):
-            app_version.validate_version_compatibility(check_version)
+            app_version.validate_compatibility_with(check_version)
