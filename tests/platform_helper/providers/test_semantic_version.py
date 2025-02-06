@@ -16,3 +16,9 @@ class TestSemanticVersion:
     def test_stringify_version_numbers(self, suite):
         input_version, expected_version = suite
         assert str(input_version) == expected_version
+
+    def test_same_semantic_versions_are_equal(self):
+        assert SemanticVersion(1, 2, 3) == SemanticVersion(1, 2, 3)
+
+    def test_different_semantic_versions_are_not_equal(self):
+        assert SemanticVersion(1, 1, 1) != SemanticVersion(1, 2, 3)

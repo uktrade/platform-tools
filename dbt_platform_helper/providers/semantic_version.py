@@ -12,6 +12,9 @@ class SemanticVersion:
     def __lt__(self, other) -> bool:
         return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
 
+    def __eq__(self, other) -> bool:
+        return (self.major, self.minor, self.patch) == (other.major, other.minor, other.patch)
+
 
 class VersionStatus:
     def __init__(
