@@ -103,12 +103,8 @@ class ConfigProvider:
 
         return enriched_config
 
-    def _read_config_file_contents(self):
-        if Path(PLATFORM_CONFIG_FILE).exists():
-            return YamlFileProvider.load(PLATFORM_CONFIG_FILE)
-
     def load_unvalidated_config_file(self):
         try:
-            return self._read_config_file_contents()
+            return self.file_provider.load(PLATFORM_CONFIG_FILE)
         except (FileNotFoundException, InvalidYamlException, DuplicateKeysException):
             return {}
