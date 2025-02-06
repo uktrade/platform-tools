@@ -81,7 +81,6 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
         assert (message % template_path) == str(exception.value)
 
 
-# TODO reimplement this test in the correct domain
 @patch("click.secho")
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
 @patch(
