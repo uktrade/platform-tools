@@ -1,3 +1,6 @@
+import re
+from typing import Union
+
 from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
 from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 
@@ -30,6 +33,26 @@ class SemanticVersion:
 
         if self.minor != other.minor:
             raise IncompatibleMinorVersionException(str(self), str(other))
+
+    @staticmethod
+    def from_string(version_string: Union[str, None]):
+        if version_string is None:
+            return None
+
+        version_plain = version_string.replace("v", "")
+        version_segments = re.split(r"[.\-]", version_plain)
+
+        if len(version_segments) != 3:
+            return None
+
+        output_version = [0, 0, 0]
+        for index, segment in enumerate(version_segments):
+            try:
+                output_version[index] = int(segment)
+            except ValueError:
+                output_version[index] = -1
+
+        return SemanticVersion(output_version[0], output_version[1], output_version[2])
 
 
 class VersionStatus:

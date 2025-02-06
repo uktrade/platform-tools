@@ -28,25 +28,8 @@ from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
-from dbt_platform_helper.utils.versioning import parse_version
 from dbt_platform_helper.utils.versioning import validate_template_version
 from tests.platform_helper.conftest import FIXTURES_DIR
-
-
-@pytest.mark.parametrize(
-    "suite",
-    [
-        ("v1.2.3", SemanticVersion(1, 2, 3)),
-        ("1.2.3", SemanticVersion(1, 2, 3)),
-        ("v0.1-TEST", SemanticVersion(0, 1, -1)),
-        ("TEST-0.2", SemanticVersion(-1, 0, 2)),
-        ("unknown", None),
-        (None, None),
-    ],
-)
-def test_parsing_version_numbers(suite):
-    input_version, expected_version = suite
-    assert parse_version(input_version) == expected_version
 
 
 class MockGithubReleaseResponse:
