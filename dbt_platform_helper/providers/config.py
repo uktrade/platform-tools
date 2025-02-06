@@ -58,6 +58,12 @@ class ConfigProvider:
 
         return self.config
 
+    def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
+        try:
+            return self.file_provider.load(path)
+        except FileProviderException:
+            return {}
+
     # TODO this general function should be moved out of ConfigProvider
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
