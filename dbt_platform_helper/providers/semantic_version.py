@@ -76,4 +76,4 @@ class VersionStatus:
         self.latest = latest_release
 
     def is_outdated(self):
-        return self.local < self.latest
+        return self.local != self.latest

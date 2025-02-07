@@ -26,7 +26,7 @@ from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
-class PlatformHelperVersions:
+class PlatformHelperVersions(VersionStatus):
     def __init__(
         self,
         local: SemanticVersion = None,

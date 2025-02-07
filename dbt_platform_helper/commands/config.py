@@ -169,13 +169,8 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
-    local_aws_version = aws_versions.local
-    aws_latest_release = aws_versions.latest
-    if local_aws_version is None:
+    if aws_versions.local is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
-
-    local_platform_helper_version = platform_helper_versions.local
-    latest_platform_helper_release = platform_helper_versions.latest
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -189,46 +184,46 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     tool_versions_table.add_row(
         [
             "aws",
-            str(local_aws_version),
-            str(aws_latest_release),
-            no if local_aws_version != aws_latest_release else yes,
+            str(aws_versions.local),
+            str(aws_versions.latest),
+            no if aws_versions.is_outdated() else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "copilot",
-            str(local_copilot_version),
-            str(copilot_latest_release),
-            no if local_copilot_version != copilot_latest_release else yes,
+            str(copilot_versions.local),
+            str(copilot_versions.latest),
+            no if copilot_versions.is_outdated() else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "dbt-platform-helper",
-            str(local_platform_helper_version),
-            str(latest_platform_helper_release),
-            no if local_platform_helper_version != latest_platform_helper_release else yes,
+            str(platform_helper_versions.local),
+            str(platform_helper_versions.latest),
+            no if platform_helper_versions.is_outdated() else yes,
         ]
     )
 
     click.secho(tool_versions_table)
 
-    if local_aws_version != aws_latest_release and "install-aws" not in recommendations:
+    if aws_versions.is_outdated() and "install-aws" not in recommendations:
         recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS CLI",
-            version=str(aws_latest_release),
+            version=str(aws_versions.latest),
         )
 
-    if local_copilot_version != copilot_latest_release and "install-copilot" not in recommendations:
+    if copilot_versions.is_outdated() and "install-copilot" not in recommendations:
         recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS Copilot",
             version=str(copilot_latest_release),
         )
 
-    if local_platform_helper_version != latest_platform_helper_release:
+    if platform_helper_versions.is_outdated():
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=str(latest_platform_helper_release))
+        ].format(version=str(platform_helper_versions.latest))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]
