@@ -52,7 +52,7 @@ class TerraformManifestProvider:
         self._add_environment_locals(terraform, application_name)
         self._add_backend(terraform, platform_config, account, state_key_suffix)
         self._add_extensions_module(terraform, terraform_platform_modules_version, env)
-        self._add_moved(terraform)
+        self._add_moved(terraform, platform_config)
         self._write_terraform_json(terraform, f"terraform/environments/{env}/main.tf.json")
 
     @staticmethod
@@ -159,14 +159,40 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_moved(terraform):
+    def _add_moved(terraform, platform_config):
+        extensions_comment = "Moved extensions-tf to just extensions - this block tells terraform this. Can be removed once all services have moved to the new naming."
         terraform["moved"] = [
             {
-                "//": "Moved extensions-tf to just extensions - this block tells terraform this. Can be removed once all services have moved to the new naming.",
+                "//": extensions_comment,
                 "from": "module.extensions-tf",
                 "to": "module.extensions",
             }
         ]
+
+        extensions = platform_config.get("extensions", {})
+        s3_extension_names = [
+            extension_name
+            for extension_name, extension in extensions.items()
+            if extension["type"] == "s3"
+        ]
+        s3_comment = "S3 bucket resources are now indexed. Can be removed once all services have moved to terraform-platform-modules 5.x."
+
+        for name in s3_extension_names:
+            resources = [
+                "aws_s3_bucket_server_side_encryption_configuration.encryption-config",
+                "aws_s3_bucket_policy.bucket-policy",
+                "aws_kms_key.kms-key",
+                "aws_kms_alias.s3-bucket",
+            ]
+            moves = [f'module.extensions.module.s3["{name}"].{resource}' for resource in resources]
+            for move in moves:
+                terraform["moved"].append(
+                    {
+                        "//": s3_comment,
+                        "from": move,
+                        "to": f"{move}[0]",
+                    }
+                )
 
     def _write_terraform_json(self, terraform, tf_json):
         message = self.file_provider.mkfile(
