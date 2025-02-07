@@ -210,9 +210,9 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_plat
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == SemanticVersion(1, 1, 1)
-    assert versions.latest_release == SemanticVersion(2, 3, 4)
-    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.local == SemanticVersion(1, 1, 1)
+    assert versions.latest == SemanticVersion(2, 3, 4)
+    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == SemanticVersion(10, 2, 0)
     assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
@@ -231,9 +231,9 @@ def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == SemanticVersion(1, 1, 1)
-    assert versions.latest_release == SemanticVersion(2, 3, 4)
-    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.local == SemanticVersion(1, 1, 1)
+    assert versions.latest == SemanticVersion(2, 3, 4)
+    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == None
     assert versions.pipeline_overrides == {}
 
@@ -254,9 +254,9 @@ def test_get_platform_helper_versions_with_invalid_config(
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == SemanticVersion(1, 1, 1)
-    assert versions.latest_release == SemanticVersion(2, 3, 4)
-    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.local == SemanticVersion(1, 1, 1)
+    assert versions.latest == SemanticVersion(2, 3, 4)
+    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == SemanticVersion(1, 2, 3)
     assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
 
@@ -333,8 +333,8 @@ def test_get_copilot_versions(mock_get_github_released_version, mock_run):
 
     versions = get_copilot_versions()
 
-    assert versions.local_version == SemanticVersion(1, 0, 0)
-    assert versions.latest_release == SemanticVersion(2, 0, 0)
+    assert versions.local == SemanticVersion(1, 0, 0)
+    assert versions.latest == SemanticVersion(2, 0, 0)
 
 
 @patch("subprocess.run")
@@ -346,8 +346,8 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
     mock_run.return_value.stdout = b"aws-cli/1.0.0"
     versions = get_aws_versions()
 
-    assert versions.local_version == SemanticVersion(1, 0, 0)
-    assert versions.latest_release == SemanticVersion(2, 0, 0)
+    assert versions.local == SemanticVersion(1, 0, 0)
+    assert versions.latest == SemanticVersion(2, 0, 0)
 
 
 @pytest.mark.parametrize(

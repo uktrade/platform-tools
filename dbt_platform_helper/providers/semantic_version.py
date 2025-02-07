@@ -72,5 +72,8 @@ class VersionStatus:
     def __init__(
         self, local_version: SemanticVersion = None, latest_release: SemanticVersion = None
     ):
-        self.local_version = local_version
-        self.latest_release = latest_release
+        self.local = local_version
+        self.latest = latest_release
+
+    def is_outdated(self):
+        return self.local < self.latest

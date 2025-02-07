@@ -81,8 +81,8 @@ def deployment():
     _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
-    local_version = platform_helper_versions.local_version
-    latest_release = platform_helper_versions.latest_release
+    local_version = platform_helper_versions.local
+    latest_release = platform_helper_versions.latest
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -162,20 +162,20 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
-    local_copilot_version = copilot_versions.local_version
-    copilot_latest_release = copilot_versions.latest_release
+    local_copilot_version = copilot_versions.local
+    copilot_latest_release = copilot_versions.latest
     if local_copilot_version is None:
         recommendations["install-copilot"] = (
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
-    local_aws_version = aws_versions.local_version
-    aws_latest_release = aws_versions.latest_release
+    local_aws_version = aws_versions.local
+    aws_latest_release = aws_versions.latest
     if local_aws_version is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
-    local_version = platform_helper_versions.local_version
-    latest_release = platform_helper_versions.latest_release
+    local_platform_helper_version = platform_helper_versions.local
+    latest_platform_helper_release = platform_helper_versions.latest
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -205,9 +205,9 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     tool_versions_table.add_row(
         [
             "dbt-platform-helper",
-            str(local_version),
-            str(latest_release),
-            no if local_version != latest_release else yes,
+            str(local_platform_helper_version),
+            str(latest_platform_helper_release),
+            no if local_platform_helper_version != latest_platform_helper_release else yes,
         ]
     )
 
@@ -225,10 +225,10 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
             version=str(copilot_latest_release),
         )
 
-    if local_version != latest_release:
+    if local_platform_helper_version != latest_platform_helper_release:
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=str(latest_release))
+        ].format(version=str(latest_platform_helper_release))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]
