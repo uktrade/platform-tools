@@ -69,14 +69,13 @@ class RequiredVersion:
             return
 
         versions = get_platform_helper_versions()
-        local_version = versions.local
         platform_helper_file_version = SemanticVersion.from_string(
             self.get_required_platform_helper_version(versions=versions)
         )
 
-        if not local_version == platform_helper_file_version:
+        if not versions.local == platform_helper_file_version:
             message = (
-                f"WARNING: You are running platform-helper v{local_version} against "
+                f"WARNING: You are running platform-helper v{versions.local} against "
                 f"v{platform_helper_file_version} specified by {PLATFORM_HELPER_VERSION_FILE}."
             )
             self.io.warn(message)
