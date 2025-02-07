@@ -9,6 +9,7 @@ class VersionProvider(ABC):
     pass
 
 
+# TODO add timeouts and exception handling for requests
 class GithubVersionProvider(VersionProvider):
     @staticmethod
     def get_latest_version(repo_name: str, tags: bool = False) -> SemanticVersion:
