@@ -508,7 +508,10 @@ def test_determine_terraform_platform_modules_version(
     )
 
 
-@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+@patch(
+    "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
+    return_value="10.9.9",
+)
 def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     mock_latest_release, fakefs
 ):
@@ -533,7 +536,10 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     assert result == default_version
 
 
-@patch("dbt_platform_helper.utils.versioning._get_latest_release", return_value="10.9.9")
+@patch(
+    "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
+    return_value="10.9.9",
+)
 class TestVersionCommandWithInvalidConfig:
     DEFAULT_VERSION = "1.2.3"
     INVALID_CONFIG = {

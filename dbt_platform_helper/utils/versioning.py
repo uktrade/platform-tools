@@ -23,6 +23,7 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
 class PlatformHelperVersions:
@@ -140,16 +141,6 @@ def get_github_released_version(repository: str, tags: bool = False) -> Semantic
     return SemanticVersion.from_string(package_info["tag_name"])
 
 
-# TODO To be moved somewhere that will be really obvious it's making a network call so we
-# don't make unneccessary calls in tests etc.
-def _get_latest_release() -> SemanticVersion:
-    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
-    released_versions = package_info["releases"].keys()
-    parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
-    parsed_released_versions.sort(reverse=True)
-    return parsed_released_versions[0]
-
-
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
 def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
@@ -158,7 +149,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     except PackageNotFoundError:
         locally_installed_version = None
 
-    latest_release = _get_latest_release()
+    latest_release = PyPiVersionProvider.get_latest_version("dbt-platform-helper")
 
     if not include_project_versions:
         return PlatformHelperVersions(
