@@ -16,6 +16,7 @@ class PlatformConfigSchema:
             {
                 # The following line is for the AWS Copilot version, will be removed under DBTP-1002
                 "application": str,
+                Optional("deploy_repository"): str,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
@@ -429,7 +430,7 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n{'\\n'.join(f'  {e}' for e in errors)}"
             )
 
         return True

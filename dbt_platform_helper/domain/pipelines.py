@@ -80,9 +80,17 @@ class Pipelines:
                 if "account" in config
             }
 
+            # TODO - test case on below.
+            def _determine_deploy_repository_name(platform_config):
+                if "deploy_repository" in platform_config.keys():
+                    return platform_config["deploy_repository"]
+                else:
+                    return f"uktrade/{platform_config['application']}-deploy"
+
             for account in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
                     platform_config["application"],
+                    _determine_deploy_repository_name(platform_config=platform_config),
                     account,
                     terraform_platform_modules_version,
                     deploy_branch,
@@ -113,6 +121,7 @@ class Pipelines:
     def _generate_terraform_environment_pipeline_manifest(
         self,
         application: str,
+        deploy_repository: str,
         aws_account: str,
         terraform_platform_modules_version: str,
         deploy_branch: str,
@@ -122,6 +131,7 @@ class Pipelines:
         contents = env_pipeline_template.render(
             {
                 "application": application,
+                "deploy_repository": deploy_repository,
                 "aws_account": aws_account,
                 "terraform_platform_modules_version": terraform_platform_modules_version,
                 "deploy_branch": deploy_branch,
