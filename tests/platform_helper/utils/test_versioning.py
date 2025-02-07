@@ -18,9 +18,9 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.versioning import PlatformHelperVersionStatus
 from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,

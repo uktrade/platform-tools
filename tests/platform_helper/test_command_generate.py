@@ -5,8 +5,8 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.utils.versioning import PlatformHelperVersionStatus
 
 
 @patch("dbt_platform_helper.commands.generate.make_addons", return_value=None)

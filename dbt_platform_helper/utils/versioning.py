@@ -19,27 +19,12 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
-
-
-class PlatformHelperVersionStatus(VersionStatus):
-    def __init__(
-        self,
-        local: SemanticVersion = None,
-        latest: SemanticVersion = None,
-        deprecated_version_file: SemanticVersion = None,
-        platform_config_default: SemanticVersion = None,
-        pipeline_overrides: dict[str, str] = None,
-    ):
-        self.local = local
-        self.latest = latest
-        self.deprecated_version_file = deprecated_version_file
-        self.platform_config_default = platform_config_default
-        self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -149,7 +134,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     return out
 
 
-# Validates the returned PlatformHelperVersions and echos useful warnings
+# Validates the returned PlatformHelperVersionStatus and echos useful warnings
 # Should use IO provider
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
 def _process_version_file_warnings(versions: PlatformHelperVersionStatus):

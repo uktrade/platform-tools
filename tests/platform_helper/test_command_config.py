@@ -7,9 +7,9 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.config import aws
 from dbt_platform_helper.commands.config import validate
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
-from dbt_platform_helper.utils.versioning import PlatformHelperVersionStatus
 
 
 def test_running_in_non_copilot_directory(fakefs):

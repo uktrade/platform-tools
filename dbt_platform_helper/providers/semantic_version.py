@@ -77,3 +77,19 @@ class VersionStatus:
 
     def is_outdated(self):
         return self.local != self.latest
+
+
+class PlatformHelperVersionStatus(VersionStatus):
+    def __init__(
+        self,
+        local: SemanticVersion = None,
+        latest: SemanticVersion = None,
+        deprecated_version_file: SemanticVersion = None,
+        platform_config_default: SemanticVersion = None,
+        pipeline_overrides: dict[str, str] = None,
+    ):
+        self.local = local
+        self.latest = latest
+        self.deprecated_version_file = deprecated_version_file
+        self.platform_config_default = platform_config_default
+        self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
