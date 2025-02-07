@@ -17,6 +17,12 @@ class MockGithubTagResponse:
         return [{"name": "1.1.1"}, {"name": "1.2.3"}]
 
 
+class MockPyPiResponse:
+    @staticmethod
+    def json():
+        return {"releases": {"1.1.1": [], "1.2.3": []}}
+
+
 class TestGithubVersionProvider:
     @patch("requests.get", return_value=MockGithubReleaseResponse())
     def test_get_github_version_from_releases(self, request_get):
@@ -34,8 +40,8 @@ class TestGithubVersionProvider:
 
 
 class TestPyPiVersionProvider:
-    @patch("requests.get", return_value=MockGithubReleaseResponse())
+    @patch("requests.get", return_value=MockPyPiResponse())
     def test_get_latest_version(self, request_get):
         result = PyPiVersionProvider.get_latest_version("foo")
-        assert result == SemanticVersion(1, 1, 1)
-        # request_get.assert_called_once_with("https://api.github.com/repos/test/repo/releases/latest")
+        assert result == SemanticVersion(1, 2, 3)
+        request_get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")

@@ -26,5 +26,9 @@ class GithubVersionProvider(VersionProvider):
 
 class PyPiVersionProvider(VersionProvider):
     @staticmethod
-    def get_latest_version(tool_name: str) -> SemanticVersion:
-        return SemanticVersion(1, 1, 1)
+    def get_latest_version(project_name: str) -> SemanticVersion:
+        package_info = requests.get(f"https://pypi.org/pypi/{project_name}/json").json()
+        released_versions = package_info["releases"].keys()
+        parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
+        parsed_released_versions.sort(reverse=True)
+        return parsed_released_versions[0]
