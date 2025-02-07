@@ -325,7 +325,7 @@ def test_platform_helper_version_warnings(
 
 @patch("subprocess.run")
 @patch(
-    "dbt_platform_helper.utils.versioning.get_github_released_version",
+    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
     return_value=SemanticVersion(2, 0, 0),
 )
 def test_get_copilot_versions(mock_get_github_released_version, mock_run):
@@ -339,7 +339,7 @@ def test_get_copilot_versions(mock_get_github_released_version, mock_run):
 
 @patch("subprocess.run")
 @patch(
-    "dbt_platform_helper.utils.versioning.get_github_released_version",
+    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
     return_value=SemanticVersion(2, 0, 0),
 )
 def test_get_aws_versions(mock_get_github_released_version, mock_run):

@@ -6,7 +6,6 @@ from importlib.metadata import version
 from pathlib import Path
 
 import click
-import requests
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -23,6 +22,7 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
@@ -109,7 +109,8 @@ def get_copilot_versions() -> VersionStatus:
         pass
 
     return VersionStatus(
-        SemanticVersion.from_string(copilot_version), get_github_released_version("aws/copilot-cli")
+        SemanticVersion.from_string(copilot_version),
+        GithubVersionProvider.get_latest_version("aws/copilot-cli"),
     )
 
 
@@ -125,20 +126,7 @@ def get_aws_versions() -> VersionStatus:
     except ValueError:
         pass
 
-    return VersionStatus(aws_version, get_github_released_version("aws/aws-cli", True))
-
-
-# TODO To be moved somewhere that will be really obvious it's making a network call so we
-# don't make unneccessary calls in tests etc.
-def get_github_released_version(repository: str, tags: bool = False) -> SemanticVersion:
-    if tags:
-        tags_list = requests.get(f"https://api.github.com/repos/{repository}/tags").json()
-        versions = [SemanticVersion.from_string(v["name"]) for v in tags_list]
-        versions.sort(reverse=True)
-        return versions[0]
-
-    package_info = requests.get(f"https://api.github.com/repos/{repository}/releases/latest").json()
-    return SemanticVersion.from_string(package_info["tag_name"])
+    return VersionStatus(aws_version, GithubVersionProvider.get_latest_version("aws/aws-cli", True))
 
 
 # Resolves all the versions from pypi, config and locally installed version
