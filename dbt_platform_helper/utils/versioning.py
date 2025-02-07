@@ -8,7 +8,6 @@ from pathlib import Path
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -137,27 +136,13 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 # Should use IO provider
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
 def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
-    if versions.platform_config_default and not versions.deprecated_version_file:
-        return
+    messages = versions.warn()
 
-    messages = []
-    missing_default_version_message = f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: "
-    deprecation_message = f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."
+    if messages.get("errors"):
+        click.secho("\n".join(messages["errors"]), fg="red")
 
-    if versions.platform_config_default and versions.deprecated_version_file:
-        messages.append(deprecation_message)
-
-    if not versions.platform_config_default and versions.deprecated_version_file:
-        messages.append(deprecation_message)
-        messages.append(f"{missing_default_version_message}{versions.deprecated_version_file}\n")
-
-    if not versions.platform_config_default and not versions.deprecated_version_file:
-        message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
-        message += f"{missing_default_version_message}{versions.local}\n"
-        click.secho(message, fg="red")
-
-    if messages:
-        click.secho("\n".join(messages), fg="yellow")
+    if messages.get("warnings"):
+        click.secho("\n".join(messages["warnings"]), fg="yellow")
 
 
 # TODO called at the beginning of every command.  This is platform-version base functionality

@@ -1,6 +1,8 @@
 import re
 from typing import Union
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.validation import ValidationException
 
 
@@ -78,6 +80,9 @@ class VersionStatus:
     def is_outdated(self):
         return self.local != self.latest
 
+    def warn(self):
+        pass
+
 
 class PlatformHelperVersionStatus(VersionStatus):
     def __init__(
@@ -93,3 +98,32 @@ class PlatformHelperVersionStatus(VersionStatus):
         self.deprecated_version_file = deprecated_version_file
         self.platform_config_default = platform_config_default
         self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
+
+    def warn(self) -> dict:
+        if self.platform_config_default and not self.deprecated_version_file:
+            return {}
+
+        warnings = []
+        errors = []
+
+        missing_default_version_message = f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: "
+        deprecation_message = (
+            f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."
+        )
+
+        if self.platform_config_default and self.deprecated_version_file:
+            warnings.append(deprecation_message)
+
+        if not self.platform_config_default and self.deprecated_version_file:
+            warnings.append(deprecation_message)
+            warnings.append(f"{missing_default_version_message}{self.deprecated_version_file}\n")
+
+        if not self.platform_config_default and not self.deprecated_version_file:
+            message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+            message += f"{missing_default_version_message}{self.local}\n"
+            errors.append(message)
+
+        return {
+            "warnings": warnings,
+            "errors": errors,
+        }
