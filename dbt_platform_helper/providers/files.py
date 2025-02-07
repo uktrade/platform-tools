@@ -24,3 +24,8 @@ class FileProvider:
         file.write_text(contents)
 
         return f"File {file_path} {action}"
+
+    @staticmethod
+    def delete_file_if_present(base_path: str, file_path: str | Path):
+        file_path = Path(base_path) / file_path
+        file_path.unlink(missing_ok=True)

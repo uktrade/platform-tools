@@ -37,8 +37,8 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     mock_io.info.assert_called_once_with("File created")
 
-    assert base_path == str(Path(".").absolute())
-    assert file_path == "terraform/codebase-pipelines/main.tf.json"
+    assert base_path == str(Path("terraform/codebase-pipelines").absolute())
+    assert file_path == "main.tf.json"
     assert overwrite
 
     json_content = json.loads(contents)
@@ -176,9 +176,12 @@ def test_generate_environment_config_creates_file(
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
 
     mock_io.info.assert_called_once_with("File created")
+    mock_file_provider.delete_file_if_present.assert_called_with(
+        f"terraform/environments/{env}", "main.tf"
+    )
 
-    assert base_path == str(Path(".").absolute())
-    assert file_path == f"terraform/environments/{env}/main.tf.json"
+    assert base_path == str(Path(f"terraform/environments/{env}").absolute())
+    assert file_path == "main.tf.json"
     assert overwrite
 
     json_content = json.loads(contents)
