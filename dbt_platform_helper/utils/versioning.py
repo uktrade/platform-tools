@@ -29,15 +29,15 @@ from dbt_platform_helper.providers.version import PyPiVersionProvider
 class PlatformHelperVersions:
     def __init__(
         self,
-        local_version: SemanticVersion = None,
-        latest_release: SemanticVersion = None,
-        platform_helper_file_version: SemanticVersion = None,
+        local: SemanticVersion = None,
+        latest: SemanticVersion = None,
+        deprecated_version_file: SemanticVersion = None,
         platform_config_default: SemanticVersion = None,
         pipeline_overrides: dict[str, str] = None,
     ):
-        self.local_version = local_version
-        self.latest_release = latest_release
-        self.platform_helper_file_version = platform_helper_file_version
+        self.local_version = local
+        self.latest_release = latest
+        self.platform_helper_file_version = deprecated_version_file
         self.platform_config_default = platform_config_default
         self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
 
@@ -109,8 +109,8 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 
     if not include_project_versions:
         return PlatformHelperVersions(
-            local_version=locally_installed_version,
-            latest_release=latest_release,
+            local=locally_installed_version,
+            latest=latest_release,
         )
 
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
@@ -137,9 +137,9 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         }
 
     out = PlatformHelperVersions(
-        local_version=locally_installed_version,
-        latest_release=latest_release,
-        platform_helper_file_version=version_from_file,
+        local=locally_installed_version,
+        latest=latest_release,
+        deprecated_version_file=version_from_file,
         platform_config_default=platform_config_default,
         pipeline_overrides=pipeline_overrides,
     )

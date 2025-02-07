@@ -122,8 +122,8 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=SemanticVersion(1, 0, 1),
-        platform_helper_file_version=SemanticVersion(1, 0, 0),
+        local=SemanticVersion(1, 0, 1),
+        deprecated_version_file=SemanticVersion(1, 0, 0),
     )
 
     required_version = RequiredVersion()
@@ -146,8 +146,8 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     get_file_app_versions, secho, mock_running_as_installed_package
 ):
     get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=SemanticVersion(1, 0, 1),
-        platform_helper_file_version=SemanticVersion(1, 0, 0),
+        local=SemanticVersion(1, 0, 1),
+        deprecated_version_file=SemanticVersion(1, 0, 0),
     )
     mock_running_as_installed_package.return_value = False
 
@@ -167,8 +167,8 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     get_file_app_versions, secho
 ):
     get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=SemanticVersion(1, 0, 1),
-        platform_helper_file_version=None,
+        local=SemanticVersion(1, 0, 1),
+        deprecated_version_file=None,
         platform_config_default=SemanticVersion(1, 0, 0),
     )
 
