@@ -27,37 +27,12 @@ from dbt_platform_helper.utils.versioning import (
 )
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
-from dbt_platform_helper.utils.versioning import get_github_released_version
 from dbt_platform_helper.utils.versioning import get_platform_helper_versions
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
 from dbt_platform_helper.utils.versioning import validate_template_version
 from tests.platform_helper.conftest import FIXTURES_DIR
-
-
-class MockGithubReleaseResponse:
-    @staticmethod
-    def json():
-        return {"tag_name": "1.1.1"}
-
-
-@patch("requests.get", return_value=MockGithubReleaseResponse())
-def test_get_github_version_from_releases(request_get):
-    assert get_github_released_version("test/repo") == SemanticVersion(1, 1, 1)
-    request_get.assert_called_once_with("https://api.github.com/repos/test/repo/releases/latest")
-
-
-class MockGithubTagResponse:
-    @staticmethod
-    def json():
-        return [{"name": "1.1.1"}, {"name": "1.2.3"}]
-
-
-@patch("requests.get", return_value=MockGithubTagResponse())
-def test_get_github_version_from_tags(request_get):
-    assert get_github_released_version("test/repo", True) == SemanticVersion(1, 2, 3)
-    request_get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
 
 
 @pytest.mark.parametrize(
