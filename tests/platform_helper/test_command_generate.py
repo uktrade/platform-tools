@@ -6,7 +6,7 @@ from click.testing import CliRunner
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.utils.versioning import PlatformHelperVersions
+from dbt_platform_helper.utils.versioning import PlatformHelperVersionStatus
 
 
 @patch("dbt_platform_helper.commands.generate.make_addons", return_value=None)
@@ -24,7 +24,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 @patch(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     new=Mock(
-        return_value=PlatformHelperVersions(
+        return_value=PlatformHelperVersionStatus(
             local=SemanticVersion(1, 0, 1),
             deprecated_version_file=SemanticVersion(1, 0, 0),
         )
@@ -49,7 +49,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 @patch(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
     new=Mock(
-        return_value=PlatformHelperVersions(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
+        return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
     ),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))

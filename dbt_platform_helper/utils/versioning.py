@@ -26,7 +26,7 @@ from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
-class PlatformHelperVersions(VersionStatus):
+class PlatformHelperVersionStatus(VersionStatus):
     def __init__(
         self,
         local: SemanticVersion = None,
@@ -52,7 +52,7 @@ class RequiredVersion:
         self.io = io or ClickIOProvider()
 
     def get_required_platform_helper_version(
-        self, pipeline: str = None, versions: PlatformHelperVersions = None
+        self, pipeline: str = None, versions: PlatformHelperVersionStatus = None
     ) -> str:
         if not versions:
             versions = get_platform_helper_versions()
@@ -99,7 +99,7 @@ class RequiredVersion:
 
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
-def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
+def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersionStatus:
     try:
         locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -108,7 +108,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     latest_release = PyPiVersionProvider.get_latest_version("dbt-platform-helper")
 
     if not include_project_versions:
-        return PlatformHelperVersions(
+        return PlatformHelperVersionStatus(
             local=locally_installed_version,
             latest=latest_release,
         )
@@ -136,7 +136,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
             if pipeline.get("versions", {}).get("platform-helper")
         }
 
-    out = PlatformHelperVersions(
+    out = PlatformHelperVersionStatus(
         local=locally_installed_version,
         latest=latest_release,
         deprecated_version_file=version_from_file,
@@ -152,7 +152,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 # Validates the returned PlatformHelperVersions and echos useful warnings
 # Should use IO provider
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
-def _process_version_file_warnings(versions: PlatformHelperVersions):
+def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
     if versions.platform_config_default and not versions.deprecated_version_file:
         return
 

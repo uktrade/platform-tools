@@ -20,7 +20,7 @@ from dbt_platform_helper.providers.semantic_version import (
 )
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.versioning import PlatformHelperVersions
+from dbt_platform_helper.utils.versioning import PlatformHelperVersionStatus
 from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -64,7 +64,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
     mock_get_platform_helper_versions, secho
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
         SemanticVersion(1, 0, 0), SemanticVersion(2, 0, 0)
     )
 
@@ -87,7 +87,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
 def test_check_platform_helper_version_needs_minor_update_returns_yellow_warning_to_upgrade(
     mock_get_platform_helper_versions, secho
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
         SemanticVersion(1, 0, 0), SemanticVersion(1, 1, 0)
     )
 
@@ -121,7 +121,7 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho
 ):
-    get_file_app_versions.return_value = PlatformHelperVersions(
+    get_file_app_versions.return_value = PlatformHelperVersionStatus(
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=SemanticVersion(1, 0, 0),
     )
@@ -145,7 +145,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho, mock_running_as_installed_package
 ):
-    get_file_app_versions.return_value = PlatformHelperVersions(
+    get_file_app_versions.return_value = PlatformHelperVersionStatus(
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=SemanticVersion(1, 0, 0),
     )
@@ -166,7 +166,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
     get_file_app_versions, secho
 ):
-    get_file_app_versions.return_value = PlatformHelperVersions(
+    get_file_app_versions.return_value = PlatformHelperVersionStatus(
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=None,
         platform_config_default=SemanticVersion(1, 0, 0),
@@ -481,7 +481,7 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
-        versions=PlatformHelperVersions(platform_config_default=SemanticVersion(1, 2, 3))
+        versions=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
     )
 
     assert result == "1.2.3"
