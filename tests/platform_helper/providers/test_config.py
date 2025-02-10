@@ -107,6 +107,26 @@ class TestLoadAndValidate:
 
         assert validated == conf
 
+    def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(self, fakefs):
+        fakefs.create_file(
+            Path(PLATFORM_CONFIG_FILE),
+            contents="""
+        test:
+            some_key: some_value
+        """,
+        )
+        config_provider = ConfigProvider()
+        config = config_provider.load_unvalidated_config_file()
+
+        assert config == {"test": {"some_key": "some_value"}}
+
+    def test_load_unvalidated_config_file_returns_empty_dict_given_invalid_yaml(self, fakefs):
+        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="{")
+        config_provider = ConfigProvider()
+        config = config_provider.load_unvalidated_config_file()
+
+        assert config == {}
+
 
 class TestDataMigrationValidation:
     def test_validate_data_migration_fails_if_neither_import_nor_import_sources_present(self):
