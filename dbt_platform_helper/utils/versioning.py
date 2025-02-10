@@ -102,8 +102,8 @@ def get_platform_helper_versions(
 
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
     try:
-        version_from_file = yaml_provider.load(deprecated_version_file)
-        version_from_file = SemanticVersion.from_string(version_from_file)
+        loaded_version = yaml_provider.load(deprecated_version_file)
+        version_from_file = SemanticVersion.from_string(loaded_version)
     except FileProviderException:
         version_from_file = None
 
