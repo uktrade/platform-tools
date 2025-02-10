@@ -81,8 +81,8 @@ def deployment():
     _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
-    local_version = platform_helper_versions.local_version
-    latest_release = platform_helper_versions.latest_release
+    local_version = platform_helper_versions.local
+    latest_release = platform_helper_versions.latest
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",
@@ -162,20 +162,15 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     click.secho("Checking tooling versions...", fg="blue")
     recommendations = {}
 
-    local_copilot_version = copilot_versions.local_version
-    copilot_latest_release = copilot_versions.latest_release
+    local_copilot_version = copilot_versions.local
+    copilot_latest_release = copilot_versions.latest
     if local_copilot_version is None:
         recommendations["install-copilot"] = (
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
-    local_aws_version = aws_versions.local_version
-    aws_latest_release = aws_versions.latest_release
-    if local_aws_version is None:
+    if aws_versions.local is None:
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
-
-    local_version = platform_helper_versions.local_version
-    latest_release = platform_helper_versions.latest_release
 
     tool_versions_table = PrettyTable()
     tool_versions_table.field_names = [
@@ -189,46 +184,46 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     tool_versions_table.add_row(
         [
             "aws",
-            str(local_aws_version),
-            str(aws_latest_release),
-            no if local_aws_version != aws_latest_release else yes,
+            str(aws_versions.local),
+            str(aws_versions.latest),
+            no if aws_versions.is_outdated() else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "copilot",
-            str(local_copilot_version),
-            str(copilot_latest_release),
-            no if local_copilot_version != copilot_latest_release else yes,
+            str(copilot_versions.local),
+            str(copilot_versions.latest),
+            no if copilot_versions.is_outdated() else yes,
         ]
     )
     tool_versions_table.add_row(
         [
             "dbt-platform-helper",
-            str(local_version),
-            str(latest_release),
-            no if local_version != latest_release else yes,
+            str(platform_helper_versions.local),
+            str(platform_helper_versions.latest),
+            no if platform_helper_versions.is_outdated() else yes,
         ]
     )
 
     click.secho(tool_versions_table)
 
-    if local_aws_version != aws_latest_release and "install-aws" not in recommendations:
+    if aws_versions.is_outdated() and "install-aws" not in recommendations:
         recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS CLI",
-            version=str(aws_latest_release),
+            version=str(aws_versions.latest),
         )
 
-    if local_copilot_version != copilot_latest_release and "install-copilot" not in recommendations:
+    if copilot_versions.is_outdated() and "install-copilot" not in recommendations:
         recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
             tool="AWS Copilot",
             version=str(copilot_latest_release),
         )
 
-    if local_version != latest_release:
+    if platform_helper_versions.is_outdated():
         recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade"
-        ].format(version=str(latest_release))
+        ].format(version=str(platform_helper_versions.latest))
         recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
             "dbt-platform-helper-upgrade-note"
         ]
