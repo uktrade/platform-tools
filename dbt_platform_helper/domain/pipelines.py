@@ -80,10 +80,10 @@ class Pipelines:
                 if "account" in config
             }
 
-            # TODO - test case on below.
             def _determine_deploy_repository_name(platform_config):
+
                 if "deploy_repository" in platform_config.keys():
-                    return platform_config["deploy_repository"]
+                    return f"uktrade/{platform_config['deploy_repository']}"
                 else:
                     return f"uktrade/{platform_config['application']}-deploy"
 
