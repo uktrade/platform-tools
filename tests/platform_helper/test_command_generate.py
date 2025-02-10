@@ -27,6 +27,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
         return_value=PlatformHelperVersionStatus(
             local=SemanticVersion(1, 0, 1),
             deprecated_version_file=SemanticVersion(1, 0, 0),
+            pipeline_overrides={},
         )
     ),
 )
