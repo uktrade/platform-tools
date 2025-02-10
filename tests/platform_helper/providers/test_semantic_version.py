@@ -75,3 +75,16 @@ class TestSemanticVersion:
         input_version, expected_version = suite
         result = SemanticVersion.from_string(input_version)
         assert result == expected_version
+
+
+class VersionStatus:
+    @pytest.mark.parametrize(
+        "suite",
+        [
+            (SemanticVersion(1, 2, 3), SemanticVersion(1, 2, 3), True),
+            (SemanticVersion(1, 2, 0), SemanticVersion(1, 2, 3), False),
+        ],
+    )
+    def test_is_outdated(self, suite):
+        local_version, latest_release, expected = suite
+        assert VersionStatus(local_version, latest_release) == expected
