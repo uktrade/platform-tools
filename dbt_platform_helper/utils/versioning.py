@@ -4,39 +4,28 @@ import subprocess
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
-from typing import Tuple
-from typing import Union
 
 import click
-import requests
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMinorVersionException,
+)
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
-from dbt_platform_helper.providers.validation import IncompatibleMajorVersionException
-from dbt_platform_helper.providers.validation import IncompatibleMinorVersionException
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
-
-
-class PlatformHelperVersions:
-    def __init__(
-        self,
-        local_version: SemanticVersion = None,
-        latest_release: SemanticVersion = None,
-        platform_helper_file_version: SemanticVersion = None,
-        platform_config_default: SemanticVersion = None,
-        pipeline_overrides: dict[str, str] = None,
-    ):
-        self.local_version = local_version
-        self.latest_release = latest_release
-        self.platform_helper_file_version = platform_helper_file_version
-        self.platform_config_default = platform_config_default
-        self.pipeline_overrides = pipeline_overrides if pipeline_overrides else {}
+from dbt_platform_helper.providers.version import GithubVersionProvider
+from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.yaml_file import FileProviderException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -49,7 +38,7 @@ class RequiredVersion:
         self.io = io or ClickIOProvider()
 
     def get_required_platform_helper_version(
-        self, pipeline: str = None, versions: PlatformHelperVersions = None
+        self, pipeline: str = None, versions: PlatformHelperVersionStatus = None
     ) -> str:
         if not versions:
             versions = get_platform_helper_versions()
@@ -57,7 +46,7 @@ class RequiredVersion:
         version_precedence = [
             pipeline_version,
             versions.platform_config_default,
-            versions.platform_helper_file_version,
+            versions.deprecated_version_file,
         ]
         non_null_version_precedence = [
             f"{v}" if isinstance(v, SemanticVersion) else v for v in version_precedence if v
@@ -75,131 +64,56 @@ class RequiredVersion:
         self.io.info(version)
         return version
 
+    # Used in the generate command
     def check_platform_helper_version_mismatch(self):
         if not running_as_installed_package():
             return
 
         versions = get_platform_helper_versions()
-        local_version = versions.local_version
-        platform_helper_file_version = parse_version(
+        platform_helper_file_version = SemanticVersion.from_string(
             self.get_required_platform_helper_version(versions=versions)
         )
 
-        if not check_version_on_file_compatibility(local_version, platform_helper_file_version):
+        if not versions.local == platform_helper_file_version:
             message = (
-                f"WARNING: You are running platform-helper v{local_version} against "
+                f"WARNING: You are running platform-helper v{versions.local} against "
                 f"v{platform_helper_file_version} specified by {PLATFORM_HELPER_VERSION_FILE}."
             )
             self.io.warn(message)
 
 
-# Creates a VersionTuple from a string.  VersionTuples are used
-# internally to store versioning info from strings output by the command line
-# Could be a provider hiding in here.
-def parse_version(input_version: Union[str, None]) -> SemanticVersion:
-    if input_version is None:
-        return None
-
-    version_plain = input_version.replace("v", "")
-    version_segments = re.split(r"[.\-]", version_plain)
-
-    if len(version_segments) != 3:
-        return None
-
-    output_version = [0, 0, 0]
-    for index, segment in enumerate(version_segments):
-        try:
-            output_version[index] = int(segment)
-        except ValueError:
-            output_version[index] = -1
-
-    return SemanticVersion(output_version[0], output_version[1], output_version[2])
-
-
-# Local version and latest release of tool.
-# Used only in config command.
-# TODO Move to config domain
-def get_copilot_versions() -> VersionStatus:
-    copilot_version = None
-
-    try:
-        response = subprocess.run("copilot --version", capture_output=True, shell=True)
-        [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
-    except ValueError:
-        pass
-
-    return VersionStatus(
-        parse_version(copilot_version), get_github_released_version("aws/copilot-cli")
-    )
-
-
-# Local version and latest release of tool.
-# Used only in config command.
-# TODO Move to config domain
-def get_aws_versions() -> VersionStatus:
-    aws_version = None
-    try:
-        response = subprocess.run("aws --version", capture_output=True, shell=True)
-        matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-        aws_version = parse_version(matched.group(1))
-    except ValueError:
-        pass
-
-    return VersionStatus(aws_version, get_github_released_version("aws/aws-cli", True))
-
-
-# TODO To be moved somewhere that will be really obvious it's making a network call so we
-# don't make unneccessary calls in tests etc.
-def get_github_released_version(repository: str, tags: bool = False) -> Tuple[int, int, int]:
-    if tags:
-        tags_list = requests.get(f"https://api.github.com/repos/{repository}/tags").json()
-        versions = [parse_version(v["name"]) for v in tags_list]
-        versions.sort(reverse=True)
-        return versions[0]
-
-    package_info = requests.get(f"https://api.github.com/repos/{repository}/releases/latest").json()
-    return parse_version(package_info["tag_name"])
-
-
-# TODO To be moved somewhere that will be really obvious it's making a network call so we
-# don't make unneccessary calls in tests etc.
-def _get_latest_release():
-    package_info = requests.get("https://pypi.org/pypi/dbt-platform-helper/json").json()
-    released_versions = package_info["releases"].keys()
-    parsed_released_versions = [parse_version(v) for v in released_versions]
-    parsed_released_versions.sort(reverse=True)
-    return parsed_released_versions[0]
-
-
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
-def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersions:
+def get_platform_helper_versions(
+    include_project_versions=True, yaml_provider=YamlFileProvider
+) -> PlatformHelperVersionStatus:
     try:
-        locally_installed_version = parse_version(version("dbt-platform-helper"))
+        locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
     except PackageNotFoundError:
         locally_installed_version = None
 
-    latest_release = _get_latest_release()
+    latest_release = PyPiVersionProvider.get_latest_version("dbt-platform-helper")
 
     if not include_project_versions:
-        return PlatformHelperVersions(
-            local_version=locally_installed_version,
-            latest_release=latest_release,
+        return PlatformHelperVersionStatus(
+            local=locally_installed_version,
+            latest=latest_release,
         )
 
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    version_from_file = (
-        parse_version(deprecated_version_file.read_text())
-        if deprecated_version_file.exists()
-        else None
-    )
+    try:
+        loaded_version = yaml_provider.load(deprecated_version_file)
+        version_from_file = SemanticVersion.from_string(loaded_version)
+    except FileProviderException:
+        version_from_file = None
 
     platform_config_default, pipeline_overrides = None, {}
 
-    platform_config = load_unvalidated_config_file()
+    config = ConfigProvider()
+    platform_config = config.load_unvalidated_config_file()
 
     if platform_config:
-        platform_config_default = parse_version(
+        platform_config_default = SemanticVersion.from_string(
             platform_config.get("default_versions", {}).get("platform-helper")
         )
 
@@ -209,10 +123,10 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
             if pipeline.get("versions", {}).get("platform-helper")
         }
 
-    out = PlatformHelperVersions(
-        local_version=locally_installed_version,
-        latest_release=latest_release,
-        platform_helper_file_version=version_from_file,
+    out = PlatformHelperVersionStatus(
+        local=locally_installed_version,
+        latest=latest_release,
+        deprecated_version_file=version_from_file,
         platform_config_default=platform_config_default,
         pipeline_overrides=pipeline_overrides,
     )
@@ -222,87 +136,17 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
     return out
 
 
-# Validates the returned PlatformHelperVersions and echos useful warnings
+# Validates the returned PlatformHelperVersionStatus and echos useful warnings
 # Should use IO provider
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
-def _process_version_file_warnings(versions: PlatformHelperVersions):
-    if versions.platform_config_default and not versions.platform_helper_file_version:
-        return
+def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
+    messages = versions.warn()
 
-    messages = []
-    missing_default_version_message = f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: "
-    deprecation_message = f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."
+    if messages.get("errors"):
+        click.secho("\n".join(messages["errors"]), fg="red")
 
-    if versions.platform_config_default and versions.platform_helper_file_version:
-        messages.append(deprecation_message)
-
-    if not versions.platform_config_default and versions.platform_helper_file_version:
-        messages.append(deprecation_message)
-        messages.append(
-            f"{missing_default_version_message}{versions.platform_helper_file_version}\n"
-        )
-
-    if not versions.platform_config_default and not versions.platform_helper_file_version:
-        message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
-        message += f"{missing_default_version_message}{versions.local_version}\n"
-        click.secho(message, fg="red")
-
-    if messages:
-        click.secho("\n".join(messages), fg="yellow")
-
-
-# Generic function can stay utility for now
-def validate_version_compatibility(app_version: SemanticVersion, check_version: SemanticVersion):
-    app_major, app_minor, app_patch = app_version.major, app_version.minor, app_version.patch
-    check_major, check_minor, check_patch = (
-        check_version.major,
-        check_version.minor,
-        check_version.patch,
-    )
-    app_version_as_string = str(app_version)
-    check_version_as_string = str(check_version)
-
-    if (app_major == 0 and check_major == 0) and (
-        app_minor != check_minor or app_patch != check_patch
-    ):
-        raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
-
-    if app_major != check_major:
-        raise IncompatibleMajorVersionException(app_version_as_string, check_version_as_string)
-
-    if app_minor != check_minor:
-        raise IncompatibleMinorVersionException(app_version_as_string, check_version_as_string)
-
-
-# Generic function can stay utility for now
-def check_version_on_file_compatibility(
-    app_version: SemanticVersion, file_version: SemanticVersion
-):
-    app_major, app_minor, app_patch = app_version.major, app_version.minor, app_version.patch
-    file_major, file_minor, file_patch = file_version.major, file_version.minor, file_version.patch
-
-    return app_major == file_major and app_minor == file_minor and app_patch == file_patch
-
-
-# Getting version from the "Generated by" comment in a file that was generated from a template
-# TODO where does this belong?  It sort of belongs to our platform-helper templating
-def get_template_generated_with_version(template_file_path: str) -> SemanticVersion:
-    try:
-        template_contents = Path(template_file_path).read_text()
-        template_version = re.match(
-            r"# Generated by platform-helper ([v.\-0-9]+)", template_contents
-        ).group(1)
-        return parse_version(template_version)
-    except (IndexError, AttributeError):
-        raise ValidationException(f"Template {template_file_path} has no version information")
-
-
-# TODO Only used in config command.  Move to config domain.  Move tests also.
-def validate_template_version(app_version: SemanticVersion, template_file_path: str):
-    validate_version_compatibility(
-        app_version,
-        get_template_generated_with_version(template_file_path),
-    )
+    if messages.get("warnings"):
+        click.secho("\n".join(messages["warnings"]), fg="yellow")
 
 
 # TODO called at the beginning of every command.  This is platform-version base functionality
@@ -311,15 +155,15 @@ def check_platform_helper_version_needs_update():
         return
 
     versions = get_platform_helper_versions(include_project_versions=False)
-    local_version = versions.local_version
-    latest_release = versions.latest_release
+    local_version = versions.local
+    latest_release = versions.latest
     message = (
         f"You are running platform-helper v{local_version}, upgrade to "
         f"v{latest_release} by running run `pip install "
         "--upgrade dbt-platform-helper`."
     )
     try:
-        validate_version_compatibility(local_version, latest_release)
+        local_version.validate_compatibility_with(latest_release)
     except IncompatibleMajorVersionException:
         click.secho(message, fg="red")
     except IncompatibleMinorVersionException:
@@ -340,3 +184,59 @@ def get_required_terraform_platform_modules_version(
         DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION,
     ]
     return [version for version in version_preference_order if version][0]
+
+
+#########################################
+# Only used in Config domain
+# TODO to be relocated along with tests
+#########################################
+
+
+# Getting version from the "Generated by" comment in a file that was generated from a template
+# TODO where does this belong?  It sort of belongs to our platform-helper templating
+def get_template_generated_with_version(template_file_path: str) -> SemanticVersion:
+    try:
+        template_contents = Path(template_file_path).read_text()
+        template_version = re.match(
+            r"# Generated by platform-helper ([v.\-0-9]+)", template_contents
+        ).group(1)
+        return SemanticVersion.from_string(template_version)
+    except (IndexError, AttributeError):
+        raise ValidationException(f"Template {template_file_path} has no version information")
+
+
+def validate_template_version(app_version: SemanticVersion, template_file_path: str):
+    app_version.validate_compatibility_with(get_template_generated_with_version(template_file_path))
+
+
+# Local version and latest release of tool.
+# Used only in config command.
+# TODO Move to config domain
+def get_copilot_versions() -> VersionStatus:
+    copilot_version = None
+
+    try:
+        response = subprocess.run("copilot --version", capture_output=True, shell=True)
+        [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+    except ValueError:
+        pass
+
+    return VersionStatus(
+        SemanticVersion.from_string(copilot_version),
+        GithubVersionProvider.get_latest_version("aws/copilot-cli"),
+    )
+
+
+# Local version and latest release of tool.
+# Used only in config command.
+# TODO Move to config domain
+def get_aws_versions() -> VersionStatus:
+    aws_version = None
+    try:
+        response = subprocess.run("aws --version", capture_output=True, shell=True)
+        matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
+        aws_version = SemanticVersion.from_string(matched.group(1))
+    except ValueError:
+        pass
+
+    return VersionStatus(aws_version, GithubVersionProvider.get_latest_version("aws/aws-cli", True))
