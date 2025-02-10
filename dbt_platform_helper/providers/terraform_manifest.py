@@ -33,7 +33,7 @@ class TerraformManifestProvider:
         self._add_backend(terraform, platform_config, default_account, state_key_suffix)
         self._add_codebase_pipeline_module(terraform, terraform_platform_modules_version)
         self._add_imports(terraform, ecr_imports)
-        self._write_terraform_json(terraform, "terraform/codebase-pipelines/main.tf.json")
+        self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
     def generate_environment_config(
         self,
@@ -46,6 +46,7 @@ class TerraformManifestProvider:
 
         application_name = platform_config["application"]
         state_key_suffix = f"{platform_config['application']}-{env}"
+        env_dir = f"terraform/environments/{env}"
 
         terraform = {}
         self._add_header(terraform)
@@ -53,7 +54,8 @@ class TerraformManifestProvider:
         self._add_backend(terraform, platform_config, account, state_key_suffix)
         self._add_extensions_module(terraform, terraform_platform_modules_version, env)
         self._add_moved(terraform, platform_config)
-        self._write_terraform_json(terraform, f"terraform/environments/{env}/main.tf.json")
+        self._ensure_no_hcl_manifest_file(env_dir)
+        self._write_terraform_json(terraform, env_dir)
 
     @staticmethod
     def _get_account_for_env(env, platform_config):
@@ -194,11 +196,16 @@ class TerraformManifestProvider:
                     }
                 )
 
-    def _write_terraform_json(self, terraform, tf_json):
+    def _write_terraform_json(self, terraform: dict, env_dir: str):
         message = self.file_provider.mkfile(
-            str(Path(".").absolute()),
-            tf_json,
+            str(Path(env_dir).absolute()),
+            "main.tf.json",
             json.dumps(terraform, indent=2),
             True,
         )
         self.io.info(message)
+
+    def _ensure_no_hcl_manifest_file(self, env_dir):
+        message = self.file_provider.delete_file(env_dir, "main.tf")
+        if message:
+            self.io.info(f"Manifest has moved to main.tf.json. {message}")
