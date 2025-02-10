@@ -24,6 +24,8 @@ from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.yaml_file import FileProviderException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -97,11 +99,11 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         )
 
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    version_from_file = (
-        SemanticVersion.from_string(deprecated_version_file.read_text())
-        if deprecated_version_file.exists()
-        else None
-    )
+    try:
+        version_from_file = YamlFileProvider.load(deprecated_version_file)
+        version_from_file = SemanticVersion.from_string(version_from_file)
+    except FileProviderException:
+        version_from_file = None
 
     platform_config_default, pipeline_overrides = None, {}
 
