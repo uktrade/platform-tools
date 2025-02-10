@@ -93,7 +93,7 @@ class PlatformHelperVersionStatus(VersionStatus):
     latest: Optional[SemanticVersion] = None
     deprecated_version_file: Optional[SemanticVersion] = None
     platform_config_default: Optional[SemanticVersion] = None
-    pipeline_overrides: Optional[Dict[str, str]] = None
+    pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
 
     def warn(self) -> dict:
         if self.platform_config_default and not self.deprecated_version_file:
