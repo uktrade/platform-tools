@@ -314,12 +314,6 @@ class PlatformConfigSchema:
                 }
             },
             Optional("database_copy"): [_valid_postgres_database_copy],
-            Optional("objects"): [
-                {
-                    "key": str,
-                    Optional("body"): str,
-                }
-            ],
         }
 
     @staticmethod
