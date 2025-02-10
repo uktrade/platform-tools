@@ -84,7 +84,9 @@ class RequiredVersion:
 
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
-def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersionStatus:
+def get_platform_helper_versions(
+    include_project_versions=True, yaml_provider=YamlFileProvider
+) -> PlatformHelperVersionStatus:
     try:
         locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -100,7 +102,7 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
 
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
     try:
-        version_from_file = YamlFileProvider.load(deprecated_version_file)
+        version_from_file = yaml_provider.load(deprecated_version_file)
         version_from_file = SemanticVersion.from_string(version_from_file)
     except FileProviderException:
         version_from_file = None
