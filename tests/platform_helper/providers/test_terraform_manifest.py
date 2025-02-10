@@ -35,7 +35,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     mock_file_provider.mkfile.assert_called_once()
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
 
-    mock_io.info.assert_called_once_with("File created")
+    mock_io.info.assert_called_with("File created")
 
     assert base_path == str(Path("terraform/codebase-pipelines").absolute())
     assert file_path == "main.tf.json"
@@ -165,6 +165,9 @@ def test_generate_environment_config_creates_file(
     platform_env_config["application"] = app
     mock_file_provider = Mock()
     mock_file_provider.mkfile.return_value = "File created"
+    mock_file_provider.delete_file.return_value = (
+        f"terraform/environments/{env}/main.tf has been deleted"
+    )
     mock_io = Mock()
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
@@ -175,10 +178,13 @@ def test_generate_environment_config_creates_file(
     mock_file_provider.mkfile.assert_called_once()
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
 
-    mock_io.info.assert_called_once_with("File created")
-    mock_file_provider.delete_file_if_present.assert_called_with(
-        f"terraform/environments/{env}", "main.tf"
+    messages = [call.args[0] for call in mock_io.info.call_args_list]
+    assert (
+        messages[0]
+        == f"Manifest has moved to main.tf.json. terraform/environments/{env}/main.tf has been deleted"
     )
+    assert messages[1] == "File created"
+    mock_file_provider.delete_file.assert_called_with(f"terraform/environments/{env}", "main.tf")
 
     assert base_path == str(Path(f"terraform/environments/{env}").absolute())
     assert file_path == "main.tf.json"
@@ -314,3 +320,20 @@ def test_generate_environment_config_with_multiple_extensions_adds_moved_blocks_
     assert moved[8]["//"] == expected_message
     assert moved[8]["from"] == f'module.extensions.module.s3["test-s3-2"].aws_kms_alias.s3-bucket'
     assert moved[8]["to"] == f'module.extensions.module.s3["test-s3-2"].aws_kms_alias.s3-bucket[0]'
+
+
+def test_generate_environment_config_when_old_manifest_not_deleted_does_not_output_deleted_message(
+    platform_env_config,
+):
+    platform_env_config["application"] = "test-app"
+    mock_file_provider = Mock()
+    mock_file_provider.mkfile.return_value = "File created"
+    mock_file_provider.delete_file.return_value = None
+    mock_io = Mock()
+    template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
+
+    template_provider.generate_environment_config(
+        platform_env_config, env="dev", terraform_platform_modules_version="7"
+    )
+
+    mock_io.info.assert_called_once_with("File created")

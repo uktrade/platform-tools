@@ -54,7 +54,7 @@ class TerraformManifestProvider:
         self._add_backend(terraform, platform_config, account, state_key_suffix)
         self._add_extensions_module(terraform, terraform_platform_modules_version, env)
         self._add_moved(terraform, platform_config)
-        self._cleanup_old_manifests(env_dir)
+        self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
 
     @staticmethod
@@ -205,5 +205,7 @@ class TerraformManifestProvider:
         )
         self.io.info(message)
 
-    def _cleanup_old_manifests(self, env_dir):
-        self.file_provider.delete_file_if_present(env_dir, "main.tf")
+    def _ensure_no_hcl_manifest_file(self, env_dir):
+        message = self.file_provider.delete_file(env_dir, "main.tf")
+        if message:
+            self.io.info(f"Manifest has moved to main.tf.json. {message}")

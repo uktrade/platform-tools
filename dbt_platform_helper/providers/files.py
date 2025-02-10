@@ -26,6 +26,8 @@ class FileProvider:
         return f"File {file_path} {action}"
 
     @staticmethod
-    def delete_file_if_present(base_path: str, file_path: str | Path):
-        file_path = Path(base_path) / file_path
-        file_path.unlink(missing_ok=True)
+    def delete_file(base_path: str, file: str | Path):
+        file_path = Path(base_path) / file
+        if file_path.exists():
+            file_path.unlink()
+            return f"{str(file_path)} has been deleted"

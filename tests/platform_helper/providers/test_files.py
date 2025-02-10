@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from dbt_platform_helper.providers.files import FileProvider
@@ -38,13 +40,20 @@ def test_mkfile_does_nothing_if_file_already_exists_but_override_is_false(tmp_pa
     assert message == f"File {filename} exists; doing nothing"
 
 
-@pytest.mark.parametrize("file_exists", [True, False])
-def test_delete_file_deletes_the_file(tmp_path, file_exists):
-    filename = "some-file.txt"
-    file_path = tmp_path / filename
+@pytest.mark.parametrize(
+    "file_exists, expected_message",
+    [(True, "a_folder/some_file.txt has been deleted"), (False, None)],
+)
+def test_delete_file_deletes_the_file(fs, file_exists, expected_message):
+    filename = "some_file.txt"
+    folder = "a_folder"
+    folder_path = Path(folder)
+    file_path = folder_path / filename
     if file_exists:
+        folder_path.mkdir(parents=True)
         file_path.touch()
 
-    FileProvider().delete_file_if_present(str(tmp_path), filename)
+    message = FileProvider().delete_file(folder, filename)
 
     assert not file_path.exists()
+    assert message == expected_message
