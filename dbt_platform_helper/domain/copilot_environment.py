@@ -1,8 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
-from typing import Callable
 
-import click
 from boto3 import Session
 
 from dbt_platform_helper.domain.terraform_environment import (
@@ -11,6 +9,7 @@ from dbt_platform_helper.domain.terraform_environment import (
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import (
     get_https_certificate_for_application,
 )
@@ -30,14 +29,14 @@ class CopilotEnvironment:
         cloudformation_provider: CloudFormation = None,
         session: Session = None,  # TODO - this is a temporary fix, will fall away once the Loadbalancer provider is in place.
         copilot_templating=None,
-        echo: Callable[[str], str] = click.secho,
+        io: ClickIOProvider = ClickIOProvider(),
     ):
         self.config_provider = config_provider
         self.vpc_provider = vpc_provider
         self.copilot_templating = copilot_templating or CopilotTemplating(
             file_provider=FileProvider(),
         )
-        self.echo = echo
+        self.io = io
         self.session = session
         self.cloudformation_provider = cloudformation_provider
 
@@ -53,7 +52,7 @@ class CopilotEnvironment:
         env_config = platform_config["environments"][environment_name]
         profile_for_environment = env_config.get("accounts", {}).get("deploy", {}).get("name")
 
-        self.echo(f"Using {profile_for_environment} for this AWS session")
+        self.io.info(f"Using {profile_for_environment} for this AWS session")
 
         app_name = platform_config["application"]
 
@@ -72,7 +71,7 @@ class CopilotEnvironment:
             cert_arn=certificate_arn,
         )
 
-        self.echo(
+        self.io.info(
             self.copilot_templating.write_environment_manifest(
                 environment_name, copilot_environment_manifest
             )
@@ -134,11 +133,13 @@ class CopilotTemplating:
     def __init__(
         self,
         file_provider: FileProvider = None,
+        io: ClickIOProvider = ClickIOProvider(),
         # TODO file_provider can be moved up a layer.  File writing can be the responsibility of CopilotEnvironment generate
         # Or we align with PlatformTerraformManifestGenerator and rename from Templating to reflect the file writing responsibility
     ):
         self.file_provider = file_provider
         self.templates = setup_templates()
+        self.io = io
 
     def generate_copilot_environment_manifest(
         self, environment_name: str, vpc: Vpc, cert_arn: str
@@ -193,16 +194,16 @@ class CopilotTemplating:
                             )
 
         if not resource_blocks:
-            click.echo("\n>>> No cross-environment S3 policies to create.\n")
+            self.io.info("\n>>> No cross-environment S3 policies to create.\n")
             return
 
         for service in sorted(resource_blocks.keys()):
             resources = resource_blocks[service]
-            click.echo(f"\n>>> Creating S3 cross account policies for {service}.\n")
+            self.io.info(f"\n>>> Creating S3 cross account policies for {service}.\n")
             template = self.templates.get_template(S3_CROSS_ACCOUNT_POLICY)
             file_content = template.render({"resources": resources})
             output_dir = Path(".").absolute()
             file_path = f"copilot/{service}/addons/s3-cross-account-policy.yml"
 
             self.file_provider.mkfile(output_dir, file_path, file_content, True)
-            click.echo(f"File {file_path} created")
+            self.io.info(f"File {file_path} created")

@@ -113,18 +113,24 @@ class TestRemoveMaintenancePage:
 
 
 class TestAddMaintenancePage:
+    # TODO with the introduction of the class based LoadBalancerProvider these patches should mostly go
     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )
     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.get_host_header_conditions",
+        return_value=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+    )
     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
     def test_adding_existing_template(
         self,
         get_maintenance_page_template,
         find_target_group,
+        get_host_header_conditions,
         create_header_rule,
         create_source_ip,
         choices,
@@ -146,6 +152,12 @@ class TestAddMaintenancePage:
             template,
         )
 
+        get_host_header_conditions.assert_called_with(
+            boto_mock.client(),
+            "listener_arn",
+            "target_group_arn",
+        )
+
         assert create_header_rule.call_count == 2
         create_header_rule.assert_has_calls(
             [
@@ -157,6 +169,7 @@ class TestAddMaintenancePage:
                     ["1.2.3.4"],
                     "AllowedIps",
                     1,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
                 ),
                 call(
                     boto_mock.client(),
@@ -166,6 +179,7 @@ class TestAddMaintenancePage:
                     ["abc"],
                     "BypassIpFilter",
                     3,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
                 ),
             ]
         )
@@ -178,6 +192,7 @@ class TestAddMaintenancePage:
                     ["1.2.3.4"],
                     "AllowedSourceIps",
                     2,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
                 )
             ]
         )
@@ -188,7 +203,8 @@ class TestAddMaintenancePage:
                 {
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
-                }
+                },
+                {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
             ],
             Actions=[
                 {
@@ -211,12 +227,14 @@ class TestAddMaintenancePage:
     )
     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
+    @patch("dbt_platform_helper.domain.maintenance_page.get_host_header_conditions")
     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
     def test_no_target_group(
         self,
         get_maintenance_page_template,
         find_target_group,
+        get_host_header_conditions,
         create_header_rule,
         create_source_ip,
         choices,
@@ -236,7 +254,8 @@ class TestAddMaintenancePage:
             template,
         )
 
-        assert create_header_rule.call_count == 0
+        get_host_header_conditions.assert_not_called()
+        create_header_rule.assert_not_called()
 
         create_source_ip.was_not_called()
         boto_mock.client().create_rule.assert_called_once_with(
@@ -246,7 +265,8 @@ class TestAddMaintenancePage:
                 {
                     "Field": "path-pattern",
                     "PathPatternConfig": {"Values": ["/*"]},
-                }
+                },
+                {"Field": "host-header", "HostHeaderConfig": {"Values": []}},
             ],
             Actions=[
                 {
@@ -394,6 +414,51 @@ class TestCommandHelperMethods:
 
         return mock_session, mock_create_rule
 
+    def _custom_create_rule_with_validation(self):
+        """A bug in moto means that it will not return a validation error on
+        invalid conditions This adds an exception to cover a use case we require
+        to cover but it is not extensive."""
+        from botocore.exceptions import ClientError
+        from moto.elbv2.models import ELBv2Backend
+
+        original_create_rule = ELBv2Backend.create_rule
+
+        def custom_create_rule(self, listener_arn, conditions, priority, actions, **kwargs):
+            host_header_conditions = [
+                condition for condition in conditions if condition.get("Field") == "host-header"
+            ]
+            if len(host_header_conditions) > 1:
+                raise ClientError(
+                    {
+                        "Error": {
+                            "Code": "ValidationError",
+                            "Message": "A rule can only have one 'host-header' condition",
+                        }
+                    },
+                    "CreateRule",
+                )
+
+            # all conditions paths must be unqiue.
+            if host_header_conditions:
+                all_values = [
+                    value
+                    for condition in host_header_conditions
+                    for value in condition["HostHeaderConfig"]["Values"]
+                ]
+                if len(all_values) != len(set(all_values)):
+                    raise ClientError(
+                        {
+                            "Error": {
+                                "Code": "ValidationError",
+                                "Message": "Condition values must be unique",
+                            }
+                        },
+                        "CreateRule",
+                    )
+            return original_create_rule(self, listener_arn, conditions, priority, actions, **kwargs)
+
+        ELBv2Backend.create_rule = custom_create_rule
+
     @mock_aws
     def test_find_target_group(self):
 
@@ -459,11 +524,16 @@ class TestCommandHelperMethods:
             ["1.2.3.4", "5.6.7.8"],
             "AllowedIps",
             333,
+            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
         )
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
         assert rules[1]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
+        assert rules[1]["Conditions"][1], {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
         assert rules[1]["Priority"] == "333"
 
         captured = capsys.readouterr()
@@ -509,6 +579,7 @@ class TestCommandHelperMethods:
             allowed_ips,
             "AllowedSourceIps",
             333,
+            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
         )
 
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
@@ -516,6 +587,10 @@ class TestCommandHelperMethods:
         assert sorted(rules[1]["Conditions"][0]["SourceIpConfig"]["Values"]) == sorted(
             expected_rule_cidr
         )
+        assert rules[1]["Conditions"][1], {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
         assert rules[1]["Priority"] == "333"
 
         captured = capsys.readouterr()
@@ -868,6 +943,114 @@ class TestCommandHelperMethods:
 
         assert len(rules) == 3
 
+    @pytest.mark.parametrize(
+        "services, expected_host_header, indices",
+        [
+            (
+                ["web"],
+                {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
+                {"maintenance_page_index": 5, "expected_rules_length": 7, "priority": "4"},
+            ),
+            (
+                ["web", "web2"],
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+                },
+                {"maintenance_page_index": 8, "expected_rules_length": 10, "priority": "7"},
+            ),
+        ],
+    )
+    @mock_aws
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+    def test_host_header_conditions_in_maintenance_page_rule(
+        self,
+        get_maintenance_page_template,
+        choices,
+        services,
+        expected_host_header,
+        indices,
+        mock_application,
+    ):
+
+        get_maintenance_page_template.return_value = "default"
+        self._custom_create_rule_with_validation()
+
+        mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        target_group_arn_2 = self._create_target_group("web2")
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value-2"}],
+            Conditions=[
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+                }
+            ],
+            Priority=501,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn_2}],
+        )
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 3
+
+        add_maintenance_page(
+            boto3.Session(),
+            listener_arn,
+            "test-application",
+            "development",
+            [mock_application.services[service] for service in services],
+            ["1.2.3.4"],
+            template,
+        )
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        tags_descriptions = elbv2_client.describe_tags(
+            ResourceArns=[rule["RuleArn"] for rule in rules]
+        )
+
+        for description in tags_descriptions["TagDescriptions"]:
+            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+            # assert test tag present
+            if tags.get("test-key"):
+                assert tags["test-key"] in ["test-value", "test-value-2"]
+
+        # assert test condition present
+        assert rules[0]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
+        assert rules[0]["Priority"] == "500"
+        assert rules[1]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+        }
+        assert rules[1]["Priority"] == "501"
+
+        assert rules[indices["maintenance_page_index"]]["Priority"] == indices["priority"]
+        assert rules[indices["maintenance_page_index"]]["Conditions"] == [
+            {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+            expected_host_header,
+        ]
+
+        # default rule after maintenance page rule
+        assert len(rules[indices["maintenance_page_index"] + 1]["Conditions"]) == 0
+        assert rules[indices["maintenance_page_index"] + 1]["Priority"] == "default"
+        assert len(rules) == indices["expected_rules_length"]
+
 
 class MaintenancePageMocks:
     def __init__(self, app_name="test-application", *args, **kwargs):
@@ -1142,10 +1325,10 @@ class TestActivateMethod:
         ):
             provider.activate(env, services, template, vpc)
 
-            maintenance_mocks.get_https_listener_for_application.assert_not_called()
-            maintenance_mocks.get_maintenance_page_type.assert_not_called()
-            maintenance_mocks.remove_maintenance_page.assert_not_called()
-            maintenance_mocks.add_maintenance_page.assert_not_called()
+        maintenance_mocks.get_https_listener_for_application.assert_not_called()
+        maintenance_mocks.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.add_maintenance_page.assert_not_called()
 
     def test_successful_activate_multiple_services(
         self,

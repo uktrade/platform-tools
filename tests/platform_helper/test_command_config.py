@@ -7,8 +7,9 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.config import aws
 from dbt_platform_helper.commands.config import validate
-from dbt_platform_helper.utils.versioning import PlatformHelperVersions
-from dbt_platform_helper.utils.versioning import Versions
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.semantic_version import VersionStatus
 
 
 def test_running_in_non_copilot_directory(fakefs):
@@ -18,19 +19,19 @@ def test_running_in_non_copilot_directory(fakefs):
 
 @patch(
     "dbt_platform_helper.commands.config.get_platform_helper_versions",
-    return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0)),
+    return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
-    return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0)),
+    return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_aws_versions",
-    return_value=Versions((1, 0, 0), (1, 0, 0)),
+    return_value=VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_copilot_versions",
-    return_value=Versions((1, 0, 0), (1, 0, 0)),
+    return_value=VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
 )
 def test_with_outdated_addons_templates(
     mock_config_platform_helper_versions,
@@ -67,19 +68,19 @@ def test_with_outdated_addons_templates(
 
 @patch(
     "dbt_platform_helper.commands.config.get_platform_helper_versions",
-    return_value=PlatformHelperVersions((0, 1, 0), (1, 0, 0)),
+    return_value=PlatformHelperVersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
-    return_value=PlatformHelperVersions((0, 1, 0), (1, 0, 0)),
+    return_value=PlatformHelperVersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_aws_versions",
-    return_value=Versions((1, 0, 0), (1, 0, 0)),
+    return_value=VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_copilot_versions",
-    return_value=Versions((1, 0, 0), (1, 0, 0)),
+    return_value=VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
 )
 def test_with_outdated_platform_helper(
     mock_config_platform_helper_versions,
@@ -116,19 +117,19 @@ def test_with_outdated_platform_helper(
 
 @patch(
     "dbt_platform_helper.commands.config.get_platform_helper_versions",
-    return_value=PlatformHelperVersions((0, 1, 0), (1, 0, 0)),
+    return_value=PlatformHelperVersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
-    return_value=PlatformHelperVersions((0, 1, 0), (1, 0, 0)),
+    return_value=PlatformHelperVersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_aws_versions",
-    return_value=Versions((0, 1, 0), (1, 0, 0)),
+    return_value=VersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0)),
 )
 @patch(
     "dbt_platform_helper.utils.versioning.get_copilot_versions",
-    return_value=Versions((0, 1, 0), (1, 0, 0)),
+    return_value=VersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0)),
 )
 def test_with_outdated_tools(
     mock_config_platform_helper_versions,

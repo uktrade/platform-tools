@@ -2,12 +2,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from dbt_platform_helper.domain.terraform_environment import (
-    PlatformTerraformManifestGenerator,
-)
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
 
 class TestGenerateTerraform:
@@ -32,8 +30,8 @@ class TestGenerateTerraform:
 
         terraform_environment = TerraformEnvironment(
             config_provider=mock_config_provider,
-            manifest_generator=Mock(),
-            echo=Mock(),
+            manifest_provider=Mock(),
+            io=Mock(),
         )
         with pytest.raises(
             PlatformException,
@@ -41,35 +39,23 @@ class TestGenerateTerraform:
         ):
             terraform_environment.generate("not-an-environment")
 
-    # TODO test can be made more complete by using a file fixture for the expected content on the manifest
-    # (See copilot tests)
-    def test_terraform_environment_generate_writes_the_expected_manifest_to_file(
-        self,
-    ):
+    def test_generate_success(self):
+        environment_name = "test"
+        tpm_default_version = "123"
+
+        mock_manifest_provider = Mock(spec=TerraformManifestProvider)
+
         mock_config_provider = Mock(spec=ConfigProvider)
         mock_config_provider.get_enriched_config.return_value = self.VALID_ENRICHED_CONFIG
 
-        mock_generator = Mock(spec=PlatformTerraformManifestGenerator)
-        mock_generator.generate_manifest.return_value = "I am a junk manifest for testing!"
-        mock_generator.write_manifest.return_value = "Hello, World!"
-
-        mock_echo_fn = Mock()
-
         terraform_environment = TerraformEnvironment(
             config_provider=mock_config_provider,
-            manifest_generator=mock_generator,
-            echo=mock_echo_fn,
+            manifest_provider=mock_manifest_provider,
+            io=Mock(),
         )
 
-        terraform_environment.generate("test")
+        terraform_environment.generate(environment_name, tpm_default_version)
 
-        mock_generator.generate_manifest.assert_called_with(
-            environment_name="test",
-            application_name="test-app",
-            environment_config=self.VALID_ENV_CONFIG,
-            terraform_platform_modules_version_override=None,
+        mock_manifest_provider.generate_environment_config.assert_called_once_with(
+            self.VALID_ENRICHED_CONFIG, environment_name, tpm_default_version
         )
-        mock_generator.write_manifest.assert_called_with(
-            environment_name="test", manifest_content="I am a junk manifest for testing!"
-        )
-        mock_echo_fn.assert_called_with("Hello, World!")

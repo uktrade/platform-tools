@@ -39,7 +39,6 @@ class ConfigProvider:
         try:
             self.validator.run_validations(enriched_config)
         except ConfigValidatorError as exc:
-            print(exc)
             self.io.abort_with_error(f"Config validation has failed.\n{str(exc)}")
 
     def load_and_validate_platform_config(self, path=PLATFORM_CONFIG_FILE):
@@ -58,6 +57,12 @@ class ConfigProvider:
             self.io.abort_with_error(f"Schema error in {path}. {e}")
 
         return self.config
+
+    def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
+        try:
+            return self.file_provider.load(path)
+        except FileProviderException:
+            return {}
 
     # TODO this general function should be moved out of ConfigProvider
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
