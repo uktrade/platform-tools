@@ -170,7 +170,6 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=None,
         platform_config_default=SemanticVersion(1, 0, 0),
-        pipeline_overrides={},
     )
 
     required_version = RequiredVersion()
@@ -482,9 +481,7 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
-        versions=PlatformHelperVersionStatus(
-            platform_config_default=SemanticVersion(1, 2, 3), pipeline_overrides={}
-        )
+        versions=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
     )
 
     assert result == "1.2.3"
