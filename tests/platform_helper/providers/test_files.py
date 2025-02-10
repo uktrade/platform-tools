@@ -44,6 +44,8 @@ def test_mkfile_can_write_to_a_file_in_a_non_existent_directory(tmp_path):
 
     message = FileProvider().mkfile(str(path), filename, contents="does not matter")
 
+    file_path = path / filename
+    assert file_path.exists()
     assert message == "File test_file.txt created"
 
 
