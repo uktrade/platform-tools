@@ -299,16 +299,12 @@ class PlatformConfigSchema:
         return {
             "type": "postgres",
             "version": (Or(int, float)),
-            Optional("deletion_policy"): PlatformConfigSchema.__valid_postgres_deletion_policy(),
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_postgres_plans,
                     Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
                     Optional("iops"): PlatformConfigSchema.is_integer_between(1000, 9950),
                     Optional("snapshot_id"): str,
-                    Optional(
-                        "deletion_policy"
-                    ): PlatformConfigSchema.__valid_postgres_deletion_policy(),
                     Optional("deletion_protection"): bool,
                     Optional("multi_az"): bool,
                     Optional("storage_type"): _valid_postgres_storage_types,
