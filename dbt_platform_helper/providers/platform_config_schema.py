@@ -242,7 +242,6 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("engine"): str,
-                    Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                     Optional("plan"): _valid_opensearch_plans,
                     Optional("volume_size"): int,
                     Optional("ebs_throughput"): int,
