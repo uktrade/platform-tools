@@ -473,6 +473,14 @@ class TestCopilotTemplating:
             overwrite=True,
         )
 
+    def test_file_provider_default(self):
+        result = CopilotTemplating().write_environment_manifest(
+            "connors-environment",
+            "test manifest contents",
+        )
+
+        assert result == "ive written to a file!"
+
 
 class TestCopilotGenerate:
 
