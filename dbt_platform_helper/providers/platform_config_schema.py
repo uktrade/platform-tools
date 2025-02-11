@@ -241,8 +241,8 @@ class PlatformConfigSchema:
             "type": "opensearch",
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
-                    Optional("engine"): str,
-                    Optional("plan"): _valid_opensearch_plans,
+                    "engine": str,
+                    "plan": _valid_opensearch_plans,
                     Optional("volume_size"): int,
                     Optional("ebs_throughput"): int,
                     Optional("ebs_volume_type"): str,
