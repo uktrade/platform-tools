@@ -479,7 +479,7 @@ class TestCopilotTemplating:
             "test manifest contents",
         )
 
-        assert result == "ive written to a file!"
+        assert result == "File copilot/environments/connors-environment/manifest.yml created"
 
 
 class TestCopilotGenerate:
