@@ -132,7 +132,7 @@ class CopilotEnvironment:
 class CopilotTemplating:
     def __init__(
         self,
-        file_provider: FileProvider = None,
+        file_provider: FileProvider = FileProvider(),
         io: ClickIOProvider = ClickIOProvider(),
         # TODO file_provider can be moved up a layer.  File writing can be the responsibility of CopilotEnvironment generate
         # Or we align with PlatformTerraformManifestGenerator and rename from Templating to reflect the file writing responsibility
