@@ -24,6 +24,8 @@ from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.yaml_file import FileProviderException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -82,7 +84,9 @@ class RequiredVersion:
 
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
-def get_platform_helper_versions(include_project_versions=True) -> PlatformHelperVersionStatus:
+def get_platform_helper_versions(
+    include_project_versions=True, yaml_provider=YamlFileProvider
+) -> PlatformHelperVersionStatus:
     try:
         locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
     except PackageNotFoundError:
@@ -97,11 +101,11 @@ def get_platform_helper_versions(include_project_versions=True) -> PlatformHelpe
         )
 
     deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    version_from_file = (
-        SemanticVersion.from_string(deprecated_version_file.read_text())
-        if deprecated_version_file.exists()
-        else None
-    )
+    try:
+        loaded_version = yaml_provider.load(deprecated_version_file)
+        version_from_file = SemanticVersion.from_string(loaded_version)
+    except FileProviderException:
+        version_from_file = None
 
     platform_config_default, pipeline_overrides = None, {}
 
