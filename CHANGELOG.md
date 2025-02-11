@@ -1,5 +1,15 @@
 # Changelog
 
+## [13.0.2](https://github.com/uktrade/platform-tools/compare/13.0.1...13.0.2) (2025-02-10)
+
+
+### Bug Fixes
+
+* DBTP-1387 Fix maintenance page offline command when specifiying a specific service ([#746](https://github.com/uktrade/platform-tools/issues/746)) ([b22630b](https://github.com/uktrade/platform-tools/commit/b22630be5fb4cf2085c2da370e63dcd1ce6dcdc7))
+* DBTP-1602 Fix resource renaming bug ([#759](https://github.com/uktrade/platform-tools/issues/759)) ([c968433](https://github.com/uktrade/platform-tools/commit/c968433d2225ca5775263bfbfa2426d856c422f7))
+* DBTP-1784: Passing a full path as the first mkfile parameter causes a file not found error ([#768](https://github.com/uktrade/platform-tools/issues/768)) ([ef126c6](https://github.com/uktrade/platform-tools/commit/ef126c680a6d1812df672f39c61c508672f7eb53))
+* Delete old manifest before creating json one ([#764](https://github.com/uktrade/platform-tools/issues/764)) ([681d487](https://github.com/uktrade/platform-tools/commit/681d487508d91360d8295e6cb87e0aba27788244))
+
 ## [13.0.1](https://github.com/uktrade/platform-tools/compare/13.0.0...13.0.1) (2025-01-31)
 
 
