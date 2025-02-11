@@ -340,7 +340,6 @@ class PlatformConfigSchema:
                     Optional("plan"): _valid_redis_plans,
                     Optional("engine"): str,
                     Optional("replicas"): PlatformConfigSchema.is_integer_between(0, 5),
-                    Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                     Optional("apply_immediately"): bool,
                     Optional("automatic_failover_enabled"): bool,
                     Optional("instance"): str,
@@ -445,7 +444,6 @@ class PlatformConfigSchema:
                 Optional("environments"): {
                     PlatformConfigSchema.__valid_environment_name(): {
                         "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
-                        Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                         Optional("retention_policy"): _valid_s3_bucket_retention_policy,
                         Optional("versioning"): bool,
                         Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
@@ -519,10 +517,6 @@ class PlatformConfigSchema:
     def __valid_branch_name() -> Callable:
         # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
         return PlatformConfigSchema.string_matching_regex(r"^((?!\*).)*(\*)?$")
-
-    @staticmethod
-    def __valid_deletion_policy() -> Or:
-        return Or("Delete", "Retain")
 
     @staticmethod
     def __valid_postgres_deletion_policy() -> Or:
