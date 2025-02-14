@@ -73,7 +73,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
 
     secho.assert_called_with(
-        "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
+        "Error: You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
         "--upgrade dbt-platform-helper`.",
         fg="red",
     )
@@ -84,7 +84,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_check_platform_helper_version_needs_minor_update_returns_yellow_warning_to_upgrade(
+def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
     mock_get_platform_helper_versions, secho
 ):
     mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
@@ -98,7 +98,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_yellow_warning
     secho.assert_called_with(
         "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
         "--upgrade dbt-platform-helper`.",
-        fg="yellow",
+        fg="magenta",
     )
 
 
@@ -267,7 +267,7 @@ def test_get_platform_helper_versions_with_invalid_config(
         (
             False,
             False,
-            f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+            f"Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
             "red",
         ),
@@ -277,14 +277,14 @@ def test_get_platform_helper_versions_with_invalid_config(
             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
             "  platform-helper: 3.3.3\n",
-            "yellow",
+            "magenta",
         ),
-        (False, True, None, "yellow"),
+        (False, True, None, "magenta"),
         (
             True,
             True,
             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
-            "yellow",
+            "magenta",
         ),
     ),
 )
@@ -463,7 +463,7 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
         required_version.get_required_platform_helper_version("main")
 
     secho.assert_called_with(
-        f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
+        f"""Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
 Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
 """,
         fg="red",
