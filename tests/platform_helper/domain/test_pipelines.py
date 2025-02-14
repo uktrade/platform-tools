@@ -142,7 +142,7 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
 
-    assert 'repository          = "uktrade/test-app-deploy"' in content
+    assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
 @pytest.mark.parametrize(
