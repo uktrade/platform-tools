@@ -80,17 +80,20 @@ class Pipelines:
                 if "account" in config
             }
 
-            def _determine_deploy_repository_name(platform_config):
-
-                if "deploy_repository" in platform_config.keys():
-                    return f"uktrade/{platform_config['deploy_repository']}"
-                else:
-                    return f"uktrade/{platform_config['application']}-deploy"
+            # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
+            deploy_repository = ""
+            if "deploy_repository" in platform_config.keys():
+                deploy_repository = f"uktrade/{platform_config['deploy_repository']}"
+            else:
+                self.io.warn(
+                    "No `deploy_repository` key set in platform-config.yml, this will become a required key. See full platform config reference in the docs: https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+                )
+                deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
             for account in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
                     platform_config["application"],
-                    _determine_deploy_repository_name(platform_config=platform_config),
+                    deploy_repository,
                     account,
                     terraform_platform_modules_version,
                     deploy_branch,

@@ -143,6 +143,9 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
 
+    mocks.io.warn.assert_called_once_with(
+        "No `deploy_repository` key set in platform-config.yml, this will become a required key. See full platform config reference in the docs: https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+    )
     assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
