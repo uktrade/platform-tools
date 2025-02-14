@@ -87,7 +87,7 @@ def test_generate_codebase_pipeline_config_creates_file(
         module["additional_ecr_repository"]
         == '${lookup(each.value, "additional_ecr_repository", null)}'
     )
-    assert module["pipelines"] == "${each.value.pipelines}"
+    assert module["pipelines"] == '${lookup(each.value, "pipelines", [])}'
     assert module["services"] == "${each.value.services}"
     assert module["requires_image_build"] == '${lookup(each.value, "requires_image_build", true)}'
     assert (
