@@ -5,8 +5,6 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
 
-import click
-
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
@@ -137,7 +135,6 @@ def get_platform_helper_versions(
 
 
 # Validates the returned PlatformHelperVersionStatus and echos useful warnings
-# Should use IO provider
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
 def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
     messages = versions.warn()
@@ -154,7 +151,7 @@ def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
 def check_platform_helper_version_needs_update():
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
-
+    io = ClickIOProvider()
     versions = get_platform_helper_versions(include_project_versions=False)
     local_version = versions.local
     latest_release = versions.latest
@@ -166,9 +163,9 @@ def check_platform_helper_version_needs_update():
     try:
         local_version.validate_compatibility_with(latest_release)
     except IncompatibleMajorVersionException:
-        click.secho(message, fg="red")
+        io.error(message)
     except IncompatibleMinorVersionException:
-        click.secho(message, fg="magenta")
+        io.warn(message)
 
 
 # TODO can stay as utility for now

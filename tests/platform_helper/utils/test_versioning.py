@@ -73,7 +73,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
 
     secho.assert_called_with(
-        "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
+        "Error: You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
         "--upgrade dbt-platform-helper`.",
         fg="red",
     )
