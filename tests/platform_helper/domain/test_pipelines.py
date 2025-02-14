@@ -131,7 +131,7 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
 
     app_name = "test-app"
     # deploy_repository key set on test_fixture so remove it
-    platform_config_for_env_pipelines.pop("deploy_repository")
+    platform_config_for_env_pipelines.delete("deploy_repository")
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
