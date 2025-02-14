@@ -136,7 +136,7 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate("an-unimportant-verstion", "abranch")
+    pipelines.generate("an-unimportant-version", "a-branch")
 
     expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
     assert expected_files_dir.exists()
