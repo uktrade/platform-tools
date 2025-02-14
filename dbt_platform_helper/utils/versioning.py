@@ -136,9 +136,8 @@ def get_platform_helper_versions(
 
 # Validates the returned PlatformHelperVersionStatus and echos useful warnings
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
-def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
+def _process_version_file_warnings(versions: PlatformHelperVersionStatus, io=ClickIOProvider()):
     messages = versions.warn()
-    io = ClickIOProvider()
 
     if messages.get("errors"):
         io.error("\n".join(messages["errors"]))
@@ -148,10 +147,9 @@ def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
 
 
 # TODO called at the beginning of every command.  This is platform-version base functionality
-def check_platform_helper_version_needs_update():
+def check_platform_helper_version_needs_update(io=ClickIOProvider()):
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
-    io = ClickIOProvider()
     versions = get_platform_helper_versions(include_project_versions=False)
     local_version = versions.local
     latest_release = versions.latest
