@@ -141,12 +141,13 @@ def get_platform_helper_versions(
 # Could return ValidationMessages (warnings and errors) which are output elsewhere
 def _process_version_file_warnings(versions: PlatformHelperVersionStatus):
     messages = versions.warn()
+    io = ClickIOProvider()
 
     if messages.get("errors"):
-        click.secho("\n".join(messages["errors"]), fg="red")
+        io.error("\n".join(messages["errors"]))
 
     if messages.get("warnings"):
-        click.secho("\n".join(messages["warnings"]), fg="yellow")
+        io.warn("\n".join(messages["warnings"]))
 
 
 # TODO called at the beginning of every command.  This is platform-version base functionality
@@ -167,7 +168,7 @@ def check_platform_helper_version_needs_update():
     except IncompatibleMajorVersionException:
         click.secho(message, fg="red")
     except IncompatibleMinorVersionException:
-        click.secho(message, fg="yellow")
+        click.secho(message, fg="magenta")
 
 
 # TODO can stay as utility for now
