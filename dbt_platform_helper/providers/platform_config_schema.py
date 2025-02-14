@@ -338,7 +338,7 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_redis_plans,
-                    Optional("engine"): str,
+                    "engine": str,
                     Optional("replicas"): PlatformConfigSchema.is_integer_between(0, 5),
                     Optional("apply_immediately"): bool,
                     Optional("automatic_failover_enabled"): bool,
