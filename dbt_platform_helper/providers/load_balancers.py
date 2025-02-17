@@ -1,9 +1,91 @@
 import boto3
+from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
-# TODO - a good candidate for a dataclass when this is refactored into a class.
-# Below methods should also really be refactored to not be so tightly coupled with eachother.
+
+class LoadBalancerProvider:
+
+    def __init__(self, session: Session = None, io: ClickIOProvider = ClickIOProvider()):
+        self.session = session
+        self.evlb_client = self._get_client("elbv2")
+
+    def _get_client(self, client: str):
+        if not self.session:
+            self.session = get_aws_session_or_abort()
+        return self.session.client(client)
+
+    def get_https_certificate_for_application(self, app: str, env: str) -> str:
+        return ""
+
+    def get_https_listener_for_application(self, app: str, env: str) -> str:
+        return ""
+
+    def get_load_balancer_for_application(self, app: str, env: str) -> str:
+        return ""
+
+    def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
+        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+
+        for rule in rules:
+            for action in rule["Actions"]:
+                if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
+                    conditions = rule["Conditions"]
+
+        # filter to host-header conditions
+        conditions = [
+            {i: condition[i] for i in condition if i != "Values"}
+            for condition in conditions
+            if condition["Field"] == "host-header"
+        ]
+
+        # remove internal hosts
+        conditions[0]["HostHeaderConfig"]["Values"] = [
+            v for v in conditions[0]["HostHeaderConfig"]["Values"]
+        ]
+
+        return conditions
+
+    def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
+        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        return self.get_rules_tag_descriptions(rules)
+
+    def get_rules_tag_descriptions(self, rules: list) -> list:
+        tag_descriptions = []
+        chunk_size = 20
+
+        for i in range(0, len(rules), chunk_size):
+            chunk = rules[i : i + chunk_size]
+            resource_arns = [r["RuleArn"] for r in chunk]
+            response = self.evlb_client.describe_tags(ResourceArns=resource_arns)
+            tag_descriptions.extend(response["TagDescriptions"])
+
+        return tag_descriptions
+
+    def create_header_rule(
+        self,
+        listener_arn: str,
+        target_group_arn: str,
+        header_name: str,
+        values: list,
+        rule_name: str,
+        priority: int,
+        conditions: list,
+    ):
+        pass
+
+    def create_source_ip_rule(
+        self,
+        listener_arn: str,
+        target_group_arn: str,
+        values: list,
+        rule_name: str,
+        priority: int,
+        conditions: list,
+    ):
+        pass
 
 
 def get_load_balancer_for_application(session: boto3.Session, app: str, env: str) -> str:
