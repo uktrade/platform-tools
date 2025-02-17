@@ -18,9 +18,9 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import (
     check_platform_helper_version_needs_update,
@@ -64,7 +64,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
     mock_get_platform_helper_versions, secho
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
         SemanticVersion(1, 0, 0), SemanticVersion(2, 0, 0)
     )
 
@@ -73,7 +73,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
 
     secho.assert_called_with(
-        "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
+        "Error: You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
         "--upgrade dbt-platform-helper`.",
         fg="red",
     )
@@ -84,10 +84,10 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_check_platform_helper_version_needs_minor_update_returns_yellow_warning_to_upgrade(
+def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
     mock_get_platform_helper_versions, secho
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersions(
+    mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
         SemanticVersion(1, 0, 0), SemanticVersion(1, 1, 0)
     )
 
@@ -98,7 +98,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_yellow_warning
     secho.assert_called_with(
         "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
         "--upgrade dbt-platform-helper`.",
-        fg="yellow",
+        fg="magenta",
     )
 
 
@@ -121,9 +121,9 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho
 ):
-    get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=SemanticVersion(1, 0, 1),
-        platform_helper_file_version=SemanticVersion(1, 0, 0),
+    get_file_app_versions.return_value = PlatformHelperVersionStatus(
+        local=SemanticVersion(1, 0, 1),
+        deprecated_version_file=SemanticVersion(1, 0, 0),
     )
 
     required_version = RequiredVersion()
@@ -145,9 +145,9 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
     get_file_app_versions, secho, mock_running_as_installed_package
 ):
-    get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=SemanticVersion(1, 0, 1),
-        platform_helper_file_version=SemanticVersion(1, 0, 0),
+    get_file_app_versions.return_value = PlatformHelperVersionStatus(
+        local=SemanticVersion(1, 0, 1),
+        deprecated_version_file=SemanticVersion(1, 0, 0),
     )
     mock_running_as_installed_package.return_value = False
 
@@ -166,9 +166,9 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
     get_file_app_versions, secho
 ):
-    get_file_app_versions.return_value = PlatformHelperVersions(
-        local_version=SemanticVersion(1, 0, 1),
-        platform_helper_file_version=None,
+    get_file_app_versions.return_value = PlatformHelperVersionStatus(
+        local=SemanticVersion(1, 0, 1),
+        deprecated_version_file=None,
         platform_config_default=SemanticVersion(1, 0, 0),
     )
 
@@ -210,9 +210,9 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_plat
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == SemanticVersion(1, 1, 1)
-    assert versions.latest_release == SemanticVersion(2, 3, 4)
-    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.local == SemanticVersion(1, 1, 1)
+    assert versions.latest == SemanticVersion(2, 3, 4)
+    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == SemanticVersion(10, 2, 0)
     assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
@@ -231,9 +231,9 @@ def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == SemanticVersion(1, 1, 1)
-    assert versions.latest_release == SemanticVersion(2, 3, 4)
-    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.local == SemanticVersion(1, 1, 1)
+    assert versions.latest == SemanticVersion(2, 3, 4)
+    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == None
     assert versions.pipeline_overrides == {}
 
@@ -254,9 +254,9 @@ def test_get_platform_helper_versions_with_invalid_config(
 
     versions = get_platform_helper_versions()
 
-    assert versions.local_version == SemanticVersion(1, 1, 1)
-    assert versions.latest_release == SemanticVersion(2, 3, 4)
-    assert versions.platform_helper_file_version == SemanticVersion(5, 6, 7)
+    assert versions.local == SemanticVersion(1, 1, 1)
+    assert versions.latest == SemanticVersion(2, 3, 4)
+    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
     assert versions.platform_config_default == SemanticVersion(1, 2, 3)
     assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
 
@@ -267,7 +267,7 @@ def test_get_platform_helper_versions_with_invalid_config(
         (
             False,
             False,
-            f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+            f"Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
             "red",
         ),
@@ -277,14 +277,14 @@ def test_get_platform_helper_versions_with_invalid_config(
             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
             "  platform-helper: 3.3.3\n",
-            "yellow",
+            "magenta",
         ),
-        (False, True, None, "yellow"),
+        (False, True, None, "magenta"),
         (
             True,
             True,
             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
-            "yellow",
+            "magenta",
         ),
     ),
 )
@@ -333,8 +333,8 @@ def test_get_copilot_versions(mock_get_github_released_version, mock_run):
 
     versions = get_copilot_versions()
 
-    assert versions.local_version == SemanticVersion(1, 0, 0)
-    assert versions.latest_release == SemanticVersion(2, 0, 0)
+    assert versions.local == SemanticVersion(1, 0, 0)
+    assert versions.latest == SemanticVersion(2, 0, 0)
 
 
 @patch("subprocess.run")
@@ -346,8 +346,8 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
     mock_run.return_value.stdout = b"aws-cli/1.0.0"
     versions = get_aws_versions()
 
-    assert versions.local_version == SemanticVersion(1, 0, 0)
-    assert versions.latest_release == SemanticVersion(2, 0, 0)
+    assert versions.local == SemanticVersion(1, 0, 0)
+    assert versions.latest == SemanticVersion(2, 0, 0)
 
 
 @pytest.mark.parametrize(
@@ -463,7 +463,7 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
         required_version.get_required_platform_helper_version("main")
 
     secho.assert_called_with(
-        f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
+        f"""Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
 Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
 """,
         fg="red",
@@ -481,7 +481,7 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
-        versions=PlatformHelperVersions(platform_config_default=SemanticVersion(1, 2, 3))
+        versions=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
     )
 
     assert result == "1.2.3"

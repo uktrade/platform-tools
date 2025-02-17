@@ -14,8 +14,8 @@ class PlatformConfigSchema:
     def schema() -> Schema:
         return Schema(
             {
-                # The following line is for the AWS Copilot version, will be removed under DBTP-1002
                 "application": str,
+                Optional("deploy_repository"): str,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),

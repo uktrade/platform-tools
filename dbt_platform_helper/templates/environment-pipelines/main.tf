@@ -40,7 +40,7 @@ module "environment-pipelines" {
 
   application         = "{{ application }}"
   pipeline_name       = each.key
-  repository          = "uktrade/{{ application }}-deploy"
+  repository          = "{{ deploy_repository }}"
 
   environments        = each.value.environments
   all_pipelines       = local.all_pipelines
