@@ -446,7 +446,7 @@ class PlatformConfigSchema:
                 Optional("serve_static_content"): bool,
                 Optional("serve_static_param_name"): str,
                 Optional("services"): Or("__all__", [str]),
-                Optional("environments"): {
+                "environments": {
                     PlatformConfigSchema.__valid_environment_name(): {
                         "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
                         Optional("retention_policy"): _valid_s3_bucket_retention_policy,
