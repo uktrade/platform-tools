@@ -1,4 +1,5 @@
 from io import StringIO
+from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
@@ -94,3 +95,36 @@ class TestClickIOProvider:
         with pytest.raises(SystemExit):
             io.abort_with_error("Aborting")
         mock_echo.assert_called_once_with("Error: Aborting", err=True, fg="red")
+
+
+class TestClickIOProviderProcessMessages:
+    @patch("click.secho")
+    def test_with_empty_messages(self, mock_echo):
+        io = ClickIOProvider()
+        messages = {"errors": [], "warnings": [], "info": []}
+        io.process_messages(messages)
+        mock_echo.assert_not_called()
+
+    @patch("click.secho")
+    def test_with_none_messages(self, mock_echo):
+        io = ClickIOProvider()
+        messages = {"errors": [], "warnings": [], "info": []}
+        io.process_messages(None)
+        mock_echo.assert_not_called()
+
+    @patch("click.secho")
+    def test_echos_populated_messages_with_correct_formatting(self, mock_echo):
+        io = ClickIOProvider()
+        messages = {
+            "errors": ["error_1", "error_2"],
+            "warnings": ["warning_1", "warning_2"],
+            "info": ["info_1", "info_2"],
+        }
+        io.process_messages(messages)
+        mock_echo.assert_has_calls(
+            [
+                call("Error: error_1\nerror_2", fg="red"),
+                call("warning_1\nwarning_2", fg="magenta"),
+                call("info_1\ninfo_2"),
+            ]
+        )
