@@ -17,6 +17,7 @@ class PlatformConfigSchema:
         return Schema(
             {
                 "application": str,
+                Optional("deploy_repository"): str,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
@@ -387,7 +388,7 @@ class PlatformConfigSchema:
         return True
 
     @staticmethod
-    def __valid_s3_base_definition() -> dict:
+    def __s3_bucket_schema() -> dict:
         def _valid_s3_bucket_arn(key):
             return Regex(
                 r"^arn:aws:s3::.*",
@@ -437,6 +438,10 @@ class PlatformConfigSchema:
 
         return dict(
             {
+                "type": "s3",
+                Optional("objects"): [
+                    {"key": str, Optional("body"): str, Optional("content_type"): str}
+                ],
                 Optional("readonly"): bool,
                 Optional("serve_static_content"): bool,
                 Optional("serve_static_param_name"): str,
@@ -470,17 +475,18 @@ class PlatformConfigSchema:
         )
 
     @staticmethod
-    def __s3_bucket_schema() -> dict:
-        return PlatformConfigSchema.__valid_s3_base_definition() | {
-            "type": "s3",
-            Optional("objects"): [
-                {"key": str, Optional("body"): str, Optional("content_type"): str}
-            ],
-        }
-
-    @staticmethod
     def __s3_bucket_policy_schema() -> dict:
-        return PlatformConfigSchema.__valid_s3_base_definition() | {"type": "s3-policy"}
+        return dict(
+            {
+                "type": "s3-policy",
+                Optional("services"): Or("__all__", [str]),
+                Optional("environments"): {
+                    PlatformConfigSchema.__valid_environment_name(): {
+                        "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
+                    },
+                },
+            }
+        )
 
     @staticmethod
     def string_matching_regex(regex_pattern: str) -> Callable:

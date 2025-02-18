@@ -473,6 +473,14 @@ class TestCopilotTemplating:
             overwrite=True,
         )
 
+    def test_file_provider_default(self, fakefs):
+        result = CopilotTemplating().write_environment_manifest(
+            "connors-environment",
+            "test manifest contents",
+        )
+
+        assert result == "File copilot/environments/connors-environment/manifest.yml created"
+
 
 class TestCopilotGenerate:
 

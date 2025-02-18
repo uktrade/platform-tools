@@ -495,7 +495,6 @@ extensions:
     environments:
       dev:
         bucket_name: test-app-policy-dev
-        versioning: false
   
   test-app-s3-bucket-data-migration:
     type: s3
@@ -734,6 +733,8 @@ def platform_config_for_env_pipelines():
     return yaml.safe_load(
         """
 application: test-app
+deploy_repository: test-app-weird-name-deploy
+
 environments:
   dev:
     accounts:
