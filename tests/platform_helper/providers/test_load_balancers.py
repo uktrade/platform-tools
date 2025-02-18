@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -119,6 +120,139 @@ def test_get_rules_tag_descriptions_by_listener_arn(mock_application):
     result = alb_provider.get_rules_tag_descriptions_by_listener_arn(listener_arn)
 
     assert result[0]["Tags"] == [{"Key": "test-key", "Value": "test-value"}]
+
+
+@mock_aws
+def test_create_header_rule(mock_application):
+    session = mock_application.environments["development"].session
+
+    conditions = [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
+
+    listener_arn = _create_listener(session)
+    target_group_arn = _create_target_group(session)
+    session.client("elbv2").create_rule(
+        ListenerArn=listener_arn,
+        Tags=[{"Key": "test-key", "Value": "test-value"}],
+        Conditions=conditions,
+        Priority=500,
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+    )
+
+    mock_io = Mock()
+    alb_provider = LoadBalancerProvider(session, mock_io)
+    alb_provider.create_header_rule(
+        listener_arn,
+        target_group_arn,
+        "test_header_name",
+        ["1.2.3.4"],
+        "test_rule_name",
+        1,
+        conditions,
+    )
+
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+
+    assert len(rules) == 3
+    assert rules[1]["Priority"] == "1"
+    assert rules[1]["Conditions"][0] == {
+        "Field": "http-header",
+        "HttpHeaderConfig": {"HttpHeaderName": "test_header_name", "Values": ["1.2.3.4"]},
+    }
+
+    mock_io.info.assert_called_once_with(
+        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\n\nIf request header test_header_name contains one of the values ['1.2.3.4'], the request will be forwarded to target group with arn {target_group_arn}."
+    )
+
+
+@mock_aws
+def test_create_source_ip_rule(mock_application):
+    session = mock_application.environments["development"].session
+
+    conditions = [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
+
+    listener_arn = _create_listener(session)
+    target_group_arn = _create_target_group(session)
+    session.client("elbv2").create_rule(
+        ListenerArn=listener_arn,
+        Tags=[{"Key": "test-key", "Value": "test-value"}],
+        Conditions=conditions,
+        Priority=500,
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+    )
+
+    mock_io = Mock()
+    alb_provider = LoadBalancerProvider(session, mock_io)
+    alb_provider.create_source_ip_rule(
+        listener_arn, target_group_arn, ["1.2.3.4"], "test_rule_name", 1, conditions
+    )
+
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+
+    assert len(rules) == 3
+    assert rules[1]["Priority"] == "1"
+    assert rules[1]["Conditions"][0] == {
+        "Field": "source-ip",
+        "SourceIpConfig": {"Values": ["1.2.3.4/32"]},
+    }
+
+    mock_io.info.assert_called_once_with(
+        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values ['1.2.3.4'], the request will be forwarded to target group with arn {target_group_arn}."
+    )
+
+
+@mock_aws
+def test_find_target_group(mock_application):
+    session = mock_application.environments["development"].session
+
+    _create_listener(session)
+    target_group_arn = _create_target_group(session)
+
+    mock_io = Mock()
+    alb_provider = LoadBalancerProvider(session, mock_io)
+    result = alb_provider.find_target_group("test-application", "development", "web")
+
+    assert result == target_group_arn
+
+
+@mock_aws
+def test_cannot_find_target_group(mock_application):
+    session = mock_application.environments["development"].session
+
+    _create_listener(session)
+    _create_target_group(session)
+
+    mock_io = Mock()
+    alb_provider = LoadBalancerProvider(session, mock_io)
+    result = alb_provider.find_target_group("unfindable-application", "development", "web")
+
+    assert result == None
+    mock_io.error.assert_called_once_with(
+        "No target group found for application: unfindable-application, environment: development, service: web"
+    )
+
+
+@mock_aws
+def test_delete_listener_rule(mock_application):
+    session = mock_application.environments["development"].session
+
+    listener_arn = _create_listener(session)
+    target_group_arn = _create_target_group(session)
+
+    rules = session.client("elbv2").create_rule(
+        ListenerArn=listener_arn,
+        Tags=[{"Key": "name", "Value": "test-value"}],
+        Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+        Priority=500,
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+    )
+    expected_arn = rules["Rules"][0]["RuleArn"]
+    alb_provider = LoadBalancerProvider(session)
+    result = alb_provider.delete_listener_rule_by_tags(
+        [{"Tags": [{"Key": "name", "Value": "test-value"}], "ResourceArn": expected_arn}],
+        "test_rule_name",
+    )
+
+    assert result == expected_arn
 
 
 class TestFindHTTPSListener:

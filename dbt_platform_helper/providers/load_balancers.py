@@ -6,16 +6,69 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
+def normalise_to_cidr(ip: str):
+    if "/" in ip:
+        return ip
+    SINGLE_IPV4_CIDR_PREFIX_LENGTH = "32"
+    return f"{ip}/{SINGLE_IPV4_CIDR_PREFIX_LENGTH}"
+
+
 class LoadBalancerProvider:
 
     def __init__(self, session: Session = None, io: ClickIOProvider = ClickIOProvider()):
         self.session = session
         self.evlb_client = self._get_client("elbv2")
+        self.rg_tagging_client = self._get_client("resourcegroupstaggingapi")
+        self.io = io
 
     def _get_client(self, client: str):
         if not self.session:
             self.session = get_aws_session_or_abort()
         return self.session.client(client)
+
+    def find_target_group(self, app: str, env: str, svc: str) -> str:
+        target_group_arn = None
+
+        response = self.rg_tagging_client.get_resources(
+            TagFilters=[
+                {
+                    "Key": "copilot-application",
+                    "Values": [
+                        app,
+                    ],
+                    "Key": "copilot-environment",
+                    "Values": [
+                        env,
+                    ],
+                    "Key": "copilot-service",
+                    "Values": [
+                        svc,
+                    ],
+                },
+            ],
+            ResourceTypeFilters=[
+                "elasticloadbalancing:targetgroup",
+            ],
+        )
+        for resource in response["ResourceTagMappingList"]:
+            tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
+
+            if (
+                "copilot-service" in tags
+                and tags["copilot-service"] == svc
+                and "copilot-environment" in tags
+                and tags["copilot-environment"] == env
+                and "copilot-application" in tags
+                and tags["copilot-application"] == app
+            ):
+                target_group_arn = resource["ResourceARN"]
+
+        if not target_group_arn:
+            self.io.error(
+                f"No target group found for application: {app}, environment: {env}, service: {svc}",
+            )
+
+        return target_group_arn
 
     def get_https_certificate_for_application(self, app: str, env: str) -> str:
         return ""
@@ -64,6 +117,26 @@ class LoadBalancerProvider:
 
         return tag_descriptions
 
+    # def create_rule(self):
+
+    def create_forward_rule(
+        self,
+        listener_arn: str,
+        target_group_arn: str,
+        rule_name: str,
+        priority: int,
+        conditions: list,
+    ):
+        return self.evlb_client.create_rule(
+            ListenerArn=listener_arn,
+            Priority=priority,
+            Conditions=conditions,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+            Tags=[
+                {"Key": "name", "Value": rule_name},
+            ],
+        )
+
     def create_header_rule(
         self,
         listener_arn: str,
@@ -74,7 +147,21 @@ class LoadBalancerProvider:
         priority: int,
         conditions: list,
     ):
-        pass
+
+        combined_conditions = [
+            {
+                "Field": "http-header",
+                "HttpHeaderConfig": {"HttpHeaderName": header_name, "Values": values},
+            }
+        ] + conditions
+
+        self.create_forward_rule(
+            listener_arn, target_group_arn, rule_name, priority, combined_conditions
+        )
+
+        self.io.info(
+            f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        )
 
     def create_source_ip_rule(
         self,
@@ -85,7 +172,32 @@ class LoadBalancerProvider:
         priority: int,
         conditions: list,
     ):
-        pass
+        combined_conditions = [
+            {
+                "Field": "source-ip",
+                "SourceIpConfig": {"Values": [normalise_to_cidr(value) for value in values]},
+            }
+        ] + conditions
+
+        self.create_forward_rule(
+            listener_arn, target_group_arn, rule_name, priority, combined_conditions
+        )
+
+        self.io.info(
+            f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        )
+
+    def delete_listener_rule_by_tags(self, tag_descriptions: list, tag_name: str) -> str:
+        current_rule_arn = None
+
+        for description in tag_descriptions:
+            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+            if tags.get("name") == tag_name:
+                current_rule_arn = description["ResourceArn"]
+                if current_rule_arn:
+                    self.evlb_client.delete_rule(RuleArn=current_rule_arn)
+
+        return current_rule_arn
 
 
 def get_load_balancer_for_application(session: boto3.Session, app: str, env: str) -> str:
