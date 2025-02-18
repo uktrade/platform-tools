@@ -479,8 +479,8 @@ class PlatformConfigSchema:
         return dict(
             {
                 "type": "s3-policy",
-                Optional("services"): Or("__all__", [str]),
-                Optional("environments"): {
+                "services": Or("__all__", [str]),
+                "environments": {
                     PlatformConfigSchema.__valid_environment_name(): {
                         "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
                     },
