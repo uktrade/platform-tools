@@ -240,18 +240,25 @@ def test_delete_listener_rule(mock_application):
 
     rules = session.client("elbv2").create_rule(
         ListenerArn=listener_arn,
-        Tags=[{"Key": "name", "Value": "test-value"}],
+        Tags=[{"Key": "name", "Value": "test_rule_name"}],
         Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
         Priority=500,
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
     expected_arn = rules["Rules"][0]["RuleArn"]
+
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+    assert len(rules) == 2
+
     alb_provider = LoadBalancerProvider(session)
     result = alb_provider.delete_listener_rule_by_tags(
-        [{"Tags": [{"Key": "name", "Value": "test-value"}], "ResourceArn": expected_arn}],
+        [{"Tags": [{"Key": "name", "Value": "test_rule_name"}], "ResourceArn": expected_arn}],
         "test_rule_name",
     )
 
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+
+    assert len(rules) == 1  # only default rule
     assert result == expected_arn
 
 
