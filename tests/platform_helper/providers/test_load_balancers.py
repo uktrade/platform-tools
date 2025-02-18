@@ -30,15 +30,45 @@ def _create_subnet(session):
     )
 
 
-def _create_listener(session):
+def _create_load_balancer(session):
     _, subnet_id = _create_subnet(session)
     elbv2_client = session.client("elbv2")
-    load_balancer_arn = elbv2_client.create_load_balancer(
-        Name="test-load-balancer", Subnets=[subnet_id]
+    return elbv2_client.create_load_balancer(
+        Name="test-load-balancer",
+        Subnets=[subnet_id],
+        Tags=[
+            {"Key": "copilot-application", "Value": "test-application"},
+            {"Key": "copilot-environment", "Value": "development"},
+        ],
     )["LoadBalancers"][0]["LoadBalancerArn"]
+
+
+def _create_listener(session):
+    elbv2_client = session.client("elbv2")
+    load_balancer_arn = _create_load_balancer(session)
     return elbv2_client.create_listener(
-        LoadBalancerArn=load_balancer_arn, DefaultActions=[{"Type": "forward"}]
+        LoadBalancerArn=load_balancer_arn, DefaultActions=[{"Type": "forward"}], Protocol="HTTPS"
     )["Listeners"][0]["ListenerArn"]
+
+
+def _create_listener_with_cert(session):
+    elbv2_client = session.client("elbv2")
+    listener_arn = _create_listener(session)
+
+    acm_client = session.client("acm-pca")
+    certificate_authority_arn = acm_client.create_certificate_authority()["CertificateAuthorityArn"]
+    print(certificate_authority_arn)
+
+    certificate_arn = acm_client.issue_certificate(
+        CertificateAuthorityArn=certificate_authority_arn
+    )["CertificateArn"]
+    print(certificate_arn)
+    elbv2_client.add_listener_certificates(
+        ListenerArn=listener_arn,
+        Certificates=[{"CertificateArn": certificate_arn, "IsDefault": True}],
+    )
+
+    return certificate_arn, listener_arn
 
 
 def _create_target_group(session, service_name="web"):
@@ -215,7 +245,7 @@ def test_find_target_group(mock_application):
 
 
 @mock_aws
-def test_cannot_find_target_group(mock_application):
+def test_find_target_group_not_found(mock_application):
     session = mock_application.environments["development"].session
 
     _create_listener(session)
@@ -260,6 +290,69 @@ def test_delete_listener_rule(mock_application):
 
     assert len(rules) == 1  # only default rule
     assert result == expected_arn
+
+
+@mock_aws
+def test_create_rule(mock_application):
+    session = mock_application.environments["development"].session
+
+    listener_arn = _create_listener(session)
+
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+    assert len(rules) == 1
+
+    alb_provider = LoadBalancerProvider(session)
+    alb_provider.create_rule(
+        listener_arn,
+        actions=[],
+        conditions=[],
+        priority=111,
+        tags=[{"Key": "doesnt", "Value": "matter"}],
+    )
+
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+    assert len(rules) == 2
+    tags_descriptions = session.client("elbv2").describe_tags(
+        ResourceArns=[rule["RuleArn"] for rule in rules]
+    )
+
+    assert rules[0]["Priority"] == "111"
+    assert rules[0]["Conditions"] == []
+    assert rules[0]["Actions"] == []
+    assert tags_descriptions["TagDescriptions"][0]["Tags"] == [{"Key": "doesnt", "Value": "matter"}]
+
+
+@mock_aws
+def test_get_load_balancer_for_application(mock_application):
+    session = mock_application.environments["development"].session
+    lb_arn = _create_load_balancer(session)
+
+    alb_provider = LoadBalancerProvider(session)
+    result = alb_provider.get_load_balancer_for_application("test-application", "development")
+
+    assert result == lb_arn
+
+
+@mock_aws
+def test_get_https_listener_for_application(mock_application):
+    session = mock_application.environments["development"].session
+    listerner_arn = _create_listener(session)
+
+    alb_provider = LoadBalancerProvider(session)
+    result = alb_provider.get_https_listener_for_application("test-application", "development")
+
+    assert result == listerner_arn
+
+
+@mock_aws
+def test_https_certificate_for_application(mock_application):
+    session = mock_application.environments["development"].session
+    certificate_arn, listerner_arn = _create_listener_with_cert(session)
+
+    alb_provider = LoadBalancerProvider(session)
+    result = alb_provider.get_https_certificate_for_application("test-application", "development")
+
+    assert result == certificate_arn
 
 
 class TestFindHTTPSListener:

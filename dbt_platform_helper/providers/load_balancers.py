@@ -74,10 +74,45 @@ class LoadBalancerProvider:
         return ""
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
-        return ""
+        load_balancer_arn = self.get_load_balancer_for_application(app, env)
+
+        listeners = self.evlb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)[
+            "Listeners"
+        ]
+
+        listener_arn = None
+
+        try:
+            listener_arn = next(l["ListenerArn"] for l in listeners if l["Protocol"] == "HTTPS")
+        except StopIteration:
+            pass
+
+        if not listener_arn:
+            raise ListenerNotFoundException(f"No HTTPS listener for {app} in the {env} environment")
+
+        return listener_arn
 
     def get_load_balancer_for_application(self, app: str, env: str) -> str:
-        return ""
+        describe_response = self.evlb_client.describe_load_balancers()
+        load_balancers = [lb["LoadBalancerArn"] for lb in describe_response["LoadBalancers"]]
+
+        load_balancers = self.evlb_client.describe_tags(ResourceArns=load_balancers)[
+            "TagDescriptions"
+        ]
+
+        load_balancer_arn = None
+        for lb in load_balancers:
+            tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
+            # TODO copilot hangover, creates coupling to specific tags could update to check application and environment
+            if tags.get("copilot-application") == app and tags.get("copilot-environment") == env:
+                load_balancer_arn = lb["ResourceArn"]
+
+        if not load_balancer_arn:
+            raise LoadBalancerNotFoundException(
+                f"No load balancer found for {app} in the {env} environment"
+            )
+
+        return load_balancer_arn
 
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
         rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
@@ -117,7 +152,21 @@ class LoadBalancerProvider:
 
         return tag_descriptions
 
-    # def create_rule(self):
+    def create_rule(
+        self,
+        listener_arn: str,
+        actions: list,
+        conditions: list,
+        priority: int,
+        tags: list,
+    ):
+        return self.evlb_client.create_rule(
+            ListenerArn=listener_arn,
+            Priority=priority,
+            Conditions=conditions,
+            Actions=actions,
+            Tags=tags,
+        )
 
     def create_forward_rule(
         self,
@@ -127,12 +176,12 @@ class LoadBalancerProvider:
         priority: int,
         conditions: list,
     ):
-        return self.evlb_client.create_rule(
-            ListenerArn=listener_arn,
-            Priority=priority,
-            Conditions=conditions,
-            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
-            Tags=[
+        return self.create_rule(
+            listener_arn=listener_arn,
+            priority=priority,
+            conditions=conditions,
+            actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+            tags=[
                 {"Key": "name", "Value": rule_name},
             ],
         )
