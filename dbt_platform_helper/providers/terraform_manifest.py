@@ -22,6 +22,7 @@ class TerraformManifestProvider:
         platform_config: dict,
         terraform_platform_modules_version: str,
         ecr_imports: dict[str, str],
+        deploy_repository: str,
     ):
         default_account = self._get_account_for_env("*", platform_config)
         state_key_suffix = f"{platform_config['application']}-codebase-pipelines"
@@ -31,7 +32,9 @@ class TerraformManifestProvider:
         self._add_codebase_pipeline_locals(terraform)
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account, state_key_suffix)
-        self._add_codebase_pipeline_module(terraform, terraform_platform_modules_version)
+        self._add_codebase_pipeline_module(
+            terraform, terraform_platform_modules_version, deploy_repository
+        )
         self._add_imports(terraform, ecr_imports)
         self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
@@ -81,7 +84,6 @@ class TerraformManifestProvider:
         terraform["locals"] = {
             "platform_config": '${yamldecode(file("../../platform-config.yml"))}',
             "application": '${local.platform_config["application"]}',
-            "deploy_repository": '${local.platform_config["deploy_repository"]}',
             "all_codebases": '${local.platform_config["codebase_pipelines"]}',
             "environments": '${local.platform_config["environments"]}',
         }
@@ -114,7 +116,9 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_codebase_pipeline_module(terraform: dict, terraform_platform_modules_version: str):
+    def _add_codebase_pipeline_module(
+        terraform: dict, terraform_platform_modules_version: str, deploy_repository: str
+    ):
         source = f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={terraform_platform_modules_version}"
         terraform["module"] = {
             "codebase-pipelines": {
@@ -122,7 +126,8 @@ class TerraformManifestProvider:
                 "for_each": "${local.all_codebases}",
                 "application": "${local.application}",
                 "codebase": "${each.key}",
-                "repository": "${local.deploy_repository}",
+                "repository": "${each.value.repository}",
+                "deploy_repository": f"{deploy_repository}",
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
                 "pipelines": '${lookup(each.value, "pipelines", [])}',
                 "services": "${each.value.services}",
