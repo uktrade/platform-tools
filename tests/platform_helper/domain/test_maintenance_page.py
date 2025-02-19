@@ -4,10 +4,12 @@ from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
 
+import boto3
 import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
+from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.maintenance_page import *
 from dbt_platform_helper.utils.application import Application
 
@@ -573,13 +575,12 @@ class TestCommandHelperMethods:
             elbv2_client, create_rule_count_to_error
         )
 
-        mock_application.environments["development"].session = mock_session
         maintenance_page = MaintenancePage(mock_application)
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
-            maintenance_page.__add_maintenance_page(
+            maintenance_page.add_maintenance_page(
                 listener_arn,
                 "test-application",
                 "development",
@@ -686,13 +687,12 @@ class TestCommandHelperMethods:
             elbv2_client, 5  # will only error during loop on second service
         )
 
-        mock_application.environments["development"].session = mock_session
         maintenance_page = MaintenancePage(mock_application)
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
-            maintenance_page.__add_maintenance_page(
+            maintenance_page.add_maintenance_page(
                 listener_arn,
                 "test-application",
                 "development",
@@ -831,7 +831,7 @@ class TestCommandHelperMethods:
 
         maintenance_page = MaintenancePage(mock_application)
         maintenance_page.load_balancer = LoadBalancerProvider(boto3.Session())
-        maintenance_page.__add_maintenance_page(
+        maintenance_page.add_maintenance_page(
             listener_arn,
             "test-application",
             "development",

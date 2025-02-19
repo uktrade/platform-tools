@@ -121,7 +121,7 @@ class MaintenancePage:
 
                 allowed_ips = self.get_env_ips(vpc, application_environment)
 
-                self.__add_maintenance_page(
+                self.add_maintenance_page(
                     https_listener,
                     self.application.name,
                     env,
@@ -184,7 +184,7 @@ class MaintenancePage:
                 f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
             )
 
-    def __add_maintenance_page(
+    def add_maintenance_page(
         self,
         listener_arn: str,
         app: str,
@@ -248,9 +248,9 @@ class MaintenancePage:
             )
 
             self.load_balancer.create_rule(
-                ListenerArn=listener_arn,
-                Priority=next(rule_priority),
-                Conditions=[
+                listener_arn=listener_arn,
+                priority=next(rule_priority),
+                conditions=[
                     {
                         "Field": "path-pattern",
                         "PathPatternConfig": {"Values": ["/*"]},
@@ -270,7 +270,7 @@ class MaintenancePage:
                         },
                     },
                 ],
-                Actions=[
+                actions=[
                     {
                         "Type": "fixed-response",
                         "FixedResponseConfig": {
@@ -280,7 +280,7 @@ class MaintenancePage:
                         },
                     }
                 ],
-                Tags=[
+                tags=[
                     {"Key": "name", "Value": "MaintenancePage"},
                     {"Key": "type", "Value": template},
                 ],
