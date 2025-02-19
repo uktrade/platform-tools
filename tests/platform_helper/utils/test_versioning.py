@@ -12,6 +12,7 @@ from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VER
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -387,7 +388,9 @@ def test_get_required_platform_helper_version(
 
     required_version = RequiredVersion()
 
-    result = required_version.get_required_platform_helper_version()
+    result = required_version.get_required_platform_helper_version(
+        version_status=get_platform_helper_version_status()
+    )
 
     assert result == expected_version
 
@@ -437,7 +440,9 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     required_version = RequiredVersion()
 
-    result = required_version.get_required_platform_helper_version("main")
+    result = required_version.get_required_platform_helper_version(
+        "main", version_status=get_platform_helper_version_status()
+    )
 
     assert result == expected_version
 
@@ -458,9 +463,10 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
     # TODO need to inject the config provider instead of relying on FS
     required_version = RequiredVersion()
-
+    version_status = get_platform_helper_version_status()
+    ClickIOProvider().process_messages(version_status.warn())
     with pytest.raises(PlatformException):
-        required_version.get_required_platform_helper_version("main")
+        required_version.get_required_platform_helper_version("main", version_status=version_status)
 
     secho.assert_called_with(
         f"""Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
@@ -531,7 +537,9 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     }
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-    result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+    result = RequiredVersion().get_required_platform_helper_version(
+        "bogus_pipeline", version_status=get_platform_helper_version_status()
+    )
 
     assert result == default_version
 
@@ -552,7 +560,9 @@ class TestVersionCommandWithInvalidConfig:
         platform_config = self.INVALID_CONFIG
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-        result = RequiredVersion().get_required_platform_helper_version("bogus_pipeline")
+        result = RequiredVersion().get_required_platform_helper_version(
+            "bogus_pipeline", version_status=get_platform_helper_version_status()
+        )
 
         assert result == default_version
 
@@ -566,6 +576,8 @@ class TestVersionCommandWithInvalidConfig:
         }
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-        result = RequiredVersion().get_required_platform_helper_version("main")
+        result = RequiredVersion().get_required_platform_helper_version(
+            "main", version_status=get_platform_helper_version_status()
+        )
 
         assert result == pipeline_override_version
