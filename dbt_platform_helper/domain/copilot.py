@@ -27,6 +27,7 @@ class Copilot:
 
     PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
+    # TODO Remove and test
     WAF_ACL_ARN_KEY = "waf-acl-arn"
 
     SERVICE_TYPES = [
@@ -36,6 +37,10 @@ class Copilot:
         "Static Site",
         "Worker Service",
     ]
+
+    def __init__(self, config_provider: ConfigProvider, file_provider: FileProvider):
+        self.config_provider = config_provider
+        self.file_provider = file_provider
 
     def list_copilot_local_environments(self):
         return [
@@ -64,7 +69,7 @@ class Copilot:
         """Load a config file, validate it against the extensions schemas and
         return the normalised config dict."""
 
-        def _lookup_plan(self, addon_type, env_conf):
+        def _lookup_plan(addon_type, env_conf):
             plan = env_conf.pop("plan", None)
             conf = addon_plans[addon_type][plan] if plan else {}
 
@@ -226,13 +231,14 @@ class Copilot:
 
         return arns
 
+    # TODO Inject?
     def copilot_provider(self):
         return CopilotTemplating()
 
-    def _make_addons(self, config_provider: ConfigProvider):
-        config_provider.config_file_check()
+    def make_addons(self):
+        self.config_provider.config_file_check()
         try:
-            config = config_provider.load_and_validate_platform_config()
+            config = self.config_provider.load_and_validate_platform_config()
         except SchemaError as ex:
             click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
             raise click.Abort
@@ -304,7 +310,7 @@ class Copilot:
                 log_destination_arns,
             )
 
-        environments = config_provider.apply_environment_defaults(config)["environments"]
+        environments = self.config_provider.apply_environment_defaults(config)["environments"]
 
         provider = self.copilot_provider()
         provider.generate_cross_account_s3_policies(environments, extensions)
@@ -355,7 +361,7 @@ class Copilot:
 
                 (output_dir / service_path).mkdir(parents=True, exist_ok=True)
                 click.echo(
-                    FileProvider.mkfile(
+                    self.file_provider.mkfile(
                         output_dir, service_path / f"{addon_name}.yml", contents, overwrite=True
                     )
                 )
