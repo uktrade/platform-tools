@@ -31,6 +31,10 @@ class PlatformHelperVersionNotFoundException(PlatformException):
         super().__init__(f"""Platform helper version could not be resolved.""")
 
 
+class PlatformHelperVersion:
+    pass
+
+
 class RequiredVersion:
     def __init__(self, io=None):
         self.io = io or ClickIOProvider()
@@ -71,14 +75,14 @@ class RequiredVersion:
 
         self.io.process_messages(version_status.warn())
 
-        platform_helper_file_version = SemanticVersion.from_string(
+        required_version = SemanticVersion.from_string(
             self.get_required_platform_helper_version(version_status=version_status)
         )
 
-        if not version_status.local == platform_helper_file_version:
+        if not version_status.local == required_version:
             message = (
                 f"WARNING: You are running platform-helper v{version_status.local} against "
-                f"v{platform_helper_file_version} specified by {PLATFORM_HELPER_VERSION_FILE}."
+                f"v{required_version} specified for the project."
             )
             self.io.warn(message)
 

@@ -48,7 +48,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
                 fg="magenta",
             ),
             call(
-                f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
+                f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
                 fg="magenta",
             ),
         ]
