@@ -10,9 +10,9 @@ import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
