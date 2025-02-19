@@ -6,9 +6,9 @@ import boto3
 from boto3 import Session
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.io import ClickIOProviderException
 from dbt_platform_helper.providers.vpc import Vpc
