@@ -81,6 +81,7 @@ class TerraformManifestProvider:
         terraform["locals"] = {
             "platform_config": '${yamldecode(file("../../platform-config.yml"))}',
             "application": '${local.platform_config["application"]}',
+            "deploy_repository": '${local.platform_config["deploy_repository"]}',
             "all_codebases": '${local.platform_config["codebase_pipelines"]}',
             "environments": '${local.platform_config["environments"]}',
         }
@@ -121,7 +122,7 @@ class TerraformManifestProvider:
                 "for_each": "${local.all_codebases}",
                 "application": "${local.application}",
                 "codebase": "${each.key}",
-                "repository": "${each.value.repository}",
+                "repository": "${local.deploy_repository}",
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
                 "pipelines": '${lookup(each.value, "pipelines", [])}',
                 "services": "${each.value.services}",
