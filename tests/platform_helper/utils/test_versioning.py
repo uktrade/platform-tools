@@ -11,6 +11,7 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
@@ -23,9 +24,6 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import RequiredVersion
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import get_platform_helper_version_status
@@ -64,7 +62,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 )
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
-    check_platform_helper_version_needs_update()
+    PlatformHelperVersion().check_if_needs_update()
 
     version_compatibility.assert_not_called()
 
@@ -148,7 +146,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 ):
     os.environ["PLATFORM_TOOLS_SKIP_VERSION_CHECK"] = "true"
 
-    check_platform_helper_version_needs_update()
+    PlatformHelperVersion().check_if_needs_update()
 
     version_compatibility.assert_not_called()
 

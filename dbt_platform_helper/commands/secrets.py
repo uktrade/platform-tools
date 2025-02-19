@@ -6,15 +6,13 @@ import click
 from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 
+from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 
 
 def secret_should_be_skipped(secret_name):
@@ -42,7 +40,7 @@ def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def secrets():
-    check_platform_helper_version_needs_update()
+    PlatformHelperVersion().check_if_needs_update()
 
 
 @secrets.command()

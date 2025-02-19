@@ -1,4 +1,3 @@
-import os
 import re
 import subprocess
 from importlib.metadata import PackageNotFoundError
@@ -10,12 +9,6 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMajorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMinorVersionException,
-)
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
@@ -132,25 +125,6 @@ def get_platform_helper_version_status(
     )
 
     return out
-
-
-# TODO called at the beginning of every command.  This is platform-version base functionality
-def check_platform_helper_version_needs_update(io=ClickIOProvider()):
-    if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
-        return
-    version_status = get_platform_helper_version_status(include_project_versions=False)
-    io.process_messages(version_status.warn())
-    message = (
-        f"You are running platform-helper v{version_status.local}, upgrade to "
-        f"v{version_status.latest} by running run `pip install "
-        "--upgrade dbt-platform-helper`."
-    )
-    try:
-        version_status.local.validate_compatibility_with(version_status.latest)
-    except IncompatibleMajorVersionException:
-        io.error(message)
-    except IncompatibleMinorVersionException:
-        io.warn(message)
 
 
 # TODO can stay as utility for now

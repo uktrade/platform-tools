@@ -12,6 +12,7 @@ from schema import SchemaError
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
+from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.utils.application import get_application_name
@@ -24,9 +25,6 @@ from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
 from dbt_platform_helper.utils.validation import validate_addons
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 
 PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
@@ -69,7 +67,7 @@ def list_copilot_local_services():
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def copilot():
-    check_platform_helper_version_needs_update()
+    PlatformHelperVersion().check_if_needs_update()
 
 
 def _validate_and_normalise_extensions_config(config_file, key_in_config_file=None):
