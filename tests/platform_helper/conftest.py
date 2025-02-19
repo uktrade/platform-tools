@@ -495,7 +495,6 @@ extensions:
     environments:
       dev:
         bucket_name: test-app-policy-dev
-        versioning: false
   
   test-app-s3-bucket-data-migration:
     type: s3

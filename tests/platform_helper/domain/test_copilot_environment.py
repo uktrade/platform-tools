@@ -473,7 +473,7 @@ class TestCopilotTemplating:
             overwrite=True,
         )
 
-    def test_file_provider_default(self):
+    def test_file_provider_default(self, fakefs):
         result = CopilotTemplating().write_environment_manifest(
             "connors-environment",
             "test manifest contents",
