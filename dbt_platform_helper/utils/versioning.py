@@ -85,7 +85,6 @@ class RequiredVersion:
 
 
 # Resolves all the versions from pypi, config and locally installed version
-# echos warnings if anything is incompatible
 def get_platform_helper_version_status(
     include_project_versions=True, yaml_provider=YamlFileProvider
 ) -> PlatformHelperVersionStatus:
