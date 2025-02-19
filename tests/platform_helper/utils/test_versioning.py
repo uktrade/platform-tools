@@ -27,7 +27,7 @@ from dbt_platform_helper.utils.versioning import (
 )
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
-from dbt_platform_helper.utils.versioning import get_platform_helper_versions
+from dbt_platform_helper.utils.versioning import get_platform_helper_version_status
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
@@ -57,20 +57,20 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
-    mock_get_platform_helper_versions, secho
+    mock_get_platform_helper_version_status, secho
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
+    mock_get_platform_helper_version_status.return_value = PlatformHelperVersionStatus(
         SemanticVersion(1, 0, 0), SemanticVersion(2, 0, 0)
     )
 
     check_platform_helper_version_needs_update()
 
-    mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
+    mock_get_platform_helper_version_status.assert_called_with(include_project_versions=False)
 
     secho.assert_called_with(
         "Error: You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
@@ -80,20 +80,20 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
-    mock_get_platform_helper_versions, secho
+    mock_get_platform_helper_version_status, secho
 ):
-    mock_get_platform_helper_versions.return_value = PlatformHelperVersionStatus(
+    mock_get_platform_helper_version_status.return_value = PlatformHelperVersionStatus(
         SemanticVersion(1, 0, 0), SemanticVersion(1, 1, 0)
     )
 
     check_platform_helper_version_needs_update()
 
-    mock_get_platform_helper_versions.assert_called_with(include_project_versions=False)
+    mock_get_platform_helper_version_status.assert_called_with(include_project_versions=False)
 
     secho.assert_called_with(
         "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
@@ -106,7 +106,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upg
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=False),
 )
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
     check_platform_helper_version_needs_update()
 
@@ -114,7 +114,7 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
@@ -138,7 +138,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 
 @patch("dbt_platform_helper.utils.versioning.running_as_installed_package")
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
@@ -159,7 +159,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
@@ -186,7 +186,7 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_versions")
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 def test_check_platform_helper_version_skips_when_skip_environment_variable_is_set(
     version_compatibility,
 ):
@@ -199,7 +199,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_platform_config):
+def test_get_platform_helper_version_status(mock_version, mock_get, fakefs, valid_platform_config):
     mock_version.return_value = "1.1.1"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
@@ -208,7 +208,7 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_plat
     config = valid_platform_config
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
-    versions = get_platform_helper_versions()
+    versions = get_platform_helper_version_status()
 
     assert versions.local == SemanticVersion(1, 1, 1)
     assert versions.latest == SemanticVersion(2, 3, 4)
@@ -219,7 +219,7 @@ def test_get_platform_helper_versions(mock_version, mock_get, fakefs, valid_plat
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
+def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
     mock_local_version, mock_latest_release_request, fakefs
 ):
     mock_local_version.return_value = "1.1.1"
@@ -229,7 +229,7 @@ def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
 
-    versions = get_platform_helper_versions()
+    versions = get_platform_helper_version_status()
 
     assert versions.local == SemanticVersion(1, 1, 1)
     assert versions.latest == SemanticVersion(2, 3, 4)
@@ -240,7 +240,7 @@ def test_get_platform_helper_versions_with_invalid_yaml_in_platform_config(
 
 @patch("requests.get")
 @patch("dbt_platform_helper.utils.versioning.version")
-def test_get_platform_helper_versions_with_invalid_config(
+def test_get_platform_helper_version_status_with_invalid_config(
     mock_version,
     mock_get,
     fakefs,
@@ -252,7 +252,7 @@ def test_get_platform_helper_versions_with_invalid_config(
     }
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
 
-    versions = get_platform_helper_versions()
+    versions = get_platform_helper_version_status()
 
     assert versions.local == SemanticVersion(1, 1, 1)
     assert versions.latest == SemanticVersion(2, 3, 4)
@@ -315,7 +315,7 @@ def test_platform_helper_version_warnings(
     if version_in_phv_file:
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
 
-    get_platform_helper_versions(include_project_versions=include_project_versions)
+    get_platform_helper_version_status(include_project_versions=include_project_versions)
 
     if expected_message and include_project_versions:
         secho.assert_called_with(expected_message, fg=message_colour)

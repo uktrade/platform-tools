@@ -22,7 +22,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
 @patch("click.secho")
 @patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    "dbt_platform_helper.utils.versioning.get_platform_helper_version_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(
             local=SemanticVersion(1, 0, 1),
@@ -47,7 +47,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    "dbt_platform_helper.utils.versioning.get_platform_helper_version_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
     ),

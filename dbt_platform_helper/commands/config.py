@@ -15,7 +15,7 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils import versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.versioning import get_platform_helper_versions
+from dbt_platform_helper.utils.versioning import get_platform_helper_version_status
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -75,7 +75,7 @@ def deployment():
     click.secho()
 
     compatible = True
-    platform_helper_versions = get_platform_helper_versions()
+    platform_helper_versions = get_platform_helper_version_status()
     copilot_versions = versioning.get_copilot_versions()
     aws_versions = versioning.get_aws_versions()
     _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions)

@@ -39,7 +39,7 @@ class RequiredVersion:
         self, pipeline: str = None, versions: PlatformHelperVersionStatus = None
     ) -> str:
         if not versions:
-            versions = get_platform_helper_versions()
+            versions = get_platform_helper_version_status()
         pipeline_version = versions.pipeline_overrides.get(pipeline)
         version_precedence = [
             pipeline_version,
@@ -67,7 +67,7 @@ class RequiredVersion:
         if not running_as_installed_package():
             return
 
-        versions = get_platform_helper_versions()
+        versions = get_platform_helper_version_status()
         platform_helper_file_version = SemanticVersion.from_string(
             self.get_required_platform_helper_version(versions=versions)
         )
@@ -82,7 +82,7 @@ class RequiredVersion:
 
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
-def get_platform_helper_versions(
+def get_platform_helper_version_status(
     include_project_versions=True, yaml_provider=YamlFileProvider, io=ClickIOProvider()
 ) -> PlatformHelperVersionStatus:
     try:
@@ -138,7 +138,7 @@ def get_platform_helper_versions(
 def check_platform_helper_version_needs_update(io=ClickIOProvider()):
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
-    versions = get_platform_helper_versions(include_project_versions=False)
+    versions = get_platform_helper_version_status(include_project_versions=False)
     local_version = versions.local
     latest_release = versions.latest
     message = (
