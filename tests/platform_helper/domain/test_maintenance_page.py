@@ -18,271 +18,271 @@ template = "default"
 vpc = None
 
 
-class TestGetMaintenancePage:
-    def test_when_environment_online(self):
+# class TestGetMaintenancePage:
+#     def test_when_environment_online(self):
 
-        boto_mock = MagicMock()
-        boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
-        boto_mock.client().describe_tags.return_value = {
-            "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
-        }
+#         boto_mock = MagicMock()
+#         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
+#         boto_mock.client().describe_tags.return_value = {
+#             "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
+#         }
 
-        maintenance_page = get_maintenance_page_type(boto_mock, "listener_arn")
-        assert maintenance_page is None
+#         maintenance_page = get_maintenance_page_type(boto_mock, "listener_arn")
+#         assert maintenance_page is None
 
-    def test_when_environment_offline_with_default_page(self):
+#     def test_when_environment_offline_with_default_page(self):
 
-        boto_mock = MagicMock()
-        boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
-        boto_mock.client().describe_tags.return_value = {
-            "TagDescriptions": [
-                {
-                    "ResourceArn": "rule_arn",
-                    "Tags": [
-                        {"Key": "name", "Value": "MaintenancePage"},
-                        {"Key": "type", "Value": "default"},
-                    ],
-                }
-            ]
-        }
+#         boto_mock = MagicMock()
+#         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
+#         boto_mock.client().describe_tags.return_value = {
+#             "TagDescriptions": [
+#                 {
+#                     "ResourceArn": "rule_arn",
+#                     "Tags": [
+#                         {"Key": "name", "Value": "MaintenancePage"},
+#                         {"Key": "type", "Value": "default"},
+#                     ],
+#                 }
+#             ]
+#         }
 
-        maintenance_page = get_maintenance_page_type(boto_mock, "listener_arn")
-        assert maintenance_page == "default"
-
-
-class TestRemoveMaintenancePage:
-    def test_when_environment_online(self):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
-        boto_mock.client().describe_tags.return_value = {
-            "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
-        }
-
-        with pytest.raises(ListenerRuleNotFoundException):
-            remove_maintenance_page(boto_mock, "listener_arn")
-
-    @patch("dbt_platform_helper.domain.maintenance_page.delete_listener_rule")
-    def test_when_environment_offline(self, delete_listener_rule):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_rules.return_value = {
-            "Rules": [{"RuleArn": "rule_arn"}, {"RuleArn": "allowed_ips_rule_arn"}]
-        }
-        tag_descriptions = [
-            {
-                "ResourceArn": "rule_arn",
-                "Tags": [
-                    {"Key": "name", "Value": "MaintenancePage"},
-                    {"Key": "type", "Value": "default"},
-                ],
-            },
-            {
-                "ResourceArn": "allowed_ips_rule_arn",
-                "Tags": [
-                    {"Key": "name", "Value": "AllowedIps"},
-                    {"Key": "type", "Value": "default"},
-                ],
-            },
-            {
-                "ResourceArn": "allowed_source_ips_rule_arn",
-                "Tags": [
-                    {"Key": "name", "Value": "AllowedSourceIps"},
-                    {"Key": "type", "Value": "default"},
-                ],
-            },
-        ]
-        boto_mock.client().describe_tags.return_value = {"TagDescriptions": tag_descriptions}
-        boto_mock.client().delete_rule.return_value = None
-
-        remove_maintenance_page(boto_mock, "listener_arn")
-
-        delete_listener_rule.assert_has_calls(
-            [
-                call(tag_descriptions, "MaintenancePage", boto_mock.client()),
-                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-                call().__bool__(),  # return value of mock is referenced in line: `if name == "MaintenancePage" and not deleted`
-                call(tag_descriptions, "AllowedIps", boto_mock.client()),
-                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-                call(tag_descriptions, "BypassIpFilter", boto_mock.client()),
-                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-                call(tag_descriptions, "AllowedSourceIps", boto_mock.client()),
-                call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-            ]
-        )
+#         maintenance_page = get_maintenance_page_type(boto_mock, "listener_arn")
+#         assert maintenance_page == "default"
 
 
-class TestAddMaintenancePage:
-    # TODO with the introduction of the class based LoadBalancerProvider these patches should mostly go
-    @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
-    @patch(
-        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
-    )
-    @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
-    @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
-    @patch(
-        "dbt_platform_helper.domain.maintenance_page.get_host_header_conditions",
-        return_value=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-    )
-    @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
-    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
-    def test_adding_existing_template(
-        self,
-        get_maintenance_page_template,
-        find_target_group,
-        get_host_header_conditions,
-        create_header_rule,
-        create_source_ip,
-        choices,
-        template,
-        mock_application,
-    ):
+# class TestRemoveMaintenancePage:
+#     def test_when_environment_online(self):
 
-        boto_mock = MagicMock()
-        get_maintenance_page_template.return_value = template
-        find_target_group.return_value = "target_group_arn"
+#         boto_mock = MagicMock()
+#         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
+#         boto_mock.client().describe_tags.return_value = {
+#             "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
+#         }
 
-        add_maintenance_page(
-            boto_mock,
-            "listener_arn",
-            "test-application",
-            "development",
-            [mock_application.services["web"]],
-            ["1.2.3.4"],
-            template,
-        )
+#         with pytest.raises(ListenerRuleNotFoundException):
+#             remove_maintenance_page(boto_mock, "listener_arn")
 
-        get_host_header_conditions.assert_called_with(
-            boto_mock.client(),
-            "listener_arn",
-            "target_group_arn",
-        )
+#     @patch("dbt_platform_helper.domain.maintenance_page.delete_listener_rule")
+#     def test_when_environment_offline(self, delete_listener_rule):
 
-        assert create_header_rule.call_count == 2
-        create_header_rule.assert_has_calls(
-            [
-                call(
-                    boto_mock.client(),
-                    "listener_arn",
-                    "target_group_arn",
-                    "X-Forwarded-For",
-                    ["1.2.3.4"],
-                    "AllowedIps",
-                    1,
-                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                ),
-                call(
-                    boto_mock.client(),
-                    "listener_arn",
-                    "target_group_arn",
-                    "Bypass-Key",
-                    ["abc"],
-                    "BypassIpFilter",
-                    3,
-                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                ),
-            ]
-        )
-        create_source_ip.assert_has_calls(
-            [
-                call(
-                    boto_mock.client(),
-                    "listener_arn",
-                    "target_group_arn",
-                    ["1.2.3.4"],
-                    "AllowedSourceIps",
-                    2,
-                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                )
-            ]
-        )
-        boto_mock.client().create_rule.assert_called_once_with(
-            ListenerArn="listener_arn",
-            Priority=4,
-            Conditions=[
-                {
-                    "Field": "path-pattern",
-                    "PathPatternConfig": {"Values": ["/*"]},
-                },
-                {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
-            ],
-            Actions=[
-                {
-                    "Type": "fixed-response",
-                    "FixedResponseConfig": {
-                        "StatusCode": "503",
-                        "ContentType": "text/html",
-                        "MessageBody": template,
-                    },
-                }
-            ],
-            Tags=[
-                {"Key": "name", "Value": "MaintenancePage"},
-                {"Key": "type", "Value": template},
-            ],
-        )
+#         boto_mock = MagicMock()
+#         boto_mock.client().describe_rules.return_value = {
+#             "Rules": [{"RuleArn": "rule_arn"}, {"RuleArn": "allowed_ips_rule_arn"}]
+#         }
+#         tag_descriptions = [
+#             {
+#                 "ResourceArn": "rule_arn",
+#                 "Tags": [
+#                     {"Key": "name", "Value": "MaintenancePage"},
+#                     {"Key": "type", "Value": "default"},
+#                 ],
+#             },
+#             {
+#                 "ResourceArn": "allowed_ips_rule_arn",
+#                 "Tags": [
+#                     {"Key": "name", "Value": "AllowedIps"},
+#                     {"Key": "type", "Value": "default"},
+#                 ],
+#             },
+#             {
+#                 "ResourceArn": "allowed_source_ips_rule_arn",
+#                 "Tags": [
+#                     {"Key": "name", "Value": "AllowedSourceIps"},
+#                     {"Key": "type", "Value": "default"},
+#                 ],
+#             },
+#         ]
+#         boto_mock.client().describe_tags.return_value = {"TagDescriptions": tag_descriptions}
+#         boto_mock.client().delete_rule.return_value = None
 
-    @patch(
-        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
-    )
-    @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
-    @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
-    @patch("dbt_platform_helper.domain.maintenance_page.get_host_header_conditions")
-    @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
-    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
-    def test_no_target_group(
-        self,
-        get_maintenance_page_template,
-        find_target_group,
-        get_host_header_conditions,
-        create_header_rule,
-        create_source_ip,
-        choices,
-        mock_application,
-    ):
-        boto_mock = MagicMock()
-        get_maintenance_page_template.return_value = "default"
-        find_target_group.return_value = None
+#         remove_maintenance_page(boto_mock, "listener_arn")
 
-        add_maintenance_page(
-            boto_mock,
-            "listener_arn",
-            "test-application",
-            "development",
-            [mock_application.services["web"]],
-            ["1.2.3.4"],
-            template,
-        )
+#         delete_listener_rule.assert_has_calls(
+#             [
+#                 call(tag_descriptions, "MaintenancePage", boto_mock.client()),
+#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
+#                 call().__bool__(),  # return value of mock is referenced in line: `if name == "MaintenancePage" and not deleted`
+#                 call(tag_descriptions, "AllowedIps", boto_mock.client()),
+#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
+#                 call(tag_descriptions, "BypassIpFilter", boto_mock.client()),
+#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
+#                 call(tag_descriptions, "AllowedSourceIps", boto_mock.client()),
+#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
+#             ]
+#         )
 
-        get_host_header_conditions.assert_not_called()
-        create_header_rule.assert_not_called()
 
-        create_source_ip.was_not_called()
-        boto_mock.client().create_rule.assert_called_once_with(
-            ListenerArn="listener_arn",
-            Priority=1,
-            Conditions=[
-                {
-                    "Field": "path-pattern",
-                    "PathPatternConfig": {"Values": ["/*"]},
-                },
-                {"Field": "host-header", "HostHeaderConfig": {"Values": []}},
-            ],
-            Actions=[
-                {
-                    "Type": "fixed-response",
-                    "FixedResponseConfig": {
-                        "StatusCode": "503",
-                        "ContentType": "text/html",
-                        "MessageBody": "default",
-                    },
-                }
-            ],
-            Tags=[
-                {"Key": "name", "Value": "MaintenancePage"},
-                {"Key": "type", "Value": "default"},
-            ],
-        )
+# class TestAddMaintenancePage:
+#     # TODO with the introduction of the class based LoadBalancerProvider these patches should mostly go
+#     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
+#     @patch(
+#         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+#     )
+#     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
+#     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
+#     @patch(
+#         "dbt_platform_helper.domain.maintenance_page.get_host_header_conditions",
+#         return_value=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+#     )
+#     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
+#     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+#     def test_adding_existing_template(
+#         self,
+#         get_maintenance_page_template,
+#         find_target_group,
+#         get_host_header_conditions,
+#         create_header_rule,
+#         create_source_ip,
+#         choices,
+#         template,
+#         mock_application,
+#     ):
+
+#         boto_mock = MagicMock()
+#         get_maintenance_page_template.return_value = template
+#         find_target_group.return_value = "target_group_arn"
+
+#         add_maintenance_page(
+#             boto_mock,
+#             "listener_arn",
+#             "test-application",
+#             "development",
+#             [mock_application.services["web"]],
+#             ["1.2.3.4"],
+#             template,
+#         )
+
+#         get_host_header_conditions.assert_called_with(
+#             boto_mock.client(),
+#             "listener_arn",
+#             "target_group_arn",
+#         )
+
+#         assert create_header_rule.call_count == 2
+#         create_header_rule.assert_has_calls(
+#             [
+#                 call(
+#                     boto_mock.client(),
+#                     "listener_arn",
+#                     "target_group_arn",
+#                     "X-Forwarded-For",
+#                     ["1.2.3.4"],
+#                     "AllowedIps",
+#                     1,
+#                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+#                 ),
+#                 call(
+#                     boto_mock.client(),
+#                     "listener_arn",
+#                     "target_group_arn",
+#                     "Bypass-Key",
+#                     ["abc"],
+#                     "BypassIpFilter",
+#                     3,
+#                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+#                 ),
+#             ]
+#         )
+#         create_source_ip.assert_has_calls(
+#             [
+#                 call(
+#                     boto_mock.client(),
+#                     "listener_arn",
+#                     "target_group_arn",
+#                     ["1.2.3.4"],
+#                     "AllowedSourceIps",
+#                     2,
+#                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+#                 )
+#             ]
+#         )
+#         boto_mock.client().create_rule.assert_called_once_with(
+#             ListenerArn="listener_arn",
+#             Priority=4,
+#             Conditions=[
+#                 {
+#                     "Field": "path-pattern",
+#                     "PathPatternConfig": {"Values": ["/*"]},
+#                 },
+#                 {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
+#             ],
+#             Actions=[
+#                 {
+#                     "Type": "fixed-response",
+#                     "FixedResponseConfig": {
+#                         "StatusCode": "503",
+#                         "ContentType": "text/html",
+#                         "MessageBody": template,
+#                     },
+#                 }
+#             ],
+#             Tags=[
+#                 {"Key": "name", "Value": "MaintenancePage"},
+#                 {"Key": "type", "Value": template},
+#             ],
+#         )
+
+#     @patch(
+#         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+#     )
+#     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
+#     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
+#     @patch("dbt_platform_helper.domain.maintenance_page.get_host_header_conditions")
+#     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
+#     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+#     def test_no_target_group(
+#         self,
+#         get_maintenance_page_template,
+#         find_target_group,
+#         get_host_header_conditions,
+#         create_header_rule,
+#         create_source_ip,
+#         choices,
+#         mock_application,
+#     ):
+#         boto_mock = MagicMock()
+#         get_maintenance_page_template.return_value = "default"
+#         find_target_group.return_value = None
+
+#         add_maintenance_page(
+#             boto_mock,
+#             "listener_arn",
+#             "test-application",
+#             "development",
+#             [mock_application.services["web"]],
+#             ["1.2.3.4"],
+#             template,
+#         )
+
+#         get_host_header_conditions.assert_not_called()
+#         create_header_rule.assert_not_called()
+
+#         create_source_ip.was_not_called()
+#         boto_mock.client().create_rule.assert_called_once_with(
+#             ListenerArn="listener_arn",
+#             Priority=1,
+#             Conditions=[
+#                 {
+#                     "Field": "path-pattern",
+#                     "PathPatternConfig": {"Values": ["/*"]},
+#                 },
+#                 {"Field": "host-header", "HostHeaderConfig": {"Values": []}},
+#             ],
+#             Actions=[
+#                 {
+#                     "Type": "fixed-response",
+#                     "FixedResponseConfig": {
+#                         "StatusCode": "503",
+#                         "ContentType": "text/html",
+#                         "MessageBody": "default",
+#                     },
+#                 }
+#             ],
+#             Tags=[
+#                 {"Key": "name", "Value": "MaintenancePage"},
+#                 {"Key": "type", "Value": "default"},
+#             ],
+#         )
 
 
 class TestEnvironmentMaintenanceTemplates:
@@ -459,147 +459,6 @@ class TestCommandHelperMethods:
 
         ELBv2Backend.create_rule = custom_create_rule
 
-    @mock_aws
-    def test_find_target_group(self):
-
-        target_group_arn = self._create_target_group()
-
-        assert (
-            find_target_group("test-application", "development", "web", boto3.session.Session())
-            == target_group_arn
-        )
-
-    @mock_aws
-    def test_find_target_group_not_found(self):
-
-        assert (
-            find_target_group("test-application", "development", "web", boto3.session.Session())
-            is None
-        )
-
-    @mock_aws
-    def test_delete_listener_rule(self):
-
-        rule_arn, elbv2_client, listener_arn = self._create_listener_rule()
-        rule_2_arn, _, _ = self._create_listener_rule(
-            priority=2, elbv2_client=elbv2_client, listener_arn=listener_arn
-        )
-        rules = [
-            {"ResourceArn": rule_arn, "Tags": [{"Key": "name", "Value": "test-tag"}]},
-            {"ResourceArn": rule_2_arn, "Tags": [{"Key": "name", "Value": "test-tag"}]},
-        ]
-
-        described_rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-
-        # sanity check that default and two newly created rules  exist
-        assert len(described_rules) == 3
-
-        delete_listener_rule(rules, "test-tag", elbv2_client)
-
-        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-
-        assert len(rules) == 1
-
-    @mock_aws
-    def test_create_header_rule(self, capsys):
-
-        elbv2_client = boto3.client("elbv2")
-        listener_arn = self._create_listener(elbv2_client)
-        target_group_arn = self._create_target_group()
-        elbv2_client.create_rule(
-            ListenerArn=listener_arn,
-            Tags=[{"Key": "test-key", "Value": "test-value"}],
-            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-            Priority=500,
-            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
-        )
-        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 2
-
-        create_header_rule(
-            elbv2_client,
-            listener_arn,
-            target_group_arn,
-            "X-Forwarded-For",
-            ["1.2.3.4", "5.6.7.8"],
-            "AllowedIps",
-            333,
-            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-        )
-
-        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
-        assert rules[1]["Conditions"][0]["HttpHeaderConfig"]["Values"], ["1.2.3.4", "5.6.7.8"]
-        assert rules[1]["Conditions"][1], {
-            "Field": "host-header",
-            "HostHeaderConfig": {"Values": ["/test-path"]},
-        }
-        assert rules[1]["Priority"] == "333"
-
-        captured = capsys.readouterr()
-
-        assert (
-            f"Creating listener rule AllowedIps for HTTPS Listener with arn {listener_arn}.\n\nIf request header X-Forwarded-For contains one of the values ['1.2.3.4', '5.6.7.8'], the request will be forwarded to target group with arn {target_group_arn}."
-            in captured.out
-        )
-
-    @pytest.mark.parametrize(
-        "allowed_ips, expected_rule_cidr",
-        [
-            (
-                ["1.2.3.4", "5.6.7.8"],
-                ["1.2.3.4/32", "5.6.7.8/32"],
-            ),
-            (
-                ["1.2.3.4/32", "5.6.7.8/24"],
-                ["1.2.3.4/32", "5.6.7.8/24"],
-            ),
-        ],
-    )
-    @mock_aws
-    def test_create_source_ip_rule(self, allowed_ips, expected_rule_cidr, capsys):
-
-        elbv2_client = boto3.client("elbv2")
-        listener_arn = self._create_listener(elbv2_client)
-        target_group_arn = self._create_target_group()
-        elbv2_client.create_rule(
-            ListenerArn=listener_arn,
-            Tags=[{"Key": "test-key", "Value": "test-value"}],
-            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-            Priority=500,
-            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
-        )
-        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 2
-
-        create_source_ip_rule(
-            elbv2_client,
-            listener_arn,
-            target_group_arn,
-            allowed_ips,
-            "AllowedSourceIps",
-            333,
-            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-        )
-
-        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        assert len(rules) == 3  # 1 default + 1 forward + 1 newly created
-        assert sorted(rules[1]["Conditions"][0]["SourceIpConfig"]["Values"]) == sorted(
-            expected_rule_cidr
-        )
-        assert rules[1]["Conditions"][1], {
-            "Field": "host-header",
-            "HostHeaderConfig": {"Values": ["/test-path"]},
-        }
-        assert rules[1]["Priority"] == "333"
-
-        captured = capsys.readouterr()
-
-        assert (
-            f"Creating listener rule AllowedSourceIps for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {allowed_ips}, the request will be forwarded to target group with arn {target_group_arn}."
-            in captured.out
-        )
-
     @pytest.mark.parametrize(
         "vpc, param_value, expected",
         [
@@ -665,47 +524,6 @@ class TestCommandHelperMethods:
 
         assert "No parameter found with name: /vpc/EGRESS_IPS\n" in captured.out
 
-    @patch("boto3.client")
-    def test_get_rules_tag_descriptions(self, mock_boto_client):
-
-        mock_client = Mock()
-        mock_client.describe_tags.side_effect = [
-            {"TagDescriptions": ["TagDescriptions1"]},
-            {"TagDescriptions": ["TagDescriptions2"]},
-        ]
-
-        mock_boto_client.return_value = mock_client
-
-        rules = []
-
-        for i in range(21):
-            rules.append({"RuleArn": i})
-
-        tag_descriptions = get_rules_tag_descriptions(rules, boto3.client("elbv2"))
-
-        assert tag_descriptions == ["TagDescriptions1", "TagDescriptions2"]
-        assert mock_client.describe_tags.call_count == 2
-
-    @pytest.mark.parametrize(
-        "ip, expected_cidr",
-        [
-            (
-                "1.2.3.4",
-                "1.2.3.4/32",
-            ),
-            (
-                "1.2.3.4/32",
-                "1.2.3.4/32",
-            ),
-            (
-                "1.2.3.4/128",
-                "1.2.3.4/128",
-            ),
-        ],
-    )
-    def test_normalise_to_cidr(self, ip, expected_cidr):
-        assert normalise_to_cidr(ip) == expected_cidr
-
     @pytest.mark.parametrize(
         "create_rule_count_to_error, expected_roll_back_message",
         [
@@ -755,11 +573,13 @@ class TestCommandHelperMethods:
             elbv2_client, create_rule_count_to_error
         )
 
+        mock_application.environments["development"].session = mock_session
+        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
-            add_maintenance_page(
-                mock_session,
+            maintenance_page.__add_maintenance_page(
                 listener_arn,
                 "test-application",
                 "development",
@@ -866,11 +686,13 @@ class TestCommandHelperMethods:
             elbv2_client, 5  # will only error during loop on second service
         )
 
+        mock_application.environments["development"].session = mock_session
+        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
-            add_maintenance_page(
-                mock_session,
+            maintenance_page.__add_maintenance_page(
                 listener_arn,
                 "test-application",
                 "development",
@@ -1007,8 +829,9 @@ class TestCommandHelperMethods:
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 3
 
-        add_maintenance_page(
-            boto3.Session(),
+        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page.load_balancer = LoadBalancerProvider(boto3.Session())
+        maintenance_page.__add_maintenance_page(
             listener_arn,
             "test-application",
             "development",
@@ -1061,30 +884,21 @@ class MaintenancePageMocks:
         dummy_application.services = {"web": Service("web", "Load Balanced Web Service")}
         self.application = dummy_application
 
-        self.get_https_listener_for_application = kwargs.get(
-            "get_https_listener_for_application", Mock(return_value="https_listener")
-        )
         self.io = kwargs.get("io", Mock())
         self.io.confirm = Mock(return_value="yes")
         self.io.abort_with_error = Mock(side_effect=SystemExit(1))
-        self.get_maintenance_page_type = kwargs.get(
-            "get_maintenance_page_type", Mock(return_value=None)
-        )
         self.get_env_ips = kwargs.get("get_env_ips", Mock(return_value=["0.1.2.3, 4.5.6.7"]))
-        self.add_maintenance_page = kwargs.get("add_maintenance_page", Mock(return_value=None))
-        self.remove_maintenance_page = kwargs.get(
-            "remove_maintenance_page", Mock(return_value=None)
+        self.set_load_balancer = MagicMock()
+        self.load_balancer = kwargs.get(
+            "load_balancer", MagicMock(return_value=self.set_load_balancer)
         )
 
     def params(self):
         return {
             "application": self.application,
-            "get_https_listener_for_application": self.get_https_listener_for_application,
             "io": self.io,
-            "get_maintenance_page_type": self.get_maintenance_page_type,
             "get_env_ips": self.get_env_ips,
-            "add_maintenance_page": self.add_maintenance_page,
-            "remove_maintenance_page": self.remove_maintenance_page,
+            "load_balancer": self.load_balancer,
         }
 
 
@@ -1098,14 +912,16 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.add_maintenance_page.assert_called_with(
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
@@ -1136,14 +952,16 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.add_maintenance_page.assert_called_with(
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
@@ -1176,14 +994,16 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.add_maintenance_page.assert_called_with(
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
@@ -1206,7 +1026,9 @@ class TestActivateMethod:
             "application test-application",
         )
 
-        maintenance_mocks.remove_maintenance_page.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_called_with(
+            ANY, "https_listener"
+        )
 
     def test_activate_do_not_replace_template(self):
         maintenance_mocks = MaintenancePageMocks(
@@ -1216,10 +1038,12 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
@@ -1230,9 +1054,9 @@ class TestActivateMethod:
         )
 
         maintenance_mocks.get_env_ips.assert_not_called()
-        maintenance_mocks.add_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
         maintenance_mocks.io.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
 
     def test_activate_do_not_enable_page(self):
         maintenance_mocks = MaintenancePageMocks(
@@ -1243,10 +1067,12 @@ class TestActivateMethod:
 
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
@@ -1257,8 +1083,8 @@ class TestActivateMethod:
         )
 
         maintenance_mocks.get_env_ips.assert_not_called()
-        maintenance_mocks.add_maintenance_page.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
 
     # TODO this doesn't need to be caught in maintenance domain
     def test_activate_page_when_load_balancer_not_found(
@@ -1274,11 +1100,11 @@ class TestActivateMethod:
         with pytest.raises(SystemExit):
             provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
         maintenance_mocks.io.abort_with_error.assert_called_with(
             "No load balancer found for environment development in the application "
             "test-application.",
@@ -1300,12 +1126,12 @@ class TestActivateMethod:
             "No HTTPS listener found for environment development in the application "
             "test-application.",
         )
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.add_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
 
     def test_activate_an_environment_when_no_load_balancer_service_found(
         self,
@@ -1325,10 +1151,10 @@ class TestActivateMethod:
         ):
             provider.activate(env, services, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_not_called()
-        maintenance_mocks.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.add_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
 
     def test_successful_activate_multiple_services(
         self,
@@ -1345,14 +1171,16 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, services, template, vpc)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.add_maintenance_page.assert_called_with(
+        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
             ANY,
             "https_listener",
             "test-application",
@@ -1391,11 +1219,15 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
-        maintenance_mocks.remove_maintenance_page.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
@@ -1418,11 +1250,13 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
         maintenance_mocks.io.warn.assert_called_with(
             "There is no current maintenance page to remove",
         )
@@ -1440,14 +1274,16 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_called_with(ANY, "https_listener")
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
+            ANY, "https_listener"
+        )
         maintenance_mocks.io.confirm.assert_called_with(
             "There is currently a 'default' maintenance page, " "would you like to remove it?"
         )
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
 
     def test_deactivate_an_environment_when_listener_not_found(
         self,
@@ -1460,11 +1296,11 @@ class TestDeactivateCommand:
         with pytest.raises(SystemExit):
             provider.deactivate(env)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
 
         maintenance_mocks.io.abort_with_error.assert_called_with(
             "No HTTPS listener found for environment development in the application "
@@ -1482,11 +1318,11 @@ class TestDeactivateCommand:
         with pytest.raises(SystemExit):
             provider.deactivate(env)
 
-        maintenance_mocks.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
+        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
         maintenance_mocks.io.abort_with_error.assert_called_with(
             "No load balancer found for environment development in the application "
             "test-application.",

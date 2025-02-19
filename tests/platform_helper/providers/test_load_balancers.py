@@ -18,6 +18,7 @@ from dbt_platform_helper.providers.load_balancers import (
 from dbt_platform_helper.providers.load_balancers import (
     get_load_balancer_for_application,
 )
+from dbt_platform_helper.providers.load_balancers import normalise_to_cidr
 
 
 def _create_subnet(session):
@@ -165,6 +166,9 @@ def test_create_header_rule(mock_application):
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
 
+    rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
+    assert len(rules) == 2
+
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
     alb_provider.create_header_rule(
@@ -191,8 +195,21 @@ def test_create_header_rule(mock_application):
     )
 
 
+@pytest.mark.parametrize(
+    "allowed_ips, expected_rule_cidr",
+    [
+        (
+            ["1.2.3.4", "5.6.7.8"],
+            ["1.2.3.4/32", "5.6.7.8/32"],
+        ),
+        (
+            ["1.2.3.4/32", "5.6.7.8/24"],
+            ["1.2.3.4/32", "5.6.7.8/24"],
+        ),
+    ],
+)
 @mock_aws
-def test_create_source_ip_rule(mock_application):
+def test_create_source_ip_rule(allowed_ips, expected_rule_cidr, mock_application):
     session = mock_application.environments["development"].session
 
     conditions = [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
@@ -210,7 +227,7 @@ def test_create_source_ip_rule(mock_application):
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
     alb_provider.create_source_ip_rule(
-        listener_arn, target_group_arn, ["1.2.3.4"], "test_rule_name", 1, conditions
+        listener_arn, target_group_arn, allowed_ips, "test_rule_name", 1, conditions
     )
 
     rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
@@ -219,11 +236,11 @@ def test_create_source_ip_rule(mock_application):
     assert rules[1]["Priority"] == "1"
     assert rules[1]["Conditions"][0] == {
         "Field": "source-ip",
-        "SourceIpConfig": {"Values": ["1.2.3.4/32"]},
+        "SourceIpConfig": {"Values": sorted(expected_rule_cidr)},
     }
 
     mock_io.info.assert_called_once_with(
-        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values ['1.2.3.4'], the request will be forwarded to target group with arn {target_group_arn}."
+        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {allowed_ips}, the request will be forwarded to target group with arn {target_group_arn}."
     )
 
 
@@ -356,6 +373,27 @@ def test_https_certificate_for_application(mock_application):
             "test-application", "development"
         )
         assert result == certificate_arn
+
+
+@pytest.mark.parametrize(
+    "ip, expected_cidr",
+    [
+        (
+            "1.2.3.4",
+            "1.2.3.4/32",
+        ),
+        (
+            "1.2.3.4/32",
+            "1.2.3.4/32",
+        ),
+        (
+            "1.2.3.4/128",
+            "1.2.3.4/128",
+        ),
+    ],
+)
+def test_normalise_to_cidr(ip, expected_cidr):
+    assert normalise_to_cidr(ip) == expected_cidr
 
 
 class TestFindHTTPSListener:
