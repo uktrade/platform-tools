@@ -31,10 +31,6 @@ class PlatformHelperVersionNotFoundException(PlatformException):
         super().__init__(f"""Platform helper version could not be resolved.""")
 
 
-class PlatformHelperVersion:
-    pass
-
-
 class RequiredVersion:
     def __init__(self, io=None):
         self.io = io or ClickIOProvider()
@@ -144,15 +140,13 @@ def check_platform_helper_version_needs_update(io=ClickIOProvider()):
         return
     version_status = get_platform_helper_version_status(include_project_versions=False)
     io.process_messages(version_status.warn())
-    local_version = version_status.local
-    latest_release = version_status.latest
     message = (
-        f"You are running platform-helper v{local_version}, upgrade to "
-        f"v{latest_release} by running run `pip install "
+        f"You are running platform-helper v{version_status.local}, upgrade to "
+        f"v{version_status.latest} by running run `pip install "
         "--upgrade dbt-platform-helper`."
     )
     try:
-        local_version.validate_compatibility_with(latest_release)
+        version_status.local.validate_compatibility_with(version_status.latest)
     except IncompatibleMajorVersionException:
         io.error(message)
     except IncompatibleMinorVersionException:
