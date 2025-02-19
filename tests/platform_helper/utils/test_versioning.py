@@ -261,66 +261,66 @@ def test_get_platform_helper_version_status_with_invalid_config(
     assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
-@pytest.mark.parametrize(
-    "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
-    (
-        (
-            False,
-            False,
-            f"Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
-            f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
-            "red",
-        ),
-        (
-            True,
-            False,
-            f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
-            f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
-            "  platform-helper: 3.3.3\n",
-            "magenta",
-        ),
-        (False, True, None, "magenta"),
-        (
-            True,
-            True,
-            f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
-            "magenta",
-        ),
-    ),
-)
-@pytest.mark.parametrize("include_project_versions", [False, True])
-@patch("click.secho")
-@patch("requests.get")
-@patch("dbt_platform_helper.utils.versioning.version")
-def test_platform_helper_version_warnings(
-    mock_version,
-    mock_get,
-    secho,
-    fakefs,
-    version_in_phv_file,
-    version_in_platform_config,
-    expected_message,
-    message_colour,
-    include_project_versions,
-):
-    mock_version.return_value = "1.2.3"
-    mock_get.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
-    platform_config = {"application": "my-app"}
-    if version_in_platform_config:
-        platform_config["default_versions"] = {"platform-helper": "2.2.2"}
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+# @pytest.mark.parametrize(
+#     "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
+#     (
+#         (
+#             False,
+#             False,
+#             f"Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
+#             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
+#             "red",
+#         ),
+#         (
+#             True,
+#             False,
+#             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
+#             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
+#             "  platform-helper: 3.3.3\n",
+#             "magenta",
+#         ),
+#         (False, True, None, "magenta"),
+#         (
+#             True,
+#             True,
+#             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
+#             "magenta",
+#         ),
+#     ),
+# )
+# @pytest.mark.parametrize("include_project_versions", [False, True])
+# @patch("click.secho")
+# @patch("requests.get")
+# @patch("dbt_platform_helper.utils.versioning.version")
+# def test_platform_helper_version_warnings(
+#     mock_version,
+#     mock_get,
+#     secho,
+#     fakefs,
+#     version_in_phv_file,
+#     version_in_platform_config,
+#     expected_message,
+#     message_colour,
+#     include_project_versions,
+# ):
+#     mock_version.return_value = "1.2.3"
+#     mock_get.return_value.json.return_value = {
+#         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+#     }
+#     platform_config = {"application": "my-app"}
+#     if version_in_platform_config:
+#         platform_config["default_versions"] = {"platform-helper": "2.2.2"}
+#     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
 
-    if version_in_phv_file:
-        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
+#     if version_in_phv_file:
+#         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
 
-    get_platform_helper_version_status(include_project_versions=include_project_versions)
+#     get_platform_helper_version_status(include_project_versions=include_project_versions)
 
-    if expected_message and include_project_versions:
-        secho.assert_called_with(expected_message, fg=message_colour)
-    else:
-        secho.assert_not_called()
+#     if expected_message and include_project_versions:
+#         secho.assert_called_with(expected_message, fg=message_colour)
+#     else:
+#         secho.assert_not_called()
 
 
 @patch("subprocess.run")

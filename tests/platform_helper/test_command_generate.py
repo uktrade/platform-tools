@@ -1,4 +1,5 @@
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -40,9 +41,17 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 ):
     CliRunner().invoke(platform_helper_generate)
 
-    mock_secho.assert_called_once_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="magenta",
+    mock_secho.assert_has_calls(
+        [
+            call(
+                "Please delete '.platform-helper-version' as it is now deprecated.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 1.0.0\n",
+                fg="magenta",
+            ),
+            call(
+                f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
+                fg="magenta",
+            ),
+        ]
     )
 
 

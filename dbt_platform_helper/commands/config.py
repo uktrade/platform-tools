@@ -9,6 +9,7 @@ import click
 from prettytable import PrettyTable
 
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -76,6 +77,7 @@ def deployment():
 
     compatible = True
     platform_helper_version_status = get_platform_helper_version_status()
+    ClickIOProvider().process_messages(platform_helper_version_status.warn())
     copilot_versions = versioning.get_copilot_versions()
     aws_versions = versioning.get_aws_versions()
     _check_tool_versions(platform_helper_version_status, copilot_versions, aws_versions)

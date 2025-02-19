@@ -38,8 +38,11 @@ class RequiredVersion:
     def get_required_platform_helper_version(
         self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
     ) -> str:
+
         if not version_status:
             version_status = get_platform_helper_version_status()
+            self.io.process_messages(version_status.warn())
+
         pipeline_version = version_status.pipeline_overrides.get(pipeline)
         version_precedence = [
             pipeline_version,
@@ -68,6 +71,7 @@ class RequiredVersion:
             return
 
         version_status = get_platform_helper_version_status()
+        self.io.process_messages(version_status.warn())
         platform_helper_file_version = SemanticVersion.from_string(
             self.get_required_platform_helper_version(version_status=version_status)
         )
@@ -83,7 +87,7 @@ class RequiredVersion:
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
 def get_platform_helper_version_status(
-    include_project_versions=True, yaml_provider=YamlFileProvider, io=ClickIOProvider()
+    include_project_versions=True, yaml_provider=YamlFileProvider
 ) -> PlatformHelperVersionStatus:
     try:
         locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
@@ -129,8 +133,6 @@ def get_platform_helper_version_status(
         pipeline_overrides=pipeline_overrides,
     )
 
-    io.process_messages(out.warn())
-
     return out
 
 
@@ -139,6 +141,7 @@ def check_platform_helper_version_needs_update(io=ClickIOProvider()):
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
     version_status = get_platform_helper_version_status(include_project_versions=False)
+    io.process_messages(version_status.warn())
     local_version = version_status.local
     latest_release = version_status.latest
     message = (
