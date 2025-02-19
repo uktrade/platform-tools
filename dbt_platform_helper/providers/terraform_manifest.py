@@ -123,7 +123,7 @@ class TerraformManifestProvider:
                 "codebase": "${each.key}",
                 "repository": "${each.value.repository}",
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
-                "pipelines": "${each.value.pipelines}",
+                "pipelines": '${lookup(each.value, "pipelines", [])}',
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
                 "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
