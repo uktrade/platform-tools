@@ -11,8 +11,10 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
     @patch("dbt_platform_helper.commands.copilot.FileProvider")
+    @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
     def test_calls_make_addons(
         self,
+        mock_copilot_templating,
         mock_file_provider,
         mock_config_validator,
         mock_config_provider,
@@ -27,7 +29,9 @@ class TestMakeAddonsCommand:
         mock_config_validator.assert_called_once()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
         mock_copilot.assert_called_with(
-            mock_config_provider.return_value, mock_file_provider.return_value
+            mock_config_provider.return_value,
+            mock_file_provider.return_value,
+            mock_copilot_templating.return_value,
         )
         mock_copilot_instance.make_addons.assert_called_once()
 
@@ -35,10 +39,12 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
     @patch("dbt_platform_helper.commands.copilot.FileProvider")
+    @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
     @patch("click.secho")
     def test_prints_error_message_if_exception_is_thrown_by_make_addons(
         self,
         mock_click,
+        mock_copilot_templating,
         mock_file_provider,
         mock_config_validator,
         mock_config_provider,
@@ -54,7 +60,9 @@ class TestMakeAddonsCommand:
         mock_config_validator.assert_called_once()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
         mock_copilot.assert_called_with(
-            mock_config_provider.return_value, mock_file_provider.return_value
+            mock_config_provider.return_value,
+            mock_file_provider.return_value,
+            mock_copilot_templating.return_value,
         )
         mock_copilot_instance.make_addons.assert_called_once()
         mock_click.assert_called_with("Error: Something bad happened", err=True, fg="red")

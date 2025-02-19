@@ -38,9 +38,15 @@ class Copilot:
         "Worker Service",
     ]
 
-    def __init__(self, config_provider: ConfigProvider, file_provider: FileProvider):
+    def __init__(
+        self,
+        config_provider: ConfigProvider,
+        file_provider: FileProvider,
+        copilot_templating: CopilotTemplating,
+    ):
         self.config_provider = config_provider
         self.file_provider = file_provider
+        self.copilot_templating = copilot_templating
 
     def list_copilot_local_environments(self):
         return [
@@ -231,10 +237,6 @@ class Copilot:
 
         return arns
 
-    # TODO Inject?
-    def copilot_provider(self):
-        return CopilotTemplating()
-
     def make_addons(self):
         self.config_provider.config_file_check()
         try:
@@ -312,8 +314,7 @@ class Copilot:
 
         environments = self.config_provider.apply_environment_defaults(config)["environments"]
 
-        provider = self.copilot_provider()
-        provider.generate_cross_account_s3_policies(environments, extensions)
+        self.copilot_templating.generate_cross_account_s3_policies(environments, extensions)
 
         click.echo(templates.get_template("addon-instructions.txt").render(services=services))
 
