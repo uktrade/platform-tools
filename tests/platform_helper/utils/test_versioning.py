@@ -208,13 +208,13 @@ def test_get_platform_helper_version_status(mock_version, mock_get, fakefs, vali
     config = valid_platform_config
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
-    versions = get_platform_helper_version_status()
+    version_status = get_platform_helper_version_status()
 
-    assert versions.local == SemanticVersion(1, 1, 1)
-    assert versions.latest == SemanticVersion(2, 3, 4)
-    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
-    assert versions.platform_config_default == SemanticVersion(10, 2, 0)
-    assert versions.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
+    assert version_status.local == SemanticVersion(1, 1, 1)
+    assert version_status.latest == SemanticVersion(2, 3, 4)
+    assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
+    assert version_status.platform_config_default == SemanticVersion(10, 2, 0)
+    assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
 
 @patch("requests.get")
@@ -229,13 +229,13 @@ def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
 
-    versions = get_platform_helper_version_status()
+    version_status = get_platform_helper_version_status()
 
-    assert versions.local == SemanticVersion(1, 1, 1)
-    assert versions.latest == SemanticVersion(2, 3, 4)
-    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
-    assert versions.platform_config_default == None
-    assert versions.pipeline_overrides == {}
+    assert version_status.local == SemanticVersion(1, 1, 1)
+    assert version_status.latest == SemanticVersion(2, 3, 4)
+    assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
+    assert version_status.platform_config_default == None
+    assert version_status.pipeline_overrides == {}
 
 
 @patch("requests.get")
@@ -252,13 +252,13 @@ def test_get_platform_helper_version_status_with_invalid_config(
     }
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
 
-    versions = get_platform_helper_version_status()
+    version_status = get_platform_helper_version_status()
 
-    assert versions.local == SemanticVersion(1, 1, 1)
-    assert versions.latest == SemanticVersion(2, 3, 4)
-    assert versions.deprecated_version_file == SemanticVersion(5, 6, 7)
-    assert versions.platform_config_default == SemanticVersion(1, 2, 3)
-    assert versions.pipeline_overrides == {"prod-main": "9.0.9"}
+    assert version_status.local == SemanticVersion(1, 1, 1)
+    assert version_status.latest == SemanticVersion(2, 3, 4)
+    assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
+    assert version_status.platform_config_default == SemanticVersion(1, 2, 3)
+    assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
 @pytest.mark.parametrize(
@@ -481,7 +481,7 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
-        versions=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
+        version_status=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
     )
 
     assert result == "1.2.3"

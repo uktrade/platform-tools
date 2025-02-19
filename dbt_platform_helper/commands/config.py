@@ -75,14 +75,14 @@ def deployment():
     click.secho()
 
     compatible = True
-    platform_helper_versions = get_platform_helper_version_status()
+    platform_helper_version_status = get_platform_helper_version_status()
     copilot_versions = versioning.get_copilot_versions()
     aws_versions = versioning.get_aws_versions()
-    _check_tool_versions(platform_helper_versions, copilot_versions, aws_versions)
+    _check_tool_versions(platform_helper_version_status, copilot_versions, aws_versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
-    local_version = platform_helper_versions.local
-    latest_release = platform_helper_versions.latest
+    local_version = platform_helper_version_status.local
+    latest_release = platform_helper_version_status.latest
     addons_templates_table = PrettyTable()
     addons_templates_table.field_names = [
         "Addons Template File",

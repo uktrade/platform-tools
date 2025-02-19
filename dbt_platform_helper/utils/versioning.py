@@ -36,15 +36,15 @@ class RequiredVersion:
         self.io = io or ClickIOProvider()
 
     def get_required_platform_helper_version(
-        self, pipeline: str = None, versions: PlatformHelperVersionStatus = None
+        self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
     ) -> str:
-        if not versions:
-            versions = get_platform_helper_version_status()
-        pipeline_version = versions.pipeline_overrides.get(pipeline)
+        if not version_status:
+            version_status = get_platform_helper_version_status()
+        pipeline_version = version_status.pipeline_overrides.get(pipeline)
         version_precedence = [
             pipeline_version,
-            versions.platform_config_default,
-            versions.deprecated_version_file,
+            version_status.platform_config_default,
+            version_status.deprecated_version_file,
         ]
         non_null_version_precedence = [
             f"{v}" if isinstance(v, SemanticVersion) else v for v in version_precedence if v
@@ -67,14 +67,14 @@ class RequiredVersion:
         if not running_as_installed_package():
             return
 
-        versions = get_platform_helper_version_status()
+        version_status = get_platform_helper_version_status()
         platform_helper_file_version = SemanticVersion.from_string(
-            self.get_required_platform_helper_version(versions=versions)
+            self.get_required_platform_helper_version(version_status=version_status)
         )
 
-        if not versions.local == platform_helper_file_version:
+        if not version_status.local == platform_helper_file_version:
             message = (
-                f"WARNING: You are running platform-helper v{versions.local} against "
+                f"WARNING: You are running platform-helper v{version_status.local} against "
                 f"v{platform_helper_file_version} specified by {PLATFORM_HELPER_VERSION_FILE}."
             )
             self.io.warn(message)
@@ -138,9 +138,9 @@ def get_platform_helper_version_status(
 def check_platform_helper_version_needs_update(io=ClickIOProvider()):
     if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
         return
-    versions = get_platform_helper_version_status(include_project_versions=False)
-    local_version = versions.local
-    latest_release = versions.latest
+    version_status = get_platform_helper_version_status(include_project_versions=False)
+    local_version = version_status.local
+    latest_release = version_status.latest
     message = (
         f"You are running platform-helper v{local_version}, upgrade to "
         f"v{latest_release} by running run `pip install "
