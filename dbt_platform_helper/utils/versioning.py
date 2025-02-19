@@ -83,7 +83,7 @@ class RequiredVersion:
 # Resolves all the versions from pypi, config and locally installed version
 # echos warnings if anything is incompatible
 def get_platform_helper_versions(
-    include_project_versions=True, yaml_provider=YamlFileProvider
+    include_project_versions=True, yaml_provider=YamlFileProvider, io=ClickIOProvider()
 ) -> PlatformHelperVersionStatus:
     try:
         locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
@@ -129,15 +129,10 @@ def get_platform_helper_versions(
         pipeline_overrides=pipeline_overrides,
     )
 
-    _process_version_file_warnings(out)
+    io.process_messages(out.warn())
 
     return out
 
-
-# Validates the returned PlatformHelperVersionStatus and echos useful warnings
-# Could return ValidationMessages (warnings and errors) which are output elsewhere
-def _process_version_file_warnings(versions: PlatformHelperVersionStatus, io=ClickIOProvider()):
-    io.process_messages(versions.warn())
 
 # TODO called at the beginning of every command.  This is platform-version base functionality
 def check_platform_helper_version_needs_update(io=ClickIOProvider()):
