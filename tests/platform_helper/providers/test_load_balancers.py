@@ -55,14 +55,11 @@ def _create_listener_with_cert(session):
     elbv2_client = session.client("elbv2")
     listener_arn = _create_listener(session)
 
-    acm_client = session.client("acm-pca")
-    certificate_authority_arn = acm_client.create_certificate_authority()["CertificateAuthorityArn"]
-    print(certificate_authority_arn)
-
-    certificate_arn = acm_client.issue_certificate(
-        CertificateAuthorityArn=certificate_authority_arn
+    acm_client = session.client("acm")
+    certificate_arn = acm_client.request_certificate(
+        DomainName="*.moto.com",
+        CertificateAuthorityArn=f"arn:aws:acm-pca:eu-west-2:1234567890:certificate-authority/12345678-1234-1234-1234-123456789012",
     )["CertificateArn"]
-    print(certificate_arn)
     elbv2_client.add_listener_certificates(
         ListenerArn=listener_arn,
         Certificates=[{"CertificateArn": certificate_arn, "IsDefault": True}],
@@ -347,12 +344,18 @@ def test_get_https_listener_for_application(mock_application):
 @mock_aws
 def test_https_certificate_for_application(mock_application):
     session = mock_application.environments["development"].session
-    certificate_arn, listerner_arn = _create_listener_with_cert(session)
+    certificate_arn, _ = _create_listener_with_cert(session)
 
+    # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
+    mock_response = {"Certificates": [{"CertificateArn": certificate_arn, "IsDefault": True}]}
     alb_provider = LoadBalancerProvider(session)
-    result = alb_provider.get_https_certificate_for_application("test-application", "development")
-
-    assert result == certificate_arn
+    with patch.object(
+        alb_provider.evlb_client, "describe_listener_certificates", return_value=mock_response
+    ):
+        result = alb_provider.get_https_certificate_for_application(
+            "test-application", "development"
+        )
+        assert result == certificate_arn
 
 
 class TestFindHTTPSListener:

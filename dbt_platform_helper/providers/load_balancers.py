@@ -71,7 +71,17 @@ class LoadBalancerProvider:
         return target_group_arn
 
     def get_https_certificate_for_application(self, app: str, env: str) -> str:
-        return ""
+        listener_arn = self.get_https_listener_for_application(app, env)
+        certificates = self.evlb_client.describe_listener_certificates(ListenerArn=listener_arn)[
+            "Certificates"
+        ]
+
+        try:
+            certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
+        except StopIteration:
+            raise CertificateNotFoundException(env)
+
+        return certificate_arn
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
