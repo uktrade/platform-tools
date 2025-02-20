@@ -87,7 +87,6 @@ class PlatformHelperVersioning:
             return
 
         version_status = self.get_status(include_project_versions=False)
-        self.io.process_messages(version_status.validate())
 
         message = (
             f"You are running platform-helper v{version_status.local}, upgrade to "
