@@ -2,6 +2,7 @@
 
 import click
 
+from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
