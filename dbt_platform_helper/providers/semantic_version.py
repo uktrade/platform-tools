@@ -91,7 +91,7 @@ class VersionStatus:
     def is_outdated(self):
         return self.local != self.latest
 
-    def warn(self):
+    def validate(self):
         pass
 
 
@@ -119,8 +119,8 @@ class PlatformHelperVersionStatus(VersionStatus):
 
         return f"{self.__class__.__name__}: {class_str}"
 
-    # TODO rename to validate
-    def warn(self) -> dict:
+
+    def validate(self) -> dict:
         if self.platform_config_default and not self.deprecated_version_file:
             return {}
 

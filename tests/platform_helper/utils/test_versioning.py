@@ -415,7 +415,7 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
 
     version_status = PlatformHelperVersioning().get_status()
 
-    ClickIOProvider().process_messages(version_status.warn())
+    ClickIOProvider().process_messages(version_status.validate())
     with pytest.raises(PlatformException):
         required_version.get_required_platform_helper_version("main", version_status=version_status)
 

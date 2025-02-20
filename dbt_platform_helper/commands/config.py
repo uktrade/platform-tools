@@ -77,7 +77,7 @@ def deployment():
 
     compatible = True
     platform_helper_version_status = get_platform_helper_version_status()
-    ClickIOProvider().process_messages(platform_helper_version_status.warn())
+    ClickIOProvider().process_messages(platform_helper_version_status.validate())
     copilot_versions = versioning.get_copilot_versions()
     aws_versions = versioning.get_aws_versions()
     _check_tool_versions(platform_helper_version_status, copilot_versions, aws_versions)

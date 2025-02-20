@@ -50,7 +50,7 @@ class RequiredVersion:
 
     def get_required_version(self, pipeline=None):
         version_status = self.platform_helper_version_provider.get_status()
-        self.io.process_messages(version_status.warn())
+        self.io.process_messages(version_status.validate())
         required_version = self.get_required_platform_helper_version(pipeline, version_status)
         self.io.info(required_version)
         return required_version
@@ -61,7 +61,7 @@ class RequiredVersion:
             return
 
         version_status = self.platform_helper_version_provider.get_status()
-        self.io.process_messages(version_status.warn())
+        self.io.process_messages(version_status.validate())
 
         required_version = SemanticVersion.from_string(
             self.get_required_platform_helper_version(version_status=version_status)
