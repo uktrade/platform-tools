@@ -95,6 +95,7 @@ class VersionStatus:
         pass
 
 
+# TODO remove dataclass, or make VersionStatus also a dataclass - align attribute names
 @dataclass
 class PlatformHelperVersionStatus(VersionStatus):
     local: Optional[SemanticVersion] = None
@@ -102,6 +103,18 @@ class PlatformHelperVersionStatus(VersionStatus):
     deprecated_version_file: Optional[SemanticVersion] = None
     platform_config_default: Optional[SemanticVersion] = None
     pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
+
+    def __str__(self):
+        attrs = {
+            key: value for key, value in vars(self).items() if isinstance(value, SemanticVersion)
+        }
+        attrs_str = ", ".join(f"{key}: {value}" for key, value in attrs.items())
+        pipeline_overrides_str = ", ".join(
+            f"{key}: {value}" for key, value in self.pipeline_overrides.items()
+        )
+        return (
+            f"{self.__class__.__name__}: {attrs_str}, pipeline_overrides: {pipeline_overrides_str}"
+        )
 
     # TODO rename to validate
     def warn(self) -> dict:
