@@ -7,6 +7,7 @@ from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.semantic_version import VersionStatus
 
 
 class TestSemanticVersion:
@@ -77,14 +78,21 @@ class TestSemanticVersion:
         assert result == expected_version
 
 
-class VersionStatus:
+class TestVersionStatus:
     @pytest.mark.parametrize(
         "suite",
         [
-            (SemanticVersion(1, 2, 3), SemanticVersion(1, 2, 3), True),
-            (SemanticVersion(1, 2, 0), SemanticVersion(1, 2, 3), False),
+            (SemanticVersion(1, 2, 3), SemanticVersion(1, 2, 3), False),
+            (SemanticVersion(1, 2, 0), SemanticVersion(1, 2, 3), True),
         ],
     )
     def test_is_outdated(self, suite):
         local_version, latest_release, expected = suite
-        assert VersionStatus(local_version, latest_release) == expected
+        assert (
+            VersionStatus(local_version=local_version, latest_release=latest_release).is_outdated()
+            == expected
+        )
+
+    def test_to_string(self):
+        result = f"{VersionStatus(SemanticVersion(1, 2, 0), SemanticVersion(1, 2, 3))}"
+        assert result == "VersionStatus: local: 1.2.0, latest: 1.2.3"

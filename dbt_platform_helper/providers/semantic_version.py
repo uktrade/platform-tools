@@ -81,6 +81,13 @@ class VersionStatus:
         self.local = local_version
         self.latest = latest_release
 
+    def __str__(self):
+        attrs = {
+            key: value for key, value in vars(self).items() if isinstance(value, SemanticVersion)
+        }
+        attrs_str = ", ".join(f"{key}: {value}" for key, value in attrs.items())
+        return f"{self.__class__.__name__}: {attrs_str}"
+
     def is_outdated(self):
         return self.local != self.latest
 
@@ -96,6 +103,7 @@ class PlatformHelperVersionStatus(VersionStatus):
     platform_config_default: Optional[SemanticVersion] = None
     pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
 
+    # TODO rename to validate
     def warn(self) -> dict:
         if self.platform_config_default and not self.deprecated_version_file:
             return {}
