@@ -20,6 +20,8 @@ from dbt_platform_helper.providers.load_balancers import (
 )
 from dbt_platform_helper.providers.load_balancers import normalise_to_cidr
 
+# TODO add exception tests for class based ALB provider
+
 
 def _create_subnet(session):
     ec2 = session.client("ec2")

@@ -20,210 +20,7 @@ template = "default"
 vpc = None
 
 
-# class TestGetMaintenancePage:
-#     def test_when_environment_online(self):
-
-#         boto_mock = MagicMock()
-#         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
-#         boto_mock.client().describe_tags.return_value = {
-#             "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
-#         }
-
-#         maintenance_page = get_maintenance_page_type(boto_mock, "listener_arn")
-#         assert maintenance_page is None
-
-#     def test_when_environment_offline_with_default_page(self):
-
-#         boto_mock = MagicMock()
-#         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
-#         boto_mock.client().describe_tags.return_value = {
-#             "TagDescriptions": [
-#                 {
-#                     "ResourceArn": "rule_arn",
-#                     "Tags": [
-#                         {"Key": "name", "Value": "MaintenancePage"},
-#                         {"Key": "type", "Value": "default"},
-#                     ],
-#                 }
-#             ]
-#         }
-
-#         maintenance_page = get_maintenance_page_type(boto_mock, "listener_arn")
-#         assert maintenance_page == "default"
-
-
-# class TestRemoveMaintenancePage:
-#     def test_when_environment_online(self):
-
-#         boto_mock = MagicMock()
-#         boto_mock.client().describe_rules.return_value = {"Rules": [{"RuleArn": "rule_arn"}]}
-#         boto_mock.client().describe_tags.return_value = {
-#             "TagDescriptions": [{"ResourceArn": "rule_arn", "Tags": []}]
-#         }
-
-#         with pytest.raises(ListenerRuleNotFoundException):
-#             remove_maintenance_page(boto_mock, "listener_arn")
-
-#     @patch("dbt_platform_helper.domain.maintenance_page.delete_listener_rule")
-#     def test_when_environment_offline(self, delete_listener_rule):
-
-#         boto_mock = MagicMock()
-#         boto_mock.client().describe_rules.return_value = {
-#             "Rules": [{"RuleArn": "rule_arn"}, {"RuleArn": "allowed_ips_rule_arn"}]
-#         }
-#         tag_descriptions = [
-#             {
-#                 "ResourceArn": "rule_arn",
-#                 "Tags": [
-#                     {"Key": "name", "Value": "MaintenancePage"},
-#                     {"Key": "type", "Value": "default"},
-#                 ],
-#             },
-#             {
-#                 "ResourceArn": "allowed_ips_rule_arn",
-#                 "Tags": [
-#                     {"Key": "name", "Value": "AllowedIps"},
-#                     {"Key": "type", "Value": "default"},
-#                 ],
-#             },
-#             {
-#                 "ResourceArn": "allowed_source_ips_rule_arn",
-#                 "Tags": [
-#                     {"Key": "name", "Value": "AllowedSourceIps"},
-#                     {"Key": "type", "Value": "default"},
-#                 ],
-#             },
-#         ]
-#         boto_mock.client().describe_tags.return_value = {"TagDescriptions": tag_descriptions}
-#         boto_mock.client().delete_rule.return_value = None
-
-#         remove_maintenance_page(boto_mock, "listener_arn")
-
-#         delete_listener_rule.assert_has_calls(
-#             [
-#                 call(tag_descriptions, "MaintenancePage", boto_mock.client()),
-#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-#                 call().__bool__(),  # return value of mock is referenced in line: `if name == "MaintenancePage" and not deleted`
-#                 call(tag_descriptions, "AllowedIps", boto_mock.client()),
-#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-#                 call(tag_descriptions, "BypassIpFilter", boto_mock.client()),
-#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-#                 call(tag_descriptions, "AllowedSourceIps", boto_mock.client()),
-#                 call().__bool__(),  # return value of mock is cast into truthy in line: deletes[name] = bool(deleted)
-#             ]
-#         )
-
-
 # class TestAddMaintenancePage:
-#     # TODO with the introduction of the class based LoadBalancerProvider these patches should mostly go
-#     @pytest.mark.parametrize("template", ["default", "migration", "dmas-migration"])
-#     @patch(
-#         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
-#     )
-#     @patch("dbt_platform_helper.domain.maintenance_page.create_source_ip_rule")
-#     @patch("dbt_platform_helper.domain.maintenance_page.create_header_rule")
-#     @patch(
-#         "dbt_platform_helper.domain.maintenance_page.get_host_header_conditions",
-#         return_value=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-#     )
-#     @patch("dbt_platform_helper.domain.maintenance_page.find_target_group")
-#     @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
-#     def test_adding_existing_template(
-#         self,
-#         get_maintenance_page_template,
-#         find_target_group,
-#         get_host_header_conditions,
-#         create_header_rule,
-#         create_source_ip,
-#         choices,
-#         template,
-#         mock_application,
-#     ):
-
-#         boto_mock = MagicMock()
-#         get_maintenance_page_template.return_value = template
-#         find_target_group.return_value = "target_group_arn"
-
-#         add_maintenance_page(
-#             boto_mock,
-#             "listener_arn",
-#             "test-application",
-#             "development",
-#             [mock_application.services["web"]],
-#             ["1.2.3.4"],
-#             template,
-#         )
-
-#         get_host_header_conditions.assert_called_with(
-#             boto_mock.client(),
-#             "listener_arn",
-#             "target_group_arn",
-#         )
-
-#         assert create_header_rule.call_count == 2
-#         create_header_rule.assert_has_calls(
-#             [
-#                 call(
-#                     boto_mock.client(),
-#                     "listener_arn",
-#                     "target_group_arn",
-#                     "X-Forwarded-For",
-#                     ["1.2.3.4"],
-#                     "AllowedIps",
-#                     1,
-#                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-#                 ),
-#                 call(
-#                     boto_mock.client(),
-#                     "listener_arn",
-#                     "target_group_arn",
-#                     "Bypass-Key",
-#                     ["abc"],
-#                     "BypassIpFilter",
-#                     3,
-#                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-#                 ),
-#             ]
-#         )
-#         create_source_ip.assert_has_calls(
-#             [
-#                 call(
-#                     boto_mock.client(),
-#                     "listener_arn",
-#                     "target_group_arn",
-#                     ["1.2.3.4"],
-#                     "AllowedSourceIps",
-#                     2,
-#                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-#                 )
-#             ]
-#         )
-#         boto_mock.client().create_rule.assert_called_once_with(
-#             ListenerArn="listener_arn",
-#             Priority=4,
-#             Conditions=[
-#                 {
-#                     "Field": "path-pattern",
-#                     "PathPatternConfig": {"Values": ["/*"]},
-#                 },
-#                 {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}},
-#             ],
-#             Actions=[
-#                 {
-#                     "Type": "fixed-response",
-#                     "FixedResponseConfig": {
-#                         "StatusCode": "503",
-#                         "ContentType": "text/html",
-#                         "MessageBody": template,
-#                     },
-#                 }
-#             ],
-#             Tags=[
-#                 {"Key": "name", "Value": "MaintenancePage"},
-#                 {"Key": "type", "Value": template},
-#             ],
-#         )
-
 #     @patch(
 #         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
 #     )
@@ -1381,6 +1178,80 @@ class TestActivateMethod:
             ]
         )
 
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    def test_successful_activate_with_no_target_group_returned(self, random_mock):
+        maintenance_mocks = MaintenancePageMocks(app, find_target_group=None)
+        provider = MaintenancePage(**maintenance_mocks.params())
+        provider.activate(env, svc, template, vpc)
+
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+            ANY, "test-application", "development"
+        )
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+            "https_listener"
+        )
+        maintenance_mocks.get_env_ips.assert_called_with(
+            vpc, maintenance_mocks.application.environments["development"]
+        )
+        maintenance_mocks.set_load_balancer.find_target_group.assert_called_with(
+            "test-application", "development", "web"
+        )
+        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
+
+        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+
+        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+            listener_arn="https_listener",
+            priority=1,
+            conditions=[
+                {
+                    "Field": "path-pattern",
+                    "PathPatternConfig": {"Values": ["/*"]},
+                },
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": []},
+                },
+            ],
+            actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "StatusCode": "503",
+                        "ContentType": "text/html",
+                        "MessageBody": ANY,
+                    },
+                }
+            ],
+            tags=[
+                {"Key": "name", "Value": "MaintenancePage"},
+                {"Key": "type", "Value": "default"},
+            ],
+        )
+
+        maintenance_mocks.io.confirm.assert_has_calls(
+            [
+                call(
+                    "You are about to enable the 'default' maintenance page for the development "
+                    "environment in test-application.\nWould you like to continue?"
+                ),
+            ]
+        )
+        maintenance_mocks.io.info.assert_has_calls(
+            [
+                call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
+                ),
+                call(
+                    "Maintenance page 'default' added for environment development in "
+                    "application test-application",
+                ),
+            ]
+        )
+
 
 class TestDeactivateCommand:
 
@@ -1481,3 +1352,41 @@ class TestDeactivateCommand:
         maintenance_mocks.io.confirm.assert_called_with(
             "There is currently a 'default' maintenance page, " "would you like to remove it?"
         )
+
+    def test_deactivate_raises_load_balancer_rule_not_found_exception_when_failing_to_delete_rule(
+        self,
+    ):
+        describe_rules_response = [
+            {
+                "ResourceArn": "rule_arn",
+                "Tags": [
+                    {"Key": "name", "Value": "MaintenancePage"},
+                    {"Key": "type", "Value": "default"},
+                ],
+            }
+        ]
+
+        maintenance_mocks = MaintenancePageMocks(
+            app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
+        )
+        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.return_value = None
+
+        provider = MaintenancePage(**maintenance_mocks.params())
+        with pytest.raises(ListenerRuleNotFoundException):
+            provider.deactivate(env)
+
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+            "test-application", "development"
+        )
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+            "https_listener"
+        )
+        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_has_calls(
+            [
+                call(describe_rules_response, "MaintenancePage"),
+            ]
+        )
+        maintenance_mocks.io.confirm.assert_called_once_with(
+            "There is currently a 'default' maintenance page, would you like to remove it?"
+        )
+        maintenance_mocks.io.info.assert_not_called()
