@@ -1,5 +1,20 @@
 # Changelog
 
+## [13.1.0](https://github.com/uktrade/platform-tools/compare/13.0.2...13.1.0) (2025-02-20)
+
+
+### Features
+
+* add deploy_repository as an optional key to platform-config.yml. ([#762](https://github.com/uktrade/platform-tools/issues/762)) ([9f69b32](https://github.com/uktrade/platform-tools/commit/9f69b324faf1e3f4c18c1ebb582fab0518c9d771))
+* DBTP-1788 Add deploy_repository key to codebase pipeline ([#777](https://github.com/uktrade/platform-tools/issues/777)) ([cf4e52a](https://github.com/uktrade/platform-tools/commit/cf4e52a86ba78725d3bd1380fad86ba433b035e6))
+
+
+### Bug Fixes
+
+* DBTP-1789 - Default pipelines config to empty list ([#772](https://github.com/uktrade/platform-tools/issues/772)) ([f109139](https://github.com/uktrade/platform-tools/commit/f109139b12239b30ec53c83fa220dc3b6e547ca7))
+* DBTP-1792 Set FileProvider default in CopilotTemplating ([#769](https://github.com/uktrade/platform-tools/issues/769)) ([81401e6](https://github.com/uktrade/platform-tools/commit/81401e60326126a56c01aa0736789bc9a7ac0f00))
+* Use fakefs in test to avoid message changing to 'overwritten' in subsequent test runs ([#775](https://github.com/uktrade/platform-tools/issues/775)) ([433592e](https://github.com/uktrade/platform-tools/commit/433592e1655ac4bcfaf2adc2ae9e1eff80a574b7))
+
 ## [13.0.2](https://github.com/uktrade/platform-tools/compare/13.0.1...13.0.2) (2025-02-10)
 
 
