@@ -72,6 +72,16 @@ class Pipelines:
             platform_config_terraform_modules_default_version,
         )
 
+        # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
+        deploy_repository = ""
+        if "deploy_repository" in platform_config.keys():
+            deploy_repository = f"{platform_config['deploy_repository']}"
+        else:
+            self.io.warn(
+                "No `deploy_repository` key set in platform-config.yml, this will become a required key. See full platform config reference in the docs: https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+            )
+            deploy_repository = f"uktrade/{platform_config['application']}-deploy"
+
         if has_environment_pipelines:
             environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
             accounts = {
@@ -79,16 +89,6 @@ class Pipelines:
                 for config in environment_pipelines.values()
                 if "account" in config
             }
-
-            # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
-            deploy_repository = ""
-            if "deploy_repository" in platform_config.keys():
-                deploy_repository = f"uktrade/{platform_config['deploy_repository']}"
-            else:
-                self.io.warn(
-                    "No `deploy_repository` key set in platform-config.yml, this will become a required key. See full platform config reference in the docs: https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
-                )
-                deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
             for account in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
@@ -113,7 +113,10 @@ class Pipelines:
             }
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
-                platform_config, terraform_platform_modules_version, ecrs_that_need_importing
+                platform_config,
+                terraform_platform_modules_version,
+                ecrs_that_need_importing,
+                deploy_repository,
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
