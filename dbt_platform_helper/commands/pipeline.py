@@ -7,7 +7,7 @@ from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_helper_version import (
+from dbt_platform_helper.providers.platform_helper_versioning import (
     PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider

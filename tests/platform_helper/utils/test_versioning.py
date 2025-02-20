@@ -13,7 +13,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_helper_version import (
+from dbt_platform_helper.providers.platform_helper_versioning import (
     PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.semantic_version import (
@@ -75,7 +75,7 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch(
-    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec():
@@ -101,7 +101,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch(
-    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec():
@@ -123,7 +123,7 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec()
 
 # TODO move to RequiredVersion domain tests.  consolidate running_as_installed_package
 @patch(
-    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
 @patch(
@@ -193,7 +193,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 # TODO add coverage for the include_project_versions parameter in the PlatformHelperVersion tests
 # @pytest.mark.parametrize("include_project_versions", [False, True])
 @patch("requests.get")
-@patch("dbt_platform_helper.providers.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version")
 def test_platform_helper_version_deprecation_warnings(
     mock_version,
     mock_get,
@@ -230,7 +230,7 @@ def test_platform_helper_version_deprecation_warnings(
 # TODO move to RequiredVersion domain tests
 # TODO mock config provider instead of fs
 @patch("requests.get")
-@patch("dbt_platform_helper.providers.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version")
 def test_get_required_version_errors_if_version_is_not_specified(
     mock_version,
     mock_get,
@@ -301,7 +301,7 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
         ("0.0.1", "1.0.0", "1.0.0"),
     ],
 )
-@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version(
     mock_get,
@@ -349,7 +349,7 @@ def test_get_required_platform_helper_version(
         ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
     ],
 )
-@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_in_pipeline(
     mock_get,
@@ -397,7 +397,7 @@ def test_get_required_platform_helper_version_in_pipeline(
 # TODO All the following tests still need to be reviewed....
 #
 @patch("click.secho")
-@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_errors_when_no_platform_config_version_available(
     mock_get,
@@ -428,7 +428,7 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_does_not_call_external_services_if_versions_passed_in(
     mock_get,

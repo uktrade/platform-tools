@@ -5,15 +5,15 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.platform_helper_version import (
+from dbt_platform_helper.providers.platform_helper_versioning import (
     PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
-@patch("dbt_platform_helper.providers.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version")
 @patch(
-    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
@@ -34,9 +34,9 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     )
 
 
-@patch("dbt_platform_helper.providers.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_versioning.version")
 @patch(
-    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
@@ -60,7 +60,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upg
 class TestPlatformHelperVersionGetStatus:
     # TODO clean up mocking
     @patch("requests.get")
-    @patch("dbt_platform_helper.providers.platform_helper_version.version")
+    @patch("dbt_platform_helper.providers.platform_helper_versioning.version")
     def test_get_platform_helper_version_status_given_config_and_deprecated_version_file(
         self, mock_version, mock_get, fakefs, valid_platform_config
     ):
@@ -81,7 +81,7 @@ class TestPlatformHelperVersionGetStatus:
         assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
     @patch("requests.get")
-    @patch("dbt_platform_helper.providers.platform_helper_version.version")
+    @patch("dbt_platform_helper.providers.platform_helper_versioning.version")
     def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
         self, mock_local_version, mock_latest_release_request, fakefs
     ):
@@ -101,7 +101,7 @@ class TestPlatformHelperVersionGetStatus:
         assert version_status.pipeline_overrides == {}
 
     @patch("requests.get")
-    @patch("dbt_platform_helper.providers.platform_helper_version.version")
+    @patch("dbt_platform_helper.providers.platform_helper_versioning.version")
     def test_get_platform_helper_version_status_with_invalid_config(
         self,
         mock_version,

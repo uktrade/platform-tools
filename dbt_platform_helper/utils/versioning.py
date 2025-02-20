@@ -5,7 +5,7 @@ from pathlib import Path
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_helper_version import (
+from dbt_platform_helper.providers.platform_helper_versioning import (
     PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus

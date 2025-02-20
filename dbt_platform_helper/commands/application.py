@@ -10,7 +10,7 @@ from datetime import timedelta
 import click
 from prettytable import PrettyTable
 
-from dbt_platform_helper.providers.platform_helper_version import (
+from dbt_platform_helper.providers.platform_helper_versioning import (
     PlatformHelperVersioning,
 )
 from dbt_platform_helper.utils.application import load_application
