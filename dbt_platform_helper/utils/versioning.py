@@ -56,12 +56,9 @@ class RequiredVersion:
     # Used in the generate command
     def check_platform_helper_version_mismatch(self):
         if not running_as_installed_package():
-            print("OOPS")
             return
 
         version_status = self.platform_helper_version_provider.get_status()
-        print("STATUS", version_status)
-
         self.io.process_messages(version_status.warn())
 
         required_version = SemanticVersion.from_string(

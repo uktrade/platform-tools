@@ -1,6 +1,10 @@
 from unittest.mock import Mock
 from unittest.mock import patch
 
+import yaml
+
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
@@ -49,3 +53,70 @@ def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upg
         "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
         "--upgrade dbt-platform-helper`."
     )
+
+
+class TestPlatformHelperVersionGetStatus:
+    # TODO clean up mocking
+    @patch("requests.get")
+    @patch("dbt_platform_helper.domain.platform_helper_version.version")
+    def test_get_platform_helper_version_status_given_config_and_deprecated_version_file(
+        self, mock_version, mock_get, fakefs, valid_platform_config
+    ):
+        mock_version.return_value = "1.1.1"
+        mock_get.return_value.json.return_value = {
+            "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+        }
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+        config = valid_platform_config
+        fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
+
+        version_status = PlatformHelperVersion().get_status()
+
+        assert version_status.local == SemanticVersion(1, 1, 1)
+        assert version_status.latest == SemanticVersion(2, 3, 4)
+        assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
+        assert version_status.platform_config_default == SemanticVersion(10, 2, 0)
+        assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
+
+    @patch("requests.get")
+    @patch("dbt_platform_helper.domain.platform_helper_version.version")
+    def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
+        self, mock_local_version, mock_latest_release_request, fakefs
+    ):
+        mock_local_version.return_value = "1.1.1"
+        mock_latest_release_request.return_value.json.return_value = {
+            "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+        }
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+        fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
+
+        version_status = PlatformHelperVersion().get_status()
+
+        assert version_status.local == SemanticVersion(1, 1, 1)
+        assert version_status.latest == SemanticVersion(2, 3, 4)
+        assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
+        assert version_status.platform_config_default == None
+        assert version_status.pipeline_overrides == {}
+
+    @patch("requests.get")
+    @patch("dbt_platform_helper.domain.platform_helper_version.version")
+    def test_get_platform_helper_version_status_with_invalid_config(
+        self,
+        mock_version,
+        mock_get,
+        fakefs,
+        create_invalid_platform_config_file,
+    ):
+        mock_version.return_value = "1.1.1"
+        mock_get.return_value.json.return_value = {
+            "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+        }
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+
+        version_status = PlatformHelperVersion().get_status()
+
+        assert version_status.local == SemanticVersion(1, 1, 1)
+        assert version_status.latest == SemanticVersion(2, 3, 4)
+        assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
+        assert version_status.platform_config_default == SemanticVersion(1, 2, 3)
+        assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}

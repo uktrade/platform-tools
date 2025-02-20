@@ -23,6 +23,7 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.utils.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
@@ -56,6 +57,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
         assert (message % template_path) == str(exception.value)
 
 
+# TODO move to PlatformHelperVersion provider tests
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=False),
@@ -67,52 +69,58 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
     version_compatibility.assert_not_called()
 
 
-@patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
+# TODO move to RequiredVersion domain
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-    get_file_app_versions, secho
-):
-    get_file_app_versions.return_value = PlatformHelperVersionStatus(
+@patch(
+    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    new=Mock(return_value=True),
+)
+def test_check_platform_helper_version_shows_warning_when_different_than_file_spec():
+    mock_io_provider = Mock()
+    mock_platform_helper_version_provider = Mock()
+    mock_platform_helper_version_provider.get_status.return_value = PlatformHelperVersionStatus(
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=SemanticVersion(1, 0, 0),
     )
-
-    required_version = RequiredVersion()
+    required_version = RequiredVersion(
+        io=mock_io_provider, platform_helper_version_provider=mock_platform_helper_version_provider
+    )
 
     required_version.check_platform_helper_version_mismatch()
 
-    secho.assert_called_with(
+    mock_io_provider.warn.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
-        fg="magenta",
     )
 
 
-@patch("dbt_platform_helper.utils.versioning.running_as_installed_package")
-@patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
+# TODO move to RequiredVersion domain
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-    get_file_app_versions, secho, mock_running_as_installed_package
-):
-    get_file_app_versions.return_value = PlatformHelperVersionStatus(
+@patch(
+    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    new=Mock(return_value=True),
+)
+def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec():
+    mock_io_provider = Mock()
+    mock_platform_helper_version_provider = Mock()
+    mock_platform_helper_version_provider.get_status.return_value = PlatformHelperVersionStatus(
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=SemanticVersion(1, 0, 0),
     )
-    mock_running_as_installed_package.return_value = False
-
-    required_version = RequiredVersion()
+    required_version = RequiredVersion(
+        io=mock_io_provider, platform_helper_version_provider=mock_platform_helper_version_provider
+    )
 
     required_version.check_platform_helper_version_mismatch()
 
-    secho.assert_not_called()
+    mock_io_provider.warn.assert_not_called
+    mock_io_provider.error.assert_not_called
 
 
-# TODO move to domain tests.  consolidate running_as_installed_package
+# TODO move to RequiredVersion domain tests.  consolidate running_as_installed_package
 @patch(
     "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
@@ -141,6 +149,8 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     )
 
 
+# TODO move to PlatformHelperVersion provider tests and ensure it's testing the right thing
+# right now this always passes because the specific mock is never called
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package",
     new=Mock(return_value=True),
@@ -156,130 +166,98 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
     version_compatibility.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    "version_in_phv_file, version_in_platform_config, expected_warnings",
+    (
+        (
+            True,
+            False,
+            [
+                f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
+                f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 3.3.3\n",
+            ],
+        ),
+        (
+            False,
+            True,
+            None,
+        ),
+        (
+            True,
+            True,
+            [f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."],
+        ),
+    ),
+)
+# TODO add coverage for the include_project_versions parameter in the PlatformHelperVersion tests
+# @pytest.mark.parametrize("include_project_versions", [False, True])
 @patch("requests.get")
 @patch("dbt_platform_helper.domain.platform_helper_version.version")
-def test_get_platform_helper_version_status(mock_version, mock_get, fakefs, valid_platform_config):
-    mock_version.return_value = "1.1.1"
-    mock_get.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
-    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
-    config = valid_platform_config
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
-
-    version_status = PlatformHelperVersion().get_status()
-
-    assert version_status.local == SemanticVersion(1, 1, 1)
-    assert version_status.latest == SemanticVersion(2, 3, 4)
-    assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
-    assert version_status.platform_config_default == SemanticVersion(10, 2, 0)
-    assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
-
-
-@patch("requests.get")
-@patch("dbt_platform_helper.domain.platform_helper_version.version")
-def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
-    mock_local_version, mock_latest_release_request, fakefs
-):
-    mock_local_version.return_value = "1.1.1"
-    mock_latest_release_request.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
-    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
-
-    version_status = get_platform_helper_version_status()
-
-    assert version_status.local == SemanticVersion(1, 1, 1)
-    assert version_status.latest == SemanticVersion(2, 3, 4)
-    assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
-    assert version_status.platform_config_default == None
-    assert version_status.pipeline_overrides == {}
-
-
-@patch("requests.get")
-@patch("dbt_platform_helper.domain.platform_helper_version.version")
-def test_get_platform_helper_version_status_with_invalid_config(
+def test_platform_helper_version_deprecation_warnings(
     mock_version,
     mock_get,
     fakefs,
-    create_invalid_platform_config_file,
+    version_in_phv_file,
+    version_in_platform_config,
+    expected_warnings,
 ):
-    mock_version.return_value = "1.1.1"
+    mock_version.return_value = "1.2.3"
     mock_get.return_value.json.return_value = {
         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
     }
-    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+    platform_config = {"application": "my-app"}
+    if version_in_platform_config:
+        platform_config["default_versions"] = {"platform-helper": "2.2.2"}
 
-    version_status = get_platform_helper_version_status()
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
 
-    assert version_status.local == SemanticVersion(1, 1, 1)
-    assert version_status.latest == SemanticVersion(2, 3, 4)
-    assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
-    assert version_status.platform_config_default == SemanticVersion(1, 2, 3)
-    assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}
+    if version_in_phv_file:
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
+
+    mock_io_provider = Mock()
+
+    RequiredVersion(io=mock_io_provider).get_required_version()
+
+    if expected_warnings:
+        mock_io_provider.process_messages.assert_called_with(
+            {"warnings": expected_warnings, "errors": []}
+        )
+    else:
+        mock_io_provider.process_messages.assert_called_with({})
 
 
-# @pytest.mark.parametrize(
-#     "version_in_phv_file, version_in_platform_config, expected_message, message_colour",
-#     (
-#         (
-#             False,
-#             False,
-#             f"Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
-#             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3\n",
-#             "red",
-#         ),
-#         (
-#             True,
-#             False,
-#             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.\n"
-#             f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n"
-#             "  platform-helper: 3.3.3\n",
-#             "magenta",
-#         ),
-#         (False, True, None, "magenta"),
-#         (
-#             True,
-#             True,
-#             f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
-#             "magenta",
-#         ),
-#     ),
-# )
-# @pytest.mark.parametrize("include_project_versions", [False, True])
-# @patch("click.secho")
-# @patch("requests.get")
-# @patch("dbt_platform_helper.utils.versioning.version")
-# def test_platform_helper_version_warnings(
-#     mock_version,
-#     mock_get,
-#     secho,
-#     fakefs,
-#     version_in_phv_file,
-#     version_in_platform_config,
-#     expected_message,
-#     message_colour,
-#     include_project_versions,
-# ):
-#     mock_version.return_value = "1.2.3"
-#     mock_get.return_value.json.return_value = {
-#         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-#     }
-#     platform_config = {"application": "my-app"}
-#     if version_in_platform_config:
-#         platform_config["default_versions"] = {"platform-helper": "2.2.2"}
-#     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+# TODO move to RequiredVersion domain tests
+@patch("requests.get")
+@patch("dbt_platform_helper.domain.platform_helper_version.version")
+def test_get_required_version_errors_if_version_is_not_specified(
+    mock_version,
+    mock_get,
+    fakefs,
+):
+    mock_version.return_value = "1.2.3"
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
 
-#     if version_in_phv_file:
-#         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
+    platform_config_without_default_version = {"application": "my-app"}
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_without_default_version)
+    )
 
-#     get_platform_helper_version_status(include_project_versions=include_project_versions)
+    mock_io_provider = Mock()
 
-#     if expected_message and include_project_versions:
-#         secho.assert_called_with(expected_message, fg=message_colour)
-#     else:
-#         secho.assert_not_called()
+    print("provider mock", mock_io_provider)
+
+    expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
+Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
+"""
+
+    with pytest.raises(PlatformHelperVersionNotFoundException):
+        RequiredVersion(io=mock_io_provider).get_required_version()
+
+    mock_io_provider.process_messages.assert_called_with(
+        {"warnings": [], "errors": [expected_message]}
+    )
 
 
 @patch("subprocess.run")
