@@ -73,7 +73,7 @@ class RequiredVersion:
             self.io.warn(message)
 
 
-# TODO to be removed after tests are updated - temporary wrapper mid-refactor
+# TODO to be removed after config tests are updated - temporary wrapper mid-refactor
 def get_platform_helper_version_status(
     include_project_versions=True,
     yaml_provider=YamlFileProvider,
@@ -83,7 +83,7 @@ def get_platform_helper_version_status(
     )
 
 
-# TODO can stay as utility for now
+# TODO duplicated in PlatformHelperVersion
 def running_as_installed_package():
     return "site-packages" in __file__
 
