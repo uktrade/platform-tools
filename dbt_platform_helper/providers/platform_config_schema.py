@@ -506,7 +506,9 @@ class PlatformConfigSchema:
                         },
                         Optional("cross_environment_service_access"): {
                             PlatformConfigSchema.__valid_schema_key(): {
-                                "application": str,
+                                # Deprecated: We didn't implement cross application access, no service teams are asking for it.
+                                # application should be removed once we can confirm that no-one is using it.
+                                Optional("application"): str,
                                 "environment": PlatformConfigSchema.__valid_environment_name(),
                                 "account": str,
                                 "service": str,
