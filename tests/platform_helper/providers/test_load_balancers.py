@@ -1,4 +1,3 @@
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -9,15 +8,6 @@ from dbt_platform_helper.providers.load_balancers import CertificateNotFoundExce
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
-from dbt_platform_helper.providers.load_balancers import (
-    get_https_certificate_for_application,
-)
-from dbt_platform_helper.providers.load_balancers import (
-    get_https_listener_for_application,
-)
-from dbt_platform_helper.providers.load_balancers import (
-    get_load_balancer_for_application,
-)
 from dbt_platform_helper.providers.load_balancers import normalise_to_cidr
 
 # TODO add exception tests for class based ALB provider
@@ -46,17 +36,23 @@ def _create_load_balancer(session):
     )["LoadBalancers"][0]["LoadBalancerArn"]
 
 
-def _create_listener(session):
+def _create_listener(session, load_balancer_arn=None):
     elbv2_client = session.client("elbv2")
-    load_balancer_arn = _create_load_balancer(session)
-    return elbv2_client.create_listener(
-        LoadBalancerArn=load_balancer_arn, DefaultActions=[{"Type": "forward"}], Protocol="HTTPS"
-    )["Listeners"][0]["ListenerArn"]
+
+    load_balancer_arn = load_balancer_arn if load_balancer_arn else _create_load_balancer(session)
+    return (
+        elbv2_client.create_listener(
+            LoadBalancerArn=load_balancer_arn,
+            DefaultActions=[{"Type": "forward"}],
+            Protocol="HTTPS",
+        )["Listeners"][0]["ListenerArn"],
+        load_balancer_arn,
+    )
 
 
-def _create_listener_with_cert(session):
+def _create_listener_with_cert(session, is_default=True, load_balancer_arn=None):
     elbv2_client = session.client("elbv2")
-    listener_arn = _create_listener(session)
+    listener_arn, load_balancer_arn = _create_listener(session, load_balancer_arn)
 
     acm_client = session.client("acm")
     certificate_arn = acm_client.request_certificate(
@@ -65,10 +61,10 @@ def _create_listener_with_cert(session):
     )["CertificateArn"]
     elbv2_client.add_listener_certificates(
         ListenerArn=listener_arn,
-        Certificates=[{"CertificateArn": certificate_arn, "IsDefault": True}],
+        Certificates=[{"CertificateArn": certificate_arn, "IsDefault": is_default}],
     )
 
-    return certificate_arn, listener_arn
+    return certificate_arn, listener_arn, load_balancer_arn
 
 
 def _create_target_group(session, service_name="web"):
@@ -93,7 +89,7 @@ def _create_target_group(session, service_name="web"):
 def test_get_host_header_conditions(mock_application):
     session = mock_application.environments["development"].session
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
     target_group_arn = _create_target_group(session)
     session.client("elbv2").create_rule(
         ListenerArn=listener_arn,
@@ -113,7 +109,7 @@ def test_get_host_header_conditions(mock_application):
 def test_get_rules_tag_descriptions(mock_application):
     session = mock_application.environments["development"].session
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
     target_group_arn = _create_target_group(session)
 
     created_rules = session.client("elbv2").create_rule(
@@ -135,7 +131,7 @@ def test_get_rules_tag_descriptions(mock_application):
 def test_get_rules_tag_descriptions_by_listener_arn(mock_application):
     session = mock_application.environments["development"].session
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
     target_group_arn = _create_target_group(session)
 
     session.client("elbv2").create_rule(
@@ -158,7 +154,7 @@ def test_create_header_rule(mock_application):
 
     conditions = [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
     target_group_arn = _create_target_group(session)
     session.client("elbv2").create_rule(
         ListenerArn=listener_arn,
@@ -216,7 +212,7 @@ def test_create_source_ip_rule(allowed_ips, expected_rule_cidr, mock_application
 
     conditions = [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
     target_group_arn = _create_target_group(session)
     session.client("elbv2").create_rule(
         ListenerArn=listener_arn,
@@ -281,7 +277,7 @@ def test_find_target_group_not_found(mock_application):
 def test_delete_listener_rule(mock_application):
     session = mock_application.environments["development"].session
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
     target_group_arn = _create_target_group(session)
 
     rules = session.client("elbv2").create_rule(
@@ -312,7 +308,7 @@ def test_delete_listener_rule(mock_application):
 def test_create_rule(mock_application):
     session = mock_application.environments["development"].session
 
-    listener_arn = _create_listener(session)
+    listener_arn, _ = _create_listener(session)
 
     rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
     assert len(rules) == 1
@@ -352,7 +348,7 @@ def test_get_load_balancer_for_application(mock_application):
 @mock_aws
 def test_get_https_listener_for_application(mock_application):
     session = mock_application.environments["development"].session
-    listerner_arn = _create_listener(session)
+    listerner_arn, _ = _create_listener(session)
 
     alb_provider = LoadBalancerProvider(session)
     result = alb_provider.get_https_listener_for_application("test-application", "development")
@@ -363,7 +359,7 @@ def test_get_https_listener_for_application(mock_application):
 @mock_aws
 def test_https_certificate_for_application(mock_application):
     session = mock_application.environments["development"].session
-    certificate_arn, _ = _create_listener_with_cert(session)
+    certificate_arn, _, _ = _create_listener_with_cert(session)
 
     # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
     mock_response = {"Certificates": [{"CertificateArn": certificate_arn, "IsDefault": True}]}
@@ -375,6 +371,69 @@ def test_https_certificate_for_application(mock_application):
             "test-application", "development"
         )
         assert result == certificate_arn
+
+
+@mock_aws
+def test_multiple_https_certificate_for_application(mock_application):
+    session = mock_application.environments["development"].session
+    certificate_arn, _, load_balancer_arn = _create_listener_with_cert(session)
+    certificate_arn_2, _, _ = _create_listener_with_cert(session, False, load_balancer_arn)
+
+    # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
+    mock_response = {
+        "Certificates": [
+            {"CertificateArn": certificate_arn, "IsDefault": "True"},
+            {"CertificateArn": certificate_arn_2, "IsDefault": "False"},
+        ]
+    }
+    alb_provider = LoadBalancerProvider(session)
+    with patch.object(
+        alb_provider.evlb_client, "describe_listener_certificates", return_value=mock_response
+    ):
+        result = alb_provider.get_https_certificate_for_application(
+            "test-application", "development"
+        )
+        assert result == certificate_arn
+
+
+@mock_aws
+def test_when_no_certificate_present_for_application(mock_application):
+    session = mock_application.environments["development"].session
+    _, _, _ = _create_listener_with_cert(session)
+
+    # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
+    mock_response = {"Certificates": []}
+    alb_provider = LoadBalancerProvider(session)
+    with patch.object(
+        alb_provider.evlb_client, "describe_listener_certificates", return_value=mock_response
+    ):
+        with pytest.raises(CertificateNotFoundException):
+            alb_provider.get_https_certificate_for_application("test-application", "development")
+
+
+@mock_aws
+def test_when_no_https_listener_present(mock_application):
+    session = mock_application.environments["development"].session
+
+    _create_load_balancer(session)
+    alb_provider = LoadBalancerProvider(session)
+    with pytest.raises(
+        ListenerNotFoundException,
+        match="No HTTPS listener found for environment development in the application test-application.",
+    ):
+        alb_provider.get_https_listener_for_application("test-application", "development")
+
+
+@mock_aws
+def test_when_no_load_balancer_exists(mock_application):
+    session = mock_application.environments["development"].session
+
+    alb_provider = LoadBalancerProvider(session)
+    with pytest.raises(
+        LoadBalancerNotFoundException,
+        match="No load balancer found for environment development in the application test-application.",
+    ):
+        alb_provider.get_load_balancer_for_application("test-application", "development")
 
 
 @pytest.mark.parametrize(
@@ -396,107 +455,3 @@ def test_https_certificate_for_application(mock_application):
 )
 def test_normalise_to_cidr(ip, expected_cidr):
     assert normalise_to_cidr(ip) == expected_cidr
-
-
-class TestFindHTTPSListener:
-    @patch(
-        "dbt_platform_helper.providers.load_balancers.get_load_balancer_for_application",
-        return_value="lb_arn",
-    )
-    def test_when_no_https_listener_present(self, get_load_balancer_for_application):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listeners.return_value = {"Listeners": []}
-        with pytest.raises(ListenerNotFoundException):
-            get_https_listener_for_application(boto_mock, "test-application", "development")
-
-    @patch(
-        "dbt_platform_helper.providers.load_balancers.get_load_balancer_for_application",
-        return_value="lb_arn",
-    )
-    def test_when_https_listener_present(self, get_load_balancer_for_application):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listeners.return_value = {
-            "Listeners": [{"ListenerArn": "listener_arn", "Protocol": "HTTPS"}]
-        }
-
-        listener_arn = get_https_listener_for_application(
-            boto_mock, "test-application", "development"
-        )
-        assert "listener_arn" == listener_arn
-
-
-class TestFindLoadBalancer:
-    def test_when_no_load_balancer_exists(self):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_load_balancers.return_value = {"LoadBalancers": []}
-        with pytest.raises(LoadBalancerNotFoundException):
-            get_load_balancer_for_application(boto_mock, "test-application", "development")
-
-    def test_when_a_load_balancer_exists(self):
-
-        boto_mock = MagicMock()
-        boto_mock.client().describe_load_balancers.return_value = {
-            "LoadBalancers": [{"LoadBalancerArn": "lb_arn"}]
-        }
-        boto_mock.client().describe_tags.return_value = {
-            "TagDescriptions": [
-                {
-                    "ResourceArn": "lb_arn",
-                    "Tags": [
-                        {"Key": "copilot-application", "Value": "test-application"},
-                        {"Key": "copilot-environment", "Value": "development"},
-                    ],
-                }
-            ]
-        }
-
-        lb_arn = get_load_balancer_for_application(boto_mock, "test-application", "development")
-        assert "lb_arn" == lb_arn
-
-
-class TestGetHttpsCertificateForApplicationLoadbalancer:
-    @patch(
-        "dbt_platform_helper.providers.load_balancers.get_https_listener_for_application",
-        return_value="https_listener_arn",
-    )
-    def test_when_no_certificate_present(self, mock_get_https_listener_for_application):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {"Certificates": []}
-
-        with pytest.raises(CertificateNotFoundException):
-            get_https_certificate_for_application(boto_mock, "test-application", "development")
-
-    @patch(
-        "dbt_platform_helper.providers.load_balancers.get_https_listener_for_application",
-        return_value="https_listener_arn",
-    )
-    def test_when_single_https_certificate_present(self, mock_get_https_listener_for_application):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {
-            "Certificates": [{"CertificateArn": "certificate_arn", "IsDefault": "True"}]
-        }
-
-        certificate_arn = get_https_certificate_for_application(
-            boto_mock, "test-application", "development"
-        )
-        assert "certificate_arn" == certificate_arn
-
-    @patch(
-        "dbt_platform_helper.providers.load_balancers.get_https_listener_for_application",
-        return_value="https_listener_arn",
-    )
-    def test_when_multiple_https_certificate_present(self, mock_get_https_listener_for_application):
-        boto_mock = MagicMock()
-        boto_mock.client().describe_listener_certificates.return_value = {
-            "Certificates": [
-                {"CertificateArn": "certificate_arn_default", "IsDefault": "True"},
-                {"CertificateArn": "certificate_arn_not_default", "IsDefault": "False"},
-            ]
-        }
-
-        certificate_arn = get_https_certificate_for_application(
-            boto_mock, "test-application", "development"
-        )
-        assert "certificate_arn_default" == certificate_arn
