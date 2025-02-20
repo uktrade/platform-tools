@@ -86,7 +86,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
         deprecated_version_file=SemanticVersion(1, 0, 0),
     )
     required_version = RequiredVersion(
-        io=mock_io_provider, platform_helper_version_provider=mock_platform_helper_version_provider
+        io=mock_io_provider, platform_helper_versioning=mock_platform_helper_version_provider
     )
 
     required_version.check_platform_helper_version_mismatch()
@@ -112,7 +112,7 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec()
         deprecated_version_file=SemanticVersion(1, 0, 0),
     )
     required_version = RequiredVersion(
-        io=mock_io_provider, platform_helper_version_provider=mock_platform_helper_version_provider
+        io=mock_io_provider, platform_helper_versioning=mock_platform_helper_version_provider
     )
 
     required_version.check_platform_helper_version_mismatch()
@@ -140,7 +140,7 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     mock_io_provider = Mock()
 
     required_version = RequiredVersion(
-        platform_helper_version_provider=mock_platform_helper_version_provider, io=mock_io_provider
+        platform_helper_versioning=mock_platform_helper_version_provider, io=mock_io_provider
     )
 
     required_version.check_platform_helper_version_mismatch()

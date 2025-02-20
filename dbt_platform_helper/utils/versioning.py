@@ -16,16 +16,19 @@ from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
+
+# TODO to be moved into domain
 class PlatformHelperVersionNotFoundException(PlatformException):
     def __init__(self):
         super().__init__(f"""Platform helper version could not be resolved.""")
 
 
+# TODO to be moved into domain
 class RequiredVersion:
-    def __init__(self, io=None, platform_helper_version_provider=None):
+    def __init__(self, io=None, platform_helper_versioning=None):
         self.io = io or ClickIOProvider()
-        self.platform_helper_version_provider = (
-            platform_helper_version_provider or PlatformHelperVersioning(io=self.io)
+        self.platform_helper_versioning = (
+            platform_helper_versioning or PlatformHelperVersioning(io=self.io)
         )
 
     def get_required_platform_helper_version(
@@ -49,7 +52,7 @@ class RequiredVersion:
         return out
 
     def get_required_version(self, pipeline=None):
-        version_status = self.platform_helper_version_provider.get_status()
+        version_status = self.platform_helper_versioning.get_status()
         self.io.process_messages(version_status.validate())
         required_version = self.get_required_platform_helper_version(pipeline, version_status)
         self.io.info(required_version)
@@ -60,7 +63,7 @@ class RequiredVersion:
         if not running_as_installed_package():
             return
 
-        version_status = self.platform_helper_version_provider.get_status()
+        version_status = self.platform_helper_versioning.get_status()
         self.io.process_messages(version_status.validate())
 
         required_version = SemanticVersion.from_string(
