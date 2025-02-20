@@ -888,10 +888,12 @@ class MaintenancePageMocks:
         self.io.confirm = Mock(return_value="yes")
         self.io.abort_with_error = Mock(side_effect=SystemExit(1))
         self.get_env_ips = kwargs.get("get_env_ips", Mock(return_value=["0.1.2.3, 4.5.6.7"]))
-        self.set_load_balancer = MagicMock()
+        self.set_load_balancer = kwargs.get("set_load_balancer", MagicMock())
         self.load_balancer = kwargs.get(
             "load_balancer", MagicMock(return_value=self.set_load_balancer)
         )
+        if not kwargs.get("set_load_balancer"):
+            self.__initialise_load_balancer_return_values(**kwargs)
 
     def params(self):
         return {
@@ -901,13 +903,34 @@ class MaintenancePageMocks:
             "load_balancer": self.load_balancer,
         }
 
+    def __initialise_load_balancer_return_values(self, **kwargs):
+        self.set_load_balancer.get_https_listener_for_application.return_value = kwargs.get(
+            "get_https_listener_for_application", "https_listener"
+        )
+        self.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.return_value = kwargs.get(
+            "get_rules_tag_descriptions_by_listener_arn",
+            [
+                {
+                    "ResourceArn": "rule_arn",
+                    "Tags": [],
+                }
+            ],
+        )
+
+        self.set_load_balancer.find_target_group.return_value = kwargs.get(
+            "find_target_group", "target_group_arn"
+        )
+        self.set_load_balancer.get_host_header_conditions.return_value = kwargs.get(
+            "get_host_header_conditions",
+            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+        )
+
 
 class TestActivateMethod:
-
-    def test_successful_activate(
-        self,
-    ):
-
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    def test_successful_activate(self, random_mock):
         maintenance_mocks = MaintenancePageMocks(app)
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
@@ -915,20 +938,78 @@ class TestActivateMethod:
         maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
-            ANY, "https_listener"
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+            "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
-            ANY,
+        maintenance_mocks.set_load_balancer.find_target_group.assert_called_with(
+            "test-application", "development", "web"
+        )
+        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_called_with(
             "https_listener",
-            "test-application",
-            "development",
-            [maintenance_mocks.application.services["web"]],
+            "target_group_arn",
+        )
+        maintenance_mocks.set_load_balancer.create_header_rule.assert_has_calls(
+            [
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "X-Forwarded-For",
+                    ["0.1.2.3, 4.5.6.7"],
+                    "AllowedIps",
+                    1,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "Bypass-Key",
+                    ["abc"],
+                    "BypassIpFilter",
+                    3,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                ),
+            ]
+        )
+
+        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_called_with(
+            "https_listener",
+            "target_group_arn",
             ["0.1.2.3, 4.5.6.7"],
-            "default",
+            "AllowedSourceIps",
+            2,
+            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+        )
+
+        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+            listener_arn="https_listener",
+            priority=4,
+            conditions=[
+                {
+                    "Field": "path-pattern",
+                    "PathPatternConfig": {"Values": ["/*"]},
+                },
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path"]},
+                },
+            ],
+            actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "StatusCode": "503",
+                        "ContentType": "text/html",
+                        "MessageBody": ANY,
+                    },
+                }
+            ],
+            tags=[
+                {"Key": "name", "Value": "MaintenancePage"},
+                {"Key": "type", "Value": "default"},
+            ],
         )
 
         maintenance_mocks.io.confirm.assert_has_calls(
@@ -939,9 +1020,16 @@ class TestActivateMethod:
                 ),
             ]
         )
-        maintenance_mocks.io.info.assert_called_with(
-            "Maintenance page 'default' added for environment development in "
-            "application test-application",
+        maintenance_mocks.io.info.assert_has_calls(
+            [
+                call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
+                ),
+                call(
+                    "Maintenance page 'default' added for environment development in "
+                    "application test-application",
+                ),
+            ]
         )
 
     def test_successful_activate_with_custom_template(

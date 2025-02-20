@@ -243,7 +243,7 @@ class MaintenancePage:
                 # add to accumilating list of conditions for maintenace page rule
                 maintenance_page_host_header_conditions.extend(service_conditions)
 
-            click.secho(
+            self.io.info(
                 f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
             )
 
