@@ -12,9 +12,7 @@ import click
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
-from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
@@ -97,52 +95,39 @@ class MaintenancePage:
         application_environment = get_app_environment(self.application, env)
         self.load_balancer = self.load_balancer_provider(application_environment.session)
 
-        try:
-            https_listener = self.load_balancer.get_https_listener_for_application(
-                application_environment.session, self.application.name, env
+        https_listener = self.load_balancer.get_https_listener_for_application(
+            application_environment.session, self.application.name, env
+        )
+        current_maintenance_page = self.__get_maintenance_page_type(https_listener)
+        remove_current_maintenance_page = False
+        if current_maintenance_page:
+            remove_current_maintenance_page = self.io.confirm(
+                f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
+                f"environment in {self.application.name}.\nWould you like to replace it with a '{template}' "
+                f"maintenance page?"
             )
-            current_maintenance_page = self.__get_maintenance_page_type(https_listener)
-            remove_current_maintenance_page = False
-            if current_maintenance_page:
-                remove_current_maintenance_page = self.io.confirm(
-                    f"There is currently a '{current_maintenance_page}' maintenance page for the {env} "
-                    f"environment in {self.application.name}.\nWould you like to replace it with a '{template}' "
-                    f"maintenance page?"
-                )
-                if not remove_current_maintenance_page:
-                    return
+            if not remove_current_maintenance_page:
+                return
 
-            if remove_current_maintenance_page or self.io.confirm(
-                f"You are about to enable the '{template}' maintenance page for the {env} "
-                f"environment in {self.application.name}.\nWould you like to continue?"
-            ):
-                if current_maintenance_page and remove_current_maintenance_page:
-                    self.__remove_maintenance_page(https_listener)
+        if remove_current_maintenance_page or self.io.confirm(
+            f"You are about to enable the '{template}' maintenance page for the {env} "
+            f"environment in {self.application.name}.\nWould you like to continue?"
+        ):
+            if current_maintenance_page and remove_current_maintenance_page:
+                self.__remove_maintenance_page(https_listener)
 
-                allowed_ips = self.get_env_ips(vpc, application_environment)
+            allowed_ips = self.get_env_ips(vpc, application_environment)
 
-                self.add_maintenance_page(
-                    https_listener,
-                    self.application.name,
-                    env,
-                    services,
-                    allowed_ips,
-                    template,
-                )
-                self.io.info(
-                    f"Maintenance page '{template}' added for environment {env} in application {self.application.name}",
-                )
-
-        except LoadBalancerNotFoundException:
-            # TODO push exception to command layer
-            self.io.abort_with_error(
-                f"No load balancer found for environment {env} in the application {self.application.name}.",
+            self.add_maintenance_page(
+                https_listener,
+                self.application.name,
+                env,
+                services,
+                allowed_ips,
+                template,
             )
-
-        except ListenerNotFoundException:
-            # TODO push exception to command layer
-            self.io.abort_with_error(
-                f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
+            self.io.info(
+                f"Maintenance page '{template}' added for environment {env} in application {self.application.name}",
             )
 
     def deactivate(self, env: str):
@@ -150,39 +135,26 @@ class MaintenancePage:
 
         self.load_balancer = self.load_balancer_provider(application_environment.session)
 
-        try:
-            https_listener = self.load_balancer.get_https_listener_for_application(
-                application_environment.session, self.application.name, env
-            )
-            current_maintenance_page = self.__get_maintenance_page_type(https_listener)
+        https_listener = self.load_balancer.get_https_listener_for_application(
+            application_environment.session, self.application.name, env
+        )
+        current_maintenance_page = self.__get_maintenance_page_type(https_listener)
 
-            # TODO discuss, reduce number of return statements but more nested if statements
-            if not current_maintenance_page:
-                self.io.warn("There is no current maintenance page to remove")
-                return
+        # TODO discuss, reduce number of return statements but more nested if statements
+        if not current_maintenance_page:
+            self.io.warn("There is no current maintenance page to remove")
+            return
 
-            if not self.io.confirm(
-                f"There is currently a '{current_maintenance_page}' maintenance page, "
-                f"would you like to remove it?"
-            ):
-                return
+        if not self.io.confirm(
+            f"There is currently a '{current_maintenance_page}' maintenance page, "
+            f"would you like to remove it?"
+        ):
+            return
 
-            self.__remove_maintenance_page(https_listener)
-            self.io.info(
-                f"Maintenance page removed from environment {env} in application {self.application.name}",
-            )
-
-        except LoadBalancerNotFoundException:
-            # TODO push exception to command layer
-            self.io.abort_with_error(
-                f"No load balancer found for environment {env} in the application {self.application.name}.",
-            )
-
-        except ListenerNotFoundException:
-            # TODO push exception to command layer
-            self.io.abort_with_error(
-                f"No HTTPS listener found for environment {env} in the application {self.application.name}.",
-            )
+        self.__remove_maintenance_page(https_listener)
+        self.io.info(
+            f"Maintenance page removed from environment {env} in application {self.application.name}",
+        )
 
     def add_maintenance_page(
         self,

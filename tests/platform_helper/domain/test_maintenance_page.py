@@ -1032,135 +1032,201 @@ class TestActivateMethod:
             ]
         )
 
-    def test_successful_activate_with_custom_template(
-        self,
-    ):
-        template = "migration"
-        maintenance_mocks = MaintenancePageMocks(app)
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    def test_successful_activate_with_custom_template(self, random_mock):
+        describe_rules_response = [
+            {
+                "ResourceArn": "rule_arn",
+                "Tags": [
+                    {"Key": "name", "Value": "MaintenancePage"},
+                    {"Key": "type", "Value": "default"},
+                ],
+            }
+        ]
+        maintenance_mocks = MaintenancePageMocks(
+            app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
+        )
+        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
-            ANY, "https_listener"
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+            "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
-            ANY,
-            "https_listener",
-            "test-application",
-            "development",
-            [maintenance_mocks.application.services["web"]],
-            ["0.1.2.3, 4.5.6.7"],
-            "migration",
+        maintenance_mocks.set_load_balancer.find_target_group.assert_called_with(
+            "test-application", "development", "web"
         )
-
-        maintenance_mocks.io.confirm.assert_has_calls(
+        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_called_with(
+            "https_listener",
+            "target_group_arn",
+        )
+        maintenance_mocks.set_load_balancer.create_header_rule.assert_has_calls(
             [
                 call(
-                    "You are about to enable the 'migration' maintenance page for the development "
-                    "environment in test-application.\nWould you like to continue?"
+                    "https_listener",
+                    "target_group_arn",
+                    "X-Forwarded-For",
+                    ["0.1.2.3, 4.5.6.7"],
+                    "AllowedIps",
+                    1,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "Bypass-Key",
+                    ["abc"],
+                    "BypassIpFilter",
+                    3,
+                    [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
                 ),
             ]
         )
-        maintenance_mocks.io.info.assert_called_with(
-            "Maintenance page 'migration' added for environment development in "
-            "application test-application",
-        )
 
-    def test_successful_activate_when_already_activated(
-        self,
-    ):
-
-        maintenance_mocks = MaintenancePageMocks(
-            app, get_maintenance_page_type=Mock(return_value="maintenance")
-        )
-        provider = MaintenancePage(**maintenance_mocks.params())
-        provider.activate(env, svc, template, vpc)
-
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
-        )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
-            ANY, "https_listener"
-        )
-        maintenance_mocks.get_env_ips.assert_called_with(
-            vpc, maintenance_mocks.application.environments["development"]
-        )
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_called_with(
-            ANY,
+        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_called_with(
             "https_listener",
-            "test-application",
-            "development",
-            [maintenance_mocks.application.services["web"]],
+            "target_group_arn",
             ["0.1.2.3, 4.5.6.7"],
-            "default",
+            "AllowedSourceIps",
+            2,
+            [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+        )
+
+        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+            listener_arn="https_listener",
+            priority=4,
+            conditions=[
+                {
+                    "Field": "path-pattern",
+                    "PathPatternConfig": {"Values": ["/*"]},
+                },
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path"]},
+                },
+            ],
+            actions=[
+                {
+                    "Type": "fixed-response",
+                    "FixedResponseConfig": {
+                        "StatusCode": "503",
+                        "ContentType": "text/html",
+                        "MessageBody": ANY,
+                    },
+                }
+            ],
+            tags=[
+                {"Key": "name", "Value": "MaintenancePage"},
+                {"Key": "type", "Value": "default"},
+            ],
         )
 
         maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
-                    "There is currently a 'maintenance' maintenance page for the development "
+                    "There is currently a 'default' maintenance page for the development "
                     "environment in test-application.\nWould you like to replace it with a 'default' maintenance page?"
                 ),
             ]
         )
-        maintenance_mocks.io.info.assert_called_with(
-            "Maintenance page 'default' added for environment development in "
-            "application test-application",
+        maintenance_mocks.io.info.assert_has_calls(
+            [
+                call(
+                    "Maintenance page 'default' added for environment development in "
+                    "application test-application",
+                ),
+            ]
         )
 
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_called_with(
-            ANY, "https_listener"
+        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_has_calls(
+            [
+                call(describe_rules_response, "MaintenancePage"),
+                call(describe_rules_response, "AllowedIps"),
+                call(describe_rules_response, "BypassIpFilter"),
+                call(describe_rules_response, "AllowedSourceIps"),
+            ]
         )
 
-    def test_activate_do_not_replace_template(self):
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    def test_activate_do_not_replace_template(self, random_mock):
+        describe_rules_response = [
+            {
+                "ResourceArn": "rule_arn",
+                "Tags": [
+                    {"Key": "name", "Value": "MaintenancePage"},
+                    {"Key": "type", "Value": "maintenance"},
+                ],
+            }
+        ]
         maintenance_mocks = MaintenancePageMocks(
-            app, get_maintenance_page_type=Mock(return_value="maintenance")
+            app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
         maintenance_mocks.io.confirm.return_value = False
+
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
-            ANY, "https_listener"
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+            "https_listener"
         )
-        maintenance_mocks.io.confirm.assert_has_calls(
-            [
-                call(
-                    "There is currently a 'maintenance' maintenance page for the development "
-                    "environment in test-application.\nWould you like to replace it with a 'default' maintenance page?"
-                ),
-            ]
-        )
-
         maintenance_mocks.get_env_ips.assert_not_called()
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
-        maintenance_mocks.io.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
+        maintenance_mocks.set_load_balancer.find_target_group.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
 
-    def test_activate_do_not_enable_page(self):
-        maintenance_mocks = MaintenancePageMocks(
-            app,
+        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+
+        maintenance_mocks.set_load_balancer.create_rule.assert_not_called()
+
+        maintenance_mocks.io.confirm.assert_has_calls(
+            [
+                call(
+                    "There is currently a 'maintenance' maintenance page for the development "
+                    "environment in test-application.\nWould you like to replace it with a 'default' maintenance page?"
+                ),
+            ]
         )
-        maintenance_mocks.io.confirm.return_value = False
-        provider = MaintenancePage(**maintenance_mocks.params())
+        maintenance_mocks.io.info.assert_not_called()
+        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_not_called()
 
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    def test_activate_do_not_enable_page(self, random_mock):
+        maintenance_mocks = MaintenancePageMocks(app)
+        maintenance_mocks.io.confirm.return_value = False
+
+        provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_called_with(
-            ANY, "https_listener"
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+            "https_listener"
         )
+        maintenance_mocks.get_env_ips.assert_not_called()
+        maintenance_mocks.set_load_balancer.find_target_group.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+
+        maintenance_mocks.set_load_balancer.create_rule.assert_not_called()
+
         maintenance_mocks.io.confirm.assert_has_calls(
             [
                 call(
@@ -1169,80 +1235,7 @@ class TestActivateMethod:
                 ),
             ]
         )
-
-        maintenance_mocks.get_env_ips.assert_not_called()
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-
-    # TODO this doesn't need to be caught in maintenance domain
-    def test_activate_page_when_load_balancer_not_found(
-        self,
-    ):
-
-        maintenance_mocks = MaintenancePageMocks(
-            app,
-            get_https_listener_for_application=Mock(side_effect=LoadBalancerNotFoundException()),
-        )
-        provider = MaintenancePage(**maintenance_mocks.params())
-
-        with pytest.raises(SystemExit):
-            provider.activate(env, svc, template, vpc)
-
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
-        )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.io.abort_with_error.assert_called_with(
-            "No load balancer found for environment development in the application "
-            "test-application.",
-        )
-
-    # TODO this doesn't need to be caught in maintenance domain
-    def test_activate_page_when_listener_not_found(
-        self,
-    ):
-        maintenance_mocks = MaintenancePageMocks(
-            app, get_https_listener_for_application=Mock(side_effect=ListenerNotFoundException())
-        )
-        provider = MaintenancePage(**maintenance_mocks.params())
-
-        with pytest.raises(SystemExit):
-            provider.activate(env, svc, template, vpc)
-
-        maintenance_mocks.io.abort_with_error.assert_called_with(
-            "No HTTPS listener found for environment development in the application "
-            "test-application.",
-        )
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
-        )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
-
-    def test_activate_an_environment_when_no_load_balancer_service_found(
-        self,
-    ):
-        services = ["not-an-alb-service"]
-        maintenance_mocks = MaintenancePageMocks(
-            app,
-        )
-        maintenance_mocks.application.services["not-an-alb-service"] = Service(
-            "not-an-alb-service", "Backend Service"
-        )
-        provider = MaintenancePage(**maintenance_mocks.params())
-
-        with pytest.raises(
-            LoadBalancedWebServiceNotFoundException,
-            match="No services deployed yet to test-application",
-        ):
-            provider.activate(env, services, template, vpc)
-
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_not_called()
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.set_load_balancer.add_maintenance_page.assert_not_called()
+        maintenance_mocks.io.info.assert_not_called()
 
     def test_successful_activate_multiple_services(
         self,
@@ -1372,46 +1365,3 @@ class TestDeactivateCommand:
             "There is currently a 'default' maintenance page, " "would you like to remove it?"
         )
         maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-
-    def test_deactivate_an_environment_when_listener_not_found(
-        self,
-    ):
-
-        maintenance_mocks = MaintenancePageMocks(
-            app, get_https_listener_for_application=Mock(side_effect=ListenerNotFoundException())
-        )
-        provider = MaintenancePage(**maintenance_mocks.params())
-        with pytest.raises(SystemExit):
-            provider.deactivate(env)
-
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
-        )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-
-        maintenance_mocks.io.abort_with_error.assert_called_with(
-            "No HTTPS listener found for environment development in the application "
-            "test-application.",
-        )
-
-    def test_deactivate_an_environment_when_load_balancer_not_found(
-        self,
-    ):
-        maintenance_mocks = MaintenancePageMocks(
-            app,
-            get_https_listener_for_application=Mock(side_effect=LoadBalancerNotFoundException()),
-        )
-        provider = MaintenancePage(**maintenance_mocks.params())
-        with pytest.raises(SystemExit):
-            provider.deactivate(env)
-
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
-        )
-        maintenance_mocks.set_load_balancer.get_maintenance_page_type.assert_not_called()
-        maintenance_mocks.set_load_balancer.remove_maintenance_page.assert_not_called()
-        maintenance_mocks.io.abort_with_error.assert_called_with(
-            "No load balancer found for environment development in the application "
-            "test-application.",
-        )

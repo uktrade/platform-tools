@@ -98,7 +98,7 @@ class LoadBalancerProvider:
             pass
 
         if not listener_arn:
-            raise ListenerNotFoundException(f"No HTTPS listener for {app} in the {env} environment")
+            raise ListenerNotFoundException(app, env)
 
         return listener_arn
 
@@ -118,9 +118,7 @@ class LoadBalancerProvider:
                 load_balancer_arn = lb["ResourceArn"]
 
         if not load_balancer_arn:
-            raise LoadBalancerNotFoundException(
-                f"No load balancer found for {app} in the {env} environment"
-            )
+            raise LoadBalancerNotFoundException(app, env)
 
         return load_balancer_arn
 
@@ -274,9 +272,7 @@ def get_load_balancer_for_application(session: boto3.Session, app: str, env: str
             load_balancer_arn = lb["ResourceArn"]
 
     if not load_balancer_arn:
-        raise LoadBalancerNotFoundException(
-            f"No load balancer found for {app} in the {env} environment"
-        )
+        raise LoadBalancerNotFoundException(app, env)
 
     return load_balancer_arn
 
@@ -294,7 +290,7 @@ def get_https_listener_for_application(session: boto3.Session, app: str, env: st
         pass
 
     if not listener_arn:
-        raise ListenerNotFoundException(f"No HTTPS listener for {app} in the {env} environment")
+        raise ListenerNotFoundException(app, env)
 
     return listener_arn
 
@@ -320,11 +316,17 @@ class LoadBalancerException(PlatformException):
 
 
 class LoadBalancerNotFoundException(LoadBalancerException):
-    pass
+    def __init__(self, application_name, env):
+        super().__init__(
+            f"No load balancer found for environment {env} in the application {application_name}."
+        )
 
 
 class ListenerNotFoundException(LoadBalancerException):
-    pass
+    def __init__(self, application_name, env):
+        super().__init__(
+            f"No HTTPS listener found for environment {env} in the application {application_name}."
+        )
 
 
 class ListenerRuleNotFoundException(LoadBalancerException):
