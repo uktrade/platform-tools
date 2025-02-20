@@ -109,12 +109,14 @@ class PlatformHelperVersionStatus(VersionStatus):
             key: value for key, value in vars(self).items() if isinstance(value, SemanticVersion)
         }
         attrs_str = ", ".join(f"{key}: {value}" for key, value in attrs.items())
-        pipeline_overrides_str = ", ".join(
-            f"{key}: {value}" for key, value in self.pipeline_overrides.items()
-        )
-        return (
-            f"{self.__class__.__name__}: {attrs_str}, pipeline_overrides: {pipeline_overrides_str}"
-        )
+
+        if self.pipeline_overrides.items():
+            pipeline_overrides_str = "pipeline_overrides: " + ", ".join(
+                f"{key}: {value}" for key, value in self.pipeline_overrides.items()
+            )
+            attrs_str = ", ".join([attrs_str, pipeline_overrides_str])
+
+        return f"{self.__class__.__name__}: {attrs_str}"
 
     # TODO rename to validate
     def warn(self) -> dict:
