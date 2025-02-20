@@ -316,7 +316,7 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
         ("0.0.1", "1.0.0", "1.0.0"),
     ],
 )
-@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version(
     mock_get,
@@ -362,7 +362,7 @@ def test_get_required_platform_helper_version(
         ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
     ],
 )
-@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_in_pipeline(
     mock_get,
@@ -437,7 +437,7 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_does_not_call_external_services_if_versions_passed_in(
     mock_get,
