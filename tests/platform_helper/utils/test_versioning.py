@@ -391,6 +391,9 @@ def test_get_required_platform_helper_version_in_pipeline(
     assert result == expected_version
 
 
+#
+# TODO All the following tests still need to be reviewed....
+#
 @patch("click.secho")
 @patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
@@ -411,7 +414,6 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     version_status = PlatformHelperVersion().get_status()
 
     ClickIOProvider().process_messages(version_status.warn())
-    print("SRTATUS:", version_status)
     with pytest.raises(PlatformException):
         required_version.get_required_platform_helper_version("main", version_status=version_status)
 
@@ -491,6 +493,8 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     assert result == default_version
 
 
+# TODO move to RequiredVersion domain tests
+# TODO use as template to recreate PlatformHelperVersion test cases for PlatformHelperVersion unit tests
 @patch(
     "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
     return_value="10.9.9",
