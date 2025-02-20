@@ -23,7 +23,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
 @patch("click.secho")
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.PlatformHelperVersion.get_status",
+    "dbt_platform_helper.providers.platform_helper_version.PlatformHelperVersionProvider.get_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(
             local=SemanticVersion(1, 0, 1),
@@ -33,7 +33,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 )
 # TODO running_as_installed_package will be consolidated to a single place
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
 )
 @patch(

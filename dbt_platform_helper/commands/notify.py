@@ -2,14 +2,16 @@ import click
 from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
-from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
+from dbt_platform_helper.providers.platform_helper_version import (
+    PlatformHelperVersionProvider,
+)
 from dbt_platform_helper.utils.arn_parser import ARN
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
 @click.group(cls=ClickDocOptGroup, help="Send Slack notifications")
 def notify():
-    PlatformHelperVersion().check_if_needs_update()
+    PlatformHelperVersionProvider().check_if_needs_update()
 
 
 @notify.command(

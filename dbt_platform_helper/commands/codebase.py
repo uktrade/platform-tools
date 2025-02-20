@@ -1,16 +1,18 @@
 import click
 
 from dbt_platform_helper.domain.codebase import Codebase
-from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.platform_helper_version import (
+    PlatformHelperVersionProvider,
+)
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def codebase():
     """Codebase commands."""
-    PlatformHelperVersion().check_if_needs_update()
+    PlatformHelperVersionProvider().check_if_needs_update()
 
 
 @codebase.command()

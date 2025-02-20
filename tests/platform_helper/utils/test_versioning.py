@@ -11,9 +11,11 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.platform_helper_version import (
+    PlatformHelperVersionProvider,
+)
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -63,7 +65,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 )
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
-    PlatformHelperVersion().check_if_needs_update()
+    PlatformHelperVersionProvider().check_if_needs_update()
 
     version_compatibility.assert_not_called()
 
@@ -73,7 +75,7 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec():
@@ -99,7 +101,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec():
@@ -121,7 +123,7 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec()
 
 # TODO move to RequiredVersion domain tests.  consolidate running_as_installed_package
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
 )
 @patch(
@@ -160,7 +162,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 ):
     os.environ["PLATFORM_TOOLS_SKIP_VERSION_CHECK"] = "true"
 
-    PlatformHelperVersion().check_if_needs_update()
+    PlatformHelperVersionProvider().check_if_needs_update()
 
     version_compatibility.assert_not_called()
 
@@ -191,7 +193,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 # TODO add coverage for the include_project_versions parameter in the PlatformHelperVersion tests
 # @pytest.mark.parametrize("include_project_versions", [False, True])
 @patch("requests.get")
-@patch("dbt_platform_helper.domain.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_version.version")
 def test_platform_helper_version_deprecation_warnings(
     mock_version,
     mock_get,
@@ -228,7 +230,7 @@ def test_platform_helper_version_deprecation_warnings(
 # TODO move to RequiredVersion domain tests
 # TODO mock config provider instead of fs
 @patch("requests.get")
-@patch("dbt_platform_helper.domain.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_version.version")
 def test_get_required_version_errors_if_version_is_not_specified(
     mock_version,
     mock_get,
@@ -299,7 +301,7 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
         ("0.0.1", "1.0.0", "1.0.0"),
     ],
 )
-@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version(
     mock_get,
@@ -327,7 +329,7 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    version_status = PlatformHelperVersion().get_status()
+    version_status = PlatformHelperVersionProvider().get_status()
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(version_status=version_status)
@@ -347,7 +349,7 @@ def test_get_required_platform_helper_version(
         ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
     ],
 )
-@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_in_pipeline(
     mock_get,
@@ -381,7 +383,7 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    version_status = PlatformHelperVersion().get_status()
+    version_status = PlatformHelperVersionProvider().get_status()
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
@@ -395,7 +397,7 @@ def test_get_required_platform_helper_version_in_pipeline(
 # TODO All the following tests still need to be reviewed....
 #
 @patch("click.secho")
-@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_errors_when_no_platform_config_version_available(
     mock_get,
@@ -411,7 +413,7 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     # TODO need to inject the config provider instead of relying on FS
     required_version = RequiredVersion()
 
-    version_status = PlatformHelperVersion().get_status()
+    version_status = PlatformHelperVersionProvider().get_status()
 
     ClickIOProvider().process_messages(version_status.warn())
     with pytest.raises(PlatformException):
@@ -426,7 +428,7 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
+@patch("dbt_platform_helper.providers.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_does_not_call_external_services_if_versions_passed_in(
     mock_get,
@@ -487,7 +489,7 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
     result = RequiredVersion().get_required_platform_helper_version(
-        "bogus_pipeline", version_status=PlatformHelperVersion().get_status()
+        "bogus_pipeline", version_status=PlatformHelperVersionProvider().get_status()
     )
 
     assert result == default_version
@@ -512,7 +514,7 @@ class TestVersionCommandWithInvalidConfig:
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version(
-            "bogus_pipeline", version_status=PlatformHelperVersion().get_status()
+            "bogus_pipeline", version_status=PlatformHelperVersionProvider().get_status()
         )
 
         assert result == default_version
@@ -528,7 +530,7 @@ class TestVersionCommandWithInvalidConfig:
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version(
-            "main", version_status=PlatformHelperVersion().get_status()
+            "main", version_status=PlatformHelperVersionProvider().get_status()
         )
 
         assert result == pipeline_override_version

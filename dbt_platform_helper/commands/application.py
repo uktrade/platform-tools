@@ -10,7 +10,9 @@ from datetime import timedelta
 import click
 from prettytable import PrettyTable
 
-from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
+from dbt_platform_helper.providers.platform_helper_version import (
+    PlatformHelperVersionProvider,
+)
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -95,7 +97,7 @@ def get_query_results(env, app, query_string, timeout):
 @click.group(chain=True, cls=ClickDocOptGroup, deprecated=True)
 def application():
     """[DEPRECATED] Application metrics."""
-    PlatformHelperVersion().check_if_needs_update()
+    PlatformHelperVersionProvider().check_if_needs_update()
 
 
 @application.command(deprecated=True)

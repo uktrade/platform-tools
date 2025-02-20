@@ -5,13 +5,15 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
+from dbt_platform_helper.providers.platform_helper_version import (
+    PlatformHelperVersionProvider,
+)
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
-@patch("dbt_platform_helper.domain.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_version.version")
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
@@ -22,7 +24,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
     mock_io_provider = Mock()
 
-    PlatformHelperVersion(
+    PlatformHelperVersionProvider(
         io=mock_io_provider, pypi_provider=mock_pypi_provider
     ).check_if_needs_update()
 
@@ -32,9 +34,9 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     )
 
 
-@patch("dbt_platform_helper.domain.platform_helper_version.version")
+@patch("dbt_platform_helper.providers.platform_helper_version.version")
 @patch(
-    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    "dbt_platform_helper.providers.platform_helper_version.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
@@ -45,7 +47,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upg
     mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
     mock_io_provider = Mock()
 
-    PlatformHelperVersion(
+    PlatformHelperVersionProvider(
         io=mock_io_provider, pypi_provider=mock_pypi_provider
     ).check_if_needs_update()
 
@@ -58,7 +60,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upg
 class TestPlatformHelperVersionGetStatus:
     # TODO clean up mocking
     @patch("requests.get")
-    @patch("dbt_platform_helper.domain.platform_helper_version.version")
+    @patch("dbt_platform_helper.providers.platform_helper_version.version")
     def test_get_platform_helper_version_status_given_config_and_deprecated_version_file(
         self, mock_version, mock_get, fakefs, valid_platform_config
     ):
@@ -70,7 +72,7 @@ class TestPlatformHelperVersionGetStatus:
         config = valid_platform_config
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
-        version_status = PlatformHelperVersion().get_status()
+        version_status = PlatformHelperVersionProvider().get_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -79,7 +81,7 @@ class TestPlatformHelperVersionGetStatus:
         assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
     @patch("requests.get")
-    @patch("dbt_platform_helper.domain.platform_helper_version.version")
+    @patch("dbt_platform_helper.providers.platform_helper_version.version")
     def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
         self, mock_local_version, mock_latest_release_request, fakefs
     ):
@@ -90,7 +92,7 @@ class TestPlatformHelperVersionGetStatus:
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
 
-        version_status = PlatformHelperVersion().get_status()
+        version_status = PlatformHelperVersionProvider().get_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -99,7 +101,7 @@ class TestPlatformHelperVersionGetStatus:
         assert version_status.pipeline_overrides == {}
 
     @patch("requests.get")
-    @patch("dbt_platform_helper.domain.platform_helper_version.version")
+    @patch("dbt_platform_helper.providers.platform_helper_version.version")
     def test_get_platform_helper_version_status_with_invalid_config(
         self,
         mock_version,
@@ -113,7 +115,7 @@ class TestPlatformHelperVersionGetStatus:
         }
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
 
-        version_status = PlatformHelperVersion().get_status()
+        version_status = PlatformHelperVersionProvider().get_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
