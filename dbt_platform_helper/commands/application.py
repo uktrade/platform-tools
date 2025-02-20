@@ -11,7 +11,7 @@ import click
 from prettytable import PrettyTable
 
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -97,7 +97,7 @@ def get_query_results(env, app, query_string, timeout):
 @click.group(chain=True, cls=ClickDocOptGroup, deprecated=True)
 def application():
     """[DEPRECATED] Application metrics."""
-    PlatformHelperVersionProvider().check_if_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
 
 
 @application.command(deprecated=True)

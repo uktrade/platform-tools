@@ -6,7 +6,7 @@ from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import load_application
@@ -28,7 +28,7 @@ CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 def conduit(addon_name: str, app: str, env: str, access: str):
     """Opens a shell for a given addon_name create a conduit connection to
     interact with postgres, opensearch or redis."""
-    PlatformHelperVersionProvider().check_if_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
     application = load_application(app)
 
     try:

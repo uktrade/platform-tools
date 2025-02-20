@@ -14,7 +14,7 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
@@ -65,7 +65,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 )
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
-    PlatformHelperVersionProvider().check_if_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
 
     version_compatibility.assert_not_called()
 
@@ -162,7 +162,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 ):
     os.environ["PLATFORM_TOOLS_SKIP_VERSION_CHECK"] = "true"
 
-    PlatformHelperVersionProvider().check_if_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
 
     version_compatibility.assert_not_called()
 
@@ -329,7 +329,7 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    version_status = PlatformHelperVersionProvider().get_status()
+    version_status = PlatformHelperVersioning().get_status()
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(version_status=version_status)
@@ -383,7 +383,7 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    version_status = PlatformHelperVersionProvider().get_status()
+    version_status = PlatformHelperVersioning().get_status()
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
@@ -413,7 +413,7 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     # TODO need to inject the config provider instead of relying on FS
     required_version = RequiredVersion()
 
-    version_status = PlatformHelperVersionProvider().get_status()
+    version_status = PlatformHelperVersioning().get_status()
 
     ClickIOProvider().process_messages(version_status.warn())
     with pytest.raises(PlatformException):
@@ -489,7 +489,7 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
     result = RequiredVersion().get_required_platform_helper_version(
-        "bogus_pipeline", version_status=PlatformHelperVersionProvider().get_status()
+        "bogus_pipeline", version_status=PlatformHelperVersioning().get_status()
     )
 
     assert result == default_version
@@ -514,7 +514,7 @@ class TestVersionCommandWithInvalidConfig:
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version(
-            "bogus_pipeline", version_status=PlatformHelperVersionProvider().get_status()
+            "bogus_pipeline", version_status=PlatformHelperVersioning().get_status()
         )
 
         assert result == default_version
@@ -530,7 +530,7 @@ class TestVersionCommandWithInvalidConfig:
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version(
-            "main", version_status=PlatformHelperVersionProvider().get_status()
+            "main", version_status=PlatformHelperVersioning().get_status()
         )
 
         assert result == pipeline_override_version

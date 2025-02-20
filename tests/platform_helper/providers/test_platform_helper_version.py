@@ -6,7 +6,7 @@ import yaml
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
@@ -24,7 +24,7 @@ def test_check_platform_helper_version_needs_major_update_returns_red_warning_to
     mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
     mock_io_provider = Mock()
 
-    PlatformHelperVersionProvider(
+    PlatformHelperVersioning(
         io=mock_io_provider, pypi_provider=mock_pypi_provider
     ).check_if_needs_update()
 
@@ -47,7 +47,7 @@ def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upg
     mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
     mock_io_provider = Mock()
 
-    PlatformHelperVersionProvider(
+    PlatformHelperVersioning(
         io=mock_io_provider, pypi_provider=mock_pypi_provider
     ).check_if_needs_update()
 
@@ -72,7 +72,7 @@ class TestPlatformHelperVersionGetStatus:
         config = valid_platform_config
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
-        version_status = PlatformHelperVersionProvider().get_status()
+        version_status = PlatformHelperVersioning().get_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -92,7 +92,7 @@ class TestPlatformHelperVersionGetStatus:
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
 
-        version_status = PlatformHelperVersionProvider().get_status()
+        version_status = PlatformHelperVersioning().get_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -115,7 +115,7 @@ class TestPlatformHelperVersionGetStatus:
         }
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
 
-        version_status = PlatformHelperVersionProvider().get_status()
+        version_status = PlatformHelperVersioning().get_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)

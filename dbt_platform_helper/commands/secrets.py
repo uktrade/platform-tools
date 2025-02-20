@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import SSM_BASE_PATH
@@ -42,7 +42,7 @@ def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def secrets():
-    PlatformHelperVersionProvider().check_if_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
 
 
 @secrets.command()

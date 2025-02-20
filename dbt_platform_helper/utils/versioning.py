@@ -6,7 +6,7 @@ from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VER
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
@@ -25,7 +25,7 @@ class RequiredVersion:
     def __init__(self, io=None, platform_helper_version_provider=None):
         self.io = io or ClickIOProvider()
         self.platform_helper_version_provider = (
-            platform_helper_version_provider or PlatformHelperVersionProvider(io=self.io)
+            platform_helper_version_provider or PlatformHelperVersioning(io=self.io)
         )
 
     def get_required_platform_helper_version(
@@ -80,7 +80,7 @@ def get_platform_helper_version_status(
     include_project_versions=True,
     yaml_provider=YamlFileProvider,
 ) -> PlatformHelperVersionStatus:
-    return PlatformHelperVersionProvider(file_provider=yaml_provider).get_status(
+    return PlatformHelperVersioning(file_provider=yaml_provider).get_status(
         include_project_versions=include_project_versions
     )
 

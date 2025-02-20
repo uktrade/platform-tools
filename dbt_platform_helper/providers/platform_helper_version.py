@@ -20,7 +20,7 @@ from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
-class PlatformHelperVersionProvider:
+class PlatformHelperVersioning:
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),

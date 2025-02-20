@@ -15,7 +15,7 @@ from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.platform_helper_version import (
-    PlatformHelperVersionProvider,
+    PlatformHelperVersioning,
 )
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
@@ -69,7 +69,7 @@ def list_copilot_local_services():
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def copilot():
-    PlatformHelperVersionProvider().check_if_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
 
 
 def _validate_and_normalise_extensions_config(config_file, key_in_config_file=None):
