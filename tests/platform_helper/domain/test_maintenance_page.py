@@ -967,6 +967,32 @@ class TestActivateMethod:
         )
         maintenance_mocks.io.info.assert_not_called()
 
+    def test_activate_an_environment_when_no_load_balancer_service_found(
+        self,
+    ):
+        services = ["not-an-alb-service"]
+        maintenance_mocks = MaintenancePageMocks(
+            app,
+        )
+        maintenance_mocks.application.services["not-an-alb-service"] = Service(
+            "not-an-alb-service", "Backend Service"
+        )
+        provider = MaintenancePage(**maintenance_mocks.params())
+
+        with pytest.raises(
+            LoadBalancedWebServiceNotFoundException,
+            match="No services deployed yet to test-application",
+        ):
+            provider.activate(env, services, template, vpc)
+
+        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_not_called()
+        maintenance_mocks.set_load_balancer.find_target_group.assert_not_called()
+        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+        maintenance_mocks.set_load_balancer.create_rule.assert_not_called()
+
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )

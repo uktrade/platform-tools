@@ -70,12 +70,14 @@ class MaintenancePage:
         application: Application,
         io: ClickIOProvider = ClickIOProvider(),
         load_balancer: LoadBalancerProvider = LoadBalancerProvider,
-        get_env_ips: Callable[[str, Environment], List[str]] = get_env_ips,
+        get_env_ips: Callable[
+            [str, Environment], List[str]
+        ] = get_env_ips,  # TODO requires provider?
     ):
         self.application = application
         self.io = io
-        self.load_balancer_provider = load_balancer  # TODO instanciate
-        self.load_balancer: LoadBalancerProvider = None
+        self.load_balancer_provider = load_balancer  # TODO rename
+        self.load_balancer: LoadBalancerProvider = None  # TODO rename
         self.get_env_ips = get_env_ips
 
     def _get_deployed_load_balanced_web_services(self, app: Application, svc: List[str]):
@@ -140,7 +142,6 @@ class MaintenancePage:
         )
         current_maintenance_page = self.__get_maintenance_page_type(https_listener)
 
-        # TODO discuss, reduce number of return statements but more nested if statements
         if not current_maintenance_page:
             self.io.warn("There is no current maintenance page to remove")
             return
@@ -315,6 +316,7 @@ def get_app_environment(application: Application, env_name: str) -> Environment:
     application_environment = application.environments.get(env_name)
 
     if not application_environment:
+        # TODO raise exception instead of abort
         click.secho(
             f"The environment {env_name} was not found in the application {application.name}. "
             f"It either does not exist, or has not been deployed.",
