@@ -105,18 +105,19 @@ class PlatformHelperVersionStatus(VersionStatus):
     pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
 
     def __str__(self):
-        attrs = {
+        semantic_version_attrs = {
             key: value for key, value in vars(self).items() if isinstance(value, SemanticVersion)
         }
-        attrs_str = ", ".join(f"{key}: {value}" for key, value in attrs.items())
+
+        class_str = ", ".join(f"{key}: {value}" for key, value in semantic_version_attrs.items())
 
         if self.pipeline_overrides.items():
             pipeline_overrides_str = "pipeline_overrides: " + ", ".join(
                 f"{key}: {value}" for key, value in self.pipeline_overrides.items()
             )
-            attrs_str = ", ".join([attrs_str, pipeline_overrides_str])
+            class_str = ", ".join([class_str, pipeline_overrides_str])
 
-        return f"{self.__class__.__name__}: {attrs_str}"
+        return f"{self.__class__.__name__}: {class_str}"
 
     # TODO rename to validate
     def warn(self) -> dict:
