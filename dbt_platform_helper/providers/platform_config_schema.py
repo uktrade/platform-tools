@@ -460,6 +460,7 @@ class PlatformConfigSchema:
                             PlatformConfigSchema.__valid_schema_key(): {
                                 "application": str,
                                 "environment": PlatformConfigSchema.__valid_environment_name(),
+                                # Todo: We should be able to get the AWA account from the application configuration and deprecate this
                                 "account": str,
                                 "service": str,
                                 "read": bool,
