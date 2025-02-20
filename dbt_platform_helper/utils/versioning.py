@@ -1,21 +1,16 @@
 import re
 import subprocess
-from importlib.metadata import PackageNotFoundError
-from importlib.metadata import version
 from pathlib import Path
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.domain.platform_helper_version import PlatformHelperVersion
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.version import GithubVersionProvider
-from dbt_platform_helper.providers.version import PyPiVersionProvider
-from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -25,8 +20,11 @@ class PlatformHelperVersionNotFoundException(PlatformException):
 
 
 class RequiredVersion:
-    def __init__(self, io=None):
+    def __init__(self, io=None, platform_helper_version_provider=None):
         self.io = io or ClickIOProvider()
+        self.platform_helper_version_provider = (
+            platform_helper_version_provider or PlatformHelperVersion(io=self.io)
+        )
 
     def get_required_platform_helper_version(
         self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
@@ -49,7 +47,7 @@ class RequiredVersion:
         return out
 
     def get_required_version(self, pipeline=None):
-        version_status = get_platform_helper_version_status()
+        version_status = self.platform_helper_version_provider.get_status()
         self.io.process_messages(version_status.warn())
         required_version = self.get_required_platform_helper_version(pipeline, version_status)
         self.io.info(required_version)
@@ -58,9 +56,11 @@ class RequiredVersion:
     # Used in the generate command
     def check_platform_helper_version_mismatch(self):
         if not running_as_installed_package():
+            print("OOPS")
             return
 
-        version_status = get_platform_helper_version_status()
+        version_status = self.platform_helper_version_provider.get_status()
+        print("STATUS", version_status)
 
         self.io.process_messages(version_status.warn())
 
@@ -76,55 +76,14 @@ class RequiredVersion:
             self.io.warn(message)
 
 
-# Resolves all the versions from pypi, config and locally installed version
+# TODO to be removed after tests are updated - temporary wrapper mid-refactor
 def get_platform_helper_version_status(
-    include_project_versions=True, yaml_provider=YamlFileProvider
+    include_project_versions=True,
+    yaml_provider=YamlFileProvider,
 ) -> PlatformHelperVersionStatus:
-    try:
-        locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
-    except PackageNotFoundError:
-        locally_installed_version = None
-
-    latest_release = PyPiVersionProvider.get_latest_version("dbt-platform-helper")
-
-    if not include_project_versions:
-        return PlatformHelperVersionStatus(
-            local=locally_installed_version,
-            latest=latest_release,
-        )
-
-    deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-    try:
-        loaded_version = yaml_provider.load(deprecated_version_file)
-        version_from_file = SemanticVersion.from_string(loaded_version)
-    except FileProviderException:
-        version_from_file = None
-
-    platform_config_default, pipeline_overrides = None, {}
-
-    config = ConfigProvider()
-    platform_config = config.load_unvalidated_config_file()
-
-    if platform_config:
-        platform_config_default = SemanticVersion.from_string(
-            platform_config.get("default_versions", {}).get("platform-helper")
-        )
-
-        pipeline_overrides = {
-            name: pipeline.get("versions", {}).get("platform-helper")
-            for name, pipeline in platform_config.get("environment_pipelines", {}).items()
-            if pipeline.get("versions", {}).get("platform-helper")
-        }
-
-    out = PlatformHelperVersionStatus(
-        local=locally_installed_version,
-        latest=latest_release,
-        deprecated_version_file=version_from_file,
-        platform_config_default=platform_config_default,
-        pipeline_overrides=pipeline_overrides,
+    return PlatformHelperVersion(file_provider=yaml_provider).get_status(
+        include_project_versions=include_project_versions
     )
-
-    return out
 
 
 # TODO can stay as utility for now

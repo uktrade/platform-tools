@@ -112,27 +112,32 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     secho.assert_not_called()
 
 
-@patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
+# TODO move to domain tests.  consolidate running_as_installed_package
+@patch(
+    "dbt_platform_helper.domain.platform_helper_version.running_as_installed_package",
+    new=Mock(return_value=True),
+)
 @patch(
     "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
 )
-def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
-    get_file_app_versions, secho
-):
-    get_file_app_versions.return_value = PlatformHelperVersionStatus(
+def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present():
+    mock_platform_helper_version_provider = Mock()
+    mock_platform_helper_version_provider.get_status.return_value = PlatformHelperVersionStatus(
         local=SemanticVersion(1, 0, 1),
         deprecated_version_file=None,
         platform_config_default=SemanticVersion(1, 0, 0),
     )
 
-    required_version = RequiredVersion()
+    mock_io_provider = Mock()
+
+    required_version = RequiredVersion(
+        platform_helper_version_provider=mock_platform_helper_version_provider, io=mock_io_provider
+    )
 
     required_version.check_platform_helper_version_mismatch()
 
-    secho.assert_called_with(
+    mock_io_provider.warn.assert_called_with(
         f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
-        fg="magenta",
     )
 
 
@@ -152,7 +157,7 @@ def test_check_platform_helper_version_skips_when_skip_environment_variable_is_s
 
 
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.versioning.version")
+@patch("dbt_platform_helper.domain.platform_helper_version.version")
 def test_get_platform_helper_version_status(mock_version, mock_get, fakefs, valid_platform_config):
     mock_version.return_value = "1.1.1"
     mock_get.return_value.json.return_value = {
@@ -162,7 +167,7 @@ def test_get_platform_helper_version_status(mock_version, mock_get, fakefs, vali
     config = valid_platform_config
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
-    version_status = get_platform_helper_version_status()
+    version_status = PlatformHelperVersion().get_status()
 
     assert version_status.local == SemanticVersion(1, 1, 1)
     assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -172,7 +177,7 @@ def test_get_platform_helper_version_status(mock_version, mock_get, fakefs, vali
 
 
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.versioning.version")
+@patch("dbt_platform_helper.domain.platform_helper_version.version")
 def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
     mock_local_version, mock_latest_release_request, fakefs
 ):
@@ -193,7 +198,7 @@ def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config
 
 
 @patch("requests.get")
-@patch("dbt_platform_helper.utils.versioning.version")
+@patch("dbt_platform_helper.domain.platform_helper_version.version")
 def test_get_platform_helper_version_status_with_invalid_config(
     mock_version,
     mock_get,
@@ -401,7 +406,7 @@ def test_get_required_platform_helper_version_in_pipeline(
 
 
 @patch("click.secho")
-@patch("dbt_platform_helper.utils.versioning.version", return_value="0.0.0")
+@patch("dbt_platform_helper.domain.platform_helper_version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version_errors_when_no_platform_config_version_available(
     mock_get,
@@ -417,7 +422,9 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     # TODO need to inject the config provider instead of relying on FS
     required_version = RequiredVersion()
     version_status = get_platform_helper_version_status()
+
     ClickIOProvider().process_messages(version_status.warn())
+    print("SRTATUS:", version_status)
     with pytest.raises(PlatformException):
         required_version.get_required_platform_helper_version("main", version_status=version_status)
 
