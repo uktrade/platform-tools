@@ -27,7 +27,6 @@ from dbt_platform_helper.utils.versioning import PlatformHelperVersionNotFoundEx
 from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
-from dbt_platform_helper.utils.versioning import get_platform_helper_version_status
 from dbt_platform_helper.utils.versioning import (
     get_required_terraform_platform_modules_version,
 )
@@ -486,7 +485,7 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
     result = RequiredVersion().get_required_platform_helper_version(
-        "bogus_pipeline", version_status=get_platform_helper_version_status()
+        "bogus_pipeline", version_status=PlatformHelperVersion().get_status()
     )
 
     assert result == default_version
@@ -509,7 +508,7 @@ class TestVersionCommandWithInvalidConfig:
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version(
-            "bogus_pipeline", version_status=get_platform_helper_version_status()
+            "bogus_pipeline", version_status=PlatformHelperVersion().get_status()
         )
 
         assert result == default_version
@@ -525,7 +524,7 @@ class TestVersionCommandWithInvalidConfig:
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
         result = RequiredVersion().get_required_platform_helper_version(
-            "main", version_status=get_platform_helper_version_status()
+            "main", version_status=PlatformHelperVersion().get_status()
         )
 
         assert result == pipeline_override_version
