@@ -227,6 +227,7 @@ def test_platform_helper_version_deprecation_warnings(
 
 
 # TODO move to RequiredVersion domain tests
+# TODO mock config provider instead of fs
 @patch("requests.get")
 @patch("dbt_platform_helper.domain.platform_helper_version.version")
 def test_get_required_version_errors_if_version_is_not_specified(
@@ -260,6 +261,7 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
     )
 
 
+# TODO Relocate when we refactor config command in DBTP-1538
 @patch("subprocess.run")
 @patch(
     "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
@@ -274,6 +276,7 @@ def test_get_copilot_versions(mock_get_github_released_version, mock_run):
     assert versions.latest == SemanticVersion(2, 0, 0)
 
 
+# TODO Relocate when we refactor config command in DBTP-1538
 @patch("subprocess.run")
 @patch(
     "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
@@ -287,6 +290,9 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
     assert versions.latest == SemanticVersion(2, 0, 0)
 
 
+# TODO this is testing both get_required_platform_helper_version and
+# get_platform_helper_version_status.  We should instead unit test
+# PlatformHelperVersion.get_status thoroughly and then inject VersionStatus for this test.
 @pytest.mark.parametrize(
     "platform_helper_version_file_version,platform_config_default_version,expected_version",
     [
@@ -322,15 +328,17 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
+    version_status = PlatformHelperVersion().get_status()
     required_version = RequiredVersion()
 
-    result = required_version.get_required_platform_helper_version(
-        version_status=get_platform_helper_version_status()
-    )
+    result = required_version.get_required_platform_helper_version(version_status=version_status)
 
     assert result == expected_version
 
 
+# TODO this is testing both get_required_platform_helper_version and
+# get_platform_helper_version_status.  We should instead unit test
+# PlatformHelperVersion.get_status thoroughly and then inject VersionStatus for this test.
 @pytest.mark.parametrize(
     "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
     [
@@ -374,10 +382,11 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
+    version_status = PlatformHelperVersion().get_status()
     required_version = RequiredVersion()
 
     result = required_version.get_required_platform_helper_version(
-        "main", version_status=get_platform_helper_version_status()
+        "main", version_status=version_status
     )
 
     assert result == expected_version
@@ -399,7 +408,8 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
     # TODO need to inject the config provider instead of relying on FS
     required_version = RequiredVersion()
-    version_status = get_platform_helper_version_status()
+
+    version_status = PlatformHelperVersion().get_status()
 
     ClickIOProvider().process_messages(version_status.warn())
     print("SRTATUS:", version_status)
