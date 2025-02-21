@@ -9,9 +9,9 @@ from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config_validator import ConfigValidator
 
 
 class PipelineMocks:
@@ -167,7 +167,10 @@ def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_vers
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
-        codebase_pipeline_config_for_1_pipeline_and_2_run_groups, exp_version, {}
+        codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
+        exp_version,
+        {},
+        "uktrade/my-app-deploy",
     )
 
 
@@ -195,6 +198,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_imports(
         codebase_pipeline_config_for_2_pipelines_and_1_run_group,
         "6",
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
+        "uktrade/my-app-deploy",
     )
 
 
