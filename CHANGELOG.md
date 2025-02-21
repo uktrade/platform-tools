@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.1.1](https://github.com/uktrade/platform-tools/compare/13.1.0...13.1.1) (2025-02-21)
+
+
+### Bug Fixes
+
+* DBTP-1700 Deprecate cross_enviroment_service_access application property ([#780](https://github.com/uktrade/platform-tools/issues/780)) ([8a54526](https://github.com/uktrade/platform-tools/commit/8a5452678f71a6ee306db70d2a1c0bf079eca7b6))
+
 ## [13.1.0](https://github.com/uktrade/platform-tools/compare/13.0.2...13.1.0) (2025-02-20)
 
 
