@@ -101,7 +101,7 @@ class MaintenancePage:
         self.load_balancer = self.load_balancer_provider(application_environment.session)
 
         https_listener = self.load_balancer.get_https_listener_for_application(
-            application_environment.session, self.application.name, env
+            self.application.name, env
         )
         current_maintenance_page = self.__get_maintenance_page_type(https_listener)
         remove_current_maintenance_page = False

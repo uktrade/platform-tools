@@ -672,7 +672,7 @@ class TestActivateMethod:
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
+            "test-application", "development"
         )
         maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
@@ -790,7 +790,7 @@ class TestActivateMethod:
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
+            "test-application", "development"
         )
         maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
@@ -914,7 +914,7 @@ class TestActivateMethod:
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
+            "test-application", "development"
         )
         maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
@@ -950,7 +950,7 @@ class TestActivateMethod:
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
+            "test-application", "development"
         )
         maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
@@ -1016,7 +1016,7 @@ class TestActivateMethod:
         provider.activate(env, services, template, vpc)
 
         maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
+            "test-application", "development"
         )
         maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
@@ -1155,7 +1155,7 @@ class TestActivateMethod:
         provider.activate(env, svc, template, vpc)
 
         maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
-            ANY, "test-application", "development"
+            "test-application", "development"
         )
         maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
