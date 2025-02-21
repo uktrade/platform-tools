@@ -48,7 +48,7 @@ class LoadBalancerProvider:
             ResourceTypeFilters=[
                 "elasticloadbalancing:targetgroup",
             ],
-        )
+        )  # TODO should be paginated
         for resource in response["ResourceTagMappingList"]:
             tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
 
@@ -73,7 +73,7 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         certificates = self.evlb_client.describe_listener_certificates(ListenerArn=listener_arn)[
             "Certificates"
-        ]
+        ]  # TODO should be paginated
 
         try:
             certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
@@ -87,7 +87,7 @@ class LoadBalancerProvider:
 
         listeners = self.evlb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)[
             "Listeners"
-        ]
+        ]  # TODO should be paginated
 
         listener_arn = None
 
@@ -107,7 +107,7 @@ class LoadBalancerProvider:
 
         load_balancers = self.evlb_client.describe_tags(ResourceArns=load_balancers)[
             "TagDescriptions"
-        ]
+        ]  # TODO should be paginated
 
         load_balancer_arn = None
         for lb in load_balancers:
@@ -122,7 +122,9 @@ class LoadBalancerProvider:
         return load_balancer_arn
 
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
-        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
+            "Rules"
+        ]  # TODO should be paginated
 
         for rule in rules:
             for action in rule["Actions"]:
@@ -144,7 +146,9 @@ class LoadBalancerProvider:
         return conditions
 
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
-        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
+            "Rules"
+        ]  # TODO should be paginated
         return self.get_rules_tag_descriptions(rules)
 
     def get_rules_tag_descriptions(self, rules: list) -> list:
@@ -154,7 +158,9 @@ class LoadBalancerProvider:
         for i in range(0, len(rules), chunk_size):
             chunk = rules[i : i + chunk_size]
             resource_arns = [r["RuleArn"] for r in chunk]
-            response = self.evlb_client.describe_tags(ResourceArns=resource_arns)
+            response = self.evlb_client.describe_tags(
+                ResourceArns=resource_arns
+            )  # TODO should be paginated
             tag_descriptions.extend(response["TagDescriptions"])
 
         return tag_descriptions
