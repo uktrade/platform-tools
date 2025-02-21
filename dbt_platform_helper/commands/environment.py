@@ -1,13 +1,13 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.domain.config_validator import ConfigValidator
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_helper_versioning import (
     PlatformHelperVersioning,

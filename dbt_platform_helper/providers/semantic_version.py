@@ -119,7 +119,6 @@ class PlatformHelperVersionStatus(VersionStatus):
 
         return f"{self.__class__.__name__}: {class_str}"
 
-
     def validate(self) -> dict:
         if self.platform_config_default and not self.deprecated_version_file:
             return {}

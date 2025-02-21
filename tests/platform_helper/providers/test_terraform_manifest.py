@@ -30,6 +30,7 @@ def test_generate_codebase_pipeline_config_creates_file(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
         terraform_platform_modules_version="7",
         ecr_imports={},
+        deploy_repository="uktrade/my-app-deploy",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -83,11 +84,12 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert module["application"] == "${local.application}"
     assert module["codebase"] == "${each.key}"
     assert module["repository"] == "${each.value.repository}"
+    assert module["deploy_repository"] == "uktrade/my-app-deploy"
     assert (
         module["additional_ecr_repository"]
         == '${lookup(each.value, "additional_ecr_repository", null)}'
     )
-    assert module["pipelines"] == "${each.value.pipelines}"
+    assert module["pipelines"] == '${lookup(each.value, "pipelines", [])}'
     assert module["services"] == "${each.value.services}"
     assert module["requires_image_build"] == '${lookup(each.value, "requires_image_build", true)}'
     assert (
@@ -119,6 +121,7 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
         config,
         terraform_platform_modules_version="7",
         ecr_imports={"application": "test_project/application"},
+        deploy_repository="uktrade/my-app-deploy",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -143,6 +146,7 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
         terraform_platform_modules_version="7",
         ecr_imports={},
+        deploy_repository="uktrade/my-app-deploy",
     )
 
     mock_file_provider.mkfile.assert_called_once()

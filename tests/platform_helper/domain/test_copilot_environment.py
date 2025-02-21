@@ -113,7 +113,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket",
                         "cross_environment_service_access": {
                             "test_access": {
-                                "application": "app2",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "test_svc",
@@ -137,7 +136,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-1",
                         "cross_environment_service_access": {
                             "test_access_1": {
-                                "application": "app1",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "other_svc_1",
@@ -146,7 +144,6 @@ class TestCrossEnvironmentS3Templating:
                                 "cyber_sign_off_by": "user1@example.com",
                             },
                             "test_access_2": {
-                                "application": "app2",
                                 "environment": "dev",
                                 "account": "123456789010",
                                 "service": "other_svc_2",
@@ -166,7 +163,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-2",
                         "cross_environment_service_access": {
                             "test_access_3": {
-                                "application": "app2",
                                 "environment": "hotfix",
                                 "account": "987654321010",
                                 "service": "other_svc_2",
@@ -180,7 +176,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-3",
                         "cross_environment_service_access": {
                             "test_access_4": {
-                                "application": "app2",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "other_svc_3",
@@ -194,7 +189,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-4",
                         "cross_environment_service_access": {
                             "test_access_5": {
-                                "application": "app2",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "other_svc_4",

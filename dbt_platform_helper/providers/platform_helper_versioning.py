@@ -106,6 +106,6 @@ class PlatformHelperVersioning:
             self.io.warn(message)
 
 
-# TODO can stay as utility for now
+# TODO consolidate with the same function in versioning and given a home
 def running_as_installed_package():
     return "site-packages" in __file__
