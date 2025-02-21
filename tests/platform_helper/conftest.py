@@ -733,7 +733,7 @@ def platform_config_for_env_pipelines():
     return yaml.safe_load(
         """
 application: test-app
-deploy_repository: test-app-weird-name-deploy
+deploy_repository: uktrade/test-app-weird-name-deploy
 
 environments:
   dev:
