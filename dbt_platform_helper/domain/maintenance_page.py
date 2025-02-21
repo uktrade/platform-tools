@@ -15,6 +15,10 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.utils.application import Application
+from dbt_platform_helper.utils.application import (
+    ApplicationEnvironmentNotFoundException,
+)
+from dbt_platform_helper.utils.application import ApplicationServiceNotFoundException
 from dbt_platform_helper.utils.application import Environment
 from dbt_platform_helper.utils.application import Service
 
@@ -50,6 +54,7 @@ class FailedToActivateMaintenancePageException(MaintenancePageException):
         )
 
 
+# TODO should this be in its own provider, inside the VPC one, what logic is this sepcific too?
 def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
     account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
@@ -69,15 +74,13 @@ class MaintenancePage:
         self,
         application: Application,
         io: ClickIOProvider = ClickIOProvider(),
-        load_balancer: LoadBalancerProvider = LoadBalancerProvider,
-        get_env_ips: Callable[
-            [str, Environment], List[str]
-        ] = get_env_ips,  # TODO requires provider?
+        load_balancer_provider: LoadBalancerProvider = LoadBalancerProvider,
+        get_env_ips: Callable[[str, Environment], List[str]] = get_env_ips,
     ):
         self.application = application
         self.io = io
-        self.load_balancer_provider = load_balancer  # TODO rename
-        self.load_balancer: LoadBalancerProvider = None  # TODO rename
+        self.load_balancer_provider = load_balancer_provider  # TODO requires session from environment in application object which is only known during method execution
+        self.load_balancer: LoadBalancerProvider = None
         self.get_env_ips = get_env_ips
 
     def _get_deployed_load_balanced_web_services(self, app: Application, svc: List[str]):
@@ -301,13 +304,7 @@ def get_app_service(application: Application, svc_name: str) -> Service:
     application_service = application.services.get(svc_name)
 
     if not application_service:
-        # TODO raise exception instead of abort
-        click.secho(
-            f"The service {svc_name} was not found in the application {application.name}. "
-            f"It either does not exist, or has not been deployed.",
-            fg="red",
-        )
-        raise click.Abort
+        raise ApplicationServiceNotFoundException(application.name, svc_name)
 
     return application_service
 
@@ -316,13 +313,7 @@ def get_app_environment(application: Application, env_name: str) -> Environment:
     application_environment = application.environments.get(env_name)
 
     if not application_environment:
-        # TODO raise exception instead of abort
-        click.secho(
-            f"The environment {env_name} was not found in the application {application.name}. "
-            f"It either does not exist, or has not been deployed.",
-            fg="red",
-        )
-        raise click.Abort
+        raise ApplicationEnvironmentNotFoundException(application.name, env_name)
 
     return application_environment
 

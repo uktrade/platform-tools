@@ -17,6 +17,7 @@ from dbt_platform_helper.providers.secrets import InvalidAddonTypeException
 from dbt_platform_helper.providers.secrets import ParameterNotFoundException
 from dbt_platform_helper.providers.secrets import SecretNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
+from dbt_platform_helper.utils.application import ApplicationServiceNotFoundException
 
 
 @pytest.mark.parametrize(
@@ -39,8 +40,13 @@ from dbt_platform_helper.utils.application import ApplicationNotFoundException
         ),
         (
             ApplicationEnvironmentNotFoundException,
-            {"environment": "development"},
-            """The environment "development" either does not exist or has not been deployed.""",
+            {"application_name": "test-application", "environment": "development"},
+            """The environment "development" either does not exist or has not been deployed for the application test-application.""",
+        ),
+        (
+            ApplicationServiceNotFoundException,
+            {"application_name": "test-application", "svc_name": "web"},
+            """The service web was not found in the application test-application. It either does not exist, or has not been deployed.""",
         ),
         (
             ApplicationNotFoundException,

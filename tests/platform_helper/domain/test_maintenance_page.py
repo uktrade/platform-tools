@@ -45,19 +45,25 @@ class TestCommandHelperMethods:
 
         assert app_environment == development
 
-    def test_get_app_environment_does_not_exist(self, capsys):
+    def test_get_app_environment_does_not_exist(self):
 
         application = Application(name="test-application")
 
-        with pytest.raises(click.Abort):
+        with pytest.raises(
+            ApplicationEnvironmentNotFoundException,
+            match="""The environment "development" either does not exist or has not been deployed for the application test-application.""",
+        ):
             get_app_environment(application, "development")
 
-        captured = capsys.readouterr()
+    def test_get_app_service_does_not_exist(self):
 
-        assert (
-            "The environment development was not found in the application test-application."
-            in captured.out
-        )
+        application = Application(name="test-application")
+
+        with pytest.raises(
+            ApplicationServiceNotFoundException,
+            match="""The service not-real-service was not found in the application test-application. It either does not exist, or has not been deployed.""",
+        ):
+            get_app_service(application, "not-real-service")
 
     def _create_subnet(self, session):
         ec2 = session.client("ec2")
@@ -361,7 +367,7 @@ class TestCommandHelperMethods:
         # check it doesn't contain any maintenance page rules
         for rule in rules:
             for conidition in rule["Conditions"]:
-                # ensure maintenace page conditions are not present
+                # ensure maintenance page conditions are not present
                 assert conidition not in [
                     {
                         "Field": "http-header",
@@ -618,11 +624,11 @@ class MaintenancePageMocks:
         self.io.confirm = Mock(return_value="yes")
         self.io.abort_with_error = Mock(side_effect=SystemExit(1))
         self.get_env_ips = kwargs.get("get_env_ips", Mock(return_value=["0.1.2.3, 4.5.6.7"]))
-        self.set_load_balancer = kwargs.get("set_load_balancer", MagicMock())
-        self.load_balancer = kwargs.get(
-            "load_balancer", MagicMock(return_value=self.set_load_balancer)
+        self.load_balancer = kwargs.get("load_balancer", MagicMock())
+        self.load_balancer_provider = kwargs.get(
+            "load_balancer_provider", MagicMock(return_value=self.load_balancer)
         )
-        if not kwargs.get("set_load_balancer"):
+        if not kwargs.get("load_balancer"):
             self.__initialise_load_balancer_return_values(**kwargs)
 
     def params(self):
@@ -630,14 +636,14 @@ class MaintenancePageMocks:
             "application": self.application,
             "io": self.io,
             "get_env_ips": self.get_env_ips,
-            "load_balancer": self.load_balancer,
+            "load_balancer_provider": self.load_balancer_provider,
         }
 
     def __initialise_load_balancer_return_values(self, **kwargs):
-        self.set_load_balancer.get_https_listener_for_application.return_value = kwargs.get(
+        self.load_balancer.get_https_listener_for_application.return_value = kwargs.get(
             "get_https_listener_for_application", "https_listener"
         )
-        self.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.return_value = kwargs.get(
+        self.load_balancer.get_rules_tag_descriptions_by_listener_arn.return_value = kwargs.get(
             "get_rules_tag_descriptions_by_listener_arn",
             [
                 {
@@ -647,10 +653,10 @@ class MaintenancePageMocks:
             ],
         )
 
-        self.set_load_balancer.find_target_group.return_value = kwargs.get(
+        self.load_balancer.find_target_group.return_value = kwargs.get(
             "find_target_group", "target_group_arn"
         )
-        self.set_load_balancer.get_host_header_conditions.return_value = kwargs.get(
+        self.load_balancer.get_host_header_conditions.return_value = kwargs.get(
             "get_host_header_conditions",
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
         )
@@ -665,23 +671,23 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.set_load_balancer.find_target_group.assert_called_with(
+        maintenance_mocks.load_balancer.find_target_group.assert_called_with(
             "test-application", "development", "web"
         )
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_called_with(
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_called_with(
             "https_listener",
             "target_group_arn",
         )
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_has_calls(
+        maintenance_mocks.load_balancer.create_header_rule.assert_has_calls(
             [
                 call(
                     "https_listener",
@@ -704,7 +710,7 @@ class TestActivateMethod:
             ]
         )
 
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_called_with(
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_called_with(
             "https_listener",
             "target_group_arn",
             ["0.1.2.3, 4.5.6.7"],
@@ -713,7 +719,7 @@ class TestActivateMethod:
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
         )
 
-        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+        maintenance_mocks.load_balancer.create_rule.assert_called_with(
             listener_arn="https_listener",
             priority=4,
             conditions=[
@@ -778,28 +784,28 @@ class TestActivateMethod:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
 
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.set_load_balancer.find_target_group.assert_called_with(
+        maintenance_mocks.load_balancer.find_target_group.assert_called_with(
             "test-application", "development", "web"
         )
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_called_with(
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_called_with(
             "https_listener",
             "target_group_arn",
         )
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_has_calls(
+        maintenance_mocks.load_balancer.create_header_rule.assert_has_calls(
             [
                 call(
                     "https_listener",
@@ -822,7 +828,7 @@ class TestActivateMethod:
             ]
         )
 
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_called_with(
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_called_with(
             "https_listener",
             "target_group_arn",
             ["0.1.2.3, 4.5.6.7"],
@@ -831,7 +837,7 @@ class TestActivateMethod:
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
         )
 
-        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+        maintenance_mocks.load_balancer.create_rule.assert_called_with(
             listener_arn="https_listener",
             priority=4,
             conditions=[
@@ -877,7 +883,7 @@ class TestActivateMethod:
             ]
         )
 
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_has_calls(
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.assert_has_calls(
             [
                 call(describe_rules_response, "MaintenancePage"),
                 call(describe_rules_response, "AllowedIps"),
@@ -907,20 +913,20 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_not_called()
-        maintenance_mocks.set_load_balancer.find_target_group.assert_not_called()
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
+        maintenance_mocks.load_balancer.find_target_group.assert_not_called()
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.load_balancer.create_header_rule.assert_not_called()
 
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_not_called()
 
-        maintenance_mocks.set_load_balancer.create_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_rule.assert_not_called()
 
         maintenance_mocks.io.confirm.assert_has_calls(
             [
@@ -931,7 +937,7 @@ class TestActivateMethod:
             ]
         )
         maintenance_mocks.io.info.assert_not_called()
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_not_called()
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.assert_not_called()
 
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
@@ -943,19 +949,19 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_not_called()
-        maintenance_mocks.set_load_balancer.find_target_group.assert_not_called()
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+        maintenance_mocks.load_balancer.find_target_group.assert_not_called()
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.load_balancer.create_header_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_not_called()
 
-        maintenance_mocks.set_load_balancer.create_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_rule.assert_not_called()
 
         maintenance_mocks.io.confirm.assert_has_calls(
             [
@@ -985,13 +991,13 @@ class TestActivateMethod:
         ):
             provider.activate(env, services, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_not_called()
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_not_called()
-        maintenance_mocks.set_load_balancer.find_target_group.assert_not_called()
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_rule.assert_not_called()
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_not_called()
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_not_called()
+        maintenance_mocks.load_balancer.find_target_group.assert_not_called()
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.load_balancer.create_header_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_rule.assert_not_called()
 
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
@@ -1009,26 +1015,26 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, services, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.set_load_balancer.find_target_group.assert_has_calls(
+        maintenance_mocks.load_balancer.find_target_group.assert_has_calls(
             [
                 call("test-application", "development", "web"),
                 call("test-application", "development", "web2"),
             ]
         )
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_called_with(
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_called_with(
             "https_listener",
             "target_group_arn",
         )
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_has_calls(
+        maintenance_mocks.load_balancer.create_header_rule.assert_has_calls(
             [
                 call(
                     "https_listener",
@@ -1069,7 +1075,7 @@ class TestActivateMethod:
             ]
         )
 
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_has_calls(
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_has_calls(
             [
                 call(
                     "https_listener",
@@ -1090,7 +1096,7 @@ class TestActivateMethod:
             ]
         )
 
-        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+        maintenance_mocks.load_balancer.create_rule.assert_called_with(
             listener_arn="https_listener",
             priority=7,
             conditions=[
@@ -1148,24 +1154,24 @@ class TestActivateMethod:
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             ANY, "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.get_env_ips.assert_called_with(
             vpc, maintenance_mocks.application.environments["development"]
         )
-        maintenance_mocks.set_load_balancer.find_target_group.assert_called_with(
+        maintenance_mocks.load_balancer.find_target_group.assert_called_with(
             "test-application", "development", "web"
         )
-        maintenance_mocks.set_load_balancer.get_host_header_conditions.assert_not_called()
-        maintenance_mocks.set_load_balancer.create_header_rule.assert_not_called()
+        maintenance_mocks.load_balancer.get_host_header_conditions.assert_not_called()
+        maintenance_mocks.load_balancer.create_header_rule.assert_not_called()
 
-        maintenance_mocks.set_load_balancer.create_source_ip_rule.assert_not_called()
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_not_called()
 
-        maintenance_mocks.set_load_balancer.create_rule.assert_called_with(
+        maintenance_mocks.load_balancer.create_rule.assert_called_with(
             listener_arn="https_listener",
             priority=1,
             conditions=[
@@ -1232,19 +1238,19 @@ class TestDeactivateCommand:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
 
         provider = MaintenancePage(**maintenance_mocks.params())
 
         provider.deactivate(env)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_has_calls(
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.assert_has_calls(
             [
                 call(describe_rules_response, "MaintenancePage"),
                 call(describe_rules_response, "AllowedIps"),
@@ -1274,10 +1280,10 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.io.warn.assert_called_with(
@@ -1305,10 +1311,10 @@ class TestDeactivateCommand:
 
         provider.deactivate(env)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
         maintenance_mocks.io.confirm.assert_called_with(
@@ -1331,19 +1337,19 @@ class TestDeactivateCommand:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.return_value = None
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = None
 
         provider = MaintenancePage(**maintenance_mocks.params())
         with pytest.raises(ListenerRuleNotFoundException):
             provider.deactivate(env)
 
-        maintenance_mocks.set_load_balancer.get_https_listener_for_application.assert_called_with(
+        maintenance_mocks.load_balancer.get_https_listener_for_application.assert_called_with(
             "test-application", "development"
         )
-        maintenance_mocks.set_load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
+        maintenance_mocks.load_balancer.get_rules_tag_descriptions_by_listener_arn.assert_called_with(
             "https_listener"
         )
-        maintenance_mocks.set_load_balancer.delete_listener_rule_by_tags.assert_has_calls(
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.assert_has_calls(
             [
                 call(describe_rules_response, "MaintenancePage"),
             ]

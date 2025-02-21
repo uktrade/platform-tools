@@ -569,6 +569,7 @@ class TestCopilotGenerate:
             vpc_provider=Mock(),
             copilot_templating=Mock(),
             io=Mock(),
+            load_balancer_provider=Mock(),
         )
 
         with pytest.raises(
