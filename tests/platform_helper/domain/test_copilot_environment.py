@@ -78,6 +78,7 @@ def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order()
         vpc_provider=Mock(),
         copilot_templating=Mock(),
         io=Mock(),
+        load_balancer_provider=Mock(),
     )
 
     mock_updated_vpc = copilot_environment._match_subnet_id_order_to_cloudformation_exports(
@@ -500,12 +501,7 @@ class TestCopilotGenerate:
         security_groups=["group1"],
     )
 
-    # TODO - temporary patch, will fall away once loadbalancer lives in a class and it can be injected and mocked approriatley.
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
-        return_value="test-cert-arn",
-    )
-    def test_generate_success(self, mock_get_certificate):
+    def test_generate_success(self):
 
         mock_copilot_templating = Mock()
         mock_copilot_templating.write_environment_manifest.return_value = "test template written"
@@ -529,12 +525,16 @@ class TestCopilotGenerate:
             {"Value": "public-1", "Name": "test_environment-PublicSubnets"},
         ]
 
+        load_balancer_provider = Mock()
+        load_balancer_provider.get_https_certificate_for_application.return_value = "test-cert-arn"
+
         copilot_environment = CopilotEnvironment(
             config_provider=mock_config_provider,
             vpc_provider=mock_vpc_provider,
             cloudformation_provider=mock_cloudformation_provider,
             copilot_templating=mock_copilot_templating,
             io=mock_io,
+            load_balancer_provider=MagicMock(return_value=load_balancer_provider),
         )
 
         copilot_environment.generate(environment_name="test_environment")
