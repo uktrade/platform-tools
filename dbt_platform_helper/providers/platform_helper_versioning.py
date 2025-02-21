@@ -35,7 +35,7 @@ class PlatformHelperVersioning:
 
     def get_status(
         self,
-        include_project_versions=True,
+        include_project_versions: bool =True,
     ) -> PlatformHelperVersionStatus:
         try:
             locally_installed_version = SemanticVersion.from_string(version("dbt-platform-helper"))
