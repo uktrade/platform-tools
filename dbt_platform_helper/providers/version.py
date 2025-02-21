@@ -1,5 +1,6 @@
 from abc import ABC
-from importlib.metadata import PackageNotFoundError, version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version
 
 import requests
 
@@ -10,12 +11,14 @@ from dbt_platform_helper.providers.semantic_version import SemanticVersion
 class LocalVersionProviderException(PlatformException):
     pass
 
+
 class InstalledToolNotFoundException(LocalVersionProviderException):
     def __init__(
         self,
         tool_name: str,
     ):
         super().__init__(f"Package '{tool_name}' not found.")
+
 
 class VersionProvider(ABC):
     pass
@@ -28,6 +31,7 @@ class LocalVersionProvider:
             return SemanticVersion.from_string(version(tool_name))
         except PackageNotFoundError:
             raise InstalledToolNotFoundException(tool_name)
+
 
 # TODO add timeouts and exception handling for requests
 # TODO Alternatively use the gitpython package?
