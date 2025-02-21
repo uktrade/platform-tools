@@ -12,20 +12,19 @@ def get_load_balancer_for_application(session: boto3.Session, app: str, env: str
     describe_response = lb_client.describe_load_balancers()
     load_balancers = [lb["LoadBalancerArn"] for lb in describe_response["LoadBalancers"]]
 
-    load_balancers = lb_client.describe_tags(ResourceArns=load_balancers)["TagDescriptions"]
+    tag_descriptions = []
+    for i in range(0, len(load_balancers), 20):
+        chunk = load_balancers[i : i + 20]
+        tag_descriptions.extend(lb_client.describe_tags(ResourceArns=chunk)["TagDescriptions"])
 
-    load_balancer_arn = None
-    for lb in load_balancers:
+    for lb in tag_descriptions:
         tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
         if tags.get("copilot-application") == app and tags.get("copilot-environment") == env:
-            load_balancer_arn = lb["ResourceArn"]
+            return lb["ResourceArn"]
 
-    if not load_balancer_arn:
-        raise LoadBalancerNotFoundException(
-            f"No load balancer found for {app} in the {env} environment"
-        )
-
-    return load_balancer_arn
+    raise LoadBalancerNotFoundException(
+        f"No load balancer found for {app} in the {env} environment"
+    )
 
 
 def get_https_listener_for_application(session: boto3.Session, app: str, env: str) -> str:
