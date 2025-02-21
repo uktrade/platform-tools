@@ -16,7 +16,6 @@ from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
-
 # TODO to be moved into domain
 class PlatformHelperVersionNotFoundException(PlatformException):
     def __init__(self):
@@ -27,8 +26,8 @@ class PlatformHelperVersionNotFoundException(PlatformException):
 class RequiredVersion:
     def __init__(self, io=None, platform_helper_versioning=None):
         self.io = io or ClickIOProvider()
-        self.platform_helper_versioning = (
-            platform_helper_versioning or PlatformHelperVersioning(io=self.io)
+        self.platform_helper_versioning = platform_helper_versioning or PlatformHelperVersioning(
+            io=self.io
         )
 
     def get_required_platform_helper_version(

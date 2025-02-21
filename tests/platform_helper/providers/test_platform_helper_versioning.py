@@ -18,7 +18,8 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         new=Mock(return_value=True),
     )
     def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
-        self, mock_local_version,
+        self,
+        mock_local_version,
     ):
         mock_local_version.return_value = "1.0.0"
         mock_pypi_provider = Mock()
@@ -34,14 +35,14 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             "--upgrade dbt-platform-helper`."
         )
 
-
     @patch("dbt_platform_helper.providers.platform_helper_versioning.version")
     @patch(
         "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
         new=Mock(return_value=True),
     )
     def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
-        self, mock_local_version,
+        self,
+        mock_local_version,
     ):
         mock_local_version.return_value = "1.0.0"
         mock_pypi_provider = Mock()
