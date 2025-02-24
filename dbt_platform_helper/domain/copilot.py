@@ -27,9 +27,6 @@ class Copilot:
 
     PACKAGE_DIR = Path(__file__).resolve().parent.parent
 
-    # TODO Remove and test
-    WAF_ACL_ARN_KEY = "waf-acl-arn"
-
     SERVICE_TYPES = [
         "Load Balanced Web Service",
         "Backend Service",
@@ -48,12 +45,93 @@ class Copilot:
         self.file_provider = file_provider
         self.copilot_templating = copilot_templating
 
-    def list_copilot_local_environments(self):
+    def make_addons(self):
+        self.config_provider.config_file_check()
+        try:
+            config = self.config_provider.load_and_validate_platform_config()
+        except SchemaError as ex:
+            click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
+            raise click.Abort
+
+        templates = setup_templates()
+        extensions = self._get_extensions()
+        session = get_aws_session_or_abort()
+
+        application_name = get_application_name()
+
+        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
+
+        output_dir = Path(".").absolute()
+        env_path = Path(f"copilot/environments/")
+        env_addons_path = env_path / "addons"
+        env_overrides_path = env_path / "overrides"
+
+        self._cleanup_old_files(extensions, output_dir, env_addons_path, env_overrides_path)
+        self._generate_env_overrides(output_dir)
+
+        svc_names = self._list_copilot_local_services()
+        base_path = Path(".")
+        for svc_name in svc_names:
+            self._generate_svc_overrides(base_path, templates, svc_name)
+
+        services = []
+        for ext_name, ext_data in extensions.items():
+            extension = {**ext_data}
+            addon_type = extension.pop("type")
+            environments = extension.pop("environments")
+            environment_addon_config = {
+                "addon_type": addon_type,
+                "environments": environments,
+                "name": extension.get("name", None) or ext_name,
+                "prefix": camel_case(ext_name),
+                "secret_name": ext_name.upper().replace("-", "_"),
+                **extension,
+            }
+
+            services.append(environment_addon_config)
+
+            service_addon_config = {
+                "application_name": application_name,
+                "name": extension.get("name", None) or ext_name,
+                "prefix": camel_case(ext_name),
+                "environments": environments,
+                **extension,
+            }
+
+            log_destination_arns = self._get_log_destination_arn()
+
+            if addon_type in ["s3", "s3-policy"]:
+                if extensions[ext_name].get("serve_static_content"):
+                    continue
+
+                s3_kms_arns = self._get_s3_kms_alias_arns(session, application_name, environments)
+                for environment_name in environments:
+                    environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
+                        environment_name, "kms-key-not-found"
+                    )
+
+            self._generate_service_addons(
+                extension,
+                ext_name,
+                addon_type,
+                output_dir,
+                service_addon_config,
+                templates,
+                log_destination_arns,
+            )
+
+        environments = self.config_provider.apply_environment_defaults(config)["environments"]
+
+        self.copilot_templating.generate_cross_account_s3_policies(environments, extensions)
+
+        click.echo(templates.get_template("addon-instructions.txt").render(services=services))
+
+    def _list_copilot_local_environments(self):
         return [
             path.parent.parts[-1] for path in Path("./copilot/environments/").glob("*/manifest.yml")
         ]
 
-    def is_service(self, path: PosixPath) -> bool:
+    def _is_service(self, path: PosixPath) -> bool:
         with open(path) as manifest_file:
             data = yaml.safe_load(manifest_file)
             if not data or not data.get("type"):
@@ -64,11 +142,11 @@ class Copilot:
 
             return data.get("type") in self.SERVICE_TYPES
 
-    def list_copilot_local_services(self):
+    def _list_copilot_local_services(self):
         return [
             path.parent.parts[-1]
             for path in Path("./copilot/").glob("*/manifest.yml")
-            if self.is_service(path)
+            if self._is_service(path)
         ]
 
     def _validate_and_normalise_extensions_config(self, config_file, key_in_config_file=None):
@@ -112,8 +190,8 @@ class Copilot:
                 click.echo(click.style(f"Addon '{addon}': {error}", fg="red"))
             exit(1)
 
-        env_names = self.list_copilot_local_environments()
-        svc_names = self.list_copilot_local_services()
+        env_names = self._list_copilot_local_environments()
+        svc_names = self._list_copilot_local_services()
 
         if not env_names:
             click.echo(
@@ -187,7 +265,8 @@ class Copilot:
 
         return normalised_config
 
-    def get_log_destination_arn(self):
+    # TODO - Param store provider? - Setting up a client here locally too which I really don't like... And creating its own session
+    def _get_log_destination_arn(self):
         """Get destination arns stored in param store in projects aws
         account."""
         session = get_aws_session_or_abort()
@@ -213,6 +292,7 @@ class Copilot:
         overrides_file = overrides_path.joinpath("cfn.patches.yml")
         overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
+    # TODO - Doing stuff with KMS, likely want a provider for this too.
     def _get_s3_kms_alias_arns(self, session, application_name, config):
         application = load_application(application_name, session)
         arns = {}
@@ -236,87 +316,6 @@ class Copilot:
                 arns[environment_name] = response["KeyMetadata"]["Arn"]
 
         return arns
-
-    def make_addons(self):
-        self.config_provider.config_file_check()
-        try:
-            config = self.config_provider.load_and_validate_platform_config()
-        except SchemaError as ex:
-            click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
-            raise click.Abort
-
-        templates = setup_templates()
-        extensions = self._get_extensions()
-        session = get_aws_session_or_abort()
-
-        application_name = get_application_name()
-
-        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
-
-        output_dir = Path(".").absolute()
-        env_path = Path(f"copilot/environments/")
-        env_addons_path = env_path / "addons"
-        env_overrides_path = env_path / "overrides"
-
-        self._cleanup_old_files(extensions, output_dir, env_addons_path, env_overrides_path)
-        self._generate_env_overrides(output_dir)
-
-        svc_names = self.list_copilot_local_services()
-        base_path = Path(".")
-        for svc_name in svc_names:
-            self._generate_svc_overrides(base_path, templates, svc_name)
-
-        services = []
-        for ext_name, ext_data in extensions.items():
-            extension = {**ext_data}
-            addon_type = extension.pop("type")
-            environments = extension.pop("environments")
-            environment_addon_config = {
-                "addon_type": addon_type,
-                "environments": environments,
-                "name": extension.get("name", None) or ext_name,
-                "prefix": camel_case(ext_name),
-                "secret_name": ext_name.upper().replace("-", "_"),
-                **extension,
-            }
-
-            services.append(environment_addon_config)
-
-            service_addon_config = {
-                "application_name": application_name,
-                "name": extension.get("name", None) or ext_name,
-                "prefix": camel_case(ext_name),
-                "environments": environments,
-                **extension,
-            }
-
-            log_destination_arns = self.get_log_destination_arn()
-
-            if addon_type in ["s3", "s3-policy"]:
-                if extensions[ext_name].get("serve_static_content"):
-                    continue
-
-                s3_kms_arns = self._get_s3_kms_alias_arns(session, application_name, environments)
-                for environment_name in environments:
-                    environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
-                        environment_name, "kms-key-not-found"
-                    )
-
-            self._generate_service_addons(
-                extension,
-                ext_name,
-                addon_type,
-                output_dir,
-                service_addon_config,
-                templates,
-                log_destination_arns,
-            )
-
-        environments = self.config_provider.apply_environment_defaults(config)["environments"]
-
-        self.copilot_templating.generate_cross_account_s3_policies(environments, extensions)
-
-        click.echo(templates.get_template("addon-instructions.txt").render(services=services))
 
     def _get_extensions(self):
         config = self._validate_and_normalise_extensions_config(
