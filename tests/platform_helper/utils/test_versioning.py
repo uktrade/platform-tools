@@ -301,7 +301,6 @@ def test_get_aws_versions(mock_get_github_released_version, mock_run):
         ("0.0.1", "1.0.0", "1.0.0"),
     ],
 )
-
 @patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
 @patch("requests.get")
 def test_get_required_platform_helper_version(
