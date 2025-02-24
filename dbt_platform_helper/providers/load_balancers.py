@@ -105,21 +105,20 @@ class LoadBalancerProvider:
         describe_response = self.evlb_client.describe_load_balancers()
         load_balancers = [lb["LoadBalancerArn"] for lb in describe_response["LoadBalancers"]]
 
-        load_balancers = self.evlb_client.describe_tags(ResourceArns=load_balancers)[
-            "TagDescriptions"
-        ]  # TODO should be paginated
+        tag_descriptions = []
+        for i in range(0, len(load_balancers), 20):
+            chunk = load_balancers[i : i + 20]
+            tag_descriptions.extend(
+                self.evlb_client.describe_tags(ResourceArns=chunk)["TagDescriptions"]
+            )
 
-        load_balancer_arn = None
-        for lb in load_balancers:
+        for lb in tag_descriptions:
             tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
             # TODO copilot hangover, creates coupling to specific tags could update to check application and environment
             if tags.get("copilot-application") == app and tags.get("copilot-environment") == env:
-                load_balancer_arn = lb["ResourceArn"]
+                return lb["ResourceArn"]
 
-        if not load_balancer_arn:
-            raise LoadBalancerNotFoundException(app, env)
-
-        return load_balancer_arn
+        raise LoadBalancerNotFoundException(app, env)
 
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
         rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
