@@ -6,6 +6,9 @@ from moto import mock_aws
 
 from dbt_platform_helper.providers.load_balancers import CertificateNotFoundException
 from dbt_platform_helper.providers.load_balancers import ListenerNotFoundException
+from dbt_platform_helper.providers.load_balancers import (
+    ListenerRuleConditionsNotFoundException,
+)
 from dbt_platform_helper.providers.load_balancers import LoadBalancerNotFoundException
 from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.providers.load_balancers import normalise_to_cidr
@@ -101,6 +104,27 @@ def test_get_host_header_conditions(mock_application):
     result = alb_provider.get_host_header_conditions(listener_arn, target_group_arn)
 
     assert result == [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
+
+
+@mock_aws
+def test_exception_raised_when_listener_rule_conditions_not_found(mock_application):
+    session = mock_application.environments["development"].session
+
+    listener_arn, _ = _create_listener(session)
+    target_group_arn = _create_target_group(session)
+    session.client("elbv2").create_rule(
+        ListenerArn=listener_arn,
+        Tags=[{"Key": "test-key", "Value": "test-value"}],
+        Conditions=[],
+        Priority=500,
+        Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+    )
+
+    with pytest.raises(ListenerRuleConditionsNotFoundException) as exception:
+        alb_provider = LoadBalancerProvider(session)
+        alb_provider.get_host_header_conditions(listener_arn, target_group_arn)
+
+    assert "No listener rule conditions found for listener ARN: " in str(exception)
 
 
 @mock_aws

@@ -125,10 +125,15 @@ class LoadBalancerProvider:
             "Rules"
         ]  # TODO should be paginated
 
+        conditions = []
+
         for rule in rules:
             for action in rule["Actions"]:
                 if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
                     conditions = rule["Conditions"]
+
+        if not conditions:
+            raise ListenerRuleConditionsNotFoundException(listener_arn)
 
         # filter to host-header conditions
         conditions = [
@@ -281,6 +286,11 @@ class ListenerNotFoundException(LoadBalancerException):
 
 class ListenerRuleNotFoundException(LoadBalancerException):
     pass
+
+
+class ListenerRuleConditionsNotFoundException(LoadBalancerException):
+    def __init__(self, listener_arn):
+        super().__init__(f"No listener rule conditions found for listener ARN: {listener_arn}")
 
 
 class CertificateNotFoundException(PlatformException):
