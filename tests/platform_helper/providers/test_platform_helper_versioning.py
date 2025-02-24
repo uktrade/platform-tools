@@ -22,6 +22,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
 
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 0, 0)
+
         mock_pypi_provider = Mock()
         mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
         mock_io_provider = Mock()
@@ -30,6 +31,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             io=mock_io_provider,
             pypi_provider=mock_pypi_provider,
             local_version_provider=mock_local_version,
+
         ).check_if_needs_update()
 
         mock_io_provider.error.assert_called_with(
@@ -37,13 +39,16 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             "--upgrade dbt-platform-helper`."
         )
 
+
     @patch(
         "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
         new=Mock(return_value=True),
     )
+
     def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(self):
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 0, 0)
+
         mock_pypi_provider = Mock()
         mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
         mock_io_provider = Mock()
@@ -52,6 +57,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             io=mock_io_provider,
             pypi_provider=mock_pypi_provider,
             local_version_provider=mock_local_version,
+
         ).check_if_needs_update()
 
         mock_io_provider.warn.assert_called_with(
@@ -63,11 +69,13 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
 class TestPlatformHelperVersioningGetStatus:
     # TODO clean up mocking
     @patch("requests.get")
+
     def test_get_platform_helper_version_status_given_config_and_deprecated_version_file(
         self, mock_get, fakefs, valid_platform_config
     ):
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 1, 1)
+
         mock_get.return_value.json.return_value = {
             "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
         }
@@ -75,9 +83,11 @@ class TestPlatformHelperVersioningGetStatus:
         config = valid_platform_config
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
+
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version
         ).get_status()
+
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -86,20 +96,24 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
     @patch("requests.get")
+
     def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
         self, mock_latest_release_request, fakefs
     ):
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 1, 1)
+
         mock_latest_release_request.return_value.json.return_value = {
             "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
         }
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
         fakefs.create_file(PLATFORM_CONFIG_FILE, contents="{")
 
+
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version
         ).get_status()
+
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -114,12 +128,15 @@ class TestPlatformHelperVersioningGetStatus:
         fakefs,
         create_invalid_platform_config_file,
     ):
+
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 1, 1)
+
         mock_get.return_value.json.return_value = {
             "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
         }
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version
