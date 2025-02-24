@@ -146,3 +146,17 @@ class ApplicationNotFoundException(ApplicationException):
         super().__init__(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
         )
+
+
+class ApplicationServiceNotFoundException(ApplicationException):
+    def __init__(self, application_name: str, svc_name: str):
+        super().__init__(
+            f"""The service {svc_name} was not found in the application {application_name}. It either does not exist, or has not been deployed."""
+        )
+
+
+class ApplicationEnvironmentNotFoundException(ApplicationException):
+    def __init__(self, application_name: str, environment: str):
+        super().__init__(
+            f"""The environment "{environment}" either does not exist or has not been deployed for the application {application_name}."""
+        )
