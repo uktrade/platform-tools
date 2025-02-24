@@ -1,7 +1,12 @@
+from importlib.metadata import PackageNotFoundError
 from unittest.mock import patch
+
+import pytest
 
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import GithubVersionProvider
+from dbt_platform_helper.providers.version import LocalVersionProvider
+from dbt_platform_helper.providers.version import LocalVersionProviderException
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
@@ -21,6 +26,23 @@ class MockPyPiResponse:
     @staticmethod
     def json():
         return {"releases": {"1.1.1": [], "1.2.3": []}}
+
+
+class TestLocalVersionProvider:
+    @patch("dbt_platform_helper.providers.version.version", return_value="1.1.1")
+    def test_get_locally_installed_tool_version(self, mock_version):
+        assert LocalVersionProvider.get_installed_tool_version("test") == SemanticVersion(1, 1, 1)
+        mock_version.assert_called_once_with("test")
+
+    @patch("dbt_platform_helper.providers.version.version", return_value="")
+    def test_get_locally_installed_tool_version_given_package_not_found_exception(
+        self, mock_version
+    ):
+        mock_version.side_effect = PackageNotFoundError
+        with pytest.raises(LocalVersionProviderException) as exc:
+            LocalVersionProvider.get_installed_tool_version("test")
+
+        assert "Package 'test' not found" in str(exc)
 
 
 class TestGithubVersionProvider:
