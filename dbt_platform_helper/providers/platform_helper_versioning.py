@@ -37,7 +37,7 @@ class PlatformHelperVersioning:
 
     def get_status(
         self,
-        include_project_versions=True,
+        include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
         try:
             locally_installed_version = self.local_version_provider.get_installed_tool_version(
