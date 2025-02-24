@@ -9,13 +9,13 @@ from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.platform_helper_versioning import (
+    PlatformHelperVersioning,
+)
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.versioning import (
-    check_platform_helper_version_needs_update,
-)
 
 AVAILABLE_TEMPLATES = ["default", "migration", "dmas-migration"]
 
@@ -23,7 +23,7 @@ AVAILABLE_TEMPLATES = ["default", "migration", "dmas-migration"]
 @click.group(cls=ClickDocOptGroup)
 def environment():
     """Commands affecting environments."""
-    check_platform_helper_version_needs_update()
+    PlatformHelperVersioning().check_if_needs_update()
 
 
 @environment.command()
