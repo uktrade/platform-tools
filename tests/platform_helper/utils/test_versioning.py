@@ -11,6 +11,8 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
+from dbt_platform_helper.domain.versioning import RequiredVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_helper_versioning import (
@@ -25,8 +27,6 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.versioning import PlatformHelperVersionNotFoundException
-from dbt_platform_helper.utils.versioning import RequiredVersion
 from dbt_platform_helper.utils.versioning import get_aws_versions
 from dbt_platform_helper.utils.versioning import get_copilot_versions
 from dbt_platform_helper.utils.versioning import (
@@ -72,7 +72,8 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 
 # TODO move to RequiredVersion domain
 @patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
+    new=Mock(return_value=True),
 )
 @patch(
     "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
@@ -127,7 +128,8 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec()
     new=Mock(return_value=True),
 )
 @patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
+    new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present():
     mock_platform_helper_version_provider = Mock()
