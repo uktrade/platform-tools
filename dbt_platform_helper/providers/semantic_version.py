@@ -81,13 +81,21 @@ class VersionStatus:
         self.local = local_version
         self.latest = latest_release
 
+    def __str__(self):
+        attrs = {
+            key: value for key, value in vars(self).items() if isinstance(value, SemanticVersion)
+        }
+        attrs_str = ", ".join(f"{key}: {value}" for key, value in attrs.items())
+        return f"{self.__class__.__name__}: {attrs_str}"
+
     def is_outdated(self):
         return self.local != self.latest
 
-    def warn(self):
+    def validate(self):
         pass
 
 
+# TODO remove dataclass, or make VersionStatus also a dataclass - align attribute names
 @dataclass
 class PlatformHelperVersionStatus(VersionStatus):
     local: Optional[SemanticVersion] = None
@@ -96,7 +104,22 @@ class PlatformHelperVersionStatus(VersionStatus):
     platform_config_default: Optional[SemanticVersion] = None
     pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
 
-    def warn(self) -> dict:
+    def __str__(self):
+        semantic_version_attrs = {
+            key: value for key, value in vars(self).items() if isinstance(value, SemanticVersion)
+        }
+
+        class_str = ", ".join(f"{key}: {value}" for key, value in semantic_version_attrs.items())
+
+        if self.pipeline_overrides.items():
+            pipeline_overrides_str = "pipeline_overrides: " + ", ".join(
+                f"{key}: {value}" for key, value in self.pipeline_overrides.items()
+            )
+            class_str = ", ".join([class_str, pipeline_overrides_str])
+
+        return f"{self.__class__.__name__}: {class_str}"
+
+    def validate(self) -> dict:
         if self.platform_config_default and not self.deprecated_version_file:
             return {}
 
