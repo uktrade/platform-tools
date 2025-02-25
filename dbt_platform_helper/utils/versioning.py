@@ -24,11 +24,6 @@ def get_platform_helper_version_status(
     )
 
 
-# TODO duplicated in PlatformHelperVersion
-def running_as_installed_package():
-    return "site-packages" in __file__
-
-
 def get_required_terraform_platform_modules_version(
     cli_terraform_platform_modules_version, platform_config_terraform_modules_default_version
 ):

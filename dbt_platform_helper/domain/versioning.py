@@ -5,7 +5,7 @@ from dbt_platform_helper.providers.platform_helper_versioning import (
 )
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.utils.versioning import running_as_installed_package
+from dbt_platform_helper.utils.files import running_as_installed_package
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):

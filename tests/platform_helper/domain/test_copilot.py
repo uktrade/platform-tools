@@ -88,7 +88,7 @@ class TestMakeAddonsCommand:
     )
     @freeze_time("2023-08-22 16:00:00")
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -237,7 +237,7 @@ class TestMakeAddonsCommand:
     )
     @freeze_time("2023-08-22 16:00:00")
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -340,7 +340,7 @@ class TestMakeAddonsCommand:
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -412,7 +412,7 @@ class TestMakeAddonsCommand:
             assert not path.exists(), f"{path} should not exist"
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     def test_exit_if_no_config_file(self, fakefs):
@@ -425,7 +425,7 @@ class TestMakeAddonsCommand:
         )
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
@@ -440,7 +440,7 @@ class TestMakeAddonsCommand:
         assert "No services found in ./copilot/; exiting" in result.output
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
@@ -473,7 +473,7 @@ class TestMakeAddonsCommand:
         )
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @mock_aws
@@ -506,7 +506,7 @@ class TestMakeAddonsCommand:
         )
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
@@ -559,7 +559,7 @@ class TestMakeAddonsCommand:
         )
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
@@ -607,7 +607,7 @@ class TestMakeAddonsCommand:
         assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     def test_exit_if_services_key_invalid(self, fakefs):
@@ -645,7 +645,7 @@ class TestMakeAddonsCommand:
         assert "'this-is-not-valid' should be instance of 'list'" in result.output
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
@@ -667,7 +667,7 @@ class TestMakeAddonsCommand:
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch(
@@ -706,7 +706,7 @@ class TestMakeAddonsCommand:
             )
 
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
@@ -747,7 +747,7 @@ class TestMakeAddonsCommand:
 
     @freeze_time("2023-08-22 16:00:00")
     @patch(
-        "dbt_platform_helper.utils.versioning.running_as_installed_package",
+        "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))

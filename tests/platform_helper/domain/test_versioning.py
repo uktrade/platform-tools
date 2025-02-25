@@ -41,9 +41,7 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
 
 
-@patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
-)
+@patch("dbt_platform_helper.utils.files.running_as_installed_package", new=Mock(return_value=True))
 @patch(
     "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
     new=Mock(return_value=True),
