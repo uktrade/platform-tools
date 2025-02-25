@@ -146,10 +146,6 @@ def test_platform_helper_version_deprecation_warnings(
         mock_io_provider.process_messages.assert_called_with({})
 
 
-# TODO move to RequiredVersion domain tests
-# TODO mock config provider instead of fs
-
-
 # TODO Relocate when we refactor config command in DBTP-1538
 @patch("subprocess.run")
 @patch(
