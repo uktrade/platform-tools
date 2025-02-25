@@ -11,7 +11,6 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import RequiredVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -68,88 +67,6 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
     PlatformHelperVersioning().check_if_needs_update()
 
     version_compatibility.assert_not_called()
-
-
-# TODO move to RequiredVersion domain
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
-@patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
-def test_check_platform_helper_version_shows_warning_when_different_than_file_spec():
-    mock_io_provider = Mock()
-    mock_platform_helper_version_provider = Mock()
-    mock_platform_helper_version_provider.get_status.return_value = PlatformHelperVersionStatus(
-        local=SemanticVersion(1, 0, 1),
-        deprecated_version_file=SemanticVersion(1, 0, 0),
-    )
-    required_version = RequiredVersion(
-        io=mock_io_provider, platform_helper_versioning=mock_platform_helper_version_provider
-    )
-
-    required_version.check_platform_helper_version_mismatch()
-
-    mock_io_provider.warn.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
-    )
-
-
-# TODO move to RequiredVersion domain
-@patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
-)
-@patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
-def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec():
-    mock_io_provider = Mock()
-    mock_platform_helper_version_provider = Mock()
-    mock_platform_helper_version_provider.get_status.return_value = PlatformHelperVersionStatus(
-        local=SemanticVersion(1, 0, 1),
-        deprecated_version_file=SemanticVersion(1, 0, 0),
-    )
-    required_version = RequiredVersion(
-        io=mock_io_provider, platform_helper_versioning=mock_platform_helper_version_provider
-    )
-
-    required_version.check_platform_helper_version_mismatch()
-
-    mock_io_provider.warn.assert_not_called
-    mock_io_provider.error.assert_not_called
-
-
-# TODO move to RequiredVersion domain tests.  consolidate running_as_installed_package
-@patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
-def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present():
-    mock_platform_helper_version_provider = Mock()
-    mock_platform_helper_version_provider.get_status.return_value = PlatformHelperVersionStatus(
-        local=SemanticVersion(1, 0, 1),
-        deprecated_version_file=None,
-        platform_config_default=SemanticVersion(1, 0, 0),
-    )
-
-    mock_io_provider = Mock()
-
-    required_version = RequiredVersion(
-        platform_helper_versioning=mock_platform_helper_version_provider, io=mock_io_provider
-    )
-
-    required_version.check_platform_helper_version_mismatch()
-
-    mock_io_provider.warn.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
-    )
 
 
 # TODO move to PlatformHelperVersion provider tests and ensure it's testing the right thing
@@ -231,37 +148,6 @@ def test_platform_helper_version_deprecation_warnings(
 
 # TODO move to RequiredVersion domain tests
 # TODO mock config provider instead of fs
-@patch("requests.get")
-@patch("dbt_platform_helper.providers.version.version")
-def test_get_required_version_errors_if_version_is_not_specified(
-    mock_version,
-    mock_get,
-    fakefs,
-):
-    mock_version.return_value = "1.2.3"
-    mock_get.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
-
-    platform_config_without_default_version = {"application": "my-app"}
-    fakefs.create_file(
-        PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_without_default_version)
-    )
-
-    mock_io_provider = Mock()
-
-    print("provider mock", mock_io_provider)
-
-    expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
-Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
-"""
-
-    with pytest.raises(PlatformHelperVersionNotFoundException):
-        RequiredVersion(io=mock_io_provider).get_required_version()
-
-    mock_io_provider.process_messages.assert_called_with(
-        {"warnings": [], "errors": [expected_message]}
-    )
 
 
 # TODO Relocate when we refactor config command in DBTP-1538
@@ -495,44 +381,3 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     )
 
     assert result == default_version
-
-
-# TODO move to RequiredVersion domain tests
-# TODO use as template to recreate PlatformHelperVersion test cases for PlatformHelperVersion unit tests
-@patch(
-    "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
-    return_value="10.9.9",
-)
-class TestVersionCommandWithInvalidConfig:
-    DEFAULT_VERSION = "1.2.3"
-    INVALID_CONFIG = {
-        "default_versions": {"platform-helper": DEFAULT_VERSION},
-        "a_bogus_field_that_invalidates_config": "foo",
-    }
-
-    def test_works_given_invalid_config(self, mock_latest_release, fakefs):
-        default_version = "1.2.3"
-        platform_config = self.INVALID_CONFIG
-        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
-
-        result = RequiredVersion().get_required_platform_helper_version(
-            "bogus_pipeline", version_status=PlatformHelperVersioning().get_status()
-        )
-
-        assert result == default_version
-
-    def test_pipeline_override_given_invalid_config(self, mock_latest_release, fakefs):
-        pipeline_override_version = "1.1.1"
-        platform_config = self.INVALID_CONFIG
-        platform_config["environment_pipelines"] = {
-            "main": {
-                "versions": {"platform-helper": pipeline_override_version},
-            }
-        }
-        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
-
-        result = RequiredVersion().get_required_platform_helper_version(
-            "main", version_status=PlatformHelperVersioning().get_status()
-        )
-
-        assert result == pipeline_override_version
