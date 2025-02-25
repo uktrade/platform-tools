@@ -6,6 +6,7 @@ import pytest
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import RequiredVersion
 from dbt_platform_helper.providers.platform_helper_versioning import (
@@ -162,3 +163,108 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
     mock_io_provider.process_messages.assert_called_with(
         {"warnings": [], "errors": [expected_message]}
     )
+
+
+# TODO this is testing both get_required_platform_helper_version and
+# get_platform_helper_version_status.  We should instead unit test
+# PlatformHelperVersion.get_status thoroughly and then inject VersionStatus for this test.
+@pytest.mark.parametrize(
+    "platform_helper_version_file_version,platform_config_default_version,expected_version",
+    [
+        ("0.0.1", None, "0.0.1"),
+        ("0.0.1", "1.0.0", "1.0.0"),
+    ],
+)
+@patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
+@patch("requests.get")
+def test_get_required_platform_helper_version(
+    mock_get,
+    mock_version,
+    fakefs,
+    platform_helper_version_file_version,
+    platform_config_default_version,
+    expected_version,
+):
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    if platform_helper_version_file_version:
+        Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
+
+    platform_config = {
+        "application": "my-app",
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {"slack_channel": "abc", "trigger_on_push": True, "environments": {"dev": None}}
+        },
+    }
+    if platform_config_default_version:
+        platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
+
+    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+
+    version_status = PlatformHelperVersioning().get_status()
+    required_version = RequiredVersion()
+
+    result = required_version.get_required_platform_helper_version(version_status=version_status)
+
+    assert result == expected_version
+
+
+@pytest.mark.parametrize(
+    "version_in_phv_file, version_in_platform_config, expected_warnings",
+    (
+        (
+            True,
+            False,
+            [
+                f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated.",
+                f"Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 3.3.3\n",
+            ],
+        ),
+        (
+            False,
+            True,
+            None,
+        ),
+        (
+            True,
+            True,
+            [f"Please delete '{PLATFORM_HELPER_VERSION_FILE}' as it is now deprecated."],
+        ),
+    ),
+)
+# TODO add coverage for the include_project_versions parameter in the PlatformHelperVersion tests
+@patch("requests.get")
+@patch("dbt_platform_helper.providers.version.version")
+def test_platform_helper_version_deprecation_warnings(
+    mock_version,
+    mock_get,
+    fakefs,
+    version_in_phv_file,
+    version_in_platform_config,
+    expected_warnings,
+):
+    mock_version.return_value = "1.2.3"
+    mock_get.return_value.json.return_value = {
+        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+    }
+    platform_config = {"application": "my-app"}
+    if version_in_platform_config:
+        platform_config["default_versions"] = {"platform-helper": "2.2.2"}
+
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+
+    if version_in_phv_file:
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
+
+    mock_io_provider = Mock()
+
+    RequiredVersion(io=mock_io_provider).get_required_version()
+
+    if expected_warnings:
+        mock_io_provider.process_messages.assert_called_with(
+            {"warnings": expected_warnings, "errors": []}
+        )
+    else:
+        mock_io_provider.process_messages.assert_called_with({})
