@@ -7,7 +7,9 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
-from dbt_platform_helper.domain.terraform_versioning import TerraformVersioning
+from dbt_platform_helper.domain.terraform_versioning import (
+    TerraformPlatformModulesVersioning,
+)
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -66,7 +68,7 @@ class Pipelines:
         self._clean_pipeline_config(copilot_pipelines_dir)
 
         terraform_platform_modules_version = (
-            TerraformVersioning().get_required_terraform_platform_modules_version(
+            TerraformPlatformModulesVersioning().get_required_version(
                 cli_terraform_platform_modules_version,
                 platform_config_terraform_modules_default_version,
             )

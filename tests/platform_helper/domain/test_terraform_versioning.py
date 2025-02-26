@@ -1,13 +1,12 @@
 import pytest
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.domain.terraform_versioning import TerraformVersioning
+from dbt_platform_helper.domain.terraform_versioning import (
+    TerraformPlatformModulesVersioning,
+)
 
 
-class TestTerraformVersioning:
-    def test_get_required_version(self):
-        pass
-
+class TestTerraformPlatformModulesVersioning:
     @pytest.mark.parametrize(
         "cli_terraform_platform_version, config_terraform_platform_version, expected_version",
         [
@@ -16,11 +15,11 @@ class TestTerraformVersioning:
             (None, None, DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION),
         ],
     )
-    def test_determine_terraform_platform_modules_version(
+    def test_get_required_version(
         self, cli_terraform_platform_version, config_terraform_platform_version, expected_version
     ):
         assert (
-            TerraformVersioning().get_required_terraform_platform_modules_version(
+            TerraformPlatformModulesVersioning().get_required_version(
                 cli_terraform_platform_version, config_terraform_platform_version
             )
             == expected_version

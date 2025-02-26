@@ -1,4 +1,6 @@
-from dbt_platform_helper.domain.terraform_versioning import TerraformVersioning
+from dbt_platform_helper.domain.terraform_versioning import (
+    TerraformPlatformModulesVersioning,
+)
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -35,7 +37,7 @@ class TerraformEnvironment:
             "terraform-platform-modules", ""
         )
         terraform_platform_modules_version = (
-            TerraformVersioning().get_required_terraform_platform_modules_version(
+            TerraformPlatformModulesVersioning().get_required_version(
                 terraform_platform_modules_version_override,
                 platform_config_terraform_modules_default_version,
             )
