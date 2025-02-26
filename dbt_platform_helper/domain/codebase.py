@@ -20,6 +20,7 @@ from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
+from dbt_platform_helper.utils.aws import get_manual_release_pipeline
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
 from dbt_platform_helper.utils.aws import start_pipeline_and_return_execution_id
@@ -34,6 +35,7 @@ class Codebase:
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
         check_image_exists: Callable[[str], str] = check_image_exists,
+        get_manual_release_pipeline: Callable[[str], str] = get_manual_release_pipeline,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
         get_build_url_from_pipeline_execution_id: Callable[
             [str], str
@@ -50,6 +52,7 @@ class Codebase:
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
         self.check_image_exists = check_image_exists
+        self.get_manual_release_pipeline = get_manual_release_pipeline
         self.get_build_url_from_arn = get_build_url_from_arn
         self.get_build_url_from_pipeline_execution_id = get_build_url_from_pipeline_execution_id
         self.list_latest_images = list_latest_images
@@ -154,8 +157,11 @@ class Codebase:
 
         self.check_image_exists(session, application, codebase, commit)
 
-        pipeline_name = f"{app}-{codebase}-manual-release"
         codepipeline_client = session.client("codepipeline")
+
+        pipeline_name = self.get_manual_release_pipeline(
+            codepipeline_client, application.name, codebase
+        )
 
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,

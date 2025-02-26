@@ -8,6 +8,7 @@ from unittest.mock import patch
 import boto3
 import botocore
 import pytest
+from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from dbt_platform_helper.constants import ALPHANUMERIC_ENVIRONMENT_NAME
@@ -27,6 +28,7 @@ from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_load_balancer_domain_and_configuration
+from dbt_platform_helper.utils.aws import get_manual_release_pipeline
 from dbt_platform_helper.utils.aws import (
     get_postgres_connection_data_updated_with_master_secret,
 )
@@ -816,3 +818,30 @@ def test_wait_for_log_group_to_exist_fails_when_log_group_not_found():
 def test_get_build_url_from_pipeline_execution_id(execution_id, pipeline_name, expected_url):
     result = get_build_url_from_pipeline_execution_id(execution_id, pipeline_name)
     assert result == expected_url
+
+
+@pytest.mark.parametrize(
+    "new_pipeline_name_exists, expected_pipeline_name",
+    [
+        (
+            False,
+            "test-application-test-codebase-manual-release-pipeline",
+        ),
+        (
+            True,
+            "test-application-test-codebase-manual-release",
+        ),
+    ],
+)
+def test_get_manual_release_pipeline(new_pipeline_name_exists, expected_pipeline_name):
+    mock_client = Mock()
+
+    if new_pipeline_name_exists is False:
+        mock_client.get_pipeline.side_effect = ClientError(
+            {"Error": {"Code": "PipelineNotFoundException", "Message": "Pipeline not found"}},
+            "get_pipeline",
+        )
+
+    result = get_manual_release_pipeline(mock_client, "test-application", "test-codebase")
+
+    assert result == expected_pipeline_name
