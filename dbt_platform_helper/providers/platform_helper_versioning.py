@@ -18,6 +18,7 @@ from dbt_platform_helper.providers.version import LocalVersionProviderException
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
+from dbt_platform_helper.utils.files import running_as_installed_package
 
 
 class PlatformHelperVersioning:
@@ -104,8 +105,3 @@ class PlatformHelperVersioning:
             self.io.error(message)
         except IncompatibleMinorVersionException:
             self.io.warn(message)
-
-
-# TODO consolidate with the same function in versioning and given a home
-def running_as_installed_package():
-    return "site-packages" in __file__

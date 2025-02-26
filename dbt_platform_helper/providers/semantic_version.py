@@ -74,12 +74,10 @@ class SemanticVersion:
         return SemanticVersion(output_version[0], output_version[1], output_version[2])
 
 
+@dataclass
 class VersionStatus:
-    def __init__(
-        self, local_version: SemanticVersion = None, latest_release: SemanticVersion = None
-    ):
-        self.local = local_version
-        self.latest = latest_release
+    local: SemanticVersion = None
+    latest: SemanticVersion = None
 
     def __str__(self):
         attrs = {
@@ -95,7 +93,6 @@ class VersionStatus:
         pass
 
 
-# TODO remove dataclass, or make VersionStatus also a dataclass - align attribute names
 @dataclass
 class PlatformHelperVersionStatus(VersionStatus):
     local: Optional[SemanticVersion] = None
