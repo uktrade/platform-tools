@@ -20,10 +20,6 @@ from dbt_platform_helper.providers.semantic_version import SemanticVersion
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
-@patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec():
     mock_io_provider = Mock()
     mock_platform_helper_version_provider = Mock()
@@ -42,9 +38,8 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
 
 
-@patch("dbt_platform_helper.utils.files.running_as_installed_package", new=Mock(return_value=True))
 @patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec():
@@ -64,10 +59,6 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec()
     mock_io_provider.error.assert_not_called
 
 
-@patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 @patch(
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
     new=Mock(return_value=True),
@@ -150,8 +141,6 @@ def test_get_required_version_errors_if_version_is_not_specified(
     )
 
     mock_io_provider = Mock()
-
-    print("provider mock", mock_io_provider)
 
     expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
 Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
