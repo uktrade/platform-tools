@@ -3,9 +3,7 @@ import subprocess
 from pathlib import Path
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus

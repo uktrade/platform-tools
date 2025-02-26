@@ -5,15 +5,13 @@ import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
     @patch(
-        "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
+        "dbt_platform_helper.domain.versioning.running_as_installed_package",
         new=Mock(return_value=True),
     )
     def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
@@ -39,7 +37,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         )
 
     @patch(
-        "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
+        "dbt_platform_helper.domain.versioning.running_as_installed_package",
         new=Mock(return_value=True),
     )
     def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(self):

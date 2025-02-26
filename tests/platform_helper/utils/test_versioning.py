@@ -11,12 +11,9 @@ import yaml
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.domain.versioning import RequiredVersion
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -162,7 +159,7 @@ def test_get_required_platform_helper_version_in_pipeline(
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
     version_status = PlatformHelperVersioning().get_status()
-    required_version = RequiredVersion()
+    required_version = PlatformHelperVersioning()
 
     result = required_version.get_required_platform_helper_version(
         "main", version_status=version_status
@@ -189,7 +186,7 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     mock_version.return_value = "1.2.3"
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump({"application": "my-app"}))
     # TODO need to inject the config provider instead of relying on FS
-    required_version = RequiredVersion()
+    required_version = PlatformHelperVersioning()
 
     version_status = PlatformHelperVersioning().get_status()
 
@@ -213,7 +210,7 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
     mock_version,
     secho,
 ):
-    required_version = RequiredVersion()
+    required_version = PlatformHelperVersioning()
 
     result = required_version.get_required_platform_helper_version(
         version_status=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
@@ -266,7 +263,7 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     }
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-    result = RequiredVersion().get_required_platform_helper_version(
+    result = PlatformHelperVersioning().get_required_platform_helper_version(
         "bogus_pipeline", version_status=PlatformHelperVersioning().get_status()
     )
 
