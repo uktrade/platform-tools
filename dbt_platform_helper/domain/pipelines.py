@@ -7,6 +7,7 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+from dbt_platform_helper.domain.terraform_versioning import TerraformVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -14,9 +15,6 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.versioning import (
-    get_required_terraform_platform_modules_version,
-)
 
 
 class Pipelines:
@@ -67,9 +65,11 @@ class Pipelines:
 
         self._clean_pipeline_config(copilot_pipelines_dir)
 
-        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
-            cli_terraform_platform_modules_version,
-            platform_config_terraform_modules_default_version,
+        terraform_platform_modules_version = (
+            TerraformVersioning().get_required_terraform_platform_modules_version(
+                cli_terraform_platform_modules_version,
+                platform_config_terraform_modules_default_version,
+            )
         )
 
         # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
