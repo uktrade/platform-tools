@@ -38,20 +38,14 @@ class FailedToActivateMaintenancePageException(MaintenancePageException):
         application_name: str,
         env: str,
         original_exception: Exception,
-        rolled_back_rules: dict[str, bool] = {},
     ):
         super().__init__(
             f"Maintenance page failed to activate for the {application_name} application in environment {env}."
         )
         self.orginal_exception = original_exception
-        self.rolled_back_rules = rolled_back_rules
 
     def __str__(self):
-        return (
-            f"{super().__str__()}\n"
-            f"Rolled-back rules: {self.rolled_back_rules }\n"
-            f"Original exception: {self.orginal_exception}"
-        )
+        return f"{super().__str__()}\n" f"Original exception: {self.orginal_exception}"
 
 
 # TODO should this be in its own provider, inside the VPC one, what logic is this sepcific too?
@@ -187,6 +181,12 @@ class MaintenancePage:
                     listener_arn, target_group_arn
                 )
 
+                self.io.debug(
+                    "\n#----------------------------------------------------------#\n# Creating listener rules for service "
+                    + svc.name.ljust(21, " ")
+                    + "#\n#----------------------------------------------------------#\n\n",
+                )
+
                 for ip in allowed_ips:
                     self.load_balancer.create_header_rule(
                         listener_arn,
@@ -196,6 +196,7 @@ class MaintenancePage:
                         "AllowedIps",
                         next(rule_priority),
                         service_conditions,
+                        [{"Key": "service", "Value": svc.name}],
                     )
                     self.load_balancer.create_source_ip_rule(
                         listener_arn,
@@ -204,6 +205,7 @@ class MaintenancePage:
                         "AllowedSourceIps",
                         next(rule_priority),
                         service_conditions,
+                        [{"Key": "service", "Value": svc.name}],
                     )
 
                 self.load_balancer.create_header_rule(
@@ -214,12 +216,13 @@ class MaintenancePage:
                     "BypassIpFilter",
                     next(rule_priority),
                     service_conditions,
+                    [{"Key": "service", "Value": svc.name}],
                 )
 
                 # add to accumilating list of conditions for maintenace page rule
                 maintenance_page_host_header_conditions.extend(service_conditions)
 
-            self.io.info(
+            self.io.debug(
                 f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
             )
 
@@ -262,9 +265,9 @@ class MaintenancePage:
                 ],
             )
         except Exception as e:
-            deleted_rules = self.__clean_up_maintenance_page_rules(listener_arn)
+            self.__clean_up_maintenance_page_rules(listener_arn)
             raise FailedToActivateMaintenancePageException(
-                app, env, f"{e}:\n {traceback.format_exc()}", deleted_rules
+                app, env, f"{e}:\n {traceback.format_exc()}"
             )
 
     def __clean_up_maintenance_page_rules(
@@ -275,13 +278,35 @@ class MaintenancePage:
             listener_arn
         )
 
-        deletes = {}
+        # keep track of rules deleted
+        deletes = {"MaintenancePage": 0}
         for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
-            deleted = self.load_balancer.delete_listener_rule_by_tags(tag_descriptions, name)
-            deletes[name] = bool(deleted)
-            if fail_when_not_deleted and name == "MaintenancePage" and not deleted:
+            deleted_list = self.load_balancer.delete_listener_rule_by_tags(tag_descriptions, name)
+
+            # track the rules deleted grouped by service
+            for deleted_rule in deleted_list:
+                tags = {t["Key"]: t["Value"] for t in deleted_rule["Tags"]}
+                if tags.get("service"):
+                    if tags["service"] not in deletes:
+                        deletes[tags["service"]] = {
+                            "AllowedIps": 0,
+                            "BypassIpFilter": 0,
+                            "AllowedSourceIps": 0,
+                        }
+                    deletes[tags["service"]][name] += 1
+                elif tags.get("name") == "MaintenancePage":
+                    deletes["MaintenancePage"] += 1
+
+            if (
+                fail_when_not_deleted
+                and name == "MaintenancePage"
+                and deletes["MaintenancePage"] == 0
+            ):
                 raise ListenerRuleNotFoundException()
 
+        self.io.warn(
+            f"Rules deleted by type and grouped by service: {deletes}",
+        )
         return deletes
 
     def __remove_maintenance_page(self, listener_arn: str) -> dict[str, bool]:

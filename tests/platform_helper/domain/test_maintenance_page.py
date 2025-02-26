@@ -330,10 +330,11 @@ class TestCommandHelperMethods:
 
         excepted = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
-            f"Rolled-back rules: {expected_roll_back_message}\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
         assert str(e.value).startswith(excepted)
+
+        # TODO add check for warn output or mock Io and assert called with
 
         assert mock_create_rule.call_count == create_rule_count_to_error + 1
 
@@ -439,7 +440,6 @@ class TestCommandHelperMethods:
 
         excepted = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
-            "Rolled-back rules: {'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': True, 'AllowedSourceIps': True}\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
         assert str(e.value).startswith(excepted)
@@ -697,6 +697,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -706,6 +707,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
             ]
         )
@@ -717,6 +719,7 @@ class TestActivateMethod:
             "AllowedSourceIps",
             2,
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            [{"Key": "service", "Value": "web"}],
         )
 
         maintenance_mocks.load_balancer.create_rule.assert_called_with(
@@ -759,11 +762,15 @@ class TestActivateMethod:
         maintenance_mocks.io.info.assert_has_calls(
             [
                 call(
-                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
-                ),
-                call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
+                ),
+            ]
+        )
+        maintenance_mocks.io.debug.assert_has_calls(
+            [
+                call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
                 ),
             ]
         )
@@ -784,7 +791,9 @@ class TestActivateMethod:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = (
+            describe_rules_response
+        )
 
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
@@ -815,6 +824,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -824,6 +834,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
             ]
         )
@@ -835,6 +846,7 @@ class TestActivateMethod:
             "AllowedSourceIps",
             2,
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            [{"Key": "service", "Value": "web"}],
         )
 
         maintenance_mocks.load_balancer.create_rule.assert_called_with(
@@ -1044,6 +1056,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -1053,6 +1066,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -1062,6 +1076,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     4,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web2"}],
                 ),
                 call(
                     "https_listener",
@@ -1071,6 +1086,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     6,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web2"}],
                 ),
             ]
         )
@@ -1084,6 +1100,7 @@ class TestActivateMethod:
                     "AllowedSourceIps",
                     2,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -1092,6 +1109,7 @@ class TestActivateMethod:
                     "AllowedSourceIps",
                     5,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web2"}],
                 ),
             ]
         )
@@ -1137,11 +1155,16 @@ class TestActivateMethod:
         maintenance_mocks.io.info.assert_has_calls(
             [
                 call(
-                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
-                ),
-                call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
+                ),
+            ]
+        )
+
+        maintenance_mocks.io.debug.assert_has_calls(
+            [
+                call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
                 ),
             ]
         )
@@ -1211,11 +1234,16 @@ class TestActivateMethod:
         maintenance_mocks.io.info.assert_has_calls(
             [
                 call(
-                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
-                ),
-                call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
+                ),
+            ]
+        )
+
+        maintenance_mocks.io.debug.assert_has_calls(
+            [
+                call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
                 ),
             ]
         )
@@ -1238,7 +1266,9 @@ class TestDeactivateCommand:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = (
+            describe_rules_response
+        )
 
         provider = MaintenancePage(**maintenance_mocks.params())
 
@@ -1337,7 +1367,7 @@ class TestDeactivateCommand:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = None
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = []
 
         provider = MaintenancePage(**maintenance_mocks.params())
         with pytest.raises(ListenerRuleNotFoundException):
