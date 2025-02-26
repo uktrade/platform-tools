@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.1.2](https://github.com/uktrade/platform-tools/compare/13.1.1...13.1.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* DBTP-notsure - Fixing limit ([#784](https://github.com/uktrade/platform-tools/issues/784)) ([3ee9eae](https://github.com/uktrade/platform-tools/commit/3ee9eaece39e1483baf41e6b3d628ca143d76368))
+
 ## [13.1.1](https://github.com/uktrade/platform-tools/compare/13.1.0...13.1.1) (2025-02-21)
 
 
