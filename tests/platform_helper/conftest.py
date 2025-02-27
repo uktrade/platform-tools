@@ -89,6 +89,13 @@ environments:
     )
 
 
+@pytest.fixture(scope="session")
+def no_skipping_version_checks():
+    with patch("dbt_platform_helper.domain.versioning.running_as_installed_package") as installed:
+        installed.return_value = True
+        yield installed
+
+
 @pytest.fixture(scope="function", autouse=True)
 def mock_application():
     with patch(

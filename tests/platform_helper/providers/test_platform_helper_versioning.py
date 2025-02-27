@@ -10,14 +10,9 @@ from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
-    @patch(
-        "dbt_platform_helper.domain.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
-    )
     def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
-        self,
+        self, no_skipping_version_checks
     ):
-
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 0, 0)
 
@@ -36,11 +31,9 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             "--upgrade dbt-platform-helper`."
         )
 
-    @patch(
-        "dbt_platform_helper.domain.versioning.running_as_installed_package",
-        new=Mock(return_value=True),
-    )
-    def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(self):
+    def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
+        self, no_skipping_version_checks
+    ):
         mock_local_version = Mock()
         mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 0, 0)
 

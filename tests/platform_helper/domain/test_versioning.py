@@ -32,12 +32,12 @@ def mock_pypi_provider():
     return mock_pypi_provider
 
 
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-    mock_io_provider, mock_local_version_provider, mock_pypi_provider, fakefs
+    no_skipping_version_checks,
+    mock_io_provider,
+    mock_local_version_provider,
+    mock_pypi_provider,
+    fakefs,
 ):
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
     required_version = PlatformHelperVersioning(
@@ -53,12 +53,12 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     )
 
 
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
-    mock_io_provider, mock_local_version_provider, mock_pypi_provider, fakefs
+    no_skipping_version_checks,
+    mock_io_provider,
+    mock_local_version_provider,
+    mock_pypi_provider,
+    fakefs,
 ):
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
 
@@ -74,12 +74,13 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
     mock_io_provider.error.assert_not_called
 
 
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
-    mock_io_provider, mock_local_version_provider, mock_pypi_provider, fakefs, valid_platform_config
+    no_skipping_version_checks,
+    mock_io_provider,
+    mock_local_version_provider,
+    mock_pypi_provider,
+    fakefs,
+    valid_platform_config,
 ):
     config = valid_platform_config
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
