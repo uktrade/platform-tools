@@ -20,10 +20,12 @@ class TerraformEnvironment:
         config_provider,
         manifest_provider: TerraformManifestProvider = None,
         io: ClickIOProvider = ClickIOProvider(),
+        terraform_platform_modules_versioning: TerraformPlatformModulesVersioning = TerraformPlatformModulesVersioning(),
     ):
         self.io = io
         self.config_provider = config_provider
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
+        self.terraform_platform_modules_versioning = terraform_platform_modules_versioning
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.get_enriched_config()
@@ -37,7 +39,7 @@ class TerraformEnvironment:
             "terraform-platform-modules", ""
         )
         terraform_platform_modules_version = (
-            TerraformPlatformModulesVersioning().get_required_version(
+            self.terraform_platform_modules_versioning.get_required_version(
                 terraform_platform_modules_version_override,
                 platform_config_terraform_modules_default_version,
             )
