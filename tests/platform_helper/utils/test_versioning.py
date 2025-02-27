@@ -56,7 +56,7 @@ def test_validate_template_version(template_check: Tuple[str, Type[BaseException
 
 # TODO move to PlatformHelperVersion provider tests
 @patch(
-    "dbt_platform_helper.utils.files.running_as_installed_package",
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
     new=Mock(return_value=False),
 )
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
@@ -68,10 +68,6 @@ def test_check_platform_helper_version_skips_when_running_local_version(version_
 
 # TODO move to PlatformHelperVersion provider tests and ensure it's testing the right thing
 # right now this always passes because the specific mock is never called
-@patch(
-    "dbt_platform_helper.utils.files.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 @patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
 def test_check_platform_helper_version_skips_when_skip_environment_variable_is_set(
     version_compatibility,

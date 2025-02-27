@@ -22,8 +22,12 @@ from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
+def running_as_installed_package():
+    return "site-packages" in __file__
+
+
 def skip_version_check():
-    return not "site-packages" in __file__ or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
+    return not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):

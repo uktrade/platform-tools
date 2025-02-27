@@ -10,6 +10,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
+from dbt_platform_helper.domain.versioning import skip_version_check
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
@@ -305,4 +306,4 @@ def test_skip_version_check(
     mock_running_as_installed_package.return_value = mock_installed
     mock_env = {"PLATFORM_TOOLS_SKIP_VERSION_CHECK": mock_env_var} if mock_env_var else {}
     with patch.dict(os.environ, mock_env):
-        assert PlatformHelperVersioning().skip_version_check() == expected
+        assert skip_version_check() == expected
