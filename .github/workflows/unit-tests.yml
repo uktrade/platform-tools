@@ -30,7 +30,7 @@ jobs:
           poetry install
 
       - name: Run pytest
-        run: poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy tests
         env:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
