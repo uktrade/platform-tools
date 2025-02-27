@@ -25,7 +25,7 @@ class MockGithubTagResponse:
 class MockPyPiResponse:
     @staticmethod
     def json():
-        return {"releases": {"1.1.1": [], "1.2.3": []}}
+        return {"releases": {"1.1.1": [], "1.2.3": [], "1.1.0": None}}
 
 
 class TestLocalVersionProvider:
