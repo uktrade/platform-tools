@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Tuple
 from typing import Type
@@ -54,19 +53,6 @@ class TestConfigCommand:
 
         if message:
             assert (message % template_path) == str(exception.value)
-
-
-# TODO move to PlatformHelperVersion provider tests and ensure it's testing the right thing
-# right now this always passes because the specific mock is never called
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
-def test_check_platform_helper_version_skips_when_skip_environment_variable_is_set(
-    version_compatibility,
-):
-    os.environ["PLATFORM_TOOLS_SKIP_VERSION_CHECK"] = "true"
-
-    PlatformHelperVersioning().check_if_needs_update()
-
-    version_compatibility.assert_not_called()
 
 
 # TODO Relocate when we refactor config command in DBTP-1538

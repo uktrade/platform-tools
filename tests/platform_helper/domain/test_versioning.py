@@ -11,24 +11,32 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import skip_version_check
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import LocalVersionProvider
+from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
 @pytest.fixture
 def mock_local_version_provider():
-    mock_local_version_provider = Mock()
+    mock_local_version_provider = Mock(spec=LocalVersionProvider)
     mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(1, 0, 1)
     return mock_local_version_provider
 
 
 @pytest.fixture
 def mock_io_provider():
+    return Mock(spec=ClickIOProvider)
+
+
+@pytest.fixture
+def mock_skip():
     return Mock()
 
 
 @pytest.fixture
 def mock_pypi_provider():
-    mock_pypi_provider = Mock()
+    mock_pypi_provider = Mock(spec=PyPiVersionProvider)
     mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 0, 0)
     return mock_pypi_provider
 
@@ -309,12 +317,16 @@ def test_skip_version_check(
         assert skip_version_check() == expected
 
 
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=False),
-)
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
-def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
-    PlatformHelperVersioning().check_if_needs_update()
+def test_no_version_warnings_given_skip_version_checks(
+    mock_skip, mock_io_provider, mock_local_version_provider
+):
 
-    version_compatibility.assert_not_called()
+    PlatformHelperVersioning(
+        io=mock_io_provider,
+        skip_version_checks=mock_skip,
+        local_version_provider=mock_local_version_provider,
+    ).check_if_needs_update()
+
+    mock_local_version_provider.get_installed_tool_version.assert_not_called()
+    mock_io_provider.warn.assert_not_called()
+    mock_io_provider.error.assert_not_called()
