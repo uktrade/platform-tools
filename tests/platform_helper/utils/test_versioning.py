@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Tuple
 from typing import Type
-from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -33,37 +32,28 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 # TODO Relocate when we refactor config command in DBTP-1538
-@pytest.mark.parametrize(
-    "template_check",
-    [
-        ("addon_newer_major_version.yml", IncompatibleMajorVersionException, ""),
-        ("addon_newer_minor_version.yml", IncompatibleMinorVersionException, ""),
-        ("addon_older_major_version.yml", IncompatibleMajorVersionException, ""),
-        ("addon_older_minor_version.yml", IncompatibleMinorVersionException, ""),
-        ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
-    ],
-)
-def test_validate_template_version(template_check: Tuple[str, Type[BaseException], str]):
-    template_name, raises, message = template_check
+class TestConfigCommand:
+    @pytest.mark.parametrize(
+        "template_check",
+        [
+            ("addon_newer_major_version.yml", IncompatibleMajorVersionException, ""),
+            ("addon_newer_minor_version.yml", IncompatibleMinorVersionException, ""),
+            ("addon_older_major_version.yml", IncompatibleMajorVersionException, ""),
+            ("addon_older_minor_version.yml", IncompatibleMinorVersionException, ""),
+            ("addon_no_version.yml", ValidationException, "Template %s has no version information"),
+        ],
+    )
+    def test_validate_template_version(self, template_check: Tuple[str, Type[BaseException], str]):
+        template_name, raises, message = template_check
 
-    with pytest.raises(raises) as exception:
-        template_path = str(Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve())
-        validate_template_version(SemanticVersion(10, 10, 10), template_path)
+        with pytest.raises(raises) as exception:
+            template_path = str(
+                Path(f"{FIXTURES_DIR}/version_validation/{template_name}").resolve()
+            )
+            validate_template_version(SemanticVersion(10, 10, 10), template_path)
 
-    if message:
-        assert (message % template_path) == str(exception.value)
-
-
-# TODO move to PlatformHelperVersion provider tests
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=False),
-)
-@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
-def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
-    PlatformHelperVersioning().check_if_needs_update()
-
-    version_compatibility.assert_not_called()
+        if message:
+            assert (message % template_path) == str(exception.value)
 
 
 # TODO move to PlatformHelperVersion provider tests and ensure it's testing the right thing

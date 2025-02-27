@@ -307,3 +307,14 @@ def test_skip_version_check(
     mock_env = {"PLATFORM_TOOLS_SKIP_VERSION_CHECK": mock_env_var} if mock_env_var else {}
     with patch.dict(os.environ, mock_env):
         assert skip_version_check() == expected
+
+
+@patch(
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
+    new=Mock(return_value=False),
+)
+@patch("dbt_platform_helper.utils.versioning.get_platform_helper_version_status")
+def test_check_platform_helper_version_skips_when_running_local_version(version_compatibility):
+    PlatformHelperVersioning().check_if_needs_update()
+
+    version_compatibility.assert_not_called()
