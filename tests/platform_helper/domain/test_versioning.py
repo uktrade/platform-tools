@@ -37,7 +37,7 @@ def mock_skip():
 @pytest.fixture
 def mock_pypi_provider():
     mock_pypi_provider = Mock(spec=PyPiVersionProvider)
-    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 0, 0)
+    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
     return mock_pypi_provider
 
 
@@ -317,16 +317,65 @@ def test_skip_version_check(
         assert skip_version_check() == expected
 
 
-def test_no_version_warnings_given_skip_version_checks(
-    mock_skip, mock_io_provider, mock_local_version_provider
-):
+class TestPlatformHelperVersioningCheckIfNeedsUpdate:
+    def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
+        self,
+        no_skipping_version_checks,
+        mock_local_version_provider,
+        mock_pypi_provider,
+        mock_io_provider,
+    ):
+        mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
 
-    PlatformHelperVersioning(
-        io=mock_io_provider,
-        skip_version_checks=mock_skip,
-        local_version_provider=mock_local_version_provider,
-    ).check_if_needs_update()
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            pypi_provider=mock_pypi_provider,
+            local_version_provider=mock_local_version_provider,
+        ).check_if_needs_update()
 
-    mock_local_version_provider.get_installed_tool_version.assert_not_called()
-    mock_io_provider.warn.assert_not_called()
-    mock_io_provider.error.assert_not_called()
+        mock_io_provider.error.assert_called_with(
+            "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
+            "--upgrade dbt-platform-helper`."
+        )
+
+    def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
+        self,
+        no_skipping_version_checks,
+        mock_local_version_provider,
+        mock_pypi_provider,
+        mock_io_provider,
+    ):
+        mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
+
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            pypi_provider=mock_pypi_provider,
+            local_version_provider=mock_local_version_provider,
+        ).check_if_needs_update()
+
+        mock_io_provider.warn.assert_called_with(
+            "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
+            "--upgrade dbt-platform-helper`."
+        )
+
+    def test_no_version_warnings_or_errors_given_skip_version_checks(
+        self, mock_skip, mock_io_provider, mock_local_version_provider, mock_pypi_provider
+    ):
+        mock_skip.return_value = True
+
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            local_version_provider=mock_local_version_provider,
+            pypi_provider=mock_pypi_provider,
+            skip_version_checks=mock_skip,
+        ).check_if_needs_update()
+
+        mock_local_version_provider.get_installed_tool_version.assert_not_called()
+        mock_io_provider.warn.assert_not_called()
+        mock_io_provider.error.assert_not_called()
