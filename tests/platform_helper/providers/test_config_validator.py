@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from dbt_platform_helper.domain.config_validator import ConfigValidator
-from dbt_platform_helper.domain.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 
 
 @pytest.mark.parametrize(

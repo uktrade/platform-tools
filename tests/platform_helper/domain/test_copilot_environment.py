@@ -77,7 +77,8 @@ def test_get_subnet_ids_with_cloudformation_export_returning_a_different_order()
         cloudformation_provider=mock_cloudformation_provider,
         vpc_provider=Mock(),
         copilot_templating=Mock(),
-        echo=Mock(),
+        io=Mock(),
+        load_balancer_provider=Mock(),
     )
 
     mock_updated_vpc = copilot_environment._match_subnet_id_order_to_cloudformation_exports(
@@ -113,7 +114,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket",
                         "cross_environment_service_access": {
                             "test_access": {
-                                "application": "app2",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "test_svc",
@@ -137,7 +137,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-1",
                         "cross_environment_service_access": {
                             "test_access_1": {
-                                "application": "app1",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "other_svc_1",
@@ -146,7 +145,6 @@ class TestCrossEnvironmentS3Templating:
                                 "cyber_sign_off_by": "user1@example.com",
                             },
                             "test_access_2": {
-                                "application": "app2",
                                 "environment": "dev",
                                 "account": "123456789010",
                                 "service": "other_svc_2",
@@ -166,7 +164,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-2",
                         "cross_environment_service_access": {
                             "test_access_3": {
-                                "application": "app2",
                                 "environment": "hotfix",
                                 "account": "987654321010",
                                 "service": "other_svc_2",
@@ -180,7 +177,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-3",
                         "cross_environment_service_access": {
                             "test_access_4": {
-                                "application": "app2",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "other_svc_3",
@@ -194,7 +190,6 @@ class TestCrossEnvironmentS3Templating:
                         "bucket_name": "x-acc-bucket-4",
                         "cross_environment_service_access": {
                             "test_access_5": {
-                                "application": "app2",
                                 "environment": "staging",
                                 "account": "123456789010",
                                 "service": "other_svc_4",
@@ -473,6 +468,14 @@ class TestCopilotTemplating:
             overwrite=True,
         )
 
+    def test_file_provider_default(self, fakefs):
+        result = CopilotTemplating().write_environment_manifest(
+            "connors-environment",
+            "test manifest contents",
+        )
+
+        assert result == "File copilot/environments/connors-environment/manifest.yml created"
+
 
 class TestCopilotGenerate:
 
@@ -492,12 +495,7 @@ class TestCopilotGenerate:
         security_groups=["group1"],
     )
 
-    # TODO - temporary patch, will fall away once loadbalancer lives in a class and it can be injected and mocked approriatley.
-    @patch(
-        "dbt_platform_helper.domain.copilot_environment.get_https_certificate_for_application",
-        return_value="test-cert-arn",
-    )
-    def test_generate_success(self, mock_get_certificate):
+    def test_generate_success(self):
 
         mock_copilot_templating = Mock()
         mock_copilot_templating.write_environment_manifest.return_value = "test template written"
@@ -513,7 +511,7 @@ class TestCopilotGenerate:
         }
         mock_config_provider.get_enriched_config.return_value = config
 
-        mock_echo = Mock()
+        mock_io = Mock()
 
         mock_cloudformation_provider = Mock()
         mock_cloudformation_provider.get_cloudformation_exports_for_environment.return_value = [
@@ -521,12 +519,16 @@ class TestCopilotGenerate:
             {"Value": "public-1", "Name": "test_environment-PublicSubnets"},
         ]
 
+        load_balancer_provider = Mock()
+        load_balancer_provider.get_https_certificate_for_application.return_value = "test-cert-arn"
+
         copilot_environment = CopilotEnvironment(
             config_provider=mock_config_provider,
             vpc_provider=mock_vpc_provider,
             cloudformation_provider=mock_cloudformation_provider,
             copilot_templating=mock_copilot_templating,
-            echo=mock_echo,
+            io=mock_io,
+            load_balancer_provider=MagicMock(return_value=load_balancer_provider),
         )
 
         copilot_environment.generate(environment_name="test_environment")
@@ -543,7 +545,7 @@ class TestCopilotGenerate:
             "test-app", "test_environment", "a-really-cool-vpc"
         )
 
-        mock_echo.assert_has_calls(
+        mock_io.info.assert_has_calls(
             [call("Using non-prod-acc for this AWS session"), call("test template written")]
         )
 
@@ -560,7 +562,8 @@ class TestCopilotGenerate:
             config_provider=mock_config_provider,
             vpc_provider=Mock(),
             copilot_templating=Mock(),
-            echo=Mock(),
+            io=Mock(),
+            load_balancer_provider=Mock(),
         )
 
         with pytest.raises(

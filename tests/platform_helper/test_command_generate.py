@@ -1,11 +1,13 @@
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.utils.versioning import PlatformHelperVersions
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 @patch("dbt_platform_helper.commands.generate.make_addons", return_value=None)
@@ -21,15 +23,22 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
 @patch("click.secho")
 @patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
+    "dbt_platform_helper.providers.platform_helper_versioning.PlatformHelperVersioning.get_status",
     new=Mock(
-        return_value=PlatformHelperVersions(
-            local_version=(1, 0, 1), platform_helper_file_version=(1, 0, 0)
+        return_value=PlatformHelperVersionStatus(
+            local=SemanticVersion(1, 0, 1),
+            deprecated_version_file=SemanticVersion(1, 0, 0),
         )
     ),
 )
+# TODO running_as_installed_package will be consolidated to a single place
 @patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
+    new=Mock(return_value=True),
+)
+@patch(
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
+    new=Mock(return_value=True),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=True))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=True))
@@ -38,15 +47,25 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 ):
     CliRunner().invoke(platform_helper_generate)
 
-    mock_secho.assert_called_once_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified by {PLATFORM_HELPER_VERSION_FILE}.",
-        fg="red",
+    mock_secho.assert_has_calls(
+        [
+            call(
+                "Please delete '.platform-helper-version' as it is now deprecated.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 1.0.0\n",
+                fg="magenta",
+            ),
+            call(
+                f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
+                fg="magenta",
+            ),
+        ]
     )
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_versions",
-    new=Mock(return_value=PlatformHelperVersions((1, 0, 0), (1, 0, 0))),
+    "dbt_platform_helper.utils.versioning.get_platform_helper_version_status",
+    new=Mock(
+        return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
+    ),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))

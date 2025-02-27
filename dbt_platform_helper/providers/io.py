@@ -26,6 +26,20 @@ class ClickIOProvider:
         click.secho(f"Error: {message}", err=True, fg="red")
         exit(1)
 
+    # TODO messages will be a ValidationMessages class rather than a free-rein dictionary
+    def process_messages(self, messages: dict):
+        if not messages:
+            return
+
+        if messages.get("errors"):
+            self.error("\n".join(messages["errors"]))
+
+        if messages.get("warnings"):
+            self.warn("\n".join(messages["warnings"]))
+
+        if messages.get("info"):
+            self.info("\n".join(messages["info"]))
+
 
 class ClickIOProviderException(PlatformException):
     pass

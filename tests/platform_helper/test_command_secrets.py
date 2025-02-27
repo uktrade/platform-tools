@@ -133,7 +133,7 @@ def test_copy_secrets_with_existing_secret(
 
 @mock_aws
 @patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package",
+    "dbt_platform_helper.utils.files.running_as_installed_package",
     new=Mock(return_value=False),
 )
 def test_list():

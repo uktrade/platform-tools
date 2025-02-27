@@ -16,7 +16,6 @@ from moto.ec2 import utils as ec2_utils
 import dbt_platform_helper.domain.versions as versions
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
-from dbt_platform_helper.utils.versioning import PlatformHelperVersions
 
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "platform_helper" / "test-application-deploy"
@@ -246,20 +245,6 @@ def mocked_pg_secret():
             Name="/copilot/dbt-app/staging/secrets/POSTGRES",
             SecretString='{"password":"abc123","dbname":"main","engine":"postgres","port":5432,"dbInstanceIdentifier":"dbt-app-staging-addons-postgresdbinstance-blah","host":"dbt-app-staging-addons-postgresdbinstance-blah.whatever.eu-west-2.rds.amazonaws.com","username":"postgres"}',
         )
-
-
-@pytest.fixture(scope="function")
-def validate_version():
-    with patch(
-        "dbt_platform_helper.utils.versioning.get_platform_helper_versions"
-    ) as get_platform_helper_versions:
-        get_platform_helper_versions.return_value = PlatformHelperVersions((1, 0, 0), (1, 0, 0))
-        with patch(
-            "dbt_platform_helper.utils.versioning.validate_version_compatibility",
-            side_effect=None,
-            return_value=None,
-        ) as patched:
-            yield patched
 
 
 @pytest.fixture(scope="function")
@@ -509,7 +494,6 @@ extensions:
     environments:
       dev:
         bucket_name: test-app-policy-dev
-        versioning: false
   
   test-app-s3-bucket-data-migration:
     type: s3
@@ -748,6 +732,8 @@ def platform_config_for_env_pipelines():
     return yaml.safe_load(
         """
 application: test-app
+deploy_repository: uktrade/test-app-weird-name-deploy
+
 environments:
   dev:
     accounts:

@@ -9,35 +9,35 @@ from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 def test_returns_valid_yaml(fs):
-    test_path = "./test_success_path"
+    test_path = "./test"
     fs.create_file(Path(test_path), contents="key: value")
     result = YamlFileProvider.load(test_path)
     assert result == {"key": "value"}
 
 
 def test_returns_empty_dict_given_empty_yaml(fs):
-    test_path = "./test_empty_yaml_path"
+    test_path = "./test"
     fs.create_file(Path(test_path), contents="")
     result = YamlFileProvider.load(test_path)
     assert result == {}
 
 
 def test_raises_exception_if_invalid_yaml(fs):
-    test_path = "./test_invalid_path"
+    test_path = "./test"
     fs.create_file(Path(test_path), contents="{")
     with pytest.raises(InvalidYamlException):
         YamlFileProvider.load(test_path)
 
 
 def test_raises_exception_if_duplicate_keys_in_yaml(fs):
-    test_path = "./test_duplicate_keys_path"
+    test_path = "./test"
     fs.create_file(Path(test_path), contents="key1: name\nkey2: name\nkey1: name")
     with pytest.raises(DuplicateKeysException):
         YamlFileProvider.load(test_path)
 
 
 def test_raises_exception_if_path_doesnt_exist(fs):
-    test_path = "./test_duplicate_keys_path"
+    test_path = "./test"
     with pytest.raises(FileNotFoundException):
         YamlFileProvider.load(test_path)
 
@@ -68,7 +68,7 @@ redis:
 
 
 def test_writes_with_no_comment(fs):
-    test_path = ".platform-helper-config-cache.yml"
+    test_path = "./test"
     test_content = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]},
         "opensearch": {"versions": ["6.1", "6.2"], "date-retrieved": "09-12-24 16:00:00"},

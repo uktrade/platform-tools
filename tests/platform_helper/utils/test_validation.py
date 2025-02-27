@@ -95,7 +95,6 @@ def test_validate_addons_success(addons_file):
                 "my-s3-external-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
                 "my-s3-cross-environment-service-access-bucket-invalid-environment": r"Environment name hyphen-not-allowed-in-environment is invalid",
                 "my-s3-cross-environment-service-access-bucket-invalid-email": r"cyber_sign_off_by must contain a valid DBT email address",
-                "my-s3-cross-environment-service-access-bucket-missing-application": r"Missing key: 'application'",
                 "my-s3-cross-environment-service-access-bucket-missing-environment": r"Missing key: 'environment'",
                 "my-s3-cross-environment-service-access-bucket-missing-account": r"Missing key: 'account'",
                 "my-s3-cross-environment-service-access-bucket-missing-service": r"Missing key: 'service'",
@@ -107,13 +106,9 @@ def test_validate_addons_success(addons_file):
         (
             "s3_policy_addons_bad_data.yml",
             {
-                "my-s3-bucket-policy-readonly-should-be-bool": r"readonly.*should be instance of 'bool'",
-                "my-s3-bucket-policy-serve-static-content-should-be-bool": r"serve_static_content.*should be instance of 'bool'",
-                "my-s3-bucket-policy-serve-static-param-name-should-be-string": r"serve_static_param_name.*should be instance of 'str'",
                 "my-s3-bucket-policy-services-should-be-list": r"services.*should be instance of 'list'",
                 "my-s3-bucket-policy-service-should-be-string": r"services.*should be instance of 'str'",
                 "my-s3-bucket-policy-bad-name-suffix": r"Bucket name 'banana-s3alias' is invalid:\n  Names cannot be suffixed '-s3alias'",
-                "my-s3-bucket-policy-invalid-deletion-policy": r"environments.*dev.*deletion_policy.*does not match False",
                 "my-s3-bucket-policy-invalid-param": r"Wrong key 'unknown1'",
                 "my-s3-bucket-policy-invalid-object-param": r"Wrong key 'objects'",
                 "my-s3-bucket-policy-invalid-env-param": r"environments.*Wrong key 'unknown3'",

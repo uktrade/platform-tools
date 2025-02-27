@@ -10,11 +10,11 @@ import boto3
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.messages import abort_with_error
-from dbt_platform_helper.utils.platform_config import load_unvalidated_config_file
 
 
 @dataclass
@@ -125,8 +125,9 @@ def load_application(app=None, default_session=None) -> Application:
 
 def get_application_name(abort=abort_with_error):
     if Path(PLATFORM_CONFIG_FILE).exists():
+        config = ConfigProvider()
         try:
-            app_config = load_unvalidated_config_file()
+            app_config = config.load_unvalidated_config_file()
             return app_config["application"]
         except KeyError:
             abort(
@@ -144,4 +145,18 @@ class ApplicationNotFoundException(ApplicationException):
     def __init__(self, application_name: str):
         super().__init__(
             f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+        )
+
+
+class ApplicationServiceNotFoundException(ApplicationException):
+    def __init__(self, application_name: str, svc_name: str):
+        super().__init__(
+            f"""The service {svc_name} was not found in the application {application_name}. It either does not exist, or has not been deployed."""
+        )
+
+
+class ApplicationEnvironmentNotFoundException(ApplicationException):
+    def __init__(self, application_name: str, environment: str):
+        super().__init__(
+            f"""The environment "{environment}" either does not exist or has not been deployed for the application {application_name}."""
         )
