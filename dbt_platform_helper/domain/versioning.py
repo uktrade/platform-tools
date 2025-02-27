@@ -144,7 +144,7 @@ class PlatformHelperVersioning:
         )
 
     def check_if_needs_update(self):
-        if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
+        if self.skip_version_update_check():
             return
 
         version_status = self.get_version_status(include_project_versions=False)
