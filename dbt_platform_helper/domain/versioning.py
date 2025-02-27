@@ -42,7 +42,7 @@ class PlatformHelperVersioning:
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
 
-    def get_required_platform_helper_version(
+    def _resolve_required_version(
         self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
     ) -> str:
         pipeline_version = version_status.pipeline_overrides.get(pipeline)
@@ -63,9 +63,9 @@ class PlatformHelperVersioning:
         return out
 
     def get_required_version(self, pipeline=None):
-        version_status = self.get_status()
+        version_status = self.get_version_status()
         self.io.process_messages(version_status.validate())
-        required_version = self.get_required_platform_helper_version(pipeline, version_status)
+        required_version = self._resolve_required_version(pipeline, version_status)
         self.io.info(required_version)
         return required_version
 
@@ -74,11 +74,11 @@ class PlatformHelperVersioning:
         if not running_as_installed_package():
             return
 
-        version_status = self.get_status()
+        version_status = self.get_version_status()
         self.io.process_messages(version_status.validate())
 
         required_version = SemanticVersion.from_string(
-            self.get_required_platform_helper_version(version_status=version_status)
+            self._resolve_required_version(version_status=version_status)
         )
 
         if not version_status.local == required_version:
@@ -88,7 +88,7 @@ class PlatformHelperVersioning:
             )
             self.io.warn(message)
 
-    def get_status(
+    def get_version_status(
         self,
         include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
@@ -142,7 +142,7 @@ class PlatformHelperVersioning:
         if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
             return
 
-        version_status = self.get_status(include_project_versions=False)
+        version_status = self.get_version_status(include_project_versions=False)
 
         message = (
             f"You are running platform-helper v{version_status.local}, upgrade to "

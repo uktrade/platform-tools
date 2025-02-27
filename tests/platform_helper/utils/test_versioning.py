@@ -158,12 +158,10 @@ def test_get_required_platform_helper_version_in_pipeline(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    version_status = PlatformHelperVersioning().get_status()
+    version_status = PlatformHelperVersioning().get_version_status()
     required_version = PlatformHelperVersioning()
 
-    result = required_version.get_required_platform_helper_version(
-        "main", version_status=version_status
-    )
+    result = required_version._resolve_required_version("main", version_status=version_status)
 
     assert result == expected_version
 
@@ -188,11 +186,11 @@ def test_get_required_platform_helper_version_errors_when_no_platform_config_ver
     # TODO need to inject the config provider instead of relying on FS
     required_version = PlatformHelperVersioning()
 
-    version_status = PlatformHelperVersioning().get_status()
+    version_status = PlatformHelperVersioning().get_version_status()
 
     ClickIOProvider().process_messages(version_status.validate())
     with pytest.raises(PlatformException):
-        required_version.get_required_platform_helper_version("main", version_status=version_status)
+        required_version._resolve_required_version("main", version_status=version_status)
 
     secho.assert_called_with(
         f"""Error: Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
@@ -212,7 +210,7 @@ def test_get_required_platform_helper_version_does_not_call_external_services_if
 ):
     required_version = PlatformHelperVersioning()
 
-    result = required_version.get_required_platform_helper_version(
+    result = required_version._resolve_required_version(
         version_status=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
     )
 
@@ -263,8 +261,8 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     }
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-    result = PlatformHelperVersioning().get_required_platform_helper_version(
-        "bogus_pipeline", version_status=PlatformHelperVersioning().get_status()
+    result = PlatformHelperVersioning()._resolve_required_version(
+        "bogus_pipeline", version_status=PlatformHelperVersioning().get_version_status()
     )
 
     assert result == default_version

@@ -17,7 +17,7 @@ def get_platform_helper_version_status(
     include_project_versions=True,
     yaml_provider=YamlFileProvider,
 ) -> PlatformHelperVersionStatus:
-    return PlatformHelperVersioning(file_provider=yaml_provider).get_status(
+    return PlatformHelperVersioning(file_provider=yaml_provider).get_version_status(
         include_project_versions=include_project_versions
     )
 

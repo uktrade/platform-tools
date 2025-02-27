@@ -112,8 +112,8 @@ class TestVersionCommandWithInvalidConfig:
         platform_config = self.INVALID_CONFIG
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-        result = PlatformHelperVersioning().get_required_platform_helper_version(
-            "bogus_pipeline", version_status=PlatformHelperVersioning().get_status()
+        result = PlatformHelperVersioning()._resolve_required_version(
+            "bogus_pipeline", version_status=PlatformHelperVersioning().get_version_status()
         )
 
         assert result == default_version
@@ -128,8 +128,8 @@ class TestVersionCommandWithInvalidConfig:
         }
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
-        result = PlatformHelperVersioning().get_required_platform_helper_version(
-            "main", version_status=PlatformHelperVersioning().get_status()
+        result = PlatformHelperVersioning()._resolve_required_version(
+            "main", version_status=PlatformHelperVersioning().get_version_status()
         )
 
         assert result == pipeline_override_version
@@ -203,10 +203,10 @@ def test_get_required_platform_helper_version(
 
     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
 
-    version_status = PlatformHelperVersioning().get_status()
+    version_status = PlatformHelperVersioning().get_version_status()
     required_version = PlatformHelperVersioning()
 
-    result = required_version.get_required_platform_helper_version(version_status=version_status)
+    result = required_version._resolve_required_version(version_status=version_status)
 
     assert result == expected_version
 

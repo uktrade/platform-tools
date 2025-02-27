@@ -78,7 +78,7 @@ class TestPlatformHelperVersioningGetStatus:
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version
-        ).get_status()
+        ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -101,7 +101,7 @@ class TestPlatformHelperVersioningGetStatus:
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version
-        ).get_status()
+        ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -127,7 +127,7 @@ class TestPlatformHelperVersioningGetStatus:
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version
-        ).get_status()
+        ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
