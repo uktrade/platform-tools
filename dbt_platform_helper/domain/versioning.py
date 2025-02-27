@@ -138,6 +138,11 @@ class PlatformHelperVersioning:
 
         return out
 
+    def skip_version_update_check(self):
+        return (
+            not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
+        )
+
     def check_if_needs_update(self):
         if not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ:
             return

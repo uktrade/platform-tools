@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
@@ -267,3 +268,40 @@ def test_platform_helper_version_deprecation_warnings(
         )
     else:
         mock_io_provider.process_messages.assert_called_with({})
+
+
+@pytest.mark.parametrize(
+    "mock_env_var, mock_installed, expected",
+    (
+        (
+            "set",
+            True,
+            True,
+        ),
+        (
+            "set",
+            False,
+            True,
+        ),
+        (
+            None,
+            True,
+            False,
+        ),
+        (
+            None,
+            False,
+            True,
+        ),
+    ),
+)
+@patch(
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
+)
+def test_skip_version_update(
+    mock_running_as_installed_package, mock_env_var, mock_installed, expected
+):
+    mock_running_as_installed_package.return_value = mock_installed
+    mock_env = {"PLATFORM_TOOLS_SKIP_VERSION_CHECK": mock_env_var} if mock_env_var else {}
+    with patch.dict(os.environ, mock_env):
+        assert PlatformHelperVersioning().skip_version_update_check() == expected
