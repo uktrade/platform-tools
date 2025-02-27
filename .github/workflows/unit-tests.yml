@@ -63,8 +63,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Where are we?
-        run: pwd
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -76,11 +74,12 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pwd
           pip install poetry
-           poetry install
+          poetry install
 
       - name: Run pytest
-        run: poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: pwd; poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         env:
           AWS_DEFAULT_REGION: eu-west-2
           PYTHON_VERSION: ${{ matrix.python-version }}
