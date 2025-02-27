@@ -194,6 +194,7 @@ class Copilot:
         client = session.client("ssm", region_name="eu-west-2")
         response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
 
+        # TODO: Shift error handling to ps provider
         if not response["Parameters"]:
             click.echo(
                 click.style(

@@ -7,14 +7,14 @@ class ParameterStore:
     def __init__(self, ssm_client: boto3.client):
         self.ssm_client = ssm_client
 
-    def get_ssm_parameter_value_by_name(self, parameter_name: str):
+    def get_ssm_parameter_by_name(self, parameter_name: str):
         """Retrieves the latest version of a parameter from parameter store for
         a given name/arn."""
 
-        response = self.ssm_client.get_parameters(Names=[parameter_name])["Parameters"][0]
+        response = self.ssm_client.get_parameters(Names=[parameter_name])["Parameters"]
 
         if response:
-            return response
+            return response[0]
         else:
             raise ParameterNotFoundForNameException()
 
