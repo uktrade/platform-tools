@@ -10,6 +10,9 @@ from freezegun.api import freeze_time
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
+from dbt_platform_helper.domain.terraform_versioning import (
+    TerraformPlatformModulesVersioning,
+)
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 
@@ -28,6 +31,7 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
+        self.mock_terraform_platform_modules_versioning = TerraformPlatformModulesVersioning()
 
     def params(self):
         return {
@@ -37,6 +41,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
+            "terraform_platform_modules_versioning": self.mock_terraform_platform_modules_versioning,
         }
 
 
