@@ -51,6 +51,9 @@ jobs:
   terraform_platform_modules_python_tests:
     name: Test terraform-platform-modules against Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform-platform-modules
 
     strategy:
       fail-fast: false
@@ -72,10 +75,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install poetry
-          cd terraform-platform-modules; poetry install
+           poetry install
 
       - name: Run pytest
-        run: cd terraform-platform-modules; poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy terraform-platform-modules
+        run: poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
         env:
           AWS_DEFAULT_REGION: eu-west-2
           PYTHON_VERSION: ${{ matrix.python-version }}
