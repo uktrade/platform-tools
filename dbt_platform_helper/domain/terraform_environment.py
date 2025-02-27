@@ -1,9 +1,9 @@
+from dbt_platform_helper.domain.terraform_versioning import (
+    TerraformPlatformModulesVersioning,
+)
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
-from dbt_platform_helper.utils.versioning import (
-    get_required_terraform_platform_modules_version,
-)
 
 
 class TerraformEnvironmentException(PlatformException):
@@ -20,10 +20,12 @@ class TerraformEnvironment:
         config_provider,
         manifest_provider: TerraformManifestProvider = None,
         io: ClickIOProvider = ClickIOProvider(),
+        terraform_platform_modules_versioning: TerraformPlatformModulesVersioning = TerraformPlatformModulesVersioning(),
     ):
         self.io = io
         self.config_provider = config_provider
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
+        self.terraform_platform_modules_versioning = terraform_platform_modules_versioning
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
         config = self.config_provider.get_enriched_config()
@@ -36,9 +38,11 @@ class TerraformEnvironment:
         platform_config_terraform_modules_default_version = config.get("default_versions", {}).get(
             "terraform-platform-modules", ""
         )
-        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
-            terraform_platform_modules_version_override,
-            platform_config_terraform_modules_default_version,
+        terraform_platform_modules_version = (
+            self.terraform_platform_modules_versioning.get_required_version(
+                terraform_platform_modules_version_override,
+                platform_config_terraform_modules_default_version,
+            )
         )
 
         self.manifest_provider.generate_environment_config(
