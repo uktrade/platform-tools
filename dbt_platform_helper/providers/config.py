@@ -60,6 +60,7 @@ class ConfigProvider:
 
     def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
         try:
+            print("here")
             return self.file_provider.load(path)
         except FileProviderException:
             return {}

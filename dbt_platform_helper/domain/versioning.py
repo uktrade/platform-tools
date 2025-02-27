@@ -46,11 +46,13 @@ class PlatformHelperVersioning:
         self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
     ) -> str:
         pipeline_version = version_status.pipeline_overrides.get(pipeline)
+        print(version_status)
         version_precedence = [
             pipeline_version,
             version_status.platform_config_default,
             version_status.deprecated_version_file,
         ]
+        print(version_precedence)
         non_null_version_precedence = [
             f"{v}" if isinstance(v, SemanticVersion) else v for v in version_precedence if v
         ]
@@ -116,6 +118,8 @@ class PlatformHelperVersioning:
         platform_config_default, pipeline_overrides = None, {}
 
         platform_config = self.config_provider.load_unvalidated_config_file()
+
+        print(platform_config)
 
         if platform_config:
             platform_config_default = SemanticVersion.from_string(

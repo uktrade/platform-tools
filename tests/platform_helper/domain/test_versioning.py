@@ -12,16 +12,32 @@ from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundE
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
+@pytest.fixture
+def mock_local_version_provider():
+    mock_local_version_provider = Mock()
+    mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(1, 0, 1)
+    return mock_local_version_provider
+
+
+@pytest.fixture
+def mock_io_provider():
+    return Mock()
+
+
+@pytest.fixture
+def mock_pypi_provider():
+    mock_pypi_provider = Mock()
+    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 0, 0)
+    return mock_pypi_provider
+
+
 @patch(
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
-def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(fakefs):
-    mock_local_version_provider = Mock()
-    mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(1, 0, 1)
-    mock_pypi_provider = Mock()
-    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 0, 0)
-    mock_io_provider = Mock()
+def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
+    mock_io_provider, mock_local_version_provider, mock_pypi_provider, fakefs
+):
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
     required_version = PlatformHelperVersioning(
         io=mock_io_provider,
@@ -40,12 +56,9 @@ def test_check_platform_helper_version_shows_warning_when_different_than_file_sp
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
     new=Mock(return_value=True),
 )
-def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(fakefs):
-    mock_local_version_provider = Mock()
-    mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(1, 0, 1)
-    mock_pypi_provider = Mock()
-    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 0, 0)
-    mock_io_provider = Mock()
+def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
+    mock_io_provider, mock_local_version_provider, mock_pypi_provider, fakefs
+):
     fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
 
     required_version = PlatformHelperVersioning(
@@ -65,14 +78,10 @@ def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(f
     new=Mock(return_value=True),
 )
 def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
-    fakefs, valid_platform_config
+    mock_io_provider, mock_local_version_provider, mock_pypi_provider, fakefs, valid_platform_config
 ):
-    mock_local_version_provider = Mock()
-    mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(1, 0, 1)
-    mock_pypi_provider = Mock()
-    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 0, 0)
-    mock_io_provider = Mock()
-    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
+    config = valid_platform_config
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
 
     required_version = PlatformHelperVersioning(
         io=mock_io_provider,
@@ -83,7 +92,7 @@ def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_ver
     required_version.check_platform_helper_version_mismatch()
 
     mock_io_provider.warn.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
+        f"WARNING: You are running platform-helper v1.0.1 against v10.2.0 specified for the project.",
     )
 
 
@@ -131,6 +140,7 @@ class TestVersionCommandWithInvalidConfig:
 def test_get_required_version_errors_if_version_is_not_specified(
     mock_version,
     mock_get,
+    mock_io_provider,
     fakefs,
 ):
     mock_version.return_value = "1.2.3"
@@ -142,8 +152,6 @@ def test_get_required_version_errors_if_version_is_not_specified(
     fakefs.create_file(
         PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_without_default_version)
     )
-
-    mock_io_provider = Mock()
 
     expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
 Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
@@ -232,6 +240,7 @@ def test_get_required_platform_helper_version(
 def test_platform_helper_version_deprecation_warnings(
     mock_version,
     mock_get,
+    mock_io_provider,
     fakefs,
     version_in_phv_file,
     version_in_platform_config,
@@ -249,8 +258,6 @@ def test_platform_helper_version_deprecation_warnings(
 
     if version_in_phv_file:
         fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
-
-    mock_io_provider = Mock()
 
     PlatformHelperVersioning(io=mock_io_provider).get_required_version()
 

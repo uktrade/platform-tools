@@ -28,7 +28,6 @@ class LocalVersionProvider:
     @staticmethod
     def get_installed_tool_version(tool_name: str) -> SemanticVersion:
         try:
-            print("tool name = ", tool_name)
             return SemanticVersion.from_string(version(tool_name))
         except PackageNotFoundError:
             raise InstalledToolNotFoundException(tool_name)

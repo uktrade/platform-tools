@@ -36,6 +36,7 @@ class YamlFileProvider:
             InvalidYamlException: file contains invalid yaml
             DuplicateKeysException: yaml contains duplicate keys
         """
+        print("here2")
         if not Path(path).exists():
             raise FileNotFoundException(f"`{path}` is missing.")
         try:
@@ -45,7 +46,6 @@ class YamlFileProvider:
 
         if not yaml_content:
             return {}
-
         YamlFileProvider.lint_yaml_for_duplicate_keys(path)
 
         return yaml_content
