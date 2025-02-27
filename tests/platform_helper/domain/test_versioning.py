@@ -298,10 +298,10 @@ def test_platform_helper_version_deprecation_warnings(
 @patch(
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
 )
-def test_skip_version_update(
+def test_skip_version_check(
     mock_running_as_installed_package, mock_env_var, mock_installed, expected
 ):
     mock_running_as_installed_package.return_value = mock_installed
     mock_env = {"PLATFORM_TOOLS_SKIP_VERSION_CHECK": mock_env_var} if mock_env_var else {}
     with patch.dict(os.environ, mock_env):
-        assert PlatformHelperVersioning().skip_version_update_check() == expected
+        assert PlatformHelperVersioning().skip_version_check() == expected

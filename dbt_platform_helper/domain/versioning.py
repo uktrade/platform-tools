@@ -71,7 +71,7 @@ class PlatformHelperVersioning:
 
     # Used in the generate command
     def check_platform_helper_version_mismatch(self):
-        if not running_as_installed_package():
+        if self.skip_version_check():
             return
 
         version_status = self.get_version_status()
@@ -138,13 +138,13 @@ class PlatformHelperVersioning:
 
         return out
 
-    def skip_version_update_check(self):
+    def skip_version_check(self):
         return (
             not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
         )
 
     def check_if_needs_update(self):
-        if self.skip_version_update_check():
+        if self.skip_version_check():
             return
 
         version_status = self.get_version_status(include_project_versions=False)
