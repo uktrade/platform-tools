@@ -1,6 +1,7 @@
 from datetime import datetime
 from datetime import timedelta
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from freezegun import freeze_time
@@ -11,7 +12,7 @@ from dbt_platform_helper.providers.cache import CacheProvider
 def test_cache_refresh_required_with_cached_datetime_greater_than_one_day_returns_true():
 
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {
@@ -33,7 +34,7 @@ def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_return
     middle_of_today = today - timedelta(hours=12)
 
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": middle_of_today.strftime("%d-%m-%y %H:%M:%S")}
@@ -48,7 +49,7 @@ def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_return
 def test_update_cache_with_existing_cache_file_expected_file():
 
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]}
@@ -75,7 +76,7 @@ def test_update_cache_with_existing_cache_file_expected_file():
 def test_read_supported_versions_from_cache_returns_correct_product():
 
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]},
@@ -86,3 +87,53 @@ def test_read_supported_versions_from_cache_returns_correct_product():
     supported_versions = cache_provider.read_supported_versions_from_cache("opensearch")
 
     assert supported_versions == ["6.1", "6.2"]
+
+
+# from unittest.mock import MagicMock
+
+
+# def test_get_supported_versions_cache_refresh():
+#     mock_cache_provider = MagicMock()
+#     mock_aws_provider = MagicMock()
+#     setattr(mock_aws_provider, "get_reference", MagicMock(return_value="doesnt-matter"))
+#     setattr(
+#         mock_aws_provider,
+#         "get_supported_versions",
+#         MagicMock(return_value=["doesnt", "matter"]),
+#     )
+#     mock_cache_provider.cache_refresh_required.return_value = True
+
+#     versions = get_supported_aws_versions(mock_aws_provider, mock_cache_provider)
+
+#     mock_aws_provider.get_reference.assert_called()
+#     mock_aws_provider.get_supported_versions.assert_called()
+#     mock_cache_provider.update_cache.assert_called_with("doesnt-matter", ["doesnt", "matter"])
+#     mock_cache_provider.read_supported_versions_from_cache.assert_not_called()
+
+#     assert versions == ["doesnt", "matter"]
+
+
+# def test_get_supported_versions_no_cache_refresh():
+#     mock_cache_provider = MagicMock()
+#     mock_aws_provider = MagicMock()
+#     setattr(mock_aws_provider, "get_reference", MagicMock(return_value="doesnt-matter"))
+#     setattr(
+#         mock_aws_provider,
+#         "get_supported_versions",
+#         MagicMock(return_value=["doesnt", "matter"]),
+#     )
+#     mock_cache_provider.cache_refresh_required.return_value = False
+#     mock_cache_provider.read_supported_versions_from_cache.return_value = [
+#         "cache",
+#         "doesnt",
+#         "matter",
+#     ]
+
+#     versions = get_supported_aws_versions(mock_aws_provider, mock_cache_provider)
+
+#     mock_aws_provider.get_reference.assert_called()
+#     mock_aws_provider.get_supported_versions.assert_not_called()
+#     mock_cache_provider.update_cache.assert_not_called()
+#     mock_cache_provider.read_supported_versions_from_cache.assert_called_with("doesnt-matter")
+
+#     assert versions == ["cache", "doesnt", "matter"]

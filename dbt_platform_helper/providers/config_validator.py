@@ -2,10 +2,11 @@ from typing import Callable
 
 import boto3
 
-import dbt_platform_helper.domain.versions as versions
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
 from dbt_platform_helper.providers.aws.redis import RedisProvider
+from dbt_platform_helper.providers.cache import CacheProvider
+from dbt_platform_helper.providers.cache import GetAWSVersionStrategy
 from dbt_platform_helper.providers.io import ClickIOProvider
 
 
@@ -45,8 +46,9 @@ class ConfigValidator:
             if extension.get("type") == extension_type
         ]
 
-        # In this format so it can be monkey patched initially via mock_get_aws_supported_versions fixture
-        supported_extension_versions = versions.get_supported_aws_versions(aws_provider)
+        # In this format so it can be monkey patched initially via mock_get_or_update_cache fixture
+        cache_provider = CacheProvider(strategy=GetAWSVersionStrategy())
+        supported_extension_versions = cache_provider.get_or_update_cache(aws_provider)
         extensions_with_invalid_version = []
 
         for extension in extensions_for_type:

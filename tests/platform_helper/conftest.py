@@ -13,8 +13,8 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
-import dbt_platform_helper.domain.versions as versions
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.cache import CacheProvider
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -787,11 +787,11 @@ def create_invalid_platform_config_file(fakefs):
 
 # TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
 @pytest.fixture(autouse=True)
-def mock_get_aws_supported_versions(request, monkeypatch):
+def mock_get_or_update_cache(request, monkeypatch):
     if "skip_supported_versions_fixture" in request.keywords:
         return
 
-    def mock_return_value(self):
+    def mock_return_value(self, aws_provider):
         return ["6.2", "7.0", "7.1"]
 
-    monkeypatch.setattr(versions, "get_supported_aws_versions", mock_return_value)
+    monkeypatch.setattr(CacheProvider, "get_or_update_cache", mock_return_value)

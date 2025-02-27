@@ -1,16 +1,53 @@
 import os
+from abc import ABC
+from abc import abstractmethod
 from datetime import datetime
 
+from dbt_platform_helper.providers.aws.interfaces import AwsGetVersionProtocol
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
+
+
+class CacheStrategy(ABC):
+    @abstractmethod
+    def retrieve_data(self, cache_provider, client_provider):
+        pass
+
+
+class GetAWSVersionStrategy(CacheStrategy):
+    def retrieve_data(self, cache_provider, client_provider: AwsGetVersionProtocol):
+        """
+        For a given AWS client provider get the supported versions if the
+        operation is supported.
+
+        The cache value is retrieved if it exists.
+        """
+        supported_versions = []
+        aws_reference = client_provider.get_reference()
+        if cache_provider.cache_refresh_required(aws_reference):
+            supported_versions = client_provider.get_supported_versions()
+            cache_provider.update_cache(aws_reference, supported_versions)
+        else:
+            supported_versions = cache_provider.read_supported_versions_from_cache(aws_reference)
+
+        return supported_versions
 
 
 class CacheProvider:
     def __init__(
         self,
+        strategy: CacheStrategy,
         file_provider: YamlFileProvider = None,
     ):
+        self._strategy = strategy
         self._cache_file = ".platform-helper-config-cache.yml"
         self.file_provider = file_provider or YamlFileProvider
+
+    @property
+    def strategy(self):
+        return self._strategy
+
+    def get_or_update_cache(self, client_provider):
+        return self.strategy.retrieve_data(self, client_provider)
 
     def read_supported_versions_from_cache(self, resource_name):
 

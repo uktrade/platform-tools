@@ -7,3 +7,7 @@ class GetVersionsProtocol(Protocol):
 
 class GetReferenceProtocol(Protocol):
     def get_reference(self) -> str: ...
+
+
+class AwsGetVersionProtocol(GetReferenceProtocol, GetVersionsProtocol):
+    pass
