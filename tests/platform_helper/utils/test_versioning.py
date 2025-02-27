@@ -54,34 +54,32 @@ class TestConfigCommand:
         if message:
             assert (message % template_path) == str(exception.value)
 
+    # TODO Relocate when we refactor config command in DBTP-1538
+    @patch("subprocess.run")
+    @patch(
+        "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
+        return_value=SemanticVersion(2, 0, 0),
+    )
+    def test_get_copilot_versions(self, mock_get_github_released_version, mock_run):
+        mock_run.return_value.stdout = b"1.0.0"
 
-# TODO Relocate when we refactor config command in DBTP-1538
-@patch("subprocess.run")
-@patch(
-    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
-    return_value=SemanticVersion(2, 0, 0),
-)
-def test_get_copilot_versions(mock_get_github_released_version, mock_run):
-    mock_run.return_value.stdout = b"1.0.0"
+        versions = get_copilot_versions()
 
-    versions = get_copilot_versions()
+        assert versions.local == SemanticVersion(1, 0, 0)
+        assert versions.latest == SemanticVersion(2, 0, 0)
 
-    assert versions.local == SemanticVersion(1, 0, 0)
-    assert versions.latest == SemanticVersion(2, 0, 0)
+    # TODO Relocate when we refactor config command in DBTP-1538
+    @patch("subprocess.run")
+    @patch(
+        "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
+        return_value=SemanticVersion(2, 0, 0),
+    )
+    def test_get_aws_versions(self, mock_get_github_released_version, mock_run):
+        mock_run.return_value.stdout = b"aws-cli/1.0.0"
+        versions = get_aws_versions()
 
-
-# TODO Relocate when we refactor config command in DBTP-1538
-@patch("subprocess.run")
-@patch(
-    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
-    return_value=SemanticVersion(2, 0, 0),
-)
-def test_get_aws_versions(mock_get_github_released_version, mock_run):
-    mock_run.return_value.stdout = b"aws-cli/1.0.0"
-    versions = get_aws_versions()
-
-    assert versions.local == SemanticVersion(1, 0, 0)
-    assert versions.latest == SemanticVersion(2, 0, 0)
+        assert versions.local == SemanticVersion(1, 0, 0)
+        assert versions.latest == SemanticVersion(2, 0, 0)
 
 
 # TODO this is testing both get_required_platform_helper_version and
