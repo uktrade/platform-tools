@@ -1,4 +1,5 @@
 import os
+from collections.abc import Callable
 from pathlib import Path
 
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
@@ -19,7 +20,10 @@ from dbt_platform_helper.providers.version import LocalVersionProviderException
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
-from dbt_platform_helper.utils.files import running_as_installed_package
+
+
+def skip_version_check():
+    return not "site-packages" in __file__ or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -35,12 +39,16 @@ class PlatformHelperVersioning:
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
         local_version_provider: LocalVersionProvider = LocalVersionProvider(),
+        skip_version_checks: Callable[[], bool] = None,
     ):
         self.io = io
         self.file_provider = file_provider
         self.config_provider = config_provider
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
+        self.skip_versioning_checks = (
+            skip_version_checks() if skip_version_checks else skip_version_check()
+        )
 
     def _resolve_required_version(
         self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
@@ -71,7 +79,7 @@ class PlatformHelperVersioning:
 
     # Used in the generate command
     def check_platform_helper_version_mismatch(self):
-        if self.skip_version_check():
+        if self.skip_versioning_checks:
             return
 
         version_status = self.get_version_status()
@@ -138,13 +146,8 @@ class PlatformHelperVersioning:
 
         return out
 
-    def skip_version_check(self):
-        return (
-            not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
-        )
-
     def check_if_needs_update(self):
-        if self.skip_version_check():
+        if self.skip_versioning_checks:
             return
 
         version_status = self.get_version_status(include_project_versions=False)

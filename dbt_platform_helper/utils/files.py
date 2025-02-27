@@ -53,7 +53,7 @@ def generate_override_files_from_template(base_path, overrides_path, output_dir,
     generate_files_for_dir("bin/*")
 
 
-# TODO: we've moved this from versioning utils and removed the duplication in platform_helper_versioning
-# Need to review if this is the correct place for this function to reside longer-term
-def running_as_installed_package():
-    return "site-packages" in __file__
+# # TODO: we've moved this from versioning utils and removed the duplication in platform_helper_versioning
+# # Need to review if this is the correct place for this function to reside longer-term
+# # def running_as_installed_package():
+#     return "site-packages" in __file__

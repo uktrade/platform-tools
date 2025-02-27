@@ -16,7 +16,6 @@ def generate(ctx: click.Context):
 
     Wraps pipeline generate and make-addons.
     """
-
     PlatformHelperVersioning().check_platform_helper_version_mismatch()
     ctx.invoke(pipeline_generate)
     ctx.invoke(make_addons)

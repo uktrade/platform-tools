@@ -87,10 +87,6 @@ class TestMakeAddonsCommand:
         ),
     )
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -236,10 +232,6 @@ class TestMakeAddonsCommand:
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -339,10 +331,6 @@ class TestMakeAddonsCommand:
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -411,10 +399,6 @@ class TestMakeAddonsCommand:
             path = Path("copilot", f)
             assert not path.exists(), f"{path} should not exist"
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -424,10 +408,6 @@ class TestMakeAddonsCommand:
             in result.output
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
@@ -439,10 +419,6 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 1
         assert "No services found in ./copilot/; exiting" in result.output
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
@@ -472,10 +448,6 @@ class TestMakeAddonsCommand:
             "Services listed in invalid-entry.services do not exist in ./copilot/" in result.output
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @mock_aws
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
@@ -505,10 +477,6 @@ class TestMakeAddonsCommand:
             result.output,
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
@@ -558,10 +526,6 @@ class TestMakeAddonsCommand:
             in result.output
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
@@ -606,10 +570,6 @@ class TestMakeAddonsCommand:
         assert "Names cannot contain two adjacent periods" in result.output
         assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     def test_exit_if_services_key_invalid(self, fakefs):
         """
         The services key can be set to a list of services, or '__all__' which
@@ -644,10 +604,6 @@ class TestMakeAddonsCommand:
         assert "'__all__' does not match 'this-is-not-valid'" in result.output
         assert "'this-is-not-valid' should be instance of 'list'" in result.output
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="application: test-app")
@@ -666,10 +622,6 @@ class TestMakeAddonsCommand:
         ],
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
         new=Mock(
@@ -705,10 +657,6 @@ class TestMakeAddonsCommand:
                 f"{secret_name}" in result.output
             )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -746,10 +694,6 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 0
 
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
