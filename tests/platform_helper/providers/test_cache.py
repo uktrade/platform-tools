@@ -9,17 +9,11 @@ from freezegun import freeze_time
 from dbt_platform_helper.providers.cache import CacheProvider
 
 
-def test_cache_refresh_required_with_cached_datetime_greater_than_one_day_returns_true():
-
+def test_cache_refresh_required_when_cached_datetime_is_greater_than_one_day():
     file_provider_mock = MagicMock()
     cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
-    read_yaml_return_value = {
-        "redis": {
-            # Some timestamp which is > than 1 day. i.e. enough to trigger a cache refresh
-            "date-retrieved": "09-02-02 10:35:48"
-        }
-    }
+    read_yaml_return_value = {"redis": {"date-retrieved": "09-02-02 10:35:48"}}
 
     file_provider_mock.load.return_value = read_yaml_return_value
     with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
@@ -27,10 +21,8 @@ def test_cache_refresh_required_with_cached_datetime_greater_than_one_day_return
         assert cache_provider.cache_refresh_required("redis")
 
 
-def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_returns_false():
-
+def test_cache_refresh_required_when_cached_datetime_is_less_than_one_day():
     today = datetime.now()
-    # Time range is still < 1 day so should not require refresh
     middle_of_today = today - timedelta(hours=12)
 
     file_provider_mock = MagicMock()
@@ -46,8 +38,7 @@ def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_return
 
 
 @freeze_time("2024-12-09 16:00:00")
-def test_update_cache_with_existing_cache_file_expected_file():
-
+def test_update_cache_when_cache_exists():
     file_provider_mock = MagicMock()
     cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
@@ -73,8 +64,7 @@ def test_update_cache_with_existing_cache_file_expected_file():
     )
 
 
-def test_read_supported_versions_from_cache_returns_correct_product():
-
+def test_read_supported_versions_from_cache_when_resource_exists():
     file_provider_mock = MagicMock()
     cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
 
@@ -89,11 +79,67 @@ def test_read_supported_versions_from_cache_returns_correct_product():
     assert supported_versions == ["6.1", "6.2"]
 
 
-# from unittest.mock import MagicMock
+def test_cache_refresh_required_when_cache_file_does_not_exist():
+    file_provider_mock = MagicMock()
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+
+    file_provider_mock.load.side_effect = FileNotFoundError
+
+    result = cache_provider.cache_refresh_required("opensearch")
+
+    assert result is True
+
+
+def test_cache_refresh_required_when_resource_name_does_not_exist_in_cache():
+    file_provider_mock = MagicMock()
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+
+    read_yaml_return_value = {
+        "redis": {"date-retrieved": "01-01-01 10:00:00", "versions": ["7.1", "7.2"]},
+    }
+    file_provider_mock.load.return_value = read_yaml_return_value
+
+    result = cache_provider.cache_refresh_required("opensearch")
+
+    assert result is True
+
+
+def test_cache_refresh_required_when_date_retrieved_is_older_than_one_day():
+    file_provider_mock = MagicMock()
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+
+    read_yaml_return_value = {
+        "opensearch": {"date-retrieved": "01-01-01 10:00:00", "versions": ["6.1", "6.2"]},
+    }
+    file_provider_mock.load.return_value = read_yaml_return_value
+
+    cache_provider._CacheProvider__check_if_cached_datetime_is_greater_than_interval = Mock(
+        return_value=True
+    )
+
+    result = cache_provider.cache_refresh_required("opensearch")
+
+    assert result is True
+
+
+def test_cache_refresh_not_required_when_cache_is_fresh():
+    current_time = datetime.now()
+    date_retrieved = (current_time - timedelta(hours=2)).strftime("%d-%m-%y %H:%M:%S")
+
+    file_provider_mock = MagicMock()
+    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    file_provider_mock.load.return_value = {"opensearch": {"date-retrieved": date_retrieved}}
+
+    cache_provider._CacheProvider__cache_exists = Mock(return_value=True)
+
+    with freeze_time(current_time):
+        assert not cache_provider.cache_refresh_required("opensearch")
 
 
 # def test_get_supported_versions_cache_refresh():
-#     mock_cache_provider = MagicMock()
+#     file_provider_mock = MagicMock()
+#     cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+
 #     mock_aws_provider = MagicMock()
 #     setattr(mock_aws_provider, "get_reference", MagicMock(return_value="doesnt-matter"))
 #     setattr(
@@ -101,16 +147,16 @@ def test_read_supported_versions_from_cache_returns_correct_product():
 #         "get_supported_versions",
 #         MagicMock(return_value=["doesnt", "matter"]),
 #     )
-#     mock_cache_provider.cache_refresh_required.return_value = True
+#     cache_provider.cache_refresh_required.return_value = True
 
-#     versions = get_supported_aws_versions(mock_aws_provider, mock_cache_provider)
+#     supported_versions = cache_provider.read_supported_versions_from_cache("opensearch")
 
 #     mock_aws_provider.get_reference.assert_called()
 #     mock_aws_provider.get_supported_versions.assert_called()
-#     mock_cache_provider.update_cache.assert_called_with("doesnt-matter", ["doesnt", "matter"])
-#     mock_cache_provider.read_supported_versions_from_cache.assert_not_called()
+#     cache_provider.update_cache.assert_called_with("doesnt-matter", ["doesnt", "matter"])
+#     cache_provider.read_supported_versions_from_cache.assert_not_called()
 
-#     assert versions == ["doesnt", "matter"]
+#     assert supported_versions == ["doesnt", "matter"]
 
 
 # def test_get_supported_versions_no_cache_refresh():
