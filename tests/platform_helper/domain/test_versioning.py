@@ -480,6 +480,16 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
+# TODO test cases from old utils test:
+# @pytest.mark.parametrize(
+#     "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
+#     [
+#         ("0.0.1", None, None, "0.0.1"),
+#         ("0.0.1", "1.0.0", None, "1.0.0"),
+#         (None, "3.0.0", "4.0.0", "4.0.0"),
+#         ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
+#     ],
+# )
 # TODO extract anything from the below test that should be kept for GetVersionStatus unit tests coverage
 #         @pytest.mark.parametrize(
 #     "platform_helper_version_file_version,platform_config_default_version,expected_version",
