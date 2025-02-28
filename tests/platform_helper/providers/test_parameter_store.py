@@ -58,7 +58,7 @@ def test_get_ssm_parameters_by_path_success():
     ssm_client = boto3.client("ssm")
     expected_response = [
         {"Name": f"{parameter_path}parameter1", "Value": "some-super-cool-string"},
-        {"Name": f"{parameter_path}parameter1", "Value": "some-super-cool-string"},
+        {"Name": f"{parameter_path}parameter2", "Value": "some-super-cool-string"},
     ]
 
     stubbed_ssm_client = Stubber(ssm_client)
