@@ -60,65 +60,77 @@ def mock_pypi_provider():
 
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
     def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-        self, mock_io_provider, mock_local_version_provider, mock_pypi_provider, mock_skip, fakefs
+        self,
+        mock_io_provider,
+        mock_local_version_provider,
+        mock_pypi_provider,
+        mock_skip,
+        mock_version_file_version_provider,
     ):
-        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
+        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
 
         PlatformHelperVersioning(
             io=mock_io_provider,
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             skip_version_checks=mock_skip,
+            version_file_version_provider=mock_version_file_version_provider,
         ).check_platform_helper_version_mismatch()
 
         mock_io_provider.warn.assert_called_with(
             f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
         )
 
+    def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
+        self,
+        mock_io_provider,
+        mock_local_version_provider,
+        mock_pypi_provider,
+        mock_skip,
+        mock_version_file_version_provider,
+    ):
+        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
 
-def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
-    no_skipping_version_checks,
-    mock_io_provider,
-    mock_local_version_provider,
-    mock_pypi_provider,
-    fakefs,
-):
-    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            local_version_provider=mock_local_version_provider,
+            pypi_provider=mock_pypi_provider,
+            skip_version_checks=mock_skip,
+            version_file_version_provider=mock_version_file_version_provider,
+        ).check_platform_helper_version_mismatch()
 
-    required_version = PlatformHelperVersioning(
-        io=mock_io_provider,
-        local_version_provider=mock_local_version_provider,
-        pypi_provider=mock_pypi_provider,
-    )
+        mock_io_provider.warn.assert_not_called
+        mock_io_provider.error.assert_not_called
 
-    required_version.check_platform_helper_version_mismatch()
+    def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
+        self,
+        valid_platform_config,
+        mock_io_provider,
+        mock_local_version_provider,
+        mock_pypi_provider,
+        mock_config_provider,
+        mock_version_file_version_provider,
+        mock_skip,
+    ):
+        mock_version_file_version_provider.get_required_version.return_value = None
+        mock_config_provider.load_unvalidated_config_file.return_value = valid_platform_config
 
-    mock_io_provider.warn.assert_not_called
-    mock_io_provider.error.assert_not_called
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            local_version_provider=mock_local_version_provider,
+            pypi_provider=mock_pypi_provider,
+            config_provider=mock_config_provider,
+            skip_version_checks=mock_skip,
+            version_file_version_provider=mock_version_file_version_provider,
+        ).check_platform_helper_version_mismatch()
 
-
-def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
-    no_skipping_version_checks,
-    mock_io_provider,
-    mock_local_version_provider,
-    mock_pypi_provider,
-    fakefs,
-    valid_platform_config,
-):
-    config = valid_platform_config
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(config))
-
-    required_version = PlatformHelperVersioning(
-        io=mock_io_provider,
-        local_version_provider=mock_local_version_provider,
-        pypi_provider=mock_pypi_provider,
-    )
-
-    required_version.check_platform_helper_version_mismatch()
-
-    mock_io_provider.warn.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v10.2.0 specified for the project.",
-    )
+        mock_io_provider.warn.assert_called_with(
+            f"WARNING: You are running platform-helper v1.0.1 against v10.2.0 specified for the project.",
+        )
 
 
 @patch(
