@@ -203,9 +203,9 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             (SemanticVersion(0, 0, 1), "1.0.0", "1.0.0"),
         ],
     )
-    @patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
     def test_config_default_has_precedence_over_platform_helper_version_file_version(
         self,
+        mock_local_version_provider,
         mock_version_file_version_provider,
         mock_config_provider,
         mock_pypi_provider,
@@ -232,6 +232,8 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             version_file_version_provider=mock_version_file_version_provider,
             config_provider=mock_config_provider,
             pypi_provider=mock_pypi_provider,
+            local_version_provider=mock_local_version_provider,
+            skip_version_checks=Mock(return_value=False),
         ).get_required_version()
 
         assert result == expected_version
