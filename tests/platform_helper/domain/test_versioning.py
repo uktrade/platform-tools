@@ -46,7 +46,9 @@ def mock_file_provider():
 
 @pytest.fixture
 def mock_skip():
-    return Mock()
+    skip = Mock()
+    skip.return_value = False
+    return skip
 
 
 @pytest.fixture
@@ -56,25 +58,22 @@ def mock_pypi_provider():
     return mock_pypi_provider
 
 
-def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-    no_skipping_version_checks,
-    mock_io_provider,
-    mock_local_version_provider,
-    mock_pypi_provider,
-    fakefs,
-):
-    fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
-    required_version = PlatformHelperVersioning(
-        io=mock_io_provider,
-        local_version_provider=mock_local_version_provider,
-        pypi_provider=mock_pypi_provider,
-    )
+class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
+    def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
+        self, mock_io_provider, mock_local_version_provider, mock_pypi_provider, mock_skip, fakefs
+    ):
+        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="1.0.0")
 
-    required_version.check_platform_helper_version_mismatch()
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            local_version_provider=mock_local_version_provider,
+            pypi_provider=mock_pypi_provider,
+            skip_version_checks=mock_skip,
+        ).check_platform_helper_version_mismatch()
 
-    mock_io_provider.warn.assert_called_with(
-        f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
-    )
+        mock_io_provider.warn.assert_called_with(
+            f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
+        )
 
 
 def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
