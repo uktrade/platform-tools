@@ -263,32 +263,37 @@ def test_get_required_platform_helper_version(
         ),
     ),
 )
-# TODO add coverage for the include_project_versions parameter in the PlatformHelperVersion tests
-@patch("requests.get")
-@patch("dbt_platform_helper.providers.version.version")
 def test_platform_helper_version_deprecation_warnings(
-    mock_version,
-    mock_get,
+    mock_local_version_provider,
+    mock_pypi_provider,
     mock_io_provider,
-    fakefs,
+    mock_version_file_version_provider,
+    mock_config_provider,
     version_in_phv_file,
     version_in_platform_config,
     expected_warnings,
 ):
-    mock_version.return_value = "1.2.3"
-    mock_get.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
+    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
     platform_config = {"application": "my-app"}
     if version_in_platform_config:
         platform_config["default_versions"] = {"platform-helper": "2.2.2"}
 
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config))
+    mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
     if version_in_phv_file:
-        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="3.3.3")
+        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+            3, 3, 3
+        )
+    else:
+        mock_version_file_version_provider.get_required_version.return_value = None
 
-    PlatformHelperVersioning(io=mock_io_provider).get_required_version()
+    PlatformHelperVersioning(
+        io=mock_io_provider,
+        version_file_version_provider=mock_version_file_version_provider,
+        pypi_provider=mock_pypi_provider,
+        config_provider=mock_config_provider,
+        local_version_provider=mock_local_version_provider,
+    ).get_required_version()
 
     if expected_warnings:
         mock_io_provider.process_messages.assert_called_with(
@@ -367,6 +372,34 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.platform_config_default == SemanticVersion(10, 2, 0)
         assert version_status.pipeline_overrides == {"test": "main", "prod-main": "9.0.9"}
 
+    # TODO: refactor this when `get_version_status` becomes a private method and test implicitly
+    #  through the public methods
+    def test_get_platform_helper_version_status_when_excluding_project_versions(
+        self,
+        valid_platform_config,
+        mock_pypi_provider,
+        mock_local_version_provider,
+        mock_version_file_version_provider,
+        mock_config_provider,
+    ):
+        mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 1, 1
+        )
+        mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
+
+        version_status = PlatformHelperVersioning(
+            local_version_provider=mock_local_version_provider,
+            pypi_provider=mock_pypi_provider,
+            config_provider=mock_config_provider,
+            version_file_version_provider=mock_version_file_version_provider,
+        ).get_version_status(include_project_versions=False)
+
+        assert version_status.local == SemanticVersion(1, 1, 1)
+        assert version_status.latest == SemanticVersion(2, 3, 4)
+        assert version_status.deprecated_version_file is None
+        assert version_status.platform_config_default is None
+        assert version_status.pipeline_overrides == {}
+
     def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
         self,
         mock_pypi_provider,
@@ -397,7 +430,6 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.platform_config_default == None
         assert version_status.pipeline_overrides == {}
 
-    # TODO clean up mocking
     def test_get_platform_helper_version_status_with_invalid_config(
         self,
         mock_pypi_provider,
@@ -405,7 +437,6 @@ class TestPlatformHelperVersioningGetStatus:
         mock_version_file_version_provider,
         mock_config_provider,
     ):
-
         mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 1, 1
         )

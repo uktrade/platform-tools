@@ -132,7 +132,6 @@ class PlatformHelperVersioning:
                 for name, pipeline in platform_config.get("environment_pipelines", {}).items()
                 if pipeline.get("versions", {}).get("platform-helper")
             }
-
         out = PlatformHelperVersionStatus(
             local=locally_installed_version,
             latest=latest_release,
