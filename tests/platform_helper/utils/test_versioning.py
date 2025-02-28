@@ -77,6 +77,10 @@ class TestConfigCommand:
         assert versions.latest == SemanticVersion(2, 0, 0)
 
 
+# TODO not sure the intention of this test but it's not currently doing
+# anything since PlatformHelperVersionStatus is injected so none
+# of those calls would be done anyway.  Maybe check git history to
+# understand intention of the test
 @patch("click.secho")
 @patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
 @patch("requests.get")
@@ -115,6 +119,7 @@ def test_determine_terraform_platform_modules_version(
     )
 
 
+# TODO move this to TestPlatformHelperVersioningGetRequiredVersion
 @patch(
     "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
     return_value="10.9.9",
@@ -139,7 +144,8 @@ def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
     fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
 
     result = PlatformHelperVersioning()._resolve_required_version(
-        "bogus_pipeline", version_status=PlatformHelperVersioning().get_version_status()
+        "bogus_pipeline_not_in_config",
+        version_status=PlatformHelperVersioning().get_version_status(),
     )
 
     assert result == default_version
