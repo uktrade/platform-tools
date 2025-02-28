@@ -11,12 +11,7 @@ class ParameterStore:
         """Retrieves the latest version of a parameter from parameter store for
         a given name/arn."""
 
-        response = self.ssm_client.get_parameters(Names=[parameter_name])["Parameters"]
-
-        if response:
-            return response[0]
-        else:
-            raise ParameterNotFoundForNameException()
+        return self.ssm_client.get_parameter(Name=parameter_name)["Parameter"]
 
     def get_ssm_parameters_by_path(self, path: str):
         """Retrieves all SSM parameters for a given path from parameter
@@ -33,10 +28,6 @@ class ParameterStore:
             return parameters
         else:
             raise ParameterNotFoundForPathException()
-
-
-class ParameterNotFoundForNameException(PlatformException):
-    """Exception raised when a given parameter name cannot be found in SSM."""
 
 
 class ParameterNotFoundForPathException(PlatformException):
