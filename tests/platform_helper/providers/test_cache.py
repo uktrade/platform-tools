@@ -12,7 +12,7 @@ from dbt_platform_helper.providers.cache import CacheProvider
 @freeze_time("2024-12-09 16:00:00")
 def test_update_cache_when_cache_exists():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]}
@@ -27,7 +27,7 @@ def test_update_cache_when_cache_exists():
 
     with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
 
-        cache_provider.update_cache("opensearch", ["6.1", "6.2"])
+        cache_provider._update_cache("opensearch", ["6.1", "6.2"])
 
     file_provider_mock.write.assert_called_once_with(
         ".platform-helper-config-cache.yml",
@@ -38,7 +38,7 @@ def test_update_cache_when_cache_exists():
 
 def test_read_supported_versions_from_cache_when_resource_exists():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]},
@@ -46,39 +46,39 @@ def test_read_supported_versions_from_cache_when_resource_exists():
     }
     file_provider_mock.load.return_value = read_yaml_return_value
 
-    supported_versions = cache_provider.read_supported_versions_from_cache("opensearch")
+    supported_versions = cache_provider._read_from_cache("opensearch")
 
     assert supported_versions == ["6.1", "6.2"]
 
 
 def test_cache_refresh_required_when_cache_file_does_not_exist():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
 
     file_provider_mock.load.side_effect = FileNotFoundError
 
-    result = cache_provider.cache_refresh_required("opensearch")
+    result = cache_provider._cache_refresh_required("opensearch")
 
     assert result is True
 
 
 def test_cache_refresh_required_when_resource_name_does_not_exist_in_cache():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "01-01-01 10:00:00", "versions": ["7.1", "7.2"]},
     }
     file_provider_mock.load.return_value = read_yaml_return_value
 
-    result = cache_provider.cache_refresh_required("opensearch")
+    result = cache_provider._cache_refresh_required("opensearch")
 
     assert result is True
 
 
 def test_cache_refresh_required_when_date_retrieved_is_older_than_one_day():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "opensearch": {"date-retrieved": "01-01-01 10:00:00", "versions": ["6.1", "6.2"]},
@@ -89,7 +89,7 @@ def test_cache_refresh_required_when_date_retrieved_is_older_than_one_day():
         return_value=True
     )
 
-    result = cache_provider.cache_refresh_required("opensearch")
+    result = cache_provider._cache_refresh_required("opensearch")
 
     assert result is True
 
@@ -99,13 +99,13 @@ def test_cache_refresh_not_required_when_cache_is_less_than_one_day_old():
     date_retrieved = (current_time - timedelta(hours=2)).strftime("%d-%m-%y %H:%M:%S")
 
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
     file_provider_mock.load.return_value = {"opensearch": {"date-retrieved": date_retrieved}}
 
     cache_provider._CacheProvider__cache_exists = Mock(return_value=True)
 
     with freeze_time(current_time):
-        assert not cache_provider.cache_refresh_required("opensearch")
+        assert not cache_provider._cache_refresh_required("opensearch")
 
 
 # def test_get_supported_versions_cache_refresh():

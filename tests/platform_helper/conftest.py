@@ -787,11 +787,11 @@ def create_invalid_platform_config_file(fakefs):
 
 # TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
 @pytest.fixture(autouse=True)
-def mock_get_or_update_cache(request, monkeypatch):
+def mock_get_data(request, monkeypatch):
     if "skip_supported_versions_fixture" in request.keywords:
         return
 
-    def mock_return_value(self, aws_provider):
+    def mock_return_value(self, strategy):
         return ["6.2", "7.0", "7.1"]
 
-    monkeypatch.setattr(CacheProvider, "get_or_update_cache", mock_return_value)
+    monkeypatch.setattr(CacheProvider, "get_data", mock_return_value)
