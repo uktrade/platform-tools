@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -196,29 +195,25 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
         )
 
 
-# TODO inject VersionStatus for this test (other coverage moved to test for GetStatus).
 @pytest.mark.parametrize(
     "platform_helper_version_file_version,platform_config_default_version,expected_version",
     [
-        ("0.0.1", None, "0.0.1"),
-        ("0.0.1", "1.0.0", "1.0.0"),
+        (SemanticVersion(0, 0, 1), None, "0.0.1"),
+        (SemanticVersion(0, 0, 1), "1.0.0", "1.0.0"),
     ],
 )
 @patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
-@patch("requests.get")
 def test_get_required_platform_helper_version(
-    mock_get,
-    mock_version,
-    fakefs,
+    mock_version_file_version_provider,
+    mock_config_provider,
+    mock_pypi_provider,
     platform_helper_version_file_version,
     platform_config_default_version,
     expected_version,
 ):
-    mock_get.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
-    if platform_helper_version_file_version:
-        Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
+    mock_version_file_version_provider.get_required_version.return_value = (
+        platform_helper_version_file_version
+    )
 
     platform_config = {
         "application": "my-app",
@@ -227,15 +222,17 @@ def test_get_required_platform_helper_version(
             "main": {"slack_channel": "abc", "trigger_on_push": True, "environments": {"dev": None}}
         },
     }
+
     if platform_config_default_version:
         platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
 
-    Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+    mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
-    version_status = PlatformHelperVersioning().get_version_status()
-    required_version = PlatformHelperVersioning()
-
-    result = required_version._resolve_required_version(version_status=version_status)
+    result = PlatformHelperVersioning(
+        version_file_version_provider=mock_version_file_version_provider,
+        config_provider=mock_config_provider,
+        pypi_provider=mock_pypi_provider,
+    ).get_required_version()
 
     assert result == expected_version
 
