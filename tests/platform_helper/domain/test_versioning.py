@@ -12,9 +12,9 @@ from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import skip_version_check
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import LocalVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 from tests.platform_helper.conftest import (
@@ -40,8 +40,8 @@ def mock_config_provider():
 
 
 @pytest.fixture
-def mock_file_provider():
-    return Mock(spec=FileProvider)
+def mock_version_file_version_provider():
+    return Mock(spec=DeprecatedVersionFileVersionProvider)
 
 
 @pytest.fixture
@@ -337,7 +337,7 @@ class TestPlatformHelperVersioningGetStatus:
         valid_platform_config,
         mock_pypi_provider,
         mock_local_version_provider,
-        mock_file_provider,
+        mock_version_file_version_provider,
         mock_config_provider,
     ):
         mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
@@ -345,14 +345,16 @@ class TestPlatformHelperVersioningGetStatus:
         )
         mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
 
-        mock_file_provider.load.return_value = "5.6.7"
+        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+            5, 6, 7
+        )
         mock_config_provider.load_unvalidated_config_file.return_value = valid_platform_config
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            version_file_provider=mock_file_provider,
+            version_file_version_provider=mock_version_file_version_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
@@ -363,10 +365,9 @@ class TestPlatformHelperVersioningGetStatus:
 
     def test_get_platform_helper_version_status_with_invalid_yaml_in_platform_config(
         self,
-        valid_platform_config,
         mock_pypi_provider,
         mock_local_version_provider,
-        mock_file_provider,
+        mock_version_file_version_provider,
         mock_config_provider,
     ):
         mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
@@ -374,14 +375,16 @@ class TestPlatformHelperVersioningGetStatus:
         )
 
         mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
-        mock_file_provider.load.return_value = "5.6.7"
+        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+            5, 6, 7
+        )
         mock_config_provider.load_unvalidated_config_file.return_value = {}
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            version_file_provider=mock_file_provider,
+            version_file_version_provider=mock_version_file_version_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
@@ -395,7 +398,7 @@ class TestPlatformHelperVersioningGetStatus:
         self,
         mock_pypi_provider,
         mock_local_version_provider,
-        mock_file_provider,
+        mock_version_file_version_provider,
         mock_config_provider,
     ):
 
@@ -409,13 +412,15 @@ class TestPlatformHelperVersioningGetStatus:
         )
 
         mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
-        mock_file_provider.load.return_value = "5.6.7"
+        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+            5, 6, 7
+        )
 
         version_status = PlatformHelperVersioning(
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            version_file_provider=mock_file_provider,
+            version_file_version_provider=mock_version_file_version_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)

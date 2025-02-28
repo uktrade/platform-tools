@@ -1,11 +1,8 @@
 import os
 from collections.abc import Callable
-from pathlib import Path
 
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
@@ -15,10 +12,10 @@ from dbt_platform_helper.providers.semantic_version import (
 )
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import LocalVersionProvider
 from dbt_platform_helper.providers.version import LocalVersionProviderException
 from dbt_platform_helper.providers.version import PyPiVersionProvider
-from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -39,14 +36,16 @@ class PlatformHelperVersioning:
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),
-        version_file_provider: FileProvider = YamlFileProvider,
+        version_file_version_provider: DeprecatedVersionFileVersionProvider = DeprecatedVersionFileVersionProvider(
+            YamlFileProvider
+        ),
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
         local_version_provider: LocalVersionProvider = LocalVersionProvider(),
         skip_version_checks: Callable[[], bool] = None,
     ):
         self.io = io
-        self.file_provider = version_file_provider
+        self.version_file_version_provider = version_file_version_provider
         self.config_provider = config_provider
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
@@ -118,12 +117,6 @@ class PlatformHelperVersioning:
                 local=locally_installed_version,
                 latest=latest_release,
             )
-        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-        try:
-            loaded_version = self.file_provider.load(deprecated_version_file)
-            version_from_file = SemanticVersion.from_string(loaded_version)
-        except FileProviderException:
-            version_from_file = None
 
         platform_config_default, pipeline_overrides = None, {}
 
@@ -143,7 +136,7 @@ class PlatformHelperVersioning:
         out = PlatformHelperVersionStatus(
             local=locally_installed_version,
             latest=latest_release,
-            deprecated_version_file=version_from_file,
+            deprecated_version_file=self.version_file_version_provider.get_required_version(),
             platform_config_default=platform_config_default,
             pipeline_overrides=pipeline_overrides,
         )
