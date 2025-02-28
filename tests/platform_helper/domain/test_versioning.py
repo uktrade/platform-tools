@@ -133,7 +133,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         )
 
 
-class TestPlatformHelperVersioningWithInvalidConfig:
+class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
     DEFAULT_VERSION = "1.2.3"
     INVALID_CONFIG_WITH_DEFAULT_VERSION = {
         "default_versions": {"platform-helper": DEFAULT_VERSION},
@@ -169,37 +169,34 @@ class TestPlatformHelperVersioningWithInvalidConfig:
 
         assert result == pipeline_override_version
 
+    def test_get_required_version_errors_if_version_is_not_specified_in_config(
+        self,
+        mock_pypi_provider,
+        mock_config_provider,
+        mock_local_version_provider,
+        mock_skip,
+        mock_io_provider,
+    ):
+        mock_config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
 
-def test_get_required_version_errors_if_version_is_not_specified_in_config(
-    mock_pypi_provider,
-    mock_config_provider,
-    mock_local_version_provider,
-    mock_skip,
-    mock_io_provider,
-):
-    mock_config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
+        expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
+Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.0.1\n"""
 
-    expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
-Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.0.1
-"""
+        with pytest.raises(PlatformHelperVersionNotFoundException):
+            PlatformHelperVersioning(
+                io=mock_io_provider,
+                config_provider=mock_config_provider,
+                pypi_provider=mock_pypi_provider,
+                local_version_provider=mock_local_version_provider,
+                skip_version_checks=mock_skip,
+            ).get_required_version()
 
-    with pytest.raises(PlatformHelperVersionNotFoundException):
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            config_provider=mock_config_provider,
-            pypi_provider=mock_pypi_provider,
-            local_version_provider=mock_local_version_provider,
-            skip_version_checks=mock_skip,
-        ).get_required_version()
-
-    mock_io_provider.process_messages.assert_called_with(
-        {"warnings": [], "errors": [expected_message]}
-    )
+        mock_io_provider.process_messages.assert_called_with(
+            {"warnings": [], "errors": [expected_message]}
+        )
 
 
-# TODO this is testing both get_required_platform_helper_version and
-# get_platform_helper_version_status.  We should instead unit test
-# PlatformHelperVersion.get_status thoroughly and then inject VersionStatus for this test.
+# TODO inject VersionStatus for this test (other coverage moved to test for GetStatus).
 @pytest.mark.parametrize(
     "platform_helper_version_file_version,platform_config_default_version,expected_version",
     [
@@ -435,6 +432,50 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.deprecated_version_file == SemanticVersion(5, 6, 7)
         assert version_status.platform_config_default == SemanticVersion(1, 2, 3)
         assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}
+
+
+# TODO extract anything from the below test that should be kept for GetVersionStatus unit tests coverage
+#         @pytest.mark.parametrize(
+#     "platform_helper_version_file_version,platform_config_default_version,expected_version",
+#     [
+#         ("0.0.1", None, "0.0.1"),
+#         ("0.0.1", "1.0.0", "1.0.0"),
+#     ],
+# )
+# @patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
+# @patch("requests.get")
+# def test_get_required_platform_helper_version(
+#     mock_get,
+#     mock_version,
+#     fakefs,
+#     platform_helper_version_file_version,
+#     platform_config_default_version,
+#     expected_version,
+# ):
+#     mock_get.return_value.json.return_value = {
+#         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
+#     }
+#     if platform_helper_version_file_version:
+#         Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
+
+#     platform_config = {
+#         "application": "my-app",
+#         "environments": {"dev": None},
+#         "environment_pipelines": {
+#             "main": {"slack_channel": "abc", "trigger_on_push": True, "environments": {"dev": None}}
+#         },
+#     }
+#     if platform_config_default_version:
+#         platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
+
+#     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
+
+#     version_status = PlatformHelperVersioning().get_version_status()
+#     required_version = PlatformHelperVersioning()
+
+#     result = required_version._resolve_required_version(version_status=version_status)
+
+#     assert result == expected_version
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
