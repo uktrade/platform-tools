@@ -788,7 +788,7 @@ def create_invalid_platform_config_file(fakefs):
 # TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
 @pytest.fixture(autouse=True)
 def mock_get_data(request, monkeypatch):
-    if "skip_supported_versions_fixture" in request.keywords:
+    if "skip_mock_get_data" in request.keywords:
         return
 
     def mock_return_value(self, strategy):
