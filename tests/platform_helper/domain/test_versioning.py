@@ -133,41 +133,39 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         )
 
 
-@patch(
-    "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
-    return_value="10.9.9",
-)
-class TestVersionCommandWithInvalidConfig:
+class TestPlatformHelperVersioningWithInvalidConfig:
     DEFAULT_VERSION = "1.2.3"
-    INVALID_CONFIG = {
+    INVALID_CONFIG_WITH_DEFAULT_VERSION = {
         "default_versions": {"platform-helper": DEFAULT_VERSION},
-        "a_bogus_field_that_invalidates_config": "foo",
+        "a_bogus_field_that_invalidates_config": "boo",
     }
 
-    def test_works_given_invalid_config(self, mock_latest_release, fakefs):
-        default_version = "1.2.3"
-        platform_config = self.INVALID_CONFIG
-        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+    def test_default_given_invalid_config(self, mock_pypi_provider, mock_config_provider):
+        expected = self.DEFAULT_VERSION
 
-        result = PlatformHelperVersioning()._resolve_required_version(
-            "bogus_pipeline", version_status=PlatformHelperVersioning().get_version_status()
+        mock_config_provider.load_unvalidated_config_file.return_value = (
+            self.INVALID_CONFIG_WITH_DEFAULT_VERSION
         )
 
-        assert result == default_version
+        result = PlatformHelperVersioning(
+            config_provider=mock_config_provider, pypi_provider=mock_pypi_provider
+        ).get_required_version()
 
-    def test_pipeline_override_given_invalid_config(self, mock_latest_release, fakefs):
+        assert result == expected
+
+    def test_pipeline_override_given_invalid_config(self, mock_pypi_provider, mock_config_provider):
         pipeline_override_version = "1.1.1"
-        platform_config = self.INVALID_CONFIG
+        platform_config = self.INVALID_CONFIG_WITH_DEFAULT_VERSION
         platform_config["environment_pipelines"] = {
             "main": {
                 "versions": {"platform-helper": pipeline_override_version},
             }
         }
-        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
+        mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
-        result = PlatformHelperVersioning()._resolve_required_version(
-            "main", version_status=PlatformHelperVersioning().get_version_status()
-        )
+        result = PlatformHelperVersioning(
+            config_provider=mock_config_provider, pypi_provider=mock_pypi_provider
+        ).get_required_version("main")
 
         assert result == pipeline_override_version
 
