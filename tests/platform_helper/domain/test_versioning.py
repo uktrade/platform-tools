@@ -197,13 +197,15 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 
 class TestPlatformHelperVersioningGetRequiredVersion:
     @pytest.mark.parametrize(
-        "platform_helper_version_file_version,platform_config_default_version,expected_version",
+        "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
         [
-            (SemanticVersion(0, 0, 1), None, "0.0.1"),
-            (SemanticVersion(0, 0, 1), "1.0.0", "1.0.0"),
+            (SemanticVersion(0, 0, 1), None, None, "0.0.1"),
+            (SemanticVersion(0, 0, 1), "1.0.0", None, "1.0.0"),
+            (None, "3.0.0", "4.0.0", "4.0.0"),
+            (SemanticVersion(0, 0, 1), "4.0.0", "5.0.0", "5.0.0"),
         ],
     )
-    def test_config_default_has_precedence_over_platform_helper_version_file_version(
+    def test_versions_precedence(
         self,
         mock_local_version_provider,
         mock_version_file_version_provider,
@@ -211,6 +213,7 @@ class TestPlatformHelperVersioningGetRequiredVersion:
         mock_pypi_provider,
         platform_helper_version_file_version,
         platform_config_default_version,
+        pipeline_override,
         expected_version,
     ):
         mock_version_file_version_provider.get_required_version.return_value = (
@@ -219,11 +222,24 @@ class TestPlatformHelperVersioningGetRequiredVersion:
 
         platform_config = {
             "application": "my-app",
+            "environments": {"dev": None},
+            "environment_pipelines": {
+                "main": {
+                    "slack_channel": "abc",
+                    "trigger_on_push": True,
+                    "environments": {"dev": None},
+                }
+            },
         }
 
         if platform_config_default_version:
             platform_config["default_versions"] = {
                 "platform-helper": platform_config_default_version
+            }
+
+        if pipeline_override:
+            platform_config["environment_pipelines"]["main"]["versions"] = {
+                "platform-helper": pipeline_override
             }
 
         mock_config_provider.load_unvalidated_config_file.return_value = platform_config
@@ -234,7 +250,7 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             pypi_provider=mock_pypi_provider,
             local_version_provider=mock_local_version_provider,
             skip_version_checks=Mock(return_value=False),
-        ).get_required_version()
+        ).get_required_version("main")
 
         assert result == expected_version
 
