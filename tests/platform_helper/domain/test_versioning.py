@@ -352,7 +352,7 @@ class TestPlatformHelperVersioningGetStatus:
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            file_provider=mock_file_provider,
+            version_file_provider=mock_file_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
@@ -381,7 +381,7 @@ class TestPlatformHelperVersioningGetStatus:
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            file_provider=mock_file_provider,
+            version_file_provider=mock_file_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
@@ -415,7 +415,7 @@ class TestPlatformHelperVersioningGetStatus:
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            file_provider=mock_file_provider,
+            version_file_provider=mock_file_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)

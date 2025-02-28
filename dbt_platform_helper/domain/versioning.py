@@ -39,14 +39,14 @@ class PlatformHelperVersioning:
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),
-        file_provider: FileProvider = YamlFileProvider,
+        version_file_provider: FileProvider = YamlFileProvider,
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
         local_version_provider: LocalVersionProvider = LocalVersionProvider(),
         skip_version_checks: Callable[[], bool] = None,
     ):
         self.io = io
-        self.file_provider = file_provider
+        self.file_provider = version_file_provider
         self.config_provider = config_provider
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
