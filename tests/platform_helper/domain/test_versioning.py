@@ -170,30 +170,27 @@ class TestPlatformHelperVersioningWithInvalidConfig:
         assert result == pipeline_override_version
 
 
-@patch("requests.get")
-@patch("dbt_platform_helper.providers.version.version")
 def test_get_required_version_errors_if_version_is_not_specified(
-    mock_version,
-    mock_get,
+    mock_pypi_provider,
+    mock_config_provider,
+    mock_local_version_provider,
+    mock_skip,
     mock_io_provider,
-    fakefs,
 ):
-    mock_version.return_value = "1.2.3"
-    mock_get.return_value.json.return_value = {
-        "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-    }
-
-    platform_config_without_default_version = {"application": "my-app"}
-    fakefs.create_file(
-        PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_without_default_version)
-    )
+    mock_config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
 
     expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
-Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.2.3
+Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.0.1
 """
 
     with pytest.raises(PlatformHelperVersionNotFoundException):
-        PlatformHelperVersioning(io=mock_io_provider).get_required_version()
+        PlatformHelperVersioning(
+            io=mock_io_provider,
+            config_provider=mock_config_provider,
+            pypi_provider=mock_pypi_provider,
+            local_version_provider=mock_local_version_provider,
+            skip_version_checks=mock_skip,
+        ).get_required_version()
 
     mock_io_provider.process_messages.assert_called_with(
         {"warnings": [], "errors": [expected_message]}
