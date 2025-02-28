@@ -4,9 +4,11 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
+import pytest
 from freezegun import freeze_time
 
 from dbt_platform_helper.providers.cache import CacheProvider
+from dbt_platform_helper.providers.cache import GetAWSVersionStrategy
 
 
 @freeze_time("2024-12-09 16:00:00")
@@ -108,50 +110,60 @@ def test_cache_refresh_not_required_when_cache_is_less_than_one_day_old():
         assert not cache_provider._cache_refresh_required("opensearch")
 
 
-# def test_get_supported_versions_cache_refresh():
-#     file_provider_mock = MagicMock()
-#     cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
+@pytest.mark.skip_supported_versions_fixture
+def test_get_data():
+    file_provider_mock = MagicMock()
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    strategy = MagicMock()
+    strategy.get_resource_identifier.return_value = "doesnt-matter"
+    strategy.retrieve_fresh_data.return_value = ["this", "no", "matter"]
 
-#     mock_aws_provider = MagicMock()
-#     setattr(mock_aws_provider, "get_reference", MagicMock(return_value="doesnt-matter"))
-#     setattr(
-#         mock_aws_provider,
-#         "get_supported_versions",
-#         MagicMock(return_value=["doesnt", "matter"]),
-#     )
-#     cache_provider.cache_refresh_required.return_value = True
+    cache_provider._cache_refresh_required = MagicMock()
+    cache_provider._cache_refresh_required.return_value = True
+    cache_provider._read_from_cache = MagicMock()
+    cache_provider._update_cache = MagicMock()
 
-#     supported_versions = cache_provider.read_supported_versions_from_cache("opensearch")
+    retrieved_data = cache_provider.get_data(strategy)
 
-#     mock_aws_provider.get_reference.assert_called()
-#     mock_aws_provider.get_supported_versions.assert_called()
-#     cache_provider.update_cache.assert_called_with("doesnt-matter", ["doesnt", "matter"])
-#     cache_provider.read_supported_versions_from_cache.assert_not_called()
-
-#     assert supported_versions == ["doesnt", "matter"]
+    assert retrieved_data == ["this", "no", "matter"]
+    cache_provider._cache_refresh_required.assert_called_with("doesnt-matter")
+    cache_provider._update_cache.assert_called_with("doesnt-matter", ["this", "no", "matter"])
+    cache_provider._read_from_cache.assert_not_called()
 
 
-# def test_get_supported_versions_no_cache_refresh():
-#     mock_cache_provider = MagicMock()
-#     mock_aws_provider = MagicMock()
-#     setattr(mock_aws_provider, "get_reference", MagicMock(return_value="doesnt-matter"))
-#     setattr(
-#         mock_aws_provider,
-#         "get_supported_versions",
-#         MagicMock(return_value=["doesnt", "matter"]),
-#     )
-#     mock_cache_provider.cache_refresh_required.return_value = False
-#     mock_cache_provider.read_supported_versions_from_cache.return_value = [
-#         "cache",
-#         "doesnt",
-#         "matter",
-#     ]
+@pytest.mark.skip_supported_versions_fixture
+def test_get_data_no_cache_refresh():
+    file_provider_mock = MagicMock()
+    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    strategy = MagicMock()
+    strategy.get_resource_identifier.return_value = "doesnt-matter"
+    strategy.retrieve_fresh_data.return_value = ["this", "no", "matter"]
 
-#     versions = get_supported_aws_versions(mock_aws_provider, mock_cache_provider)
+    cache_provider._cache_refresh_required = MagicMock()
+    cache_provider._cache_refresh_required.return_value = False
+    cache_provider._read_from_cache = MagicMock()
+    cache_provider._read_from_cache.return_value = [
+        "cache",
+        "doesnt",
+        "matter",
+    ]
+    cache_provider._update_cache = MagicMock()
 
-#     mock_aws_provider.get_reference.assert_called()
-#     mock_aws_provider.get_supported_versions.assert_not_called()
-#     mock_cache_provider.update_cache.assert_not_called()
-#     mock_cache_provider.read_supported_versions_from_cache.assert_called_with("doesnt-matter")
+    retrieved_data = cache_provider.get_data(strategy)
 
-#     assert versions == ["cache", "doesnt", "matter"]
+    cache_provider._cache_refresh_required.assert_called_with("doesnt-matter")
+    cache_provider._update_cache.assert_not_called()
+    cache_provider._read_from_cache.assert_called_with("doesnt-matter")
+
+    assert retrieved_data == ["cache", "doesnt", "matter"]
+
+
+def test_get_aws_version_strategy():
+    client_proivder = MagicMock()
+    client_proivder.get_supported_versions.return_value = ["doesnt", "matter"]
+    client_proivder.get_reference.return_value = "doesnt-matter"
+
+    strategy = GetAWSVersionStrategy(client_proivder)
+
+    assert strategy.retrieve_fresh_data() == ["doesnt", "matter"]
+    assert strategy.get_resource_identifier() == "doesnt-matter"
