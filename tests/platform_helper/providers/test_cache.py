@@ -9,34 +9,6 @@ from freezegun import freeze_time
 from dbt_platform_helper.providers.cache import CacheProvider
 
 
-def test_cache_refresh_required_when_cached_datetime_is_greater_than_one_day():
-    file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
-
-    read_yaml_return_value = {"redis": {"date-retrieved": "09-02-02 10:35:48"}}
-
-    file_provider_mock.load.return_value = read_yaml_return_value
-    with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
-
-        assert cache_provider.cache_refresh_required("redis")
-
-
-def test_cache_refresh_required_when_cached_datetime_is_less_than_one_day():
-    today = datetime.now()
-    middle_of_today = today - timedelta(hours=12)
-
-    file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(strategy=Mock(), file_provider=file_provider_mock)
-
-    read_yaml_return_value = {
-        "redis": {"date-retrieved": middle_of_today.strftime("%d-%m-%y %H:%M:%S")}
-    }
-    file_provider_mock.load.return_value = read_yaml_return_value
-
-    with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
-        assert not cache_provider.cache_refresh_required("redis")
-
-
 @freeze_time("2024-12-09 16:00:00")
 def test_update_cache_when_cache_exists():
     file_provider_mock = MagicMock()
@@ -122,7 +94,7 @@ def test_cache_refresh_required_when_date_retrieved_is_older_than_one_day():
     assert result is True
 
 
-def test_cache_refresh_not_required_when_cache_is_fresh():
+def test_cache_refresh_not_required_when_cache_is_less_than_one_day_old():
     current_time = datetime.now()
     date_retrieved = (current_time - timedelta(hours=2)).strftime("%d-%m-%y %H:%M:%S")
 
