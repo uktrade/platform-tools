@@ -170,7 +170,7 @@ class TestPlatformHelperVersioningWithInvalidConfig:
         assert result == pipeline_override_version
 
 
-def test_get_required_version_errors_if_version_is_not_specified(
+def test_get_required_version_errors_if_version_is_not_specified_in_config(
     mock_pypi_provider,
     mock_config_provider,
     mock_local_version_provider,
