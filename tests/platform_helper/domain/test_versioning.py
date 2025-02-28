@@ -17,6 +17,9 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import LocalVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
+from tests.platform_helper.conftest import (
+    INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
+)
 
 
 @pytest.fixture
@@ -389,24 +392,31 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.pipeline_overrides == {}
 
     # TODO clean up mocking
-    @patch("requests.get")
     def test_get_platform_helper_version_status_with_invalid_config(
         self,
-        mock_get,
-        fakefs,
-        create_invalid_platform_config_file,
+        mock_pypi_provider,
+        mock_local_version_provider,
+        mock_file_provider,
+        mock_config_provider,
     ):
 
-        mock_local_version = Mock()
-        mock_local_version.get_installed_tool_version.return_value = SemanticVersion(1, 1, 1)
+        mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 1, 1
+        )
 
-        mock_get.return_value.json.return_value = {
-            "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-        }
-        fakefs.create_file(PLATFORM_HELPER_VERSION_FILE, contents="5.6.7")
+        invalid_platform_config = INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES
+        mock_config_provider.load_unvalidated_config_file.return_value = yaml.safe_load(
+            invalid_platform_config
+        )
+
+        mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
+        mock_file_provider.load.return_value = "5.6.7"
 
         version_status = PlatformHelperVersioning(
-            local_version_provider=mock_local_version
+            local_version_provider=mock_local_version_provider,
+            pypi_provider=mock_pypi_provider,
+            config_provider=mock_config_provider,
+            file_provider=mock_file_provider,
         ).get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
