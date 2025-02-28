@@ -182,9 +182,9 @@ class MaintenancePage:
                 )
 
                 self.io.debug(
-                    "\n#----------------------------------------------------------#\n# Creating listener rules for service "
-                    + svc.name.ljust(21, " ")
-                    + "#\n#----------------------------------------------------------#\n\n",
+                    f"""\n#----------------------------------------------------------#\n
+                    # Creating listener rules for service {svc.name.ljust(21, " ")}
+                    #\n#----------------------------------------------------------#\n\n""",
                 )
 
                 for ip in allowed_ips:
@@ -272,7 +272,7 @@ class MaintenancePage:
 
     def __clean_up_maintenance_page_rules(
         self, listener_arn: str, fail_when_not_deleted: bool = False
-    ) -> dict[str, bool]:
+    ):
 
         tag_descriptions = self.load_balancer.get_rules_tag_descriptions_by_listener_arn(
             listener_arn
@@ -286,7 +286,7 @@ class MaintenancePage:
             # track the rules deleted grouped by service
             for deleted_rule in deleted_list:
                 tags = {t["Key"]: t["Value"] for t in deleted_rule["Tags"]}
-                if tags.get("service"):
+                if "service" in tags:
                     if tags["service"] not in deletes:
                         deletes[tags["service"]] = {
                             "AllowedIps": 0,
@@ -307,7 +307,6 @@ class MaintenancePage:
         self.io.warn(
             f"Rules deleted by type and grouped by service: {deletes}",
         )
-        return deletes
 
     def __remove_maintenance_page(self, listener_arn: str) -> dict[str, bool]:
         self.__clean_up_maintenance_page_rules(listener_arn, True)

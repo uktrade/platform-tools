@@ -270,15 +270,15 @@ class TestCommandHelperMethods:
         [
             (
                 1,
-                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': False}",
+                "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 0}}",
             ),
             (
                 2,
-                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': True}",
+                "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 1}}",
             ),
             (
                 3,
-                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': True, 'AllowedSourceIps': True}",
+                "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 1, 'AllowedSourceIps': 1}}",
             ),
         ],
     )
@@ -314,7 +314,7 @@ class TestCommandHelperMethods:
             elbv2_client, create_rule_count_to_error
         )
 
-        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page = MaintenancePage(mock_application, io=Mock())
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
@@ -334,7 +334,7 @@ class TestCommandHelperMethods:
         )
         assert str(e.value).startswith(excepted)
 
-        # TODO add check for warn output or mock Io and assert called with
+        maintenance_page.io.warn.assert_called_with(expected_roll_back_message)
 
         assert mock_create_rule.call_count == create_rule_count_to_error + 1
 
@@ -424,7 +424,7 @@ class TestCommandHelperMethods:
             elbv2_client, 5  # will only error during loop on second service
         )
 
-        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page = MaintenancePage(mock_application, io=Mock())
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
@@ -443,6 +443,10 @@ class TestCommandHelperMethods:
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
         assert str(e.value).startswith(excepted)
+
+        maintenance_page.io.warn.assert_called_with(
+            "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 1, 'AllowedSourceIps': 1}, 'web2': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 1}}"
+        )
 
         assert mock_create_rule.call_count == 6
 
