@@ -9,7 +9,7 @@ from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 class CacheStrategy(ABC):
     @abstractmethod
-    def retrieve_data(self, cache_provider, client_provider):
+    def retrieve_data(self, cache_provider, client_provider: AwsGetVersionProtocol) -> list:
         pass
 
 
