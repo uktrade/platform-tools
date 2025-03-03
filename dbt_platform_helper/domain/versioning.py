@@ -23,7 +23,7 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def skip_version_check():
+def skip_version_checks():
     return not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
 
 
@@ -42,7 +42,7 @@ class PlatformHelperVersioning:
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
         local_version_provider: LocalVersionProvider = LocalVersionProvider(),
-        skip_version_checks: Callable[[], bool] = None,
+        skip_versioning_checks: Callable[[], bool] = None,
     ):
         self.io = io
         self.version_file_version_provider = version_file_version_provider
@@ -50,7 +50,7 @@ class PlatformHelperVersioning:
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
         self.skip_versioning_checks = (
-            skip_version_checks() if skip_version_checks else skip_version_check()
+            skip_versioning_checks() if skip_versioning_checks else skip_version_checks()
         )
 
     def _resolve_required_version(

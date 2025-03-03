@@ -133,7 +133,7 @@ def test_copy_secrets_with_existing_secret(
 
 @mock_aws
 @patch(
-    "dbt_platform_helper.domain.versioning.skip_version_check",
+    "dbt_platform_helper.domain.versioning.skip_version_checks",
     new=Mock(return_value=True),
 )
 def test_list():

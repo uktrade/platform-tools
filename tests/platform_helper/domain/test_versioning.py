@@ -8,7 +8,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
-from dbt_platform_helper.domain.versioning import skip_version_check
+from dbt_platform_helper.domain.versioning import skip_version_checks
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
@@ -70,7 +70,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
             io=mock_io_provider,
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
-            skip_version_checks=mock_skip,
+            skip_versioning_checks=mock_skip,
             version_file_version_provider=mock_version_file_version_provider,
         ).check_platform_helper_version_mismatch()
 
@@ -94,7 +94,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
             io=mock_io_provider,
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
-            skip_version_checks=mock_skip,
+            skip_versioning_checks=mock_skip,
             version_file_version_provider=mock_version_file_version_provider,
         ).check_platform_helper_version_mismatch()
 
@@ -119,7 +119,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
-            skip_version_checks=mock_skip,
+            skip_versioning_checks=mock_skip,
             version_file_version_provider=mock_version_file_version_provider,
         ).check_platform_helper_version_mismatch()
 
@@ -183,7 +183,7 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
                 config_provider=mock_config_provider,
                 pypi_provider=mock_pypi_provider,
                 local_version_provider=mock_local_version_provider,
-                skip_version_checks=mock_skip,
+                skip_versioning_checks=mock_skip,
             ).get_required_version()
 
         mock_io_provider.process_messages.assert_called_with(
@@ -244,7 +244,7 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             config_provider=mock_config_provider,
             pypi_provider=mock_pypi_provider,
             local_version_provider=mock_local_version_provider,
-            skip_version_checks=Mock(return_value=False),
+            skip_versioning_checks=Mock(return_value=False),
         ).get_required_version("main")
 
         assert result == expected_version
@@ -276,7 +276,7 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             config_provider=mock_config_provider,
             pypi_provider=mock_pypi_provider,
             local_version_provider=mock_local_version_provider,
-            skip_version_checks=Mock(return_value=False),
+            skip_versioning_checks=Mock(return_value=False),
         ).get_required_version("bogus_pipeline_not_in_config")
 
         print(result)
@@ -375,13 +375,13 @@ def test_platform_helper_version_deprecation_warnings(
 @patch(
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
 )
-def test_skip_version_check(
+def test_skip_version_checks(
     mock_running_as_installed_package, mock_env_var, mock_installed, expected
 ):
     mock_running_as_installed_package.return_value = mock_installed
     mock_env = {"PLATFORM_TOOLS_SKIP_VERSION_CHECK": mock_env_var} if mock_env_var else {}
     with patch.dict(os.environ, mock_env):
-        assert skip_version_check() == expected
+        assert skip_version_checks() == expected
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
@@ -440,7 +440,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             io=mock_io_provider,
             local_version_provider=mock_local_version_provider,
             pypi_provider=mock_pypi_provider,
-            skip_version_checks=mock_skip,
+            skip_versioning_checks=mock_skip,
         ).check_if_needs_update()
 
         mock_local_version_provider.get_installed_tool_version.assert_not_called()
