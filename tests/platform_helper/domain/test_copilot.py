@@ -351,6 +351,7 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     def test_make_addons_removes_old_addons_files(
         self,

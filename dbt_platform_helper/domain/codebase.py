@@ -11,6 +11,7 @@ from boto3 import Session
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationException
 from dbt_platform_helper.utils.application import load_application
@@ -28,6 +29,7 @@ from dbt_platform_helper.utils.template import setup_templates
 class Codebase:
     def __init__(
         self,
+        parameter_provider: ParameterStore,
         io: ClickIOProvider = ClickIOProvider(),
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
@@ -44,6 +46,7 @@ class Codebase:
         check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
         run_subprocess: Callable[[str], str] = subprocess.run,
     ):
+        self.parameter_store = parameter_provider
         self.io = io
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
@@ -180,9 +183,8 @@ class Codebase:
         """List available codebases for the application."""
         session = self.get_aws_session_or_abort()
         application = self.load_application(app, session)
-        ssm_client = session.client("ssm")
         ecr_client = session.client("ecr")
-        codebases = self.__get_codebases(application, ssm_client)
+        codebases = self.__get_codebases(application, session.client("ssm"))
 
         self.io.info("The following codebases are available:")
 
@@ -199,11 +201,9 @@ class Codebase:
         self.io.info("")
 
     def __get_codebases(self, application, ssm_client):
-        parameters = ssm_client.get_parameters_by_path(
-            Path=f"/copilot/applications/{application.name}/codebases",
-            Recursive=True,
-        )["Parameters"]
-
+        parameters = self.parameter_store.get_ssm_parameters_by_path(
+            f"/copilot/applications/{application.name}/codebases"
+        )
         codebases = [json.loads(p["Value"]) for p in parameters]
 
         if not codebases:
