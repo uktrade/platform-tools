@@ -412,7 +412,7 @@ class TestPlatformHelperVersioningGetStatus:
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
             version_file_version_provider=mock_version_file_version_provider,
-        ).get_version_status()
+        )._get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -440,7 +440,7 @@ class TestPlatformHelperVersioningGetStatus:
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
             version_file_version_provider=mock_version_file_version_provider,
-        ).get_version_status(include_project_versions=False)
+        )._get_version_status(include_project_versions=False)
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -470,7 +470,7 @@ class TestPlatformHelperVersioningGetStatus:
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
             version_file_version_provider=mock_version_file_version_provider,
-        ).get_version_status()
+        )._get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)
@@ -504,7 +504,7 @@ class TestPlatformHelperVersioningGetStatus:
             pypi_provider=mock_pypi_provider,
             config_provider=mock_config_provider,
             version_file_version_provider=mock_version_file_version_provider,
-        ).get_version_status()
+        )._get_version_status()
 
         assert version_status.local == SemanticVersion(1, 1, 1)
         assert version_status.latest == SemanticVersion(2, 3, 4)

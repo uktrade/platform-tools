@@ -17,9 +17,9 @@ def get_platform_helper_version_status(
     include_project_versions=True,
     yaml_provider=YamlFileProvider,
 ) -> PlatformHelperVersionStatus:
-    return PlatformHelperVersioning(version_file_version_provider=yaml_provider).get_version_status(
-        include_project_versions=include_project_versions
-    )
+    return PlatformHelperVersioning(
+        version_file_version_provider=yaml_provider
+    )._get_version_status(include_project_versions=include_project_versions)
 
 
 def get_required_terraform_platform_modules_version(

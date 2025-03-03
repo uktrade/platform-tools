@@ -74,7 +74,7 @@ class PlatformHelperVersioning:
         return out
 
     def get_required_version(self, pipeline=None):
-        version_status = self.get_version_status()
+        version_status = self._get_version_status()
         self.io.process_messages(version_status.validate())
         required_version = self._resolve_required_version(pipeline, version_status)
         self.io.info(required_version)
@@ -85,7 +85,7 @@ class PlatformHelperVersioning:
         if self.skip_versioning_checks:
             return
 
-        version_status = self.get_version_status()
+        version_status = self._get_version_status()
         self.io.process_messages(version_status.validate())
 
         required_version = SemanticVersion.from_string(
@@ -99,7 +99,7 @@ class PlatformHelperVersioning:
             )
             self.io.warn(message)
 
-    def get_version_status(
+    def _get_version_status(
         self,
         include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
@@ -146,7 +146,7 @@ class PlatformHelperVersioning:
         if self.skip_versioning_checks:
             return
 
-        version_status = self.get_version_status(include_project_versions=False)
+        version_status = self._get_version_status(include_project_versions=False)
 
         message = (
             f"You are running platform-helper v{version_status.local}, upgrade to "
