@@ -15,7 +15,6 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
-from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.versioning import get_aws_versions
@@ -75,29 +74,6 @@ class TestConfigCommand:
 
         assert versions.local == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)
-
-
-# TODO not sure the intention of this test but it's not currently doing
-# anything since PlatformHelperVersionStatus is injected so none
-# of those calls would be done anyway.  Maybe check git history to
-# understand intention of the test
-@patch("click.secho")
-@patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
-@patch("requests.get")
-def test_get_required_platform_helper_version_does_not_call_external_services_if_versions_passed_in(
-    mock_get,
-    mock_version,
-    secho,
-):
-    required_version = PlatformHelperVersioning()
-
-    result = required_version._resolve_required_version(
-        version_status=PlatformHelperVersionStatus(platform_config_default=SemanticVersion(1, 2, 3))
-    )
-
-    assert result == "1.2.3"
-    mock_version.assert_not_called()
-    mock_get.assert_not_called()
 
 
 @pytest.mark.parametrize(
