@@ -14,12 +14,12 @@ from dbt_platform_helper.providers.semantic_version import (
 )
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.versioning import get_aws_versions
-from dbt_platform_helper.utils.versioning import get_copilot_versions
-from dbt_platform_helper.utils.versioning import (
+from dbt_platform_helper.utils.tool_versioning import get_aws_versions
+from dbt_platform_helper.utils.tool_versioning import get_copilot_versions
+from dbt_platform_helper.utils.tool_versioning import (
     get_required_terraform_platform_modules_version,
 )
-from dbt_platform_helper.utils.versioning import validate_template_version
+from dbt_platform_helper.utils.tool_versioning import validate_template_version
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 

@@ -14,9 +14,9 @@ from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils import versioning
+from dbt_platform_helper.utils import tool_versioning
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.versioning import get_platform_helper_version_status
+from dbt_platform_helper.utils.tool_versioning import get_platform_helper_version_status
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -78,8 +78,8 @@ def deployment():
     compatible = True
     platform_helper_version_status = get_platform_helper_version_status()
     ClickIOProvider().process_messages(platform_helper_version_status.validate())
-    copilot_versions = versioning.get_copilot_versions()
-    aws_versions = versioning.get_aws_versions()
+    copilot_versions = tool_versioning.get_copilot_versions()
+    aws_versions = tool_versioning.get_aws_versions()
     _check_tool_versions(platform_helper_version_status, copilot_versions, aws_versions)
     click.secho("Checking addons templates versions...", fg="blue")
 
@@ -110,10 +110,10 @@ def deployment():
         latest_compatible_symbol = yes
 
         try:
-            generated_with_version = versioning.get_template_generated_with_version(
+            generated_with_version = tool_versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(local_version, str(template_file.resolve()))
+            tool_versioning.validate_template_version(local_version, str(template_file.resolve()))
         except IncompatibleMajorVersionException:
             local_compatible_symbol = no
             compatible = False
@@ -134,10 +134,10 @@ def deployment():
             ]
 
         try:
-            generated_with_version = versioning.get_template_generated_with_version(
+            generated_with_version = tool_versioning.get_template_generated_with_version(
                 str(template_file.resolve())
             )
-            versioning.validate_template_version(latest_release, str(template_file.resolve()))
+            tool_versioning.validate_template_version(latest_release, str(template_file.resolve()))
         except IncompatibleMajorVersionException:
             latest_compatible_symbol = no
             compatible = False

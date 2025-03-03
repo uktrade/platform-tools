@@ -53,7 +53,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_version_status",
+    "dbt_platform_helper.utils.tool_versioning.get_platform_helper_version_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
     ),
