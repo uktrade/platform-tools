@@ -53,26 +53,6 @@ class PlatformHelperVersioning:
             skip_versioning_checks() if skip_versioning_checks else skip_version_checks()
         )
 
-    def _resolve_required_version(
-        self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
-    ) -> str:
-        pipeline_version = version_status.pipeline_overrides.get(pipeline)
-        version_precedence = [
-            pipeline_version,
-            version_status.platform_config_default,
-            version_status.deprecated_version_file,
-        ]
-        non_null_version_precedence = [
-            f"{v}" if isinstance(v, SemanticVersion) else v for v in version_precedence if v
-        ]
-
-        out = non_null_version_precedence[0] if non_null_version_precedence else None
-
-        if not out:
-            raise PlatformHelperVersionNotFoundException
-
-        return out
-
     def get_required_version(self, pipeline=None):
         version_status = self._get_version_status()
         self.io.process_messages(version_status.validate())
@@ -97,6 +77,25 @@ class PlatformHelperVersioning:
                 f"WARNING: You are running platform-helper v{version_status.local} against "
                 f"v{required_version} specified for the project."
             )
+            self.io.warn(message)
+
+    def check_if_needs_update(self):
+        if self.skip_versioning_checks:
+            return
+
+        version_status = self._get_version_status(include_project_versions=False)
+
+        message = (
+            f"You are running platform-helper v{version_status.local}, upgrade to "
+            f"v{version_status.latest} by running run `pip install "
+            "--upgrade dbt-platform-helper`."
+        )
+
+        try:
+            version_status.local.validate_compatibility_with(version_status.latest)
+        except IncompatibleMajorVersionException:
+            self.io.error(message)
+        except IncompatibleMinorVersionException:
             self.io.warn(message)
 
     def _get_version_status(
@@ -142,21 +141,22 @@ class PlatformHelperVersioning:
 
         return out
 
-    def check_if_needs_update(self):
-        if self.skip_versioning_checks:
-            return
+    def _resolve_required_version(
+        self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
+    ) -> str:
+        pipeline_version = version_status.pipeline_overrides.get(pipeline)
+        version_precedence = [
+            pipeline_version,
+            version_status.platform_config_default,
+            version_status.deprecated_version_file,
+        ]
+        non_null_version_precedence = [
+            f"{v}" if isinstance(v, SemanticVersion) else v for v in version_precedence if v
+        ]
 
-        version_status = self._get_version_status(include_project_versions=False)
+        out = non_null_version_precedence[0] if non_null_version_precedence else None
 
-        message = (
-            f"You are running platform-helper v{version_status.local}, upgrade to "
-            f"v{version_status.latest} by running run `pip install "
-            "--upgrade dbt-platform-helper`."
-        )
+        if not out:
+            raise PlatformHelperVersionNotFoundException
 
-        try:
-            version_status.local.validate_compatibility_with(version_status.latest)
-        except IncompatibleMajorVersionException:
-            self.io.error(message)
-        except IncompatibleMinorVersionException:
-            self.io.warn(message)
+        return out
