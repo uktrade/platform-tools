@@ -4,11 +4,8 @@ from typing import Type
 from unittest.mock import patch
 
 import pytest
-import yaml
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -93,35 +90,3 @@ def test_determine_terraform_platform_modules_version(
         )
         == expected_version
     )
-
-
-# TODO move this to TestPlatformHelperVersioningGetRequiredVersion
-@patch(
-    "dbt_platform_helper.providers.version.PyPiVersionProvider.get_latest_version",
-    return_value="10.9.9",
-)
-def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
-    mock_latest_release, fakefs
-):
-    default_version = "1.2.3"
-    platform_config = {
-        "application": "my-app",
-        "default_versions": {"platform-helper": default_version},
-        "environments": {"dev": None},
-        "environment_pipelines": {
-            "main": {
-                "versions": {"platform-helper": "1.1.1"},
-                "slack_channel": "abc",
-                "trigger_on_push": True,
-                "environments": {"dev": None},
-            }
-        },
-    }
-    fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents=yaml.dump(platform_config))
-
-    result = PlatformHelperVersioning()._resolve_required_version(
-        "bogus_pipeline_not_in_config",
-        version_status=PlatformHelperVersioning().get_version_status(),
-    )
-
-    assert result == default_version

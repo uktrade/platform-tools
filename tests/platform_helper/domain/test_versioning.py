@@ -196,6 +196,23 @@ Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
+    def __init__(self, mock_config_provider):
+        self.default_version = "1.2.3"
+        self.platform_config = {
+            "application": "my-app",
+            "default_versions": {"platform-helper": self.default_version},
+            "environments": {"dev": None},
+            "environment_pipelines": {
+                "main": {
+                    "versions": {"platform-helper": "1.1.1"},
+                    "slack_channel": "abc",
+                    "trigger_on_push": True,
+                    "environments": {"dev": None},
+                }
+            },
+        }
+        mock_config_provider.load_unvalidated_config_file.return_value = self.platform_config
+
     @pytest.mark.parametrize(
         "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
         [
@@ -220,29 +237,15 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             platform_helper_version_file_version
         )
 
-        platform_config = {
-            "application": "my-app",
-            "environments": {"dev": None},
-            "environment_pipelines": {
-                "main": {
-                    "slack_channel": "abc",
-                    "trigger_on_push": True,
-                    "environments": {"dev": None},
-                }
-            },
-        }
-
         if platform_config_default_version:
-            platform_config["default_versions"] = {
+            self.platform_config["default_versions"] = {
                 "platform-helper": platform_config_default_version
             }
 
         if pipeline_override:
-            platform_config["environment_pipelines"]["main"]["versions"] = {
+            self.platform_config["environment_pipelines"]["main"]["versions"] = {
                 "platform-helper": pipeline_override
             }
-
-        mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
         result = PlatformHelperVersioning(
             version_file_version_provider=mock_version_file_version_provider,
@@ -253,6 +256,23 @@ class TestPlatformHelperVersioningGetRequiredVersion:
         ).get_required_version("main")
 
         assert result == expected_version
+
+    def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
+        self,
+        mock_pypi_provider,
+        mock_version_file_version_provider,
+        mock_config_provider,
+        mock_local_version_provider,
+    ):
+        result = PlatformHelperVersioning(
+            version_file_version_provider=mock_version_file_version_provider,
+            config_provider=mock_config_provider,
+            pypi_provider=mock_pypi_provider,
+            local_version_provider=mock_local_version_provider,
+            skip_version_checks=Mock(return_value=False),
+        ).get_required_version("bogus_pipeline_not_in_config")
+
+        assert result == self.default_version
 
 
 @pytest.mark.parametrize(
