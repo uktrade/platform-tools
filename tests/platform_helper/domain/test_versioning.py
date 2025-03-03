@@ -500,60 +500,6 @@ class TestPlatformHelperVersioningGetStatus:
         assert version_status.pipeline_overrides == {"prod-main": "9.0.9"}
 
 
-# TODO test cases from old utils test:
-# @pytest.mark.parametrize(
-#     "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
-#     [
-#         ("0.0.1", None, None, "0.0.1"),
-#         ("0.0.1", "1.0.0", None, "1.0.0"),
-#         (None, "3.0.0", "4.0.0", "4.0.0"),
-#         ("0.0.1", "4.0.0", "5.0.0", "5.0.0"),
-#     ],
-# )
-# TODO extract anything from the below test that should be kept for GetVersionStatus unit tests coverage
-#         @pytest.mark.parametrize(
-#     "platform_helper_version_file_version,platform_config_default_version,expected_version",
-#     [
-#         ("0.0.1", None, "0.0.1"),
-#         ("0.0.1", "1.0.0", "1.0.0"),
-#     ],
-# )
-# @patch("dbt_platform_helper.providers.version.version", return_value="0.0.0")
-# @patch("requests.get")
-# def test_get_required_platform_helper_version(
-#     mock_get,
-#     mock_version,
-#     fakefs,
-#     platform_helper_version_file_version,
-#     platform_config_default_version,
-#     expected_version,
-# ):
-#     mock_get.return_value.json.return_value = {
-#         "releases": {"1.2.3": None, "2.3.4": None, "0.1.0": None}
-#     }
-#     if platform_helper_version_file_version:
-#         Path(PLATFORM_HELPER_VERSION_FILE).write_text("0.0.1")
-
-#     platform_config = {
-#         "application": "my-app",
-#         "environments": {"dev": None},
-#         "environment_pipelines": {
-#             "main": {"slack_channel": "abc", "trigger_on_push": True, "environments": {"dev": None}}
-#         },
-#     }
-#     if platform_config_default_version:
-#         platform_config["default_versions"] = {"platform-helper": platform_config_default_version}
-
-#     Path(PLATFORM_CONFIG_FILE).write_text(yaml.dump(platform_config))
-
-#     version_status = PlatformHelperVersioning().get_version_status()
-#     required_version = PlatformHelperVersioning()
-
-#     result = required_version._resolve_required_version(version_status=version_status)
-
-#     assert result == expected_version
-
-
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
     def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
         self,
