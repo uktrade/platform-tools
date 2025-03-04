@@ -13,10 +13,7 @@ class ClickIOProvider:
     def error(self, message: str):
         click.secho(f"Error: {message}", fg="red")
 
-    def info(
-        self,
-        message: str,
-    ):
+    def info(self, message: str):
         click.secho(message)
 
     def input(self, message: str) -> str:
