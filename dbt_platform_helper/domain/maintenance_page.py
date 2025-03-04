@@ -222,7 +222,7 @@ class MaintenancePage:
                 # add to accumilating list of conditions for maintenace page rule
                 maintenance_page_host_header_conditions.extend(service_conditions)
 
-            self.io.debug(
+            self.io.info(
                 f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
             )
 
@@ -279,7 +279,7 @@ class MaintenancePage:
         )
 
         # keep track of rules deleted
-        deletes = {"MaintenancePage": 0}
+        deleted_rules = {"MaintenancePage": 0}
         for name in ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]:
             deleted_list = self.load_balancer.delete_listener_rule_by_tags(tag_descriptions, name)
 
@@ -287,25 +287,25 @@ class MaintenancePage:
             for deleted_rule in deleted_list:
                 tags = {t["Key"]: t["Value"] for t in deleted_rule["Tags"]}
                 if "service" in tags:
-                    if tags["service"] not in deletes:
-                        deletes[tags["service"]] = {
+                    if tags["service"] not in deleted_rules:
+                        deleted_rules[tags["service"]] = {
                             "AllowedIps": 0,
                             "BypassIpFilter": 0,
                             "AllowedSourceIps": 0,
                         }
-                    deletes[tags["service"]][name] += 1
+                    deleted_rules[tags["service"]][name] += 1
                 elif tags.get("name") == "MaintenancePage":
-                    deletes["MaintenancePage"] += 1
+                    deleted_rules["MaintenancePage"] += 1
 
             if (
                 fail_when_not_deleted
                 and name == "MaintenancePage"
-                and deletes["MaintenancePage"] == 0
+                and deleted_rules["MaintenancePage"] == 0
             ):
                 raise ListenerRuleNotFoundException()
 
         self.io.warn(
-            f"Rules deleted by type and grouped by service: {deletes}",
+            f"Rules deleted by type and grouped by service: {deleted_rules}",
         )
 
     def __remove_maintenance_page(self, listener_arn: str) -> dict[str, bool]:

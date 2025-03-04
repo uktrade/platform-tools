@@ -766,15 +766,11 @@ class TestActivateMethod:
         maintenance_mocks.io.info.assert_has_calls(
             [
                 call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
+                ),
+                call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
-                ),
-            ]
-        )
-        maintenance_mocks.io.debug.assert_has_calls(
-            [
-                call(
-                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
                 ),
             ]
         )
@@ -1159,16 +1155,11 @@ class TestActivateMethod:
         maintenance_mocks.io.info.assert_has_calls(
             [
                 call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
+                ),
+                call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
-                ),
-            ]
-        )
-
-        maintenance_mocks.io.debug.assert_has_calls(
-            [
-                call(
-                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
                 ),
             ]
         )
@@ -1238,16 +1229,11 @@ class TestActivateMethod:
         maintenance_mocks.io.info.assert_has_calls(
             [
                 call(
+                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
+                ),
+                call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
-                ),
-            ]
-        )
-
-        maintenance_mocks.io.debug.assert_has_calls(
-            [
-                call(
-                    "\nUse a browser plugin to add `Bypass-Key` header with value abc to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/"
                 ),
             ]
         )
