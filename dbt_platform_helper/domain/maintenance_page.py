@@ -272,7 +272,7 @@ class MaintenancePage:
 
     def __clean_up_maintenance_page_rules(
         self, listener_arn: str, fail_when_not_deleted: bool = False
-    ):
+    ) -> None:
 
         tag_descriptions = self.load_balancer.get_rules_tag_descriptions_by_listener_arn(
             listener_arn
