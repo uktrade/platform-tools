@@ -14,6 +14,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
@@ -46,11 +47,13 @@ class Copilot:
         parameter_provider: ParameterStore,
         file_provider: FileProvider,
         copilot_templating: CopilotTemplating,
+        io: ClickIOProvider,
     ):
         self.config_provider = config_provider
         self.parameter_provider = parameter_provider
         self.file_provider = file_provider
         self.copilot_templating = copilot_templating
+        self.io = io
 
     def list_copilot_local_environments(self):
         return [
@@ -75,6 +78,8 @@ class Copilot:
             if self.is_service(path)
         ]
 
+    # TODO - some of the validations in here seem a bit moot, can we rely on the validtions from load_and_validate instead?
+    # As a minimum i'd like to see this shifted to the config_provider or atlesat the bit that is concerned with reading the config file to make for easier mocking...
     def _validate_and_normalise_extensions_config(self, config_file, key_in_config_file=None):
         """Load a config file, validate it against the extensions schemas and
         return the normalised config dict."""
@@ -120,6 +125,7 @@ class Copilot:
         svc_names = self.list_copilot_local_services()
 
         if not env_names:
+            print("booo!")
             click.echo(
                 click.style(f"No environments found in ./copilot/environments; exiting", fg="red")
             )
