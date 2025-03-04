@@ -19,6 +19,4 @@ class KMSProvider:
             dict: A dictionary containing metadata about the specified KMS key.
         """
         # The kms client can take an alias name as the KeyId
-        response = self.kms_client.describe_key(KeyId=alias_name)
-
-        return response
+        return self.kms_client.describe_key(KeyId=alias_name)
