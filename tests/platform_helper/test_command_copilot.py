@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -7,6 +7,8 @@ from dbt_platform_helper.commands.copilot import make_addons
 
 
 class TestMakeAddonsCommand:
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @patch("dbt_platform_helper.commands.copilot.Copilot")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
@@ -19,22 +21,34 @@ class TestMakeAddonsCommand:
         mock_config_validator,
         mock_config_provider,
         mock_copilot,
+        mock_kms_provider,
+        mock_get_aws_session_or_abort,
     ):
+
+        mock_session = MagicMock()
+        mock_kms_client = MagicMock()
+        mock_session.client.return_value = mock_kms_client
+        mock_get_aws_session_or_abort.return_value = mock_session
         mock_copilot_instance = mock_copilot.return_value
-        mock_config_validator.return_value = Mock()
 
         result = CliRunner().invoke(make_addons, [])
 
-        assert result.exit_code == 0
+        mock_get_aws_session_or_abort.assert_called_once()
+        mock_kms_provider.assert_called_once_with(mock_kms_client)
         mock_config_validator.assert_called_once()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
-        mock_copilot.assert_called_with(
+
+        assert result.exit_code == 0
+        mock_copilot.assert_called_once_with(
             mock_config_provider.return_value,
             mock_file_provider.return_value,
             mock_copilot_templating.return_value,
+            mock_kms_provider.return_value,
         )
         mock_copilot_instance.make_addons.assert_called_once()
 
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @patch("dbt_platform_helper.commands.copilot.Copilot")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
@@ -49,20 +63,29 @@ class TestMakeAddonsCommand:
         mock_config_validator,
         mock_config_provider,
         mock_copilot,
+        mock_kms_provider,
+        mock_get_aws_session_or_abort,
     ):
+        mock_session = MagicMock()
+        mock_kms_client = MagicMock()
+        mock_session.client.return_value = mock_kms_client
+        mock_get_aws_session_or_abort.return_value = mock_session
         mock_copilot_instance = mock_copilot.return_value
-
         mock_copilot_instance.make_addons.side_effect = Exception("Something bad happened")
 
         result = CliRunner().invoke(make_addons, [])
 
-        assert result.exit_code == 1
+        mock_get_aws_session_or_abort.assert_called_once()
+        mock_kms_provider.assert_called_once_with(mock_kms_client)
         mock_config_validator.assert_called_once()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
+
+        assert result.exit_code == 1
         mock_copilot.assert_called_with(
             mock_config_provider.return_value,
             mock_file_provider.return_value,
             mock_copilot_templating.return_value,
+            mock_kms_provider.return_value,
         )
         mock_copilot_instance.make_addons.assert_called_once()
         mock_click.assert_called_with("Error: Something bad happened", err=True, fg="red")
