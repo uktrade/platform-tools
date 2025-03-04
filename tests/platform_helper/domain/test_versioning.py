@@ -279,7 +279,6 @@ class TestPlatformHelperVersioningGetRequiredVersion:
             skip_versioning_checks=Mock(return_value=False),
         ).get_required_version("bogus_pipeline_not_in_config")
 
-
         assert result == default_version
 
 
