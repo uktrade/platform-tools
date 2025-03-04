@@ -46,7 +46,7 @@ class ConfigValidator:
             if extension.get("type") == extension_type
         ]
 
-        # In this format so it can be monkey patched initially via mock_get_or_update_cache fixture
+        # In this format so it can be monkey patched initially via mock_get_data fixture
         cache_provider = CacheProvider()
         data_retrieval_strategy = GetAWSVersionStrategy(aws_provider)
         supported_extension_versions = cache_provider.get_data(data_retrieval_strategy)
