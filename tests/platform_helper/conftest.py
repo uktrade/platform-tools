@@ -14,7 +14,7 @@ from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.cache import CacheProvider
+from dbt_platform_helper.providers.cache import Cache
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -794,4 +794,4 @@ def mock_get_data(request, monkeypatch):
     def mock_return_value(self, strategy):
         return ["6.2", "7.0", "7.1"]
 
-    monkeypatch.setattr(CacheProvider, "get_data", mock_return_value)
+    monkeypatch.setattr(Cache, "get_data", mock_return_value)

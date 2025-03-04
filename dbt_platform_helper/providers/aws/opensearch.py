@@ -1,7 +1,7 @@
 import boto3
 
 
-class OpensearchProvider:
+class Opensearch:
 
     def __init__(self, client: boto3.client):
         self.client = client

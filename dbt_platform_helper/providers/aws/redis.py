@@ -1,7 +1,7 @@
 import boto3
 
 
-class RedisProvider:
+class Redis:
 
     def __init__(self, client: boto3.client):
         self.client = client

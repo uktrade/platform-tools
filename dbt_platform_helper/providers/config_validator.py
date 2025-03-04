@@ -3,9 +3,9 @@ from typing import Callable
 import boto3
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
-from dbt_platform_helper.providers.aws.redis import RedisProvider
-from dbt_platform_helper.providers.cache import CacheProvider
+from dbt_platform_helper.providers.aws.opensearch import Opensearch
+from dbt_platform_helper.providers.aws.redis import Redis
+from dbt_platform_helper.providers.cache import Cache
 from dbt_platform_helper.providers.cache import GetAWSVersionStrategy
 from dbt_platform_helper.providers.io import ClickIOProvider
 
@@ -47,7 +47,7 @@ class ConfigValidator:
         ]
 
         # In this format so it can be monkey patched initially via mock_get_data fixture
-        cache_provider = CacheProvider()
+        cache_provider = Cache()
         data_retrieval_strategy = GetAWSVersionStrategy(aws_provider)
         supported_extension_versions = cache_provider.get_data(data_retrieval_strategy)
         extensions_with_invalid_version = []
@@ -79,7 +79,7 @@ class ConfigValidator:
     def validate_supported_redis_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            aws_provider=RedisProvider(boto3.client("elasticache")),
+            aws_provider=Redis(boto3.client("elasticache")),
             extension_type="redis",  # TODO this is information which can live in the RedisProvider
             version_key="engine",  # TODO this is information which can live in the RedisProvider
         )
@@ -87,7 +87,7 @@ class ConfigValidator:
     def validate_supported_opensearch_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            aws_provider=OpensearchProvider(boto3.client("opensearch")),
+            aws_provider=Opensearch(boto3.client("opensearch")),
             extension_type="opensearch",  # TODO this is information which can live in the OpensearchProvider
             version_key="engine",  # TODO this is information which can live in the OpensearchProvider
         )

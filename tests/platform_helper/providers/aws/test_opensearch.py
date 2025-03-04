@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
 
-from dbt_platform_helper.providers.aws.opensearch import OpensearchProvider
+from dbt_platform_helper.providers.aws.opensearch import Opensearch
 
 
 def test_opensearch_provider_get_reference():
     opensearch_client = MagicMock()
-    opensearch_provider = OpensearchProvider(opensearch_client)
+    opensearch_provider = Opensearch(opensearch_client)
 
     reference = opensearch_provider.get_reference()
 
@@ -25,7 +25,7 @@ def test_opensearch_provider_get_supported_versions():
             "Elasticsearch_7.9",
         ]
     }
-    opensearch_provider = OpensearchProvider(opensearch_client)
+    opensearch_provider = Opensearch(opensearch_client)
 
     supported_opensearch_versions_response = opensearch_provider.get_supported_versions()
 

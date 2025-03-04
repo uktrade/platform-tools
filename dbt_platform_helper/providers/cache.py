@@ -28,7 +28,7 @@ class GetAWSVersionStrategy(DataRetrievalStrategy):
         return self.client_provider.get_reference()
 
 
-class CacheProvider:
+class Cache:
     def __init__(
         self,
         file_provider: YamlFileProvider = None,

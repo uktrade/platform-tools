@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
 
-from dbt_platform_helper.providers.aws.redis import RedisProvider
+from dbt_platform_helper.providers.aws.redis import Redis
 
 
 def test_redis_provider_get_reference():
     elasticache_client = MagicMock()
-    redis_provider = RedisProvider(elasticache_client)
+    redis_provider = Redis(elasticache_client)
 
     reference = redis_provider.get_reference()
 
@@ -34,7 +34,7 @@ def test_redis_provider_get_supported_versions():
         ]
     }
 
-    redis_provider = RedisProvider(elasticache_client)
+    redis_provider = Redis(elasticache_client)
 
     supported_versions_response = redis_provider.get_supported_versions()
 
