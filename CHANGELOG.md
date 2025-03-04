@@ -1,5 +1,13 @@
 # Changelog
 
+## [13.1.2](https://github.com/uktrade/platform-tools/compare/13.1.1...13.1.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* Fix Vulnerable OpenSSL included in cryptography wheels ([#786](https://github.com/uktrade/platform-tools/issues/786)) ([b6f1cb6](https://github.com/uktrade/platform-tools/commit/b6f1cb615fe8f7d59f53cb4330fd16550f710489))
+* Fix load balancer tag description limit by chunking ([#784](https://github.com/uktrade/platform-tools/issues/784)) ([3ee9eae](https://github.com/uktrade/platform-tools/commit/3ee9eaece39e1483baf41e6b3d628ca143d76368))
+
 ## [13.1.1](https://github.com/uktrade/platform-tools/compare/13.1.0...13.1.1) (2025-02-21)
 
 
