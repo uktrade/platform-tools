@@ -479,11 +479,11 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
     ],
 )
 def test_validate_extension_supported_versions(config, expected_response, capsys):
-    mock_redis_provider = MagicMock()
+    mock_provider = MagicMock()
 
     ConfigValidator()._validate_extension_supported_versions(
         config=config,
-        aws_provider=mock_redis_provider,
+        aws_provider=mock_provider,
         extension_type="redis",
         version_key="engine",
     )
