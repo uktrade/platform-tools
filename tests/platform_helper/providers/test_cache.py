@@ -131,7 +131,7 @@ def test_get_data():
     cache_provider._read_from_cache.assert_not_called()
 
 
-@pytest.mark.skip_get_data
+@pytest.mark.skip_mock_get_data
 def test_get_data_no_cache_refresh():
     file_provider_mock = MagicMock()
     cache_provider = CacheProvider(file_provider=file_provider_mock)
