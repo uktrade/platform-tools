@@ -13,7 +13,9 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationException
+from dbt_platform_helper.utils.application import (
+    ApplicationEnvironmentNotFoundException,
+)
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -151,7 +153,7 @@ class Codebase:
 
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundException(env)
+            raise ApplicationEnvironmentNotFoundException(application.name, env)
 
         self.check_image_exists(session, application, codebase, commit)
 
@@ -240,13 +242,6 @@ class Codebase:
 class ApplicationDeploymentNotTriggered(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(f"""Your deployment for {codebase} was not triggered.""")
-
-
-class ApplicationEnvironmentNotFoundException(ApplicationException):
-    def __init__(self, environment: str):
-        super().__init__(
-            f"""The environment "{environment}" either does not exist or has not been deployed."""
-        )
 
 
 class NotInCodeBaseRepositoryException(PlatformException):

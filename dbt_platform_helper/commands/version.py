@@ -1,9 +1,9 @@
 import click
 
+from dbt_platform_helper.domain.versioning import RequiredVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.click import ClickDocOptGroup
-from dbt_platform_helper.utils.versioning import RequiredVersion
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)

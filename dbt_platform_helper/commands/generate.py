@@ -3,8 +3,8 @@ import click
 
 from dbt_platform_helper.commands.copilot import make_addons
 from dbt_platform_helper.commands.pipeline import generate as pipeline_generate
+from dbt_platform_helper.domain.versioning import RequiredVersion
 from dbt_platform_helper.utils.click import ClickDocOptCommand
-from dbt_platform_helper.utils.versioning import RequiredVersion
 
 
 @click.command(cls=ClickDocOptCommand)
