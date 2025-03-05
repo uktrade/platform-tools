@@ -403,7 +403,6 @@ class TestMakeAddonsCommand:
             path = Path("copilot", f)
             assert not path.exists(), f"{path} should not exist"
 
-
     @mock_aws
     def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -579,7 +578,6 @@ class TestMakeAddonsCommand:
         assert "Names cannot be suffixed '-s3alias'" in result.output
         assert "Names cannot contain two adjacent periods" in result.output
         assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
-
 
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.KMSProvider")
