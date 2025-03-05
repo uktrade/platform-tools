@@ -13,6 +13,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.kms import KMSProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -43,10 +44,12 @@ class Copilot:
         config_provider: ConfigProvider,
         file_provider: FileProvider,
         copilot_templating: CopilotTemplating,
+        kms_provider: KMSProvider,
     ):
         self.config_provider = config_provider
         self.file_provider = file_provider
         self.copilot_templating = copilot_templating
+        self.kms_provider = kms_provider
 
     def list_copilot_local_environments(self):
         return [

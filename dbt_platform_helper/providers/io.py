@@ -7,6 +7,9 @@ class ClickIOProvider:
     def warn(self, message: str):
         click.secho(message, fg="magenta")
 
+    def debug(self, message: str):
+        click.secho(message, fg="green")
+
     def error(self, message: str):
         click.secho(f"Error: {message}", fg="red")
 

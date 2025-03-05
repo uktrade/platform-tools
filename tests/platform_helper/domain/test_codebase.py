@@ -42,6 +42,14 @@ class CodebaseMocks:
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
         self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
+        self.get_image_build_project = kwargs.get(
+            "get_image_build_project",
+            Mock(return_value="test-application-application-codebase-image-build"),
+        )
+        self.get_manual_release_pipeline = kwargs.get(
+            "get_manual_release_pipeline",
+            Mock(return_value="test-application-application-manual-release"),
+        )
         self.run_subprocess = kwargs.get("run_subprocess", Mock())
         self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
 
@@ -50,6 +58,8 @@ class CodebaseMocks:
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
             "check_image_exists": self.check_image_exists,
+            "get_image_build_project": self.get_image_build_project,
+            "get_manual_release_pipeline": self.get_manual_release_pipeline,
             "io": self.io,
             "run_subprocess": self.run_subprocess,
             "check_if_commit_exists": self.check_if_commit_exists,
@@ -223,7 +233,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     codebase.deploy("test-application", "development", "application", "ab1c23d")
 
     client.start_pipeline_execution.assert_called_with(
-        name="test-application-application-manual-release-pipeline",
+        name="test-application-application-manual-release",
         variables=[
             {"name": "ENVIRONMENT", "value": "development"},
             {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
@@ -234,7 +244,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         [
             call(
                 'You are about to deploy "test-application" for "application" with commit '
-                '"ab1c23d" to the "development" environment using the "test-application-application-manual-release-pipeline" deployment pipeline. Do you want to continue?'
+                '"ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -243,7 +253,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         [
             call(
                 "Your deployment has been triggered. Check your build progress in the AWS Console: "
-                "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/test-application-application-manual-release-pipeline/executions/0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
+                "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/test-application-application-manual-release/executions/0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
             )
         ]
     )
@@ -313,7 +323,7 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with commit "ab1c23d" to the "development" environment using the "test-application-application-manual-release-pipeline" deployment pipeline. Do you want to continue?'
+                'You are about to deploy "test-application" for "application" with commit "ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
