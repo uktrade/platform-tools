@@ -48,10 +48,9 @@ class PlatformHelperVersioning:
         self.config_provider = config_provider
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
-        if skip_versioning_checks is None:
-            self.skip_versioning_checks = skip_version_checks()
-        else:
-            self.skip_versioning_checks = skip_versioning_checks
+        self.skip_versioning_checks = (
+            skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
+        )
 
     def get_required_version(self, pipeline=None):
         version_status = self._get_version_status()
