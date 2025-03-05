@@ -13,8 +13,8 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
-from dbt_platform_helper.providers.version import LocalVersionProvider
-from dbt_platform_helper.providers.version import LocalVersionProviderException
+from dbt_platform_helper.providers.version import InstalledVersionProvider
+from dbt_platform_helper.providers.version import InstalledVersionProviderException
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
@@ -41,7 +41,7 @@ class PlatformHelperVersioning:
         ),
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
-        local_version_provider: LocalVersionProvider = LocalVersionProvider(),
+        local_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: Callable[[], bool] = None,
     ):
         self.io = io
@@ -106,7 +106,7 @@ class PlatformHelperVersioning:
             locally_installed_version = self.local_version_provider.get_installed_tool_version(
                 "dbt-platform-helper"
             )
-        except LocalVersionProviderException:
+        except InstalledVersionProviderException:
             locally_installed_version = None
 
         latest_release = self.pypi_provider.get_latest_version("dbt-platform-helper")
