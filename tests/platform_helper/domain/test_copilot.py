@@ -403,7 +403,6 @@ class TestMakeAddonsCommand:
             path = Path("copilot", f)
             assert not path.exists(), f"{path} should not exist"
 
-
     @mock_aws
     def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
