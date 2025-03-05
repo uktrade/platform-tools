@@ -7,7 +7,7 @@ from dbt_platform_helper.providers.aws.interfaces import AwsGetVersionProtocol
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
-class DataRetrievalStrategy(ABC):
+class GetDataStrategy(ABC):
     @abstractmethod
     def retrieve_fresh_data(self):
         pass
@@ -17,7 +17,7 @@ class DataRetrievalStrategy(ABC):
         pass
 
 
-class GetAWSVersionStrategy(DataRetrievalStrategy):
+class GetAWSVersionStrategy(GetDataStrategy):
     def __init__(self, client_provider: AwsGetVersionProtocol):
         self.client_provider = client_provider
 
@@ -36,7 +36,7 @@ class Cache:
         self._cache_file = ".platform-helper-config-cache.yml"
         self.file_provider = file_provider or YamlFileProvider
 
-    def get_data(self, strategy: DataRetrievalStrategy):
+    def get_data(self, strategy: GetDataStrategy):
         """Main method to retrieve caching data using the client-specific
         strategy."""
         cache_key = strategy.get_resource_identifier()
