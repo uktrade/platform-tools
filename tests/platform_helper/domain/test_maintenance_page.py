@@ -9,7 +9,6 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.maintenance_page import *
 from dbt_platform_helper.utils.application import Application
 

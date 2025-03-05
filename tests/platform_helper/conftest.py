@@ -89,6 +89,13 @@ environments:
     )
 
 
+@pytest.fixture()
+def no_skipping_version_checks():
+    with patch("dbt_platform_helper.domain.versioning.skip_version_checks") as skip_version_checks:
+        skip_version_checks.return_value = False
+        yield skip_version_checks
+
+
 @pytest.fixture(scope="function", autouse=True)
 def mock_application():
     with patch(

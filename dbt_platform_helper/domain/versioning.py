@@ -1,11 +1,29 @@
+import os
+from collections.abc import Callable
+
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMinorVersionException,
 )
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.utils.files import running_as_installed_package
+from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
+from dbt_platform_helper.providers.version import LocalVersionProvider
+from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
+
+
+def running_as_installed_package():
+    return "site-packages" in __file__
+
+
+def skip_version_checks():
+    return not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
@@ -13,14 +31,113 @@ class PlatformHelperVersionNotFoundException(PlatformException):
         super().__init__(f"""Platform helper version could not be resolved.""")
 
 
-class RequiredVersion:
-    def __init__(self, io=None, platform_helper_versioning=None):
-        self.io = io or ClickIOProvider()
-        self.platform_helper_versioning = platform_helper_versioning or PlatformHelperVersioning(
-            io=self.io
+class PlatformHelperVersioning:
+    def __init__(
+        self,
+        io: ClickIOProvider = ClickIOProvider(),
+        version_file_version_provider: DeprecatedVersionFileVersionProvider = DeprecatedVersionFileVersionProvider(
+            YamlFileProvider
+        ),
+        config_provider: ConfigProvider = ConfigProvider(),
+        pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
+        local_version_provider: LocalVersionProvider = LocalVersionProvider(),
+        skip_versioning_checks: Callable[[], bool] = None,
+    ):
+        self.io = io
+        self.version_file_version_provider = version_file_version_provider
+        self.config_provider = config_provider
+        self.pypi_provider = pypi_provider
+        self.local_version_provider = local_version_provider
+        self.skip_versioning_checks = (
+            skip_versioning_checks() if skip_versioning_checks else skip_version_checks()
         )
 
-    def get_required_platform_helper_version(
+    def get_required_version(self, pipeline=None):
+        version_status = self._get_version_status()
+        self.io.process_messages(version_status.validate())
+        required_version = self._resolve_required_version(pipeline, version_status)
+        self.io.info(required_version)
+        return required_version
+
+    # Used in the generate command
+    def check_platform_helper_version_mismatch(self):
+        if self.skip_versioning_checks:
+            return
+
+        version_status = self._get_version_status()
+        self.io.process_messages(version_status.validate())
+
+        required_version = SemanticVersion.from_string(
+            self._resolve_required_version(version_status=version_status)
+        )
+
+        if not version_status.local == required_version:
+            message = (
+                f"WARNING: You are running platform-helper v{version_status.local} against "
+                f"v{required_version} specified for the project."
+            )
+            self.io.warn(message)
+
+    def check_if_needs_update(self):
+        if self.skip_versioning_checks:
+            return
+
+        version_status = self._get_version_status(include_project_versions=False)
+
+        message = (
+            f"You are running platform-helper v{version_status.local}, upgrade to "
+            f"v{version_status.latest} by running run `pip install "
+            "--upgrade dbt-platform-helper`."
+        )
+
+        try:
+            version_status.local.validate_compatibility_with(version_status.latest)
+        except IncompatibleMajorVersionException:
+            self.io.error(message)
+        except IncompatibleMinorVersionException:
+            self.io.warn(message)
+
+    def _get_version_status(
+        self,
+        include_project_versions: bool = True,
+    ) -> PlatformHelperVersionStatus:
+        locally_installed_version = self.local_version_provider.get_installed_tool_version(
+            "dbt-platform-helper"
+        )
+
+        latest_release = self.pypi_provider.get_latest_version("dbt-platform-helper")
+
+        if not include_project_versions:
+            return PlatformHelperVersionStatus(
+                local=locally_installed_version,
+                latest=latest_release,
+            )
+
+        platform_config_default, pipeline_overrides = None, {}
+
+        platform_config = self.config_provider.load_unvalidated_config_file()
+
+        if platform_config:
+            platform_config_default = SemanticVersion.from_string(
+                platform_config.get("default_versions", {}).get("platform-helper")
+            )
+
+            pipeline_overrides = {
+                name: pipeline.get("versions", {}).get("platform-helper")
+                for name, pipeline in platform_config.get("environment_pipelines", {}).items()
+                if pipeline.get("versions", {}).get("platform-helper")
+            }
+        out = PlatformHelperVersionStatus(
+            local=locally_installed_version,
+            latest=latest_release,
+            deprecated_version_file=self.version_file_version_provider.get_required_version(),
+            platform_config_default=platform_config_default,
+            pipeline_overrides=pipeline_overrides,
+        )
+
+        return out
+
+    def _resolve_required_version(
         self, pipeline: str = None, version_status: PlatformHelperVersionStatus = None
     ) -> str:
         pipeline_version = version_status.pipeline_overrides.get(pipeline)
@@ -39,29 +156,3 @@ class RequiredVersion:
             raise PlatformHelperVersionNotFoundException
 
         return out
-
-    def get_required_version(self, pipeline=None):
-        version_status = self.platform_helper_versioning.get_status()
-        self.io.process_messages(version_status.validate())
-        required_version = self.get_required_platform_helper_version(pipeline, version_status)
-        self.io.info(required_version)
-        return required_version
-
-    # Used in the generate command
-    def check_platform_helper_version_mismatch(self):
-        if not running_as_installed_package():
-            return
-
-        version_status = self.platform_helper_versioning.get_status()
-        self.io.process_messages(version_status.validate())
-
-        required_version = SemanticVersion.from_string(
-            self.get_required_platform_helper_version(version_status=version_status)
-        )
-
-        if not version_status.local == required_version:
-            message = (
-                f"WARNING: You are running platform-helper v{version_status.local} against "
-                f"v{required_version} specified for the project."
-            )
-            self.io.warn(message)

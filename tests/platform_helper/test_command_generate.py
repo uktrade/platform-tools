@@ -23,7 +23,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
 
 @patch("click.secho")
 @patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.PlatformHelperVersioning.get_status",
+    "dbt_platform_helper.domain.versioning.PlatformHelperVersioning._get_version_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(
             local=SemanticVersion(1, 0, 1),
@@ -31,19 +31,10 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
         )
     ),
 )
-# TODO running_as_installed_package will be consolidated to a single place
-@patch(
-    "dbt_platform_helper.providers.platform_helper_versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
-@patch(
-    "dbt_platform_helper.domain.versioning.running_as_installed_package",
-    new=Mock(return_value=True),
-)
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=True))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=True))
 def test_platform_helper_generate_shows_a_warning_when_version_is_different_than_on_file(
-    mock_secho, tmp_path
+    mock_secho, tmp_path, no_skipping_version_checks
 ):
     CliRunner().invoke(platform_helper_generate)
 
@@ -62,7 +53,7 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
 
 
 @patch(
-    "dbt_platform_helper.utils.versioning.get_platform_helper_version_status",
+    "dbt_platform_helper.utils.tool_versioning.get_platform_helper_version_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
     ),
