@@ -40,14 +40,14 @@ class PlatformHelperVersioning:
         ),
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
-        local_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
+        installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
     ):
         self.io = io
         self.version_file_version_provider = version_file_version_provider
         self.config_provider = config_provider
         self.pypi_provider = pypi_provider
-        self.local_version_provider = local_version_provider
+        self.installed_version_provider = installed_version_provider
         self.skip_versioning_checks = (
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
         )
@@ -71,9 +71,9 @@ class PlatformHelperVersioning:
             self._resolve_required_version(version_status=version_status)
         )
 
-        if not version_status.local == required_version:
+        if not version_status.installed == required_version:
             message = (
-                f"WARNING: You are running platform-helper v{version_status.local} against "
+                f"WARNING: You are running platform-helper v{version_status.installed} against "
                 f"v{required_version} specified for the project."
             )
             self.io.warn(message)
@@ -85,13 +85,13 @@ class PlatformHelperVersioning:
         version_status = self._get_version_status(include_project_versions=False)
 
         message = (
-            f"You are running platform-helper v{version_status.local}, upgrade to "
+            f"You are running platform-helper v{version_status.installed}, upgrade to "
             f"v{version_status.latest} by running run `pip install "
             "--upgrade dbt-platform-helper`."
         )
 
         try:
-            version_status.local.validate_compatibility_with(version_status.latest)
+            version_status.installed.validate_compatibility_with(version_status.latest)
         except IncompatibleMajorVersionException:
             self.io.error(message)
         except IncompatibleMinorVersionException:
@@ -102,7 +102,7 @@ class PlatformHelperVersioning:
         include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
         try:
-            locally_installed_version = self.local_version_provider.get_installed_tool_version(
+            locally_installed_version = self.installed_version_provider.get_installed_tool_version(
                 "dbt-platform-helper"
             )
         except InstalledVersionProviderException:
@@ -112,7 +112,7 @@ class PlatformHelperVersioning:
 
         if not include_project_versions:
             return PlatformHelperVersionStatus(
-                local=locally_installed_version,
+                installed=locally_installed_version,
                 latest=latest_release,
             )
 
@@ -131,7 +131,7 @@ class PlatformHelperVersioning:
                 if pipeline.get("versions", {}).get("platform-helper")
             }
         out = PlatformHelperVersionStatus(
-            local=locally_installed_version,
+            installed=locally_installed_version,
             latest=latest_release,
             deprecated_version_file=self.version_file_version_provider.get_required_version(),
             platform_config_default=platform_config_default,

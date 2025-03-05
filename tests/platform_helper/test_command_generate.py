@@ -26,7 +26,7 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
     "dbt_platform_helper.domain.versioning.PlatformHelperVersioning._get_version_status",
     new=Mock(
         return_value=PlatformHelperVersionStatus(
-            local=SemanticVersion(1, 0, 1),
+            installed=SemanticVersion(1, 0, 1),
             deprecated_version_file=SemanticVersion(1, 0, 0),
         )
     ),

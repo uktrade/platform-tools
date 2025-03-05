@@ -26,8 +26,8 @@ class PlatformHelperVersioningMocks:
             "version_file_version_provider", Mock(spec=DeprecatedVersionFileVersionProvider)
         )
         self.pypi_provider = kwargs.get("pypi_provider", Mock(spec=PyPiVersionProvider))
-        self.local_version_provider = kwargs.get(
-            "local_version_provider", Mock(spec=InstalledVersionProvider)
+        self.installed_version_provider = kwargs.get(
+            "installed_version_provider", Mock(spec=InstalledVersionProvider)
         )
         self.skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
 
@@ -37,7 +37,7 @@ class PlatformHelperVersioningMocks:
             "version_file_version_provider": self.version_file_version_provider,
             "config_provider": self.config_provider,
             "pypi_provider": self.pypi_provider,
-            "local_version_provider": self.local_version_provider,
+            "installed_version_provider": self.installed_version_provider,
             "skip_versioning_checks": self.skip_versioning_checks,
         }
 
@@ -49,7 +49,7 @@ def mocks():
 
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
     def test_shows_warning_when_different_than_file_spec(self, mocks):
-        mocks.local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 1
         )
         mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
@@ -63,7 +63,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         )
 
     def test_shows_no_warning_when_same_as_file_spec(self, mocks):
-        mocks.local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 0
         )
         mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
@@ -80,7 +80,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         valid_platform_config,
         mocks,
     ):
-        mocks.local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 1
         )
         mocks.version_file_version_provider.get_required_version.return_value = None
@@ -129,7 +129,7 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
         assert result == pipeline_override_version
 
     def test_errors_if_version_is_not_specified_in_config_or_default_file(self, mocks):
-        mocks.local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 1
         )
         mocks.version_file_version_provider.get_required_version.return_value = None
@@ -313,7 +313,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         self,
         mocks,
     ):
-        mocks.local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 0
         )
         mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
@@ -329,7 +329,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         self,
         mocks,
     ):
-        mocks.local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 0
         )
         mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
@@ -346,6 +346,6 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
 
         PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
-        mocks.local_version_provider.get_installed_tool_version.assert_not_called()
+        mocks.installed_version_provider.get_installed_tool_version.assert_not_called()
         mocks.io.warn.assert_not_called()
         mocks.io.error.assert_not_called()
