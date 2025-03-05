@@ -182,9 +182,12 @@ class MaintenancePage:
                 )
 
                 self.io.debug(
-                    f"""\n#----------------------------------------------------------#\n
-                    # Creating listener rules for service {svc.name.ljust(21, " ")}
-                    #\n#----------------------------------------------------------#\n\n""",
+                    f"""
+#----------------------------------------------------------#
+# Creating listener rules for service {svc.name.ljust(21, " ")}#
+#----------------------------------------------------------#
+
+""",
                 )
 
                 for ip in allowed_ips:
