@@ -355,6 +355,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
+    @mock_aws
     def test_make_addons_removes_old_addons_files(
         self,
         mock_get_session,
@@ -418,6 +419,7 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.files.running_as_installed_package",
         new=Mock(return_value=False),
     )
+    @mock_aws
     def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -432,6 +434,7 @@ class TestMakeAddonsCommand:
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @mock_aws
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
