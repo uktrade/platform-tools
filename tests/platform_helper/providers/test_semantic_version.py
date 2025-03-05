@@ -89,10 +89,7 @@ class TestVersionStatus:
     )
     def test_is_outdated(self, suite):
         local_version, latest_release, expected = suite
-        assert (
-            VersionStatus(local_version=local_version, latest_release=latest_release).is_outdated()
-            == expected
-        )
+        assert VersionStatus(local=local_version, latest=latest_release).is_outdated() == expected
 
     def test_to_string(self):
         result = f"{VersionStatus(SemanticVersion(1, 2, 0), SemanticVersion(1, 2, 3))}"

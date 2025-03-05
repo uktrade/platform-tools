@@ -37,7 +37,8 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
     new=Mock(return_value=True),
 )
 @patch(
-    "dbt_platform_helper.utils.versioning.running_as_installed_package", new=Mock(return_value=True)
+    "dbt_platform_helper.domain.versioning.running_as_installed_package",
+    new=Mock(return_value=True),
 )
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=True))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=True))
