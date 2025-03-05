@@ -39,12 +39,12 @@ class Cache:
     def get_data(self, strategy: DataRetrievalStrategy):
         """Main method to retrieve caching data using the client-specific
         strategy."""
-        resource_reference = strategy.get_resource_identifier()
-        if self._cache_refresh_required(resource_reference):
+        cache_key = strategy.get_resource_identifier()
+        if self._cache_refresh_required(cache_key):
             data = strategy.retrieve_fresh_data()
-            self._update_cache(resource_reference, data)
+            self._update_cache(cache_key, data)
         else:
-            data = self._read_from_cache(resource_reference)
+            data = self._read_from_cache(cache_key)
 
         return data
 
