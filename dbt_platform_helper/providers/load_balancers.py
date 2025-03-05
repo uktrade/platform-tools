@@ -192,15 +192,14 @@ class LoadBalancerProvider:
         rule_name: str,
         priority: int,
         conditions: list,
+        additional_tags: list = [],
     ):
         return self.create_rule(
             listener_arn=listener_arn,
             priority=priority,
             conditions=conditions,
             actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
-            tags=[
-                {"Key": "name", "Value": rule_name},
-            ],
+            tags=[{"Key": "name", "Value": rule_name}, *additional_tags],
         )
 
     def create_header_rule(
@@ -212,6 +211,7 @@ class LoadBalancerProvider:
         rule_name: str,
         priority: int,
         conditions: list,
+        additional_tags: list = [],
     ):
 
         combined_conditions = [
@@ -222,11 +222,16 @@ class LoadBalancerProvider:
         ] + conditions
 
         self.create_forward_rule(
-            listener_arn, target_group_arn, rule_name, priority, combined_conditions
+            listener_arn,
+            target_group_arn,
+            rule_name,
+            priority,
+            combined_conditions,
+            additional_tags,
         )
 
-        self.io.info(
-            f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        self.io.debug(
+            f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\nIf request header {header_name} contains one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.\n\n",
         )
 
     def create_source_ip_rule(
@@ -237,6 +242,7 @@ class LoadBalancerProvider:
         rule_name: str,
         priority: int,
         conditions: list,
+        additional_tags: list = [],
     ):
         combined_conditions = [
             {
@@ -246,24 +252,29 @@ class LoadBalancerProvider:
         ] + conditions
 
         self.create_forward_rule(
-            listener_arn, target_group_arn, rule_name, priority, combined_conditions
+            listener_arn,
+            target_group_arn,
+            rule_name,
+            priority,
+            combined_conditions,
+            additional_tags,
         )
 
-        self.io.info(
-            f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.",
+        self.io.debug(
+            f"Creating listener rule {rule_name} for HTTPS Listener with arn {listener_arn}.\nIf request source ip matches one of the values {values}, the request will be forwarded to target group with arn {target_group_arn}.\n\n",
         )
 
-    def delete_listener_rule_by_tags(self, tag_descriptions: list, tag_name: str) -> str:
-        current_rule_arn = None
+    def delete_listener_rule_by_tags(self, tag_descriptions: list, tag_name: str) -> list:
+        deleted_rules = []
 
         for description in tag_descriptions:
             tags = {t["Key"]: t["Value"] for t in description["Tags"]}
             if tags.get("name") == tag_name:
-                current_rule_arn = description["ResourceArn"]
-                if current_rule_arn:
-                    self.evlb_client.delete_rule(RuleArn=current_rule_arn)
+                if description["ResourceArn"]:
+                    self.evlb_client.delete_rule(RuleArn=description["ResourceArn"])
+                    deleted_rules.append(description)
 
-        return current_rule_arn
+        return deleted_rules
 
 
 class LoadBalancerException(PlatformException):

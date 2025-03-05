@@ -101,12 +101,9 @@ class PlatformHelperVersioning:
         self,
         include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
-        try:
-            locally_installed_version = self.installed_version_provider.get_installed_tool_version(
+        locally_installed_version = self.installed_version_provider.get_installed_tool_version(
                 "dbt-platform-helper"
             )
-        except InstalledVersionProviderException:
-            locally_installed_version = None
 
         latest_release = self.pypi_provider.get_latest_version("dbt-platform-helper")
 
