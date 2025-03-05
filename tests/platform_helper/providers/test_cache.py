@@ -159,11 +159,11 @@ def test_get_data_no_cache_refresh():
 
 
 def test_get_aws_version_strategy():
-    client_proivder = MagicMock()
-    client_proivder.get_supported_versions.return_value = ["doesnt", "matter"]
-    client_proivder.get_reference.return_value = "doesnt-matter"
+    client_provider = MagicMock()
+    client_provider.get_supported_versions.return_value = ["doesnt", "matter"]
+    client_provider.get_reference.return_value = "doesnt-matter"
 
-    strategy = GetAWSVersionStrategy(client_proivder)
+    strategy = GetAWSVersionStrategy(client_provider)
 
     assert strategy.retrieve_fresh_data() == ["doesnt", "matter"]
     assert strategy.get_resource_identifier() == "doesnt-matter"
