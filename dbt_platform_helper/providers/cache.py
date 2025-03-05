@@ -13,7 +13,7 @@ class GetDataStrategy(ABC):
         pass
 
     @abstractmethod
-    def get_resource_identifier(self):
+    def get_data_identifier(self):
         pass
 
 
@@ -24,7 +24,7 @@ class GetAWSVersionStrategy(GetDataStrategy):
     def retrieve_fresh_data(self):
         return self.client_provider.get_supported_versions()
 
-    def get_resource_identifier(self):
+    def get_data_identifier(self):
         return self.client_provider.get_reference()
 
 
@@ -39,7 +39,7 @@ class Cache:
     def get_data(self, strategy: GetDataStrategy):
         """Main method to retrieve caching data using the client-specific
         strategy."""
-        cache_key = strategy.get_resource_identifier()
+        cache_key = strategy.get_data_identifier()
         if self._cache_refresh_required(cache_key):
             data = strategy.retrieve_fresh_data()
             self._update_cache(cache_key, data)

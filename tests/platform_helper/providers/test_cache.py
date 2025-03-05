@@ -115,7 +115,7 @@ def test_get_data():
     file_provider_mock = MagicMock()
     cache_provider = Cache(file_provider=file_provider_mock)
     strategy = MagicMock()
-    strategy.get_resource_identifier.return_value = "doesnt-matter"
+    strategy.get_data_identifier.return_value = "doesnt-matter"
     strategy.retrieve_fresh_data.return_value = ["this", "no", "matter"]
 
     cache_provider._cache_refresh_required = MagicMock()
@@ -136,7 +136,7 @@ def test_get_data_no_cache_refresh():
     file_provider_mock = MagicMock()
     cache_provider = Cache(file_provider=file_provider_mock)
     strategy = MagicMock()
-    strategy.get_resource_identifier.return_value = "doesnt-matter"
+    strategy.get_data_identifier.return_value = "doesnt-matter"
     strategy.retrieve_fresh_data.return_value = ["this", "no", "matter"]
 
     cache_provider._cache_refresh_required = MagicMock()
@@ -166,4 +166,4 @@ def test_get_aws_version_strategy():
     strategy = GetAWSVersionStrategy(client_provider)
 
     assert strategy.retrieve_fresh_data() == ["doesnt", "matter"]
-    assert strategy.get_resource_identifier() == "doesnt-matter"
+    assert strategy.get_data_identifier() == "doesnt-matter"
