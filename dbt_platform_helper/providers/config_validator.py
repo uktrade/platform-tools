@@ -48,8 +48,8 @@ class ConfigValidator:
 
         # In this format so it can be monkey patched initially via mock_get_data fixture
         cache_provider = Cache()
-        data_retrieval_strategy = GetAWSVersionStrategy(aws_provider)
-        supported_extension_versions = cache_provider.get_data(data_retrieval_strategy)
+        get_data_strategy = GetAWSVersionStrategy(aws_provider)
+        supported_extension_versions = cache_provider.get_data(get_data_strategy)
         extensions_with_invalid_version = []
 
         for extension in extensions_for_type:
