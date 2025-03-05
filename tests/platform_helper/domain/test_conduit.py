@@ -4,7 +4,7 @@ from unittest.mock import call
 import pytest
 
 from dbt_platform_helper.domain.conduit import Conduit
-from dbt_platform_helper.providers.aws import CreateTaskTimeoutException
+from dbt_platform_helper.providers.aws.exceptions import CreateTaskTimeoutException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.secrets import AddonNotFoundException

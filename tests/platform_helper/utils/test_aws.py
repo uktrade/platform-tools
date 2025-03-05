@@ -17,8 +17,10 @@ from dbt_platform_helper.constants import CLUSTER_NAME_SUFFIX
 from dbt_platform_helper.constants import HYPHENATED_APPLICATION_NAME
 from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
 from dbt_platform_helper.constants import SERVICE_NAME_SUFFIX
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
-from dbt_platform_helper.providers.aws import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
+from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import check_codebase_exists
