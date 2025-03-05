@@ -29,7 +29,7 @@ class PlatformHelperVersioningMocks:
         self.local_version_provider = kwargs.get(
             "local_version_provider", Mock(spec=InstalledVersionProvider)
         )
-        self.skip_versioning_checks = kwargs.get("skip_versioning_checks", Mock(return_value=False))
+        self.skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
 
     def params(self):
         return {
@@ -342,7 +342,7 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         )
 
     def test_no_version_warnings_or_errors_given_skip_version_checks(self, mocks):
-        mocks.skip_versioning_checks.return_value = True
+        mocks.skip_versioning_checks = True
 
         PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 

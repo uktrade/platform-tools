@@ -1,5 +1,4 @@
 import os
-from collections.abc import Callable
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -42,16 +41,17 @@ class PlatformHelperVersioning:
         config_provider: ConfigProvider = ConfigProvider(),
         pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
         local_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
-        skip_versioning_checks: Callable[[], bool] = None,
+        skip_versioning_checks: bool = None,
     ):
         self.io = io
         self.version_file_version_provider = version_file_version_provider
         self.config_provider = config_provider
         self.pypi_provider = pypi_provider
         self.local_version_provider = local_version_provider
-        self.skip_versioning_checks = (
-            skip_versioning_checks() if skip_versioning_checks else skip_version_checks()
-        )
+        if skip_versioning_checks is None:
+            self.skip_versioning_checks = skip_version_checks()
+        else:
+            self.skip_versioning_checks = skip_versioning_checks
 
     def get_required_version(self, pipeline=None):
         version_status = self._get_version_status()
