@@ -487,6 +487,16 @@ def wait_for_log_group_to_exist(log_client, log_group_name, attempts=30):
         raise LogGroupNotFoundException(log_group_name)
 
 
+def get_image_build_project(codebuild_client, application, codebase):
+    project_name = f"{application}-{codebase}-codebase-image-build"
+    response = codebuild_client.batch_get_projects(names=[project_name])
+
+    if bool(response.get("projects")):
+        return project_name
+    else:
+        return f"{application}-{codebase}-codebase-pipeline-image-build"
+
+
 def get_manual_release_pipeline(codepipeline_client, application, codebase):
     pipeline_name = f"{application}-{codebase}-manual-release"
     try:
