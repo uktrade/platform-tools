@@ -210,8 +210,8 @@ def test_create_header_rule(mock_application):
         "HttpHeaderConfig": {"HttpHeaderName": "test_header_name", "Values": ["1.2.3.4"]},
     }
 
-    mock_io.info.assert_called_once_with(
-        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\n\nIf request header test_header_name contains one of the values ['1.2.3.4'], the request will be forwarded to target group with arn {target_group_arn}."
+    mock_io.debug.assert_called_once_with(
+        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\nIf request header test_header_name contains one of the values ['1.2.3.4'], the request will be forwarded to target group with arn {target_group_arn}.\n\n"
     )
 
 
@@ -259,8 +259,8 @@ def test_create_source_ip_rule(allowed_ips, expected_rule_cidr, mock_application
         "SourceIpConfig": {"Values": sorted(expected_rule_cidr)},
     }
 
-    mock_io.info.assert_called_once_with(
-        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\n\nIf request source ip matches one of the values {allowed_ips}, the request will be forwarded to target group with arn {target_group_arn}."
+    mock_io.debug.assert_called_once_with(
+        f"Creating listener rule test_rule_name for HTTPS Listener with arn {listener_arn}.\nIf request source ip matches one of the values {allowed_ips}, the request will be forwarded to target group with arn {target_group_arn}.\n\n"
     )
 
 
@@ -310,6 +310,9 @@ def test_delete_listener_rule(mock_application):
         Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
     )
     expected_arn = rules["Rules"][0]["RuleArn"]
+    expected_response = [
+        {"ResourceArn": expected_arn, "Tags": [{"Key": "name", "Value": "test_rule_name"}]}
+    ]
 
     rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
     assert len(rules) == 2
@@ -323,7 +326,7 @@ def test_delete_listener_rule(mock_application):
     rules = session.client("elbv2").describe_rules(ListenerArn=listener_arn)["Rules"]
 
     assert len(rules) == 1  # only default rule
-    assert result == expected_arn
+    assert result == expected_response
 
 
 @mock_aws
