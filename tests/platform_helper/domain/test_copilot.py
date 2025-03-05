@@ -580,7 +580,6 @@ class TestMakeAddonsCommand:
         assert "Names cannot contain two adjacent periods" in result.output
         assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
-
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     def test_exit_if_services_key_invalid(
