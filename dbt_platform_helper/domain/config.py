@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 class NoDeploymentRepoConfigException(PlatformException):
@@ -10,12 +11,12 @@ class NoDeploymentRepoConfigException(PlatformException):
 
 class Config:
 
-    def __init__(self):
-        pass
+    def __init__(self, io: ClickIOProvider = ClickIOProvider()):
+        self.io = io
 
     def validate(self):
         if Path("copilot").exists():
-            pass
+            self.io.debug("\nDetected a deployment repository")
         else:
             raise NoDeploymentRepoConfigException()
 
