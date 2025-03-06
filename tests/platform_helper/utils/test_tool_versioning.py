@@ -57,7 +57,7 @@ class TestConfigCommand:
 
         versions = get_copilot_versions()
 
-        assert versions.local == SemanticVersion(1, 0, 0)
+        assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)
 
     @patch("subprocess.run")
@@ -69,7 +69,7 @@ class TestConfigCommand:
         mock_run.return_value.stdout = b"aws-cli/1.0.0"
         versions = get_aws_versions()
 
-        assert versions.local == SemanticVersion(1, 0, 0)
+        assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)
 
 

@@ -12,11 +12,11 @@ from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
-class LocalVersionProviderException(PlatformException):
+class InstalledVersionProviderException(PlatformException):
     pass
 
 
-class InstalledToolNotFoundException(LocalVersionProviderException):
+class InstalledToolNotFoundException(InstalledVersionProviderException):
     def __init__(
         self,
         tool_name: str,
@@ -28,7 +28,7 @@ class VersionProvider(ABC):
     pass
 
 
-class LocalVersionProvider:
+class InstalledVersionProvider:
     @staticmethod
     def get_installed_tool_version(tool_name: str) -> SemanticVersion:
         try:
