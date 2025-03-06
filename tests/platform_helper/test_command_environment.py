@@ -250,3 +250,22 @@ class TestGenerateTerraform:
         assert result.exit_code == 1
         mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
         mock_terraform_environment_instance.generate.assert_called_with("test", "123")
+
+    @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
+    @patch("click.secho")
+    def test_generate_terraform_sso_token_expired(self, mock_click, terraform_environment_mock):
+
+        mock_terraform_environment_instance = terraform_environment_mock.return_value
+
+        result = CliRunner().invoke(
+            generate_terraform,
+            ["--name", "test", "--terraform-platform-modules-version", "123"],
+        )
+
+        assert result.exit_code == 1
+        mock_click.assert_any_call('Checking AWS connection for profile "None"...', fg="cyan")
+        mock_click.assert_any_call(
+            "There are no credentials set for this session. To refresh this SSO session run `aws sso login` with the corresponding profile",
+            fg="red",
+        )
+        mock_terraform_environment_instance.generate.assert_not_called()
