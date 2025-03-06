@@ -76,6 +76,7 @@ def deployment():
     click.secho()
 
     compatible = True
+    # TODO within domain inject PlatformHelperVersioning Domain
     platform_helper_version_status = get_platform_helper_version_status()
     ClickIOProvider().process_messages(platform_helper_version_status.validate())
     copilot_versions = tool_versioning.get_copilot_versions()
@@ -167,11 +168,13 @@ def _check_tool_versions(platform_helper_versions, copilot_versions, aws_version
     local_copilot_version = copilot_versions.local
     copilot_latest_release = copilot_versions.latest
     if local_copilot_version is None:
+        # TODO add to recommendation constants
         recommendations["install-copilot"] = (
             "Install AWS Copilot https://aws.github.io/copilot-cli/"
         )
 
     if aws_versions.local is None:
+        # TODO add to recommendation constants
         recommendations["install-aws"] = "Install AWS CLI https://aws.amazon.com/cli/"
 
     tool_versions_table = PrettyTable()
