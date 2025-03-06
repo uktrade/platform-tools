@@ -26,9 +26,12 @@ class Config:
     def validate(self):
         if Path("copilot").exists():
             self.io.debug("\nDetected a deployment repository\n")
-            return self.platform_helper_versioning_domain._get_version_status(
-                include_project_versions=True
+            platform_helper_version_status = (
+                self.platform_helper_versioning_domain._get_version_status(
+                    include_project_versions=True
+                )
             )
+            self.io.process_messages(platform_helper_version_status.validate())
         else:
             raise NoDeploymentRepoConfigException()
 
