@@ -8,6 +8,7 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
@@ -18,7 +19,7 @@ def get_platform_helper_version_status(
     yaml_provider=YamlFileProvider,
 ) -> PlatformHelperVersionStatus:
     return PlatformHelperVersioning(
-        version_file_version_provider=yaml_provider
+        version_file_version_provider=DeprecatedVersionFileVersionProvider(yaml_provider)
     )._get_version_status(include_project_versions=include_project_versions)
 
 
