@@ -253,9 +253,15 @@ class TestGenerateTerraform:
 
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     @patch("click.secho")
-    def test_generate_terraform_sso_token_expired(self, mock_click, terraform_environment_mock):
+    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    def test_generate_terraform_sso_token_expired(
+        self, mock_session, mock_click, terraform_environment_mock
+    ):
 
         mock_terraform_environment_instance = terraform_environment_mock.return_value
+        mock_session.side_effect = PlatformException(
+            "Unable to retrieve the Token for this session."
+        )
 
         result = CliRunner().invoke(
             generate_terraform,
@@ -263,9 +269,7 @@ class TestGenerateTerraform:
         )
 
         assert result.exit_code == 1
-        mock_click.assert_any_call('Checking AWS connection for profile "None"...', fg="cyan")
-        mock_click.assert_any_call(
-            "There are no credentials set for this session. To refresh this SSO session run `aws sso login` with the corresponding profile",
-            fg="red",
+        mock_click.assert_called_with(
+            """Error: Unable to retrieve the Token for this session.""", err=True, fg="red"
         )
         mock_terraform_environment_instance.generate.assert_not_called()
