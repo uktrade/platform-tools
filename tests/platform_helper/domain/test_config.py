@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock
 from unittest.mock import Mock
+from unittest.mock import call
 
 import pytest
+from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.config import NoDeploymentRepoConfigException
@@ -9,6 +11,7 @@ from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.semantic_version import VersionStatus
 
 
 class ConfigMocks:
@@ -25,15 +28,26 @@ class ConfigMocks:
             self.platform_helper_version_status
         )
 
+        self.aws_version = VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
+        self.copilot_version = VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
+        self.get_aws_versions = kwargs.get("get_aws_versions", Mock(return_value=self.aws_version))
+        self.get_copilot_versions = kwargs.get(
+            "get_copilot_versions", Mock(return_value=self.copilot_version)
+        )
+
     def params(self):
         return {
             "io": self.io,
             "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
+            "get_aws_versions": self.get_aws_versions,
+            "get_copilot_versions": self.get_copilot_versions,
         }
 
 
 class TestConfigValidate:
 
+    # TODO parameterise different versions to test outputs
+    # TODO test_validate with recommentations for aws-upgrade, copilot-upgrade, dbt-platform-helper-upgrade
     def test_validate(self, fakefs):
         # TODO  create with dbt-platform-helper
         fakefs.create_file("platform-config.yml")
@@ -46,7 +60,63 @@ class TestConfigValidate:
         config_domain = Config(**config_mocks.params())
         config_domain.validate()
 
-        config_mocks.io.debug.assert_called_with("\nDetected a deployment repository\n")
+        config_mocks.io.debug.assert_has_calls(
+            [
+                call("\nDetected a deployment repository\n"),
+                call("Checking tooling versions..."),
+                call("Checking addons templates versions..."),
+            ]
+        )
+
+        for call_args in config_mocks.io.info.call_args_list:
+            print(repr(call_args))
+
+        yes = "\033[92m✔\033[0m"
+        expected_tool_version_table = PrettyTable()
+        expected_tool_version_table.field_names = [
+            "Tool",
+            "Local version",
+            "Released version",
+            "Running latest?",
+        ]
+        expected_tool_version_table.align["Tool"] = "l"
+        expected_tool_version_table.add_row(
+            [
+                "aws",
+                "1.0.0",
+                "1.0.0",
+                yes,
+            ]
+        )
+        expected_tool_version_table.add_row(
+            [
+                "copilot",
+                "1.0.0",
+                "1.0.0",
+                yes,
+            ]
+        )
+        expected_tool_version_table.add_row(
+            [
+                "dbt-platform-helper",
+                "1.0.0",
+                "1.0.0",
+                yes,
+            ]
+        )
+
+        assert repr(config_mocks.io.info.call_args[0][0]) == repr(expected_tool_version_table)
+        # config_mocks.io.info.assert_has_calls(
+        #     [
+        #         call(
+        #             expected_tool_version_table
+        #         )
+        #         # call("\nRecommendations:\n"),
+        #         # call("  - recommendation"),
+        #         # call("")
+        #         ], any_order=True
+        #         )
+
         config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
             include_project_versions=True
         )
@@ -59,7 +129,10 @@ class TestConfigValidate:
                 ],
             }
         )
+        config_mocks.get_aws_versions.assert_called()
+        config_mocks.get_copilot_versions.assert_called()
 
+    # TODO ensure expected behaviour
     def test_no_platform_config(self, fakefs):
         fakefs.create_file(
             "/copilot/environments/dev/addons/test_addon.yml",
@@ -70,7 +143,13 @@ class TestConfigValidate:
         config_domain = Config(**config_mocks.params())
         config_domain.validate()
 
-        config_mocks.io.debug.assert_called_with("\nDetected a deployment repository\n")
+        config_mocks.io.debug.assert_has_calls(
+            [
+                call("\nDetected a deployment repository\n"),
+                call("Checking tooling versions..."),
+                call("Checking addons templates versions..."),
+            ]
+        )
         config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
             include_project_versions=True
         )
