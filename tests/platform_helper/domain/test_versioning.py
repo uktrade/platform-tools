@@ -13,117 +13,82 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
-from dbt_platform_helper.providers.version import LocalVersionProvider
+from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiVersionProvider
 
 
-@pytest.fixture
-def mock_local_version_provider():
-    mock_local_version_provider = Mock(spec=LocalVersionProvider)
-    mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(1, 0, 1)
-    return mock_local_version_provider
+class PlatformHelperVersioningMocks:
+    def __init__(self, **kwargs):
+        self.io = kwargs.get("io", Mock(spec=ClickIOProvider))
+        self.config_provider = kwargs.get("config_provider", Mock(spec=ConfigProvider))
+        self.config_provider.load_unvalidated_config_file.return_value = {}
+        self.version_file_version_provider = kwargs.get(
+            "version_file_version_provider", Mock(spec=DeprecatedVersionFileVersionProvider)
+        )
+        self.pypi_provider = kwargs.get("pypi_provider", Mock(spec=PyPiVersionProvider))
+        self.installed_version_provider = kwargs.get(
+            "installed_version_provider", Mock(spec=InstalledVersionProvider)
+        )
+        self.skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
+
+    def params(self):
+        return {
+            "io": self.io,
+            "version_file_version_provider": self.version_file_version_provider,
+            "config_provider": self.config_provider,
+            "pypi_provider": self.pypi_provider,
+            "installed_version_provider": self.installed_version_provider,
+            "skip_versioning_checks": self.skip_versioning_checks,
+        }
 
 
 @pytest.fixture
-def mock_io_provider():
-    return Mock(spec=ClickIOProvider)
-
-
-@pytest.fixture
-def mock_config_provider():
-    return Mock(spec=ConfigProvider)
-
-
-@pytest.fixture
-def mock_version_file_version_provider():
-    return Mock(spec=DeprecatedVersionFileVersionProvider)
-
-
-@pytest.fixture
-def mock_skip():
-    skip = Mock()
-    skip.return_value = False
-    return skip
-
-
-@pytest.fixture
-def mock_pypi_provider():
-    mock_pypi_provider = Mock(spec=PyPiVersionProvider)
-    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
-    return mock_pypi_provider
+def mocks():
+    return PlatformHelperVersioningMocks()
 
 
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
-    def test_check_platform_helper_version_shows_warning_when_different_than_file_spec(
-        self,
-        mock_io_provider,
-        mock_local_version_provider,
-        mock_pypi_provider,
-        mock_skip,
-        mock_version_file_version_provider,
-    ):
-        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+    def test_shows_warning_when_different_than_file_spec(self, mocks):
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 0, 1
+        )
+        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
             1, 0, 0
         )
 
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            local_version_provider=mock_local_version_provider,
-            pypi_provider=mock_pypi_provider,
-            skip_versioning_checks=mock_skip,
-            version_file_version_provider=mock_version_file_version_provider,
-        ).check_platform_helper_version_mismatch()
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
-        mock_io_provider.warn.assert_called_with(
+        mocks.io.warn.assert_called_with(
             f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
         )
 
-    def test_check_platform_helper_version_shows_no_warning_when_same_as_file_spec(
-        self,
-        mock_io_provider,
-        mock_local_version_provider,
-        mock_pypi_provider,
-        mock_skip,
-        mock_version_file_version_provider,
-    ):
-        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+    def test_shows_no_warning_when_same_as_file_spec(self, mocks):
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
             1, 0, 0
         )
 
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            local_version_provider=mock_local_version_provider,
-            pypi_provider=mock_pypi_provider,
-            skip_versioning_checks=mock_skip,
-            version_file_version_provider=mock_version_file_version_provider,
-        ).check_platform_helper_version_mismatch()
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
-        mock_io_provider.warn.assert_not_called
-        mock_io_provider.error.assert_not_called
+        mocks.io.warn.assert_not_called
+        mocks.io.error.assert_not_called
 
-    def test_check_platform_helper_version_does_not_fall_over_if_platform_helper_version_file_not_present(
+    def test_does_not_error_if_platform_helper_version_file_not_present(
         self,
         valid_platform_config,
-        mock_io_provider,
-        mock_local_version_provider,
-        mock_pypi_provider,
-        mock_config_provider,
-        mock_version_file_version_provider,
-        mock_skip,
+        mocks,
     ):
-        mock_version_file_version_provider.get_required_version.return_value = None
-        mock_config_provider.load_unvalidated_config_file.return_value = valid_platform_config
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 0, 1
+        )
+        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.config_provider.load_unvalidated_config_file.return_value = valid_platform_config
 
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            local_version_provider=mock_local_version_provider,
-            pypi_provider=mock_pypi_provider,
-            config_provider=mock_config_provider,
-            skip_versioning_checks=mock_skip,
-            version_file_version_provider=mock_version_file_version_provider,
-        ).check_platform_helper_version_mismatch()
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
-        mock_io_provider.warn.assert_called_with(
+        mocks.io.warn.assert_called_with(
             f"WARNING: You are running platform-helper v1.0.1 against v10.2.0 specified for the project.",
         )
 
@@ -135,20 +100,20 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
         "a_bogus_field_that_invalidates_config": "boo",
     }
 
-    def test_default_given_invalid_config(self, mock_pypi_provider, mock_config_provider):
+    def test_default_given_invalid_config(self, mocks):
         expected = self.DEFAULT_VERSION
 
-        mock_config_provider.load_unvalidated_config_file.return_value = (
+        mocks.config_provider.load_unvalidated_config_file.return_value = (
             self.INVALID_CONFIG_WITH_DEFAULT_VERSION
         )
 
-        result = PlatformHelperVersioning(
-            config_provider=mock_config_provider, pypi_provider=mock_pypi_provider
-        ).get_required_version()
+        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
         assert result == expected
 
-    def test_pipeline_override_given_invalid_config(self, mock_pypi_provider, mock_config_provider):
+    def test_pipeline_override_given_invalid_config(self, mocks):
         pipeline_override_version = "1.1.1"
         platform_config = self.INVALID_CONFIG_WITH_DEFAULT_VERSION
         platform_config["environment_pipelines"] = {
@@ -156,39 +121,28 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
                 "versions": {"platform-helper": pipeline_override_version},
             }
         }
-        mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
 
-        result = PlatformHelperVersioning(
-            config_provider=mock_config_provider, pypi_provider=mock_pypi_provider
-        ).get_required_version("main")
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version("main")
 
         assert result == pipeline_override_version
 
-    def test_get_required_version_errors_if_version_is_not_specified_in_config(
-        self,
-        mock_pypi_provider,
-        mock_config_provider,
-        mock_local_version_provider,
-        mock_skip,
-        mock_io_provider,
-    ):
-        mock_config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
+    def test_errors_if_version_is_not_specified_in_config_or_default_file(self, mocks):
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+            1, 0, 1
+        )
+        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        mocks.config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
 
         expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
 Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.0.1\n"""
 
         with pytest.raises(PlatformHelperVersionNotFoundException):
-            PlatformHelperVersioning(
-                io=mock_io_provider,
-                config_provider=mock_config_provider,
-                pypi_provider=mock_pypi_provider,
-                local_version_provider=mock_local_version_provider,
-                skip_versioning_checks=mock_skip,
-            ).get_required_version()
+            PlatformHelperVersioning(**mocks.params()).get_required_version()
 
-        mock_io_provider.process_messages.assert_called_with(
-            {"warnings": [], "errors": [expected_message]}
-        )
+        mocks.io.process_messages.assert_called_with({"warnings": [], "errors": [expected_message]})
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
@@ -203,16 +157,13 @@ class TestPlatformHelperVersioningGetRequiredVersion:
     )
     def test_versions_precedence(
         self,
-        mock_local_version_provider,
-        mock_version_file_version_provider,
-        mock_config_provider,
-        mock_pypi_provider,
+        mocks,
         platform_helper_version_file_version,
         platform_config_default_version,
         pipeline_override,
         expected_version,
     ):
-        mock_version_file_version_provider.get_required_version.return_value = (
+        mocks.version_file_version_provider.get_required_version.return_value = (
             platform_helper_version_file_version
         )
         platform_config = {
@@ -237,24 +188,15 @@ class TestPlatformHelperVersioningGetRequiredVersion:
                 "platform-helper": pipeline_override
             }
 
-        mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
 
-        result = PlatformHelperVersioning(
-            version_file_version_provider=mock_version_file_version_provider,
-            config_provider=mock_config_provider,
-            pypi_provider=mock_pypi_provider,
-            local_version_provider=mock_local_version_provider,
-            skip_versioning_checks=Mock(return_value=False),
-        ).get_required_version("main")
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version("main")
 
         assert result == expected_version
 
     def test_fall_back_on_default_if_pipeline_option_is_not_a_valid_pipeline(
         self,
-        mock_pypi_provider,
-        mock_version_file_version_provider,
-        mock_config_provider,
-        mock_local_version_provider,
+        mocks,
     ):
         default_version = "1.2.3"
         platform_config = {
@@ -270,14 +212,10 @@ class TestPlatformHelperVersioningGetRequiredVersion:
                 }
             },
         }
-        mock_config_provider.load_unvalidated_config_file.return_value = platform_config
-        result = PlatformHelperVersioning(
-            version_file_version_provider=mock_version_file_version_provider,
-            config_provider=mock_config_provider,
-            pypi_provider=mock_pypi_provider,
-            local_version_provider=mock_local_version_provider,
-            skip_versioning_checks=Mock(return_value=False),
-        ).get_required_version("bogus_pipeline_not_in_config")
+        mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version(
+            "bogus_pipeline_not_in_config"
+        )
 
         assert result == default_version
 
@@ -306,43 +244,31 @@ class TestPlatformHelperVersioningGetRequiredVersion:
     ),
 )
 def test_platform_helper_version_deprecation_warnings(
-    mock_local_version_provider,
-    mock_pypi_provider,
-    mock_io_provider,
-    mock_version_file_version_provider,
-    mock_config_provider,
+    mocks,
     version_in_phv_file,
     version_in_platform_config,
     expected_warnings,
 ):
-    mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
+    mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
     platform_config = {"application": "my-app"}
     if version_in_platform_config:
         platform_config["default_versions"] = {"platform-helper": "2.2.2"}
 
-    mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+    mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
 
     if version_in_phv_file:
-        mock_version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
             3, 3, 3
         )
     else:
-        mock_version_file_version_provider.get_required_version.return_value = None
+        mocks.version_file_version_provider.get_required_version.return_value = None
 
-    PlatformHelperVersioning(
-        io=mock_io_provider,
-        version_file_version_provider=mock_version_file_version_provider,
-        pypi_provider=mock_pypi_provider,
-        config_provider=mock_config_provider,
-        local_version_provider=mock_local_version_provider,
-    ).get_required_version()
+    PlatformHelperVersioning(**mocks.params()).get_required_version()
 
     if expected_warnings:
-        mock_io_provider.process_messages.assert_called_with(
-            {"warnings": expected_warnings, "errors": []}
-        )
+        mocks.io.process_messages.assert_called_with({"warnings": expected_warnings, "errors": []})
     else:
-        mock_io_provider.process_messages.assert_called_with({})
+        mocks.io.process_messages.assert_called_with({})
 
 
 @pytest.mark.parametrize(
@@ -383,64 +309,43 @@ def test_skip_version_checks(
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
-    def test_check_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
+    def test_if_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
         self,
-        no_skipping_version_checks,
-        mock_local_version_provider,
-        mock_pypi_provider,
-        mock_io_provider,
+        mocks,
     ):
-        mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mock_pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
 
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            pypi_provider=mock_pypi_provider,
-            local_version_provider=mock_local_version_provider,
-        ).check_if_needs_update()
+        PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
-        mock_io_provider.error.assert_called_with(
+        mocks.io.error.assert_called_with(
             "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
             "--upgrade dbt-platform-helper`."
         )
 
-    def test_check_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
+    def test_if_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
         self,
-        no_skipping_version_checks,
-        mock_local_version_provider,
-        mock_pypi_provider,
-        mock_io_provider,
+        mocks,
     ):
-        mock_local_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mock_pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
+        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
 
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            pypi_provider=mock_pypi_provider,
-            local_version_provider=mock_local_version_provider,
-        ).check_if_needs_update()
+        PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
-        mock_io_provider.warn.assert_called_with(
+        mocks.io.warn.assert_called_with(
             "You are running platform-helper v1.0.0, upgrade to v1.1.0 by running run `pip install "
             "--upgrade dbt-platform-helper`."
         )
 
-    def test_no_version_warnings_or_errors_given_skip_version_checks(
-        self, mock_skip, mock_io_provider, mock_local_version_provider, mock_pypi_provider
-    ):
-        mock_skip.return_value = True
+    def test_no_version_warnings_or_errors_given_skip_version_checks(self, mocks):
+        mocks.skip_versioning_checks = True
 
-        PlatformHelperVersioning(
-            io=mock_io_provider,
-            local_version_provider=mock_local_version_provider,
-            pypi_provider=mock_pypi_provider,
-            skip_versioning_checks=mock_skip,
-        ).check_if_needs_update()
+        PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
-        mock_local_version_provider.get_installed_tool_version.assert_not_called()
-        mock_io_provider.warn.assert_not_called()
-        mock_io_provider.error.assert_not_called()
+        mocks.installed_version_provider.get_installed_tool_version.assert_not_called()
+        mocks.io.warn.assert_not_called()
+        mocks.io.error.assert_not_called()
