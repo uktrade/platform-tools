@@ -1,4 +1,7 @@
+import botocore.exceptions
+
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.aws.exceptions import AWSTokenRetrievalError
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.tool_versioning import (
@@ -26,7 +29,11 @@ class TerraformEnvironment:
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
 
     def generate(self, environment_name, terraform_platform_modules_version_override=None):
-        config = self.config_provider.get_enriched_config()
+        try:
+            config = self.config_provider.get_enriched_config()
+
+        except botocore.exceptions.TokenRetrievalError:
+            raise AWSTokenRetrievalError("Please refresh SSO token")
 
         if environment_name not in config.get("environments").keys():
             raise EnvironmentNotFoundException(

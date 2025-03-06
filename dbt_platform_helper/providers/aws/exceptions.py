@@ -29,6 +29,11 @@ class LogGroupNotFoundException(AWSException):
         super().__init__(f"""No log group called "{log_group_name}".""")
 
 
+class AWSTokenRetrievalError(AWSException):
+    def __init__(self, message="Please refresh SSO token"):
+        super().__init__(message)
+
+
 # Todo: This should probably be in the AWS Copilot provider, but was causing circular import when we tried it pre refactoring the utils/aws.py
 class CopilotCodebaseNotFoundException(PlatformException):
     def __init__(self, codebase: str):
