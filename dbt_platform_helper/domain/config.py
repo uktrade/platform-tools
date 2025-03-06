@@ -44,7 +44,7 @@ class Config:
         ),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
-        config: ConfigProvider = ConfigProvider(),
+        config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
@@ -53,23 +53,38 @@ class Config:
         self.config = config
 
     def validate(self):
-        if Path("copilot").exists():
-            self.io.debug("\nDetected a deployment repository\n")
-            platform_helper_version_status = (
-                self.platform_helper_versioning_domain._get_version_status(
-                    include_project_versions=True
-                )
-            )
-            self.io.process_messages(platform_helper_version_status.validate())
-            aws_versions = self.get_aws_versions()
-            copilot_versions = self.get_copilot_versions()
-
-            self._check_tool_versions(
-                platform_helper_version_status, aws_versions, copilot_versions
-            )
-            self.io.debug("Checking addons templates versions...")
-        else:
+        if not Path("copilot").exists():
             raise NoDeploymentRepoConfigException()
+
+        self.io.debug("\nDetected a deployment repository\n")
+        platform_helper_version_status = self.platform_helper_versioning_domain._get_version_status(
+            include_project_versions=True
+        )
+        self.io.process_messages(platform_helper_version_status.validate())
+        aws_versions = self.get_aws_versions()
+        copilot_versions = self.get_copilot_versions()
+
+        self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
+        self.io.debug("Checking addons templates versions...")
+
+        platform_helper_version_status.local
+        platform_helper_version_status.latest
+        addons_templates_table = PrettyTable()
+        addons_templates_table.field_names = [
+            "Addons Template File",
+            "Generated with",
+            "Compatible with local?",
+            "Compatible with latest?",
+        ]
+        addons_templates_table.align["Addons Template File"] = "l"
+
+        addons_templates = list(Path("./copilot").glob("**/addons/*"))
+        # Sort by template file path
+        addons_templates.sort(key=lambda e: str(e))
+        # Bring environment addons to the top
+        addons_templates.sort(key=lambda e: "environments/" not in str(e))
+
+        ConfigProvider().config_file_check()
 
     def generate_aws(self):
         pass
