@@ -1,3 +1,4 @@
+from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
@@ -22,7 +23,7 @@ class ConfigMocks:
         )
         self.platform_helper_version_status = kwargs.get(
             "platform_helper_version_status",
-            (PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))),
+            (PlatformHelperVersionStatus(SemanticVersion(0, 1, 0), SemanticVersion(1, 0, 0))),
         )
         self.platform_helper_versioning_domain._get_version_status.return_value = (
             self.platform_helper_version_status
@@ -72,6 +73,7 @@ class TestConfigValidate:
             print(repr(call_args))
 
         yes = "\033[92m✔\033[0m"
+        no = "\033[91m✖\033[0m"
         expected_tool_version_table = PrettyTable()
         expected_tool_version_table.field_names = [
             "Tool",
@@ -99,23 +101,31 @@ class TestConfigValidate:
         expected_tool_version_table.add_row(
             [
                 "dbt-platform-helper",
+                "0.1.0",
                 "1.0.0",
-                "1.0.0",
-                yes,
+                no,
             ]
         )
 
-        assert repr(config_mocks.io.info.call_args[0][0]) == repr(expected_tool_version_table)
-        # config_mocks.io.info.assert_has_calls(
-        #     [
-        #         call(
-        #             expected_tool_version_table
-        #         )
-        #         # call("\nRecommendations:\n"),
-        #         # call("  - recommendation"),
-        #         # call("")
-        #         ], any_order=True
-        #         )
+        assert repr(config_mocks.io.info.call_args_list[0][0][0]) == repr(
+            expected_tool_version_table
+        )
+        config_mocks.io.info.assert_has_calls(
+            [
+                call(
+                    ANY,  # tested above due to PrettyTable being difficult to compare
+                ),
+                call("\nRecommendations:\n"),
+                call(
+                    "  - Upgrade dbt-platform-helper to version 1.0.0 `pip install --upgrade dbt-platform-helper==1.0.0`."
+                ),
+                call(
+                    "    Post upgrade, run `platform-helper copilot make-addons` to update your addon templates."
+                ),
+                call(""),
+            ],
+            any_order=True,
+        )
 
         config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
             include_project_versions=True
@@ -125,7 +135,7 @@ class TestConfigValidate:
             {
                 "warnings": [],
                 "errors": [
-                    "Cannot get dbt-platform-helper version from 'platform-config.yml'.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 1.0.0\n"
+                    "Cannot get dbt-platform-helper version from 'platform-config.yml'.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 0.1.0\n"
                 ],
             }
         )
@@ -157,7 +167,7 @@ class TestConfigValidate:
             {
                 "warnings": [],
                 "errors": [
-                    "Cannot get dbt-platform-helper version from 'platform-config.yml'.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 1.0.0\n"
+                    "Cannot get dbt-platform-helper version from 'platform-config.yml'.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 0.1.0\n"
                 ],
             }
         )

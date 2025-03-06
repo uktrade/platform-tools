@@ -5,6 +5,7 @@ from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.tool_versioning import get_aws_versions
@@ -43,11 +44,13 @@ class Config:
         ),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
+        config: ConfigProvider = ConfigProvider(),
     ):
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
         self.get_aws_versions = get_aws_versions
         self.get_copilot_versions = get_copilot_versions
+        self.config = config
 
     def validate(self):
         if Path("copilot").exists():
