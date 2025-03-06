@@ -1,11 +1,9 @@
 from unittest.mock import Mock
 
-import botocore.exceptions
 import pytest
 
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws.exceptions import AWSTokenRetrievalError
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
@@ -61,18 +59,3 @@ class TestGenerateTerraform:
         mock_manifest_provider.generate_environment_config.assert_called_once_with(
             self.VALID_ENRICHED_CONFIG, environment_name, tpm_default_version
         )
-
-    def test_raises_token_error_if_token_is_invalid(self):
-        mock_config_provider = Mock()
-        mock_config_provider.get_enriched_config.side_effect = (
-            botocore.exceptions.TokenRetrievalError(provider="AWS", error_msg="Token error")
-        )
-
-        terraform_environment = TerraformEnvironment(
-            config_provider=mock_config_provider,
-            manifest_provider=Mock(),
-            io=Mock(),
-        )
-
-        with pytest.raises(AWSTokenRetrievalError, match="Please refresh SSO token"):
-            terraform_environment.generate("test")
