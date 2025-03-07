@@ -92,9 +92,11 @@ def generate(name):
     help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
 )
 def generate_terraform(name, terraform_platform_modules_version):
-
+    click_io = ClickIOProvider()
     try:
+        # TODO = pass the session to ConfigValidator
+        get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
         TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
     except PlatformException as err:
-        ClickIOProvider().abort_with_error(str(err))
+        click_io.abort_with_error(str(err))
