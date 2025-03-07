@@ -8,7 +8,7 @@ from dbt_platform_helper.providers.parameter_store import (
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 
 
-def test_get_ssm_parameter_by_name_sucsess():
+def test_get_ssm_parameter_by_name_success():
     """Test that given a parameter name, get_ssm_parameter_by_name successfully
     retrieves the parameter from parameter store."""
 
