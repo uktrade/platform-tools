@@ -4,11 +4,15 @@ from pathlib import Path
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import GithubVersionProvider
+from dbt_platform_helper.providers.version import InstalledVersionProvider
+from dbt_platform_helper.providers.version import PyPiVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -18,7 +22,10 @@ def get_platform_helper_version_status(
     yaml_provider=YamlFileProvider,
 ) -> PlatformHelperVersionStatus:
     return PlatformHelperVersioning(
-        version_file_version_provider=yaml_provider
+        pypi_provider=PyPiVersionProvider,
+        installed_version_provider=InstalledVersionProvider(),
+        version_file_version_provider=DeprecatedVersionFileVersionProvider(yaml_provider),
+        config_provider=ConfigProvider(),
     )._get_version_status(include_project_versions=include_project_versions)
 
 
