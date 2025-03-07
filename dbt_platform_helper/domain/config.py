@@ -9,6 +9,10 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.tool_versioning import get_aws_versions
 from dbt_platform_helper.utils.tool_versioning import get_copilot_versions
+from dbt_platform_helper.utils.tool_versioning import (
+    get_template_generated_with_version,
+)
+from dbt_platform_helper.utils.tool_versioning import validate_template_version
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -41,12 +45,16 @@ class Config:
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
+        get_template_generated_with_version=get_template_generated_with_version,
+        validate_template_version=validate_template_version,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
         self.get_aws_versions = get_aws_versions
         self.get_copilot_versions = get_copilot_versions
+        self.get_template_generated_with_version = get_template_generated_with_version
+        self.validate_template_version = validate_template_version
         self.config = config
 
     def validate(self):
@@ -64,6 +72,8 @@ class Config:
         self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
         self.io.debug("Checking addons templates versions...")
 
+        ConfigProvider().config_file_check()  # TODO move to top and make it a generic usable function? Where will it live?
+
         platform_helper_version_status.installed
         platform_helper_version_status.latest
         addons_templates_table = PrettyTable()
@@ -80,8 +90,6 @@ class Config:
         addons_templates.sort(key=lambda e: str(e))
         # Bring environment addons to the top
         addons_templates.sort(key=lambda e: "environments/" not in str(e))
-
-        ConfigProvider().config_file_check()
 
     def generate_aws(self):
         pass
@@ -162,7 +170,7 @@ class Config:
             # TODO just multi line this?
             self.io.info(
                 "\nRecommendations:\n",
-            )  # bold=True
+            )  # TODO re-add bold=True support
 
             for name, recommendation in recommendations.items():
                 if name.endswith("-note"):

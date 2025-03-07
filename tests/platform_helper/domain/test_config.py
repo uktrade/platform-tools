@@ -35,6 +35,10 @@ class ConfigMocks:
         self.get_copilot_versions = kwargs.get(
             "get_copilot_versions", Mock(return_value=self.copilot_version)
         )
+        self.get_template_generated_with_version = kwargs.get(
+            "get_template_generated_with_version", Mock()
+        )
+        self.validate_template_version = kwargs.get("validate_template_version", Mock())
 
     def params(self):
         return {
@@ -42,6 +46,8 @@ class ConfigMocks:
             "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
             "get_aws_versions": self.get_aws_versions,
             "get_copilot_versions": self.get_copilot_versions,
+            "get_template_generated_with_version": self.get_template_generated_with_version,
+            "validate_template_version": self.validate_template_version,
         }
 
 
@@ -49,6 +55,11 @@ class TestConfigValidate:
 
     # TODO parameterise different versions to test outputs
     # TODO test_validate with recommentations for aws-upgrade, copilot-upgrade, dbt-platform-helper-upgrade
+    # TODO validate recommendations when:
+    #                  - installed-copilot is None
+    #                  - installed aws is None
+    #                  - installed aws is outdated
+    #                  - installed copilot is outdated
     def test_validate(self, fakefs):
         # TODO  create with dbt-platform-helper
         fakefs.create_file("platform-config.yml")
