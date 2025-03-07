@@ -7,7 +7,6 @@ from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.tool_versioning import get_aws_versions
 from dbt_platform_helper.utils.tool_versioning import get_copilot_versions
 
@@ -39,9 +38,7 @@ class Config:
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),
-        platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(
-            version_file_version_provider=YamlFileProvider  # Overrides DeprecatedVersionFileVersionProvider wrapper
-        ),
+        platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
@@ -67,7 +64,7 @@ class Config:
         self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
         self.io.debug("Checking addons templates versions...")
 
-        platform_helper_version_status.local
+        platform_helper_version_status.installed
         platform_helper_version_status.latest
         addons_templates_table = PrettyTable()
         addons_templates_table.field_names = [
@@ -94,12 +91,12 @@ class Config:
 
         recommendations = {}
 
-        local_copilot_version = copilot_versions.local
+        local_copilot_version = copilot_versions.installed
         copilot_latest_release = copilot_versions.latest
         if local_copilot_version is None:
             recommendations["install-copilot"] = RECOMMENDATIONS["install-copilot"]
 
-        if aws_versions.local is None:
+        if aws_versions.installed is None:
             recommendations["install-aws"] = RECOMMENDATIONS["install-aws"]
 
         tool_versions_table = PrettyTable()
@@ -114,7 +111,7 @@ class Config:
         tool_versions_table.add_row(
             [
                 "aws",
-                str(aws_versions.local),
+                str(aws_versions.installed),
                 str(aws_versions.latest),
                 no if aws_versions.is_outdated() else yes,
             ]
@@ -122,7 +119,7 @@ class Config:
         tool_versions_table.add_row(
             [
                 "copilot",
-                str(copilot_versions.local),
+                str(copilot_versions.installed),
                 str(copilot_versions.latest),
                 no if copilot_versions.is_outdated() else yes,
             ]
@@ -130,7 +127,7 @@ class Config:
         tool_versions_table.add_row(
             [
                 "dbt-platform-helper",
-                str(platform_helper_versions.local),
+                str(platform_helper_versions.installed),
                 str(platform_helper_versions.latest),
                 no if platform_helper_versions.is_outdated() else yes,
             ]
