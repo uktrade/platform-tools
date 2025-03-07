@@ -16,11 +16,44 @@ from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.tool_versioning import get_aws_versions
 from dbt_platform_helper.utils.tool_versioning import get_copilot_versions
+from dbt_platform_helper.utils.tool_versioning import get_platform_helper_version_status
 from dbt_platform_helper.utils.tool_versioning import (
     get_required_terraform_platform_modules_version,
 )
 from dbt_platform_helper.utils.tool_versioning import validate_template_version
 from tests.platform_helper.conftest import FIXTURES_DIR
+
+
+# TODO Temporary test as this function will disappear in DBTP-1538
+@patch("dbt_platform_helper.utils.tool_versioning.InstalledVersionProvider")
+@patch("dbt_platform_helper.utils.tool_versioning.PyPiVersionProvider")
+@patch("dbt_platform_helper.utils.tool_versioning.ConfigProvider")
+def test_get_platform_helper_version_status(mock_config, mock_pypi, mock_installed):
+    mock_pypi.get_latest_version.return_value = SemanticVersion(2, 2, 2)
+    mock_installed.return_value.get_installed_tool_version.return_value = SemanticVersion(1, 1, 1)
+    platform_config = {
+        "application": "my-app",
+        "default_versions": {"platform-helper": "3.3.3"},
+        "environments": {"dev": None},
+        "environment_pipelines": {
+            "main": {
+                "slack_channel": "abc",
+                "trigger_on_push": True,
+                "environments": {"dev": None},
+                "versions": {"platform-helper": "4.4.4"},
+            }
+        },
+    }
+
+    mock_config.return_value.load_unvalidated_config_file.return_value = platform_config
+
+    result = get_platform_helper_version_status()
+
+    assert result.installed == SemanticVersion(1, 1, 1)
+    assert result.latest == SemanticVersion(2, 2, 2)
+    assert result.deprecated_version_file == None
+    assert result.platform_config_default == SemanticVersion(3, 3, 3)
+    assert result.pipeline_overrides["main"] == str(SemanticVersion(4, 4, 4))
 
 
 # TODO Relocate when we refactor config command in DBTP-1538

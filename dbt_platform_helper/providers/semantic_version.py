@@ -35,6 +35,9 @@ class SemanticVersion:
             return "unknown"
         return ".".join([str(s) for s in [self.major, self.minor, self.patch]])
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __lt__(self, other) -> bool:
         return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
 
