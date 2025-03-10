@@ -274,7 +274,7 @@ class PlatformConfigSchema:
                     Optional("ebs_volume_type"): str,
                     Optional("instance"): str,
                     Optional("instances"): int,
-                    Optional("master"): bool, # Todo: this is now deprecated and will need to be removed. It is no longer used in the next release of platform modules.
+                    Optional("master"): bool, # Todo: this is now deprecated and will need to be removed in a future update.
                     Optional("es_app_log_retention_in_days"): int,
                     Optional("index_slow_log_retention_in_days"): int,
                     Optional("audit_log_retention_in_days"): int,
