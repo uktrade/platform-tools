@@ -35,6 +35,9 @@ class SemanticVersion:
             return "unknown"
         return ".".join([str(s) for s in [self.major, self.minor, self.patch]])
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __lt__(self, other) -> bool:
         return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
 
@@ -76,7 +79,7 @@ class SemanticVersion:
 
 @dataclass
 class VersionStatus:
-    local: SemanticVersion = None
+    installed: SemanticVersion = None
     latest: SemanticVersion = None
 
     def __str__(self):
@@ -87,7 +90,7 @@ class VersionStatus:
         return f"{self.__class__.__name__}: {attrs_str}"
 
     def is_outdated(self):
-        return self.local != self.latest
+        return self.installed != self.latest
 
     def validate(self):
         pass
@@ -95,7 +98,7 @@ class VersionStatus:
 
 @dataclass
 class PlatformHelperVersionStatus(VersionStatus):
-    local: Optional[SemanticVersion] = None
+    installed: Optional[SemanticVersion] = None
     latest: Optional[SemanticVersion] = None
     deprecated_version_file: Optional[SemanticVersion] = None
     platform_config_default: Optional[SemanticVersion] = None
@@ -137,7 +140,7 @@ class PlatformHelperVersionStatus(VersionStatus):
 
         if not self.platform_config_default and not self.deprecated_version_file:
             message = f"Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.\n"
-            message += f"{missing_default_version_message}{self.local}\n"
+            message += f"{missing_default_version_message}{self.installed}\n"
             errors.append(message)
 
         return {

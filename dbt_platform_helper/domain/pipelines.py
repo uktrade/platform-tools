@@ -14,7 +14,7 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.versioning import (
+from dbt_platform_helper.utils.tool_versioning import (
     get_required_terraform_platform_modules_version,
 )
 

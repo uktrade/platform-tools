@@ -1,18 +1,22 @@
 from abc import ABC
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
+from pathlib import Path
 
 import requests
 
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.yaml_file import FileProviderException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
-class LocalVersionProviderException(PlatformException):
+class InstalledVersionProviderException(PlatformException):
     pass
 
 
-class InstalledToolNotFoundException(LocalVersionProviderException):
+class InstalledToolNotFoundException(InstalledVersionProviderException):
     def __init__(
         self,
         tool_name: str,
@@ -24,7 +28,7 @@ class VersionProvider(ABC):
     pass
 
 
-class LocalVersionProvider:
+class InstalledVersionProvider:
     @staticmethod
     def get_installed_tool_version(tool_name: str) -> SemanticVersion:
         try:
@@ -58,3 +62,17 @@ class PyPiVersionProvider(VersionProvider):
         parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
         parsed_released_versions.sort(reverse=True)
         return parsed_released_versions[0]
+
+
+class DeprecatedVersionFileVersionProvider(VersionProvider):
+    def __init__(self, file_provider: YamlFileProvider):
+        self.file_provider = file_provider or YamlFileProvider
+
+    def get_required_version(self) -> SemanticVersion:
+        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
+        try:
+            loaded_version = self.file_provider.load(deprecated_version_file)
+            version_from_file = SemanticVersion.from_string(loaded_version)
+        except FileProviderException:
+            version_from_file = None
+        return version_from_file

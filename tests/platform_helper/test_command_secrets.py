@@ -133,8 +133,8 @@ def test_copy_secrets_with_existing_secret(
 
 @mock_aws
 @patch(
-    "dbt_platform_helper.utils.files.running_as_installed_package",
-    new=Mock(return_value=False),
+    "dbt_platform_helper.domain.versioning.skip_version_checks",
+    new=Mock(return_value=True),
 )
 def test_list():
     def _put_ssm_param(client, app, env, name, value):

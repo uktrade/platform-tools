@@ -87,10 +87,6 @@ class TestMakeAddonsCommand:
         ),
     )
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -106,6 +102,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
@@ -236,10 +233,6 @@ class TestMakeAddonsCommand:
         ],
     )
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -249,6 +242,7 @@ class TestMakeAddonsCommand:
     )
     @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
@@ -339,10 +333,6 @@ class TestMakeAddonsCommand:
         ), "The actual filecount should be expected files plus 3 initial manifest.yml and 1 override files"
 
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -353,6 +343,8 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
     @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
+    @mock_aws
     def test_make_addons_removes_old_addons_files(
         self,
         fakefs,
@@ -415,6 +407,7 @@ class TestMakeAddonsCommand:
         new=Mock(return_value=False),
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+    @mock_aws
     def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
 
@@ -424,12 +417,10 @@ class TestMakeAddonsCommand:
             in result.output
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+    @mock_aws
+
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
@@ -440,11 +431,8 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 1
         assert "No services found in ./copilot/; exiting" in result.output
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
@@ -473,10 +461,6 @@ class TestMakeAddonsCommand:
             "Services listed in invalid-entry.services do not exist in ./copilot/" in result.output
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @mock_aws
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
@@ -506,11 +490,8 @@ class TestMakeAddonsCommand:
             result.output,
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
@@ -559,11 +540,8 @@ class TestMakeAddonsCommand:
             in result.output
         )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
@@ -607,11 +585,11 @@ class TestMakeAddonsCommand:
         assert "Names cannot contain two adjacent periods" in result.output
         assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
-    def test_exit_if_services_key_invalid(self, fakefs):
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
+    def test_exit_if_services_key_invalid(
+        self, mock_kms_provider, mock_get_aws_session_or_abort, fakefs
+    ):
         """
         The services key can be set to a list of services, or '__all__' which
         denotes that it should be applied to all services.
@@ -645,11 +623,9 @@ class TestMakeAddonsCommand:
         assert "'__all__' does not match 'this-is-not-valid'" in result.output
         assert "'this-is-not-valid' should be instance of 'list'" in result.output
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
     def test_exit_if_no_local_copilot_environments(self, fakefs):
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="application: test-app")
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
@@ -668,19 +644,20 @@ class TestMakeAddonsCommand:
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
-    @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
         new=Mock(
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     def test_addon_instructions_with_postgres_addon_types(
         self,
+        mock_kms_provider,
+        mock_get_aws_session_or_abort,
+        mock_get_aws_session_or_abort2,
         mock_config_provider,
         fakefs,
         addon_config,
@@ -706,10 +683,6 @@ class TestMakeAddonsCommand:
                 f"{secret_name}" in result.output
             )
 
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -717,10 +690,17 @@ class TestMakeAddonsCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort", new=Mock())
+    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
-        self, mock_config_provider, fakefs
+        self,
+        mock_kms_provider,
+        mock_config_provider,
+        mock_get_aws_session_or_abort,
+        mock_get_aws_session_or_abort2,
+        fakefs,
     ):
         mock_config_provider.apply_environment_defaults = lambda conf: conf
         services = ["web", "web-celery"]
@@ -747,10 +727,6 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 0
 
     @freeze_time("2023-08-22 16:00:00")
-    @patch(
-        "dbt_platform_helper.utils.files.running_as_installed_package",
-        new=Mock(return_value=False),
-    )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
@@ -765,6 +741,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
     @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_s3_cross_account_policies_called(
         self,

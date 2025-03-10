@@ -12,13 +12,16 @@ import botocore.exceptions
 import click
 import yaml
 from boto3 import Session
+from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws import CopilotCodebaseNotFoundException
-from dbt_platform_helper.providers.aws import ImageNotFoundException
-from dbt_platform_helper.providers.aws import LogGroupNotFoundException
-from dbt_platform_helper.providers.aws import RepositoryNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
+from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -484,3 +487,23 @@ def wait_for_log_group_to_exist(log_client, log_group_name, attempts=30):
 
     if not log_group_exists:
         raise LogGroupNotFoundException(log_group_name)
+
+
+def get_image_build_project(codebuild_client, application, codebase):
+    project_name = f"{application}-{codebase}-codebase-image-build"
+    response = codebuild_client.batch_get_projects(names=[project_name])
+
+    if bool(response.get("projects")):
+        return project_name
+    else:
+        return f"{application}-{codebase}-codebase-pipeline-image-build"
+
+
+def get_manual_release_pipeline(codepipeline_client, application, codebase):
+    pipeline_name = f"{application}-{codebase}-manual-release"
+    try:
+        codepipeline_client.get_pipeline(name=pipeline_name)
+        return pipeline_name
+    except ClientError as e:
+        if e.response["Error"]["Code"] == "PipelineNotFoundException":
+            return f"{pipeline_name}-pipeline"

@@ -14,8 +14,7 @@ from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.providers.opensearch import OpensearchProvider
-from dbt_platform_helper.providers.redis import RedisProvider
+from dbt_platform_helper.providers.cache import Cache
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -87,6 +86,13 @@ environments:
       alias: app.trade.gov.uk
 """,
     )
+
+
+@pytest.fixture()
+def no_skipping_version_checks():
+    with patch("dbt_platform_helper.domain.versioning.skip_version_checks") as skip_version_checks:
+        skip_version_checks.return_value = False
+        yield skip_version_checks
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -788,23 +794,11 @@ def create_invalid_platform_config_file(fakefs):
 
 # TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
 @pytest.fixture(autouse=True)
-def mock_get_supported_opensearch_versions(request, monkeypatch):
-    if "skip_opensearch_fixture" in request.keywords:
+def mock_get_data(request, monkeypatch):
+    if "skip_mock_get_data" in request.keywords:
         return
 
-    def mock_return_value(self):
-        return ["1.0", "1.1", "1.2"]
-
-    monkeypatch.setattr(OpensearchProvider, "get_supported_opensearch_versions", mock_return_value)
-
-
-# TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
-@pytest.fixture(autouse=True)
-def mock_get_supported_redis_versions(request, monkeypatch):
-    if "skip_redis_fixture" in request.keywords:
-        return
-
-    def mock_return_value(self):
+    def mock_return_value(self, strategy):
         return ["6.2", "7.0", "7.1"]
 
-    monkeypatch.setattr(RedisProvider, "get_supported_redis_versions", mock_return_value)
+    monkeypatch.setattr(Cache, "get_data", mock_return_value)

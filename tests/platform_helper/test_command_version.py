@@ -7,7 +7,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class TestVersionCommand:
-    @patch("dbt_platform_helper.commands.version.RequiredVersion.get_required_version")
+    @patch("dbt_platform_helper.commands.version.PlatformHelperVersioning.get_required_version")
     def test_calls_versioning_function(
         self,
         mock_required_version,
@@ -18,7 +18,7 @@ class TestVersionCommand:
         assert result.exit_code == 0
         mock_required_version.assert_called_with(None)
 
-    @patch("dbt_platform_helper.commands.version.RequiredVersion.get_required_version")
+    @patch("dbt_platform_helper.commands.version.PlatformHelperVersioning.get_required_version")
     def test_calls_versioning_function_with_pipeline_override(
         self,
         mock_required_version,
@@ -30,7 +30,7 @@ class TestVersionCommand:
         assert result.exit_code == 0
         mock_required_version.assert_called_with("main")
 
-    @patch("dbt_platform_helper.commands.version.RequiredVersion.get_required_version")
+    @patch("dbt_platform_helper.commands.version.PlatformHelperVersioning.get_required_version")
     @patch("click.secho")
     def test_prints_error_message_if_exception_is_thrown_by_get_required_version(
         self,

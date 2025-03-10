@@ -3,9 +3,11 @@ from typing import Callable
 import boto3
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.aws.opensearch import Opensearch
+from dbt_platform_helper.providers.aws.redis import Redis
+from dbt_platform_helper.providers.cache import Cache
+from dbt_platform_helper.providers.cache import GetAWSVersionStrategy
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.opensearch import OpensearchProvider
-from dbt_platform_helper.providers.redis import RedisProvider
 
 
 class ConfigValidatorError(PlatformException):
@@ -32,7 +34,7 @@ class ConfigValidator:
             validation(config)
 
     def _validate_extension_supported_versions(
-        self, config, extension_type, version_key, get_supported_versions
+        self, config, aws_provider, extension_type, version_key
     ):
         extensions = config.get("extensions", {})
         if not extensions:
@@ -44,7 +46,10 @@ class ConfigValidator:
             if extension.get("type") == extension_type
         ]
 
-        supported_extension_versions = get_supported_versions()
+        # In this format so it can be monkey patched initially via mock_get_data fixture
+        cache_provider = Cache()
+        get_data_strategy = GetAWSVersionStrategy(aws_provider)
+        supported_extension_versions = cache_provider.get_data(get_data_strategy)
         extensions_with_invalid_version = []
 
         for extension in extensions_for_type:
@@ -74,21 +79,17 @@ class ConfigValidator:
     def validate_supported_redis_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            extension_type="redis",
-            version_key="engine",
-            get_supported_versions=RedisProvider(
-                boto3.client("elasticache")
-            ).get_supported_redis_versions,
+            aws_provider=Redis(boto3.client("elasticache")),
+            extension_type="redis",  # TODO this is information which can live in the RedisProvider
+            version_key="engine",  # TODO this is information which can live in the RedisProvider
         )
 
     def validate_supported_opensearch_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            extension_type="opensearch",
-            version_key="engine",
-            get_supported_versions=OpensearchProvider(
-                boto3.client("opensearch")
-            ).get_supported_opensearch_versions,
+            aws_provider=Opensearch(boto3.client("opensearch")),
+            extension_type="opensearch",  # TODO this is information which can live in the OpensearchProvider
+            version_key="engine",  # TODO this is information which can live in the OpensearchProvider
         )
 
     def validate_environment_pipelines(self, config):

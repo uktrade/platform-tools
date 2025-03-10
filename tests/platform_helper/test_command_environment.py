@@ -2,6 +2,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 from click.testing import CliRunner
+from moto import mock_aws
 
 from dbt_platform_helper.commands.environment import generate
 from dbt_platform_helper.commands.environment import generate_terraform
@@ -194,6 +195,7 @@ class TestGenerateCopilot:
 
 
 class TestGenerateTerraform:
+    @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     def test_generate_terraform_success(self, terraform_environment_mock):
         """Test that given name and terraform-platform-modules-version, the
@@ -211,6 +213,7 @@ class TestGenerateTerraform:
 
         mock_terraform_environment_instance.generate.assert_called_with("test", "123")
 
+    @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     def test_generate_terraform_without_version_flag_success(self, terraform_environment_mock):
         """Test that given name, the generate terraform command calls
@@ -227,6 +230,7 @@ class TestGenerateTerraform:
 
         mock_terraform_environment_instance.generate.assert_called_with("test", None)
 
+    @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     @patch("click.secho")
     def test_generate_terraform_catches_platform_exception_and_exits(
@@ -246,3 +250,26 @@ class TestGenerateTerraform:
         assert result.exit_code == 1
         mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
         mock_terraform_environment_instance.generate.assert_called_with("test", "123")
+
+    @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
+    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
+    def test_generate_terraform_sso_token_expired(
+        self, mock_session, mock_click, terraform_environment_mock
+    ):
+
+        mock_terraform_environment_instance = terraform_environment_mock.return_value
+        mock_session.side_effect = PlatformException(
+            "Unable to retrieve the Token for this session."
+        )
+
+        result = CliRunner().invoke(
+            generate_terraform,
+            ["--name", "test", "--terraform-platform-modules-version", "123"],
+        )
+
+        assert result.exit_code == 1
+        mock_click.assert_called_with(
+            """Error: Unable to retrieve the Token for this session.""", err=True, fg="red"
+        )
+        mock_terraform_environment_instance.generate.assert_not_called()

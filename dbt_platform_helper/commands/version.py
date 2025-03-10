@@ -1,6 +1,6 @@
 import click
 
-from dbt_platform_helper.domain.versioning import RequiredVersion
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -32,6 +32,6 @@ def get_platform_helper_for_project(pipeline):
         - Fall back on the version in the deprecated '.platform-helper-version' file
     """
     try:
-        RequiredVersion().get_required_version(pipeline)
+        PlatformHelperVersioning().get_required_version(pipeline)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
