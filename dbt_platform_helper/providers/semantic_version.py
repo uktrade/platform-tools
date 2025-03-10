@@ -42,6 +42,8 @@ class SemanticVersion:
         return (self.major, self.minor, self.patch) < (other.major, other.minor, other.patch)
 
     def __eq__(self, other) -> bool:
+        if other is None:
+            return False
         return (self.major, self.minor, self.patch) == (other.major, other.minor, other.patch)
 
     def validate_compatibility_with(self, other):

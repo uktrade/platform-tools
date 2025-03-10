@@ -176,11 +176,11 @@ class TestConfigValidate:
         )
 
         config_mocks = ConfigMocks(
-            aws_version=VersionStatus(SemanticVersion(None, None, None), SemanticVersion(2, 0, 0)),
-            copilot_version=VersionStatus(
-                SemanticVersion(None, None, None), SemanticVersion(3, 0, 0)
-            ),
+            aws_version=VersionStatus(None, SemanticVersion(2, 0, 0)),
+            copilot_version=VersionStatus(None, SemanticVersion(3, 0, 0)),
         )
+
+        print(config_mocks.copilot_version.installed)
         config_domain = Config(**config_mocks.params())
 
         with pytest.raises(SystemExit) as excinfo:
@@ -212,7 +212,7 @@ class TestConfigValidate:
         expected_tool_version_table.add_row(
             [
                 "aws",
-                "unknown",
+                None,
                 "2.0.0",
                 no,
             ]
@@ -220,7 +220,7 @@ class TestConfigValidate:
         expected_tool_version_table.add_row(
             [
                 "copilot",
-                "unknown",
+                None,
                 "3.0.0",
                 no,
             ]
@@ -260,8 +260,8 @@ class TestConfigValidate:
                     ANY,  # tested above due to PrettyTable being difficult to compare
                 ),
                 call("\nRecommendations:\n"),
-                call("  - Upgrade AWS CLI to version 2.0.0."),
-                call("  - Upgrade AWS Copilot to version 3.0.0."),
+                call("  - Install AWS Copilot https://aws.github.io/copilot-cli/"),
+                call("  - Install AWS CLI https://aws.amazon.com/cli/"),
                 call(""),
                 call(
                     ANY,  # tested above due to PrettyTable being difficult to compare
