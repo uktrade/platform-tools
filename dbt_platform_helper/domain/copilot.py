@@ -6,7 +6,6 @@ from pathlib import Path
 from pathlib import PosixPath
 
 import botocore
-import click
 import yaml
 from schema import SchemaError
 
@@ -14,6 +13,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.kms import KMSProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.application import get_application_name
@@ -45,20 +45,21 @@ class Copilot:
         file_provider: FileProvider,
         copilot_templating: CopilotTemplating,
         kms_provider: KMSProvider,
+        io: ClickIOProvider = ClickIOProvider(),
     ):
         self.config_provider = config_provider
         self.parameter_provider = parameter_provider
         self.file_provider = file_provider
         self.copilot_templating = copilot_templating
         self.kms_provider = kms_provider
+        self.io = io
 
     def make_addons(self):
         self.config_provider.config_file_check()
         try:
             config = self.config_provider.load_and_validate_platform_config()
         except SchemaError as ex:
-            click.secho(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}", fg="red")
-            raise click.Abort
+            self.io.abort_with_error(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}")
 
         templates = setup_templates()
         extensions = self._get_extensions()
@@ -66,7 +67,7 @@ class Copilot:
 
         application_name = get_application_name()
 
-        click.echo("\n>>> Generating Terraform compatible addons CloudFormation\n")
+        self.io.info("\n>>> Generating Terraform compatible addons CloudFormation\n")
 
         output_dir = Path(".").absolute()
         env_path = Path(f"copilot/environments/")
@@ -131,7 +132,7 @@ class Copilot:
 
         self.copilot_templating.generate_cross_account_s3_policies(environments, extensions)
 
-        click.echo(templates.get_template("addon-instructions.txt").render(services=services))
+        self.io.info(templates.get_template("addon-instructions.txt").render(services=services))
 
     def _list_copilot_local_environments(self):
         return [
@@ -142,10 +143,9 @@ class Copilot:
         with open(path) as manifest_file:
             data = yaml.safe_load(manifest_file)
             if not data or not data.get("type"):
-                click.echo(
-                    click.style(f"No type defined in manifest file {str(path)}; exiting", fg="red")
+                self.io.abort_with_error(
+                    f"No type defined in manifest file {str(path)}; exiting", fg="red"
                 )
-                exit(1)
 
             return data.get("type") in self.SERVICE_TYPES
 
@@ -192,23 +192,19 @@ class Copilot:
         errors = validate_addons(config)
 
         if errors:
-            click.echo(click.style(f"Errors found in {config_file}:", fg="red"))
+            self.io.error(f"Errors found in {config_file}:")
             for addon, error in errors.items():
-                click.echo(click.style(f"Addon '{addon}': {error}", fg="red"))
-            exit(1)
+                self.io.error(f"Addon '{addon}': {error}")
+            self.io.abort_with_error("Invalid platform-config.yml provided, see above warnings")
 
         env_names = self._list_copilot_local_environments()
         svc_names = self._list_copilot_local_services()
 
         if not env_names:
-            click.echo(
-                click.style(f"No environments found in ./copilot/environments; exiting", fg="red")
-            )
-            exit(1)
+            self.io.abort_with_error("No environments found in ./copilot/environments; exiting")
 
         if not svc_names:
-            click.echo(click.style(f"No services found in ./copilot/; exiting", fg="red"))
-            exit(1)
+            self.io.abort_with_error("No services found in ./copilot/; exiting")
 
         normalised_config = {}
         config_has_errors = False
@@ -221,11 +217,8 @@ class Copilot:
                     normalised_config[addon_name]["services"] = svc_names
 
                 if not set(normalised_config[addon_name]["services"]).issubset(set(svc_names)):
-                    click.echo(
-                        click.style(
-                            f"Services listed in {addon_name}.services do not exist in ./copilot/",
-                            fg="red",
-                        ),
+                    self.io.error(
+                        f"Services listed in {addon_name}.services do not exist in ./copilot/"
                     )
                     config_has_errors = True
 
@@ -236,18 +229,10 @@ class Copilot:
 
             missing_envs = set(environments.keys()) - set(env_names)
             if missing_envs:
-                click.echo(
-                    click.style(
-                        f"Environment keys listed in {addon_name} do not match those defined in ./copilot/environments.",
-                        fg="red",
-                    )
-                ),
-                click.echo(
-                    click.style(
-                        f"  Missing environments: {', '.join(sorted(missing_envs))}",
-                        fg="white",
-                    ),
+                self.io.error(
+                    f"Environment keys listed in {addon_name} do not match those defined in ./copilot/environments"
                 )
+                self.io.error(f"  Missing environments: {', '.join(sorted(missing_envs))}")
                 config_has_errors = True
 
             if config_has_errors:
@@ -273,7 +258,7 @@ class Copilot:
         return normalised_config
 
     # TODO - as part of the domain refactor, move this code into make-addons maybe?
-    def get_log_destination_arn(self):
+    def _get_log_destination_arn(self):
         """Get destination arns stored in param store in projects aws
         account."""
 
@@ -282,17 +267,14 @@ class Copilot:
                 "/copilot/tools/central_log_groups"
             )
         except botocore.errorfactory.ParameterNotFound:
-            # TODO - clickioprovider instead...
-            click.secho(
-                "No aws central log group defined in Parameter Store at location /copilot/tools/central_log_groups; exiting",
-                fg="red",
+            self.io.abort_with_error(
+                "No aws central log group defined in Parameter Store at location /copilot/tools/central_log_groups; exiting"
             )
-            exit(1)
 
         return json.loads(destination_arns["Value"])
 
     def _generate_svc_overrides(self, base_path, templates, name):
-        click.echo(f"\n>>> Generating service overrides for {name}\n")
+        self.io.info(f"\n>>> Generating service overrides for {name}\n")
         overrides_path = base_path.joinpath(f"copilot/{name}/overrides")
         overrides_path.mkdir(parents=True, exist_ok=True)
         overrides_file = overrides_path.joinpath("cfn.patches.yml")
@@ -335,7 +317,7 @@ class Copilot:
 
     def _generate_env_overrides(self, output_dir):
         path = "templates/env/terraform-overrides"
-        click.echo("\n>>> Generating Environment overrides\n")
+        self.io.info("\n>>> Generating Environment overrides\n")
         overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
         overrides_path.mkdir(parents=True, exist_ok=True)
         template_overrides_path = Path(__file__).parent.parent.joinpath(path)
@@ -366,7 +348,7 @@ class Copilot:
                 )
 
                 (output_dir / service_path).mkdir(parents=True, exist_ok=True)
-                click.echo(
+                self.io.info(
                     self.file_provider.mkfile(
                         output_dir, service_path / f"{addon_name}.yml", contents, overwrite=True
                     )

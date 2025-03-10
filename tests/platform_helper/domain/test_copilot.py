@@ -10,6 +10,7 @@ class CopilotMocks:
         self.file_provider = kwargs.get("file_provider", Mock())
         self.copilot_templating = kwargs.get("copilot_templating", Mock())
         self.kms_provider = kwargs.get("kms_provider", Mock())
+        self.io = kwargs.get("io", Mock())
 
     def params(self):
         return {
@@ -18,6 +19,7 @@ class CopilotMocks:
             "file_provider": self.file_provider,
             "copilot_templating": self.copilot_templating,
             "kms_provider": self.kms_provider,
+            "io": self.io,
         }
 
 
