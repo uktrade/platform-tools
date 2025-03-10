@@ -7,6 +7,12 @@ from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.semantic_version import VersionStatus
+from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.tool_versioning import get_aws_versions
 from dbt_platform_helper.utils.tool_versioning import get_copilot_versions
 from dbt_platform_helper.utils.tool_versioning import (
@@ -70,31 +76,22 @@ class Config:
         copilot_versions = self.get_copilot_versions()
 
         self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
-        self.io.debug("Checking addons templates versions...")
 
         ConfigProvider().config_file_check()  # TODO move to top and make it a generic usable function? Where will it live?
 
-        platform_helper_version_status.installed
-        platform_helper_version_status.latest
-        addons_templates_table = PrettyTable()
-        addons_templates_table.field_names = [
-            "Addons Template File",
-            "Generated with",
-            "Compatible with local?",
-            "Compatible with latest?",
-        ]
-        addons_templates_table.align["Addons Template File"] = "l"
+        compatible = self._check_addon_versions(platform_helper_version_status)
 
-        addons_templates = list(Path("./copilot").glob("**/addons/*"))
-        # Sort by template file path
-        addons_templates.sort(key=lambda e: str(e))
-        # Bring environment addons to the top
-        addons_templates.sort(key=lambda e: "environments/" not in str(e))
+        exit(0 if compatible else 1)
 
     def generate_aws(self):
         pass
 
-    def _check_tool_versions(self, platform_helper_versions, aws_versions, copilot_versions):
+    def _check_tool_versions(
+        self,
+        platform_helper_versions: PlatformHelperVersionStatus,
+        aws_versions: VersionStatus,
+        copilot_versions: VersionStatus,
+    ):
         self.io.debug("Checking tooling versions...")
 
         recommendations = {}
@@ -164,6 +161,86 @@ class Config:
             ]
 
         self._render_recommendations(recommendations)
+
+    def _check_addon_versions(self, platform_helper_versions: PlatformHelperVersionStatus) -> bool:
+
+        self.io.debug("Checking addons templates versions...")
+
+        compatible = True
+        recommendations = {}
+
+        local_version = platform_helper_versions.installed
+        latest_release = platform_helper_versions.latest
+
+        addons_templates_table = PrettyTable()
+        addons_templates_table.field_names = [
+            "Addons Template File",
+            "Generated with",
+            "Compatible with local?",
+            "Compatible with latest?",
+        ]
+        addons_templates_table.align["Addons Template File"] = "l"
+
+        addons_templates = list(Path("./copilot").glob("**/addons/*"))
+        # Sort by template file path
+        addons_templates.sort(key=lambda e: str(e))
+        # Bring environment addons to the top
+        addons_templates.sort(key=lambda e: "environments/" not in str(e))
+
+        for template_file in addons_templates:
+            generated_with_version = maybe
+            local_compatible_symbol = yes
+            latest_compatible_symbol = yes
+
+            try:
+                generated_with_version = self.get_template_generated_with_version(
+                    str(template_file.resolve())
+                )
+                self.validate_template_version(local_version, str(template_file.resolve()))
+            except IncompatibleMajorVersionException:
+                local_compatible_symbol = no
+                compatible = False
+                recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
+                    "dbt-platform-helper-upgrade"
+                ].format(version=latest_release)
+                recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
+                    "dbt-platform-helper-upgrade-note"
+                ]
+            except ValidationException:
+                local_compatible_symbol = maybe
+                compatible = False
+                recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
+                    "dbt-platform-helper-upgrade"
+                ].format(version=latest_release)
+                recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
+                    "dbt-platform-helper-upgrade-note"
+                ]
+
+            try:
+                generated_with_version = self.get_template_generated_with_version(
+                    str(template_file.resolve())
+                )
+                self.validate_template_version(latest_release, str(template_file.resolve()))
+            except IncompatibleMajorVersionException:
+                latest_compatible_symbol = no
+                compatible = False
+            except ValidationException:
+                latest_compatible_symbol = maybe
+                compatible = False
+
+            addons_templates_table.add_row(
+                [
+                    template_file.relative_to("."),
+                    (maybe if latest_compatible_symbol is maybe else str(generated_with_version)),
+                    local_compatible_symbol,
+                    latest_compatible_symbol,
+                ]
+            )
+
+        self.io.info(addons_templates_table)
+        self._render_recommendations(recommendations)
+
+        return compatible
 
     def _render_recommendations(self, recommendations: Dict[str, str]):
         if recommendations:

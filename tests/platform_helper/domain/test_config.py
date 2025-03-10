@@ -46,8 +46,8 @@ class ConfigMocks:
             "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
             "get_aws_versions": self.get_aws_versions,
             "get_copilot_versions": self.get_copilot_versions,
-            "get_template_generated_with_version": self.get_template_generated_with_version,
-            "validate_template_version": self.validate_template_version,
+            # "get_template_generated_with_version": self.get_template_generated_with_version,
+            # "validate_template_version": self.validate_template_version,
         }
 
 
@@ -60,6 +60,11 @@ class TestConfigValidate:
     #                  - installed aws is None
     #                  - installed aws is outdated
     #                  - installed copilot is outdated
+    # TODO addons validation
+    #                  - local installed IncompatibleMajorVersionException
+    #                  - local installed ValidationException
+    #                  - latest IncompatibleMajorVersionException (done)
+    #                  - latest ValidationException
     def test_validate(self, fakefs):
         # TODO  create with dbt-platform-helper
         fakefs.create_file("platform-config.yml")
@@ -70,7 +75,9 @@ class TestConfigValidate:
 
         config_mocks = ConfigMocks()
         config_domain = Config(**config_mocks.params())
-        config_domain.validate()
+
+        with pytest.raises(SystemExit) as excinfo:
+            config_domain.validate()
 
         config_mocks.io.debug.assert_has_calls(
             [
@@ -118,9 +125,27 @@ class TestConfigValidate:
             ]
         )
 
+        expected_addon_table = PrettyTable()
+        expected_addon_table.field_names = [
+            "Addons Template File",
+            "Generated with",
+            "Compatible with local?",
+            "Compatible with latest?",
+        ]
+        expected_addon_table.align["Addons Template File"] = "l"
+        expected_addon_table.add_row(
+            [
+                "copilot/environments/dev/addons/test_addon.yml",
+                "0.1.0",
+                yes,
+                no,
+            ]
+        )
+
         assert repr(config_mocks.io.info.call_args_list[0][0][0]) == repr(
             expected_tool_version_table
         )
+        assert repr(config_mocks.io.info.call_args_list[5][0][0]) == repr(expected_addon_table)
         config_mocks.io.info.assert_has_calls(
             [
                 call(
@@ -134,6 +159,9 @@ class TestConfigValidate:
                     "    Post upgrade, run `platform-helper copilot make-addons` to update your addon templates."
                 ),
                 call(""),
+                call(
+                    ANY,  # tested above due to PrettyTable being difficult to compare
+                ),
             ],
             any_order=True,
         )
@@ -176,7 +204,6 @@ class TestConfigValidate:
             [
                 call("\nDetected a deployment repository\n"),
                 call("Checking tooling versions..."),
-                call("Checking addons templates versions..."),
             ]
         )
         config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
