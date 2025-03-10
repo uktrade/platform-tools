@@ -251,6 +251,7 @@ class PlatformConfigSchema:
         # Todo: Move to OpenSearch provider?
         _valid_opensearch_plans = Or(
             "tiny",
+            "tiny-ha",
             "small",
             "small-ha",
             "medium",
@@ -273,7 +274,7 @@ class PlatformConfigSchema:
                     Optional("ebs_volume_type"): str,
                     Optional("instance"): str,
                     Optional("instances"): int,
-                    Optional("master"): bool,
+                    Optional("master"): bool, # Deprecated, will need to be removed.
                     Optional("es_app_log_retention_in_days"): int,
                     Optional("index_slow_log_retention_in_days"): int,
                     Optional("audit_log_retention_in_days"): int,
