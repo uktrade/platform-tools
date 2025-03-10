@@ -16,6 +16,7 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.kms import KMSProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -46,6 +47,7 @@ class Copilot:
         copilot_templating: CopilotTemplating,
         kms_provider: KMSProvider,
         io: ClickIOProvider = ClickIOProvider(),
+        yaml_file_provider: YamlFileProvider = YamlFileProvider,
     ):
         self.config_provider = config_provider
         self.parameter_provider = parameter_provider
@@ -53,6 +55,7 @@ class Copilot:
         self.copilot_templating = copilot_templating
         self.kms_provider = kms_provider
         self.io = io
+        self.yaml_file_provider = yaml_file_provider
 
     def make_addons(self):
         self.config_provider.config_file_check()
@@ -140,14 +143,12 @@ class Copilot:
         ]
 
     def _is_service(self, path: PosixPath) -> bool:
-        with open(path) as manifest_file:
-            data = yaml.safe_load(manifest_file)
-            if not data or not data.get("type"):
-                self.io.abort_with_error(
-                    f"No type defined in manifest file {str(path)}; exiting", fg="red"
-                )
 
-            return data.get("type") in self.SERVICE_TYPES
+        manifest_file = self.yaml_file_provider.load(path)
+        if not manifest_file or not manifest_file.get("type"):
+            self.io.abort_with_error(f"No type defined in manifest file {str(path)}; exiting")
+
+        return manifest_file.get("type") in self.SERVICE_TYPES
 
     def _list_copilot_local_services(self):
         return [
