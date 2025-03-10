@@ -1,54 +1,20 @@
 from datetime import datetime
 from datetime import timedelta
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
+import pytest
 from freezegun import freeze_time
 
-from dbt_platform_helper.providers.cache import CacheProvider
-
-
-def test_cache_refresh_required_with_cached_datetime_greater_than_one_day_returns_true():
-
-    file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
-
-    read_yaml_return_value = {
-        "redis": {
-            # Some timestamp which is > than 1 day. i.e. enough to trigger a cache refresh
-            "date-retrieved": "09-02-02 10:35:48"
-        }
-    }
-
-    file_provider_mock.load.return_value = read_yaml_return_value
-    with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
-
-        assert cache_provider.cache_refresh_required("redis")
-
-
-def test_cache_refresh_required_with_cached_datetime_greater_less_one_day_returns_false():
-
-    today = datetime.now()
-    # Time range is still < 1 day so should not require refresh
-    middle_of_today = today - timedelta(hours=12)
-
-    file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
-
-    read_yaml_return_value = {
-        "redis": {"date-retrieved": middle_of_today.strftime("%d-%m-%y %H:%M:%S")}
-    }
-    file_provider_mock.load.return_value = read_yaml_return_value
-
-    with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
-        assert not cache_provider.cache_refresh_required("redis")
+from dbt_platform_helper.providers.cache import Cache
+from dbt_platform_helper.providers.cache import GetAWSVersionStrategy
 
 
 @freeze_time("2024-12-09 16:00:00")
-def test_update_cache_with_existing_cache_file_expected_file():
-
+def test_update_cache_when_cache_exists():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    cache_provider = Cache(file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]}
@@ -63,7 +29,7 @@ def test_update_cache_with_existing_cache_file_expected_file():
 
     with patch("dbt_platform_helper.providers.cache.os.path.exists", return_value=True):
 
-        cache_provider.update_cache("opensearch", ["6.1", "6.2"])
+        cache_provider._update_cache("opensearch", ["6.1", "6.2"])
 
     file_provider_mock.write.assert_called_once_with(
         ".platform-helper-config-cache.yml",
@@ -72,10 +38,9 @@ def test_update_cache_with_existing_cache_file_expected_file():
     )
 
 
-def test_read_supported_versions_from_cache_returns_correct_product():
-
+def test_read_supported_versions_from_cache_when_resource_exists():
     file_provider_mock = MagicMock()
-    cache_provider = CacheProvider(file_provider=file_provider_mock)
+    cache_provider = Cache(file_provider=file_provider_mock)
 
     read_yaml_return_value = {
         "redis": {"date-retrieved": "09-02-02 10:35:48", "versions": ["7.1", "7.2"]},
@@ -83,6 +48,122 @@ def test_read_supported_versions_from_cache_returns_correct_product():
     }
     file_provider_mock.load.return_value = read_yaml_return_value
 
-    supported_versions = cache_provider.read_supported_versions_from_cache("opensearch")
+    supported_versions = cache_provider._read_from_cache("opensearch")
 
     assert supported_versions == ["6.1", "6.2"]
+
+
+def test_cache_refresh_required_when_cache_file_does_not_exist():
+    file_provider_mock = MagicMock()
+    cache_provider = Cache(file_provider=file_provider_mock)
+
+    file_provider_mock.load.side_effect = FileNotFoundError
+
+    result = cache_provider._cache_refresh_required("opensearch")
+
+    assert result is True
+
+
+def test_cache_refresh_required_when_resource_name_does_not_exist_in_cache():
+    file_provider_mock = MagicMock()
+    cache_provider = Cache(file_provider=file_provider_mock)
+
+    read_yaml_return_value = {
+        "redis": {"date-retrieved": "01-01-01 10:00:00", "versions": ["7.1", "7.2"]},
+    }
+    file_provider_mock.load.return_value = read_yaml_return_value
+
+    result = cache_provider._cache_refresh_required("opensearch")
+
+    assert result is True
+
+
+def test_cache_refresh_required_when_date_retrieved_is_older_than_one_day():
+    file_provider_mock = MagicMock()
+    cache_provider = Cache(file_provider=file_provider_mock)
+
+    read_yaml_return_value = {
+        "opensearch": {"date-retrieved": "01-01-01 10:00:00", "versions": ["6.1", "6.2"]},
+    }
+    file_provider_mock.load.return_value = read_yaml_return_value
+
+    cache_provider._CacheProvider__check_if_cached_datetime_is_greater_than_interval = Mock(
+        return_value=True
+    )
+
+    result = cache_provider._cache_refresh_required("opensearch")
+
+    assert result is True
+
+
+def test_cache_refresh_not_required_when_cache_is_less_than_one_day_old():
+    current_time = datetime.now()
+    date_retrieved = (current_time - timedelta(hours=2)).strftime("%d-%m-%y %H:%M:%S")
+
+    file_provider_mock = MagicMock()
+    cache_provider = Cache(file_provider=file_provider_mock)
+    file_provider_mock.load.return_value = {"opensearch": {"date-retrieved": date_retrieved}}
+
+    cache_provider._Cache__cache_exists = Mock(return_value=True)
+
+    with freeze_time(current_time):
+        assert not cache_provider._cache_refresh_required("opensearch")
+
+
+@pytest.mark.skip_mock_get_data
+def test_get_data():
+    file_provider_mock = MagicMock()
+    cache_provider = Cache(file_provider=file_provider_mock)
+    strategy = MagicMock()
+    strategy.get_data_identifier.return_value = "doesnt-matter"
+    strategy.retrieve_fresh_data.return_value = ["this", "no", "matter"]
+
+    cache_provider._cache_refresh_required = MagicMock()
+    cache_provider._cache_refresh_required.return_value = True
+    cache_provider._read_from_cache = MagicMock()
+    cache_provider._update_cache = MagicMock()
+
+    retrieved_data = cache_provider.get_data(strategy)
+
+    assert retrieved_data == ["this", "no", "matter"]
+    cache_provider._cache_refresh_required.assert_called_with("doesnt-matter")
+    cache_provider._update_cache.assert_called_with("doesnt-matter", ["this", "no", "matter"])
+    cache_provider._read_from_cache.assert_not_called()
+
+
+@pytest.mark.skip_mock_get_data
+def test_get_data_no_cache_refresh():
+    file_provider_mock = MagicMock()
+    cache_provider = Cache(file_provider=file_provider_mock)
+    strategy = MagicMock()
+    strategy.get_data_identifier.return_value = "doesnt-matter"
+    strategy.retrieve_fresh_data.return_value = ["this", "no", "matter"]
+
+    cache_provider._cache_refresh_required = MagicMock()
+    cache_provider._cache_refresh_required.return_value = False
+    cache_provider._read_from_cache = MagicMock()
+    cache_provider._read_from_cache.return_value = [
+        "cache",
+        "doesnt",
+        "matter",
+    ]
+    cache_provider._update_cache = MagicMock()
+
+    retrieved_data = cache_provider.get_data(strategy)
+
+    cache_provider._cache_refresh_required.assert_called_with("doesnt-matter")
+    cache_provider._update_cache.assert_not_called()
+    cache_provider._read_from_cache.assert_called_with("doesnt-matter")
+
+    assert retrieved_data == ["cache", "doesnt", "matter"]
+
+
+def test_get_aws_version_strategy():
+    client_provider = MagicMock()
+    client_provider.get_supported_versions.return_value = ["doesnt", "matter"]
+    client_provider.get_reference.return_value = "doesnt-matter"
+
+    strategy = GetAWSVersionStrategy(client_provider)
+
+    assert strategy.retrieve_fresh_data() == ["doesnt", "matter"]
+    assert strategy.get_data_identifier() == "doesnt-matter"

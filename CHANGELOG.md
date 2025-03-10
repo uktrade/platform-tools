@@ -1,5 +1,27 @@
 # Changelog
 
+## [13.2.0](https://github.com/uktrade/platform-tools/compare/13.1.2...13.2.0) (2025-03-07)
+
+
+### Features
+
+* DBTP-1845 Improve Maintenance Page logging ([#790](https://github.com/uktrade/platform-tools/issues/790)) ([9fb3985](https://github.com/uktrade/platform-tools/commit/9fb39854ed31ebcc09dfe71e09ef2de3d02eb72f))
+
+
+### Bug Fixes
+
+* config validate command - wrong provider injected into PlatformHelperVersioning ([#801](https://github.com/uktrade/platform-tools/issues/801)) ([7a7c36d](https://github.com/uktrade/platform-tools/commit/7a7c36da8d6eab0111386553c64d6ba25bccc6c1))
+* DBTP-1804 - Update manual release pipeline name ([#781](https://github.com/uktrade/platform-tools/issues/781)) ([cb571fc](https://github.com/uktrade/platform-tools/commit/cb571fc9985d823801a83440b03fa3f458b85eac))
+* mock aws session in copilot tests ([#796](https://github.com/uktrade/platform-tools/issues/796)) ([9ee43b5](https://github.com/uktrade/platform-tools/commit/9ee43b51c9c1718f9e81d0ebe0ed2ce6364cc854))
+
+## [13.1.2](https://github.com/uktrade/platform-tools/compare/13.1.1...13.1.2) (2025-02-26)
+
+
+### Bug Fixes
+
+* Fix Vulnerable OpenSSL included in cryptography wheels ([#786](https://github.com/uktrade/platform-tools/issues/786)) ([b6f1cb6](https://github.com/uktrade/platform-tools/commit/b6f1cb615fe8f7d59f53cb4330fd16550f710489))
+* Fix load balancer tag description limit by chunking ([#784](https://github.com/uktrade/platform-tools/issues/784)) ([3ee9eae](https://github.com/uktrade/platform-tools/commit/3ee9eaece39e1483baf41e6b3d628ca143d76368))
+
 ## [13.1.1](https://github.com/uktrade/platform-tools/compare/13.1.0...13.1.1) (2025-02-21)
 
 

@@ -10,9 +10,7 @@ from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.load_balancers import (
-    get_https_certificate_for_application,
-)
+from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcNotFoundForNameException
 from dbt_platform_helper.providers.vpc import VpcProvider
@@ -27,9 +25,10 @@ class CopilotEnvironment:
         config_provider: ConfigProvider,
         vpc_provider: VpcProvider = None,
         cloudformation_provider: CloudFormation = None,
-        session: Session = None,  # TODO - this is a temporary fix, will fall away once the Loadbalancer provider is in place.
+        session: Session = None,  # TODO - this is a temporary fix, will fall away once _get_environment_vpc is updated.
         copilot_templating=None,
         io: ClickIOProvider = ClickIOProvider(),
+        load_balancer_provider: LoadBalancerProvider = LoadBalancerProvider,
     ):
         self.config_provider = config_provider
         self.vpc_provider = vpc_provider
@@ -38,6 +37,7 @@ class CopilotEnvironment:
         )
         self.io = io
         self.session = session
+        self.load_balancer = load_balancer_provider(session)
         self.cloudformation_provider = cloudformation_provider
 
     def generate(self, environment_name: str) -> None:
@@ -56,8 +56,8 @@ class CopilotEnvironment:
 
         app_name = platform_config["application"]
 
-        certificate_arn = get_https_certificate_for_application(
-            self.session, app_name, environment_name
+        certificate_arn = self.load_balancer.get_https_certificate_for_application(
+            app_name, environment_name
         )
 
         vpc = self._get_environment_vpc(

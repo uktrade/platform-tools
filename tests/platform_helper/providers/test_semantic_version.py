@@ -90,13 +90,12 @@ class TestVersionStatus:
     def test_is_outdated(self, suite):
         local_version, latest_release, expected = suite
         assert (
-            VersionStatus(local_version=local_version, latest_release=latest_release).is_outdated()
-            == expected
+            VersionStatus(installed=local_version, latest=latest_release).is_outdated() == expected
         )
 
     def test_to_string(self):
         result = f"{VersionStatus(SemanticVersion(1, 2, 0), SemanticVersion(1, 2, 3))}"
-        assert result == "VersionStatus: local: 1.2.0, latest: 1.2.3"
+        assert result == "VersionStatus: installed: 1.2.0, latest: 1.2.3"
 
 
 class TestPlatformHelperVersionStatus:
@@ -114,7 +113,7 @@ class TestPlatformHelperVersionStatus:
         result = f"{platform_helper_version_status}"
         assert (
             result
-            == "PlatformHelperVersionStatus: local: 1.2.0, latest: 1.2.3, deprecated_version_file: 1.1.1, platform_config_default: 1.0.0, pipeline_overrides: main: 2.0.0, dev: 2.1.1"
+            == "PlatformHelperVersionStatus: installed: 1.2.0, latest: 1.2.3, deprecated_version_file: 1.1.1, platform_config_default: 1.0.0, pipeline_overrides: main: 2.0.0, dev: 2.1.1"
         )
 
     def test_to_string_with_no_pipeline_overrides(self):
@@ -127,5 +126,5 @@ class TestPlatformHelperVersionStatus:
         result = f"{platform_helper_version_status}"
         assert (
             result
-            == "PlatformHelperVersionStatus: local: 1.2.0, latest: 1.2.3, deprecated_version_file: 1.1.1, platform_config_default: 1.0.0"
+            == "PlatformHelperVersionStatus: installed: 1.2.0, latest: 1.2.3, deprecated_version_file: 1.1.1, platform_config_default: 1.0.0"
         )

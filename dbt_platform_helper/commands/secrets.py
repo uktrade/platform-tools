@@ -6,9 +6,7 @@ import click
 from botocore.exceptions import ClientError
 from cloudfoundry_client.client import CloudFoundryClient
 
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort

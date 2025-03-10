@@ -2,9 +2,7 @@ import click
 from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.utils.arn_parser import ARN
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 

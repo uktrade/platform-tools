@@ -12,12 +12,16 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.application import Application
-from dbt_platform_helper.utils.application import ApplicationException
+from dbt_platform_helper.utils.application import (
+    ApplicationEnvironmentNotFoundException,
+)
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
+from dbt_platform_helper.utils.aws import get_image_build_project
+from dbt_platform_helper.utils.aws import get_manual_release_pipeline
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
 from dbt_platform_helper.utils.aws import start_pipeline_and_return_execution_id
@@ -32,6 +36,8 @@ class Codebase:
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
         check_image_exists: Callable[[str], str] = check_image_exists,
+        get_image_build_project: Callable[[str], str] = get_image_build_project,
+        get_manual_release_pipeline: Callable[[str], str] = get_manual_release_pipeline,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
         get_build_url_from_pipeline_execution_id: Callable[
             [str], str
@@ -48,6 +54,8 @@ class Codebase:
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
         self.check_image_exists = check_image_exists
+        self.get_image_build_project = get_image_build_project
+        self.get_manual_release_pipeline = get_manual_release_pipeline
         self.get_build_url_from_arn = get_build_url_from_arn
         self.get_build_url_from_pipeline_execution_id = get_build_url_from_pipeline_execution_id
         self.list_latest_images = list_latest_images
@@ -124,12 +132,13 @@ class Codebase:
         self.check_if_commit_exists(commit)
 
         codebuild_client = session.client("codebuild")
+        project_name = self.get_image_build_project(codebuild_client, app, codebase)
         build_url = self.__start_build_with_confirmation(
             codebuild_client,
             self.get_build_url_from_arn,
             f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
             {
-                "projectName": f"{app}-{codebase}-codebase-pipeline-image-build",
+                "projectName": project_name,
                 "artifactsOverride": {"type": "NO_ARTIFACTS"},
                 "sourceVersion": commit,
             },
@@ -148,12 +157,13 @@ class Codebase:
 
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundException(env)
+            raise ApplicationEnvironmentNotFoundException(application.name, env)
 
         self.check_image_exists(session, application, codebase, commit)
 
-        pipeline_name = f"{app}-{codebase}-manual-release-pipeline"
         codepipeline_client = session.client("codepipeline")
+
+        pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
 
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
@@ -240,13 +250,6 @@ class Codebase:
 class ApplicationDeploymentNotTriggered(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(f"""Your deployment for {codebase} was not triggered.""")
-
-
-class ApplicationEnvironmentNotFoundException(ApplicationException):
-    def __init__(self, environment: str):
-        super().__init__(
-            f"""The environment "{environment}" either does not exist or has not been deployed."""
-        )
 
 
 class NotInCodeBaseRepositoryException(PlatformException):
