@@ -51,16 +51,12 @@ class Config:
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
-        get_template_generated_with_version=get_template_generated_with_version,
-        validate_template_version=validate_template_version,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
         self.get_aws_versions = get_aws_versions
         self.get_copilot_versions = get_copilot_versions
-        self.get_template_generated_with_version = get_template_generated_with_version
-        self.validate_template_version = validate_template_version
         self.config = config
 
     def validate(self):
@@ -193,10 +189,10 @@ class Config:
             latest_compatible_symbol = yes
 
             try:
-                generated_with_version = self.get_template_generated_with_version(
+                generated_with_version = get_template_generated_with_version(
                     str(template_file.resolve())
                 )
-                self.validate_template_version(local_version, str(template_file.resolve()))
+                validate_template_version(local_version, str(template_file.resolve()))
             except IncompatibleMajorVersionException:
                 local_compatible_symbol = no
                 compatible = False
@@ -217,10 +213,10 @@ class Config:
                 ]
 
             try:
-                generated_with_version = self.get_template_generated_with_version(
+                generated_with_version = get_template_generated_with_version(
                     str(template_file.resolve())
                 )
-                self.validate_template_version(latest_release, str(template_file.resolve()))
+                validate_template_version(latest_release, str(template_file.resolve()))
             except IncompatibleMajorVersionException:
                 latest_compatible_symbol = no
                 compatible = False
