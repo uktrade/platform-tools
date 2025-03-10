@@ -48,7 +48,7 @@ class Codebase:
         check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
         run_subprocess: Callable[[str], str] = subprocess.run,
     ):
-        self.parameter_store = parameter_provider
+        self.parameter_provider = parameter_provider
         self.io = io
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
@@ -203,7 +203,7 @@ class Codebase:
         self.io.info("")
 
     def __get_codebases(self, application, ssm_client):
-        parameters = self.parameter_store.get_ssm_parameters_by_path(
+        parameters = self.parameter_provider.get_ssm_parameters_by_path(
             f"/copilot/applications/{application.name}/codebases"
         )
         codebases = [json.loads(p["Value"]) for p in parameters]
