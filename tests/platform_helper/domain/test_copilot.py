@@ -420,7 +420,6 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
     @mock_aws
-
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
 
