@@ -11,6 +11,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @patch("dbt_platform_helper.commands.copilot.Copilot")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.ParameterStore")
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
     @patch("dbt_platform_helper.commands.copilot.FileProvider")
     @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
@@ -19,6 +20,7 @@ class TestMakeAddonsCommand:
         mock_copilot_templating,
         mock_file_provider,
         mock_config_validator,
+        mock_parameter_store,
         mock_config_provider,
         mock_copilot,
         mock_kms_provider,
@@ -41,6 +43,7 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 0
         mock_copilot.assert_called_once_with(
             mock_config_provider.return_value,
+            mock_parameter_store.return_value,
             mock_file_provider.return_value,
             mock_copilot_templating.return_value,
             mock_kms_provider.return_value,
@@ -51,6 +54,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @patch("dbt_platform_helper.commands.copilot.Copilot")
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.ParameterStore")
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
     @patch("dbt_platform_helper.commands.copilot.FileProvider")
     @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
@@ -61,6 +65,7 @@ class TestMakeAddonsCommand:
         mock_copilot_templating,
         mock_file_provider,
         mock_config_validator,
+        mock_parameter_store,
         mock_config_provider,
         mock_copilot,
         mock_kms_provider,
@@ -83,6 +88,7 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 1
         mock_copilot.assert_called_with(
             mock_config_provider.return_value,
+            mock_parameter_store.return_value,
             mock_file_provider.return_value,
             mock_copilot_templating.return_value,
             mock_kms_provider.return_value,

@@ -340,20 +340,19 @@ class TestMakeAddonsCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
     @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_make_addons_removes_old_addons_files(
         self,
-        mock_get_session,
         fakefs,
     ):
         """Tests that old addons files are cleaned up before generating new
         ones."""
 
         # Arrange
-        mock_aws_client(mock_get_session)
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
             addons_dir / "config/copilot", read_only=False, target_path="copilot"
@@ -403,6 +402,7 @@ class TestMakeAddonsCommand:
             path = Path("copilot", f)
             assert not path.exists(), f"{path} should not exist"
 
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
     @mock_aws
     def test_exit_if_no_config_file(self, fakefs):
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -414,6 +414,7 @@ class TestMakeAddonsCommand:
         )
 
     @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
     @mock_aws
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
@@ -820,7 +821,7 @@ class TestMakeAddonsCommand:
         CliRunner().invoke(copilot, ["make-addons"])
 
         mock_load_and_validate_platform_config.assert_called()
-        exp = Copilot(mock_config_provider, Mock(), Mock(), Mock())._get_extensions()
+        exp = Copilot(mock_config_provider, Mock(), Mock(), Mock(), Mock())._get_extensions()
         exp["s3"]["environments"]["development"]["kms_key_arn"] = "arn-for-kms-alias"
         exp["s3"]["environments"]["production"]["kms_key_arn"] = "arn-for-kms-alias"
         mock_config_provider_instance.apply_environment_defaults.assert_called_with(
@@ -854,7 +855,9 @@ def test_is_service(fakefs, service_type, expected):
     # TODO - horrendous mocking, but good as as top gap so we keep test coverage.
     # Will need to create a copilot_mocks obj for the domain tests.
     assert (
-        Copilot(Mock(), Mock(), Mock(), Mock()).is_service(PosixPath("copilot/web/manifest.yml"))
+        Copilot(Mock(), Mock(), Mock(), Mock(), Mock()).is_service(
+            PosixPath("copilot/web/manifest.yml")
+        )
         == expected
     )
 
@@ -864,7 +867,7 @@ def test_is_service_empty_manifest(fakefs, capfd):
     fakefs.create_file(file_path)
 
     with pytest.raises(SystemExit) as excinfo:
-        Copilot(Mock(), Mock(), Mock(), Mock()).is_service(PosixPath(file_path))
+        Copilot(Mock(), Mock(), Mock(), Mock(), Mock()).is_service(PosixPath(file_path))
 
     assert excinfo.value.code == 1
     assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
