@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from pathlib import PosixPath
 
+import botocore
 import click
 import yaml
 from schema import SchemaError
@@ -14,6 +15,7 @@ from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.kms import KMSProvider
+from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -39,11 +41,13 @@ class Copilot:
     def __init__(
         self,
         config_provider: ConfigProvider,
+        parameter_provider: ParameterStore,
         file_provider: FileProvider,
         copilot_templating: CopilotTemplating,
         kms_provider: KMSProvider,
     ):
         self.config_provider = config_provider
+        self.parameter_provider = parameter_provider
         self.file_provider = file_provider
         self.copilot_templating = copilot_templating
         self.kms_provider = kms_provider
@@ -268,25 +272,24 @@ class Copilot:
 
         return normalised_config
 
-    # TODO - Param store provider? - Setting up a client here locally too which I really don't like... And creating its own session
-    def _get_log_destination_arn(self):
+    # TODO - as part of the domain refactor, move this code into make-addons maybe?
+    def get_log_destination_arn(self):
         """Get destination arns stored in param store in projects aws
         account."""
-        session = get_aws_session_or_abort()
-        client = session.client("ssm", region_name="eu-west-2")
-        response = client.get_parameters(Names=["/copilot/tools/central_log_groups"])
 
-        if not response["Parameters"]:
-            click.echo(
-                click.style(
-                    "No aws central log group defined in Parameter Store at location /copilot/tools/central_log_groups; exiting",
-                    fg="red",
-                )
+        try:
+            destination_arns = self.parameter_provider.get_ssm_parameter_by_name(
+                "/copilot/tools/central_log_groups"
+            )
+        except botocore.errorfactory.ParameterNotFound:
+            # TODO - clickioprovider instead...
+            click.secho(
+                "No aws central log group defined in Parameter Store at location /copilot/tools/central_log_groups; exiting",
+                fg="red",
             )
             exit(1)
 
-        destination_arns = json.loads(response["Parameters"][0]["Value"])
-        return destination_arns
+        return json.loads(destination_arns["Value"])
 
     def _generate_svc_overrides(self, base_path, templates, name):
         click.echo(f"\n>>> Generating service overrides for {name}\n")
