@@ -6,7 +6,6 @@ from pathlib import Path
 from pathlib import PosixPath
 
 import botocore
-import yaml
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -157,6 +156,7 @@ class Copilot:
             if self._is_service(path)
         ]
 
+    # TODO - potentially worth moving into config provider?
     def _validate_and_normalise_extensions_config(self, config_file, key_in_config_file=None):
         """Load a config file, validate it against the extensions schemas and
         return the normalised config dict."""
@@ -176,12 +176,10 @@ class Copilot:
         def _normalise_keys(source: dict):
             return {k.replace("-", "_"): v for k, v in source.items()}
 
-        with open(self.PACKAGE_DIR / "addon-plans.yml", "r") as fd:
-            addon_plans = yaml.safe_load(fd)
+        addon_plans = self.yaml_file_provider.load(self.PACKAGE_DIR / "addon-plans.yml")
 
         # load and validate config
-        with open(config_file, "r") as fd:
-            config = yaml.safe_load(fd)
+        config = self.yaml_file_provider.load(config_file)
 
         if config and key_in_config_file:
             config = config[key_in_config_file]
