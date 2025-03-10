@@ -23,7 +23,6 @@ class TestMakeAddonsCommand:
         mock_parameter_store,
         mock_config_provider,
         mock_copilot,
-        mock_session,
         mock_kms_provider,
         mock_get_aws_session_or_abort,
     ):
@@ -69,7 +68,6 @@ class TestMakeAddonsCommand:
         mock_parameter_store,
         mock_config_provider,
         mock_copilot,
-        mock_session,
         mock_kms_provider,
         mock_get_aws_session_or_abort,
     ):
