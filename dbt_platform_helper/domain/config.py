@@ -55,6 +55,23 @@ output = json
 """
 
 
+class SSOAuthProvider:
+    def __init__(self):
+        pass
+
+    def register(self, client_name, client_type):
+        pass
+
+    def start_device_authorization(self, client_id, client_secret, start_url):
+        pass
+
+    def create_access_token(self, client_id, client_secret, grant_type, device_code):
+        pass
+
+    def list_accounts(self, access_token, max_results):
+        pass
+
+
 class NoDeploymentRepoConfigException(PlatformException):
     def __init__(self):
         super().__init__("Could not find a deployment repository, no checks to run.")
@@ -68,8 +85,7 @@ class Config:
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
-        sso=None,
-        sso_oidc=None,
+        sso: SSOAuthProvider = SSOAuthProvider(),
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.io = io
@@ -78,7 +94,6 @@ class Config:
         self.get_copilot_versions = get_copilot_versions
         self.config = config
         self.sso = sso
-        self.sso_oidc = sso_oidc
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
 
     def validate(self):
@@ -135,7 +150,7 @@ class Config:
 
     def _create_oidc_application(self):
         print("Creating temporary AWS SSO OIDC application")
-        client = self.sso_oidc.register(
+        client = self.sso.register(
             client_name="platform-helper",
             client_type="public",
         )
@@ -146,7 +161,7 @@ class Config:
 
     def _get_device_code(self, oidc_application):
         print("Initiating device code flow")
-        authz = self.sso_oidc.start_device_authorization(
+        authz = self.sso.start_device_authorization(
             client_id=oidc_application[0],
             client_secret=oidc_application[1],
             start_url=self.SSO_START_URL,
@@ -158,7 +173,7 @@ class Config:
 
     def _get_access_token(self, device_code, oidc_app):
         try:
-            access_token = self.sso_oidc.create_access_token(
+            access_token = self.sso.create_access_token(
                 client_id=oidc_app[0],
                 client_secret=oidc_app[1],
                 grant_type="urn:ietf:params:oauth:grant-type:device_code",

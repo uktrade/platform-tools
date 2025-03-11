@@ -13,6 +13,7 @@ from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.config import NoDeploymentRepoConfigException
+from dbt_platform_helper.domain.config import SSOAuthProvider
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
@@ -46,8 +47,7 @@ class ConfigMocks:
             self.platform_helper_version_status
         )
 
-        self.sso = kwargs.get("sso", Mock())
-        self.sso_oidc = kwargs.get("sso_oidc", Mock())
+        self.sso = kwargs.get("sso", Mock(spec=SSOAuthProvider))
 
         self.aws_version = kwargs.get(
             "aws_version", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
@@ -64,7 +64,6 @@ class ConfigMocks:
         return {
             "io": self.io,
             "sso": self.sso,
-            "sso_oidc": self.sso_oidc,
             "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
             "get_aws_versions": self.get_aws_versions,
             "get_copilot_versions": self.get_copilot_versions,
@@ -504,17 +503,17 @@ class TestConfigGenerateAWS:
         # start_device_authorization(client_id, client_secret, start_url)
         # -> url, device_code
         # create_access_token(client_id, client_secret, grant_type, device_code) -> access_token
-        config_mocks.sso_oidc.register.return_value = {
+        config_mocks.sso.register.return_value = {
             "clientId": CLIENT_ID,
             "clientSecret": CLIENT_SECRET,
         }
 
-        config_mocks.sso_oidc.start_device_authorization.return_value = {
+        config_mocks.sso.start_device_authorization.return_value = {
             "verificationUriComplete": VERIFICATION_URI,
             "deviceCode": "TEST_DEVICE_CODE",
         }
 
-        config_mocks.sso_oidc.create_access_token.return_value = "TEST_ACCESS_TOKEN"
+        config_mocks.sso.create_access_token.return_value = "TEST_ACCESS_TOKEN"
 
         # TODO: define interface for SSO Provider. Proposed:
         # list_accounts(access_token, max_results) -> account_list[{account_id, account_name, email_address}]
@@ -527,10 +526,10 @@ class TestConfigGenerateAWS:
 
         config_domain.generate_aws("/test/aws/config")
 
-        config_mocks.sso_oidc.register.assert_called_with(
+        config_mocks.sso.register.assert_called_with(
             client_name="platform-helper", client_type="public"
         )
-        config_mocks.sso_oidc.start_device_authorization.assert_called_with(
+        config_mocks.sso.start_device_authorization.assert_called_with(
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET,
             start_url=START_URL,
@@ -549,7 +548,7 @@ class TestConfigGenerateAWS:
             ]
         )
         mock_webbrowser_open.assert_called_with(VERIFICATION_URI)
-        config_mocks.sso_oidc.create_access_token.assert_called_with(
+        config_mocks.sso.create_access_token.assert_called_with(
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET,
             grant_type="urn:ietf:params:oauth:grant-type:device_code",
