@@ -49,6 +49,8 @@ class Config:
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
+        sso=None,
+        sso_oidc=None,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.io = io
@@ -56,6 +58,9 @@ class Config:
         self.get_aws_versions = get_aws_versions
         self.get_copilot_versions = get_copilot_versions
         self.config = config
+        self.sso = sso
+        self.sso_oidc = sso_oidc
+        self.SSO_START_URL = "https://uktrade.awsapps.com/start"
 
     def validate(self):
         if not Path("copilot").exists():
@@ -78,7 +83,31 @@ class Config:
         exit(0 if compatible else 1)
 
     def generate_aws(self):
-        pass
+        oidc_app = self._create_oidc_application()
+        verification_url, device_code = self._get_device_code(oidc_app)
+
+    def _create_oidc_application(self):
+        print("Creating temporary AWS SSO OIDC application")
+        client = self.sso_oidc.register(
+            client_name="platform-helper",
+            client_type="public",
+        )
+        client_id = client.get("clientId")
+        client_secret = client.get("clientSecret")
+
+        return client_id, client_secret
+
+    def _get_device_code(self, oidc_application):
+        print("Initiating device code flow")
+        authz = self.sso_oidc.start_device_authorization(
+            client_id=oidc_application[0],
+            client_secret=oidc_application[1],
+            start_url=self.SSO_START_URL,
+        )
+        url = authz.get("verificationUriComplete")
+        deviceCode = authz.get("deviceCode")
+
+        return url, deviceCode
 
     def _check_tool_versions(
         self,

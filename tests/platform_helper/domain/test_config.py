@@ -1,3 +1,5 @@
+import webbrowser
+from unittest import mock
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import Mock
@@ -33,6 +35,9 @@ class ConfigMocks:
             self.platform_helper_version_status
         )
 
+        self.sso = kwargs.get("sso", Mock())
+        self.sso_oidc = kwargs.get("sso_oidc", Mock())
+
         self.aws_version = kwargs.get(
             "aws_version", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
         )
@@ -47,6 +52,8 @@ class ConfigMocks:
     def params(self):
         return {
             "io": self.io,
+            "sso": self.sso,
+            "sso_oidc": self.sso_oidc,
             "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
             "get_aws_versions": self.get_aws_versions,
             "get_copilot_versions": self.get_copilot_versions,
@@ -471,4 +478,32 @@ class TestConfigValidate:
 
 
 class TestConfigGenerateAWS:
-    pass
+    @mock.patch.object(webbrowser, "open")
+    def test_aws_with_default_file_path(self, mock_webbrowser):
+        config_mocks = ConfigMocks()
+        config_domain = Config(**config_mocks.params())
+
+        # TODO: define interface for SSO OIDC Provider. Proposed:
+        # register(client_name, client_type) -> client_id, client_secret ??
+        # start_device_authorization(client_id, client_secret, start_url)
+        # -> url, device_code
+
+        config_mocks.sso_oidc.register.return_value = {
+            "clientId": "TEST_CLIENT_ID",
+            "clientSecret": "TEST_CLIENT_SECRET",
+        }
+
+        config_mocks.sso_oidc.start_device_authorization.return_value = {
+            "verificationUriComplete": "TEST_VERIFICATION_URI_COMPLETE",
+            "deviceCode": "TEST_DEVICE_CODE",
+        }
+
+        config_domain.generate_aws()
+        config_mocks.sso_oidc.register.assert_called_with(
+            client_name="platform-helper", client_type="public"
+        )
+        config_mocks.sso_oidc.start_device_authorization.assert_called_with(
+            client_id="TEST_CLIENT_ID",
+            client_secret="TEST_CLIENT_SECRET",
+            start_url="https://uktrade.awsapps.com/start",
+        )
