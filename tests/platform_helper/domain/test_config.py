@@ -497,11 +497,6 @@ class TestConfigGenerateAWS:
         mock_expanduser.return_value = "/test/aws/config"
         config_domain = Config(**config_mocks.params())
 
-        # TODO: define interface for SSO OIDC Provider. Proposed:
-        # register(client_name, client_type) -> client_id, client_secret ??
-        # start_device_authorization(client_id, client_secret, start_url)
-        # -> url, device_code
-        # create_access_token(client_id, client_secret, grant_type, device_code) -> access_token
         config_mocks.sso.register.return_value = {
             "clientId": CLIENT_ID,
             "clientSecret": CLIENT_SECRET,
@@ -514,8 +509,6 @@ class TestConfigGenerateAWS:
 
         config_mocks.sso.create_access_token.return_value = "TEST_ACCESS_TOKEN"
 
-        # TODO: define interface for SSO Provider. Proposed:
-        # list_accounts(access_token, max_results) -> account_list[{account_id, account_name, email_address}]
         config_mocks.sso.list_accounts.return_value = [
             {
                 "account_name": "TEST_AWS_ACCOUNT",
