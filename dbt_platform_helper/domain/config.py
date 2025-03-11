@@ -69,7 +69,7 @@ class Config:
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
         get_aws_versions=get_aws_versions,
         get_copilot_versions=get_copilot_versions,
-        sso: SSOAuthProvider = SSOAuthProvider(),
+        sso: SSOAuthProvider = None,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.io = io
@@ -77,7 +77,7 @@ class Config:
         self.get_aws_versions = get_aws_versions
         self.get_copilot_versions = get_copilot_versions
         self.config = config
-        self.sso = sso
+        self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
 
     def validate(self):

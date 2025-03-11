@@ -478,7 +478,7 @@ class TestConfigValidate:
         )
 
     def test_no_copilot_repo(self, fakefs):
-        config_domain = Config()
+        config_domain = Config(sso=Mock())
         with pytest.raises(
             NoDeploymentRepoConfigException,
             match="Could not find a deployment repository, no checks to run.",

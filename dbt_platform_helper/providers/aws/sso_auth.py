@@ -4,7 +4,7 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
 class SSOAuthProvider:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session = None):
         self.session = session
         self.sso_oidc = self._get_client("sso-oidc")
 
