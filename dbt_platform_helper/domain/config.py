@@ -149,7 +149,7 @@ class Config:
                     config_file.write("\n")
 
     def _create_oidc_application(self):
-        print("Creating temporary AWS SSO OIDC application")
+        self.io.debug("Creating temporary AWS SSO OIDC application")
         client = self.sso.register(
             client_name="platform-helper",
             client_type="public",
@@ -160,7 +160,7 @@ class Config:
         return client_id, client_secret
 
     def _get_device_code(self, oidc_application):
-        print("Initiating device code flow")
+        self.io.debug("Initiating device code flow")
         authz = self.sso.start_device_authorization(
             client_id=oidc_application[0],
             client_secret=oidc_application[1],

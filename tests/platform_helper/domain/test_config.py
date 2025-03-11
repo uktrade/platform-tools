@@ -197,7 +197,6 @@ class TestConfigValidate:
             copilot_version=VersionStatus(None, SemanticVersion(3, 0, 0)),
         )
 
-        print(config_mocks.copilot_version.installed)
         config_domain = Config(**config_mocks.params())
 
         with pytest.raises(SystemExit) as excinfo:
@@ -533,6 +532,13 @@ class TestConfigGenerateAWS:
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET,
             start_url=START_URL,
+        )
+
+        config_mocks.io.debug.assert_has_calls(
+            [
+                call("Creating temporary AWS SSO OIDC application"),
+                call("Initiating device code flow"),
+            ]
         )
 
         config_mocks.io.confirm.assert_has_calls(
