@@ -274,6 +274,7 @@ def aws(file_path):
         access_token = get_access_token(device_code, sso_oidc_client, oidc_app)
 
     aws_config_path = os.path.expanduser(file_path)
+    print(file_path)
 
     if click.confirm(
         f"This command is destructive and will overwrite file contents at {file_path}. Are you sure you want to continue?",

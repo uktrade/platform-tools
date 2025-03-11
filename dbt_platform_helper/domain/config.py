@@ -1,3 +1,4 @@
+import os
 import re
 import webbrowser
 from pathlib import Path
@@ -83,7 +84,7 @@ class Config:
 
         exit(0 if compatible else 1)
 
-    def generate_aws(self):
+    def generate_aws(self, file_path):
         oidc_app = self._create_oidc_application()
         verification_url, device_code = self._get_device_code(oidc_app)
 
@@ -92,6 +93,19 @@ class Config:
             "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?",
         ):
             webbrowser.open(verification_url)
+
+        if self.io.confirm(
+            "Have you completed the sign-in process in your browser?",
+        ):
+            self._get_access_token(device_code, oidc_app)
+
+        aws_config_path = os.path.expanduser(file_path)
+        print(aws_config_path)
+
+        if self.io.confirm(
+            f"This command is destructive and will overwrite file contents at {file_path}. Are you sure you want to continue?"
+        ):
+            pass
 
     def _create_oidc_application(self):
         print("Creating temporary AWS SSO OIDC application")
@@ -115,6 +129,21 @@ class Config:
         deviceCode = authz.get("deviceCode")
 
         return url, deviceCode
+
+    def _get_access_token(self, device_code, oidc_app):
+        try:
+            token_response = self.sso_oidc.create_token(
+                client_id=oidc_app[0],
+                client_secret=oidc_app[1],
+                grant_type="urn:ietf:params:oauth:grant-type:device_code",
+                device_code=device_code,
+            )
+
+            return token_response.get("accessToken")
+
+        # TODO: implement and raise from ClientError exception
+        except Exception:
+            pass
 
     def _check_tool_versions(
         self,

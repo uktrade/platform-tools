@@ -1,9 +1,12 @@
+import builtins
+import os
 import webbrowser
 from unittest import mock
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
+from unittest.mock import mock_open
 
 import pytest
 from prettytable import PrettyTable
@@ -15,6 +18,12 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
+
+START_URL = "https://uktrade.awsapps.com/start"
+
+CLIENT_SECRET = "TEST_CLIENT_SECRET"
+
+CLIENT_ID = "TEST_CLIENT_ID"
 
 VERIFICATION_URI = "TEST_VERIFICATION_URI_COMPLETE"
 
@@ -480,20 +489,25 @@ class TestConfigValidate:
 
 
 class TestConfigGenerateAWS:
+
+    @mock.patch.object(builtins, "open", new_callable=mock_open())
+    @mock.patch.object(os.path, "expanduser")
     @mock.patch.object(webbrowser, "open")
-    def test_aws_with_default_file_path(self, mock_webbrowser_open):
+    def test_aws_with_default_file_path(self, mock_webbrowser_open, expanduser_mock, open_mock):
         config_mocks = ConfigMocks()
         config_mocks.io.confirm.return_value = True
+        expanduser_mock.return_value = "/test/aws/config"
         config_domain = Config(**config_mocks.params())
 
         # TODO: define interface for SSO OIDC Provider. Proposed:
         # register(client_name, client_type) -> client_id, client_secret ??
         # start_device_authorization(client_id, client_secret, start_url)
         # -> url, device_code
+        # create_token(client_id, client_secret, grant_type, device_code)
 
         config_mocks.sso_oidc.register.return_value = {
-            "clientId": "TEST_CLIENT_ID",
-            "clientSecret": "TEST_CLIENT_SECRET",
+            "clientId": CLIENT_ID,
+            "clientSecret": CLIENT_SECRET,
         }
 
         config_mocks.sso_oidc.start_device_authorization.return_value = {
@@ -501,21 +515,32 @@ class TestConfigGenerateAWS:
             "deviceCode": "TEST_DEVICE_CODE",
         }
 
-        config_domain.generate_aws()
+        config_domain.generate_aws("/test/aws/config")
         config_mocks.sso_oidc.register.assert_called_with(
             client_name="platform-helper", client_type="public"
         )
         config_mocks.sso_oidc.start_device_authorization.assert_called_with(
-            client_id="TEST_CLIENT_ID",
-            client_secret="TEST_CLIENT_SECRET",
-            start_url="https://uktrade.awsapps.com/start",
+            client_id=CLIENT_ID,
+            client_secret=CLIENT_SECRET,
+            start_url=START_URL,
         )
 
         config_mocks.io.confirm.assert_has_calls(
             [
                 call(
-                    "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?"
-                )
+                    "You are about to be redirected to a verification page. "
+                    "You will need to complete sign-in before returning to the command line. Do you want to continue?"
+                ),
+                call("Have you completed the sign-in process in your browser?"),
+                call(
+                    f"This command is destructive and will overwrite file contents at /test/aws/config. Are you sure you want to continue?"
+                ),
             ]
         )
         mock_webbrowser_open.assert_called_with(VERIFICATION_URI)
+        config_mocks.sso_oidc.create_token.assert_called_with(
+            client_id=CLIENT_ID,
+            client_secret=CLIENT_SECRET,
+            grant_type="urn:ietf:params:oauth:grant-type:device_code",
+            device_code="TEST_DEVICE_CODE",
+        )
