@@ -16,7 +16,15 @@ class SSOAuthProvider:
         return client_id, client_secret
 
     def start_device_authorization(self, client_id, client_secret, start_url):
-        pass
+        authz = self.sso_oidc.start_device_authorization(
+            client_id=client_id,
+            client_secret=client_secret,
+            start_url=start_url,
+        )
+        url = authz.get("verificationUriComplete")
+        deviceCode = authz.get("deviceCode")
+
+        return url, deviceCode
 
     def create_access_token(self, client_id, client_secret, grant_type, device_code):
         pass

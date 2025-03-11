@@ -143,6 +143,7 @@ class Config:
 
         return client_id, client_secret
 
+    # TODO: consider extracting oidc_application to instance variables
     def _get_device_code(self, oidc_application):
         self.io.debug("Initiating device code flow")
         authz = self.sso.start_device_authorization(
