@@ -12,6 +12,8 @@ TEST_VERIFICATION_URI = "TEST_VERIFICATION_URI"
 
 TEST_DEVICE_CODE = "TEST_DEVICE_CODE"
 
+TEST_ACCESS_TOKEN = "TEST_ACCESS_TOKEN"
+
 
 def test_register_returns_client_id_and_client_secret():
     mock_boto_sso_client = Mock(name="client-mock")
@@ -51,3 +53,29 @@ def test_start_device_authorization_returns_device_code_and_url():
     )
     assert url == TEST_VERIFICATION_URI
     assert device_code == TEST_DEVICE_CODE
+
+
+def test_create_access_token():
+    mock_boto_sso_client = Mock(name="client-mock")
+    mock_boto_sso_client.create_access_token.return_value = TEST_ACCESS_TOKEN
+    mock_session = Mock(name="session-mock")
+    mock_session.client.return_value = mock_boto_sso_client
+
+    result = SSOAuthProvider(mock_session).create_access_token(
+        TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
+    )
+
+    assert result == TEST_ACCESS_TOKEN
+
+
+def test_list_accounts():
+    mock_boto_sso_client = Mock(name="client-mock")
+    mock_boto_sso_client.list_accounts.return_value = {
+        "accountList": {"accountName": "test-account", "accountId": "abc123"}
+    }
+    mock_session = Mock(name="session-mock")
+    mock_session.client.return_value = mock_boto_sso_client
+
+    result = SSOAuthProvider(mock_session).list_accounts(TEST_ACCESS_TOKEN)
+
+    assert result == {"accountName": "test-account", "accountId": "abc123"}
