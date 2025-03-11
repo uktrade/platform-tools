@@ -8,6 +8,7 @@ from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
@@ -53,23 +54,6 @@ region = eu-west-2
 output = json
 
 """
-
-
-class SSOAuthProvider:
-    def __init__(self):
-        pass
-
-    def register(self, client_name, client_type):
-        pass
-
-    def start_device_authorization(self, client_id, client_secret, start_url):
-        pass
-
-    def create_access_token(self, client_id, client_secret, grant_type, device_code):
-        pass
-
-    def list_accounts(self, access_token, max_results):
-        pass
 
 
 class NoDeploymentRepoConfigException(PlatformException):

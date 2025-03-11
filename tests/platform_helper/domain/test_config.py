@@ -13,8 +13,8 @@ from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.config import NoDeploymentRepoConfigException
-from dbt_platform_helper.domain.config import SSOAuthProvider
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
