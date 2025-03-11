@@ -236,7 +236,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 
 ```
 platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase> 
-                                --commit <commit> 
+                                [--commit <commit>] [--tag <tag>] 
 ```
 
 ## Options
@@ -249,6 +249,8 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
   - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
 - `--commit <text>`
   - GitHub commit hash
+- `--tag <text>`
+  - ECR image tag (alternative to commit hash)
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
