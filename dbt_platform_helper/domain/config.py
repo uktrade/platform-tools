@@ -37,6 +37,23 @@ RECOMMENDATIONS = {
     "install-aws": "Install AWS CLI https://aws.amazon.com/cli/",
 }
 
+AWS_CONFIG = """
+#
+# uktrade
+#
+
+[sso-session uktrade]
+sso_start_url = https://uktrade.awsapps.com/start#/
+sso_region = eu-west-2
+sso_registration_scopes = sso:account:access
+
+[default]
+sso_session = uktrade
+region = eu-west-2
+output = json
+
+"""
+
 
 class NoDeploymentRepoConfigException(PlatformException):
     def __init__(self):
@@ -97,15 +114,19 @@ class Config:
         if self.io.confirm(
             "Have you completed the sign-in process in your browser?",
         ):
-            self._get_access_token(device_code, oidc_app)
+            access_token = self._get_access_token(device_code, oidc_app)
 
         aws_config_path = os.path.expanduser(file_path)
-        print(aws_config_path)
 
         if self.io.confirm(
             f"This command is destructive and will overwrite file contents at {file_path}. Are you sure you want to continue?"
         ):
-            pass
+            with open(aws_config_path, "w") as config_file:
+                config_file.write(AWS_CONFIG)
+
+                for account in self._retrieve_aws_accounts(access_token):
+                    config_file.write(f"[profile {account['account_name']}]\n")
+                    # TODO: implement the rest of the config_file write instructions
 
     def _create_oidc_application(self):
         print("Creating temporary AWS SSO OIDC application")
@@ -132,18 +153,27 @@ class Config:
 
     def _get_access_token(self, device_code, oidc_app):
         try:
-            token_response = self.sso_oidc.create_token(
+            access_token = self.sso_oidc.create_access_token(
                 client_id=oidc_app[0],
                 client_secret=oidc_app[1],
                 grant_type="urn:ietf:params:oauth:grant-type:device_code",
                 device_code=device_code,
             )
 
-            return token_response.get("accessToken")
+            return access_token
 
         # TODO: implement and raise from ClientError exception
         except Exception:
             pass
+
+    def _retrieve_aws_accounts(self, aws_sso_token):
+        accounts_list = self.sso.list_accounts(
+            access_token=aws_sso_token,
+            max_results=100,
+        )
+        if len(accounts_list) == 0:
+            raise RuntimeError("Unable to retrieve AWS SSO account list\n")
+        return accounts_list
 
     def _check_tool_versions(
         self,

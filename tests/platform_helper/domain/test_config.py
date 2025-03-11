@@ -493,18 +493,17 @@ class TestConfigGenerateAWS:
     @mock.patch.object(builtins, "open", new_callable=mock_open())
     @mock.patch.object(os.path, "expanduser")
     @mock.patch.object(webbrowser, "open")
-    def test_aws_with_default_file_path(self, mock_webbrowser_open, expanduser_mock, open_mock):
+    def test_aws_with_default_file_path(self, mock_webbrowser_open, mock_expanduser, mock_open):
         config_mocks = ConfigMocks()
         config_mocks.io.confirm.return_value = True
-        expanduser_mock.return_value = "/test/aws/config"
+        mock_expanduser.return_value = "/test/aws/config"
         config_domain = Config(**config_mocks.params())
 
         # TODO: define interface for SSO OIDC Provider. Proposed:
         # register(client_name, client_type) -> client_id, client_secret ??
         # start_device_authorization(client_id, client_secret, start_url)
         # -> url, device_code
-        # create_token(client_id, client_secret, grant_type, device_code)
-
+        # create_access_token(client_id, client_secret, grant_type, device_code) -> access_token
         config_mocks.sso_oidc.register.return_value = {
             "clientId": CLIENT_ID,
             "clientSecret": CLIENT_SECRET,
@@ -515,7 +514,19 @@ class TestConfigGenerateAWS:
             "deviceCode": "TEST_DEVICE_CODE",
         }
 
+        config_mocks.sso_oidc.create_access_token.return_value = "TEST_ACCESS_TOKEN"
+
+        # TODO: define interface for SSO Provider. Proposed:
+        # list_accounts(access_token, max_results) -> account_list[{account_id, account_name, email_address}]
+        config_mocks.sso.list_accounts.return_value = [
+            {
+                "account_name": "TEST_AWS_ACCOUNT",
+                "account_id": "TEST_AWS_ACCOUNT_ID",
+            }
+        ]
+
         config_domain.generate_aws("/test/aws/config")
+
         config_mocks.sso_oidc.register.assert_called_with(
             client_name="platform-helper", client_type="public"
         )
@@ -538,9 +549,17 @@ class TestConfigGenerateAWS:
             ]
         )
         mock_webbrowser_open.assert_called_with(VERIFICATION_URI)
-        config_mocks.sso_oidc.create_token.assert_called_with(
+        config_mocks.sso_oidc.create_access_token.assert_called_with(
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET,
             grant_type="urn:ietf:params:oauth:grant-type:device_code",
             device_code="TEST_DEVICE_CODE",
+        )
+
+        config_mocks.sso.list_accounts.assert_called_with(
+            access_token="TEST_ACCESS_TOKEN", max_results=100
+        )
+
+        mock_open.return_value.__enter__().write.assert_has_calls(
+            [call("[profile TEST_AWS_ACCOUNT]\n")]
         )
