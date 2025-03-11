@@ -126,7 +126,12 @@ class Config:
 
                 for account in self._retrieve_aws_accounts(access_token):
                     config_file.write(f"[profile {account['account_name']}]\n")
-                    # TODO: implement the rest of the config_file write instructions
+                    config_file.write("sso_session = uktrade\n")
+                    config_file.write(f"sso_account_id = {account['account_id']}\n")
+                    config_file.write("sso_role_name = AdministratorAccess\n")
+                    config_file.write("region = eu-west-2\n")
+                    config_file.write("output = json\n")
+                    config_file.write("\n")
 
     def _create_oidc_application(self):
         print("Creating temporary AWS SSO OIDC application")

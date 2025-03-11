@@ -561,5 +561,13 @@ class TestConfigGenerateAWS:
         )
 
         mock_open.return_value.__enter__().write.assert_has_calls(
-            [call("[profile TEST_AWS_ACCOUNT]\n")]
+            [
+                call("[profile TEST_AWS_ACCOUNT]\n"),
+                call("sso_session = uktrade\n"),
+                call("sso_account_id = TEST_AWS_ACCOUNT_ID\n"),
+                call("sso_role_name = AdministratorAccess\n"),
+                call("region = eu-west-2\n"),
+                call("output = json\n"),
+                call("\n"),
+            ]
         )
