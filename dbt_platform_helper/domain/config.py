@@ -1,4 +1,5 @@
 import re
+import webbrowser
 from pathlib import Path
 from typing import Dict
 
@@ -85,6 +86,12 @@ class Config:
     def generate_aws(self):
         oidc_app = self._create_oidc_application()
         verification_url, device_code = self._get_device_code(oidc_app)
+
+        # Should abort=True remain? We do not include any other args in the Provider interface
+        if self.io.confirm(
+            "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?",
+        ):
+            webbrowser.open(verification_url)
 
     def _create_oidc_application(self):
         print("Creating temporary AWS SSO OIDC application")

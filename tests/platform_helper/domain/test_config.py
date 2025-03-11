@@ -16,6 +16,8 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 
+VERIFICATION_URI = "TEST_VERIFICATION_URI_COMPLETE"
+
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
 maybe = "\033[93m?\033[0m"
@@ -479,8 +481,9 @@ class TestConfigValidate:
 
 class TestConfigGenerateAWS:
     @mock.patch.object(webbrowser, "open")
-    def test_aws_with_default_file_path(self, mock_webbrowser):
+    def test_aws_with_default_file_path(self, mock_webbrowser_open):
         config_mocks = ConfigMocks()
+        config_mocks.io.confirm.return_value = True
         config_domain = Config(**config_mocks.params())
 
         # TODO: define interface for SSO OIDC Provider. Proposed:
@@ -494,7 +497,7 @@ class TestConfigGenerateAWS:
         }
 
         config_mocks.sso_oidc.start_device_authorization.return_value = {
-            "verificationUriComplete": "TEST_VERIFICATION_URI_COMPLETE",
+            "verificationUriComplete": VERIFICATION_URI,
             "deviceCode": "TEST_DEVICE_CODE",
         }
 
@@ -507,3 +510,12 @@ class TestConfigGenerateAWS:
             client_secret="TEST_CLIENT_SECRET",
             start_url="https://uktrade.awsapps.com/start",
         )
+
+        config_mocks.io.confirm.assert_has_calls(
+            [
+                call(
+                    "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?"
+                )
+            ]
+        )
+        mock_webbrowser_open.assert_called_with(VERIFICATION_URI)
