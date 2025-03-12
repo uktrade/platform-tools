@@ -1,6 +1,7 @@
 import botocore
 from boto3 import Session
 
+from dbt_platform_helper.providers.aws.exceptions import CreateAccessTokenException
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
@@ -41,7 +42,7 @@ class SSOAuthProvider:
 
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] != "AuthorizationPendingException":
-                raise e
+                raise CreateAccessTokenException(client_id)
 
     def list_accounts(self, access_token, max_results=100):
         aws_accounts_response = self.sso.list_accounts(

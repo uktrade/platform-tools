@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import botocore
 import pytest
 
+from dbt_platform_helper.providers.aws.exceptions import CreateAccessTokenException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 
 TEST_CLIENT_ID = "TEST_CLIENT_ID"
@@ -84,7 +85,7 @@ class TestCreateAccessToken:
 
         assert result == TEST_ACCESS_TOKEN
 
-    def test_raises_error_when_error_code_is_not_authorization_pending_exception(self):
+    def test_raises_when_error_code_is_not_authorization_pending_exception(self):
         mock_boto_sso_client = Mock(name="client-mock")
         mock_boto_sso_client.create_access_token.side_effect = botocore.exceptions.ClientError(
             {
@@ -95,7 +96,7 @@ class TestCreateAccessToken:
         mock_session = Mock(name="session-mock")
         mock_session.client.return_value = mock_boto_sso_client
 
-        with pytest.raises(botocore.exceptions.ClientError):
+        with pytest.raises(CreateAccessTokenException):
             SSOAuthProvider(mock_session).create_access_token(
                 TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
             )
@@ -115,5 +116,5 @@ class TestCreateAccessToken:
             SSOAuthProvider(mock_session).create_access_token(
                 TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
             )
-        except botocore.exceptions.ClientError as e:
+        except CreateAccessTokenException as e:
             pytest.fail(f"Unexpected exception: {e}")
