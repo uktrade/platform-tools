@@ -13,9 +13,9 @@ class CreateTaskTimeoutException(AWSException):
 
 
 class ImageNotFoundException(AWSException):
-    def __init__(self, commit: str):
+    def __init__(self, commit_or_tag_display: str):
         super().__init__(
-            f"""The commit hash "{commit}" has not been built into an image, try the `platform-helper codebase build` command first."""
+            f"""The {commit_or_tag_display} has not been built into an image, try the `platform-helper codebase build` command first."""
         )
 
 
