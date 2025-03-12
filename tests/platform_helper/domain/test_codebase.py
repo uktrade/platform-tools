@@ -38,6 +38,7 @@ def mock_aws_client(get_aws_session_or_abort):
 
 class CodebaseMocks:
     def __init__(self, **kwargs):
+        self.parameter_provider = kwargs.get("parameter_provider", Mock())
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
@@ -55,6 +56,7 @@ class CodebaseMocks:
 
     def params(self):
         return {
+            "parameter_provider": self.parameter_provider,
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
             "check_image_exists": self.check_image_exists,
@@ -198,11 +200,6 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
     mocks = CodebaseMocks()
     mocks.io.confirm.return_value = False
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-
     with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
         codebase.build("test-application", "application", "ab1c234")
@@ -221,10 +218,6 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     mocks.load_application.return_value = mock_application
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
     client.start_pipeline_execution.return_value = {
         "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
     }
@@ -263,12 +256,6 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
 def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
     mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-
     with pytest.raises(exception_type):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
@@ -280,10 +267,6 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
     client.describe_images.side_effect = ecr_exceptions.RepositoryNotFoundException({}, "")
 
     with pytest.raises(ImageNotFoundException):
@@ -297,10 +280,6 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
     client.describe_images.side_effect = ecr_exceptions.ImageNotFoundException({}, "")
 
     with pytest.raises(ImageNotFoundException):
@@ -357,11 +336,6 @@ def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
     mocks = CodebaseMocks()
     mocks.io.confirm.return_value = False
 
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
-
     with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
@@ -378,12 +352,7 @@ def test_codebase_list_does_not_trigger_build_without_an_application():
 
 def test_codebase_list_returns_empty_when_no_codebases():
     mocks = CodebaseMocks(check_codebase_exists=Mock())
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-
-    client.get_parameter.return_value = {
-        "Parameter": {"Value": json.dumps({"name": "application"})},
-    }
+    mocks.parameter_provider.get_ssm_parameters_by_path.return_value = []
 
     codebase = Codebase(**mocks.params())
     codebase.list("test-application", True)
@@ -393,13 +362,11 @@ def test_codebase_list_returns_empty_when_no_codebases():
 
 def test_lists_codebases_with_multiple_pages_of_images():
     mocks = CodebaseMocks()
+    mocks.parameter_provider.get_ssm_parameters_by_path.return_value = [
+        {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+    ]
     codebase = Codebase(**mocks.params())
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.get_parameters_by_path.return_value = {
-        "Parameters": [
-            {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
-        ],
-    }
 
     client.get_paginator.return_value.paginate.return_value = [
         {
@@ -451,13 +418,12 @@ def test_lists_codebases_with_multiple_pages_of_images():
 
 def test_lists_codebases_with_disordered_images_in_chronological_order():
     mocks = CodebaseMocks()
+    mocks.parameter_provider.get_ssm_parameters_by_path.return_value = [
+        {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+    ]
     codebase = Codebase(**mocks.params())
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.get_parameters_by_path.return_value = {
-        "Parameters": [
-            {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
-        ],
-    }
+
     client.get_paginator.return_value.paginate.return_value = [
         {
             "imageDetails": [
@@ -508,13 +474,11 @@ def test_lists_codebases_with_disordered_images_in_chronological_order():
 
 def test_lists_codebases_with_images_successfully():
     mocks = CodebaseMocks()
+    mocks.parameter_provider.get_ssm_parameters_by_path.return_value = [
+        {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
+    ]
     codebase = Codebase(**mocks.params())
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.get_parameters_by_path.return_value = {
-        "Parameters": [
-            {"Value": json.dumps({"name": "application", "repository": "uktrade/example"})}
-        ],
-    }
     client.get_paginator.return_value.paginate.return_value = [
         {
             "imageDetails": [
