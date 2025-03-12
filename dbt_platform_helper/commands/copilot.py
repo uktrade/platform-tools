@@ -15,8 +15,9 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 # TODOs
-# Figure out a pattern for copilot templating and the new copilot domain - probably a lot of overlap here that really belongs in the copilottemplating domain instead (atleast whatever is concerned with "templating")
-# Check for E2E test coverage.
+# Inject session into class, remove get_aws_session_or_abort from domain. Patching needs to be moved to dbt_platform_helper.commands.copilot instead of dbt_platform_helper.domain.copilot.
+# Validate unit tests are running - add additional patching if needed.
+# Check test coverage via codecov, shouldn't have gone down.
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
