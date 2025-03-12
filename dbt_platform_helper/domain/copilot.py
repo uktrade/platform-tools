@@ -18,7 +18,6 @@ from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
@@ -45,6 +44,7 @@ class Copilot:
         file_provider: FileProvider,
         copilot_templating: CopilotTemplating,
         kms_provider: KMSProvider,
+        session,
         io: ClickIOProvider = ClickIOProvider(),
         yaml_file_provider: YamlFileProvider = YamlFileProvider,
     ):
@@ -55,6 +55,7 @@ class Copilot:
         self.kms_provider = kms_provider
         self.io = io
         self.yaml_file_provider = yaml_file_provider
+        self.session = session
 
     def make_addons(self):
         self.config_provider.config_file_check()
@@ -65,8 +66,6 @@ class Copilot:
 
         templates = setup_templates()
         extensions = self._get_extensions()
-        session = get_aws_session_or_abort()
-
         application_name = get_application_name()
 
         self.io.info("\n>>> Generating Terraform compatible addons CloudFormation\n")
@@ -114,7 +113,7 @@ class Copilot:
                 if extensions[ext_name].get("serve_static_content"):
                     continue
 
-                s3_kms_arns = self._get_s3_kms_alias_arns(session, application_name, environments)
+                s3_kms_arns = self._get_s3_kms_alias_arns(application_name, environments)
                 for environment_name in environments:
                     environments[environment_name]["kms_key_arn"] = s3_kms_arns.get(
                         environment_name, "kms-key-not-found"
@@ -280,8 +279,8 @@ class Copilot:
         overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
     # TODO - Doing stuff with KMS, likely want a provider for this too.
-    def _get_s3_kms_alias_arns(self, session, application_name, config):
-        application = load_application(application_name, session)
+    def _get_s3_kms_alias_arns(self, application_name, config):
+        application = load_application(application_name, self.session)
         arns = {}
 
         for environment_name in application.environments:
@@ -292,7 +291,7 @@ class Copilot:
                 continue
 
             bucket_name = config[environment_name]["bucket_name"]
-            kms_client = application.environments[environment_name].session.client("kms")
+            kms_client = self.session.client("kms")
             alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
 
             try:

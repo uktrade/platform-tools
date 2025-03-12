@@ -34,7 +34,12 @@ def make_addons():
         config_provider = ConfigProvider(ConfigValidator())
         kms_provider = KMSProvider(session.client("kms"))
         Copilot(
-            config_provider, parameter_provider, FileProvider(), CopilotTemplating(), kms_provider
+            config_provider=config_provider,
+            parameter_provider=parameter_provider,
+            file_provider=FileProvider(),
+            copilot_templating=CopilotTemplating(),
+            kms_provider=kms_provider,
+            session=session,
         ).make_addons()
     except Exception as err:
         ClickIOProvider().abort_with_error(str(err))
