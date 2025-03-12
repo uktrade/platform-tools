@@ -550,7 +550,6 @@ class TestConfigGenerateAWS:
         config_mocks.sso.create_access_token.assert_called_with(
             client_id=CLIENT_ID,
             client_secret=CLIENT_SECRET,
-            grant_type="urn:ietf:params:oauth:grant-type:device_code",
             device_code="TEST_DEVICE_CODE",
         )
 

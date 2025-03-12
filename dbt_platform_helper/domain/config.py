@@ -72,6 +72,7 @@ class Config:
         sso: SSOAuthProvider = None,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
+        self.oidc_app = None
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
         self.get_aws_versions = get_aws_versions
@@ -101,10 +102,10 @@ class Config:
         exit(0 if compatible else 1)
 
     def generate_aws(self, file_path):
-        oidc_app = self._create_oidc_application()
-        verification_url, device_code = self._get_device_code(oidc_app)
+        self.oidc_app = self._create_oidc_application()
+        verification_url, device_code = self._get_device_code(self.oidc_app)
 
-        # Should abort=True remain? We do not include any other args in the Provider interface
+        # TODO: Should abort=True remain? We do not include any other args in the Provider interface
         if self.io.confirm(
             "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?",
         ):
@@ -113,7 +114,11 @@ class Config:
         if self.io.confirm(
             "Have you completed the sign-in process in your browser?",
         ):
-            access_token = self._get_access_token(device_code, oidc_app)
+            access_token = self.sso.create_access_token(
+                client_id=self.oidc_app[0],
+                client_secret=self.oidc_app[1],
+                device_code=device_code,
+            )
 
         aws_config_path = os.path.expanduser(file_path)
 
@@ -138,10 +143,7 @@ class Config:
             client_name="platform-helper",
             client_type="public",
         )
-        client_id = client.get("clientId")
-        client_secret = client.get("clientSecret")
-
-        return client_id, client_secret
+        return client.get("clientId"), client.get("clientSecret")
 
     # TODO: consider extracting oidc_application to instance variables
     def _get_device_code(self, oidc_application):
@@ -152,24 +154,9 @@ class Config:
             start_url=self.SSO_START_URL,
         )
         url = authz.get("verificationUriComplete")
-        deviceCode = authz.get("deviceCode")
+        device_code = authz.get("deviceCode")
 
-        return url, deviceCode
-
-    def _get_access_token(self, device_code, oidc_app):
-        try:
-            access_token = self.sso.create_access_token(
-                client_id=oidc_app[0],
-                client_secret=oidc_app[1],
-                grant_type="urn:ietf:params:oauth:grant-type:device_code",
-                device_code=device_code,
-            )
-
-            return access_token
-
-        # TODO: implement and raise from ClientError exception
-        except Exception:
-            pass
+        return url, device_code
 
     def _retrieve_aws_accounts(self, aws_sso_token):
         accounts_list = self.sso.list_accounts(
