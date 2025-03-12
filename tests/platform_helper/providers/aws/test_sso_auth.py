@@ -1,5 +1,8 @@
 from unittest.mock import Mock
 
+import botocore
+import pytest
+
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 
 TEST_CLIENT_ID = "TEST_CLIENT_ID"
@@ -55,19 +58,6 @@ def test_start_device_authorization_returns_device_code_and_url():
     assert device_code == TEST_DEVICE_CODE
 
 
-def test_create_access_token():
-    mock_boto_sso_client = Mock(name="client-mock")
-    mock_boto_sso_client.create_access_token.return_value = TEST_ACCESS_TOKEN
-    mock_session = Mock(name="session-mock")
-    mock_session.client.return_value = mock_boto_sso_client
-
-    result = SSOAuthProvider(mock_session).create_access_token(
-        TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
-    )
-
-    assert result == TEST_ACCESS_TOKEN
-
-
 def test_list_accounts():
     mock_boto_sso_client = Mock(name="client-mock")
     mock_boto_sso_client.list_accounts.return_value = {
@@ -79,3 +69,51 @@ def test_list_accounts():
     result = SSOAuthProvider(mock_session).list_accounts(TEST_ACCESS_TOKEN)
 
     assert result == {"accountName": "test-account", "accountId": "abc123"}
+
+
+class TestCreateAccessToken:
+    def test_creates_access_token(self):
+        mock_boto_sso_client = Mock(name="client-mock")
+        mock_boto_sso_client.create_access_token.return_value = TEST_ACCESS_TOKEN
+        mock_session = Mock(name="session-mock")
+        mock_session.client.return_value = mock_boto_sso_client
+
+        result = SSOAuthProvider(mock_session).create_access_token(
+            TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
+        )
+
+        assert result == TEST_ACCESS_TOKEN
+
+    def test_raises_error_when_error_code_is_not_authorization_pending_exception(self):
+        mock_boto_sso_client = Mock(name="client-mock")
+        mock_boto_sso_client.create_access_token.side_effect = botocore.exceptions.ClientError(
+            {
+                "Error": {"Code": "TestException"},
+            },
+            operation_name="CreateAccessToken",
+        )
+        mock_session = Mock(name="session-mock")
+        mock_session.client.return_value = mock_boto_sso_client
+
+        with pytest.raises(botocore.exceptions.ClientError):
+            SSOAuthProvider(mock_session).create_access_token(
+                TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
+            )
+
+    def test_does_not_raise_when_error_code_is_authorization_pending_exception(self):
+        mock_boto_sso_client = Mock(name="client-mock")
+        mock_boto_sso_client.create_access_token.side_effect = botocore.exceptions.ClientError(
+            {
+                "Error": {"Code": "AuthorizationPendingException"},
+            },
+            operation_name="CreateAccessToken",
+        )
+        mock_session = Mock(name="session-mock")
+        mock_session.client.return_value = mock_boto_sso_client
+
+        try:
+            SSOAuthProvider(mock_session).create_access_token(
+                TEST_CLIENT_ID, TEST_CLIENT_SECRET, TEST_DEVICE_CODE
+            )
+        except botocore.exceptions.ClientError as e:
+            pytest.fail(f"Unexpected exception: {e}")
