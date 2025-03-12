@@ -105,7 +105,6 @@ class Config:
         self.oidc_app = self._create_oidc_application()
         verification_url, device_code = self._get_device_code(self.oidc_app)
 
-        # TODO: Should abort=True remain? We do not include any other args in the Provider interface
         if self.io.confirm(
             "You are about to be redirected to a verification page. You will need to complete sign-in before returning to the command line. Do you want to continue?",
         ):
@@ -327,9 +326,7 @@ class Config:
     def _render_recommendations(self, recommendations: Dict[str, str]):
         if recommendations:
             # TODO just multi line this?
-            self.io.info(
-                "\nRecommendations:\n",
-            )  # TODO re-add bold=True support
+            self.io.info("\nRecommendations:\n", bold=True)
 
             for name, recommendation in recommendations.items():
                 if name.endswith("-note"):

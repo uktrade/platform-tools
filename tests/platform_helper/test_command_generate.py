@@ -52,12 +52,6 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
     )
 
 
-@patch(
-    "dbt_platform_helper.utils.tool_versioning.get_platform_helper_version_status",
-    new=Mock(
-        return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
-    ),
-)
 @patch("dbt_platform_helper.commands.generate.make_addons", new=Mock(return_value=None))
 @patch("dbt_platform_helper.commands.generate.pipeline_generate", new=Mock(return_value=None))
 def test_platform_helper_generate_does_not_override_version_file_if_exists(tmp_path):

@@ -275,14 +275,14 @@ class TestConfigValidate:
                 call(
                     ANY,  # tested above due to PrettyTable being difficult to compare
                 ),
-                call("\nRecommendations:\n"),
+                call("\nRecommendations:\n", bold=True),
                 call("  - Install AWS Copilot https://aws.github.io/copilot-cli/"),
                 call("  - Install AWS CLI https://aws.amazon.com/cli/"),
                 call(""),
                 call(
                     ANY,  # tested above due to PrettyTable being difficult to compare
                 ),
-                call("\nRecommendations:\n"),
+                call("\nRecommendations:\n", bold=True),
                 call(
                     "  - Upgrade dbt-platform-helper to version 1.0.0 `pip install --upgrade dbt-platform-helper==1.0.0`."
                 ),
@@ -401,7 +401,7 @@ class TestConfigValidate:
                 call(
                     ANY,  # tested above due to PrettyTable being difficult to compare
                 ),
-                call("\nRecommendations:\n"),
+                call("\nRecommendations:\n", bold=True),
                 call("  - Upgrade AWS CLI to version 2.0.0."),
                 call("  - Upgrade AWS Copilot to version 3.0.0."),
                 call(
@@ -414,7 +414,7 @@ class TestConfigValidate:
                 call(
                     ANY,  # tested above due to PrettyTable being difficult to compare
                 ),
-                call("\nRecommendations:\n"),
+                call("\nRecommendations:\n", bold=True),
                 call(
                     "  - Upgrade dbt-platform-helper to version 2.0.0 `pip install --upgrade dbt-platform-helper==2.0.0`."
                 ),
