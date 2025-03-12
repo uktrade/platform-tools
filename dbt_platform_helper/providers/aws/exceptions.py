@@ -40,3 +40,8 @@ class CopilotCodebaseNotFoundException(PlatformException):
 class CreateAccessTokenException(AWSException):
     def __init__(self, client_id: str):
         super().__init__(f"""Failed to create access token for Client "{client_id}".""")
+
+
+class UnableToRetrieveSSOAccountList(AWSException):
+    def __init__(self):
+        super().__init__("Unable to retrieve AWS SSO account list")

@@ -2,6 +2,7 @@ import botocore
 from boto3 import Session
 
 from dbt_platform_helper.providers.aws.exceptions import CreateAccessTokenException
+from dbt_platform_helper.providers.aws.exceptions import UnableToRetrieveSSOAccountList
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
@@ -51,7 +52,7 @@ class SSOAuthProvider:
         )
 
         if len(aws_accounts_response.get("accountList", [])) == 0:
-            raise RuntimeError("Unable to retrieve AWS SSO account list\n")
+            raise UnableToRetrieveSSOAccountList()
         return aws_accounts_response.get("accountList")
 
     def _get_client(self, client: str):

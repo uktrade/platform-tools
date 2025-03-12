@@ -4,6 +4,7 @@ import botocore
 import pytest
 
 from dbt_platform_helper.providers.aws.exceptions import CreateAccessTokenException
+from dbt_platform_helper.providers.aws.exceptions import UnableToRetrieveSSOAccountList
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 
 TEST_CLIENT_ID = "TEST_CLIENT_ID"
@@ -59,17 +60,28 @@ def test_start_device_authorization_returns_device_code_and_url():
     assert device_code == TEST_DEVICE_CODE
 
 
-def test_list_accounts():
-    mock_boto_sso_client = Mock(name="client-mock")
-    mock_boto_sso_client.list_accounts.return_value = {
-        "accountList": {"accountName": "test-account", "accountId": "abc123"}
-    }
-    mock_session = Mock(name="session-mock")
-    mock_session.client.return_value = mock_boto_sso_client
+class TestListAccounts:
 
-    result = SSOAuthProvider(mock_session).list_accounts(TEST_ACCESS_TOKEN)
+    def test_list_accounts(self):
+        mock_boto_sso_client = Mock(name="client-mock")
+        mock_boto_sso_client.list_accounts.return_value = {
+            "accountList": [{"accountName": "test-account", "accountId": "abc123"}]
+        }
+        mock_session = Mock(name="session-mock")
+        mock_session.client.return_value = mock_boto_sso_client
 
-    assert result == {"accountName": "test-account", "accountId": "abc123"}
+        result = SSOAuthProvider(mock_session).list_accounts(TEST_ACCESS_TOKEN)
+
+        assert result == [{"accountName": "test-account", "accountId": "abc123"}]
+
+    def test_raises_when_account_list_is_empty(self):
+        mock_boto_sso_client = Mock(name="client-mock")
+        mock_boto_sso_client.list_accounts.return_value = {"accountList": []}
+        mock_session = Mock(name="session-mock")
+        mock_session.client.return_value = mock_boto_sso_client
+
+        with pytest.raises(UnableToRetrieveSSOAccountList):
+            SSOAuthProvider(mock_session).list_accounts(TEST_ACCESS_TOKEN)
 
 
 class TestCreateAccessToken:
