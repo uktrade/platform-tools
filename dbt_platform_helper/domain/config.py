@@ -145,7 +145,6 @@ class Config:
         )
         return client.get("clientId"), client.get("clientSecret")
 
-    # TODO: consider extracting oidc_application to instance variables
     def _get_device_code(self, oidc_application):
         self.io.debug("Initiating device code flow")
         authz = self.sso.start_device_authorization(
@@ -163,8 +162,6 @@ class Config:
             access_token=aws_sso_token,
             max_results=100,
         )
-        if len(accounts_list) == 0:
-            raise RuntimeError("Unable to retrieve AWS SSO account list\n")
         return accounts_list
 
     def _check_tool_versions(
