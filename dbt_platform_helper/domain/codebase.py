@@ -159,10 +159,10 @@ class Codebase:
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundException(application.name, env)
 
-        image_tag = f"commit-{commit}" if commit else tag
-        commit_or_tag_display = f'commit hash "commit-{commit}"' if commit else f'image tag "{tag}"'
+        image_tag = commit if commit else tag
+        commit_or_tag = "commit hash" if commit else "image tag"
 
-        self.check_image_exists(session, application, codebase, image_tag, commit_or_tag_display)
+        self.check_image_exists(session, application, codebase, image_tag, commit_or_tag)
 
         codepipeline_client = session.client("codepipeline")
 
@@ -171,7 +171,7 @@ class Codebase:
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with {commit_or_tag_display} to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
+            f'You are about to deploy "{app}" for "{codebase}" with {commit_or_tag} "{image_tag}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
             {
                 "name": pipeline_name,
                 "variables": [
