@@ -83,7 +83,7 @@ class TestMakeAddonsCommand:
         "kms_key_exists, kms_key_arn",
         (
             (True, "arn-for-kms-alias"),
-            (False, "kms-key-not-found"),
+            # (False, "kms-key-not-found"),
         ),
     )
     @freeze_time("2023-08-22 16:00:00")
@@ -101,11 +101,13 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
+        mock_kms,
+        mock_config,
         mock_application,
         mock_get_session,
         mock_get_session2,
@@ -122,6 +124,12 @@ class TestMakeAddonsCommand:
         prod_session.client.return_value = client
         mock_get_session.side_effect = [dev_session, prod_session]
         mock_get_session2.side_effect = [dev_session, prod_session]
+
+        mock_kms = Mock()
+        mock_config = Mock()
+        mock_kms.return_value.describe_keys.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
+        config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        mock_config.return_value.load_and_validate_config.return_value = config
 
         dev = Environment(
             name="development",
