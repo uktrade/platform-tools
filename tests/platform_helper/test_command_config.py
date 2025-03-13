@@ -33,24 +33,29 @@ def test_command_validate_raises_platform_exception(mock_config_domain):
 
 
 @pytest.mark.parametrize(
-    "cli_args",
-    [[], ["--file-path", "path"], ["-fp", "short-path"]],
+    "cli_args, called_with",
+    [
+        ([], "~/.aws/config"),
+        (["--file-path", "path"], "path"),
+        (["-fp", "short-path"], "short-path"),
+    ],
 )
+@patch("dbt_platform_helper.commands.config.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.config.Config")
-def test_command_aws_success(mock_config_domain, cli_args):
+def test_command_aws_success(mock_config_domain, mock_session, cli_args, called_with):
     mock_config_domain_instance = mock_config_domain.return_value
 
     runner = CliRunner()
     result = runner.invoke(aws, cli_args)
-    # TODO check generate_aws called with
+    mock_config_domain_instance.generate_aws.assert_called_with(called_with)
 
-    assert result.exit_code == 0
-    mock_config_domain_instance.assert_called()
     mock_config_domain.assert_called()
+    assert result.exit_code == 0
 
 
+@patch("dbt_platform_helper.commands.config.get_aws_session_or_abort")
 @patch("dbt_platform_helper.commands.config.Config")
-def test_command_aws_raises_platform_exception(mock_config_domain):
+def test_command_aws_raises_platform_exception(mock_config_domain, mock_session):
     mock_config_domain_instance = mock_config_domain.return_value
     mock_config_domain_instance.generate_aws.side_effect = PlatformException("i've failed")
 
