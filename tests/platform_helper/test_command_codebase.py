@@ -109,7 +109,31 @@ class TestCodebaseDeploy:
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
 
-        CliRunner().invoke(
+        result = CliRunner().invoke(
+            deploy,
+            [
+                "--app",
+                "test-application",
+                "--env",
+                "development",
+                "--codebase",
+                "application",
+                "--ref",
+                "ab1c23d",
+            ],
+            input="y\n",
+        )
+
+        mock_codebase_object_instance.deploy.assert_called_once_with(
+            "test-application", "development", "application", None, "ab1c23d"
+        )
+        assert result.exit_code == 0
+
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_codebase_deploy_warning_when_using_commit(self, codebase_object_mock):
+        mock_codebase_object_instance = codebase_object_mock.return_value
+
+        result = CliRunner().invoke(
             deploy,
             [
                 "--app",
@@ -125,12 +149,53 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "ab1c23d"
+            "test-application", "development", "application", "ab1c23d", None
         )
+
+        assert (
+            result.stdout
+            == "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.\n"
+        )
+        assert result.exit_code == 0
+
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_codebase_deploy_aborts_with_no_commit_or_ref(self, codebase_object_mock):
+
+        result = CliRunner().invoke(
+            deploy,
+            ["--app", "test-application", "--env", "development", "--codebase", "application"],
+        )
+
+        assert result.stdout == "Error: You must provide either --commit OR --tag, but not both.\n"
+        assert result.exit_code == 1
+
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_codebase_deploy_aborts_with_both_commit_and_ref(self, codebase_object_mock):
+
+        result = CliRunner().invoke(
+            deploy,
+            [
+                "--app",
+                "test-application",
+                "--env",
+                "development",
+                "--codebase",
+                "application",
+                "--ref",
+                "test-ref-1234",
+                "--commit",
+                "test-commit-1234",
+            ],
+        )
+
+        deprecated_msg = "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.\n"
+        error_msg = "Error: You must provide either --commit OR --tag, but not both.\n"
+        assert (deprecated_msg and error_msg) in result.stdout
+        assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
-    def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_image_tag(
+    def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_ref(
         self, mock_click, codebase_object_mock
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
@@ -144,13 +209,13 @@ class TestCodebaseDeploy:
                 "development",
                 "--codebase",
                 "application",
-                "--commit",
-                "nonexistent-commit-hash",
+                "--ref",
+                "nonexistent-ref",
             ],
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "nonexistent-commit-hash"
+            "test-application", "development", "application", None, "nonexistent-ref"
         )
         assert result.exit_code == 1
 
@@ -172,13 +237,13 @@ class TestCodebaseDeploy:
                 "dev",
                 "--codebase",
                 "application",
-                "--commit",
+                "--ref",
                 "ab1c23d",
             ],
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "not-an-application", "dev", "application", "ab1c23d"
+            "not-an-application", "dev", "application", None, "ab1c23d"
         )
         assert result.exit_code == 1
 
@@ -200,13 +265,13 @@ class TestCodebaseDeploy:
                 "not-an-environment",
                 "--codebase",
                 "application",
-                "--commit",
+                "--ref",
                 "ab1c23d",
             ],
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "not-an-environment", "application", "ab1c23d"
+            "test-application", "not-an-environment", "application", None, "ab1c23d"
         )
         assert result.exit_code == 1
 
@@ -228,13 +293,13 @@ class TestCodebaseDeploy:
                 "test-environment",
                 "--codebase",
                 "not-a-codebase",
-                "--commit",
+                "--ref",
                 "ab1c23d",
             ],
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "test-environment", "not-a-codebase", "ab1c23d", None
+            "test-application", "test-environment", "not-a-codebase", None, "ab1c23d"
         )
         assert result.exit_code == 1
 

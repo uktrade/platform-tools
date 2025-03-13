@@ -160,7 +160,7 @@ class Codebase:
             raise ApplicationEnvironmentNotFoundException(application.name, env)
 
         image_ref = commit if commit else ref
-        commit_or_ref = "commit hash" if commit else "image tag"
+        commit_or_ref = "commit hash" if commit else "image reference"
 
         self.check_image_exists(session, application, codebase, image_ref, commit_or_ref)
 

@@ -230,20 +230,20 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     }
 
     codebase = Codebase(**mocks.params())
-    codebase.deploy("test-application", "development", "application", "ab1c23d")
+    codebase.deploy("test-application", "development", "application", None, "ab1c23d")
 
     client.start_pipeline_execution.assert_called_with(
         name="test-application-application-manual-release",
         variables=[
             {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
+            {"name": "IMAGE_TAG", "value": "ab1c23d"},
         ],
     )
 
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with commit '
+                'You are about to deploy "test-application" for "application" with image reference '
                 '"ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
@@ -261,7 +261,14 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
 
 @pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
 def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
-    mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
+    if exception_type == ImageNotFoundException:
+        mocks = CodebaseMocks(
+            check_image_exists=Mock(
+                side_effect=exception_type("nonexistent-ref", "image reference")
+            )
+        )
+    else:
+        mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
 
@@ -271,12 +278,14 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
 
     with pytest.raises(exception_type):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-commit-hash"))
+        check_image_exists=Mock(
+            side_effect=ImageNotFoundException("nonexistent-ref", "image reference")
+        )
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
@@ -288,12 +297,12 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
 
-def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
+def test_codebase_deploy_aborts_with_a_nonexistent_image_ref():
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-commit-hash"))
+        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref", "image_tag"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
@@ -305,7 +314,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
 
 def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
@@ -316,14 +325,14 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "ab1c23d")
+        codebase.deploy("test-application", "development", "application", None, "ab1c23d")
 
     assert str(exc.value) == "Your deployment for application was not triggered."
     assert isinstance(exc.value, ApplicationDeploymentNotTriggered)
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with commit "ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                'You are about to deploy "test-application" for "application" with image reference "ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -337,7 +346,7 @@ def test_codebase_deploy_does_not_trigger_build_without_an_application():
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundException):
-        codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
+        codebase.deploy("not-an-application", "dev", "application", None, "ab1c23d")
 
 
 def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_application):
@@ -350,7 +359,7 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
         ApplicationEnvironmentNotFoundException,
         match="""The environment "not-an-environment" either does not exist or has not been deployed.""",
     ):
-        codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
+        codebase.deploy("test-application", "not-an-environment", "application", None, "ab1c23d")
 
 
 def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
@@ -364,7 +373,9 @@ def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
 
     with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy(
+            "test-application", "development", "application", None, "nonexistent-commit-hash"
+        )
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
