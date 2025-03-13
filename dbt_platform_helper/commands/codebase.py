@@ -79,7 +79,7 @@ def deploy(app, env, codebase, commit, ref):
     both_provided = commit and ref
     if none_provided or both_provided:
         ClickIOProvider().abort_with_error(
-            "You must provide either --commit OR --tag, but not both."
+            "You must provide either --commit OR --ref, but not both."
         )
 
     try:

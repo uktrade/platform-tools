@@ -166,7 +166,7 @@ class TestCodebaseDeploy:
             ["--app", "test-application", "--env", "development", "--codebase", "application"],
         )
 
-        assert result.stdout == "Error: You must provide either --commit OR --tag, but not both.\n"
+        assert result.stdout == "Error: You must provide either --commit OR --ref, but not both.\n"
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -189,7 +189,7 @@ class TestCodebaseDeploy:
         )
 
         deprecated_msg = "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.\n"
-        error_msg = "Error: You must provide either --commit OR --tag, but not both.\n"
+        error_msg = "Error: You must provide either --commit OR --ref, but not both.\n"
         assert (deprecated_msg and error_msg) in result.stdout
         assert result.exit_code == 1
 
