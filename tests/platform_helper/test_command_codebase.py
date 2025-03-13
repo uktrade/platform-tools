@@ -234,7 +234,7 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "test-environment", "not-a-codebase", "ab1c23d"
+            "test-application", "test-environment", "not-a-codebase", "ab1c23d", None
         )
         assert result.exit_code == 1
 
