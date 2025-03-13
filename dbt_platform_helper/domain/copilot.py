@@ -283,6 +283,10 @@ class Copilot:
         arns = {}
 
         for environment_name in application.environments:
+            
+            print(f"client being passed to provider: {application.environments[environment_name].session.client("kms")}")
+            kms_provider = self.kms_provider(application.environments[environment_name].session.client("kms"))
+            
             if environment_name not in config:
                 continue
 
@@ -293,10 +297,11 @@ class Copilot:
             alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
 
             try:
-                response = self.kms_provider.describe_key(KeyId=alias_name)
+                response = kms_provider.describe_key(alias_name)
                 print(f"kms response is {response}")
             # Boto3 classifies all AWS service errors and exceptions as ClientError exceptions
-            except botocore.exceptions.ClientError as error:
+            except Exception as error:
+                print("Exception!!!!!", error)
                 if error.response["Error"]["Code"] == "NotFoundException":
                     pass
             else:

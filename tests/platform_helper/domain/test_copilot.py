@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import boto3
+import botocore
 import pytest
 import yaml
 from click.testing import CliRunner
@@ -20,7 +20,6 @@ from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
-
 
 REDIS_STORAGE_CONTENTS = {
     "redis": {"type": "redis", "environments": {"default": {"engine": "6.2", "plan": "small"}}}
@@ -84,7 +83,7 @@ class TestMakeAddonsCommand:
         "kms_key_exists, kms_key_arn",
         (
             (True, "arn-for-kms-alias"),
-            # (False, "kms-key-not-found"),
+            (False, "kms-key-not-found"),
         ),
     )
     @freeze_time("2023-08-22 16:00:00")
@@ -99,30 +98,17 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
         new=Mock(return_value="foo"),
     )
-    # @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
-        mock_kms,
-        mock_config_provider,
         mock_application,
-        # mock_get_session,
         mock_get_session2,
         fakefs,
         kms_key_exists,
         kms_key_arn,
     ):
-        # mock_kms = Mock()
-        mock_kms.return_value.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
-
-        config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
-        mock_config_provider = Mock()
-        mock_config_provider.apply_environment_defaults.return_value = config
-        mock_config_provider.load_and_validate_platform_config.return_value = config
         dev_session = MagicMock(name="dev-session-mock")
         dev_session.profile_name = "foo"
         prod_session = MagicMock(name="prod-session-mock")
@@ -130,7 +116,6 @@ class TestMakeAddonsCommand:
         client = MagicMock(name="client-mock")
         dev_session.client.return_value = client
         prod_session.client.return_value = client
-        # mock_get_session.side_effect = [dev_session, prod_session]
         mock_get_session2.side_effect = [dev_session, prod_session]
 
         dev = Environment(
@@ -182,26 +167,23 @@ class TestMakeAddonsCommand:
         if kms_key_exists:
             client.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
         else:
-            client.exceptions.NotFoundException = boto3.client("kms").exceptions.NotFoundException
-            client.describe_key.side_effect = boto3.client("kms").exceptions.NotFoundException(
+            # client.exceptions.NotFoundException = boto3.client("kms").exceptions.NotFoundException
+            client.describe_key.side_effect = botocore.exceptions.ClientError(
                 error_response={}, operation_name="describe_key"
             )
 
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
+
         result = CliRunner().invoke(copilot, ["make-addons"])
-
-        print(f"result: {result}")
-        print(f"result.stdout: {result.stdout}")
-        # print(f"result.stderr {result.stderr}")
-
-        # print(Path(f"/copilot/web/addons/s3.yml").read_text())
+        print("RESULT:", result)
+        print("RESULT OUT:", result.stdout)
 
         s3_addon = yaml.safe_load(Path(f"/copilot/web/addons/s3.yml").read_text())
 
-        # assert (
-        #    s3_addon["Mappings"]["s3EnvironmentConfigMap"]["development"]["KmsKeyArn"]
-        #    == kms_key_arn
-        # )
+        assert (
+            s3_addon["Mappings"]["s3EnvironmentConfigMap"]["development"]["KmsKeyArn"]
+            == kms_key_arn
+        )
         dev_session.client.assert_called_with("kms")
         prod_session.client.assert_called_with("kms")
         assert dev_session != prod_session
