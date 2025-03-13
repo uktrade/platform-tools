@@ -7,10 +7,10 @@ from typing import Dict
 
 from prettytable import PrettyTable
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
-from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
@@ -78,6 +78,15 @@ class NoDeploymentRepoConfigException(PlatformException):
         super().__init__("Could not find a deployment repository, no checks to run.")
 
 
+# TODO move to generic location so it can be reused
+class NoPlatformConfigException(PlatformException):
+    def __init__(self):
+        super().__init__(
+            f"`platform-config.yml` is missing. "
+            "Please check it exists and you are in the root directory of your deployment project."
+        )
+
+
 class Config:
 
     def __init__(
@@ -87,20 +96,20 @@ class Config:
         aws_versions: AWSVersionProvider = AWSVersionProvider,
         copilot_versions: CopilotVersionProvider = CopilotVersionProvider,
         sso: SSOAuthProvider = None,
-        config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.oidc_app = None
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
         self.aws_versions = aws_versions
         self.copilot_versions = copilot_versions
-        self.config = config
         self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
 
     def validate(self):
         if not Path("copilot").exists():
             raise NoDeploymentRepoConfigException()
+        if not Path(PLATFORM_CONFIG_FILE).exists():
+            raise NoPlatformConfigException()
 
         self.io.debug("\nDetected a deployment repository\n")
         platform_helper_version_status = self.platform_helper_versioning_domain._get_version_status(
@@ -111,8 +120,6 @@ class Config:
         copilot_versions = self.copilot_versions.get_versions()
 
         self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
-
-        ConfigProvider().config_file_check()  # TODO move to top and make it a generic usable function? Where will it live?
 
         compatible = self._check_addon_versions(platform_helper_version_status)
 
