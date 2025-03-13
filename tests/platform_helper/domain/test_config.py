@@ -7,21 +7,20 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import mock_open
-from unittest.mock import patch
 
 import pytest
 from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.config import NoDeploymentRepoConfigException
-from dbt_platform_helper.domain.config import get_aws_versions
-from dbt_platform_helper.domain.config import get_copilot_versions
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
+from dbt_platform_helper.providers.version import AWSVersionProvider
+from dbt_platform_helper.providers.version import CopilotVersionProvider
 
 START_URL = "https://uktrade.awsapps.com/start"
 
@@ -58,18 +57,19 @@ class ConfigMocks:
         self.copilot_version = kwargs.get(
             "copilot_version", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
         )
-        self.get_aws_versions = kwargs.get("get_aws_versions", Mock(return_value=self.aws_version))
-        self.get_copilot_versions = kwargs.get(
-            "get_copilot_versions", Mock(return_value=self.copilot_version)
-        )
+        self.aws_versions = kwargs.get("aws_versions", Mock(spec=AWSVersionProvider))
+        self.aws_versions.get_versions.return_value = self.aws_version
+
+        self.copilot_versions = kwargs.get("copilot_versions", Mock(spec=CopilotVersionProvider))
+        self.copilot_versions.get_versions.return_value = self.copilot_version
 
     def params(self):
         return {
             "io": self.io,
             "sso": self.sso,
             "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
-            "get_aws_versions": self.get_aws_versions,
-            "get_copilot_versions": self.get_copilot_versions,
+            "aws_versions": self.aws_versions,
+            "copilot_versions": self.copilot_versions,
             # "get_template_generated_with_version": self.get_template_generated_with_version,
             # "validate_template_version": self.validate_template_version,
         }
@@ -185,8 +185,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.get_aws_versions.assert_called()
-        config_mocks.get_copilot_versions.assert_called()
+        config_mocks.aws_versions.get_versions.assert_called()
+        config_mocks.copilot_versions.get_versions.assert_called()
 
     def test_validate_not_installed(self, fakefs):
         fakefs.create_file("platform-config.yml")
@@ -308,8 +308,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.get_aws_versions.assert_called()
-        config_mocks.get_copilot_versions.assert_called()
+        config_mocks.aws_versions.get_versions.assert_called()
+        config_mocks.copilot_versions.get_versions.assert_called()
 
     def test_validate_outdated(self, fakefs):
         fakefs.create_file("platform-config.yml")
@@ -440,8 +440,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.get_aws_versions.assert_called()
-        config_mocks.get_copilot_versions.assert_called()
+        config_mocks.aws_versions.get_versions.assert_called()
+        config_mocks.copilot_versions.get_versions.assert_called()
 
     # TODO ensure expected behaviour
     def test_no_platform_config(self, fakefs, capfd):
@@ -571,30 +571,3 @@ class TestConfigGenerateAWS:
                 call("\n"),
             ]
         )
-
-
-@patch("subprocess.run")
-@patch(
-    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
-    return_value=SemanticVersion(2, 0, 0),
-)
-def test_get_copilot_versions(mock_get_github_released_version, mock_run):
-    mock_run.return_value.stdout = b"1.0.0"
-
-    versions = get_copilot_versions()
-
-    assert versions.installed == SemanticVersion(1, 0, 0)
-    assert versions.latest == SemanticVersion(2, 0, 0)
-
-
-@patch("subprocess.run")
-@patch(
-    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
-    return_value=SemanticVersion(2, 0, 0),
-)
-def test_get_aws_versions(mock_get_github_released_version, mock_run):
-    mock_run.return_value.stdout = b"aws-cli/1.0.0"
-    versions = get_aws_versions()
-
-    assert versions.installed == SemanticVersion(1, 0, 0)
-    assert versions.latest == SemanticVersion(2, 0, 0)

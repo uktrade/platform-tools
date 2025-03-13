@@ -19,6 +19,8 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
+from dbt_platform_helper.providers.version import AWSVersionProvider
+from dbt_platform_helper.providers.version import CopilotVersionProvider
 from dbt_platform_helper.providers.version import GithubVersionProvider
 
 yes = "\033[92m✔\033[0m"
@@ -71,18 +73,6 @@ def get_copilot_versions() -> VersionStatus:
     )
 
 
-def get_aws_versions() -> VersionStatus:
-    aws_version = None
-    try:
-        response = subprocess.run("aws --version", capture_output=True, shell=True)
-        matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-        aws_version = SemanticVersion.from_string(matched.group(1))
-    except ValueError:
-        pass
-
-    return VersionStatus(aws_version, GithubVersionProvider.get_latest_version("aws/aws-cli", True))
-
-
 class NoDeploymentRepoConfigException(PlatformException):
     def __init__(self):
         super().__init__("Could not find a deployment repository, no checks to run.")
@@ -94,16 +84,16 @@ class Config:
         self,
         io: ClickIOProvider = ClickIOProvider(),
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
-        get_aws_versions=get_aws_versions,
-        get_copilot_versions=get_copilot_versions,
+        aws_versions: AWSVersionProvider = AWSVersionProvider,
+        copilot_versions: CopilotVersionProvider = CopilotVersionProvider,
         sso: SSOAuthProvider = None,
         config: ConfigProvider = ConfigProvider(),  # TODO in test inject mock IO here to assert
     ):
         self.oidc_app = None
         self.io = io
         self.platform_helper_versioning_domain = platform_helper_versioning_domain
-        self.get_aws_versions = get_aws_versions
-        self.get_copilot_versions = get_copilot_versions
+        self.aws_versions = aws_versions
+        self.copilot_versions = copilot_versions
         self.config = config
         self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
@@ -117,8 +107,8 @@ class Config:
             include_project_versions=True
         )
         self.io.process_messages(platform_helper_version_status.validate())
-        aws_versions = self.get_aws_versions()
-        copilot_versions = self.get_copilot_versions()
+        aws_versions = self.aws_versions.get_versions()
+        copilot_versions = self.copilot_versions.get_versions()
 
         self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
 
