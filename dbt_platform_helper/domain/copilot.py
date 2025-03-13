@@ -278,7 +278,6 @@ class Copilot:
         overrides_file = overrides_path.joinpath("cfn.patches.yml")
         overrides_file.write_text(templates.get_template("svc/overrides/cfn.patches.yml").render())
 
-    # TODO - Doing stuff with KMS, likely want a provider for this too.
     def _get_s3_kms_alias_arns(self, application_name, config):
         application = load_application(application_name, self.session)
         arns = {}
@@ -291,13 +290,15 @@ class Copilot:
                 continue
 
             bucket_name = config[environment_name]["bucket_name"]
-            kms_client = self.session.client("kms")
             alias_name = f"alias/{application_name}-{environment_name}-{bucket_name}-key"
 
             try:
-                response = kms_client.describe_key(KeyId=alias_name)
-            except kms_client.exceptions.NotFoundException:
-                pass
+                response = self.kms_provider.describe_key(KeyId=alias_name)
+                print(f"kms response is {response}")
+            # Boto3 classifies all AWS service errors and exceptions as ClientError exceptions
+            except botocore.exceptions.ClientError as error:
+                if error.response["Error"]["Code"] == "NotFoundException":
+                    pass
             else:
                 arns[environment_name] = response["KeyMetadata"]["Arn"]
 
@@ -332,6 +333,7 @@ class Copilot:
         log_destination_arns,
     ):
         # generate svc addons
+        print(f"Generating service addons {addon_name} {addon_type}")  # dw
         for addon_template in ADDON_TEMPLATE_MAP.get(addon_type, []):
             template = templates.get_template(addon_template)
 
