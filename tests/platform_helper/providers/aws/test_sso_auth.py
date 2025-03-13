@@ -54,7 +54,7 @@ def test_start_device_authorization_returns_device_code_and_url():
     )
 
     mock_boto_sso_client.start_device_authorization.assert_called_once_with(
-        client_id=TEST_CLIENT_ID, client_secret=TEST_CLIENT_SECRET, start_url=TEST_START_URL
+        clientId=TEST_CLIENT_ID, clientSecret=TEST_CLIENT_SECRET, startUrl=TEST_START_URL
     )
     assert url == TEST_VERIFICATION_URI
     assert device_code == TEST_DEVICE_CODE
@@ -87,7 +87,7 @@ class TestListAccounts:
 class TestCreateAccessToken:
     def test_creates_access_token(self):
         mock_boto_sso_client = Mock(name="client-mock")
-        mock_boto_sso_client.create_access_token.return_value = TEST_ACCESS_TOKEN
+        mock_boto_sso_client.create_token.return_value = {"accessToken": TEST_ACCESS_TOKEN}
         mock_session = Mock(name="session-mock")
         mock_session.client.return_value = mock_boto_sso_client
 
@@ -99,7 +99,7 @@ class TestCreateAccessToken:
 
     def test_raises_when_error_code_is_not_authorization_pending_exception(self):
         mock_boto_sso_client = Mock(name="client-mock")
-        mock_boto_sso_client.create_access_token.side_effect = botocore.exceptions.ClientError(
+        mock_boto_sso_client.create_token.side_effect = botocore.exceptions.ClientError(
             {
                 "Error": {"Code": "TestException"},
             },
@@ -115,7 +115,7 @@ class TestCreateAccessToken:
 
     def test_does_not_raise_when_error_code_is_authorization_pending_exception(self):
         mock_boto_sso_client = Mock(name="client-mock")
-        mock_boto_sso_client.create_access_token.side_effect = botocore.exceptions.ClientError(
+        mock_boto_sso_client.create_token.side_effect = botocore.exceptions.ClientError(
             {
                 "Error": {"Code": "AuthorizationPendingException"},
             },

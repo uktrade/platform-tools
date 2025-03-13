@@ -21,9 +21,9 @@ class SSOAuthProvider:
 
     def start_device_authorization(self, client_id, client_secret, start_url):
         authz = self.sso_oidc.start_device_authorization(
-            client_id=client_id,
-            client_secret=client_secret,
-            start_url=start_url,
+            clientId=client_id,
+            clientSecret=client_secret,
+            startUrl=start_url,
         )
         url = authz.get("verificationUriComplete")
         deviceCode = authz.get("deviceCode")
@@ -32,14 +32,14 @@ class SSOAuthProvider:
 
     def create_access_token(self, client_id, client_secret, device_code):
         try:
-            access_token = self.sso_oidc.create_access_token(
-                client_id=client_id,
-                client_secret=client_secret,
-                grant_type="urn:ietf:params:oauth:grant-type:device_code",
-                device_code=device_code,
+            response = self.sso_oidc.create_token(
+                clientId=client_id,
+                clientSecret=client_secret,
+                grantType="urn:ietf:params:oauth:grant-type:device_code",
+                deviceCode=device_code,
             )
 
-            return access_token
+            return response.get("accessToken")
 
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] != "AuthorizationPendingException":

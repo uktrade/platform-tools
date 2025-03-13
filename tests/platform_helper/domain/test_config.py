@@ -474,22 +474,19 @@ class TestConfigGenerateAWS:
         mock_expanduser.return_value = "/test/aws/config"
         config_domain = Config(**config_mocks.params())
 
-        config_mocks.sso.register.return_value = {
-            "clientId": CLIENT_ID,
-            "clientSecret": CLIENT_SECRET,
-        }
+        config_mocks.sso.register.return_value = CLIENT_ID, CLIENT_SECRET
 
-        config_mocks.sso.start_device_authorization.return_value = {
-            "verificationUriComplete": VERIFICATION_URI,
-            "deviceCode": "TEST_DEVICE_CODE",
-        }
+        config_mocks.sso.start_device_authorization.return_value = (
+            VERIFICATION_URI,
+            "TEST_DEVICE_CODE",
+        )
 
         config_mocks.sso.create_access_token.return_value = "TEST_ACCESS_TOKEN"
 
         config_mocks.sso.list_accounts.return_value = [
             {
-                "account_name": "TEST_AWS_ACCOUNT",
-                "account_id": "TEST_AWS_ACCOUNT_ID",
+                "accountName": "TEST_AWS_ACCOUNT",
+                "accountId": "TEST_AWS_ACCOUNT_ID",
             }
         ]
 

@@ -135,9 +135,9 @@ class Config:
                 config_file.write(AWS_CONFIG)
 
                 for account in self._retrieve_aws_accounts(access_token):
-                    config_file.write(f"[profile {account['account_name']}]\n")
+                    config_file.write(f"[profile {account['accountName']}]\n")
                     config_file.write("sso_session = uktrade\n")
-                    config_file.write(f"sso_account_id = {account['account_id']}\n")
+                    config_file.write(f"sso_account_id = {account['accountId']}\n")
                     config_file.write("sso_role_name = AdministratorAccess\n")
                     config_file.write("region = eu-west-2\n")
                     config_file.write("output = json\n")
@@ -145,21 +145,19 @@ class Config:
 
     def _create_oidc_application(self):
         self.io.debug("Creating temporary AWS SSO OIDC application")
-        client = self.sso.register(
+        client_id, client_secret = self.sso.register(
             client_name="platform-helper",
             client_type="public",
         )
-        return client.get("clientId"), client.get("clientSecret")
+        return client_id, client_secret
 
     def _get_device_code(self, oidc_application):
         self.io.debug("Initiating device code flow")
-        authz = self.sso.start_device_authorization(
+        url, device_code = self.sso.start_device_authorization(
             client_id=oidc_application[0],
             client_secret=oidc_application[1],
             start_url=self.SSO_START_URL,
         )
-        url = authz.get("verificationUriComplete")
-        device_code = authz.get("deviceCode")
 
         return url, device_code
 
