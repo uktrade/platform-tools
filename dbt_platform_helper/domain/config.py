@@ -349,7 +349,6 @@ class Config:
 
     def _render_recommendations(self, recommendations: Dict[str, str]):
         if recommendations:
-            # TODO just multi line this?
             self.io.info("\nRecommendations:\n", bold=True)
 
             for name, recommendation in recommendations.items():
