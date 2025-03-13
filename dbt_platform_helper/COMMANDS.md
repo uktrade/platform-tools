@@ -250,7 +250,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--ref <text>`
   - ECR image tag, commit hash, or branch name
 - `--commit <text>`
-  - [DEPRECATED >> use --ref instead] GitHub commit hash
+  - (DEPRECATED) Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

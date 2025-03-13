@@ -64,9 +64,16 @@ def build(app, codebase, commit):
 )
 @click.option("--ref", help="ECR image tag, commit hash, or branch name", required=False)
 @click.option(
-    "--commit", help="[DEPRECATED >> use --ref instead] GitHub commit hash", required=False
+    "--commit",
+    help="(DEPRECATED) Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.",
+    required=False,
 )
 def deploy(app, env, codebase, commit, ref):
+
+    if commit:
+        ClickIOProvider().warn(
+            "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name."
+        )
 
     none_provided = not (commit or ref)
     both_provided = commit and ref
