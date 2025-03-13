@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import webbrowser
 from pathlib import Path
 from typing import Dict
@@ -18,8 +19,7 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.utils.tool_versioning import get_aws_versions
-from dbt_platform_helper.utils.tool_versioning import get_copilot_versions
+from dbt_platform_helper.providers.version import GithubVersionProvider
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -54,6 +54,33 @@ region = eu-west-2
 output = json
 
 """
+
+
+def get_copilot_versions() -> VersionStatus:
+    copilot_version = None
+
+    try:
+        response = subprocess.run("copilot --version", capture_output=True, shell=True)
+        [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+    except ValueError:
+        pass
+
+    return VersionStatus(
+        SemanticVersion.from_string(copilot_version),
+        GithubVersionProvider.get_latest_version("aws/copilot-cli"),
+    )
+
+
+def get_aws_versions() -> VersionStatus:
+    aws_version = None
+    try:
+        response = subprocess.run("aws --version", capture_output=True, shell=True)
+        matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
+        aws_version = SemanticVersion.from_string(matched.group(1))
+    except ValueError:
+        pass
+
+    return VersionStatus(aws_version, GithubVersionProvider.get_latest_version("aws/aws-cli", True))
 
 
 class NoDeploymentRepoConfigException(PlatformException):

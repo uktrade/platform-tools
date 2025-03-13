@@ -7,12 +7,15 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import mock_open
+from unittest.mock import patch
 
 import pytest
 from prettytable import PrettyTable
 
 from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.config import NoDeploymentRepoConfigException
+from dbt_platform_helper.domain.config import get_aws_versions
+from dbt_platform_helper.domain.config import get_copilot_versions
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -568,3 +571,30 @@ class TestConfigGenerateAWS:
                 call("\n"),
             ]
         )
+
+
+@patch("subprocess.run")
+@patch(
+    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
+    return_value=SemanticVersion(2, 0, 0),
+)
+def test_get_copilot_versions(mock_get_github_released_version, mock_run):
+    mock_run.return_value.stdout = b"1.0.0"
+
+    versions = get_copilot_versions()
+
+    assert versions.installed == SemanticVersion(1, 0, 0)
+    assert versions.latest == SemanticVersion(2, 0, 0)
+
+
+@patch("subprocess.run")
+@patch(
+    "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
+    return_value=SemanticVersion(2, 0, 0),
+)
+def test_get_aws_versions(mock_get_github_released_version, mock_run):
+    mock_run.return_value.stdout = b"aws-cli/1.0.0"
+    versions = get_aws_versions()
+
+    assert versions.installed == SemanticVersion(1, 0, 0)
+    assert versions.latest == SemanticVersion(2, 0, 0)
