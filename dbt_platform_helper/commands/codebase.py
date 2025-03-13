@@ -62,19 +62,20 @@ def build(app, codebase, commit):
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
-@click.option("--commit", help="GitHub commit hash", required=False)
-@click.option("--tag", help="ECR image tag (alternative to commit hash)", required=False)
-def deploy(app, env, codebase, commit, tag):
+@click.option("--ref", help="ECR image tag, commit hash, or branch name", required=False)
+@click.option(
+    "--commit", help="[DEPRECATED >> use --ref instead] GitHub commit hash", required=False
+)
+def deploy(app, env, codebase, commit, ref):
 
-    none_provided = not (commit or tag)
-    both_provided = commit and tag
-
+    none_provided = not (commit or ref)
+    both_provided = commit and ref
     if none_provided or both_provided:
         ClickIOProvider().abort_with_error(
             "You must provide either --commit OR --tag, but not both."
         )
 
     try:
-        Codebase().deploy(app, env, codebase, commit, tag)
+        Codebase().deploy(app, env, codebase, commit, ref)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
