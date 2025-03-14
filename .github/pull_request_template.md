@@ -1,4 +1,4 @@
-Addresses [DBTP-<ticket>](https://uktrade.atlassian.net/browse/DBTP-<ticket>)
+Addresses https://uktrade.atlassian.net/browse/DBTP-<ticket>.
 
 ---
 ## Checklist:
