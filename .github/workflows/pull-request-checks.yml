@@ -21,3 +21,6 @@ jobs:
         with:
           # Check the subject matches guidance from https://uktrade.atlassian.net/wiki/spaces/DBTP/pages/4402020487/Git+housekeeping?force_transition=f6ce49ea-c406-402b-ac37-ed6145b46259#Pull-request-titles
           subjectPattern: ^[A-Z].* \([a-zA-Z]{1,}-[a-zA-Z0-9]{1,}\)+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the expected pattern. E.g. "feat: Add new feature (DBTP-1234)".
