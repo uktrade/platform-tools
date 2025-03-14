@@ -8,6 +8,8 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+# If you update the schema here, please ensure that the changes are reflected in https://platform.readme.trade.gov.uk/reference/platform-config-yml/
+
 
 class PlatformConfigSchema:
     @staticmethod
@@ -28,7 +30,6 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__monitoring_schema(),
                         PlatformConfigSchema.__opensearch_schema(),
                         PlatformConfigSchema.__postgres_schema(),
-                        PlatformConfigSchema.__prometheus_policy_schema(),
                         PlatformConfigSchema.__redis_schema(),
                         PlatformConfigSchema.__s3_bucket_schema(),
                         PlatformConfigSchema.__s3_bucket_policy_schema(),
@@ -53,10 +54,6 @@ class PlatformConfigSchema:
             "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
                 "subscription-filter"
             ),
-            # Todo: The next three are no longer relevant. Remove them.
-            "monitoring": Schema(PlatformConfigSchema.__monitoring_schema()),
-            "vpc": PlatformConfigSchema.__no_configuration_required_schema("vpc"),
-            "xray": PlatformConfigSchema.__no_configuration_required_schema("xray"),
         }
 
     @staticmethod
@@ -99,11 +96,8 @@ class PlatformConfigSchema:
                         Optional("cdn_domains_list"): dict,
                         Optional("cdn_geo_locations"): [str],
                         Optional("cdn_geo_restriction_type"): str,
-                        Optional("cdn_logging_bucket"): str,
-                        Optional("cdn_logging_bucket_prefix"): str,
                         Optional("cdn_timeout_seconds"): int,
                         Optional("default_waf"): str,
-                        Optional("domain_prefix"): str,
                         Optional("enable_logging"): bool,
                         Optional("env_root"): str,
                         Optional("forwarded_values_forward"): str,
@@ -132,7 +126,6 @@ class PlatformConfigSchema:
                 Optional("slack_channel"): str,
                 Optional("requires_image_build"): bool,
                 Optional("additional_ecr_repository"): str,
-                Optional("deploy_repository_branch"): str,
                 "services": [{str: [str]}],
                 Optional("pipelines"): [
                     Or(
@@ -188,8 +181,6 @@ class PlatformConfigSchema:
                             "id": str,
                         },
                     },
-                    # Todo: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
-                    Optional("requires_approval"): bool,
                     Optional("versions"): _valid_environment_specific_version_overrides,
                     Optional("vpc"): str,
                 },
@@ -214,21 +205,7 @@ class PlatformConfigSchema:
                     str: Or(
                         None,
                         {
-                            Optional("accounts"): {
-                                "deploy": {
-                                    "name": str,
-                                    "id": str,
-                                },
-                                "dns": {
-                                    "name": str,
-                                    "id": str,
-                                },
-                            },
                             Optional("requires_approval"): bool,
-                            Optional(
-                                "versions"
-                            ): _valid_environment_pipeline_specific_version_overrides,
-                            Optional("vpc"): str,
                         },
                     )
                 },
@@ -265,9 +242,8 @@ class PlatformConfigSchema:
             "type": "opensearch",
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
-                    Optional("engine"): str,
-                    Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
-                    Optional("plan"): _valid_opensearch_plans,
+                    "engine": str,
+                    "plan": _valid_opensearch_plans,
                     Optional("volume_size"): int,
                     Optional("ebs_throughput"): int,
                     Optional("ebs_volume_type"): str,
@@ -323,16 +299,12 @@ class PlatformConfigSchema:
         return {
             "type": "postgres",
             "version": (Or(int, float)),
-            Optional("deletion_policy"): PlatformConfigSchema.__valid_postgres_deletion_policy(),
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_postgres_plans,
                     Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
                     Optional("iops"): PlatformConfigSchema.is_integer_between(1000, 9950),
                     Optional("snapshot_id"): str,
-                    Optional(
-                        "deletion_policy"
-                    ): PlatformConfigSchema.__valid_postgres_deletion_policy(),
                     Optional("deletion_protection"): bool,
                     Optional("multi_az"): bool,
                     Optional("storage_type"): _valid_postgres_storage_types,
@@ -342,24 +314,6 @@ class PlatformConfigSchema:
                 }
             },
             Optional("database_copy"): [_valid_postgres_database_copy],
-            Optional("objects"): [
-                {
-                    "key": str,
-                    Optional("body"): str,
-                }
-            ],
-        }
-
-    @staticmethod
-    def __prometheus_policy_schema() -> dict:
-        return {
-            "type": "prometheus-policy",
-            Optional("services"): Or("__all__", [str]),
-            Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    "role_arn": str,
-                }
-            },
         }
 
     @staticmethod
@@ -385,9 +339,8 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_redis_plans,
-                    Optional("engine"): str,
+                    "engine": str,
                     Optional("replicas"): PlatformConfigSchema.is_integer_between(0, 5),
-                    Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                     Optional("apply_immediately"): bool,
                     Optional("automatic_failover_enabled"): bool,
                     Optional("instance"): str,
@@ -398,7 +351,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def valid_s3_bucket_name(name: str):
-        # Todo: This is a public method becasue that's what the test expect. Perhaps it belongs in an S3 provider?
+        # Todo: This is a public method because that's what the test expect. Perhaps it belongs in an S3 provider?
         errors = []
         if not (2 < len(name) < 64):
             errors.append("Length must be between 3 and 63 characters inclusive.")
@@ -493,10 +446,9 @@ class PlatformConfigSchema:
                 Optional("serve_static_content"): bool,
                 Optional("serve_static_param_name"): str,
                 Optional("services"): Or("__all__", [str]),
-                Optional("environments"): {
+                "environments": {
                     PlatformConfigSchema.__valid_environment_name(): {
                         "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
-                        Optional("deletion_policy"): PlatformConfigSchema.__valid_deletion_policy(),
                         Optional("retention_policy"): _valid_s3_bucket_retention_policy,
                         Optional("versioning"): bool,
                         Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
@@ -510,6 +462,7 @@ class PlatformConfigSchema:
                                 # application should be removed once we can confirm that no-one is using it.
                                 Optional("application"): str,
                                 "environment": PlatformConfigSchema.__valid_environment_name(),
+                                # Todo: We should be able to get the AWA account from the application configuration and deprecate this
                                 "account": str,
                                 "service": str,
                                 "read": bool,
@@ -529,8 +482,8 @@ class PlatformConfigSchema:
         return dict(
             {
                 "type": "s3-policy",
-                Optional("services"): Or("__all__", [str]),
-                Optional("environments"): {
+                "services": Or("__all__", [str]),
+                "environments": {
                     PlatformConfigSchema.__valid_environment_name(): {
                         "bucket_name": PlatformConfigSchema.valid_s3_bucket_name,
                     },
@@ -573,10 +526,6 @@ class PlatformConfigSchema:
     def __valid_branch_name() -> Callable:
         # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
         return PlatformConfigSchema.string_matching_regex(r"^((?!\*).)*(\*)?$")
-
-    @staticmethod
-    def __valid_deletion_policy() -> Or:
-        return Or("Delete", "Retain")
 
     @staticmethod
     def __valid_postgres_deletion_policy() -> Or:
