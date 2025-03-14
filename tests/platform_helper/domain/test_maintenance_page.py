@@ -9,7 +9,6 @@ import pytest
 from botocore.exceptions import ClientError
 from moto import mock_aws
 
-from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.maintenance_page import *
 from dbt_platform_helper.utils.application import Application
 
@@ -270,15 +269,15 @@ class TestCommandHelperMethods:
         [
             (
                 1,
-                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': False}",
+                "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 0}}",
             ),
             (
                 2,
-                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': False, 'AllowedSourceIps': True}",
+                "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 1}}",
             ),
             (
                 3,
-                "{'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': True, 'AllowedSourceIps': True}",
+                "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 1, 'AllowedSourceIps': 1}}",
             ),
         ],
     )
@@ -314,7 +313,7 @@ class TestCommandHelperMethods:
             elbv2_client, create_rule_count_to_error
         )
 
-        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page = MaintenancePage(mock_application, io=Mock())
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
@@ -330,10 +329,11 @@ class TestCommandHelperMethods:
 
         excepted = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
-            f"Rolled-back rules: {expected_roll_back_message}\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
         assert str(e.value).startswith(excepted)
+
+        maintenance_page.io.warn.assert_called_with(expected_roll_back_message)
 
         assert mock_create_rule.call_count == create_rule_count_to_error + 1
 
@@ -423,7 +423,7 @@ class TestCommandHelperMethods:
             elbv2_client, 5  # will only error during loop on second service
         )
 
-        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page = MaintenancePage(mock_application, io=Mock())
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
         with pytest.raises(
             FailedToActivateMaintenancePageException,
@@ -439,10 +439,13 @@ class TestCommandHelperMethods:
 
         excepted = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
-            "Rolled-back rules: {'MaintenancePage': False, 'AllowedIps': True, 'BypassIpFilter': True, 'AllowedSourceIps': True}\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
         assert str(e.value).startswith(excepted)
+
+        maintenance_page.io.warn.assert_called_with(
+            "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 1, 'AllowedSourceIps': 1}, 'web2': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 1}}"
+        )
 
         assert mock_create_rule.call_count == 6
 
@@ -697,6 +700,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -706,6 +710,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
             ]
         )
@@ -717,6 +722,7 @@ class TestActivateMethod:
             "AllowedSourceIps",
             2,
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            [{"Key": "service", "Value": "web"}],
         )
 
         maintenance_mocks.load_balancer.create_rule.assert_called_with(
@@ -784,7 +790,9 @@ class TestActivateMethod:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = (
+            describe_rules_response
+        )
 
         provider = MaintenancePage(**maintenance_mocks.params())
         provider.activate(env, svc, template, vpc)
@@ -815,6 +823,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -824,6 +833,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
             ]
         )
@@ -835,6 +845,7 @@ class TestActivateMethod:
             "AllowedSourceIps",
             2,
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            [{"Key": "service", "Value": "web"}],
         )
 
         maintenance_mocks.load_balancer.create_rule.assert_called_with(
@@ -1044,6 +1055,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -1053,6 +1065,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -1062,6 +1075,7 @@ class TestActivateMethod:
                     "AllowedIps",
                     4,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web2"}],
                 ),
                 call(
                     "https_listener",
@@ -1071,6 +1085,7 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     6,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web2"}],
                 ),
             ]
         )
@@ -1084,6 +1099,7 @@ class TestActivateMethod:
                     "AllowedSourceIps",
                     2,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web"}],
                 ),
                 call(
                     "https_listener",
@@ -1092,6 +1108,7 @@ class TestActivateMethod:
                     "AllowedSourceIps",
                     5,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+                    [{"Key": "service", "Value": "web2"}],
                 ),
             ]
         )
@@ -1238,7 +1255,9 @@ class TestDeactivateCommand:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = "rule_arn"
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = (
+            describe_rules_response
+        )
 
         provider = MaintenancePage(**maintenance_mocks.params())
 
@@ -1337,7 +1356,7 @@ class TestDeactivateCommand:
         maintenance_mocks = MaintenancePageMocks(
             app, get_rules_tag_descriptions_by_listener_arn=describe_rules_response
         )
-        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = None
+        maintenance_mocks.load_balancer.delete_listener_rule_by_tags.return_value = []
 
         provider = MaintenancePage(**maintenance_mocks.params())
         with pytest.raises(ListenerRuleNotFoundException):

@@ -469,7 +469,7 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
                     }
                 },
             },
-            "redis version for environment prod is not in the list of supported redis versions: ['7.1']. Provided Version: invalid",
+            "redis version for environment prod is not in the list of supported redis versions: ['6.2', '7.0', '7.1']. Provided Version: invalid",
         ),
         (
             # Invalid extensions type defined in prod environment
@@ -479,14 +479,13 @@ def test_validate_platform_config_fails_if_pipeline_to_trigger_is_triggering_its
     ],
 )
 def test_validate_extension_supported_versions(config, expected_response, capsys):
-    mock_redis_provider = MagicMock()
-    mock_redis_provider.get_supported_redis_versions.return_value = ["7.1"]
+    mock_provider = MagicMock()
 
     ConfigValidator()._validate_extension_supported_versions(
         config=config,
+        aws_provider=mock_provider,
         extension_type="redis",
         version_key="engine",
-        get_supported_versions=mock_redis_provider.get_supported_redis_versions,
     )
 
     captured = capsys.readouterr()

@@ -10,9 +10,7 @@ from datetime import timedelta
 import click
 from prettytable import PrettyTable
 
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -141,7 +139,7 @@ def container_stats(env, app, storage, network):
         storage_write = field[6]["value"]
         network_read = field[7]["value"]
         network_write = field[8]["value"]
-        cpu = "%.1f%%" % float(field[9]["value"])
+        cpu = f"{float(field[9]['value']):.1f}%"
         memory = f"{field[10]['value']}M"
 
         # Nothing to compare to at start.

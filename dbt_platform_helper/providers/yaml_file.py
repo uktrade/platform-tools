@@ -45,7 +45,6 @@ class YamlFileProvider:
 
         if not yaml_content:
             return {}
-
         YamlFileProvider.lint_yaml_for_duplicate_keys(path)
 
         return yaml_content

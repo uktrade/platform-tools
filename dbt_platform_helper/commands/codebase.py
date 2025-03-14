@@ -1,11 +1,9 @@
 import click
 
 from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_helper_versioning import (
-    PlatformHelperVersioning,
-)
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
