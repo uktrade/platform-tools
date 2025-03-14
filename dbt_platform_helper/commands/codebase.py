@@ -38,6 +38,24 @@ def list(app, with_images):
         ClickIOProvider().abort_with_error(str(err))
 
 
+def build_image_reference(commit = None, tag = None, branch = None):
+    reference_options = sum([bool(commit), bool(tag), bool(branch)])
+    if reference_options != 1:
+        ClickIOProvider().abort_with_error(
+            "One of --commit, --tag, or --branch must be specified"
+        )
+    image_reference = None
+    if commit:
+        image_reference = f"commit-{commit}"
+    elif tag:
+        image_reference = f"tag-{tag}"
+    elif branch:
+        image_reference = f"branch-{branch}"
+
+    assert image_reference is not None
+    return image_reference
+
+
 @codebase.command()
 @click.option("--app", help="AWS application name", required=True)
 @click.option(
@@ -45,11 +63,15 @@ def list(app, with_images):
     help="The codebase name as specified in the platform-config.yml file. This must be run from your codebase repository directory.",
     required=True,
 )
-@click.option("--commit", help="GitHub commit hash", required=True)
-def build(app, codebase, commit):
+@click.option("--commit", help="GitHub commit hash", required=False)
+@click.option("--tag", help="GitHub tag", required=False)
+@click.option("--branch", help="GitHub branch", required=False)
+def build(app, codebase, commit= None, tag = None, branch = None):
     """Trigger a CodePipeline pipeline based build."""
+    image_reference = build_image_reference(commit, tag, branch)
+
     try:
-        Codebase().build(app, codebase, commit)
+        Codebase().build(app, codebase, image_reference)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
@@ -62,9 +84,14 @@ def build(app, codebase, commit):
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
-@click.option("--commit", help="GitHub commit hash", required=True)
-def deploy(app, env, codebase, commit):
+@click.option("--commit", help="GitHub commit hash", required=False)
+@click.option("--tag", help="GitHub tag", required=False)
+@click.option("--branch", help="GitHub branch", required=False)
+def deploy(app, env, codebase, commit= None, tag = None, branch = None):
+    """Trigger a CodePipeline pipeline based deploy."""
+    image_reference = build_image_reference(commit, tag, branch)
+
     try:
-        Codebase().deploy(app, env, codebase, commit)
+        Codebase().deploy(app, env, codebase, image_reference)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

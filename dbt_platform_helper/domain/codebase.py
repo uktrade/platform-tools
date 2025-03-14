@@ -124,7 +124,7 @@ class Codebase:
                 )
             )
 
-    def build(self, app: str, codebase: str, commit: str):
+    def build(self, app: str, codebase: str, ref: str):
         """Trigger a CodePipeline pipeline based build."""
         session = self.get_aws_session_or_abort()
         self.load_application(app, default_session=session)
@@ -134,11 +134,11 @@ class Codebase:
         build_url = self.__start_build_with_confirmation(
             codebuild_client,
             self.get_build_url_from_arn,
-            f'You are about to build "{app}" for "{codebase}" with commit "{commit}". Do you want to continue?',
+            f'You are about to build "{app}" for "{codebase}" with the reference "{ref}". Do you want to continue?',
             {
                 "projectName": project_name,
                 "artifactsOverride": {"type": "NO_ARTIFACTS"},
-                "sourceVersion": commit,
+                "sourceVersion": ref,
             },
         )
 
@@ -149,7 +149,7 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def deploy(self, app, env, codebase, commit):
+    def deploy(self, app, env, codebase, ref):
         """Trigger a CodePipeline pipeline based deployment."""
         session = self.get_aws_session_or_abort()
 
@@ -157,7 +157,7 @@ class Codebase:
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundException(application.name, env)
 
-        self.check_image_exists(session, application, codebase, commit)
+        self.check_image_exists(session, application, codebase, ref)
 
         codepipeline_client = session.client("codepipeline")
 
@@ -166,12 +166,12 @@ class Codebase:
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
+            f'You are about to deploy "{app}" for "{codebase}" with the reference "{ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
             {
                 "name": pipeline_name,
                 "variables": [
                     {"name": "ENVIRONMENT", "value": env},
-                    {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
+                    {"name": "IMAGE_TAG", "value": f"{ref}"},
                 ],
             },
         )
