@@ -62,9 +62,27 @@ def build(app, codebase, commit):
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
-@click.option("--commit", help="GitHub commit hash", required=True)
-def deploy(app, env, codebase, commit):
+@click.option("--ref", help="ECR image tag, commit hash, or branch name", required=False)
+@click.option(
+    "--commit",
+    help="(DEPRECATED) Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.",
+    required=False,
+)
+def deploy(app, env, codebase, commit, ref):
+
+    if commit:
+        ClickIOProvider().warn(
+            "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name."
+        )
+
+    none_provided = not (commit or ref)
+    both_provided = commit and ref
+    if none_provided or both_provided:
+        ClickIOProvider().abort_with_error(
+            "You must provide either --commit OR --ref, but not both."
+        )
+
     try:
-        Codebase().deploy(app, env, codebase, commit)
+        Codebase().deploy(app, env, codebase, commit, ref)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
