@@ -21,7 +21,6 @@ from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment
-from dbt_platform_helper.utils.git import CommitNotFoundException
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
 ecr_exceptions = boto3.client("ecr").exceptions
@@ -52,7 +51,6 @@ class CodebaseMocks:
             Mock(return_value="test-application-application-manual-release"),
         )
         self.run_subprocess = kwargs.get("run_subprocess", Mock())
-        self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
 
     def params(self):
         return {
@@ -64,7 +62,6 @@ class CodebaseMocks:
             "get_manual_release_pipeline": self.get_manual_release_pipeline,
             "io": self.io,
             "run_subprocess": self.run_subprocess,
-            "check_if_commit_exists": self.check_if_commit_exists,
         }
 
 
@@ -157,15 +154,6 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
         ApplicationNotFoundException,
         match="""The account "foo" does not contain the application "not-an-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
     ):
-        codebase.build("not-an-application", "application", "ab1c23d")
-
-
-def test_codebase_build_commit_not_found():
-    mocks = CodebaseMocks(check_if_commit_exists=Mock(side_effect=CommitNotFoundException()))
-
-    codebase = Codebase(**mocks.params())
-
-    with pytest.raises(CommitNotFoundException):
         codebase.build("not-an-application", "application", "ab1c23d")
 
 
