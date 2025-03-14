@@ -7,7 +7,7 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import boto3
+import botocore
 import pytest
 import yaml
 from click.testing import CliRunner
@@ -89,7 +89,7 @@ class TestMakeAddonsCommand:
     @freeze_time("2023-08-22 16:00:00")
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
-        "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
+        "dbt_platform_helper.domain.copilot.Copilot._get_log_destination_arn",
         new=Mock(
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
@@ -98,16 +98,12 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
         new=Mock(return_value="foo"),
     )
-    @patch("dbt_platform_helper.utils.application.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
         mock_application,
-        mock_get_session,
         mock_get_session2,
         fakefs,
         kms_key_exists,
@@ -120,7 +116,6 @@ class TestMakeAddonsCommand:
         client = MagicMock(name="client-mock")
         dev_session.client.return_value = client
         prod_session.client.return_value = client
-        mock_get_session.side_effect = [dev_session, prod_session]
         mock_get_session2.side_effect = [dev_session, prod_session]
 
         dev = Environment(
@@ -172,14 +167,16 @@ class TestMakeAddonsCommand:
         if kms_key_exists:
             client.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
         else:
-            client.exceptions.NotFoundException = boto3.client("kms").exceptions.NotFoundException
-            client.describe_key.side_effect = boto3.client("kms").exceptions.NotFoundException(
+            # client.exceptions.NotFoundException = boto3.client("kms").exceptions.NotFoundException
+            client.describe_key.side_effect = botocore.exceptions.ClientError(
                 error_response={}, operation_name="describe_key"
             )
 
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
-        CliRunner().invoke(copilot, ["make-addons"])
+        result = CliRunner().invoke(copilot, ["make-addons"])
+        print("RESULT:", result)
+        print("RESULT OUT:", result.stdout)
 
         s3_addon = yaml.safe_load(Path(f"/copilot/web/addons/s3.yml").read_text())
 
