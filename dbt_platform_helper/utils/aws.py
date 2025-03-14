@@ -409,16 +409,16 @@ def check_codebase_exists(session: Session, application, codebase: str):
         raise CopilotCodebaseNotFoundException(codebase)
 
 
-def check_image_exists(session, application, codebase, ref):
+def check_image_exists(session, application, codebase, commit):
     ecr_client = session.client("ecr")
     repository = f"{application.name}/{codebase}"
     try:
         ecr_client.describe_images(
             repositoryName=repository,
-            imageIds=[{"imageTag": f"{ref}"}],
+            imageIds=[{"imageTag": f"commit-{commit}"}],
         )
     except ecr_client.exceptions.ImageNotFoundException:
-        raise ImageNotFoundException(ref)
+        raise ImageNotFoundException(commit)
     except ecr_client.exceptions.RepositoryNotFoundException:
         raise RepositoryNotFoundException(repository)
 

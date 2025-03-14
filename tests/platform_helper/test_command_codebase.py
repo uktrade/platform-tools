@@ -76,101 +76,7 @@ class TestCodebaseBuild:
 
 class TestCodebaseDeploy:
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("dbt_platform_helper.commands.codebase.ClickIOProvider")
-    def test_codebase_deploy_fails_with_too_many_args(
-        self, codebase_object_mock, click_io_provider_mock
-    ):
-        mock_click_io_provider_instance = codebase_object_mock.return_value
-
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--commit",
-                "ab1c23d",
-                "--tag",
-                "1.2.3",
-            ],
-            input="y\n",
-        )
-        mock_click_io_provider_instance.abort_with_error.assert_called_once_with(
-            "One of --commit, --tag, or --branch must be specified"
-        )
-        mock_click_io_provider_instance.abort_with_error.reset_mock()
-
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--commit",
-                "ab1c23d",
-                "--branch",
-                "feature-123",
-            ],
-            input="y\n",
-        )
-        mock_click_io_provider_instance.abort_with_error.assert_called_once_with(
-            "One of --commit, --tag, or --branch must be specified"
-        )
-        mock_click_io_provider_instance.abort_with_error.reset_mock()
-
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--branch",
-                "feature-123",
-                "--tag",
-                "1.2.3",
-            ],
-            input="y\n",
-        )
-        mock_click_io_provider_instance.abort_with_error.assert_called_once_with(
-            "One of --commit, --tag, or --branch must be specified"
-        )
-        mock_click_io_provider_instance.abort_with_error.reset_mock()
-
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--commit",
-                "ab1c23d",
-                "--branch",
-                "feature-123",
-                "--tag",
-                "1.2.3",
-            ],
-            input="y\n",
-        )
-        mock_click_io_provider_instance.abort_with_error.assert_called_once_with(
-            "One of --commit, --tag, or --branch must be specified"
-        )
-        mock_click_io_provider_instance.abort_with_error.reset_mock()
-
-
-    @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_deploy_successfully_triggers_a_pipeline_based_commit_deploy(
+    def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
         self, codebase_object_mock
     ):
         mock_codebase_object_instance = codebase_object_mock.return_value
@@ -191,57 +97,7 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "commit-ab1c23d"
-        )
-
-    @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_deploy_successfully_triggers_a_pipeline_based_tag_deploy(
-        self, codebase_object_mock
-    ):
-        mock_codebase_object_instance = codebase_object_mock.return_value
-
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--tag",
-                "1.2.3",
-            ],
-            input="y\n",
-        )
-
-        mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "tag-1.2.3"
-        )
-
-    @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_deploy_successfully_triggers_a_pipeline_based_branch_deploy(
-        self, codebase_object_mock
-    ):
-        mock_codebase_object_instance = codebase_object_mock.return_value
-
-        CliRunner().invoke(
-            deploy,
-            [
-                "--app",
-                "test-application",
-                "--env",
-                "development",
-                "--codebase",
-                "application",
-                "--branch",
-                "feature-123",
-            ],
-            input="y\n",
-        )
-
-        mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "branch-feature-123"
+            "test-application", "development", "application", "ab1c23d"
         )
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -261,12 +117,12 @@ class TestCodebaseDeploy:
                 "--codebase",
                 "application",
                 "--commit",
-                "nonexistent-reference",
+                "nonexistent-commit-hash",
             ],
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "commit-nonexistent-reference"
+            "test-application", "development", "application", "nonexistent-commit-hash"
         )
         assert result.exit_code == 1
 
@@ -294,7 +150,7 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "not-an-application", "dev", "application", "commit-ab1c23d"
+            "not-an-application", "dev", "application", "ab1c23d"
         )
         assert result.exit_code == 1
 
@@ -322,7 +178,7 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "not-an-environment", "application", "commit-ab1c23d"
+            "test-application", "not-an-environment", "application", "ab1c23d"
         )
         assert result.exit_code == 1
 
@@ -350,7 +206,7 @@ class TestCodebaseDeploy:
         )
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "test-environment", "not-a-codebase", "commit-ab1c23d"
+            "test-application", "test-environment", "not-a-codebase", "ab1c23d"
         )
         assert result.exit_code == 1
 

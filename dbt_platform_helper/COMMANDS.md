@@ -213,10 +213,8 @@ platform-helper codebase list --app <application> [--with-images]
 ## Usage
 
 ```
-platform-helper codebase build --app <application> --codebase <codebase>
-                                [--commit <commit>]
-                                [--tag <tag>]
-                                [--branch <branch>]
+platform-helper codebase build --app <application> --codebase <codebase> 
+                               --commit <commit> 
 ```
 
 ## Options
@@ -225,12 +223,8 @@ platform-helper codebase build --app <application> --codebase <codebase>
   - AWS application name
 - `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This must be run from your codebase repository directory.
-- `--commit <text>` _Optional._
+- `--commit <text>`
   - GitHub commit hash
-- `--tag <text>` _Optional._
-  - GitHub tag
-- `--branch <text>` _Optional._
-  - GitHub branch
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -241,10 +235,8 @@ platform-helper codebase build --app <application> --codebase <codebase>
 ## Usage
 
 ```
-platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase>
-                                [--commit <commit>]
-                                [--tag <tag>]
-                                [--branch <branch>]
+platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase> 
+                                --commit <commit> 
 ```
 
 ## Options
@@ -255,12 +247,8 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
   - AWS Copilot environment
 - `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
-- `--commit <text>` _Optional._
+- `--commit <text>`
   - GitHub commit hash
-- `--tag <text>` _Optional._
-  - GitHub tag
-- `--branch <text>` _Optional._
-  - GitHub branch
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
