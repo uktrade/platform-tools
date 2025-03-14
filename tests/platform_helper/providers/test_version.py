@@ -4,6 +4,8 @@ from unittest.mock import patch
 import pytest
 
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import AWSVersionProvider
+from dbt_platform_helper.providers.version import CopilotVersionProvider
 from dbt_platform_helper.providers.version import GithubVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProviderException
@@ -69,3 +71,32 @@ class TestPyPiVersionProvider:
         result = PyPiVersionProvider.get_latest_version("foo")
         assert result == SemanticVersion(1, 2, 3)
         request_get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
+
+
+class TestAWSVersionProvider:
+    @patch("subprocess.run")
+    @patch(
+        "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
+        return_value=SemanticVersion(2, 0, 0),
+    )
+    def test_get_aws_versions(self, mock_get_github_released_version, mock_run):
+        mock_run.return_value.stdout = b"aws-cli/1.0.0"
+        versions = AWSVersionProvider.get_versions()
+
+        assert versions.installed == SemanticVersion(1, 0, 0)
+        assert versions.latest == SemanticVersion(2, 0, 0)
+
+
+class TestCopilotVersionProvider:
+    @patch("subprocess.run")
+    @patch(
+        "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
+        return_value=SemanticVersion(2, 0, 0),
+    )
+    def test_copilot_versions(self, mock_get_github_released_version, mock_run):
+        mock_run.return_value.stdout = b"1.0.0"
+
+        versions = CopilotVersionProvider.get_versions()
+
+        assert versions.installed == SemanticVersion(1, 0, 0)
+        assert versions.latest == SemanticVersion(2, 0, 0)

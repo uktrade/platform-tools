@@ -64,7 +64,8 @@ class ConfigProvider:
         except FileProviderException:
             return {}
 
-    # TODO this general function should be moved out of ConfigProvider
+    # TODO remove function and push logic to where this is called.
+    # removed usage from config domain, code is very generic and doesn't require the overhead of a function
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():
             self.io.abort_with_error(

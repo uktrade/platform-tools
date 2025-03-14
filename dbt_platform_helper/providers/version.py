@@ -1,3 +1,5 @@
+import re
+import subprocess
 from abc import ABC
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
@@ -8,6 +10,7 @@ import requests
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
@@ -76,3 +79,36 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
         except FileProviderException:
             version_from_file = None
         return version_from_file
+
+
+class AWSVersionProvider(VersionProvider):
+    @staticmethod
+    def get_versions() -> VersionStatus:
+        aws_version = None
+        try:
+            response = subprocess.run("aws --version", capture_output=True, shell=True)
+            matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
+            aws_version = SemanticVersion.from_string(matched.group(1))
+        except ValueError:
+            pass
+
+        return VersionStatus(
+            aws_version, GithubVersionProvider.get_latest_version("aws/aws-cli", True)
+        )
+
+
+class CopilotVersionProvider(VersionProvider):
+    @staticmethod
+    def get_versions() -> VersionStatus:
+        copilot_version = None
+
+        try:
+            response = subprocess.run("copilot --version", capture_output=True, shell=True)
+            [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+        except ValueError:
+            pass
+
+        return VersionStatus(
+            SemanticVersion.from_string(copilot_version),
+            GithubVersionProvider.get_latest_version("aws/copilot-cli"),
+        )
