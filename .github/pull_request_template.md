@@ -4,8 +4,7 @@ Addresses [DBTP-<ticket>](https://uktrade.atlassian.net/browse/DBTP-<ticket>)
 ## Checklist:
 
 ### Title:
-- [ ] Scope included as per [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)
-- [ ] Ticket reference included (unless it's a quick out of ticket thing)
+- [ ] Conforms to our [our pull request title guidance](https://uktrade.atlassian.net/wiki/spaces/DBTP/pages/4402020487/Git+housekeeping#Pull-request-titles). E.g. `feat: Add new feature (DBTP-1234)` or `chore: Correct typo (off-ticket)`
 ### Description:
 - [ ] Link to ticket included (unless it's a quick out of ticket thing)
 - [ ] Includes tests (or an explanation for why it doesn't)
