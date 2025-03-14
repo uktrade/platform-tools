@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.2.1](https://github.com/uktrade/platform-tools/compare/13.2.0...13.2.1) (2025-03-14)
+
+
+### Bug Fixes
+
+* Update jinja2 for dependabot vulnerability fix ([#804](https://github.com/uktrade/platform-tools/issues/804)) ([66a5959](https://github.com/uktrade/platform-tools/commit/66a59598411349b8abcd4451dbf523dce2c76ac3))
+
 ## [13.2.0](https://github.com/uktrade/platform-tools/compare/13.1.2...13.2.0) (2025-03-07)
 
 
