@@ -1,0 +1,51 @@
+version: 0.2
+
+env:
+  parameter-store:
+    SLACK_CHANNEL_ID: /codebuild/slack_oauth_channel
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  install:
+    commands:
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+
+  build:
+    commands:
+      - echo "Assuming LOAD and DUMP account roles"
+      - assumed_load_role=$(aws sts assume-role --role-arn "${LOAD_ROLE_ARN}" --role-session-name "database-copy-pipeline-${FROM_ENVIRONMENT}-${TO_ENVIRONMENT}-load")
+      - assumed_dump_role=$(aws sts assume-role --role-arn "${DUMP_ROLE_ARN}" --role-session-name "database-copy-pipeline-${FROM_ENVIRONMENT}-${TO_ENVIRONMENT}-dump")
+      - echo "Setting up LOAD environment profile"
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_load_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_load_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_load_role | jq -r .Credentials.SessionToken)
+      - profile_name="${TO_ENVIRONMENT}-account"
+      - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID" --profile "$profile_name"
+      - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY" --profile "$profile_name"
+      - aws configure set aws_session_token "$AWS_SESSION_TOKEN" --profile "$profile_name"
+      - aws configure set profile_account_id "${TO_ACCOUNT}" --profile "$profile_name"
+      - echo "Setting up DUMP environment profile"
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_dump_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_dump_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_dump_role | jq -r .Credentials.SessionToken)
+      - profile_name="${FROM_ENVIRONMENT}-account"
+      - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID" --profile "$profile_name"
+      - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY" --profile "$profile_name"
+      - aws configure set aws_session_token "$AWS_SESSION_TOKEN" --profile "$profile_name"
+      - aws configure set profile_account_id "${FROM_ACCOUNT}" --profile "$profile_name"
+      - AWS_PROFILE="${TO_ENVIRONMENT}-account"
+      - platform-helper database dump --app ${APPLICATION} --database ${DATABASE_NAME} --from ${FROM_ENVIRONMENT} --filename "data_dump_${TO_ENVIRONMENT}"
+
+  post_build:
+    commands:
+      - export BUILD_ID="$CODEBUILD_BUILD_ID"
+      - |
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" == "1" ]; then
+          MESSAGE="Database dump complete for ${DATABASE_NAME} in environment ${FROM_ENVIRONMENT}."
+          ADDITIONAL_OPTIONS=""
+        else
+          MESSAGE=":alert: Database dump FAILED for ${DATABASE_NAME} in environment ${FROM_ENVIRONMENT}."
+          ADDITIONAL_OPTIONS="--send-to-main-channel true"
+        fi
+      - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" ${ADDITIONAL_OPTIONS}
