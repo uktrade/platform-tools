@@ -81,6 +81,29 @@ prometheus:
 EXTENSION_CONFIG_FILENAME = "extensions.yml"
 
 
+class CopilotMocks:
+    def __init__(self, **kwargs):
+        self.parameter_provider = (kwargs.get("parameter_provider", Mock()),)
+        self.file_provider = (kwargs.get("file_provider", Mock()),)
+        self.copilot_templating = (kwargs.get("copilot_templating", Mock()),)
+        self.kms_provider = (kwargs.get("kms_provider", Mock(spec=KMSProvider)),)
+        self.session = (kwargs.get("session", Mock()),)
+        self.config_provider = (kwargs.get("config_provider", ConfigProvider()),)
+        self.io = (kwargs.get("io", Mock(spec=ClickIOProvider)),)
+        # Use fakefs patch instead of mocking YamlFileProvider
+
+    def params(self):
+        return {
+            "parameter_provider": self.parameter_provider,
+            "file_provider": self.file_provider,
+            "copilot_templating": self.copilot_templating,
+            "kms_provider": self.kms_provider,
+            "session": self.session,
+            "config_provider": self.config_provider,
+            "io": self.io,
+        }
+
+
 class TestMakeAddonsCommand:
     @pytest.mark.parametrize(
         "kms_key_exists, kms_key_arn",
@@ -830,29 +853,6 @@ class TestMakeAddonsCommand:
         mock_provider.generate_cross_account_s3_policies.assert_called_with(
             {"development": {}, "production": {}}, exp
         )
-
-
-class CopilotMocks:
-    def __init__(self, **kwargs):
-        self.parameter_provider = (kwargs.get("parameter_provider", Mock()),)
-        self.file_provider = (kwargs.get("file_provider", Mock()),)
-        self.copilot_templating = (kwargs.get("copilot_templating", Mock()),)
-        self.kms_provider = (kwargs.get("kms_provider", Mock(spec=KMSProvider)),)
-        self.session = (kwargs.get("session", Mock()),)
-        self.config_provider = (kwargs.get("config_provider", ConfigProvider()),)
-        self.io = (kwargs.get("io", Mock(spec=ClickIOProvider)),)
-        # Use fakefs patch instead of mocking YamlFileProvider
-
-    def params(self):
-        return {
-            "parameter_provider": self.parameter_provider,
-            "file_provider": self.file_provider,
-            "copilot_templating": self.copilot_templating,
-            "kms_provider": self.kms_provider,
-            "session": self.session,
-            "config_provider": self.config_provider,
-            "io": self.io,
-        }
 
 
 @pytest.mark.parametrize(
