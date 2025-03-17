@@ -17,6 +17,9 @@ from moto import mock_aws
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
+from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -849,25 +852,36 @@ def test_is_service(fakefs, service_type, expected):
         contents=" ".join([yaml.dump(yaml.safe_load(manifest_contents))]),
     )
 
-    # TODO - horrendous mocking, but good as as top gap so we keep test coverage.
-    # Will need to create a copilot_mocks obj for the domain tests.
     assert (
-        Copilot(Mock(), Mock(), Mock(), Mock(), Mock()).is_service(
+        Copilot(Mock(), Mock(), Mock(), Mock(), Mock(), Mock())._is_service(
             PosixPath("copilot/web/manifest.yml")
         )
         == expected
     )
 
 
-def test_is_service_empty_manifest(fakefs, capfd):
+def test_is_service_empty_manifest(fakefs):
     file_path = "copilot/web/manifest.yml"
     fakefs.create_file(file_path)
 
-    with pytest.raises(SystemExit) as excinfo:
-        Copilot(Mock(), Mock(), Mock(), Mock(), Mock()).is_service(PosixPath(file_path))
+    mock_io = Mock(spec=ClickIOProvider)
+    mock_io.abort_with_error.side_effect = SystemExit(1)
 
-    assert excinfo.value.code == 1
-    assert f"No type defined in manifest file {file_path}; exiting" in capfd.readouterr().out
+    with pytest.raises(SystemExit):
+        Copilot(
+            config_provider=ConfigProvider(),
+            parameter_provider=Mock(),
+            file_provider=Mock(),
+            copilot_templating=Mock(),
+            kms_provider=Mock(),
+            session=Mock(),
+            io=mock_io,
+            yaml_file_provider=YamlFileProvider,
+        )._is_service(PosixPath(file_path))
+
+    mock_io.abort_with_error.assert_called_with(
+        f"No type defined in manifest file {file_path}; exiting"
+    )
 
 
 def create_test_manifests(addon_file_contents, fakefs):
@@ -876,13 +890,3 @@ def create_test_manifests(addon_file_contents, fakefs):
     fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
     fakefs.create_file("copilot/environments/development/manifest.yml")
     fakefs.create_file("copilot/environments/production/manifest.yml")
-
-
-# TODO - commenting for now since I think this would be covered by the command-level tests.
-# @patch("dbt_platform_helper.commands.copilot._make_addons")
-# def test_exception_handling(mock_make_addons):
-#     mock_make_addons.side_effect = Exception("Could not connect to AWS")
-#     result = CliRunner().invoke(copilot, ["make-addons"])
-
-#     assert result.exit_code == 1
-#     assert "Could not connect to AWS" in result.output
