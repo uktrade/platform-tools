@@ -59,10 +59,10 @@ class ConfigMocks:
             "copilot_version", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
         )
         self.aws_versions = kwargs.get("aws_versions", Mock(spec=AWSVersionProvider))
-        self.aws_versions.get_versions.return_value = self.aws_version
+        self.aws_versions.get_version_status.return_value = self.aws_version
 
         self.copilot_versions = kwargs.get("copilot_versions", Mock(spec=CopilotVersionProvider))
-        self.copilot_versions.get_versions.return_value = self.copilot_version
+        self.copilot_versions.get_version_status.return_value = self.copilot_version
 
     def params(self):
         return {
@@ -181,8 +181,8 @@ class TestConfigValidate:
         )
 
         config_mocks.io.process_messages.assert_called_with({})
-        config_mocks.aws_versions.get_versions.assert_called()
-        config_mocks.copilot_versions.get_versions.assert_called()
+        config_mocks.aws_versions.get_version_status.assert_called()
+        config_mocks.copilot_versions.get_version_status.assert_called()
 
     def test_validate_not_installed(self, fakefs):
         fakefs.create_file("platform-config.yml")
@@ -304,8 +304,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.aws_versions.get_versions.assert_called()
-        config_mocks.copilot_versions.get_versions.assert_called()
+        config_mocks.aws_versions.get_version_status.assert_called()
+        config_mocks.copilot_versions.get_version_status.assert_called()
 
     def test_validate_outdated(self, fakefs):
         fakefs.create_file("platform-config.yml")
@@ -436,8 +436,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.aws_versions.get_versions.assert_called()
-        config_mocks.copilot_versions.get_versions.assert_called()
+        config_mocks.aws_versions.get_version_status.assert_called()
+        config_mocks.copilot_versions.get_version_status.assert_called()
 
     def test_no_platform_config(self, fakefs):
         fakefs.create_file(

@@ -99,8 +99,8 @@ class Config:
             include_project_versions=True
         )
         self.io.process_messages(platform_helper_version_status.validate())
-        aws_versions = self.aws_versions.get_versions()
-        copilot_versions = self.copilot_versions.get_versions()
+        aws_versions = self.aws_versions.get_version_status()
+        copilot_versions = self.copilot_versions.get_version_status()
 
         self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
 

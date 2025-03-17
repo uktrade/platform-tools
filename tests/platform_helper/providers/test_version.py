@@ -1,4 +1,5 @@
 from importlib.metadata import PackageNotFoundError
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -75,13 +76,11 @@ class TestPyPiVersionProvider:
 
 class TestAWSVersionProvider:
     @patch("subprocess.run")
-    @patch(
-        "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
-        return_value=SemanticVersion(2, 0, 0),
-    )
-    def test_get_aws_versions(self, mock_get_github_released_version, mock_run):
+    def test_get_aws_versions(self, mock_run):
         mock_run.return_value.stdout = b"aws-cli/1.0.0"
-        versions = AWSVersionProvider.get_versions()
+        github_response = Mock()
+        github_response.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        versions = AWSVersionProvider.get_version_status(github_response)
 
         assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)
@@ -89,14 +88,12 @@ class TestAWSVersionProvider:
 
 class TestCopilotVersionProvider:
     @patch("subprocess.run")
-    @patch(
-        "dbt_platform_helper.providers.version.GithubVersionProvider.get_latest_version",
-        return_value=SemanticVersion(2, 0, 0),
-    )
-    def test_copilot_versions(self, mock_get_github_released_version, mock_run):
+    def test_copilot_versions(self, mock_run):
         mock_run.return_value.stdout = b"1.0.0"
 
-        versions = CopilotVersionProvider.get_versions()
+        github_response = Mock()
+        github_response.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        versions = CopilotVersionProvider.get_version_status(github_response)
 
         assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)

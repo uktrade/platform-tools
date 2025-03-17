@@ -83,7 +83,7 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
 
 class AWSVersionProvider(VersionProvider):
     @staticmethod
-    def get_versions() -> VersionStatus:
+    def get_version_status(github_version=GithubVersionProvider) -> VersionStatus:
         aws_version = None
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
@@ -92,14 +92,12 @@ class AWSVersionProvider(VersionProvider):
         except ValueError:
             pass
 
-        return VersionStatus(
-            aws_version, GithubVersionProvider.get_latest_version("aws/aws-cli", True)
-        )
+        return VersionStatus(aws_version, github_version.get_latest_version("aws/aws-cli", True))
 
 
 class CopilotVersionProvider(VersionProvider):
     @staticmethod
-    def get_versions() -> VersionStatus:
+    def get_version_status(github_version=GithubVersionProvider) -> VersionStatus:
         copilot_version = None
 
         try:
@@ -110,5 +108,5 @@ class CopilotVersionProvider(VersionProvider):
 
         return VersionStatus(
             SemanticVersion.from_string(copilot_version),
-            GithubVersionProvider.get_latest_version("aws/copilot-cli"),
+            github_version.get_latest_version("aws/copilot-cli"),
         )
