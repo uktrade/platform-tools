@@ -4,6 +4,8 @@ from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.parameter_store import ParameterStore
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -17,7 +19,7 @@ def codebase():
 def prepare():
     """Sets up an application codebase for use within a DBT platform project."""
     try:
-        Codebase().prepare()
+        Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).prepare()
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
@@ -33,7 +35,7 @@ def prepare():
 def list(app, with_images):
     """List available codebases for the application."""
     try:
-        Codebase().list(app, with_images)
+        Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).list(app, with_images)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
@@ -49,7 +51,9 @@ def list(app, with_images):
 def build(app, codebase, commit):
     """Trigger a CodePipeline pipeline based build."""
     try:
-        Codebase().build(app, codebase, commit)
+        Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).build(
+            app, codebase, commit
+        )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
@@ -65,6 +69,8 @@ def build(app, codebase, commit):
 @click.option("--commit", help="GitHub commit hash", required=True)
 def deploy(app, env, codebase, commit):
     try:
-        Codebase().deploy(app, env, codebase, commit)
+        Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).deploy(
+            app, env, codebase, commit
+        )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
