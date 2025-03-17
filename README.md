@@ -10,7 +10,7 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 
 3.9, 3.10, 3.11 and 3.12.
 
-## Contributing to the dbt-platform-helper package
+## Working on the dbt-platform-helper package
 
 ### Getting started
 
@@ -239,3 +239,6 @@ If found, it indicates that the new package version exists in PyPI.
 7. Ensure the release notes contain an upgrade path for any breaking changes
 8. Check PyPI for the new published version
 
+## Contributing
+
+Please check out [Contributing to Platform Tools](./CONTRUBUTING.md).
