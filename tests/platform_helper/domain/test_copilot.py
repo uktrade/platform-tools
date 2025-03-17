@@ -19,6 +19,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.kms import KMSProvider
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
