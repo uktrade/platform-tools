@@ -844,18 +844,17 @@ class TestMakeAddonsCommand:
     ],
 )
 def test_is_service(fakefs, service_type, expected):
+    file_path = "copilot/web/manifest.yml"
     manifest_contents = f"""
     type: {service_type}
     """
     fakefs.create_file(
-        "copilot/web/manifest.yml",
+        file_path,
         contents=" ".join([yaml.dump(yaml.safe_load(manifest_contents))]),
     )
 
     assert (
-        Copilot(Mock(), Mock(), Mock(), Mock(), Mock(), Mock())._is_service(
-            PosixPath("copilot/web/manifest.yml")
-        )
+        Copilot(Mock(), Mock(), Mock(), Mock(), Mock(), Mock())._is_service(PosixPath(file_path))
         == expected
     )
 
