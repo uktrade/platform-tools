@@ -19,7 +19,6 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import FIXTURES_DIR
 from tests.platform_helper.conftest import mock_aws_client
@@ -832,6 +831,29 @@ class TestMakeAddonsCommand:
         )
 
 
+class CopilotMocks:
+    def __init__(self, **kwargs):
+        self.parameter_provider = (kwargs.get("parameter_provider", Mock()),)
+        self.file_provider = (kwargs.get("file_provider", Mock()),)
+        self.copilot_templating = (kwargs.get("copilot_templating", Mock()),)
+        self.kms_provider = (kwargs.get("kms_provider", Mock(spec=KMSProvider)),)
+        self.session = (kwargs.get("session", Mock()),)
+        self.config_provider = (kwargs.get("config_provider", ConfigProvider()),)
+        self.io = (kwargs.get("io", Mock(spec=ClickIOProvider)),)
+        # Use fakefs patch instead of mocking YamlFileProvider
+
+    def params(self):
+        return {
+            "parameter_provider": self.parameter_provider,
+            "file_provider": self.file_provider,
+            "copilot_templating": self.copilot_templating,
+            "kms_provider": self.kms_provider,
+            "session": self.session,
+            "config_provider": self.config_provider,
+            "io": self.io,
+        }
+
+
 @pytest.mark.parametrize(
     "service_type, expected",
     [
@@ -841,6 +863,7 @@ class TestMakeAddonsCommand:
         ("Static Site", True),
         ("Worker Service", True),
         ("Scheduled Job", False),
+        ("Foobar", False),
     ],
 )
 def test_is_service(fakefs, service_type, expected):
@@ -853,32 +876,21 @@ def test_is_service(fakefs, service_type, expected):
         contents=" ".join([yaml.dump(yaml.safe_load(manifest_contents))]),
     )
 
-    assert (
-        Copilot(Mock(), Mock(), Mock(), Mock(), Mock(), Mock())._is_service(PosixPath(file_path))
-        == expected
-    )
+    assert Copilot(**CopilotMocks().params())._is_service(PosixPath(file_path)) == expected
 
 
 def test_is_service_empty_manifest(fakefs):
     file_path = "copilot/web/manifest.yml"
     fakefs.create_file(file_path)
 
-    mock_io = Mock(spec=ClickIOProvider)
-    mock_io.abort_with_error.side_effect = SystemExit(1)
+    mocks = CopilotMocks()
+    mocks.io = Mock(spec=ClickIOProvider)
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
 
     with pytest.raises(SystemExit):
-        Copilot(
-            config_provider=ConfigProvider(),
-            parameter_provider=Mock(),
-            file_provider=Mock(),
-            copilot_templating=Mock(),
-            kms_provider=Mock(),
-            session=Mock(),
-            io=mock_io,
-            yaml_file_provider=YamlFileProvider,
-        )._is_service(PosixPath(file_path))
+        Copilot(**mocks.params())._is_service(PosixPath(file_path))
 
-    mock_io.abort_with_error.assert_called_with(
+    mocks.io.abort_with_error.assert_called_with(
         f"No type defined in manifest file {file_path}; exiting"
     )
 
