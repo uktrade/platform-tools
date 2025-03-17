@@ -6,6 +6,8 @@ on:
       - opened
       - edited
       - synchronize
+      - labelled
+      - unlabelled
 
 permissions:
   pull-requests: read
@@ -24,3 +26,6 @@ jobs:
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             didn't match the expected pattern. E.g. "feat: Add new feature (DBTP-1234)".
+          # Do not check Dependabot pull requests as we do no control the titles
+          ignoreLabels: |
+            dependencies
