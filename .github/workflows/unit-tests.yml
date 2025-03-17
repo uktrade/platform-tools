@@ -48,12 +48,12 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
 
-  terraform_platform_modules_python_tests:
-    name: Test terraform-platform-modules against Python ${{ matrix.python-version }}
+  terraform_python_tests:
+    name: Test terraform python code against Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./terraform-platform-modules
+        working-directory: terraform
 
     strategy:
       fail-fast: false
