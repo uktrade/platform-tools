@@ -1,4 +1,3 @@
-from unittest import mock
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import patch
@@ -7,15 +6,13 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.domain import copilot
-from dbt_platform_helper.domain import pipelines
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-@mock.patch.object(copilot.Copilot, "make_addons")
-@mock.patch.object(pipelines.Pipelines, "generate")
+@patch("dbt_platform_helper.domain.copilot.Copilot.make_addons")
+@patch("dbt_platform_helper.domain.pipelines.Pipelines.generate")
 def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
     mock_pipeline_domain_generate, mock_copilot_domain_make_addons, mock_get_session_or_abort
 ):
@@ -35,13 +32,10 @@ def test_platform_helper_generate_creates_the_pipeline_configuration_and_addons(
         )
     ),
 )
-@patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-@mock.patch.object(copilot.Copilot, "make_addons")
-@mock.patch.object(pipelines.Pipelines, "generate")
+@patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+@patch("dbt_platform_helper.domain.copilot.Copilot.make_addons", new=Mock())
+@patch("dbt_platform_helper.domain.pipelines.Pipelines.generate", new=Mock())
 def test_platform_helper_generate_shows_a_warning_when_version_is_different_than_on_file(
-    mock_pipeline_domain_generate,
-    mock_copilot_domain_make_addons,
-    mock_get_session_or_abort,
     mock_secho,
     tmp_path,
     no_skipping_version_checks,
@@ -68,13 +62,10 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
         return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
     ),
 )
-@patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-@mock.patch.object(copilot.Copilot, "make_addons")
-@mock.patch.object(pipelines.Pipelines, "generate")
+@patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
+@patch("dbt_platform_helper.domain.copilot.Copilot.make_addons", new=Mock())
+@patch("dbt_platform_helper.domain.pipelines.Pipelines.generate", new=Mock())
 def test_platform_helper_generate_does_not_override_version_file_if_exists(
-    mock_pipeline_domain_generate,
-    mock_copilot_domain_make_addons,
-    mock_get_session_or_abort,
     tmp_path,
 ):
     contents = "2.0.0"
