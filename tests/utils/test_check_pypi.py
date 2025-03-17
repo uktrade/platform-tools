@@ -14,7 +14,7 @@ TOML_UNSUPPORTED = (
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason=TOML_UNSUPPORTED)
 def test_get_current_version__success():
-    version = get_current_version(UTILS_FIXTURES_DIR / "pyproject.toml")
+    version = get_current_version(UTILS_FIXTURES_DIR / "pyproject_good.toml")
     assert version == "0.1.21"
 
 
