@@ -1,5 +1,6 @@
 import os
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -28,12 +29,21 @@ def mock_aws_client(get_aws_session_or_abort):
 
 
 class TestCodebasePrepare:
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_prepare_calls_codebase_prepare_method(self, mock_codebase_object):
-        mock_codebase_object_instance = mock_codebase_object.return_value
+    def test_codebase_prepare_calls_codebase_prepare_method(
+        self, mock_codebase_object, mock_parameter_provider, mock_session
+    ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
 
         result = CliRunner().invoke(prepare_command)
-        mock_codebase_object_instance.prepare.assert_called_once()
+
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.prepare.assert_called_once()
 
         assert result.exit_code == 0
 
@@ -50,6 +60,33 @@ class TestCodebasePrepare:
 
 
 class TestCodebaseBuild:
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_codebase_build_calls_codebase_build_method(
+        self, mock_codebase_object, mock_parameter_provider, mock_session
+    ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
+        result = CliRunner().invoke(
+            build,
+            [
+                "--app",
+                "test-application",
+                "--codebase",
+                "application",
+                "--commit",
+                "test-commit-hash",
+            ],
+        )
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.build.assert_called_once()
+
+        assert result.exit_code == 0
+
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_build_does_not_trigger_build_without_an_application(
@@ -74,11 +111,16 @@ class TestCodebaseBuild:
 
         assert result.exit_code == 1
 
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
-        self, mock_click, mock_codebase_object
+        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
     ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.build.side_effect = CommitNotFoundException()
         os.environ["AWS_PROFILE"] = "foo"
@@ -95,6 +137,11 @@ class TestCodebaseBuild:
             ],
         )
 
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.build.assert_called_once()
+
         mock_codebase_object_instance.build.assert_called_once_with(
             "test-application", "application", "nonexistent-commit-hash"
         )
@@ -103,11 +150,45 @@ class TestCodebaseBuild:
 
 
 class TestCodebaseDeploy:
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
+    @patch("dbt_platform_helper.commands.codebase.Codebase")
+    def test_codebase_prepare_calls_codebase_prepare_method(
+        self, mock_codebase_object, mock_parameter_provider, mock_session
+    ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
+        result = CliRunner().invoke(
+            deploy,
+            [
+                "--app",
+                "test-application",
+                "--env",
+                "development",
+                "--codebase",
+                "application",
+                "--commit",
+                "ab1c23d",
+            ],
+        )
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.deploy.assert_called_once()
+
+        assert result.exit_code == 0
+
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
-        self, codebase_object_mock
+        self, mock_codebase_object, mock_parameter_provider, mock_session
     ):
-        mock_codebase_object_instance = codebase_object_mock.return_value
+        mock_codebase_object_instance = mock_codebase_object.return_value
+
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
 
         result = CliRunner().invoke(
             deploy,
@@ -147,6 +228,11 @@ class TestCodebaseDeploy:
             ],
             input="y\n",
         )
+
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.deploy.assert_called_once()
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "development", "application", "ab1c23d", None
@@ -193,12 +279,18 @@ class TestCodebaseDeploy:
         assert (deprecated_msg and error_msg) in result.stdout
         assert result.exit_code == 1
 
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_ref(
-        self, mock_click, codebase_object_mock
+        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
     ):
-        mock_codebase_object_instance = codebase_object_mock.return_value
+
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
+        mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.deploy.side_effect = ImageNotFoundException
         result = CliRunner().invoke(
             deploy,
@@ -214,16 +306,27 @@ class TestCodebaseDeploy:
             ],
         )
 
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.deploy.assert_called_once()
+
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "development", "application", None, "nonexistent-ref"
         )
         assert result.exit_code == 1
 
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_without_an_application(
-        self, mock_click, mock_codebase_object
+        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
     ):
+
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.deploy.side_effect = ApplicationNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
@@ -242,16 +345,26 @@ class TestCodebaseDeploy:
             ],
         )
 
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.deploy.assert_called_once()
+
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "not-an-application", "dev", "application", None, "ab1c23d"
         )
         assert result.exit_code == 1
 
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
-        self, mock_click, mock_codebase_object
+        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
     ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.deploy.side_effect = ApplicationEnvironmentNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
@@ -270,16 +383,26 @@ class TestCodebaseDeploy:
             ],
         )
 
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.deploy.assert_called_once()
+
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "not-an-environment", "application", None, "ab1c23d"
         )
         assert result.exit_code == 1
 
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_with_missing_codebase(
-        self, mock_click, mock_codebase_object
+        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
     ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.deploy.side_effect = CopilotCodebaseNotFoundException
         os.environ["AWS_PROFILE"] = "foo"
@@ -298,6 +421,11 @@ class TestCodebaseDeploy:
             ],
         )
 
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.deploy.assert_called_once()
+
         mock_codebase_object_instance.deploy.assert_called_once_with(
             "test-application", "test-environment", "not-a-codebase", None, "ab1c23d"
         )
@@ -305,12 +433,24 @@ class TestCodebaseDeploy:
 
 
 class TestCodebaseList:
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_lists_codebases_successfully(self, mock_codebase_object):
+    def test_lists_codebases_successfully(
+        self, mock_codebase_object, mock_parameter_provider, mock_session
+    ):
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
+
         mock_codebase_object_instance = mock_codebase_object.return_value
         os.environ["AWS_PROFILE"] = "foo"
 
         result = CliRunner().invoke(list, ["--app", "test-application", "--with-images"])
+
+        mock_session.return_value.client.assert_called_once_with("ssm")
+        mock_parameter_provider.assert_called_with(mock_ssm_client)
+        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+        mock_codebase_object.return_value.list.assert_called_once()
 
         mock_codebase_object_instance.list.assert_called_once_with("test-application", True)
         assert result.exit_code == 0
