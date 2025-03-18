@@ -17,6 +17,7 @@ from moto import mock_aws
 from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
+from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.kms import KMSProvider
@@ -83,13 +84,13 @@ EXTENSION_CONFIG_FILENAME = "extensions.yml"
 
 class CopilotMocks:
     def __init__(self, **kwargs):
-        self.parameter_provider = (kwargs.get("parameter_provider", Mock()),)
-        self.file_provider = (kwargs.get("file_provider", Mock()),)
-        self.copilot_templating = (kwargs.get("copilot_templating", Mock()),)
-        self.kms_provider = (kwargs.get("kms_provider", Mock(spec=KMSProvider)),)
-        self.session = (kwargs.get("session", Mock()),)
-        self.config_provider = (kwargs.get("config_provider", ConfigProvider()),)
-        self.io = (kwargs.get("io", Mock(spec=ClickIOProvider)),)
+        self.parameter_provider = kwargs.get("parameter_provider", Mock())
+        self.file_provider = kwargs.get("file_provider", Mock())
+        self.copilot_templating = kwargs.get("copilot_templating", Mock())
+        self.kms_provider = kwargs.get("kms_provider", Mock(spec=KMSProvider))
+        self.session = kwargs.get("session", Mock())
+        self.config_provider = kwargs.get("config_provider", ConfigProvider())
+        self.io = kwargs.get("io", Mock(spec=ClickIOProvider))
         # Use fakefs patch instead of mocking YamlFileProvider
 
     def params(self):
@@ -747,7 +748,7 @@ class TestMakeAddonsCommand:
     @freeze_time("2023-08-22 16:00:00")
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
-        "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
+        "dbt_platform_helper.domain.copilot.Copilot._get_log_destination_arn",
         new=Mock(
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
@@ -757,14 +758,11 @@ class TestMakeAddonsCommand:
         new=Mock(return_value="foo"),
     )
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
+    @patch("dbt_platform_helper.domain.copilot.KMSProvider")
     @mock_aws
     def test_s3_cross_account_policies_called(
         self,
-        mock_config_provider,
-        mock_copilot_templating,
+        mock_kms,
         mock_application,
         fakefs,
     ):
@@ -775,22 +773,6 @@ class TestMakeAddonsCommand:
         client = MagicMock(name="client-mock")
         dev_session.client.return_value = client
         prod_session.client.return_value = client
-
-        mock_provider = Mock(name="Provider")
-        mock_copilot_templating.return_value = mock_provider
-        mock_provider.generate_cross_account_s3_policies.return_value = "TestData"
-
-        mock_load_and_validate_platform_config = Mock(name="load_and_validate_platform_config")
-        environment_config = {"environments": {"development": {}, "production": {}}}
-        mock_load_and_validate_platform_config.return_value = environment_config
-
-        mock_config_provider_instance = Mock(name="ConfigProviderInstance")
-        mock_config_provider.return_value = mock_config_provider_instance
-
-        mock_config_provider_instance.apply_environment_defaults.return_value = environment_config
-        mock_config_provider_instance.load_and_validate_platform_config = (
-            mock_load_and_validate_platform_config
-        )
 
         dev = Environment(
             name="development",
@@ -839,18 +821,33 @@ class TestMakeAddonsCommand:
         ]
 
         client.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
+
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
-        CliRunner().invoke(copilot, ["make-addons"])
+        mocks = CopilotMocks()
 
-        mock_load_and_validate_platform_config.assert_called()
-        exp = Copilot(mock_config_provider, Mock(), Mock(), Mock(), Mock())._get_extensions()
+        environment_config = {"environments": {"development": {}, "production": {}}}
+        mocks.config_provider = Mock(spec=ConfigProvider)
+        mocks.config_provider.load_and_validate_platform_config.return_value = environment_config
+        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+
+        mocks.copilot_templating = Mock(spec=CopilotTemplating)
+        mocks.copilot_templating.generate_cross_account_s3_policies.return_value = "TestData"
+
+        mock_kms_instance = Mock()
+        mock_kms_instance.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
+        mock_kms.return_value = mock_kms_instance
+        mocks.kms_provider = mock_kms
+
+        Copilot(**mocks.params()).make_addons()
+
+        exp = Copilot(**mocks.params())._get_extensions()
         exp["s3"]["environments"]["development"]["kms_key_arn"] = "arn-for-kms-alias"
         exp["s3"]["environments"]["production"]["kms_key_arn"] = "arn-for-kms-alias"
-        mock_config_provider_instance.apply_environment_defaults.assert_called_with(
-            environment_config
-        )
-        mock_provider.generate_cross_account_s3_policies.assert_called_with(
+
+        mocks.config_provider.load_and_validate_platform_config.assert_called()
+        mocks.config_provider.apply_environment_defaults.assert_called_with(environment_config)
+        mocks.copilot_templating.generate_cross_account_s3_policies.assert_called_with(
             {"development": {}, "production": {}}, exp
         )
 
