@@ -72,7 +72,7 @@ def build(app, codebase, commit):
     help="(DEPRECATED) Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.",
     required=False,
 )
-def deploy(app, env, codebase, commit, ref):
+def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = None):
 
     if commit:
         ClickIOProvider().warn(
@@ -81,9 +81,13 @@ def deploy(app, env, codebase, commit, ref):
 
     none_provided = not (commit or ref)
     both_provided = commit and ref
-    if none_provided or both_provided:
+    if none_provided:
         ClickIOProvider().abort_with_error(
-            "You must provide either --commit OR --ref, but not both."
+            "To deploy, you must provide a --ref option with the ECR image tag, GitHub commit hash or branch name."
+        )
+    elif both_provided:
+        ClickIOProvider().abort_with_error(
+            "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
         )
 
     try:

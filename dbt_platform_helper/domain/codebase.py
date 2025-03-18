@@ -154,7 +154,7 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def deploy(self, app, env, codebase, commit=None, ref=None):
+    def deploy(self, app: str, env: str, codebase: str, commit: str = None, ref: str = None):
         """Trigger a CodePipeline pipeline based deployment."""
         session = self.get_aws_session_or_abort()
 
@@ -162,10 +162,9 @@ class Codebase:
         if not application.environments.get(env):
             raise ApplicationEnvironmentNotFoundException(application.name, env)
 
-        image_ref = commit if commit else ref
-        commit_or_ref = "commit hash" if commit else "image reference"
+        image_ref = f"commit-{commit}" if commit else ref
 
-        self.check_image_exists(session, application, codebase, image_ref, commit_or_ref)
+        self.check_image_exists(session, application, codebase, image_ref)
 
         codepipeline_client = session.client("codepipeline")
 
@@ -174,7 +173,7 @@ class Codebase:
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with {commit_or_ref} "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
+            f'You are about to deploy "{app}" for "{codebase}" with reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
             {
                 "name": pipeline_name,
                 "variables": [

@@ -229,7 +229,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
         name="test-application-application-manual-release",
         variables=[
             {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "ab1c23d"},
+            {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
         ],
     )
 
