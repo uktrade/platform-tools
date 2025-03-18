@@ -205,7 +205,10 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
         codebase.build("test-application", "application", "ab1c234")
 
 
-def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_application):
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
+    mock_application, commit, ref
+):
     mocks = CodebaseMocks()
     mocks.io.confirm.return_value = True
     mock_application.environments = {
@@ -223,21 +226,22 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     }
 
     codebase = Codebase(**mocks.params())
-    codebase.deploy("test-application", "development", "application", None, "ab1c23d")
+    codebase.deploy("test-application", "development", "application", commit, ref)
+
+    image_ref = f"commit-{commit}" if commit else ref
 
     client.start_pipeline_execution.assert_called_with(
         name="test-application-application-manual-release",
         variables=[
             {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
+            {"name": "IMAGE_TAG", "value": image_ref},
         ],
     )
-
     mocks.io.confirm.assert_has_calls(
         [
             call(
                 'You are about to deploy "test-application" for "application" with image reference '
-                '"ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                f'"{image_ref}" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -256,9 +260,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
 def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
     if exception_type == ImageNotFoundException:
         mocks = CodebaseMocks(
-            check_image_exists=Mock(
-                side_effect=exception_type("nonexistent-ref", "image reference")
-            )
+            check_image_exists=Mock(side_effect=exception_type("nonexistent-ref"))
         )
     else:
         mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
@@ -270,9 +272,7 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
     mocks = CodebaseMocks(
-        check_image_exists=Mock(
-            side_effect=ImageNotFoundException("nonexistent-ref", "image reference")
-        )
+        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
@@ -285,7 +285,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
 def test_codebase_deploy_aborts_with_a_nonexistent_image_ref():
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref", "image_tag"))
+        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)

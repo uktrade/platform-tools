@@ -210,9 +210,16 @@ class TestCodebaseDeploy:
         )
         assert result.exit_code == 0
 
+    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
+    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    def test_codebase_deploy_warning_when_using_commit(self, codebase_object_mock):
-        mock_codebase_object_instance = codebase_object_mock.return_value
+    def test_codebase_deploy_warning_when_using_commit(
+        self, mock_codebase_object, mock_parameter_provider, mock_session
+    ):
+        mock_codebase_object_instance = mock_codebase_object.return_value
+
+        mock_ssm_client = Mock()
+        mock_session.return_value.client.return_value = mock_ssm_client
 
         result = CliRunner().invoke(
             deploy,
@@ -252,7 +259,10 @@ class TestCodebaseDeploy:
             ["--app", "test-application", "--env", "development", "--codebase", "application"],
         )
 
-        assert result.stdout == "Error: You must provide either --commit OR --ref, but not both.\n"
+        assert (
+            result.stdout
+            == "Error: To deploy, you must provide a --ref option with the ECR image tag, GitHub commit hash or branch name.\n"
+        )
         assert result.exit_code == 1
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
@@ -275,7 +285,7 @@ class TestCodebaseDeploy:
         )
 
         deprecated_msg = "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.\n"
-        error_msg = "Error: You must provide either --commit OR --ref, but not both.\n"
+        error_msg = "Error: You have provided both --ref and --commit. The latter is deprecated, please supply just --ref.\n"
         assert (deprecated_msg and error_msg) in result.stdout
         assert result.exit_code == 1
 

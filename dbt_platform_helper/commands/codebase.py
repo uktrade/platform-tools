@@ -92,7 +92,7 @@ def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = Non
 
     try:
         Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).deploy(
-            app, env, codebase, commit
+            app, env, codebase, commit, ref
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
