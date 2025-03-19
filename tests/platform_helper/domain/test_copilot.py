@@ -19,6 +19,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.kms import KMSProvider
 from dbt_platform_helper.utils.application import Environment
@@ -86,10 +87,10 @@ class CopilotMocks:
     def __init__(self, **kwargs):
         self.parameter_provider = kwargs.get("parameter_provider", Mock())
         self.file_provider = kwargs.get("file_provider", Mock())
-        self.copilot_templating = kwargs.get("copilot_templating", Mock())
+        self.copilot_templating = kwargs.get("copilot_templating", Mock(spec=CopilotTemplating))
         self.kms_provider = kwargs.get("kms_provider", Mock(spec=KMSProvider))
         self.session = kwargs.get("session", Mock())
-        self.config_provider = kwargs.get("config_provider", ConfigProvider())
+        self.config_provider = kwargs.get("config_provider", Mock(spec=ConfigProvider))
         self.io = kwargs.get("io", Mock(spec=ClickIOProvider))
         # Use fakefs patch instead of mocking YamlFileProvider
 
@@ -125,24 +126,15 @@ class TestMakeAddonsCommand:
         "dbt_platform_helper.utils.application.get_profile_name_from_account_id",
         new=Mock(return_value="foo"),
     )
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
-        mock_kms,
-        mock_config_provider,
         mock_application,
-        mock_get_session,
         fakefs,
         kms_key_exists,
         kms_key_arn,
     ):
-        config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
-        mock_config_provider.apply_environment_defaults.return_value = config
-        mock_config_provider.load_and_validate_platform_config.return_value = config
         dev_session = MagicMock(name="dev-session-mock")
         dev_session.profile_name = "foo"
         prod_session = MagicMock(name="prod-session-mock")
@@ -150,7 +142,6 @@ class TestMakeAddonsCommand:
         client = MagicMock(name="client-mock")
         dev_session.client.return_value = client
         prod_session.client.return_value = client
-        mock_get_session.side_effect = [dev_session, prod_session]
 
         dev = Environment(
             name="development",
@@ -198,15 +189,28 @@ class TestMakeAddonsCommand:
             },
         ]
 
-        if kms_key_exists:
-            mock_kms.return_value.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
-        else:
-            error = {"Error": {"Code": "NotFoundException"}}
-            mock_kms.return_value.describe_key.side_effect = ClientError(error, "NotFoundException")
-
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
-        CliRunner().invoke(copilot, ["make-addons"])
+        mocks = CopilotMocks()
+
+        config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        mocks.session.side_effect = [dev_session, prod_session]
+        environment_config = {"environments": {"development": {}, "production": {}}}
+        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        mocks.config_provider.load_and_validate_platform_config.return_value = config
+        mocks.file_provider = FileProvider  # Allow the use of fakefs
+
+        if kms_key_exists:
+            mocks.kms_provider.return_value.describe_key.return_value = {
+                "KeyMetadata": {"Arn": kms_key_arn}
+            }
+        else:
+            error = {"Error": {"Code": "NotFoundException"}}
+            mocks.kms_provider.return_value.describe_key.side_effect = ClientError(
+                error, "NotFoundException"
+            )
+
+        Copilot(**mocks.params()).make_addons()
 
         s3_addon = yaml.safe_load(Path(f"/copilot/web/addons/s3.yml").read_text())
 
@@ -221,14 +225,14 @@ class TestMakeAddonsCommand:
 
         dev_session.client.assert_called_with("kms")
         prod_session.client.assert_called_with("kms")
-        assert mock_kms.return_value.describe_key.call_count == 2
+        assert mocks.kms_provider.return_value.describe_key.call_count == 2
 
         assert "alias/test-app-production-my-bucket-prod-key" in str(
-            mock_kms.return_value.describe_key.call_args_list
+            mocks.kms_provider.return_value.describe_key.call_args_list
         )
 
         assert "alias/test-app-development-my-bucket-dev-key" in str(
-            mock_kms.return_value.describe_key.call_args_list
+            mocks.kms_provider.return_value.describe_key.call_args_list
         )
         assert dev_session != prod_session
 
