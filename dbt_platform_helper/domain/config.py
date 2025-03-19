@@ -76,8 +76,8 @@ class Config:
         self,
         io: ClickIOProvider = ClickIOProvider(),
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
-        aws_versions: AWSVersioning = AWSVersioning(),
-        copilot_versions: CopilotVersioning = CopilotVersioning(),
+        aws_versioning: AWSVersioning = AWSVersioning(),
+        copilot_versioning: CopilotVersioning = CopilotVersioning(),
         sso: SSOAuthProvider = None,
     ):
         self.oidc_app = None
