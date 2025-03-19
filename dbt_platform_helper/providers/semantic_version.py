@@ -59,8 +59,7 @@ class SemanticVersion:
         if version_string is None:
             return None
 
-        version_plain = version_string.replace("v", "")
-        version_segments = re.split(r"[.\-]", version_plain)
+        version_segments = re.split(r"[.\-]", version_string.replace("v", ""))
 
         if len(version_segments) != 3:
             return None
