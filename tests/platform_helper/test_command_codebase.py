@@ -251,7 +251,7 @@ class TestCodebaseDeploy:
 
         assert (
             result.stdout
-            == "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<commit_tag>, commit-<commit_hash> or branch-<branch_name>.\n"
+            == "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>.\n"
         )
         assert result.exit_code == 0
 
