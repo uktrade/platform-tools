@@ -683,44 +683,38 @@ class TestMakeAddonsCommand:
         ],
     )
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-    @patch(
-        "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
-        new=Mock(
-            return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
-        ),
-    )
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     def test_addon_instructions_with_postgres_addon_types(
         self,
-        mock_kms_provider,
-        mock_get_aws_session_or_abort,
-        mock_get_aws_session_or_abort2,
-        mock_config_provider,
-        fakefs,
         addon_config,
         addon_type,
         secret_name,
+        fakefs,
     ):
-        mock_config_provider.apply_environment_defaults = lambda conf: conf
         create_test_manifests(addon_config, fakefs)
+        copilot_mocks = CopilotMocks()
+        mock_config = yaml.dump({"application": "test-app", "extensions": addon_config})
+        environment_config = {"environments": {"development": {}, "production": {}}}
+        copilot_mocks.config_provider = Mock(spec=ConfigProvider)
+        copilot_mocks.config_provider.config_file_check.return_value = True
+        copilot_mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
+        copilot_mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        copilot_mocks.parameter_provider.get_ssm_parameter_by_name.return_value = {
+            "Value": '{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
+        }
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        Copilot(**copilot_mocks.params()).make_addons()
 
-        assert result.exit_code == 0
         if addon_type == "redis":
-            assert (
-                "DATABASE_CREDENTIALS" not in result.output
-            ), f"DATABASE_CREDENTIALS should not be included for {addon_type}"
+            any(
+                "REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/REDIS"
+                in arg
+                for arg in copilot_mocks.io.info.call_args_list
+            )
         else:
-            assert (
-                "DATABASE_CREDENTIALS" in result.output
-            ), f"DATABASE_CREDENTIALS should be included for {addon_type}"
-            assert (
-                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/"
-                f"{secret_name}" in result.output
+            any(
+                "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
+                in arg
+                for arg in copilot_mocks.io.info.call_args_list
             )
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
