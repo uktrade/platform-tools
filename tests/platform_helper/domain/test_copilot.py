@@ -7,10 +7,9 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
-import botocore
-from botocore.exceptions import ClientError
 import pytest
 import yaml
+from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_aws
@@ -207,7 +206,7 @@ class TestMakeAddonsCommand:
 
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        CliRunner().invoke(copilot, ["make-addons"])
 
         s3_addon = yaml.safe_load(Path(f"/copilot/web/addons/s3.yml").read_text())
 
@@ -776,11 +775,9 @@ class TestMakeAddonsCommand:
         new=Mock(return_value="foo"),
     )
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @patch("dbt_platform_helper.domain.copilot.KMSProvider")
     @mock_aws
     def test_s3_cross_account_policies_called(
         self,
-        mock_kms,
         mock_application,
         fakefs,
     ):
@@ -854,6 +851,7 @@ class TestMakeAddonsCommand:
 
         mock_kms_instance = Mock()
         mock_kms_instance.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
+        mock_kms = Mock()
         mock_kms.return_value = mock_kms_instance
         mocks.kms_provider = mock_kms
 
