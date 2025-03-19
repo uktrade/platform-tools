@@ -6,9 +6,9 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
-from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.semantic_version import VersionStatus
+from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.version_status import VersionStatus
 
 
 class TestSemanticVersion:
