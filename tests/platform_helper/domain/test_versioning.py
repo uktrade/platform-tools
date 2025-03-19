@@ -357,24 +357,24 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
 
 class TestAWSVersioning:
     @patch("subprocess.run")
-    def test_get_aws_versions(self, mock_run):
+    def test_get_aws_versioning(self, mock_run):
         mock_run.return_value.stdout = b"aws-cli/1.0.0"
         github_version_provider = Mock()
         github_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-        versions = AWSVersioning(github_version_provider).get_version_status()
+        version_status = AWSVersioning(github_version_provider).get_version_status()
 
-        assert versions.installed == SemanticVersion(1, 0, 0)
-        assert versions.latest == SemanticVersion(2, 0, 0)
+        assert version_status.installed == SemanticVersion(1, 0, 0)
+        assert version_status.latest == SemanticVersion(2, 0, 0)
 
 
 class TestCopilotVersioning:
     @patch("subprocess.run")
-    def test_copilot_versions(self, mock_run):
+    def test_copilot_versioning(self, mock_run):
         mock_run.return_value.stdout = b"1.0.0"
 
         github_version_provider = Mock()
         github_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-        versions = CopilotVersioning(github_version_provider).get_version_status()
+        version_status = CopilotVersioning(github_version_provider).get_version_status()
 
-        assert versions.installed == SemanticVersion(1, 0, 0)
-        assert versions.latest == SemanticVersion(2, 0, 0)
+        assert version_status.installed == SemanticVersion(1, 0, 0)
+        assert version_status.latest == SemanticVersion(2, 0, 0)

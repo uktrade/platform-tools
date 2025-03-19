@@ -75,16 +75,16 @@ class Config:
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),
-        platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
+        platform_helper_versioning: PlatformHelperVersioning = PlatformHelperVersioning(),
         aws_versioning: AWSVersioning = AWSVersioning(),
         copilot_versioning: CopilotVersioning = CopilotVersioning(),
         sso: SSOAuthProvider = None,
     ):
         self.oidc_app = None
         self.io = io
-        self.platform_helper_versioning_domain = platform_helper_versioning_domain
-        self.aws_versions = aws_versions
-        self.copilot_versions = copilot_versions
+        self.platform_helper_versioning = platform_helper_versioning
+        self.aws_versioning = aws_versioning
+        self.copilot_versioning = copilot_versioning
         self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
 
@@ -95,14 +95,16 @@ class Config:
             raise NoPlatformConfigException()
 
         self.io.debug("\nDetected a deployment repository\n")
-        platform_helper_version_status = self.platform_helper_versioning_domain._get_version_status(
+        platform_helper_version_status = self.platform_helper_versioning._get_version_status(
             include_project_versions=True
         )
         self.io.process_messages(platform_helper_version_status.validate())
-        aws_versions = self.aws_versions.get_version_status()
-        copilot_versions = self.copilot_versions.get_version_status()
+        aws_version_status = self.aws_versioning.get_version_status()
+        copilot_version_status = self.copilot_versioning.get_version_status()
 
-        self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
+        self._check_tool_versions(
+            platform_helper_version_status, aws_version_status, copilot_version_status
+        )
 
         compatible = self._check_addon_versions(platform_helper_version_status)
 
@@ -171,19 +173,19 @@ class Config:
     def _check_tool_versions(
         self,
         platform_helper_versions: PlatformHelperVersionStatus,
-        aws_versions: VersionStatus,
-        copilot_versions: VersionStatus,
+        aws_version_status: VersionStatus,
+        copilot_version_status: VersionStatus,
     ):
         self.io.debug("Checking tooling versions...")
 
         recommendations = {}
 
-        local_copilot_version = copilot_versions.installed
-        copilot_latest_release = copilot_versions.latest
+        local_copilot_version = copilot_version_status.installed
+        copilot_latest_release = copilot_version_status.latest
         if local_copilot_version is None:
             recommendations["install-copilot"] = RECOMMENDATIONS["install-copilot"]
 
-        if aws_versions.installed is None:
+        if aws_version_status.installed is None:
             recommendations["install-aws"] = RECOMMENDATIONS["install-aws"]
 
         tool_versions_table = PrettyTable()
@@ -198,17 +200,17 @@ class Config:
         tool_versions_table.add_row(
             [
                 "aws",
-                str(aws_versions.installed),
-                str(aws_versions.latest),
-                no if aws_versions.is_outdated() else yes,
+                str(aws_version_status.installed),
+                str(aws_version_status.latest),
+                no if aws_version_status.is_outdated() else yes,
             ]
         )
         tool_versions_table.add_row(
             [
                 "copilot",
-                str(copilot_versions.installed),
-                str(copilot_versions.latest),
-                no if copilot_versions.is_outdated() else yes,
+                str(copilot_version_status.installed),
+                str(copilot_version_status.latest),
+                no if copilot_version_status.is_outdated() else yes,
             ]
         )
         tool_versions_table.add_row(
@@ -222,13 +224,13 @@ class Config:
 
         self.io.info(tool_versions_table)
 
-        if aws_versions.is_outdated() and "install-aws" not in recommendations:
+        if aws_version_status.is_outdated() and "install-aws" not in recommendations:
             recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
                 tool="AWS CLI",
-                version=str(aws_versions.latest),
+                version=str(aws_version_status.latest),
             )
 
-        if copilot_versions.is_outdated() and "install-copilot" not in recommendations:
+        if copilot_version_status.is_outdated() and "install-copilot" not in recommendations:
             recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
                 tool="AWS Copilot",
                 version=str(copilot_latest_release),

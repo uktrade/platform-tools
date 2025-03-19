@@ -39,38 +39,39 @@ maybe = "\033[93m?\033[0m"
 class ConfigMocks:
     def __init__(self, *args, **kwargs):
         self.io = kwargs.get("io", Mock(spec=ClickIOProvider))
-        self.platform_helper_versioning_domain = kwargs.get(
-            "platform_helper_versioning_domain", MagicMock(spec=PlatformHelperVersioning)
+        self.platform_helper_versioning = kwargs.get(
+            "platform_helper_versioning", MagicMock(spec=PlatformHelperVersioning)
         )
         self.platform_helper_version_status = kwargs.get(
             "platform_helper_version_status",
             (PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))),
         )
-        self.platform_helper_versioning_domain._get_version_status.return_value = (
+        self.platform_helper_versioning._get_version_status.return_value = (
             self.platform_helper_version_status
         )
 
         self.sso = kwargs.get("sso", Mock(spec=SSOAuthProvider))
 
-        self.aws_version = kwargs.get(
-            "aws_version", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
+        self.aws_version_status = kwargs.get(
+            "aws_version_status", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
         )
-        self.copilot_version = kwargs.get(
-            "copilot_version", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
+        self.copilot_version_status = kwargs.get(
+            "copilot_version_status",
+            VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
         )
-        self.aws_versions = kwargs.get("aws_versions", Mock(spec=AWSVersioning))
-        self.aws_versions.get_version_status.return_value = self.aws_version
+        self.aws_versioning = kwargs.get("aws_versioning", Mock(spec=AWSVersioning))
+        self.aws_versioning.get_version_status.return_value = self.aws_version_status
 
-        self.copilot_versions = kwargs.get("copilot_versions", Mock(spec=CopilotVersioning))
-        self.copilot_versions.get_version_status.return_value = self.copilot_version
+        self.copilot_versioning = kwargs.get("copilot_versioning", Mock(spec=CopilotVersioning))
+        self.copilot_versioning.get_version_status.return_value = self.copilot_version_status
 
     def params(self):
         return {
             "io": self.io,
             "sso": self.sso,
-            "platform_helper_versioning_domain": self.platform_helper_versioning_domain,
-            "aws_versions": self.aws_versions,
-            "copilot_versions": self.copilot_versions,
+            "platform_helper_versioning": self.platform_helper_versioning,
+            "aws_versioning": self.aws_versioning,
+            "copilot_versioning": self.copilot_versioning,
             # "get_template_generated_with_version": self.get_template_generated_with_version,
             # "validate_template_version": self.validate_template_version,
         }
@@ -176,13 +177,13 @@ class TestConfigValidate:
             ],
         )
 
-        config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
+        config_mocks.platform_helper_versioning._get_version_status.assert_called_with(
             include_project_versions=True
         )
 
         config_mocks.io.process_messages.assert_called_with({})
-        config_mocks.aws_versions.get_version_status.assert_called()
-        config_mocks.copilot_versions.get_version_status.assert_called()
+        config_mocks.aws_versioning.get_version_status.assert_called()
+        config_mocks.copilot_versioning.get_version_status.assert_called()
 
     def test_validate_not_installed(self, fakefs):
         fakefs.create_file("platform-config.yml")
@@ -192,8 +193,8 @@ class TestConfigValidate:
         )
 
         config_mocks = ConfigMocks(
-            aws_version=VersionStatus(None, SemanticVersion(2, 0, 0)),
-            copilot_version=VersionStatus(None, SemanticVersion(3, 0, 0)),
+            aws_version_status=VersionStatus(None, SemanticVersion(2, 0, 0)),
+            copilot_version_status=VersionStatus(None, SemanticVersion(3, 0, 0)),
         )
 
         config_domain = Config(**config_mocks.params())
@@ -292,7 +293,7 @@ class TestConfigValidate:
             ],
         )
 
-        config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
+        config_mocks.platform_helper_versioning._get_version_status.assert_called_with(
             include_project_versions=True
         )
 
@@ -304,8 +305,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.aws_versions.get_version_status.assert_called()
-        config_mocks.copilot_versions.get_version_status.assert_called()
+        config_mocks.aws_versioning.get_version_status.assert_called()
+        config_mocks.copilot_versioning.get_version_status.assert_called()
 
     def test_validate_outdated(self, fakefs):
         fakefs.create_file("platform-config.yml")
@@ -318,8 +319,10 @@ class TestConfigValidate:
             platform_helper_version_status=PlatformHelperVersionStatus(
                 SemanticVersion(1, 0, 0), SemanticVersion(2, 0, 0)
             ),
-            aws_version=VersionStatus(SemanticVersion(0, 2, 0), SemanticVersion(2, 0, 0)),
-            copilot_version=VersionStatus(SemanticVersion(0, 3, 0), SemanticVersion(3, 0, 0)),
+            aws_version_status=VersionStatus(SemanticVersion(0, 2, 0), SemanticVersion(2, 0, 0)),
+            copilot_version_status=VersionStatus(
+                SemanticVersion(0, 3, 0), SemanticVersion(3, 0, 0)
+            ),
         )
         config_domain = Config(**config_mocks.params())
 
@@ -424,7 +427,7 @@ class TestConfigValidate:
             ],
         )
 
-        config_mocks.platform_helper_versioning_domain._get_version_status.assert_called_with(
+        config_mocks.platform_helper_versioning._get_version_status.assert_called_with(
             include_project_versions=True
         )
 
@@ -436,8 +439,8 @@ class TestConfigValidate:
                 ],
             }
         )
-        config_mocks.aws_versions.get_version_status.assert_called()
-        config_mocks.copilot_versions.get_version_status.assert_called()
+        config_mocks.aws_versioning.get_version_status.assert_called()
+        config_mocks.copilot_versioning.get_version_status.assert_called()
 
     def test_no_platform_config(self, fakefs):
         fakefs.create_file(

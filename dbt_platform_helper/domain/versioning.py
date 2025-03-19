@@ -167,16 +167,17 @@ class AWSVersioning:
         self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
 
     def get_version_status(self) -> VersionStatus:
-        aws_version = None
+        installed_aws_version = None
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
             matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-            aws_version = SemanticVersion.from_string(matched.group(1))
+            installed_aws_version = SemanticVersion.from_string(matched.group(1))
         except ValueError:
             pass
 
         return VersionStatus(
-            aws_version, self.latest_version_provider.get_semantic_version("aws/aws-cli", True)
+            installed_aws_version,
+            self.latest_version_provider.get_semantic_version("aws/aws-cli", True),
         )
 
 
