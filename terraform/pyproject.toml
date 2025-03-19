@@ -9,6 +9,6 @@ slack-sdk = "3.27.1"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.7.0"
-pytest = "^8.3.5"
+pytest = "^8.3.2"
 moto = "^5.0.13"
 pytest-cov = "^6.0.0"
