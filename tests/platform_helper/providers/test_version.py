@@ -7,7 +7,7 @@ import pytest
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import AWSVersionProvider
 from dbt_platform_helper.providers.version import CopilotVersionProvider
-from dbt_platform_helper.providers.version import GithubVersionProvider
+from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProviderException
 from dbt_platform_helper.providers.version import PyPiVersionProvider
@@ -51,14 +51,16 @@ class TestInstalledVersionProvider:
 class TestGithubVersionProvider:
     @patch("requests.get", return_value=MockGithubReleaseResponse())
     def test_get_github_version_from_releases(self, request_get):
-        assert GithubVersionProvider.get_latest_version("test/repo") == SemanticVersion(1, 1, 1)
+        assert GithubLatestVersionProvider.get_latest_version("test/repo") == SemanticVersion(
+            1, 1, 1
+        )
         request_get.assert_called_once_with(
             "https://api.github.com/repos/test/repo/releases/latest"
         )
 
     @patch("requests.get", return_value=MockGithubTagResponse())
     def test_get_github_version_from_tags(self, request_get):
-        assert GithubVersionProvider.get_latest_version("test/repo", True) == SemanticVersion(
+        assert GithubLatestVersionProvider.get_latest_version("test/repo", True) == SemanticVersion(
             1, 2, 3
         )
         request_get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")

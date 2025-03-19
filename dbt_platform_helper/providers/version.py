@@ -43,7 +43,7 @@ class InstalledVersionProvider:
 
 # TODO add timeouts and exception handling for requests
 # TODO Alternatively use the gitpython package?
-class GithubVersionProvider(VersionProvider):
+class GithubLatestVersionProvider(VersionProvider):
     @staticmethod
     def get_latest_version(repo_name: str, tags: bool = False) -> SemanticVersion:
         if tags:
@@ -84,7 +84,7 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
 
 class AWSVersionProvider(VersionProvider):
     @staticmethod
-    def get_version_status(github_version=GithubVersionProvider) -> VersionStatus:
+    def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
         aws_version = None
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
@@ -98,7 +98,7 @@ class AWSVersionProvider(VersionProvider):
 
 class CopilotVersionProvider(VersionProvider):
     @staticmethod
-    def get_version_status(github_version=GithubVersionProvider) -> VersionStatus:
+    def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
         copilot_version = None
 
         try:
