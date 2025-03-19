@@ -45,7 +45,7 @@ class InstalledVersionProvider:
 # TODO Alternatively use the gitpython package?
 class GithubLatestVersionProvider(VersionProvider):
     @staticmethod
-    def get_latest_version(repo_name: str, tags: bool = False) -> SemanticVersion:
+    def get_semantic_version(repo_name: str, tags: bool = False) -> SemanticVersion:
         if tags:
             tags_list = requests.get(f"https://api.github.com/repos/{repo_name}/tags").json()
             versions = [SemanticVersion.from_string(v["name"]) for v in tags_list]
@@ -60,7 +60,7 @@ class GithubLatestVersionProvider(VersionProvider):
 
 class PyPiVersionProvider(VersionProvider):
     @staticmethod
-    def get_latest_version(project_name: str) -> SemanticVersion:
+    def get_semantic_version(project_name: str) -> SemanticVersion:
         package_info = requests.get(f"https://pypi.org/pypi/{project_name}/json").json()
         released_versions = package_info["releases"].keys()
         parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
@@ -93,7 +93,7 @@ class AWSVersionProvider(VersionProvider):
         except ValueError:
             pass
 
-        return VersionStatus(aws_version, github_version.get_latest_version("aws/aws-cli", True))
+        return VersionStatus(aws_version, github_version.get_semantic_version("aws/aws-cli", True))
 
 
 class CopilotVersionProvider(VersionProvider):
@@ -109,5 +109,5 @@ class CopilotVersionProvider(VersionProvider):
 
         return VersionStatus(
             SemanticVersion.from_string(copilot_version),
-            github_version.get_latest_version("aws/copilot-cli"),
+            github_version.get_semantic_version("aws/copilot-cli"),
         )

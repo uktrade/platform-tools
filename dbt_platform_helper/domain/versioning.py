@@ -104,7 +104,7 @@ class PlatformHelperVersioning:
             "dbt-platform-helper"
         )
 
-        latest_release = self.pypi_provider.get_latest_version("dbt-platform-helper")
+        latest_release = self.pypi_provider.get_semantic_version("dbt-platform-helper")
 
         if not include_project_versions:
             return PlatformHelperVersionStatus(

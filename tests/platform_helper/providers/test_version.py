@@ -51,7 +51,7 @@ class TestInstalledVersionProvider:
 class TestGithubVersionProvider:
     @patch("requests.get", return_value=MockGithubReleaseResponse())
     def test_get_github_version_from_releases(self, request_get):
-        assert GithubLatestVersionProvider.get_latest_version("test/repo") == SemanticVersion(
+        assert GithubLatestVersionProvider.get_semantic_version("test/repo") == SemanticVersion(
             1, 1, 1
         )
         request_get.assert_called_once_with(
@@ -60,16 +60,16 @@ class TestGithubVersionProvider:
 
     @patch("requests.get", return_value=MockGithubTagResponse())
     def test_get_github_version_from_tags(self, request_get):
-        assert GithubLatestVersionProvider.get_latest_version("test/repo", True) == SemanticVersion(
-            1, 2, 3
-        )
+        assert GithubLatestVersionProvider.get_semantic_version(
+            "test/repo", True
+        ) == SemanticVersion(1, 2, 3)
         request_get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
 
 
 class TestPyPiVersionProvider:
     @patch("requests.get", return_value=MockPyPiResponse())
-    def test_get_latest_version(self, request_get):
-        result = PyPiVersionProvider.get_latest_version("foo")
+    def test_get_semantic_version(self, request_get):
+        result = PyPiVersionProvider.get_semantic_version("foo")
         assert result == SemanticVersion(1, 2, 3)
         request_get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
 
@@ -79,7 +79,7 @@ class TestAWSVersionProvider:
     def test_get_aws_versions(self, mock_run):
         mock_run.return_value.stdout = b"aws-cli/1.0.0"
         github_response = Mock()
-        github_response.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        github_response.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
         versions = AWSVersionProvider.get_version_status(github_response)
 
         assert versions.installed == SemanticVersion(1, 0, 0)
@@ -92,7 +92,7 @@ class TestCopilotVersionProvider:
         mock_run.return_value.stdout = b"1.0.0"
 
         github_response = Mock()
-        github_response.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        github_response.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
         versions = CopilotVersionProvider.get_version_status(github_response)
 
         assert versions.installed == SemanticVersion(1, 0, 0)
