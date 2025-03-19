@@ -18,7 +18,7 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.providers.version import AWSVersionProvider
+from dbt_platform_helper.providers.version import AWSVersioning
 from dbt_platform_helper.providers.version import CopilotVersionProvider
 
 yes = "\033[92m✔\033[0m"
@@ -76,7 +76,7 @@ class Config:
         self,
         io: ClickIOProvider = ClickIOProvider(),
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
-        aws_versions: AWSVersionProvider = AWSVersionProvider,
+        aws_versions: AWSVersioning = AWSVersioning,
         copilot_versions: CopilotVersionProvider = CopilotVersionProvider,
         sso: SSOAuthProvider = None,
     ):

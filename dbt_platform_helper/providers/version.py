@@ -82,7 +82,7 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
         return version_from_file
 
 
-class AWSVersionProvider(VersionProvider):
+class AWSVersioning(VersionProvider):
     @staticmethod
     def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
         aws_version = None

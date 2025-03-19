@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.version import AWSVersionProvider
+from dbt_platform_helper.providers.version import AWSVersioning
 from dbt_platform_helper.providers.version import CopilotVersionProvider
 from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
@@ -80,7 +80,7 @@ class TestAWSVersionProvider:
         mock_run.return_value.stdout = b"aws-cli/1.0.0"
         github_response = Mock()
         github_response.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-        versions = AWSVersionProvider.get_version_status(github_response)
+        versions = AWSVersioning.get_version_status(github_response)
 
         assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)
