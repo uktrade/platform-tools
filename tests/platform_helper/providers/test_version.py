@@ -93,7 +93,7 @@ class TestCopilotVersionProvider:
 
         github_response = Mock()
         github_response.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-        versions = CopilotVersioning.get_version_status(github_response)
+        versions = CopilotVersioning(github_response).get_version_status()
 
         assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)

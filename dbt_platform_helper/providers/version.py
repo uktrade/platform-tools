@@ -101,8 +101,10 @@ class AWSVersioning:
 
 
 class CopilotVersioning:
-    @staticmethod
-    def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
+    def __init__(self, latest_version_strategy: VersionProvider = None):
+        self.latest_version_strategy = latest_version_strategy or GithubLatestVersionProvider
+
+    def get_version_status(self) -> VersionStatus:
         copilot_version = None
 
         try:
@@ -113,5 +115,5 @@ class CopilotVersioning:
 
         return VersionStatus(
             SemanticVersion.from_string(copilot_version),
-            github_version.get_semantic_version("aws/copilot-cli"),
+            self.latest_version_strategy.get_semantic_version("aws/copilot-cli"),
         )
