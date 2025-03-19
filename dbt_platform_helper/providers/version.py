@@ -96,7 +96,7 @@ class AWSVersioning(VersionProvider):
         return VersionStatus(aws_version, github_version.get_semantic_version("aws/aws-cli", True))
 
 
-class CopilotVersionProvider(VersionProvider):
+class CopilotVersioning(VersionProvider):
     @staticmethod
     def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
         copilot_version = None

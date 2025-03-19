@@ -21,7 +21,7 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.version import AWSVersioning
-from dbt_platform_helper.providers.version import CopilotVersionProvider
+from dbt_platform_helper.providers.version import CopilotVersioning
 
 START_URL = "https://uktrade.awsapps.com/start"
 
@@ -61,7 +61,7 @@ class ConfigMocks:
         self.aws_versions = kwargs.get("aws_versions", Mock(spec=AWSVersioning))
         self.aws_versions.get_version_status.return_value = self.aws_version
 
-        self.copilot_versions = kwargs.get("copilot_versions", Mock(spec=CopilotVersionProvider))
+        self.copilot_versions = kwargs.get("copilot_versions", Mock(spec=CopilotVersioning))
         self.copilot_versions.get_version_status.return_value = self.copilot_version
 
     def params(self):
