@@ -73,7 +73,7 @@ def build(app, codebase, commit):
 )
 @click.option(
     "--commit",
-    help="(DEPRECATED) Use --ref instead to pass the AWS ECR image tag, GitHub commit hash, or branch name.",
+    help="(DEPRECATED) Use --ref instead to pass the AWS ECR image tag.",
     required=False,
 )
 def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = None):
