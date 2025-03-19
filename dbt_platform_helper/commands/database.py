@@ -2,6 +2,8 @@ import click
 
 from dbt_platform_helper.commands.environment import AVAILABLE_TEMPLATES
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -38,9 +40,11 @@ def database():
 )
 def dump(app, from_env, database, from_vpc, filename):
     """Dump a database into an S3 bucket."""
-    data_copy = DatabaseCopy(app, database)
-    data_copy.dump(from_env, from_vpc, filename)
-    # Todo: Catch expected errors and output message
+    try:
+        data_copy = DatabaseCopy(app, database)
+        data_copy.dump(from_env, from_vpc, filename)
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @database.command(name="load")
@@ -68,9 +72,11 @@ def dump(app, from_env, database, from_vpc, filename):
 )
 def load(app, to_env, database, to_vpc, auto_approve, filename):
     """Load a database from an S3 bucket."""
-    data_copy = DatabaseCopy(app, database, auto_approve)
-    data_copy.load(to_env, to_vpc, filename)
-    # Todo: Catch expected errors and output message
+    try:
+        data_copy = DatabaseCopy(app, database, auto_approve)
+        data_copy.load(to_env, to_vpc, filename)
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @database.command(name="copy")
@@ -120,6 +126,8 @@ def copy(
     no_maintenance_page,
 ):
     """Copy a database between environments."""
-    data_copy = DatabaseCopy(app, database, auto_approve)
-    data_copy.copy(from_env, to_env, from_vpc, to_vpc, svc, template, no_maintenance_page)
-    # Todo: Catch expected errors and output message
+    try:
+        data_copy = DatabaseCopy(app, database, auto_approve)
+        data_copy.copy(from_env, to_env, from_vpc, to_vpc, svc, template, no_maintenance_page)
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
