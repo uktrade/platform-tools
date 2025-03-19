@@ -82,9 +82,11 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
         return version_from_file
 
 
-class AWSVersioning(VersionProvider):
-    @staticmethod
-    def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
+class AWSVersioning:
+    def __init__(self, latest_version_strategy: VersionProvider = None):
+        self.latest_version_strategy = latest_version_strategy or GithubLatestVersionProvider
+
+    def get_version_status(self) -> VersionStatus:
         aws_version = None
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
@@ -93,10 +95,12 @@ class AWSVersioning(VersionProvider):
         except ValueError:
             pass
 
-        return VersionStatus(aws_version, github_version.get_semantic_version("aws/aws-cli", True))
+        return VersionStatus(
+            aws_version, self.latest_version_strategy.get_semantic_version("aws/aws-cli", True)
+        )
 
 
-class CopilotVersioning(VersionProvider):
+class CopilotVersioning:
     @staticmethod
     def get_version_status(github_version=GithubLatestVersionProvider) -> VersionStatus:
         copilot_version = None

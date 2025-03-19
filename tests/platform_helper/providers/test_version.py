@@ -80,7 +80,7 @@ class TestAWSVersionProvider:
         mock_run.return_value.stdout = b"aws-cli/1.0.0"
         github_response = Mock()
         github_response.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-        versions = AWSVersioning.get_version_status(github_response)
+        versions = AWSVersioning(github_response).get_version_status()
 
         assert versions.installed == SemanticVersion(1, 0, 0)
         assert versions.latest == SemanticVersion(2, 0, 0)

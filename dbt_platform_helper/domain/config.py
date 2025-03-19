@@ -76,7 +76,7 @@ class Config:
         self,
         io: ClickIOProvider = ClickIOProvider(),
         platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
-        aws_versions: AWSVersioning = AWSVersioning,
+        aws_versions: AWSVersioning = AWSVersioning(),
         copilot_versions: CopilotVersioning = CopilotVersioning,
         sso: SSOAuthProvider = None,
     ):
