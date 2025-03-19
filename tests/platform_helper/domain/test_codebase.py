@@ -270,7 +270,8 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
         codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
 
-def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref):
     mocks = CodebaseMocks(
         check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
@@ -280,10 +281,11 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
 
-def test_codebase_deploy_aborts_with_a_nonexistent_image_ref():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_aborts_with_a_nonexistent_image_ref(commit, ref):
     mocks = CodebaseMocks(
         check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
@@ -293,10 +295,11 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_ref():
 
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
 
-def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(commit, ref):
     mocks = CodebaseMocks()
     mocks.run_subprocess.return_value.stderr = ""
     mocks.io.confirm.return_value = False
@@ -304,14 +307,17 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", None, "ab1c23d")
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
     assert str(exc.value) == "Your deployment for application was not triggered."
     assert isinstance(exc.value, ApplicationDeploymentNotTriggered)
+
+    image_ref = f"commit-{commit}" if commit else ref
+
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with image reference "ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                f'You are about to deploy "test-application" for "application" with image reference "{image_ref}" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -319,16 +325,20 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
     client.start_pipeline_execution.assert_not_called()
 
 
-def test_codebase_deploy_does_not_trigger_build_without_an_application():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_build_without_an_application(commit, ref):
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundException):
-        codebase.deploy("not-an-application", "dev", "application", None, "ab1c23d")
+        codebase.deploy("not-an-application", "dev", "application", commit, ref)
 
 
-def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_application):
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
+    mock_application, commit, ref
+):
     mocks = CodebaseMocks()
     mock_application.environments = {}
     mocks.load_application.return_value = mock_application
@@ -338,18 +348,17 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
         ApplicationEnvironmentNotFoundException,
         match="""The environment "not-an-environment" either does not exist or has not been deployed.""",
     ):
-        codebase.deploy("test-application", "not-an-environment", "application", None, "ab1c23d")
+        codebase.deploy("test-application", "not-an-environment", "application", commit, ref)
 
 
-def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_deployment_without_confirmation(commit, ref):
     mocks = CodebaseMocks()
     mocks.io.confirm.return_value = False
 
     with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
-        codebase.deploy(
-            "test-application", "development", "application", None, "nonexistent-commit-hash"
-        )
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():

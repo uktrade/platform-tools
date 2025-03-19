@@ -13,9 +13,9 @@ class CreateTaskTimeoutException(AWSException):
 
 
 class ImageNotFoundException(AWSException):
-    def __init__(self, image_tag: str):
+    def __init__(self, image_ref: str):
         super().__init__(
-            f"""An image labelled "{image_tag}" could not be found in your image repository. Try the `platform-helper codebase build` command first."""
+            f"""An image labelled "{image_ref}" could not be found in your image repository. Try the `platform-helper codebase build` command first."""
         )
 
 

@@ -76,13 +76,8 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
         ),
         (
             ImageNotFoundException,
-            {"image_tag": "test-commit-hash-1234"},
-            """An image labelled "test-commit-hash-1234" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
-        ),
-        (
-            ImageNotFoundException,
-            {"image_tag": "test-image-tag-1234"},
-            """An image labelled "test-image-tag-1234" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
+            {"image_ref": "abc1234"},
+            """An image labelled "abc1234" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
         ),
         (
             LogGroupNotFoundException,

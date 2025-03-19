@@ -66,24 +66,28 @@ def build(app, codebase, commit):
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
-@click.option("--ref", help="ECR image tag, commit hash, or branch name", required=False)
+@click.option(
+    "--ref",
+    help="AWS ECR image tag, usually in one of the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>.",
+    required=False,
+)
 @click.option(
     "--commit",
-    help="(DEPRECATED) Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.",
+    help="(DEPRECATED) Use --ref instead to pass the AWS ECR image tag, GitHub commit hash, or branch name.",
     required=False,
 )
 def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = None):
 
     if commit:
         ClickIOProvider().warn(
-            "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name."
+            "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
         )
 
     none_provided = not (commit or ref)
     both_provided = commit and ref
     if none_provided:
         ClickIOProvider().abort_with_error(
-            "To deploy, you must provide a --ref option with the ECR image tag, GitHub commit hash or branch name."
+            "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
         )
     elif both_provided:
         ClickIOProvider().abort_with_error(

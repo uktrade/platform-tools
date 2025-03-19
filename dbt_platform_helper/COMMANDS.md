@@ -248,9 +248,9 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 - `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
 - `--ref <text>`
-  - ECR image tag, commit hash, or branch name
+  - AWS ECR image tag, usually in one of the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>.
 - `--commit <text>`
-  - (DEPRECATED) Use --ref instead to pass the ECR image tag, GitHub commit hash, or branch name.
+  - (DEPRECATED) Use --ref instead to pass the AWS ECR image tag, GitHub commit hash, or branch name.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
