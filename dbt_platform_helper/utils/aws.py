@@ -409,28 +409,36 @@ def check_codebase_exists(session: Session, application, codebase: str):
         raise CopilotCodebaseNotFoundException(codebase)
 
 
-def check_image_exists(session, application, codebase, image_ref):
+def get_image_details(session, application, codebase, image_ref) -> str:
     ecr_client = session.client("ecr")
     repository = f"{application.name}/{codebase}"
     try:
-        ecr_client.describe_images(
+        response = ecr_client.describe_images(
             repositoryName=repository,
             imageIds=[{"imageTag": image_ref}],
         )
+        return response.get("imageDetails")
     except ecr_client.exceptions.ImageNotFoundException:
         raise ImageNotFoundException(image_ref)
     except ecr_client.exceptions.RepositoryNotFoundException:
         raise RepositoryNotFoundException(repository)
 
 
-def find_commit_tag(session, application, codebase, image_ref) -> str:
+def check_image_exists(session, application, codebase, image_ref):
+    get_image_details(session, application, codebase, image_ref)
 
-    if True:
-        # find and get all tags for that image
-        # find the commit tag and assign it to image_ref
-        return "commit-<commit_hash>"
-    else:
-        return None
+
+def find_commit_tag(session, application, codebase, image_ref) -> str:
+    image_details = get_image_details(session, application, codebase, image_ref)
+    image_tags = []
+
+    for image in image_details:
+        image_tags = image.get("imageTags")
+
+    for tag in image_tags:
+        if tag.startswith("commit-"):
+            return tag
+    return None
 
 
 def get_build_url_from_arn(build_arn: str) -> str:

@@ -43,6 +43,7 @@ class CodebaseMocks:
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
         self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
+        self.find_commit_tag = kwargs.get("find_commit_tag", Mock(return_value=""))
         self.get_image_build_project = kwargs.get(
             "get_image_build_project",
             Mock(return_value="test-application-application-codebase-image-build"),
@@ -60,6 +61,7 @@ class CodebaseMocks:
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
             "check_image_exists": self.check_image_exists,
+            "find_commit_tag": self.find_commit_tag,
             "get_image_build_project": self.get_image_build_project,
             "get_manual_release_pipeline": self.get_manual_release_pipeline,
             "io": self.io,
