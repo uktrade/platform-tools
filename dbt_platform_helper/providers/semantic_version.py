@@ -54,6 +54,13 @@ class SemanticVersion:
         if self.minor != other.minor:
             raise IncompatibleMinorVersionException(str(self), str(other))
 
+    @staticmethod
+    def _cast_to_int_with_fallback(input, fallback=-1):
+        try:
+            return int(input)
+        except ValueError:
+            return fallback
+
     @classmethod
     def from_string(self, version_string: Union[str, None]):
         if version_string is None:
@@ -64,11 +71,6 @@ class SemanticVersion:
         if len(version_segments) != 3:
             return None
 
-        output_version = [0, 0, 0]
-        for index, segment in enumerate(version_segments):
-            try:
-                output_version[index] = int(segment)
-            except ValueError:
-                output_version[index] = -1
+        major, minor, patch = [self._cast_to_int_with_fallback(s) for s in version_segments]
 
-        return SemanticVersion(output_version[0], output_version[1], output_version[2])
+        return SemanticVersion(major, minor, patch)
