@@ -14,14 +14,14 @@ from prettytable import PrettyTable
 from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.config import NoDeploymentRepoConfigException
 from dbt_platform_helper.domain.config import NoPlatformConfigException
+from dbt_platform_helper.domain.versioning import AWSVersioning
+from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.semantic_version import VersionStatus
-from dbt_platform_helper.providers.version import AWSVersioning
-from dbt_platform_helper.providers.version import CopilotVersioning
 
 START_URL = "https://uktrade.awsapps.com/start"
 

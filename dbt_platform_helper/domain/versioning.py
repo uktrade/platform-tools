@@ -1,4 +1,6 @@
 import os
+import re
+import subprocess
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -11,9 +13,12 @@ from dbt_platform_helper.providers.semantic_version import (
 )
 from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
+from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
+from dbt_platform_helper.providers.version import VersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -38,7 +43,7 @@ class PlatformHelperVersioning:
             YamlFileProvider
         ),
         config_provider: ConfigProvider = ConfigProvider(),
-        latest_version_provider: PyPiLatestVersionProvider = PyPiLatestVersionProvider,
+        latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
     ):
@@ -155,3 +160,40 @@ class PlatformHelperVersioning:
             raise PlatformHelperVersionNotFoundException
 
         return out
+
+
+class AWSVersioning:
+    def __init__(self, latest_version_provider: VersionProvider = None):
+        self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
+
+    def get_version_status(self) -> VersionStatus:
+        aws_version = None
+        try:
+            response = subprocess.run("aws --version", capture_output=True, shell=True)
+            matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
+            aws_version = SemanticVersion.from_string(matched.group(1))
+        except ValueError:
+            pass
+
+        return VersionStatus(
+            aws_version, self.latest_version_provider.get_semantic_version("aws/aws-cli", True)
+        )
+
+
+class CopilotVersioning:
+    def __init__(self, latest_version_provider: VersionProvider = None):
+        self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
+
+    def get_version_status(self) -> VersionStatus:
+        copilot_version = None
+
+        try:
+            response = subprocess.run("copilot --version", capture_output=True, shell=True)
+            [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+        except ValueError:
+            pass
+
+        return VersionStatus(
+            SemanticVersion.from_string(copilot_version),
+            self.latest_version_provider.get_semantic_version("aws/copilot-cli"),
+        )

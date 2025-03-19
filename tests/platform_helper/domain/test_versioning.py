@@ -6,6 +6,8 @@ import pytest
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.domain.versioning import AWSVersioning
+from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import skip_version_checks
@@ -351,3 +353,28 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         mocks.installed_version_provider.get_semantic_version.assert_not_called()
         mocks.io.warn.assert_not_called()
         mocks.io.error.assert_not_called()
+
+
+class TestAWSVersioning:
+    @patch("subprocess.run")
+    def test_get_aws_versions(self, mock_run):
+        mock_run.return_value.stdout = b"aws-cli/1.0.0"
+        github_version_provider = Mock()
+        github_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
+        versions = AWSVersioning(github_version_provider).get_version_status()
+
+        assert versions.installed == SemanticVersion(1, 0, 0)
+        assert versions.latest == SemanticVersion(2, 0, 0)
+
+
+class TestCopilotVersioning:
+    @patch("subprocess.run")
+    def test_copilot_versions(self, mock_run):
+        mock_run.return_value.stdout = b"1.0.0"
+
+        github_version_provider = Mock()
+        github_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
+        versions = CopilotVersioning(github_version_provider).get_version_status()
+
+        assert versions.installed == SemanticVersion(1, 0, 0)
+        assert versions.latest == SemanticVersion(2, 0, 0)
