@@ -8,6 +8,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import botocore
+from botocore.exceptions import ClientError
 import pytest
 import yaml
 from click.testing import CliRunner
@@ -127,15 +128,22 @@ class TestMakeAddonsCommand:
     )
     @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
+    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
+    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
     @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
+        mock_kms,
+        mock_config_provider,
         mock_application,
-        mock_get_session2,
+        mock_get_session,
         fakefs,
         kms_key_exists,
         kms_key_arn,
     ):
+        config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        mock_config_provider.apply_environment_defaults.return_value = config
+        mock_config_provider.load_and_validate_platform_config.return_value = config
         dev_session = MagicMock(name="dev-session-mock")
         dev_session.profile_name = "foo"
         prod_session = MagicMock(name="prod-session-mock")
@@ -143,7 +151,7 @@ class TestMakeAddonsCommand:
         client = MagicMock(name="client-mock")
         dev_session.client.return_value = client
         prod_session.client.return_value = client
-        mock_get_session2.side_effect = [dev_session, prod_session]
+        mock_get_session.side_effect = [dev_session, prod_session]
 
         dev = Environment(
             name="development",
@@ -192,18 +200,14 @@ class TestMakeAddonsCommand:
         ]
 
         if kms_key_exists:
-            client.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
+            mock_kms.return_value.describe_key.return_value = {"KeyMetadata": {"Arn": kms_key_arn}}
         else:
-            # client.exceptions.NotFoundException = boto3.client("kms").exceptions.NotFoundException
-            client.describe_key.side_effect = botocore.exceptions.ClientError(
-                error_response={}, operation_name="describe_key"
-            )
+            error = {"Error": {"Code": "NotFoundException"}}
+            mock_kms.return_value.describe_key.side_effect = ClientError(error, "NotFoundException")
 
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
         result = CliRunner().invoke(copilot, ["make-addons"])
-        print("RESULT:", result)
-        print("RESULT OUT:", result.stdout)
 
         s3_addon = yaml.safe_load(Path(f"/copilot/web/addons/s3.yml").read_text())
 
@@ -211,8 +215,22 @@ class TestMakeAddonsCommand:
             s3_addon["Mappings"]["s3EnvironmentConfigMap"]["development"]["KmsKeyArn"]
             == kms_key_arn
         )
+
+        assert (
+            s3_addon["Mappings"]["s3EnvironmentConfigMap"]["production"]["KmsKeyArn"] == kms_key_arn
+        )
+
         dev_session.client.assert_called_with("kms")
         prod_session.client.assert_called_with("kms")
+        assert mock_kms.return_value.describe_key.call_count == 2
+
+        assert "alias/test-app-production-my-bucket-prod-key" in str(
+            mock_kms.return_value.describe_key.call_args_list
+        )
+
+        assert "alias/test-app-development-my-bucket-dev-key" in str(
+            mock_kms.return_value.describe_key.call_args_list
+        )
         assert dev_session != prod_session
 
     @pytest.mark.parametrize(

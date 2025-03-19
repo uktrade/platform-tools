@@ -6,6 +6,7 @@ from pathlib import Path
 from pathlib import PosixPath
 
 import botocore
+import botocore.errorfactory
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -283,10 +284,10 @@ class Copilot:
         arns = {}
 
         for environment_name in application.environments:
-            
-            print(f"client being passed to provider: {application.environments[environment_name].session.client("kms")}")
-            kms_provider = self.kms_provider(application.environments[environment_name].session.client("kms"))
-            
+            kms_provider = self.kms_provider(
+                application.environments[environment_name].session.client("kms")
+            )
+
             if environment_name not in config:
                 continue
 
@@ -298,10 +299,9 @@ class Copilot:
 
             try:
                 response = kms_provider.describe_key(alias_name)
-                print(f"kms response is {response}")
+
             # Boto3 classifies all AWS service errors and exceptions as ClientError exceptions
-            except Exception as error:
-                print("Exception!!!!!", error)
+            except botocore.exceptions.ClientError as error:
                 if error.response["Error"]["Code"] == "NotFoundException":
                     pass
             else:
@@ -338,7 +338,6 @@ class Copilot:
         log_destination_arns,
     ):
         # generate svc addons
-        print(f"Generating service addons {addon_name} {addon_type}")  # dw
         for addon_template in ADDON_TEMPLATE_MAP.get(addon_type, []):
             template = templates.get_template(addon_template)
 
