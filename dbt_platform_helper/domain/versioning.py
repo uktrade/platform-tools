@@ -185,7 +185,7 @@ class CopilotVersioning:
     def __init__(self, latest_version_provider: VersionProvider = None):
         self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
 
-    def get_version_status(self) -> VersionStatus:
+    def get_semantic_version(self):
         copilot_version = None
 
         try:
@@ -194,7 +194,10 @@ class CopilotVersioning:
         except ValueError:
             pass
 
+        return SemanticVersion.from_string(copilot_version)
+
+    def get_version_status(self) -> VersionStatus:
         return VersionStatus(
-            SemanticVersion.from_string(copilot_version),
+            self.get_semantic_version(),
             self.latest_version_provider.get_semantic_version("aws/copilot-cli"),
         )
