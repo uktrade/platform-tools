@@ -423,6 +423,16 @@ def check_image_exists(session, application, codebase, image_ref):
         raise RepositoryNotFoundException(repository)
 
 
+def find_commit_tag(session, application, codebase, image_ref) -> str:
+
+    if True:
+        # find and get all tags for that image
+        # find the commit tag and assign it to image_ref
+        return "commit-<commit_hash>"
+    else:
+        return None
+
+
 def get_build_url_from_arn(build_arn: str) -> str:
     _, _, _, region, account_id, project_name, build_id = build_arn.split(":")
     project_name = project_name.removeprefix("build/")
