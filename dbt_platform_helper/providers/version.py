@@ -83,8 +83,8 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
 
 
 class AWSVersioning:
-    def __init__(self, latest_version_strategy: VersionProvider = None):
-        self.latest_version_strategy = latest_version_strategy or GithubLatestVersionProvider
+    def __init__(self, latest_version_provider: VersionProvider = None):
+        self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
 
     def get_version_status(self) -> VersionStatus:
         aws_version = None
@@ -96,13 +96,13 @@ class AWSVersioning:
             pass
 
         return VersionStatus(
-            aws_version, self.latest_version_strategy.get_semantic_version("aws/aws-cli", True)
+            aws_version, self.latest_version_provider.get_semantic_version("aws/aws-cli", True)
         )
 
 
 class CopilotVersioning:
-    def __init__(self, latest_version_strategy: VersionProvider = None):
-        self.latest_version_strategy = latest_version_strategy or GithubLatestVersionProvider
+    def __init__(self, latest_version_provider: VersionProvider = None):
+        self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
 
     def get_version_status(self) -> VersionStatus:
         copilot_version = None
@@ -115,5 +115,5 @@ class CopilotVersioning:
 
         return VersionStatus(
             SemanticVersion.from_string(copilot_version),
-            self.latest_version_strategy.get_semantic_version("aws/copilot-cli"),
+            self.latest_version_provider.get_semantic_version("aws/copilot-cli"),
         )

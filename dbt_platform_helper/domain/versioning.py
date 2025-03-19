@@ -38,14 +38,14 @@ class PlatformHelperVersioning:
             YamlFileProvider
         ),
         config_provider: ConfigProvider = ConfigProvider(),
-        pypi_provider: PyPiLatestVersionProvider = PyPiLatestVersionProvider,
+        latest_version_provider: PyPiLatestVersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
     ):
         self.io = io
         self.version_file_version_provider = version_file_version_provider
         self.config_provider = config_provider
-        self.pypi_provider = pypi_provider
+        self.latest_version_provider = latest_version_provider
         self.installed_version_provider = installed_version_provider
         self.skip_versioning_checks = (
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
@@ -104,7 +104,7 @@ class PlatformHelperVersioning:
             "dbt-platform-helper"
         )
 
-        latest_release = self.pypi_provider.get_semantic_version("dbt-platform-helper")
+        latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         if not include_project_versions:
             return PlatformHelperVersionStatus(
