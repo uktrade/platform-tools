@@ -10,7 +10,7 @@ from dbt_platform_helper.providers.version import CopilotVersionProvider
 from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProviderException
-from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 
 
 class MockGithubReleaseResponse:
@@ -69,7 +69,7 @@ class TestGithubVersionProvider:
 class TestPyPiVersionProvider:
     @patch("requests.get", return_value=MockPyPiResponse())
     def test_get_semantic_version(self, request_get):
-        result = PyPiVersionProvider.get_semantic_version("foo")
+        result = PyPiLatestVersionProvider.get_semantic_version("foo")
         assert result == SemanticVersion(1, 2, 3)
         request_get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
 

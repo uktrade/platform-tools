@@ -14,7 +14,7 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
-from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 
 
 class PlatformHelperVersioningMocks:
@@ -25,7 +25,7 @@ class PlatformHelperVersioningMocks:
         self.version_file_version_provider = kwargs.get(
             "version_file_version_provider", Mock(spec=DeprecatedVersionFileVersionProvider)
         )
-        self.pypi_provider = kwargs.get("pypi_provider", Mock(spec=PyPiVersionProvider))
+        self.pypi_provider = kwargs.get("pypi_provider", Mock(spec=PyPiLatestVersionProvider))
         self.installed_version_provider = kwargs.get(
             "installed_version_provider", Mock(spec=InstalledVersionProvider)
         )

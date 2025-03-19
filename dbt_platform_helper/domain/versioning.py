@@ -13,7 +13,7 @@ from dbt_platform_helper.providers.semantic_version import PlatformHelperVersion
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
-from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -38,7 +38,7 @@ class PlatformHelperVersioning:
             YamlFileProvider
         ),
         config_provider: ConfigProvider = ConfigProvider(),
-        pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
+        pypi_provider: PyPiLatestVersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
     ):

@@ -58,7 +58,7 @@ class GithubLatestVersionProvider(VersionProvider):
         return SemanticVersion.from_string(package_info["tag_name"])
 
 
-class PyPiVersionProvider(VersionProvider):
+class PyPiLatestVersionProvider(VersionProvider):
     @staticmethod
     def get_semantic_version(project_name: str) -> SemanticVersion:
         package_info = requests.get(f"https://pypi.org/pypi/{project_name}/json").json()
