@@ -54,8 +54,8 @@ class SemanticVersion:
         if self.minor != other.minor:
             raise IncompatibleMinorVersionException(str(self), str(other))
 
-    @staticmethod
-    def from_string(version_string: Union[str, None]):
+    @classmethod
+    def from_string(self, version_string: Union[str, None]):
         if version_string is None:
             return None
 
