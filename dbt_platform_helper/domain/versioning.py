@@ -129,7 +129,7 @@ class PlatformHelperVersioning:
         out = PlatformHelperVersionStatus(
             installed=locally_installed_version,
             latest=latest_release,
-            deprecated_version_file=self.version_file_version_provider.get_required_version(),
+            deprecated_version_file=self.version_file_version_provider.get_semantic_version(),
             platform_config_default=platform_config_default,
             pipeline_overrides=pipeline_overrides,
         )

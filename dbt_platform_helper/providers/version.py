@@ -72,7 +72,7 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
     def __init__(self, file_provider: YamlFileProvider):
         self.file_provider = file_provider or YamlFileProvider
 
-    def get_required_version(self) -> SemanticVersion:
+    def get_semantic_version(self) -> SemanticVersion:
         deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
         try:
             loaded_version = self.file_provider.load(deprecated_version_file)

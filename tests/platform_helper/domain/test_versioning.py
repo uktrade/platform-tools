@@ -52,7 +52,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1
         )
-        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
 
@@ -66,7 +66,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
 
@@ -83,7 +83,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1
         )
-        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.version_file_version_provider.get_semantic_version.return_value = None
         mocks.config_provider.load_unvalidated_config_file.return_value = valid_platform_config
 
         PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
@@ -132,7 +132,7 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
         mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1
         )
-        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.version_file_version_provider.get_semantic_version.return_value = None
         mocks.pypi_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
         mocks.config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
 
@@ -163,7 +163,7 @@ class TestPlatformHelperVersioningGetRequiredVersion:
         pipeline_override,
         expected_version,
     ):
-        mocks.version_file_version_provider.get_required_version.return_value = (
+        mocks.version_file_version_provider.get_semantic_version.return_value = (
             platform_helper_version_file_version
         )
         platform_config = {
@@ -257,11 +257,11 @@ def test_platform_helper_version_deprecation_warnings(
     mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
 
     if version_in_phv_file:
-        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_semantic_version.return_value = SemanticVersion(
             3, 3, 3
         )
     else:
-        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.version_file_version_provider.get_semantic_version.return_value = None
 
     PlatformHelperVersioning(**mocks.params()).get_required_version()
 
