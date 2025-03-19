@@ -100,7 +100,7 @@ class PlatformHelperVersioning:
         self,
         include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
-        locally_installed_version = self.installed_version_provider.get_installed_tool_version(
+        locally_installed_version = self.installed_version_provider.get_semantic_version(
             "dbt-platform-helper"
         )
 

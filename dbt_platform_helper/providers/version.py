@@ -28,12 +28,13 @@ class InstalledToolNotFoundException(InstalledVersionProviderException):
 
 
 class VersionProvider(ABC):
-    pass
+    def get_semantic_version() -> SemanticVersion:
+        pass
 
 
 class InstalledVersionProvider:
     @staticmethod
-    def get_installed_tool_version(tool_name: str) -> SemanticVersion:
+    def get_semantic_version(tool_name: str) -> SemanticVersion:
         try:
             return SemanticVersion.from_string(version(tool_name))
         except PackageNotFoundError:

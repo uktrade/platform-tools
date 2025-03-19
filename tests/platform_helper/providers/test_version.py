@@ -34,9 +34,7 @@ class MockPyPiResponse:
 class TestInstalledVersionProvider:
     @patch("dbt_platform_helper.providers.version.version", return_value="1.1.1")
     def test_get_locally_installed_tool_version(self, mock_version):
-        assert InstalledVersionProvider.get_installed_tool_version("test") == SemanticVersion(
-            1, 1, 1
-        )
+        assert InstalledVersionProvider.get_semantic_version("test") == SemanticVersion(1, 1, 1)
         mock_version.assert_called_once_with("test")
 
     @patch("dbt_platform_helper.providers.version.version", return_value="")
@@ -45,7 +43,7 @@ class TestInstalledVersionProvider:
     ):
         mock_version.side_effect = PackageNotFoundError
         with pytest.raises(InstalledVersionProviderException) as exc:
-            InstalledVersionProvider.get_installed_tool_version("test")
+            InstalledVersionProvider.get_semantic_version("test")
 
         assert "Package 'test' not found" in str(exc)
 
