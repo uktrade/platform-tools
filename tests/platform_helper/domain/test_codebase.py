@@ -258,6 +258,60 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     )
 
 
+def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
+    mocks = CodebaseMocks()
+    mock_application = MagicMock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": MagicMock()}
+    mocks.load_application.return_value = mock_application
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
+    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
+
+    mocks.find_commit_tag.return_value = "commit-abc123"
+    codebase = Codebase(**mocks.params())
+
+    codebase.deploy("test-application", "development", "application", None, "latest")
+
+    mocks.find_commit_tag.assert_called_once_with(
+        mocks.get_aws_session_or_abort(), mock_application, "application", "latest"
+    )
+
+    client.start_pipeline_execution.assert_called_once_with(
+        name="test-application-application-manual-release",
+        variables=[
+            {"name": "ENVIRONMENT", "value": "development"},
+            {"name": "IMAGE_TAG", "value": "commit-abc123"},
+        ],
+    )
+
+
+def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
+
+    mocks = CodebaseMocks()
+    mock_application = MagicMock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": MagicMock()}
+    mocks.load_application.return_value = mock_application
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
+    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
+
+    codebase = Codebase(**mocks.params())
+
+    codebase.deploy("test-application", "development", "application", "abc123", None)
+
+    mocks.find_commit_tag.assert_not_called()
+
+    client.start_pipeline_execution.assert_called_once_with(
+        name="test-application-application-manual-release",
+        variables=[
+            {"name": "ENVIRONMENT", "value": "development"},
+            {"name": "IMAGE_TAG", "value": "commit-abc123"},
+        ],
+    )
+
+
 @pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
 def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
     if exception_type == ImageNotFoundException:
