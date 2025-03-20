@@ -545,27 +545,29 @@ platform-helper pipeline generate
     deployment pipelines.
 
     This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
       The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
       The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
 
     This command does the following in relation to the codebase pipelines:
-    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
+      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
+      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
 
 ## Usage
 
 ```
-platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+platform-helper pipeline generate [--platform-helper-version <platform_helper_version>] 
                                   [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
 
-- `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules with a specific version or branch. 
+- `--platform-helper-version <text>`
+  - Override the default version of platform-helper with a specific version or branch. 
 Precedence of version used is version supplied via CLI, then the version found in 
-platform-config.yml/default_versions/terraform-platform-modules. 
-In absence of these inputs, defaults to version '7'.
+platform-config.yml/default_versions/platform-helper. 
+In absence of these inputs, defaults to version '13'.
 - `--deploy-branch <text>`
   - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
