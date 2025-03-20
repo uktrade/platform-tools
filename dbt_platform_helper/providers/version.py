@@ -1,3 +1,5 @@
+import re
+import subprocess
 from abc import ABC
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
@@ -77,3 +79,30 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
         except FileProviderException:
             version_from_file = None
         return version_from_file
+
+
+class AWSCLIInstalledVersionProvider(VersionProvider):
+    @staticmethod
+    def get_semantic_version() -> SemanticVersion:
+        installed_aws_version = None
+        try:
+            response = subprocess.run("aws --version", capture_output=True, shell=True)
+            matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
+            installed_aws_version = SemanticVersion.from_string(matched.group(1))
+        except (ValueError, AttributeError):
+            pass
+        return installed_aws_version
+
+
+class CopilotInstalledVersionProvider(VersionProvider):
+    @staticmethod
+    def get_semantic_version() -> SemanticVersion:
+        copilot_version = None
+
+        try:
+            response = subprocess.run("copilot --version", capture_output=True, shell=True)
+            [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
+        except ValueError:
+            pass
+
+        return SemanticVersion.from_string(copilot_version)

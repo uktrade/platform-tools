@@ -1,6 +1,4 @@
 import os
-import re
-import subprocess
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -12,6 +10,8 @@ from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
+from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
@@ -163,41 +163,36 @@ class PlatformHelperVersioning:
 
 
 class AWSVersioning:
-    def __init__(self, latest_version_provider: VersionProvider = None):
+    def __init__(
+        self,
+        latest_version_provider: VersionProvider = None,
+        installed_version_provider: VersionProvider = None,
+    ):
         self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
+        self.installed_version_provider = (
+            installed_version_provider or AWSCLIInstalledVersionProvider
+        )
 
     def get_version_status(self) -> VersionStatus:
-        installed_aws_version = None
-        try:
-            response = subprocess.run("aws --version", capture_output=True, shell=True)
-            matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-            installed_aws_version = SemanticVersion.from_string(matched.group(1))
-        except ValueError:
-            pass
-
         return VersionStatus(
-            installed_aws_version,
+            self.installed_version_provider.get_semantic_version(),
             self.latest_version_provider.get_semantic_version("aws/aws-cli", True),
         )
 
 
 class CopilotVersioning:
-    def __init__(self, latest_version_provider: VersionProvider = None):
+    def __init__(
+        self,
+        latest_version_provider: VersionProvider = None,
+        installed_version_provider: VersionProvider = None,
+    ):
         self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
-
-    def get_semantic_version(self):
-        copilot_version = None
-
-        try:
-            response = subprocess.run("copilot --version", capture_output=True, shell=True)
-            [copilot_version] = re.findall(r"[0-9.]+", response.stdout.decode("utf8"))
-        except ValueError:
-            pass
-
-        return SemanticVersion.from_string(copilot_version)
+        self.installed_version_provider = (
+            installed_version_provider or CopilotInstalledVersionProvider
+        )
 
     def get_version_status(self) -> VersionStatus:
         return VersionStatus(
-            self.get_semantic_version(),
+            self.installed_version_provider.get_semantic_version(),
             self.latest_version_provider.get_semantic_version("aws/copilot-cli"),
         )
