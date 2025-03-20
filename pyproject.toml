@@ -45,7 +45,7 @@ cfn-lint = "^1.4.2"
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^5.0.28"}
 pyfakefs = "^5.2.2"
-pytest = "^7.3.1"
+pytest = "^8.3.5"
 pytest-env = "^0.8.1"
 tox = "^4.6.0"
 pre-commit = "^3.3.3"

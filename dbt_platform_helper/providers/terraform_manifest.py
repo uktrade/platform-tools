@@ -17,6 +17,9 @@ class TerraformManifestProvider:
         self.file_provider = file_provider
         self.io = io
 
+    def copy_platform_config(self):
+        pass
+
     def generate_codebase_pipeline_config(
         self,
         platform_config: dict,
@@ -140,7 +143,8 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_extensions_module(terraform: dict, terraform_platform_modules_version: str, env: str):
-        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={terraform_platform_modules_version}"
+        # TODO: Unfinished
+        source = f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={terraform_platform_modules_version}"
         terraform["module"] = {
             "extensions": {"source": source, "args": "${local.args}", "environment": env}
         }

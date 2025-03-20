@@ -1,0 +1,28 @@
+---
+plan:
+  name: "Plan"
+  category: "Build"
+  owner: "AWS"
+  provider: "CodeBuild"
+  version: "1"
+
+approve:
+  name: "Approval"
+  category: "Approval"
+  owner: "AWS"
+  provider: "Manual"
+  version: "1"
+
+apply:
+  name: "Apply"
+  category: "Build"
+  owner: "AWS"
+  provider: "CodeBuild"
+  version: "1"
+
+trigger:
+  name: "Trigger"
+  category: "Build"
+  owner: "AWS"
+  provider: "CodeBuild"
+  version: "1"

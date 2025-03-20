@@ -3,3 +3,8 @@
 node_modules
 poetry.lock
 venv
+.terraform
+slack_sdk
+venv
+.env
+.zip
