@@ -663,17 +663,17 @@ class TestMakeAddonsCommand:
         assert "'__all__' does not match 'this-is-not-valid'" in result.output
         assert "'this-is-not-valid' should be instance of 'list'" in result.output
 
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
-    def test_exit_if_no_local_copilot_environments(self, fakefs):
-        fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="application: test-app")
-        fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
+    def test_exit_if_no_local_copilot_environments(self):
+        copilot_mocks = CopilotMocks()
+        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        with pytest.raises(SystemExit):
+            Copilot(**copilot_mocks.params()).make_addons()
 
-        assert result.exit_code == 1
-        assert "No environments found in ./copilot/environments; exiting" in result.output
+        assert (
+            "No environments found in ./copilot/environments; exiting"
+            in copilot_mocks.io.abort_with_error.call_args_list[-1][0][0]
+        )
 
     @pytest.mark.parametrize(
         "addon_config, addon_type, secret_name",
