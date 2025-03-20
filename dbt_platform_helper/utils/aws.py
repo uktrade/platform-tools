@@ -22,6 +22,7 @@ from dbt_platform_helper.providers.aws.exceptions import (
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -417,6 +418,12 @@ def get_image_details(session, application, codebase, image_ref) -> str:
             repositoryName=repository,
             imageIds=[{"imageTag": image_ref}],
         )
+
+        if "imageDetails" not in response:
+            raise ImageNotFoundException(
+                f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
+            )
+
         return response.get("imageDetails")
     except ecr_client.exceptions.ImageNotFoundException:
         raise ImageNotFoundException(image_ref)
@@ -430,14 +437,18 @@ def check_image_exists(session, application, codebase, image_ref):
 
 def find_commit_tag(session, application, codebase, image_ref) -> str:
     image_details = get_image_details(session, application, codebase, image_ref)
-    image_tags = []
 
     for image in image_details:
-        image_tags = image.get("imageTags")
-
-    for tag in image_tags:
-        if tag.startswith("commit-"):
-            return tag
+        image_tags = image.get("imageTags", [])
+        for tag in image_tags:
+            if tag.startswith("commit-"):
+                ClickIOProvider().info(
+                    f'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{tag}" instead.'
+                )
+                return tag
+    ClickIOProvider().warn(
+        f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag. Note that moving tags (e.g. tag-latest) may change when a new version image is built.'
+    )
     return None
 
 
