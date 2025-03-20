@@ -439,7 +439,7 @@ def find_commit_tag(session, application, codebase, image_ref) -> str:
     image_details = get_image_details(session, application, codebase, image_ref)
 
     for image in image_details:
-        image_tags = image.get("imageTags", [])
+        image_tags = image.get("imageTags")
         for tag in image_tags:
             if tag.startswith("commit-"):
                 ClickIOProvider().info(
