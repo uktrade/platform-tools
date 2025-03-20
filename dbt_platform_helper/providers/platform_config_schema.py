@@ -172,7 +172,6 @@ class PlatformConfigSchema:
     def __environments_schema() -> dict:
         _valid_environment_specific_version_overrides = {
             Optional("terraform-platform-modules"): str,
-            Optional("platform-helper"): str,
         }
 
         return {
