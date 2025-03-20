@@ -6,8 +6,8 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.generate import generate as platform_helper_generate
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
-from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 
 
 @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
@@ -56,12 +56,6 @@ def test_platform_helper_generate_shows_a_warning_when_version_is_different_than
     )
 
 
-@patch(
-    "dbt_platform_helper.utils.tool_versioning.get_platform_helper_version_status",
-    new=Mock(
-        return_value=PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
-    ),
-)
 @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
 @patch("dbt_platform_helper.domain.copilot.Copilot.make_addons", new=Mock())
 @patch("dbt_platform_helper.domain.pipelines.Pipelines.generate", new=Mock())

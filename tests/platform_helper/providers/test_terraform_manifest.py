@@ -86,6 +86,10 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert module["repository"] == "${each.value.repository}"
     assert module["deploy_repository"] == "uktrade/my-app-deploy"
     assert (
+        module["deploy_repository_branch"]
+        == '${lookup(each.value, "deploy_repository_branch", "main")}'
+    )
+    assert (
         module["additional_ecr_repository"]
         == '${lookup(each.value, "additional_ecr_repository", null)}'
     )
