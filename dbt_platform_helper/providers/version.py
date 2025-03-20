@@ -1,6 +1,7 @@
 import re
 import subprocess
 from abc import ABC
+from abc import abstractmethod
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
@@ -10,7 +11,6 @@ import requests
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
@@ -28,12 +28,14 @@ class InstalledToolNotFoundException(InstalledVersionProviderException):
 
 
 class VersionProvider(ABC):
-    pass
+    @abstractmethod
+    def get_semantic_version() -> SemanticVersion:
+        raise NotImplementedError("Must be implemented in subclasses")
 
 
 class InstalledVersionProvider:
     @staticmethod
-    def get_installed_tool_version(tool_name: str) -> SemanticVersion:
+    def get_semantic_version(tool_name: str) -> SemanticVersion:
         try:
             return SemanticVersion.from_string(version(tool_name))
         except PackageNotFoundError:
@@ -42,9 +44,9 @@ class InstalledVersionProvider:
 
 # TODO add timeouts and exception handling for requests
 # TODO Alternatively use the gitpython package?
-class GithubVersionProvider(VersionProvider):
+class GithubLatestVersionProvider(VersionProvider):
     @staticmethod
-    def get_latest_version(repo_name: str, tags: bool = False) -> SemanticVersion:
+    def get_semantic_version(repo_name: str, tags: bool = False) -> SemanticVersion:
         if tags:
             tags_list = requests.get(f"https://api.github.com/repos/{repo_name}/tags").json()
             versions = [SemanticVersion.from_string(v["name"]) for v in tags_list]
@@ -57,9 +59,9 @@ class GithubVersionProvider(VersionProvider):
         return SemanticVersion.from_string(package_info["tag_name"])
 
 
-class PyPiVersionProvider(VersionProvider):
+class PyPiLatestVersionProvider(VersionProvider):
     @staticmethod
-    def get_latest_version(project_name: str) -> SemanticVersion:
+    def get_semantic_version(project_name: str) -> SemanticVersion:
         package_info = requests.get(f"https://pypi.org/pypi/{project_name}/json").json()
         released_versions = package_info["releases"].keys()
         parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
@@ -71,7 +73,7 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
     def __init__(self, file_provider: YamlFileProvider):
         self.file_provider = file_provider or YamlFileProvider
 
-    def get_required_version(self) -> SemanticVersion:
+    def get_semantic_version(self) -> SemanticVersion:
         deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
         try:
             loaded_version = self.file_provider.load(deprecated_version_file)
@@ -81,23 +83,22 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
         return version_from_file
 
 
-class AWSVersionProvider(VersionProvider):
+class AWSCLIInstalledVersionProvider(VersionProvider):
     @staticmethod
-    def get_version_status(github_version=GithubVersionProvider) -> VersionStatus:
-        aws_version = None
+    def get_semantic_version() -> SemanticVersion:
+        installed_aws_version = None
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
             matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-            aws_version = SemanticVersion.from_string(matched.group(1))
-        except ValueError:
+            installed_aws_version = SemanticVersion.from_string(matched.group(1))
+        except (ValueError, AttributeError):
             pass
+        return installed_aws_version
 
-        return VersionStatus(aws_version, github_version.get_latest_version("aws/aws-cli", True))
 
-
-class CopilotVersionProvider(VersionProvider):
+class CopilotInstalledVersionProvider(VersionProvider):
     @staticmethod
-    def get_version_status(github_version=GithubVersionProvider) -> VersionStatus:
+    def get_semantic_version() -> SemanticVersion:
         copilot_version = None
 
         try:
@@ -106,7 +107,4 @@ class CopilotVersionProvider(VersionProvider):
         except ValueError:
             pass
 
-        return VersionStatus(
-            SemanticVersion.from_string(copilot_version),
-            github_version.get_latest_version("aws/copilot-cli"),
-        )
+        return SemanticVersion.from_string(copilot_version)
