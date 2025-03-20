@@ -529,9 +529,6 @@ class TestMakeAddonsCommand:
             result.output,
         )
 
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
-    @mock_aws
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
@@ -558,25 +555,40 @@ class TestMakeAddonsCommand:
         )
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
-
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        copilot_mocks = CopilotMocks()
+        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
 
-        assert result.exit_code == 1
-        assert (
+        with pytest.raises(SystemExit):
+            Copilot(**copilot_mocks.params()).make_addons()
+
+        assert any(
             "Environment keys listed in invalid-environment do not match those defined in ./copilot/environments"
-            in result.output
+            in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
         )
-        assert "Missing environments: alsodoesnotexist, doesnotexist" in result.output
-        assert (
+        assert any(
+            "Missing environments: alsodoesnotexist, doesnotexist" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "Environment keys listed in invalid-environment do not match those defined in ./copilot/environments"
+            in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
             "Environment keys listed in invalid-environment-2 do not match those defined in ./copilot/environments"
-            in result.output
+            in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
         )
-        assert "Missing environments: andanotherdoesnotexist" in result.output
-        assert (
-            "Services listed in invalid-environment.services do not exist in ./copilot/"
-            in result.output
+        assert any(
+            "Missing environments: andanotherdoesnotexist" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "Services listed in invalid-environment.services do not exist in ./copilot/" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
         )
 
     def test_exit_with_multiple_errors(self, fakefs):
