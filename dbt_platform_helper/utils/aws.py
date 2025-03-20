@@ -413,22 +413,27 @@ def check_codebase_exists(session: Session, application, codebase: str):
 def get_image_details(session, application, codebase, image_ref) -> str:
     ecr_client = session.client("ecr")
     repository = f"{application.name}/{codebase}"
+
     try:
-        response = ecr_client.describe_images(
+        image_info = ecr_client.describe_images(
             repositoryName=repository,
             imageIds=[{"imageTag": image_ref}],
         )
 
-        if "imageDetails" not in response:
-            raise ImageNotFoundException(
-                f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
-            )
+        image_details_exists(image_info, image_ref)
 
-        return response.get("imageDetails")
+        return image_info.get("imageDetails")
     except ecr_client.exceptions.ImageNotFoundException:
         raise ImageNotFoundException(image_ref)
     except ecr_client.exceptions.RepositoryNotFoundException:
         raise RepositoryNotFoundException(repository)
+
+
+def image_details_exists(image_info, image_ref):
+    if "imageDetails" not in image_info:
+        raise ImageNotFoundException(
+            f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
+        )
 
 
 def check_image_exists(session, application, codebase, image_ref):

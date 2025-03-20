@@ -163,13 +163,10 @@ class Codebase:
         application, session = self.populate_application_values(app, env)
 
         image_ref = f"commit-{commit}" if commit else ref
-
         self.check_image_exists(session, application, codebase, image_ref)
-
         image_ref = self.retrieve_commit_tag(application, codebase, image_ref, session)
 
         codepipeline_client = session.client("codepipeline")
-
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
 
         confirmation_message = f'You are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
