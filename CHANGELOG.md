@@ -1,5 +1,25 @@
 # Changelog
 
+## [13.3.0](https://github.com/uktrade/platform-tools/compare/13.2.0...13.3.0) (2025-03-20)
+
+
+### Features
+
+* Add deploy repository branch to pipeline generate (DBTP-1896) ([#814](https://github.com/uktrade/platform-tools/issues/814)) ([f4e91b2](https://github.com/uktrade/platform-tools/commit/f4e91b2a43be784b02a2e6308cdac4a8c6b8a796))
+
+
+### Bug Fixes
+
+* Correctly resolve versions in config validate table output (off-ticket) ([#818](https://github.com/uktrade/platform-tools/issues/818)) ([d5bf3ff](https://github.com/uktrade/platform-tools/commit/d5bf3fff7a58fcf60a570495ed568cc77aad8b83))
+* Initialise missing parameter provider for codebase commands (off-ticket) ([#812](https://github.com/uktrade/platform-tools/issues/812)) ([7e32663](https://github.com/uktrade/platform-tools/commit/7e326637da0fa2f630b289a9bb5bac59c02ae66e))
+* Update jinja2 for dependabot vulnerability fix ([#804](https://github.com/uktrade/platform-tools/issues/804)) ([66a5959](https://github.com/uktrade/platform-tools/commit/66a59598411349b8abcd4451dbf523dce2c76ac3))
+
+
+### Documentation
+
+* Add initial contributing guidelines (off-ticket) ([#811](https://github.com/uktrade/platform-tools/issues/811)) ([6c4357d](https://github.com/uktrade/platform-tools/commit/6c4357dcb5e4d245eca7caa2f403de3c498c63e8))
+* Correct typo in CONTRIBUTING.md (off-ticket) ([#815](https://github.com/uktrade/platform-tools/issues/815)) ([19e61fe](https://github.com/uktrade/platform-tools/commit/19e61fed7a16cc36e7dce1a24b508efe10315140))
+
 ## [13.2.0](https://github.com/uktrade/platform-tools/compare/13.1.2...13.2.0) (2025-03-07)
 
 
