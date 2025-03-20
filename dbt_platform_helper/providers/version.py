@@ -28,7 +28,7 @@ class InstalledToolNotFoundException(InstalledVersionProviderException):
 
 class VersionProvider(ABC):
     def get_semantic_version() -> SemanticVersion:
-        pass
+        raise NotImplementedError("Must be implemented in subclasses")
 
 
 class InstalledVersionProvider:
