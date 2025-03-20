@@ -470,9 +470,6 @@ class TestMakeAddonsCommand:
         assert result.exit_code == 1
         assert "No services found in ./copilot/; exiting" in result.output
 
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
-    @mock_aws
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
@@ -490,14 +487,16 @@ class TestMakeAddonsCommand:
         )
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
-
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
+        copilot_mocks = CopilotMocks()
+        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        with pytest.raises(SystemExit):
+            Copilot(**copilot_mocks.params()).make_addons()
 
-        assert result.exit_code == 1
-        assert (
-            "Services listed in invalid-entry.services do not exist in ./copilot/" in result.output
+        assert any(
+            "Services listed in invalid-entry.services do not exist in ./copilot/" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
         )
 
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
