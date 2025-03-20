@@ -1,6 +1,7 @@
 import re
 import subprocess
 from abc import ABC
+from abc import abstractmethod
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
@@ -27,6 +28,7 @@ class InstalledToolNotFoundException(InstalledVersionProviderException):
 
 
 class VersionProvider(ABC):
+    @abstractmethod
     def get_semantic_version() -> SemanticVersion:
         raise NotImplementedError("Must be implemented in subclasses")
 
