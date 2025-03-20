@@ -72,8 +72,6 @@ class ConfigMocks:
             "platform_helper_versioning": self.platform_helper_versioning,
             "aws_versioning": self.aws_versioning,
             "copilot_versioning": self.copilot_versioning,
-            # "get_template_generated_with_version": self.get_template_generated_with_version,
-            # "validate_template_version": self.validate_template_version,
         }
 
 
