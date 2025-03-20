@@ -159,35 +159,33 @@ class Codebase:
 
     def deploy(self, app: str, env: str, codebase: str, commit: str = None, ref: str = None):
         """Trigger a CodePipeline pipeline based deployment."""
-        session = self.get_aws_session_or_abort()
 
-        application = self.load_application(app, default_session=session)
-        if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundException(application.name, env)
+        application, session = self.populate_application_values(app, env)
 
         image_ref = f"commit-{commit}" if commit else ref
 
         self.check_image_exists(session, application, codebase, image_ref)
 
-        if not image_ref.startswith("commit-"):
-            commit_tag = self.find_commit_tag(session, application, codebase, image_ref)
-            image_ref = commit_tag if commit_tag else image_ref
+        image_ref = self.retrieve_commit_tag(application, codebase, image_ref, session)
 
         codepipeline_client = session.client("codepipeline")
 
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
 
+        confirmation_message = f'You are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+        build_options = {
+            "name": pipeline_name,
+            "variables": [
+                {"name": "ENVIRONMENT", "value": env},
+                {"name": "IMAGE_TAG", "value": image_ref},
+            ],
+        }
+
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
-            {
-                "name": pipeline_name,
-                "variables": [
-                    {"name": "ENVIRONMENT", "value": env},
-                    {"name": "IMAGE_TAG", "value": image_ref},
-                ],
-            },
+            confirmation_message,
+            build_options,
         )
 
         if build_url:
@@ -197,6 +195,19 @@ class Codebase:
             )
 
         raise ApplicationDeploymentNotTriggered(codebase)
+
+    def retrieve_commit_tag(self, application, codebase, image_ref, session):
+        if not image_ref.startswith("commit-"):
+            commit_tag = self.find_commit_tag(session, application, codebase, image_ref)
+            image_ref = commit_tag if commit_tag else image_ref
+        return image_ref
+
+    def populate_application_values(self, app, env):
+        session = self.get_aws_session_or_abort()
+        application = self.load_application(app, default_session=session)
+        if not application.environments.get(env):
+            raise ApplicationEnvironmentNotFoundException(application.name, env)
+        return application, session
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
