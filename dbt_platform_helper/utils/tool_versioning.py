@@ -40,6 +40,16 @@ def get_required_terraform_platform_modules_version(
     return [version for version in version_preference_order if version][0]
 
 
+def get_required_platform_helper_version(
+    cli_platform_helper_version, platform_config_platform_helper_default_version
+):
+    version_preference_order = [
+        cli_platform_helper_version,
+        platform_config_platform_helper_default_version,
+    ]
+    return [version for version in version_preference_order if version][0]
+
+
 ##################################################################################
 # Only used in Config domain
 # TODO Relocate along with tests when we refactor config command in DBTP-1538
