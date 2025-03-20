@@ -458,17 +458,19 @@ class TestMakeAddonsCommand:
             in result.output
         )
 
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
-    @mock_aws
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
         fakefs.create_file("copilot/environments/development/manifest.yml")
+        copilot_mocks = CopilotMocks()
+        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        with pytest.raises(SystemExit):
+            Copilot(**copilot_mocks.params()).make_addons()
 
-        assert result.exit_code == 1
-        assert "No services found in ./copilot/; exiting" in result.output
+        assert any(
+            "No services found in ./copilot/; exiting" in str(arg)
+            for arg in copilot_mocks.io.abort_with_error.call_args_list
+        )
 
     def test_exit_with_error_if_invalid_services(self, fakefs):
         fakefs.create_file(
