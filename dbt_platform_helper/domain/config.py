@@ -170,6 +170,18 @@ class Config:
         )
         return accounts_list
 
+    def _add_version_status_row(
+        self, table: PrettyTable, header: str, version_status: VersionStatus
+    ):
+        table.add_row(
+            [
+                header,
+                str(version_status.installed),
+                str(version_status.latest),
+                no if version_status.is_outdated() else yes,
+            ]
+        )
+
     def _check_tool_versions(
         self,
         platform_helper_version_status: PlatformHelperVersionStatus,
@@ -195,29 +207,10 @@ class Config:
         ]
         tool_versions_table.align["Tool"] = "l"
 
-        tool_versions_table.add_row(
-            [
-                "aws",
-                str(aws_version_status.installed),
-                str(aws_version_status.latest),
-                no if aws_version_status.is_outdated() else yes,
-            ]
-        )
-        tool_versions_table.add_row(
-            [
-                "copilot",
-                str(copilot_version_status.installed),
-                str(copilot_version_status.latest),
-                no if copilot_version_status.is_outdated() else yes,
-            ]
-        )
-        tool_versions_table.add_row(
-            [
-                "dbt-platform-helper",
-                str(platform_helper_version_status.installed),
-                str(platform_helper_version_status.latest),
-                no if platform_helper_version_status.is_outdated() else yes,
-            ]
+        self._add_version_status_row(tool_versions_table, "aws", aws_version_status)
+        self._add_version_status_row(tool_versions_table, "copilot", copilot_version_status)
+        self._add_version_status_row(
+            tool_versions_table, "dbt-platform-helper", platform_helper_version_status
         )
 
         self.io.info(tool_versions_table)
