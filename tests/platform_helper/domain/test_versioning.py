@@ -17,6 +17,7 @@ from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
+from dbt_platform_helper.providers.version import VersionProvider
 
 
 class PlatformHelperVersioningMocks:
@@ -355,17 +356,31 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         mocks.io.error.assert_not_called()
 
 
+class VersioningMocks:
+    def __init__(self, **kwargs):
+        self.latest_version_provider = kwargs.get(
+            "latest_version_provider", Mock(spec=VersionProvider)
+        )
+        self.installed_version_provider = kwargs.get(
+            "installed_version_provider", Mock(spec=VersionProvider)
+        )
+
+    def params(self):
+        return {
+            "latest_version_provider": self.latest_version_provider,
+            "installed_version_provider": self.installed_version_provider,
+        }
+
+
 class TestAWSVersioning:
     def test_get_aws_versioning(self):
-        installed_version_provider = Mock()
-        installed_version_provider.get_semantic_version.return_value = SemanticVersion(1, 0, 0)
+        mocks = VersioningMocks()
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
 
-        github_version_provider = Mock()
-        github_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-
-        result = AWSVersioning(
-            github_version_provider, installed_version_provider
-        ).get_version_status()
+        result = AWSVersioning(**mocks.params()).get_version_status()
 
         assert result.installed == SemanticVersion(1, 0, 0)
         assert result.latest == SemanticVersion(2, 0, 0)
@@ -373,15 +388,13 @@ class TestAWSVersioning:
 
 class TestCopilotVersioning:
     def test_copilot_versioning(self):
-        installed_version_provider = Mock()
-        installed_version_provider.get_semantic_version.return_value = SemanticVersion(1, 0, 0)
+        mocks = VersioningMocks()
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
 
-        github_version_provider = Mock()
-        github_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-
-        result = CopilotVersioning(
-            github_version_provider, installed_version_provider
-        ).get_version_status()
+        result = CopilotVersioning(**mocks.params()).get_version_status()
 
         assert result.installed == SemanticVersion(1, 0, 0)
         assert result.latest == SemanticVersion(2, 0, 0)
