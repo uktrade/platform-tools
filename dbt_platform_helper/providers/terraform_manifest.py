@@ -142,7 +142,7 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_extensions_module(terraform: dict, terraform_platform_modules_version: str, env: str):
-        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={terraform_platform_modules_version}"
+        source = f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={terraform_platform_modules_version}"
         terraform["module"] = {
             "extensions": {"source": source, "args": "${local.args}", "environment": env}
         }
