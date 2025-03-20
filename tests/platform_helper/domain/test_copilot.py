@@ -703,18 +703,15 @@ class TestMakeAddonsCommand:
         }
 
         Copilot(**copilot_mocks.params()).make_addons()
-
         if addon_type == "redis":
-            any(
+            assert (
                 "REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/REDIS"
-                in arg
-                for arg in copilot_mocks.io.info.call_args_list
+                in copilot_mocks.io.info.call_args_list[-1][0][0]
             )
         else:
-            any(
+            assert (
                 "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
-                in arg
-                for arg in copilot_mocks.io.info.call_args_list
+                in copilot_mocks.io.info.call_args_list[-1][0][0]
             )
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
