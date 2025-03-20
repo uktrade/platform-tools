@@ -172,7 +172,7 @@ class Config:
 
     def _check_tool_versions(
         self,
-        platform_helper_versions: PlatformHelperVersionStatus,
+        platform_helper_version_status: PlatformHelperVersionStatus,
         aws_version_status: VersionStatus,
         copilot_version_status: VersionStatus,
     ):
@@ -180,9 +180,7 @@ class Config:
 
         recommendations = {}
 
-        local_copilot_version = copilot_version_status.installed
-        copilot_latest_release = copilot_version_status.latest
-        if local_copilot_version is None:
+        if copilot_version_status.installed is None:
             recommendations["install-copilot"] = RECOMMENDATIONS["install-copilot"]
 
         if aws_version_status.installed is None:
@@ -216,9 +214,9 @@ class Config:
         tool_versions_table.add_row(
             [
                 "dbt-platform-helper",
-                str(platform_helper_versions.installed),
-                str(platform_helper_versions.latest),
-                no if platform_helper_versions.is_outdated() else yes,
+                str(platform_helper_version_status.installed),
+                str(platform_helper_version_status.latest),
+                no if platform_helper_version_status.is_outdated() else yes,
             ]
         )
 
@@ -233,13 +231,13 @@ class Config:
         if copilot_version_status.is_outdated() and "install-copilot" not in recommendations:
             recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
                 tool="AWS Copilot",
-                version=str(copilot_latest_release),
+                version=str(copilot_version_status.latest),
             )
 
-        if platform_helper_versions.is_outdated():
+        if platform_helper_version_status.is_outdated():
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=str(platform_helper_versions.latest))
+            ].format(version=str(platform_helper_version_status.latest))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
