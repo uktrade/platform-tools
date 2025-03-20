@@ -1,15 +1,17 @@
 import os
 
+from dbt_platform_helper.entities.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.entities.semantic_version import (
+    IncompatibleMinorVersionException,
+)
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
+from dbt_platform_helper.entities.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.entities.version_status import VersionStatus
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMajorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMinorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
 from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
@@ -17,8 +19,6 @@ from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 from dbt_platform_helper.providers.version import VersionProvider
-from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
-from dbt_platform_helper.providers.version_status import VersionStatus
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 

@@ -1,8 +1,8 @@
 import pytest
 
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
-from dbt_platform_helper.providers.version_status import VersionStatus
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
+from dbt_platform_helper.entities.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.entities.version_status import VersionStatus
 
 
 class TestVersionStatus:
