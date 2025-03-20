@@ -271,6 +271,7 @@ def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
     mocks.find_commit_tag.return_value = "commit-abc123"
     codebase = Codebase(**mocks.params())
 
+    # 'commit' is None as we're only interested in the scenario where 'ref' is used
     codebase.deploy("test-application", "development", "application", None, "latest")
 
     mocks.find_commit_tag.assert_called_once_with(
@@ -299,6 +300,7 @@ def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
 
     codebase = Codebase(**mocks.params())
 
+    # 'ref' is None as we're only interested in the scenario where 'commit' is used
     codebase.deploy("test-application", "development", "application", "abc123", None)
 
     mocks.find_commit_tag.assert_not_called()
