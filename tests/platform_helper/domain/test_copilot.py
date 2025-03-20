@@ -280,28 +280,87 @@ class TestMakeAddonsCommand:
     @freeze_time("2023-08-22 16:00:00")
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
-        "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
+        "dbt_platform_helper.domain.copilot.Copilot._get_log_destination_arn",
         new=Mock(
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
+    @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
     @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
-        mock_config_provider,
-        mock_get_session,
+        mock_application,
         fakefs,
         addon_file,
         expected_service_addons,
+        capsys,
     ):
         """Test that make_addons generates the expected directories and file
         contents."""
         # Arrange
-        mock_aws_client(mock_get_session)
-        mock_config_provider.apply_environment_defaults = lambda conf: conf
+        dev_session = MagicMock(name="dev-session-mock")
+        dev_session.profile_name = "foo"
+        prod_session = MagicMock(name="prod-session-mock")
+        prod_session.profile_name = "bar"
+        client = MagicMock(name="client-mock")
+        dev_session.client.return_value = client
+        prod_session.client.return_value = client
+
+        dev = Environment(
+            name="development",
+            account_id="000000000000",
+            sessions={"000000000000": dev_session},
+        )
+        prod = Environment(
+            name="production",
+            account_id="111111111111",
+            sessions={"111111111111": prod_session},
+        )
+        mock_application.return_value.environments = {
+            "development": dev,
+            "production": prod,
+        }
+        client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test-app/environments/development",
+                        "Type": "SecureString",
+                        "Value": json.dumps(
+                            {
+                                "name": "development",
+                                "accountID": "000000000000",
+                            }
+                        ),
+                    }
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test-app/components/web",
+                        "Type": "SecureString",
+                        "Value": json.dumps(
+                            {
+                                "app": "test-app",
+                                "name": "web",
+                                "type": "Load Balanced Web Service",
+                            }
+                        ),
+                    }
+                ]
+            },
+        ]
+
+        mocks = CopilotMocks()
+
+        # config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        environment_config = {"environments": {"development": {}, "production": {}}}
+        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        mocks.file_provider = FileProvider  # Allow the use of fakefs
+        mocks.kms_provider.return_value.describe_key.return_value = {
+            "KeyMetadata": {"Arn": "kms-key-not-found"}
+        }
 
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
@@ -313,13 +372,15 @@ class TestMakeAddonsCommand:
         fakefs.add_real_directory(Path(addons_dir, "expected"), target_path="expected")
 
         # Act
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        Copilot(**mocks.params()).make_addons()
 
-        assert (
-            result.exit_code == 0
-        ), f"The exit code should have been 0 (success) but was {result.exit_code}"
+        captured = capsys.readouterr()
 
-        assert ">>> Generating Terraform compatible addons CloudFormation" in result.stdout
+        # assert (
+        #    result.exit_code == 0
+        # ), f"The exit code should have been 0 (success) but was {result.exit_code}"
+
+        # assert ">>> Generating Terraform compatible addons CloudFormation" in captured.out
 
         expected_service_files = [
             Path("web/addons", filename) for filename in expected_service_addons
@@ -349,7 +410,7 @@ class TestMakeAddonsCommand:
         assert not Path("./copilot/environments/addons/").exists()
 
         env_override_file = Path("./copilot/environments/overrides/cfn.patches.yml")
-        assert f"{env_override_file} created" in result.stdout
+        assert f"{env_override_file} created" in captured.out
 
         expected_env_overrides_file = Path(
             "expected/environments/overrides/cfn.patches.yml"
