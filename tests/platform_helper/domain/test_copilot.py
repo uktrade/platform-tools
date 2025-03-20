@@ -625,11 +625,7 @@ class TestMakeAddonsCommand:
         assert "Names cannot contain two adjacent periods" in result.output
         assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
 
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
-    def test_exit_if_services_key_invalid(
-        self, mock_kms_provider, mock_get_aws_session_or_abort, fakefs
-    ):
+    def test_exit_if_services_key_invalid(self, fakefs):
         """
         The services key can be set to a list of services, or '__all__' which
         denotes that it should be applied to all services.
@@ -656,12 +652,25 @@ class TestMakeAddonsCommand:
 
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        copilot_mocks = CopilotMocks()
+        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        with pytest.raises(SystemExit):
+            Copilot(**copilot_mocks.params()).make_addons()
 
-        assert result.exit_code == 1
-        assert "Key 'services' error:" in result.output
-        assert "'__all__' does not match 'this-is-not-valid'" in result.output
-        assert "'this-is-not-valid' should be instance of 'list'" in result.output
+        copilot_mocks.io.abort_with_error.assert_called_with(
+            "Invalid platform-config.yml provided, see above warnings"
+        )
+        assert any(
+            "Key 'services' error:" in str(arg) for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "'__all__' does not match 'this-is-not-valid'" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "'this-is-not-valid' should be instance of 'list'" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
 
     def test_exit_if_no_local_copilot_environments(self):
         copilot_mocks = CopilotMocks()
