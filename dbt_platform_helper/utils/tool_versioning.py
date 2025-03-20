@@ -2,6 +2,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from dbt_platform_helper.constants import DEFAULT_PLATFORM_HELPER_VERSION
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -46,6 +47,7 @@ def get_required_platform_helper_version(
     version_preference_order = [
         cli_platform_helper_version,
         platform_config_platform_helper_default_version,
+        DEFAULT_PLATFORM_HELPER_VERSION,
     ]
     return [version for version in version_preference_order if version][0]
 

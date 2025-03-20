@@ -28,7 +28,7 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        terraform_platform_modules_version="7",
+        platform_helper_version="13",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
     )
@@ -78,7 +78,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     module = json_content["module"]["codebase-pipelines"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref=7"
+        == f"git::https://github.com/uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=13"
     )
     assert module["for_each"] == "${local.all_codebases}"
     assert module["application"] == "${local.application}"
@@ -119,7 +119,7 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
 
     template_provider.generate_codebase_pipeline_config(
         config,
-        terraform_platform_modules_version="7",
+        platform_helper_version="13",
         ecr_imports={"application": "test_project/application"},
         deploy_repository="uktrade/my-app-deploy",
     )
@@ -144,7 +144,7 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        terraform_platform_modules_version="7",
+        platform_helper_version="13",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
     )
@@ -156,15 +156,15 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 
 @freeze_time("2025-01-16 13:00:00")
 @pytest.mark.parametrize(
-    "app, env, tpm_version, expected_aws_account",
+    "app, env, platform_helper_version, expected_aws_account",
     [
-        ("app1", "dev", "7", "non-prod-acc"),
-        ("app2", "staging", "8", "non-prod-acc"),
-        ("app3", "prod", "9", "prod-acc"),
+        ("app1", "dev", "13", "non-prod-acc"),
+        ("app2", "staging", "12", "non-prod-acc"),
+        ("app3", "prod", "13", "prod-acc"),
     ],
 )
 def test_generate_environment_config_creates_file(
-    platform_env_config, app, env, tpm_version, expected_aws_account
+    platform_env_config, app, env, platform_helper_version, expected_aws_account
 ):
     platform_env_config["application"] = app
     mock_file_provider = Mock()
@@ -176,7 +176,7 @@ def test_generate_environment_config_creates_file(
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
     template_provider.generate_environment_config(
-        platform_env_config, env=env, terraform_platform_modules_version=tpm_version
+        platform_env_config, env=env, platform_helper_version=platform_helper_version
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -233,7 +233,7 @@ def test_generate_environment_config_creates_file(
     module = json_content["module"]["extensions"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={tpm_version}"
+        == f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
     )
     assert module["args"] == "${local.args}"
     assert module["environment"] == env
@@ -263,7 +263,7 @@ def test_generate_environment_config_with_multiple_extensions_adds_moved_blocks_
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
     template_provider.generate_environment_config(
-        platform_env_config, env="dev", terraform_platform_modules_version="7"
+        platform_env_config, env="dev", platform_helper_version="13"
     )
 
     _, _, contents, _ = mock_file_provider.mkfile.call_args.args
@@ -337,7 +337,7 @@ def test_generate_environment_config_when_old_manifest_not_deleted_does_not_outp
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
     template_provider.generate_environment_config(
-        platform_env_config, env="dev", terraform_platform_modules_version="7"
+        platform_env_config, env="dev", platform_helper_version="13"
     )
 
     mock_io.info.assert_called_once_with("File created")
