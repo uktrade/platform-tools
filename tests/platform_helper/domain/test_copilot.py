@@ -463,7 +463,6 @@ class TestMakeAddonsCommand:
     @mock_aws
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
-
         fakefs.create_file("copilot/environments/development/manifest.yml")
 
         result = CliRunner().invoke(copilot, ["make-addons"])
@@ -580,9 +579,6 @@ class TestMakeAddonsCommand:
             in result.output
         )
 
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider", new=Mock())
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider", new=Mock())
-    @mock_aws
     def test_exit_with_multiple_errors(self, fakefs):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
@@ -612,18 +608,38 @@ class TestMakeAddonsCommand:
         )
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
-
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        copilot_mocks = CopilotMocks()
+        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
 
-        assert result.exit_code == 1
-        assert f"Errors found in {PLATFORM_CONFIG_FILE}:" in result.output
-        assert "'Delete' does not match 'ThisIsInvalid'" in result.output
-        assert "Names cannot be prefixed 'sthree-'" in result.output
-        assert "Names cannot be suffixed '-s3alias'" in result.output
-        assert "Names cannot contain two adjacent periods" in result.output
-        assert "Names can only contain the characters 0-9, a-z, '.' and '-'." in result.output
+        with pytest.raises(SystemExit):
+            Copilot(**copilot_mocks.params()).make_addons()
+
+        assert any(
+            f"Errors found in {PLATFORM_CONFIG_FILE}:" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "'Delete' does not match 'ThisIsInvalid'" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "Names cannot be prefixed 'sthree-'" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "Names cannot be suffixed '-s3alias'" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "Names cannot contain two adjacent periods" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
+        assert any(
+            "Names can only contain the characters 0-9, a-z, '.' and '-'." in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
+        )
 
     def test_exit_if_services_key_invalid(self, fakefs):
         """
