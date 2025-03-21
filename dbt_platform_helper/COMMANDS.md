@@ -483,7 +483,7 @@ platform-helper environment generate --name <name>
 ## Usage
 
 ```
-platform-helper environment generate-terraform --name <name> [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+platform-helper environment generate-terraform --name <name> [--platform-helper-version <platform_helper_version>] 
 ```
 
 ## Options
@@ -491,8 +491,8 @@ platform-helper environment generate-terraform --name <name> [--terraform-platfo
 - `--name
 -n <text>`
   - The name of the environment to generate a manifest for.
-- `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules. (Default version is '7').
+- `--platform-helper-version <text>`
+  - Override the default version of platform-helper. (Default version is '13').
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
