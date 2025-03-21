@@ -419,6 +419,63 @@ def test_codebase_deploy_does_not_trigger_deployment_without_confirmation(commit
         codebase.deploy("test-application", "development", "application", commit, ref)
 
 
+def test_codebase_deploy_raises_error_when_no_commit_or_ref_provided():
+    mocks = CodebaseMocks()
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as system_exit_info:
+        codebase.deploy(app="test-app", env="dev", codebase="application", commit=None, ref=None)
+
+    assert system_exit_info.type == SystemExit
+    assert system_exit_info.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+    )
+
+
+def test_codebase_deploy_raises_error_when_both_commit_and_ref_are_provided():
+    mocks = CodebaseMocks()
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as system_exit_info:
+        codebase.deploy(
+            app="test-app",
+            env="dev",
+            codebase="application",
+            commit="abc123",
+            ref="latest",
+        )
+
+    assert system_exit_info.type == SystemExit
+    assert system_exit_info.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
+    )
+
+
+def test_codebase_deploy_warns_when_commit_is_used():
+    mocks = CodebaseMocks()
+    mocks.io.confirm.return_value = False
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(ApplicationDeploymentNotTriggered):
+        codebase.deploy(
+            app="test-application",
+            env="development",
+            codebase="application",
+            commit="ab1c23d",
+            ref=None,
+        )
+
+    mocks.io.warn.assert_called_once_with(
+        "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+    )
+
+
 def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")

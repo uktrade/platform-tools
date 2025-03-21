@@ -78,22 +78,6 @@ def build(app, codebase, commit):
 )
 def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = None):
 
-    if commit:
-        ClickIOProvider().warn(
-            "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
-        )
-
-    none_provided = not (commit or ref)
-    both_provided = commit and ref
-    if none_provided:
-        ClickIOProvider().abort_with_error(
-            "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
-        )
-    elif both_provided:
-        ClickIOProvider().abort_with_error(
-            "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
-        )
-
     try:
         Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).deploy(
             app, env, codebase, commit, ref

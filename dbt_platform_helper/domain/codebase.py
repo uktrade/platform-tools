@@ -160,6 +160,8 @@ class Codebase:
     def deploy(self, app: str, env: str, codebase: str, commit: str = None, ref: str = None):
         """Trigger a CodePipeline pipeline based deployment."""
 
+        self.validate_commit_and_ref_flags(commit, ref)
+
         application, session = self.populate_application_values(app, env)
 
         image_ref = f"commit-{commit}" if commit else ref
@@ -192,6 +194,23 @@ class Codebase:
             )
 
         raise ApplicationDeploymentNotTriggered(codebase)
+
+    def validate_commit_and_ref_flags(self, commit, ref):
+        if commit:
+            self.io.warn(
+                "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+            )
+
+        none_provided = not (commit or ref)
+        both_provided = commit and ref
+        if none_provided:
+            self.io.abort_with_error(
+                "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+            )
+        elif both_provided:
+            self.io.abort_with_error(
+                "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
+            )
 
     def retrieve_commit_tag(self, application, codebase, image_ref, session):
         if not image_ref.startswith("commit-"):
