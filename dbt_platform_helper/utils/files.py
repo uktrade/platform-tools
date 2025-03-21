@@ -1,11 +1,6 @@
 import click
-import yaml
 
 from dbt_platform_helper.providers.files import FileProvider
-
-
-def to_yaml(value):
-    return yaml.dump(value, sort_keys=False)
 
 
 # TODO - extract file provider functionality from this - and figure out what it actually does!
