@@ -10,11 +10,9 @@ from unittest.mock import patch
 import pytest
 import yaml
 from botocore.exceptions import ClientError
-from click.testing import CliRunner
 from freezegun import freeze_time
 from moto import mock_aws
 
-from dbt_platform_helper.commands.copilot import copilot
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
@@ -24,7 +22,6 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.kms import KMSProvider
 from dbt_platform_helper.utils.application import Environment
 from tests.platform_helper.conftest import FIXTURES_DIR
-from tests.platform_helper.conftest import mock_aws_client
 
 REDIS_STORAGE_CONTENTS = {
     "redis": {"type": "redis", "environments": {"default": {"engine": "6.2", "plan": "small"}}}
@@ -569,17 +566,6 @@ class TestMakeAddonsCommand:
         for f in old_addon_files:
             path = Path("copilot", f)
             assert not path.exists(), f"{path} should not exist"
-
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort", new=Mock())
-    @mock_aws
-    def test_exit_if_no_config_file(self, fakefs):
-        result = CliRunner().invoke(copilot, ["make-addons"])
-
-        assert result.exit_code == 1
-        assert (
-            f"`{PLATFORM_CONFIG_FILE}` is missing. Please check it exists and you are in the root directory of your deployment project."
-            in result.output
-        )
 
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)

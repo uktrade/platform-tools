@@ -59,7 +59,6 @@ class Copilot:
         self.session = session
 
     def make_addons(self):
-        self.config_provider.config_file_check()
         try:
             config = self.config_provider.load_and_validate_platform_config()
         except SchemaError as ex:
