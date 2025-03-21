@@ -817,46 +817,59 @@ class TestMakeAddonsCommand:
 
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
-        "dbt_platform_helper.domain.copilot.Copilot.get_log_destination_arn",
+        "dbt_platform_helper.domain.copilot.Copilot._get_log_destination_arn",
         new=Mock(
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.domain.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.copilot.ConfigProvider")
-    @patch("dbt_platform_helper.commands.copilot.KMSProvider")
+    @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
     def test_appconfig_ip_filter_policy_is_applied_to_each_service_by_default(
         self,
-        mock_kms_provider,
-        mock_config_provider,
-        mock_get_aws_session_or_abort,
-        mock_get_aws_session_or_abort2,
+        mock_application,
         fakefs,
     ):
-        mock_config_provider.apply_environment_defaults = lambda conf: conf
-        services = ["web", "web-celery"]
-        fakefs.create_file(
-            PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "test-app", "extensions": {}})
-        )
+
+        mock_config = {
+            "application": "test-app",
+            "environments": {"development": {}},
+            "extensions": {"foo": {"type": "s3", "environments": {"development": {}}}},
+        }
+
+        fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(mock_config))
 
         fakefs.create_file(
             "./copilot/environments/development/manifest.yml",
         )
 
-        for service in services:
+        for service in ["test-1", "test-2"]:
             fakefs.create_file(
                 f"copilot/{service}/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS)
             )
 
-        result = CliRunner().invoke(copilot, ["make-addons"])
+        mocks = CopilotMocks()
 
-        for service in services:
-            for custom_addon in ["appconfig-ipfilter.yml", "subscription-filter.yml"]:
-                path = Path(f"copilot/{service}/addons/{custom_addon}")
-                assert path.exists()
+        mocks.file_provider = (
+            FileProvider  # TODO rename attribute to file_writer as it's only used for writing?
+        )
 
-        assert result.exit_code == 0
+        mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
+        mocks.config_provider.apply_environment_defaults = lambda conf: conf
+
+        mocks.copilot_templating = Mock(spec=CopilotTemplating)
+        mocks.copilot_templating.generate_cross_account_s3_policies.return_value = "TestData"
+
+        mock_kms_instance = Mock()
+        mock_kms_instance.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
+        mock_kms = Mock()
+        mock_kms.return_value = mock_kms_instance
+        mocks.kms_provider = mock_kms
+
+        Copilot(**mocks.params()).make_addons()
+
+        assert Path(f"copilot/test-1/addons/appconfig-ipfilter.yml").exists()
+        assert Path(f"copilot/test-1/addons/subscription-filter.yml").exists()
+        assert Path(f"copilot/test-2/addons/appconfig-ipfilter.yml").exists()
+        assert Path(f"copilot/test-2/addons/subscription-filter.yml").exists()
 
     @freeze_time("2023-08-22 16:00:00")
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
