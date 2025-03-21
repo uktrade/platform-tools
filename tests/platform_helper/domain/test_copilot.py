@@ -815,6 +815,10 @@ class TestMakeAddonsCommand:
                 in copilot_mocks.io.info.call_args_list[-1][0][0]
             )
 
+    # TODO this test set up has changed significantly in order to get it to pass
+    # Review against previous version with debugging to assure that the test needing changed was
+    # not indicative of a change in functionality in the domain
+    # In particular, the test would not pass with the previous mock config data.
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot._get_log_destination_arn",
