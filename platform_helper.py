@@ -42,4 +42,4 @@ platform_helper.add_command(database_commands)
 platform_helper.add_command(version_commands)
 
 if __name__ == "__main__":
-    platform_helper(auto_envvar_prefix="PLATFORM")
+    platform_helper(auto_envvar_prefix="DBT_PLATFORM")
