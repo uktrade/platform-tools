@@ -43,6 +43,7 @@ class CodebaseMocks:
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
         self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
+        self.find_commit_tag = kwargs.get("find_commit_tag", Mock(return_value=""))
         self.get_image_build_project = kwargs.get(
             "get_image_build_project",
             Mock(return_value="test-application-application-codebase-image-build"),
@@ -60,6 +61,7 @@ class CodebaseMocks:
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
             "check_image_exists": self.check_image_exists,
+            "find_commit_tag": self.find_commit_tag,
             "get_image_build_project": self.get_image_build_project,
             "get_manual_release_pipeline": self.get_manual_release_pipeline,
             "io": self.io,
@@ -205,7 +207,10 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
         codebase.build("test-application", "application", "ab1c234")
 
 
-def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_application):
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
+    mock_application, commit, ref
+):
     mocks = CodebaseMocks()
     mocks.io.confirm.return_value = True
     mock_application.environments = {
@@ -223,21 +228,22 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     }
 
     codebase = Codebase(**mocks.params())
-    codebase.deploy("test-application", "development", "application", "ab1c23d")
+    codebase.deploy("test-application", "development", "application", commit, ref)
+
+    image_ref = f"commit-{commit}" if commit else ref
 
     client.start_pipeline_execution.assert_called_with(
         name="test-application-application-manual-release",
         variables=[
             {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "commit-ab1c23d"},
+            {"name": "IMAGE_TAG", "value": image_ref},
         ],
     )
-
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with commit '
-                '"ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                'You are about to deploy "test-application" for "application" with image reference '
+                f'"{image_ref}" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -252,18 +258,80 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(mock_appl
     )
 
 
+def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
+    mocks = CodebaseMocks()
+    mock_application = MagicMock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": MagicMock()}
+    mocks.load_application.return_value = mock_application
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
+    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
+
+    mocks.find_commit_tag.return_value = "commit-abc123"
+    codebase = Codebase(**mocks.params())
+
+    # 'commit' is None as we're only interested in the scenario where 'ref' is used
+    codebase.deploy("test-application", "development", "application", None, "latest")
+
+    mocks.find_commit_tag.assert_called_once_with(
+        mocks.get_aws_session_or_abort(), mock_application, "application", "latest"
+    )
+
+    client.start_pipeline_execution.assert_called_once_with(
+        name="test-application-application-manual-release",
+        variables=[
+            {"name": "ENVIRONMENT", "value": "development"},
+            {"name": "IMAGE_TAG", "value": "commit-abc123"},
+        ],
+    )
+
+
+def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
+
+    mocks = CodebaseMocks()
+    mock_application = MagicMock()
+    mock_application.name = "test-application"
+    mock_application.environments = {"development": MagicMock()}
+    mocks.load_application.return_value = mock_application
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
+    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
+
+    codebase = Codebase(**mocks.params())
+
+    # 'ref' is None as we're only interested in the scenario where 'commit' is used
+    codebase.deploy("test-application", "development", "application", "abc123", None)
+
+    mocks.find_commit_tag.assert_not_called()
+
+    client.start_pipeline_execution.assert_called_once_with(
+        name="test-application-application-manual-release",
+        variables=[
+            {"name": "ENVIRONMENT", "value": "development"},
+            {"name": "IMAGE_TAG", "value": "commit-abc123"},
+        ],
+    )
+
+
 @pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
 def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
-    mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
+    if exception_type == ImageNotFoundException:
+        mocks = CodebaseMocks(
+            check_image_exists=Mock(side_effect=exception_type("nonexistent-ref"))
+        )
+    else:
+        mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
 
     with pytest.raises(exception_type):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
 
-def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref):
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-commit-hash"))
+        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
@@ -271,12 +339,13 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository():
 
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
 
-def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_aborts_with_a_nonexistent_image_ref(commit, ref):
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-commit-hash"))
+        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
@@ -284,10 +353,11 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_tag():
 
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
 
-def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(commit, ref):
     mocks = CodebaseMocks()
     mocks.run_subprocess.return_value.stderr = ""
     mocks.io.confirm.return_value = False
@@ -295,14 +365,17 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "ab1c23d")
+        codebase.deploy("test-application", "development", "application", commit, ref)
 
     assert str(exc.value) == "Your deployment for application was not triggered."
     assert isinstance(exc.value, ApplicationDeploymentNotTriggered)
+
+    image_ref = f"commit-{commit}" if commit else ref
+
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with commit "ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                f'You are about to deploy "test-application" for "application" with image reference "{image_ref}" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
@@ -310,16 +383,20 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation():
     client.start_pipeline_execution.assert_not_called()
 
 
-def test_codebase_deploy_does_not_trigger_build_without_an_application():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_build_without_an_application(commit, ref):
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundException):
-        codebase.deploy("not-an-application", "dev", "application", "ab1c23d")
+        codebase.deploy("not-an-application", "dev", "application", commit, ref)
 
 
-def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_application):
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
+    mock_application, commit, ref
+):
     mocks = CodebaseMocks()
     mock_application.environments = {}
     mocks.load_application.return_value = mock_application
@@ -329,16 +406,74 @@ def test_codebase_deploy_does_not_trigger_build_with_missing_environment(mock_ap
         ApplicationEnvironmentNotFoundException,
         match="""The environment "not-an-environment" either does not exist or has not been deployed.""",
     ):
-        codebase.deploy("test-application", "not-an-environment", "application", "ab1c23d")
+        codebase.deploy("test-application", "not-an-environment", "application", commit, ref)
 
 
-def test_codebase_deploy_does_not_trigger_deployment_without_confirmation():
+@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+def test_codebase_deploy_does_not_trigger_deployment_without_confirmation(commit, ref):
     mocks = CodebaseMocks()
     mocks.io.confirm.return_value = False
 
     with pytest.raises(ApplicationDeploymentNotTriggered):
         codebase = Codebase(**mocks.params())
-        codebase.deploy("test-application", "development", "application", "nonexistent-commit-hash")
+        codebase.deploy("test-application", "development", "application", commit, ref)
+
+
+def test_codebase_deploy_raises_error_when_no_commit_or_ref_provided():
+    mocks = CodebaseMocks()
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as system_exit_info:
+        codebase.deploy(app="test-app", env="dev", codebase="application", commit=None, ref=None)
+
+    assert system_exit_info.type == SystemExit
+    assert system_exit_info.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+    )
+
+
+def test_codebase_deploy_raises_error_when_both_commit_and_ref_are_provided():
+    mocks = CodebaseMocks()
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as system_exit_info:
+        codebase.deploy(
+            app="test-app",
+            env="dev",
+            codebase="application",
+            commit="abc123",
+            ref="latest",
+        )
+
+    assert system_exit_info.type == SystemExit
+    assert system_exit_info.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
+    )
+
+
+def test_codebase_deploy_warns_when_commit_is_used():
+    mocks = CodebaseMocks()
+    mocks.io.confirm.return_value = False
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(ApplicationDeploymentNotTriggered):
+        codebase.deploy(
+            app="test-application",
+            env="development",
+            codebase="application",
+            commit="ab1c23d",
+            ref=None,
+        )
+
+    mocks.io.warn.assert_called_once_with(
+        "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+    )
 
 
 def test_codebase_list_does_not_trigger_build_without_an_application():

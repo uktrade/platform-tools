@@ -22,6 +22,7 @@ from dbt_platform_helper.providers.aws.exceptions import (
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -409,18 +410,51 @@ def check_codebase_exists(session: Session, application, codebase: str):
         raise CopilotCodebaseNotFoundException(codebase)
 
 
-def check_image_exists(session, application, codebase, commit):
+def get_image_details(session, application, codebase, image_ref) -> str:
     ecr_client = session.client("ecr")
     repository = f"{application.name}/{codebase}"
+
     try:
-        ecr_client.describe_images(
+        image_info = ecr_client.describe_images(
             repositoryName=repository,
-            imageIds=[{"imageTag": f"commit-{commit}"}],
+            imageIds=[{"imageTag": image_ref}],
         )
+
+        image_details_exists(image_info, image_ref)
+
+        return image_info.get("imageDetails")
     except ecr_client.exceptions.ImageNotFoundException:
-        raise ImageNotFoundException(commit)
+        raise ImageNotFoundException(image_ref)
     except ecr_client.exceptions.RepositoryNotFoundException:
         raise RepositoryNotFoundException(repository)
+
+
+def image_details_exists(image_info, image_ref):
+    if "imageDetails" not in image_info:
+        raise ImageNotFoundException(
+            f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
+        )
+
+
+def check_image_exists(session, application, codebase, image_ref):
+    get_image_details(session, application, codebase, image_ref)
+
+
+def find_commit_tag(session, application, codebase, image_ref) -> str:
+    image_details = get_image_details(session, application, codebase, image_ref)
+
+    for image in image_details:
+        image_tags = image.get("imageTags")
+        for tag in image_tags:
+            if tag.startswith("commit-"):
+                ClickIOProvider().info(
+                    f'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{tag}" instead.'
+                )
+                return tag
+    ClickIOProvider().warn(
+        f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag. Note that moving tags (e.g. tag-latest) may change when a new version image is built.'
+    )
+    return None
 
 
 def get_build_url_from_arn(build_arn: str) -> str:

@@ -18,6 +18,7 @@ from dbt_platform_helper.utils.application import (
 )
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import check_image_exists
+from dbt_platform_helper.utils.aws import find_commit_tag
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
@@ -38,6 +39,7 @@ class Codebase:
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
         check_image_exists: Callable[[str], str] = check_image_exists,
+        find_commit_tag: Callable[[str], str] = find_commit_tag,
         get_image_build_project: Callable[[str], str] = get_image_build_project,
         get_manual_release_pipeline: Callable[[str], str] = get_manual_release_pipeline,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
@@ -57,6 +59,7 @@ class Codebase:
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
         self.check_image_exists = check_image_exists
+        self.find_commit_tag = find_commit_tag
         self.get_image_build_project = get_image_build_project
         self.get_manual_release_pipeline = get_manual_release_pipeline
         self.get_build_url_from_arn = get_build_url_from_arn
@@ -154,31 +157,34 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def deploy(self, app, env, codebase, commit):
+    def deploy(self, app: str, env: str, codebase: str, commit: str = None, ref: str = None):
         """Trigger a CodePipeline pipeline based deployment."""
-        session = self.get_aws_session_or_abort()
 
-        application = self.load_application(app, default_session=session)
-        if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundException(application.name, env)
+        self.validate_commit_and_ref_flags(commit, ref)
 
-        self.check_image_exists(session, application, codebase, commit)
+        application, session = self.populate_application_values(app, env)
+
+        image_ref = f"commit-{commit}" if commit else ref
+        self.check_image_exists(session, application, codebase, image_ref)
+        image_ref = self.retrieve_commit_tag(application, codebase, image_ref, session)
 
         codepipeline_client = session.client("codepipeline")
-
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
+
+        confirmation_message = f'You are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+        build_options = {
+            "name": pipeline_name,
+            "variables": [
+                {"name": "ENVIRONMENT", "value": env},
+                {"name": "IMAGE_TAG", "value": image_ref},
+            ],
+        }
 
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
-            {
-                "name": pipeline_name,
-                "variables": [
-                    {"name": "ENVIRONMENT", "value": env},
-                    {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
-                ],
-            },
+            confirmation_message,
+            build_options,
         )
 
         if build_url:
@@ -188,6 +194,36 @@ class Codebase:
             )
 
         raise ApplicationDeploymentNotTriggered(codebase)
+
+    def validate_commit_and_ref_flags(self, commit, ref):
+        if commit:
+            self.io.warn(
+                "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+            )
+
+        none_provided = not (commit or ref)
+        both_provided = commit and ref
+        if none_provided:
+            self.io.abort_with_error(
+                "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+            )
+        elif both_provided:
+            self.io.abort_with_error(
+                "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
+            )
+
+    def retrieve_commit_tag(self, application, codebase, image_ref, session):
+        if not image_ref.startswith("commit-"):
+            commit_tag = self.find_commit_tag(session, application, codebase, image_ref)
+            image_ref = commit_tag if commit_tag else image_ref
+        return image_ref
+
+    def populate_application_values(self, app, env):
+        session = self.get_aws_session_or_abort()
+        application = self.load_application(app, default_session=session)
+        if not application.environments.get(env):
+            raise ApplicationEnvironmentNotFoundException(application.name, env)
+        return application, session
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
