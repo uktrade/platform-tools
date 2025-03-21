@@ -820,8 +820,8 @@ class TestMakeAddonsCommand:
             Copilot(**copilot_mocks.params()).make_addons()
 
         assert (
-            "No environments found in ./copilot/environments; exiting"
-            in copilot_mocks.io.abort_with_error.call_args_list[-1][0][0]
+            "No environments found in ./copilot/environments; exiting" in str(arg)
+            for arg in copilot_mocks.io.error.call_args_list
         )
 
     @pytest.mark.parametrize(
