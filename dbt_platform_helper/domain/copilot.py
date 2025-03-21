@@ -7,6 +7,7 @@ from pathlib import PosixPath
 
 import botocore
 import botocore.errorfactory
+import click
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -19,7 +20,6 @@ from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.files import generate_override_files
 from dbt_platform_helper.utils.template import ADDON_TEMPLATE_MAP
 from dbt_platform_helper.utils.template import camel_case
 from dbt_platform_helper.utils.template import setup_templates
@@ -318,13 +318,32 @@ class Copilot:
         config.update(project_config)
         return config
 
+    def _generate_override_files(self, base_path, file_path, output_dir):
+        def generate_files_for_dir(pattern):
+            for file in file_path.glob(pattern):
+                if file.is_file():
+                    contents = file.read_text()
+                    file_name = str(file).removeprefix(f"{file_path}/")
+                    print("MKFILE with:", self.file_provider)
+                    click.echo(
+                        self.file_provider.mkfile(
+                            base_path,
+                            output_dir / file_name,
+                            contents,
+                            overwrite=True,
+                        )
+                    )
+
+        generate_files_for_dir("*")
+        generate_files_for_dir("bin/*")
+
     def _generate_env_overrides(self, output_dir):
         path = "templates/env/terraform-overrides"
         self.io.info("\n>>> Generating Environment overrides\n")
         overrides_path = output_dir.joinpath(f"copilot/environments/overrides")
         overrides_path.mkdir(parents=True, exist_ok=True)
         template_overrides_path = Path(__file__).parent.parent.joinpath(path)
-        generate_override_files(Path("."), template_overrides_path, overrides_path)
+        self._generate_override_files(Path("."), template_overrides_path, overrides_path)
 
     def _generate_service_addons(
         self,
