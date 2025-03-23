@@ -6,6 +6,8 @@ import pytest
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.domain.versioning import AWSVersioning
+from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import skip_version_checks
@@ -14,7 +16,8 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
-from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
+from dbt_platform_helper.providers.version import VersionProvider
 
 
 class PlatformHelperVersioningMocks:
@@ -25,7 +28,9 @@ class PlatformHelperVersioningMocks:
         self.version_file_version_provider = kwargs.get(
             "version_file_version_provider", Mock(spec=DeprecatedVersionFileVersionProvider)
         )
-        self.pypi_provider = kwargs.get("pypi_provider", Mock(spec=PyPiVersionProvider))
+        self.latest_version_provider = kwargs.get(
+            "latest_version_provider", Mock(spec=PyPiLatestVersionProvider)
+        )
         self.installed_version_provider = kwargs.get(
             "installed_version_provider", Mock(spec=InstalledVersionProvider)
         )
@@ -36,7 +41,7 @@ class PlatformHelperVersioningMocks:
             "io": self.io,
             "version_file_version_provider": self.version_file_version_provider,
             "config_provider": self.config_provider,
-            "pypi_provider": self.pypi_provider,
+            "latest_version_provider": self.latest_version_provider,
             "installed_version_provider": self.installed_version_provider,
             "skip_versioning_checks": self.skip_versioning_checks,
         }
@@ -49,10 +54,10 @@ def mocks():
 
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
     def test_shows_warning_when_different_than_file_spec(self, mocks):
-        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1
         )
-        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
 
@@ -63,10 +68,10 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         )
 
     def test_shows_no_warning_when_same_as_file_spec(self, mocks):
-        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
 
@@ -80,10 +85,10 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         valid_platform_config,
         mocks,
     ):
-        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1
         )
-        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.version_file_version_provider.get_semantic_version.return_value = None
         mocks.config_provider.load_unvalidated_config_file.return_value = valid_platform_config
 
         PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
@@ -107,7 +112,7 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
             self.INVALID_CONFIG_WITH_DEFAULT_VERSION
         )
 
-        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
 
         result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
@@ -122,18 +127,18 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
             }
         }
         mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
-        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
 
         result = PlatformHelperVersioning(**mocks.params()).get_required_version("main")
 
         assert result == pipeline_override_version
 
     def test_errors_if_version_is_not_specified_in_config_or_default_file(self, mocks):
-        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1
         )
-        mocks.version_file_version_provider.get_required_version.return_value = None
-        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        mocks.version_file_version_provider.get_semantic_version.return_value = None
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
         mocks.config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
 
         expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
@@ -163,7 +168,7 @@ class TestPlatformHelperVersioningGetRequiredVersion:
         pipeline_override,
         expected_version,
     ):
-        mocks.version_file_version_provider.get_required_version.return_value = (
+        mocks.version_file_version_provider.get_semantic_version.return_value = (
             platform_helper_version_file_version
         )
         platform_config = {
@@ -249,7 +254,7 @@ def test_platform_helper_version_deprecation_warnings(
     version_in_platform_config,
     expected_warnings,
 ):
-    mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 3, 4)
+    mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 3, 4)
     platform_config = {"application": "my-app"}
     if version_in_platform_config:
         platform_config["default_versions"] = {"platform-helper": "2.2.2"}
@@ -257,11 +262,11 @@ def test_platform_helper_version_deprecation_warnings(
     mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
 
     if version_in_phv_file:
-        mocks.version_file_version_provider.get_required_version.return_value = SemanticVersion(
+        mocks.version_file_version_provider.get_semantic_version.return_value = SemanticVersion(
             3, 3, 3
         )
     else:
-        mocks.version_file_version_provider.get_required_version.return_value = None
+        mocks.version_file_version_provider.get_semantic_version.return_value = None
 
     PlatformHelperVersioning(**mocks.params()).get_required_version()
 
@@ -313,10 +318,10 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         self,
         mocks,
     ):
-        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(2, 0, 0)
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
 
         PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
@@ -329,10 +334,10 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
         self,
         mocks,
     ):
-        mocks.installed_version_provider.get_installed_tool_version.return_value = SemanticVersion(
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mocks.pypi_provider.get_latest_version.return_value = SemanticVersion(1, 1, 0)
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(1, 1, 0)
 
         PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
@@ -346,6 +351,50 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
 
         PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
-        mocks.installed_version_provider.get_installed_tool_version.assert_not_called()
+        mocks.installed_version_provider.get_semantic_version.assert_not_called()
         mocks.io.warn.assert_not_called()
         mocks.io.error.assert_not_called()
+
+
+class VersioningMocks:
+    def __init__(self, **kwargs):
+        self.latest_version_provider = kwargs.get(
+            "latest_version_provider", Mock(spec=VersionProvider)
+        )
+        self.installed_version_provider = kwargs.get(
+            "installed_version_provider", Mock(spec=VersionProvider)
+        )
+
+    def params(self):
+        return {
+            "latest_version_provider": self.latest_version_provider,
+            "installed_version_provider": self.installed_version_provider,
+        }
+
+
+class TestAWSVersioning:
+    def test_get_aws_versioning(self):
+        mocks = VersioningMocks()
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
+
+        result = AWSVersioning(**mocks.params()).get_version_status()
+
+        assert result.installed == SemanticVersion(1, 0, 0)
+        assert result.latest == SemanticVersion(2, 0, 0)
+
+
+class TestCopilotVersioning:
+    def test_copilot_versioning(self):
+        mocks = VersioningMocks()
+        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
+
+        result = CopilotVersioning(**mocks.params()).get_version_status()
+
+        assert result.installed == SemanticVersion(1, 0, 0)
+        assert result.latest == SemanticVersion(2, 0, 0)
