@@ -198,20 +198,20 @@ class TestGenerateTerraform:
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     def test_generate_terraform_success(self, terraform_environment_mock):
-        """Test that given name and terraform-platform-modules-version, the
-        generate terraform command calls TerraformEnvironment generate with the
-        expected parameters."""
+        """Test that given name and platform-helper-version, the generate
+        terraform command calls TerraformEnvironment generate with the expected
+        parameters."""
 
         mock_terraform_environment_instance = terraform_environment_mock.return_value
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--terraform-platform-modules-version", "123"],
+            ["--name", "test", "--platform-helper-version", "12.0.0"],
         )
 
         assert result.exit_code == 0
 
-        mock_terraform_environment_instance.generate.assert_called_with("test", "123")
+        mock_terraform_environment_instance.generate.assert_called_with("test", "12.0.0")
 
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
@@ -244,12 +244,12 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--terraform-platform-modules-version", "123"],
+            ["--name", "test", "--platform-helper-version", "12.0.0"],
         )
 
         assert result.exit_code == 1
         mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
-        mock_terraform_environment_instance.generate.assert_called_with("test", "123")
+        mock_terraform_environment_instance.generate.assert_called_with("test", "12.0.0")
 
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     @patch("click.secho")
@@ -265,7 +265,7 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--terraform-platform-modules-version", "123"],
+            ["--name", "test", "--platform-helper-version", "12.0.0"],
         )
 
         assert result.exit_code == 1
