@@ -557,12 +557,17 @@ platform-helper pipeline generate
 ## Usage
 
 ```
-platform-helper pipeline generate [--platform-helper-version <platform_helper_version>] 
+platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+                                  [--platform-helper-version <platform_helper_version>] 
                                   [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
 
+- `--terraform-platform-modules-version <text>`
+  - Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
+The platform-tools and terraform-platform-modules repositories have now been merged. 
+Please use the '--platform-helper-version' flag when stating the desired version of platform-tools and terraform-platform-modules.
 - `--platform-helper-version <text>`
   - Override the default version of platform-helper with a specific version or branch. 
 Precedence of version used is version supplied via CLI, then the version found in 

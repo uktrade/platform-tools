@@ -38,8 +38,17 @@ class Pipelines:
         self.io = io
         self.file_provider = file_provider
 
-    def generate(self, cli_platform_helper_version: str, deploy_branch: str):
+    def generate(
+        self,
+        cli_terraform_platform_modules_version,
+        cli_platform_helper_version: str,
+        deploy_branch: str,
+    ):
         platform_config = self.config_provider.load_and_validate_platform_config()
+
+        self._check_terraform_platform_modules_version(
+            cli_terraform_platform_modules_version, platform_config
+        )
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
         has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in platform_config
@@ -152,3 +161,31 @@ class Pipelines:
         self.io.info(
             self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
         )
+
+    def _check_terraform_platform_modules_version(
+        self, cli_terraform_platform_modules_version, config
+    ):
+        has_deprecated_default = config.get("default_versions", {}).get(
+            "terraform-platform-modules"
+        )
+
+        has_deprecated_version = any(
+            "versions" in env and "terraform-platform-modules" in env["versions"]
+            for env in config.get("environments", {}).values()
+            if isinstance(env, dict)
+        )
+
+        if (
+            cli_terraform_platform_modules_version
+            or has_deprecated_default
+            or has_deprecated_version
+        ):
+            self.io.warn(
+                "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
+                "Please use the `--platform-helper-version` flag instead.\n\n"
+                "The `terraform-platform-modules` key set in `default_versions: terraform-platform-modules` and "
+                "`environments: <env>: versions: terraform-platform-modules`, are deprecated. "
+                "Please use the `default_versions: platform-helper` value instead. "
+                "See full platform config reference in the docs: "
+                "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+            )

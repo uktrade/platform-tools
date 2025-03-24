@@ -147,6 +147,74 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
+@freeze_time("2024-10-28 12:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_repository_key_present_in_default_config(
+    fakefs,
+    platform_config_for_env_pipelines_with_deprecated_tpm_default_versions,
+):
+    app_name = "test-app"
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(platform_config_for_env_pipelines_with_deprecated_tpm_default_versions),
+    )
+    mocks = PipelineMocks(app_name)
+    pipelines = Pipelines(**mocks.params())
+
+    pipelines.generate(
+        "terraform-platform-modules-version", "platform-helper-version", "any-branch"
+    )
+
+    expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
+    assert expected_files_dir.exists()
+    content = expected_files_dir.read_text()
+
+    mocks.io.warn.assert_called_once_with(
+        "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
+        "Please use the `--platform-helper-version` flag instead.\n\n"
+        "The `terraform-platform-modules` key set in `default_versions: terraform-platform-modules` and "
+        "`environments: <env>: versions: terraform-platform-modules`, are deprecated. "
+        "Please use the `default_versions: platform-helper` value instead. "
+        "See full platform config reference in the docs: "
+        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+    )
+    assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
+
+
+@freeze_time("2024-10-28 12:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_repository_key_present_in_environment_config(
+    fakefs,
+    platform_config_for_env_pipelines,
+):
+    app_name = "test-app"
+    platform_config_for_env_pipelines["environments"]["dev"]["versions"] = {
+        "terraform-platform-modules": "12.0.0"
+    }
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
+    mocks = PipelineMocks(app_name)
+    pipelines = Pipelines(**mocks.params())
+
+    pipelines.generate(
+        "terraform-platform-modules-version", "platform-helper-version", "any-branch"
+    )
+
+    expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
+    assert expected_files_dir.exists()
+    content = expected_files_dir.read_text()
+
+    mocks.io.warn.assert_called_once_with(
+        "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
+        "Please use the `--platform-helper-version` flag instead.\n\n"
+        "The `terraform-platform-modules` key set in `default_versions: terraform-platform-modules` and "
+        "`environments: <env>: versions: terraform-platform-modules`, are deprecated. "
+        "Please use the `default_versions: platform-helper` value instead. "
+        "See full platform config reference in the docs: "
+        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+    )
+    assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
+
+
 @pytest.mark.parametrize(
     "cli_version, exp_version", [("13", "13"), (None, DEFAULT_PLATFORM_HELPER_VERSION)]
 )
