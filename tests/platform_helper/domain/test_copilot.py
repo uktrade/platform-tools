@@ -11,7 +11,6 @@ import pytest
 import yaml
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
-from moto import mock_aws
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
@@ -124,7 +123,6 @@ class TestMakeAddonsCommand:
         new=Mock(return_value="foo"),
     )
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @mock_aws
     def test_s3_kms_arn_is_rendered_in_template(
         self,
         mock_application,
@@ -283,7 +281,6 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @mock_aws
     def test_terraform_compatible_make_addons_success(
         self,
         mock_application,
@@ -439,7 +436,6 @@ class TestMakeAddonsCommand:
         ),
     )
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @mock_aws
     def test_make_addons_removes_old_addons_files(
         self,
         mock_application,
@@ -565,15 +561,15 @@ class TestMakeAddonsCommand:
     def test_exit_if_no_local_copilot_services(self, fakefs):
         fakefs.create_file(PLATFORM_CONFIG_FILE)
         fakefs.create_file("copilot/environments/development/manifest.yml")
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
 
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
         assert any(
             "No services found in ./copilot/; exiting" in str(arg)
-            for arg in copilot_mocks.io.abort_with_error.call_args_list
+            for arg in mocks.io.abort_with_error.call_args_list
         )
 
     def test_exit_with_error_if_invalid_services(self, fakefs):
@@ -594,20 +590,20 @@ class TestMakeAddonsCommand:
 
         fakefs.create_file("copilot/environments/development/manifest.yml")
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
 
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
         assert any(
             "Services listed in invalid-entry.services do not exist in ./copilot/" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
 
         assert any(
             "Configuration has errors. Exiting." in str(arg)
-            for arg in copilot_mocks.io.abort_with_error.call_args_list
+            for arg in mocks.io.abort_with_error.call_args_list
         )
 
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
@@ -630,15 +626,15 @@ class TestMakeAddonsCommand:
         fakefs.create_file("copilot/environments/development/manifest.yml")
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
 
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
         assert re.match(
             r"(?s).*example-invalid-file.*environments.*default.*Wrong key 'no_such_key'",
-            copilot_mocks.io.error.call_args_list[-1][0][0],
+            mocks.io.error.call_args_list[-1][0][0],
         )
 
     def test_exit_with_multiple_errors_if_invalid_environments(self, fakefs):
@@ -669,38 +665,38 @@ class TestMakeAddonsCommand:
         fakefs.create_file("copilot/environments/development/manifest.yml")
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
 
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
         assert any(
             "Environment keys listed in invalid-environment do not match those defined in ./copilot/environments"
             in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Missing environments: alsodoesnotexist, doesnotexist" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Environment keys listed in invalid-environment do not match those defined in ./copilot/environments"
             in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Environment keys listed in invalid-environment-2 do not match those defined in ./copilot/environments"
             in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Missing environments: andanotherdoesnotexist" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Services listed in invalid-environment.services do not exist in ./copilot/" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
 
     def test_exit_with_multiple_errors(self, fakefs):
@@ -734,35 +730,35 @@ class TestMakeAddonsCommand:
         fakefs.create_file("copilot/environments/development/manifest.yml")
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
 
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
         assert any(
             f"Errors found in {PLATFORM_CONFIG_FILE}:" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "'Delete' does not match 'ThisIsInvalid'" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Names cannot be prefixed 'sthree-'" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Names cannot be suffixed '-s3alias'" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Names cannot contain two adjacent periods" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "Names can only contain the characters 0-9, a-z, '.' and '-'." in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
 
     def test_exit_if_services_key_invalid(self, fakefs):
@@ -792,36 +788,34 @@ class TestMakeAddonsCommand:
 
         fakefs.create_file("copilot/web/manifest.yml", contents=yaml.dump(WEB_SERVICE_CONTENTS))
 
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
-        copilot_mocks.io.abort_with_error.assert_called_with(
+        mocks.io.abort_with_error.assert_called_with(
             "Invalid platform-config.yml provided, see above warnings"
         )
-        assert any(
-            "Key 'services' error:" in str(arg) for arg in copilot_mocks.io.error.call_args_list
-        )
+        assert any("Key 'services' error:" in str(arg) for arg in mocks.io.error.call_args_list)
         assert any(
             "'__all__' does not match 'this-is-not-valid'" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
         assert any(
             "'this-is-not-valid' should be instance of 'list'" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
 
     def test_exit_if_no_local_copilot_environments(self):
-        copilot_mocks = CopilotMocks()
-        copilot_mocks.io.abort_with_error.side_effect = SystemExit(1)
+        mocks = CopilotMocks()
+        mocks.io.abort_with_error.side_effect = SystemExit(1)
 
         with pytest.raises(SystemExit):
-            Copilot(**copilot_mocks.params()).make_addons()
+            Copilot(**mocks.params()).make_addons()
 
         assert (
             "No environments found in ./copilot/environments; exiting" in str(arg)
-            for arg in copilot_mocks.io.error.call_args_list
+            for arg in mocks.io.error.call_args_list
         )
 
     @pytest.mark.parametrize(
@@ -840,27 +834,27 @@ class TestMakeAddonsCommand:
         fakefs,
     ):
         create_test_manifests(addon_config, fakefs)
-        copilot_mocks = CopilotMocks()
+        mocks = CopilotMocks()
         mock_config = yaml.dump({"application": "test-app", "extensions": addon_config})
         environment_config = {"environments": {"development": {}, "production": {}}}
-        copilot_mocks.config_provider = Mock(spec=ConfigProvider)
-        copilot_mocks.config_provider.config_file_check.return_value = True
-        copilot_mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
-        copilot_mocks.config_provider.apply_environment_defaults.return_value = environment_config
-        copilot_mocks.parameter_provider.get_ssm_parameter_by_name.return_value = {
+        mocks.config_provider = Mock(spec=ConfigProvider)
+        mocks.config_provider.config_file_check.return_value = True
+        mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
+        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        mocks.parameter_provider.get_ssm_parameter_by_name.return_value = {
             "Value": '{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         }
 
-        Copilot(**copilot_mocks.params()).make_addons()
+        Copilot(**mocks.params()).make_addons()
         if addon_type == "redis":
             assert (
                 "REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/REDIS"
-                in copilot_mocks.io.info.call_args_list[-1][0][0]
+                in mocks.io.info.call_args_list[-1][0][0]
             )
         else:
             assert (
                 "secretsmanager: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/RDS"
-                in copilot_mocks.io.info.call_args_list[-1][0][0]
+                in mocks.io.info.call_args_list[-1][0][0]
             )
 
     # TODO this test set up has changed significantly in order to get it to pass
@@ -936,7 +930,6 @@ class TestMakeAddonsCommand:
         new=Mock(return_value="foo"),
     )
     @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
-    @mock_aws
     def test_s3_cross_account_policies_called(
         self,
         mock_application,
