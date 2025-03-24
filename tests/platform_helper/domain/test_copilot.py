@@ -610,6 +610,11 @@ class TestMakeAddonsCommand:
             for arg in copilot_mocks.io.error.call_args_list
         )
 
+        assert any(
+            "Configuration has errors. Exiting." in str(arg)
+            for arg in copilot_mocks.io.abort_with_error.call_args_list
+        )
+
     def test_exit_with_error_if_addons_yml_validation_fails(self, fakefs):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,

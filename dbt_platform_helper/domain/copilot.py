@@ -251,7 +251,7 @@ class Copilot:
             normalised_config[addon_name]["environments"] = normalised_environments
 
         if config_has_errors:
-            exit(1)
+            self.io.abort_with_error("Configuration has errors. Exiting.")
 
         return normalised_config
 
