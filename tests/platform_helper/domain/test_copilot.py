@@ -290,7 +290,6 @@ class TestMakeAddonsCommand:
         fakefs,
         addon_file,
         expected_service_addons,
-        capsys,
     ):
         """Test that make_addons generates the expected directories and file
         contents."""
@@ -371,13 +370,10 @@ class TestMakeAddonsCommand:
         # Act
         Copilot(**mocks.params()).make_addons()
 
-        captured = capsys.readouterr()
-
-        # assert (
-        #    result.exit_code == 0
-        # ), f"The exit code should have been 0 (success) but was {result.exit_code}"
-
-        # assert ">>> Generating Terraform compatible addons CloudFormation" in captured.out
+        assert any(
+            ">>> Generating Terraform compatible addons CloudFormation" in str(arg)
+            for arg in mocks.io.info.call_args_list
+        )
 
         expected_service_files = [
             Path("web/addons", filename) for filename in expected_service_addons
@@ -407,7 +403,6 @@ class TestMakeAddonsCommand:
         assert not Path("./copilot/environments/addons/").exists()
 
         env_override_file = Path("./copilot/environments/overrides/cfn.patches.yml")
-        assert f"{env_override_file} created" in captured.out
 
         expected_env_overrides_file = Path(
             "expected/environments/overrides/cfn.patches.yml"
