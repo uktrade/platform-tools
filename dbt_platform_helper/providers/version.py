@@ -10,6 +10,7 @@ import requests
 
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -49,6 +50,7 @@ class GithubLatestVersionProvider(VersionProvider):
     def get_semantic_version(repo_name: str, tags: bool = False) -> SemanticVersion:
         if tags:
             tags_list = requests.get(f"https://api.github.com/repos/{repo_name}/tags").json()
+            ClickIOProvider().info(tags_list)
             versions = [SemanticVersion.from_string(v["name"]) for v in tags_list]
             versions.sort(reverse=True)
             return versions[0]
