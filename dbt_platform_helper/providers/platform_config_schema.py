@@ -48,6 +48,7 @@ class PlatformConfigSchema:
             "postgres": Schema(PlatformConfigSchema.__postgres_schema()),
             "prometheus-policy": Schema(PlatformConfigSchema.__prometheus_policy_schema()),
             "redis": Schema(PlatformConfigSchema.__redis_schema()),
+            "datadog": Schema(PlatformConfigSchema.__datadog_schema()),
             "s3": Schema(PlatformConfigSchema.__s3_bucket_schema()),
             "s3-policy": Schema(PlatformConfigSchema.__s3_bucket_policy_schema()),
             "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
@@ -429,10 +430,26 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n{'\\n'.join(f'  {e}' for e in errors)}"
             )
 
         return True
+
+    @staticmethod
+    def __datadog_schema() -> dict:
+        return {
+            "type": "datadog",
+            Optional("environments"): {
+                PlatformConfigSchema.__valid_environment_name(): {
+                    Optional("team_name"): str,
+                    Optional("contact_name"): str,
+                    Optional("contact_email"): str,
+                    Optional("repository"): str,
+                    Optional("docs"): str,
+                    Optional("services_to_monitor"): list,
+                }
+            },
+        }
 
     @staticmethod
     def __s3_bucket_schema() -> dict:

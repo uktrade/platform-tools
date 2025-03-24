@@ -191,6 +191,18 @@ def test_validate_addons_success(addons_file):
             },
         ),
         (
+            "datadog_addons_bad_data.yml",
+            {
+                "my-datadog-bad-key": r"Wrong key 'bad_key' in",
+                "my-datadog-bad-team-name": r"'environments'.*'default'.*team_name.*should be instance of 'str'",
+                "my-datadog-bad-contact-name": r"'environments'.*'default'.*contact_name.*should be instance of 'str'",
+                "my-datadog-bad-contact-email": r"'environments'.*'default'.*contact_email.*should be instance of 'str'",
+                "my-datadog-bad-repository": r"'environments'.*'default'.*repository.*should be instance of 'str'",
+                "my-datadog-bad-docs": r"'environments'.*'default'.*docs.*should be instance of 'str'",
+                "my-datadog-bad-services-to-monitor": r"'environments'.*'default'.*services_to_monitor.*should be instance of 'list'",
+            },
+        ),
+        (
             "prometheus_policy_addons_bad_data.yml",
             {
                 "my-prometheus-policy-wrong-key": r"Missing key: 'role_arn'",
