@@ -3,6 +3,7 @@ import stat
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from typing import Tuple
 
 import requests
 import yaml
@@ -212,13 +213,13 @@ class Codebase:
                 "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
             )
 
-    def _retrieve_commit_tag(self, image_ref: str, image_details: dict):
+    def _retrieve_commit_tag(self, image_ref: str, image_details: dict) -> str:
         if not image_ref.startswith("commit-"):
             commit_tag = self.find_commit_tag(image_details, image_ref)
             image_ref = commit_tag if commit_tag else image_ref
         return image_ref
 
-    def _populate_application_values(self, app: str, env: str):
+    def _populate_application_values(self, app: str, env: str) -> Tuple[Application, Session]:
         session = self.get_aws_session_or_abort()
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):

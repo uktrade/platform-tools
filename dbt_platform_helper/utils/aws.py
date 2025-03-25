@@ -411,6 +411,9 @@ def check_codebase_exists(session: Session, application, codebase: str):
 
 
 def get_image_details(session: Session, application: str, codebase: str, image_ref: str) -> str:
+    """Check if image exists in AWS ECR, and return a list of dictionaries
+    containing image metadata."""
+
     ecr_client = session.client("ecr")
     repository = f"{application.name}/{codebase}"
 
@@ -430,6 +433,9 @@ def get_image_details(session: Session, application: str, codebase: str, image_r
 
 
 def _check_image_details_exists(image_info: dict, image_ref: str):
+    """Error handling for any unexpected scenario where AWS ECR returns a
+    malformed response."""
+
     if "imageDetails" not in image_info:
         raise ImageNotFoundException(
             f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
@@ -437,6 +443,9 @@ def _check_image_details_exists(image_info: dict, image_ref: str):
 
 
 def find_commit_tag(image_details: dict, image_ref: str) -> str:
+    """Loop through imageTags list to query for an image tag starting with
+    'commit-', and return that value if found."""
+
     for image in image_details:
         image_tags = image.get("imageTags")
         for tag in image_tags:
