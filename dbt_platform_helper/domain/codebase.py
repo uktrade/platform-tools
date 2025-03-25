@@ -160,13 +160,13 @@ class Codebase:
     def deploy(self, app: str, env: str, codebase: str, commit: str = None, ref: str = None):
         """Trigger a CodePipeline pipeline based deployment."""
 
-        self.validate_commit_and_ref_flags(commit, ref)
+        self._validate_commit_and_ref_flags(commit, ref)
 
-        application, session = self.populate_application_values(app, env)
+        application, session = self._populate_application_values(app, env)
 
         image_ref = f"commit-{commit}" if commit else ref
         image_details = self.get_image_details(session, application, codebase, image_ref)
-        image_ref = self.retrieve_commit_tag(image_ref, image_details)
+        image_ref = self._retrieve_commit_tag(image_ref, image_details)
 
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
@@ -195,7 +195,7 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def validate_commit_and_ref_flags(self, commit, ref):
+    def _validate_commit_and_ref_flags(self, commit, ref):
         if commit:
             self.io.warn(
                 "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
@@ -212,13 +212,13 @@ class Codebase:
                 "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
             )
 
-    def retrieve_commit_tag(self, image_ref, image_details):
+    def _retrieve_commit_tag(self, image_ref, image_details):
         if not image_ref.startswith("commit-"):
             commit_tag = self.find_commit_tag(image_details, image_ref)
             image_ref = commit_tag if commit_tag else image_ref
         return image_ref
 
-    def populate_application_values(self, app, env):
+    def _populate_application_values(self, app: str, env: str):
         session = self.get_aws_session_or_abort()
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):

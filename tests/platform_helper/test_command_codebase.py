@@ -262,7 +262,7 @@ class TestCodebaseDeploy:
         assert result.exit_code == 1
 
     @pytest.mark.parametrize(
-        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "commit-ab1c23d")]
     )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")

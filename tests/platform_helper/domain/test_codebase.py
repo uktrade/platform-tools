@@ -207,7 +207,7 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
         codebase.build("test-application", "application", "ab1c234")
 
 
-@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+@pytest.mark.parametrize("commit, ref", [(None, "commit-ab1c23d"), ("ab1c23d", None)])
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     mock_application, commit, ref
 ):
