@@ -6,7 +6,9 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
 
-import requests
+from requests import Session
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.platform_exception import PlatformException
@@ -14,6 +16,13 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
+
+
+def set_up_retry():
+    session = Session()
+    retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[403, 500, 502, 503, 504])
+    session.mount("https://", HTTPAdapter(max_retries=retries))
+    return session
 
 
 class InstalledVersionProviderException(PlatformException):
@@ -43,32 +52,45 @@ class InstalledVersionProvider:
             raise InstalledToolNotFoundException(tool_name)
 
 
-# TODO add timeouts and exception handling for requests
-# TODO Alternatively use the gitpython package?
 class GithubLatestVersionProvider(VersionProvider):
     @staticmethod
-    def get_semantic_version(repo_name: str, tags: bool = False) -> SemanticVersion:
-        if tags:
-            tags_list = requests.get(f"https://api.github.com/repos/{repo_name}/tags").json()
-            ClickIOProvider().info(tags_list)
-            versions = [SemanticVersion.from_string(v["name"]) for v in tags_list]
-            versions.sort(reverse=True)
-            return versions[0]
+    def get_semantic_version(
+        repo_name: str, tags: bool = False, request_session=set_up_retry(), io=ClickIOProvider()
+    ) -> SemanticVersion:
 
-        package_info = requests.get(
-            f"https://api.github.com/repos/{repo_name}/releases/latest"
-        ).json()
-        return SemanticVersion.from_string(package_info["tag_name"])
+        semantic_version = None
+        try:
+            if tags:
+                response = request_session.get(f"https://api.github.com/repos/{repo_name}/tags")
+
+                versions = [SemanticVersion.from_string(v["name"]) for v in response.json()]
+                versions.sort(reverse=True)
+                semantic_version = versions[0]
+            else:
+                package_info = request_session.get(
+                    f"https://api.github.com/repos/{repo_name}/releases/latest"
+                ).json()
+                semantic_version = SemanticVersion.from_string(package_info["tag_name"])
+        except Exception as e:
+            io.error(f"Exception occured when calling Github with:\n{str(e)}")
+
+        return semantic_version
 
 
 class PyPiLatestVersionProvider(VersionProvider):
     @staticmethod
-    def get_semantic_version(project_name: str) -> SemanticVersion:
-        package_info = requests.get(f"https://pypi.org/pypi/{project_name}/json").json()
-        released_versions = package_info["releases"].keys()
-        parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
-        parsed_released_versions.sort(reverse=True)
-        return parsed_released_versions[0]
+    def get_semantic_version(
+        project_name: str, request_session=set_up_retry(), io=ClickIOProvider()
+    ) -> SemanticVersion:
+        try:
+            package_info = request_session.get(f"https://pypi.org/pypi/{project_name}/json").json()
+            released_versions = package_info["releases"].keys()
+            parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
+            parsed_released_versions.sort(reverse=True)
+            return parsed_released_versions[0]
+        except Exception as e:
+            io.error(f"Exception occured when calling PyPi with:\n{str(e)}")
+            return SemanticVersion.from_string(None)
 
 
 class DeprecatedVersionFileVersionProvider(VersionProvider):
@@ -92,10 +114,10 @@ class AWSCLIInstalledVersionProvider(VersionProvider):
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
             matched = re.match(r"aws-cli/([0-9.]+)", response.stdout.decode("utf8"))
-            installed_aws_version = SemanticVersion.from_string(matched.group(1))
+            installed_aws_version = matched.group(1)
         except (ValueError, AttributeError):
             pass
-        return installed_aws_version
+        return SemanticVersion.from_string(installed_aws_version)
 
 
 class CopilotInstalledVersionProvider(VersionProvider):
