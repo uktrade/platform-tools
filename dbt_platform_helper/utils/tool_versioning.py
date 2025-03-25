@@ -18,7 +18,7 @@ def get_required_platform_helper_version(
     return [version for version in version_preference_order if version][0]
 
 
-def check_terraform_platform_modules_version(self, cli_terraform_platform_modules_version, config):
+def check_terraform_platform_modules_version(io, cli_terraform_platform_modules_version, config):
     has_deprecated_default = config.get("default_versions", {}).get("terraform-platform-modules")
 
     has_deprecated_version = any(
@@ -28,7 +28,7 @@ def check_terraform_platform_modules_version(self, cli_terraform_platform_module
     )
 
     if cli_terraform_platform_modules_version or has_deprecated_default or has_deprecated_version:
-        self.io.warn(
+        io.warn(
             "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
             "Please use the `--platform-helper-version` flag instead.\n\n"
             "The `terraform-platform-modules` key set in `default_versions: terraform-platform-modules` and "

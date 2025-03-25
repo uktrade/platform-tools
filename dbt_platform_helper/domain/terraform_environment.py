@@ -36,7 +36,9 @@ class TerraformEnvironment:
     ):
         config = self.config_provider.get_enriched_config()
 
-        check_terraform_platform_modules_version(terraform_platform_modules_version, config)
+        check_terraform_platform_modules_version(
+            self.io, terraform_platform_modules_version, config
+        )
 
         if environment_name not in config.get("environments").keys():
             raise EnvironmentNotFoundException(
