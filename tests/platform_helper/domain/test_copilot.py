@@ -152,37 +152,6 @@ class TestMakeAddonsCommand:
             "development": dev,
             "production": prod,
         }
-        client.get_parameters_by_path.side_effect = [
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/environments/development",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "name": "development",
-                                "accountID": "000000000000",
-                            }
-                        ),
-                    }
-                ]
-            },
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/components/web",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "app": "test-app",
-                                "name": "web",
-                                "type": "Load Balanced Web Service",
-                            }
-                        ),
-                    }
-                ]
-            },
-        ]
 
         create_test_manifests(S3_STORAGE_CONTENTS, fakefs)
 
@@ -313,42 +282,12 @@ class TestMakeAddonsCommand:
             "development": dev,
             "production": prod,
         }
-        client.get_parameters_by_path.side_effect = [
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/environments/development",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "name": "development",
-                                "accountID": "000000000000",
-                            }
-                        ),
-                    }
-                ]
-            },
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/components/web",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "app": "test-app",
-                                "name": "web",
-                                "type": "Load Balanced Web Service",
-                            }
-                        ),
-                    }
-                ]
-            },
-        ]
 
         mocks = CopilotMocks()
 
-        # config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        mock_config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
         environment_config = {"environments": {"development": {}, "production": {}}}
+        mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
         mocks.config_provider.apply_environment_defaults.return_value = environment_config
         mocks.file_provider = FileProvider  # Allow the use of fakefs
         mocks.kms_provider.return_value.describe_key.return_value = {
@@ -435,79 +374,22 @@ class TestMakeAddonsCommand:
             return_value='{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         ),
     )
-    @patch("dbt_platform_helper.domain.copilot.load_application", autospec=True)
     def test_make_addons_removes_old_addons_files(
         self,
-        mock_application,
         fakefs,
     ):
         """Tests that old addons files are cleaned up before generating new
         ones."""
 
         # Arrange
-        dev_session = MagicMock(name="dev-session-mock")
-        dev_session.profile_name = "foo"
-        prod_session = MagicMock(name="prod-session-mock")
-        prod_session.profile_name = "bar"
-        client = MagicMock(name="client-mock")
-        dev_session.client.return_value = client
-        prod_session.client.return_value = client
-
-        dev = Environment(
-            name="development",
-            account_id="000000000000",
-            sessions={"000000000000": dev_session},
-        )
-        prod = Environment(
-            name="production",
-            account_id="111111111111",
-            sessions={"111111111111": prod_session},
-        )
-        mock_application.return_value.environments = {
-            "development": dev,
-            "production": prod,
-        }
-        client.get_parameters_by_path.side_effect = [
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/environments/development",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "name": "development",
-                                "accountID": "000000000000",
-                            }
-                        ),
-                    }
-                ]
-            },
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/components/web",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "app": "test-app",
-                                "name": "web",
-                                "type": "Load Balanced Web Service",
-                            }
-                        ),
-                    }
-                ]
-            },
-        ]
 
         mocks = CopilotMocks()
 
-        # config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        mock_config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
         environment_config = {"environments": {"development": {}, "production": {}}}
+        mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
         mocks.config_provider.apply_environment_defaults.return_value = environment_config
         mocks.file_provider = FileProvider  # Allow the use of fakefs
-        mocks.kms_provider.return_value.describe_key.return_value = {
-            "KeyMetadata": {"Arn": "kms-key-not-found"}
-        }
 
         addons_dir = FIXTURES_DIR / "make_addons"
         fakefs.add_real_directory(
@@ -957,37 +839,6 @@ class TestMakeAddonsCommand:
             "development": dev,
             "production": prod,
         }
-        client.get_parameters_by_path.side_effect = [
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/environments/development",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "name": "development",
-                                "accountID": "000000000000",
-                            }
-                        ),
-                    }
-                ]
-            },
-            {
-                "Parameters": [
-                    {
-                        "Name": "/copilot/applications/test-app/components/web",
-                        "Type": "SecureString",
-                        "Value": json.dumps(
-                            {
-                                "app": "test-app",
-                                "name": "web",
-                                "type": "Load Balanced Web Service",
-                            }
-                        ),
-                    }
-                ]
-            },
-        ]
 
         client.describe_key.return_value = {"KeyMetadata": {"Arn": "arn-for-kms-alias"}}
 
