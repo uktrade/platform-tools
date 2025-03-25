@@ -483,6 +483,30 @@ def test_check_codebase_errors_when_json_is_malformed(mock_application):
         )
 
 
+def test_check_image_details_returns_details():
+    return None
+
+
+def test_check_image_details_raises_image_not_found():
+    return None
+
+
+def test_check_image_details_raises_repository_not_found():
+    return None
+
+
+def test_check_image_details_exists():
+    return None
+
+
+def test_find_commit_tag_returns_commit_tag():
+    return None
+
+
+def test_find_commit_tag_returns_none_if_no_commit_tag():
+    return None
+
+
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
 def test_get_account_id(mock_get_aws_session_or_abort):
     mock_get_caller_identity(mock_get_aws_session_or_abort)

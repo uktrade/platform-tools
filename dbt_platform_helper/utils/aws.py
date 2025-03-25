@@ -410,7 +410,7 @@ def check_codebase_exists(session: Session, application, codebase: str):
         raise CopilotCodebaseNotFoundException(codebase)
 
 
-def get_image_details(session, application, codebase, image_ref) -> str:
+def get_image_details(session: Session, application: str, codebase: str, image_ref: str) -> str:
     ecr_client = session.client("ecr")
     repository = f"{application.name}/{codebase}"
 
@@ -429,14 +429,14 @@ def get_image_details(session, application, codebase, image_ref) -> str:
         raise RepositoryNotFoundException(repository)
 
 
-def _check_image_details_exists(image_info, image_ref):
+def _check_image_details_exists(image_info: dict, image_ref: str):
     if "imageDetails" not in image_info:
         raise ImageNotFoundException(
             f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
         )
 
 
-def find_commit_tag(image_details, image_ref) -> str:
+def find_commit_tag(image_details: dict, image_ref: str) -> str:
     for image in image_details:
         image_tags = image.get("imageTags")
         for tag in image_tags:

@@ -195,7 +195,7 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def _validate_commit_and_ref_flags(self, commit, ref):
+    def _validate_commit_and_ref_flags(self, commit: str, ref: str):
         if commit:
             self.io.warn(
                 "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
@@ -212,7 +212,7 @@ class Codebase:
                 "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
             )
 
-    def _retrieve_commit_tag(self, image_ref, image_details):
+    def _retrieve_commit_tag(self, image_ref: str, image_details: dict):
         if not image_ref.startswith("commit-"):
             commit_tag = self.find_commit_tag(image_details, image_ref)
             image_ref = commit_tag if commit_tag else image_ref
