@@ -1,6 +1,7 @@
 import click
 
 from dbt_platform_helper.constants import DEFAULT_PLATFORM_HELPER_VERSION
+from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
@@ -91,12 +92,18 @@ def generate(name):
     "--platform-helper-version",
     help=f"Override the default version of platform-helper. (Default version is '{DEFAULT_PLATFORM_HELPER_VERSION}').",
 )
-def generate_terraform(name, platform_helper_version):
+@click.option(
+    "--terraform-platform-modules-version",
+    help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
+)
+def generate_terraform(name, platform_helper_version, terraform_platform_modules_version):
     click_io = ClickIOProvider()
     try:
         # TODO = pass the session to ConfigValidator
         get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator())
-        TerraformEnvironment(config_provider).generate(name, platform_helper_version)
+        TerraformEnvironment(config_provider).generate(
+            name, platform_helper_version, terraform_platform_modules_version
+        )
     except PlatformException as err:
         click_io.abort_with_error(str(err))

@@ -2,6 +2,9 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.tool_versioning import (
+    check_terraform_platform_modules_version,
+)
+from dbt_platform_helper.utils.tool_versioning import (
     get_required_platform_helper_version,
 )
 
@@ -25,8 +28,15 @@ class TerraformEnvironment:
         self.config_provider = config_provider
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
 
-    def generate(self, environment_name, platform_helper_version_override=None):
+    def generate(
+        self,
+        environment_name,
+        platform_helper_version_override=None,
+        terraform_platform_modules_version=None,
+    ):
         config = self.config_provider.get_enriched_config()
+
+        check_terraform_platform_modules_version(terraform_platform_modules_version, config)
 
         if environment_name not in config.get("environments").keys():
             raise EnvironmentNotFoundException(
