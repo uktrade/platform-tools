@@ -410,7 +410,9 @@ def check_codebase_exists(session: Session, application, codebase: str):
         raise CopilotCodebaseNotFoundException(codebase)
 
 
-def get_image_details(session: Session, application: str, codebase: str, image_ref: str) -> str:
+def get_image_details(
+    session: Session, application: "Application", codebase: str, image_ref: str
+) -> str:
     """Check if image exists in AWS ECR, and return a list of dictionaries
     containing image metadata."""
 
