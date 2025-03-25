@@ -7,7 +7,6 @@ from pathlib import PosixPath
 
 import botocore
 import botocore.errorfactory
-import click
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
@@ -324,8 +323,7 @@ class Copilot:
                 if file.is_file():
                     contents = file.read_text()
                     file_name = str(file).removeprefix(f"{file_path}/")
-                    print("MKFILE with:", self.file_provider)
-                    click.echo(
+                    self.io.info(
                         self.file_provider.mkfile(
                             base_path,
                             output_dir / file_name,
