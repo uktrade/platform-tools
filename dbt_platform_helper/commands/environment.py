@@ -1,6 +1,5 @@
 import click
 
-from dbt_platform_helper.constants import DEFAULT_PLATFORM_HELPER_VERSION
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
@@ -90,7 +89,7 @@ def generate(name):
 )
 @click.option(
     "--platform-helper-version",
-    help=f"Override the default version of platform-helper. (Default version is '{DEFAULT_PLATFORM_HELPER_VERSION}').",
+    help=f"Override the default version of platform-helper. (Default version is the installed version for `dbt-platform-helper`.",
 )
 @click.option(
     "--terraform-platform-modules-version",

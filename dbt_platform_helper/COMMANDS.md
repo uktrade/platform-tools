@@ -493,7 +493,7 @@ platform-helper environment generate-terraform --name <name> [--platform-helper-
 -n <text>`
   - The name of the environment to generate a manifest for.
 - `--platform-helper-version <text>`
-  - Override the default version of platform-helper. (Default version is '13.0.0').
+  - Override the default version of platform-helper. (Default version is the installed version for `dbt-platform-helper`.
 - `--terraform-platform-modules-version <text>`
   - Override the default version of terraform-platform-modules. (Default version is '7').
 - `--help <boolean>` _Defaults to False._
