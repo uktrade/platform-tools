@@ -5,6 +5,7 @@ from abc import abstractmethod
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
 from pathlib import Path
+from typing import Union
 
 from requests import Session
 from requests.adapters import HTTPAdapter
@@ -56,7 +57,7 @@ class GithubLatestVersionProvider(VersionProvider):
     @staticmethod
     def get_semantic_version(
         repo_name: str, tags: bool = False, request_session=set_up_retry(), io=ClickIOProvider()
-    ) -> SemanticVersion:
+    ) -> Union[SemanticVersion, None]:
 
         semantic_version = None
         try:
@@ -81,23 +82,24 @@ class PyPiLatestVersionProvider(VersionProvider):
     @staticmethod
     def get_semantic_version(
         project_name: str, request_session=set_up_retry(), io=ClickIOProvider()
-    ) -> SemanticVersion:
+    ) -> Union[SemanticVersion, None]:
+        semantic_version = None
         try:
             package_info = request_session.get(f"https://pypi.org/pypi/{project_name}/json").json()
             released_versions = package_info["releases"].keys()
             parsed_released_versions = [SemanticVersion.from_string(v) for v in released_versions]
             parsed_released_versions.sort(reverse=True)
-            return parsed_released_versions[0]
+            semantic_version = parsed_released_versions[0]
         except Exception as e:
             io.error(f"Exception occured when calling PyPi with:\n{str(e)}")
-            return SemanticVersion.from_string(None)
+        return semantic_version
 
 
 class DeprecatedVersionFileVersionProvider(VersionProvider):
     def __init__(self, file_provider: YamlFileProvider):
         self.file_provider = file_provider or YamlFileProvider
 
-    def get_semantic_version(self) -> SemanticVersion:
+    def get_semantic_version(self) -> Union[SemanticVersion, None]:
         deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
         try:
             loaded_version = self.file_provider.load(deprecated_version_file)
@@ -109,7 +111,7 @@ class DeprecatedVersionFileVersionProvider(VersionProvider):
 
 class AWSCLIInstalledVersionProvider(VersionProvider):
     @staticmethod
-    def get_semantic_version() -> SemanticVersion:
+    def get_semantic_version() -> Union[SemanticVersion, None]:
         installed_aws_version = None
         try:
             response = subprocess.run("aws --version", capture_output=True, shell=True)
@@ -122,7 +124,7 @@ class AWSCLIInstalledVersionProvider(VersionProvider):
 
 class CopilotInstalledVersionProvider(VersionProvider):
     @staticmethod
-    def get_semantic_version() -> SemanticVersion:
+    def get_semantic_version() -> Union[SemanticVersion, None]:
         copilot_version = None
 
         try:
