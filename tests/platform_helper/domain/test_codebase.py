@@ -322,6 +322,31 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
         codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
 
+def test_codebase_deploy_uses_ref_when_commit_tag_not_found():
+    mocks = CodebaseMocks()
+    mock_image_details = MagicMock()
+    mocks.get_image_details.return_value = mock_image_details
+
+    client = mock_aws_client(mocks.get_aws_session_or_abort)
+    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
+
+    mocks.find_commit_tag.return_value = None
+    codebase = Codebase(**mocks.params())
+
+    # 'commit' is None as we're only interested in the scenario where 'ref' is used
+    codebase.deploy("test-application", "development", "application", None, "latest")
+
+    mocks.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
+
+    client.start_pipeline_execution.assert_called_once_with(
+        name="test-application-application-manual-release",
+        variables=[
+            {"name": "ENVIRONMENT", "value": "development"},
+            {"name": "IMAGE_TAG", "value": "latest"},
+        ],
+    )
+
+
 @pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref):
     mocks = CodebaseMocks(
