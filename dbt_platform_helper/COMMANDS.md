@@ -574,8 +574,7 @@ Please use the '--platform-helper-version' flag when stating the desired version
 - `--platform-helper-version <text>`
   - Override the default version of platform-helper with a specific version or branch. 
 Precedence of version used is version supplied via CLI, then the version found in 
-platform-config.yml/default_versions/platform-helper. 
-In absence of these inputs, defaults to version '13.0.0'.
+platform-config.yml/default_versions/platform-helper.
 - `--deploy-branch <text>`
   - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 

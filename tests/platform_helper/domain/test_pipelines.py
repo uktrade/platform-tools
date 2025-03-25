@@ -7,7 +7,6 @@ import pytest
 import yaml
 from freezegun.api import freeze_time
 
-from dbt_platform_helper.constants import DEFAULT_PLATFORM_HELPER_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -216,17 +215,13 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_re
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
 
 
-@pytest.mark.parametrize(
-    "cli_tpm_version, cli_platform_helper_version, exp_version",
-    [("7", "13", "13"), (None, None, DEFAULT_PLATFORM_HELPER_VERSION)],
-)
 def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_version(
-    cli_tpm_version,
-    cli_platform_helper_version,
-    exp_version,
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
+    cli_tpm_version = ("7",)
+    cli_platform_helper_version = "13"
+    exp_version = "13"
     app_name = "test-app"
     fakefs.create_file(
         PLATFORM_CONFIG_FILE,

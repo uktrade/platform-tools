@@ -1,19 +1,10 @@
-from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
-from dbt_platform_helper.providers.io import ClickIOProvider
-
-
 def get_required_platform_helper_version(
     cli_platform_helper_version, platform_config_platform_helper_default_version
 ):
 
-    platform_helper_versioning = PlatformHelperVersioning(io=ClickIOProvider())
-
-    required_version = platform_helper_versioning.get_required_version(pipeline=None)
-
     version_preference_order = [
         cli_platform_helper_version,
         platform_config_platform_helper_default_version,
-        required_version,
     ]
     return [version for version in version_preference_order if version][0]
 

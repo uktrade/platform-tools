@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import click
 
-from dbt_platform_helper.constants import DEFAULT_PLATFORM_HELPER_VERSION
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -31,8 +30,7 @@ def pipeline():
     "--platform-helper-version",
     help=f"""Override the default version of platform-helper with a specific version or branch. 
     Precedence of version used is version supplied via CLI, then the version found in 
-    platform-config.yml/default_versions/platform-helper. 
-    In absence of these inputs, defaults to version '{DEFAULT_PLATFORM_HELPER_VERSION}'.""",
+    platform-config.yml/default_versions/platform-helper.""",
 )
 @click.option(
     "--deploy-branch",
