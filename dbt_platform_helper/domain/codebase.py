@@ -17,12 +17,12 @@ from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
 )
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import find_commit_tag
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import get_image_build_project
+from dbt_platform_helper.utils.aws import get_image_details
 from dbt_platform_helper.utils.aws import get_manual_release_pipeline
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
@@ -38,7 +38,7 @@ class Codebase:
         io: ClickIOProvider = ClickIOProvider(),
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
-        check_image_exists: Callable[[str], str] = check_image_exists,
+        get_image_details: Callable[[str], str] = get_image_details,
         find_commit_tag: Callable[[str], str] = find_commit_tag,
         get_image_build_project: Callable[[str], str] = get_image_build_project,
         get_manual_release_pipeline: Callable[[str], str] = get_manual_release_pipeline,
@@ -58,7 +58,7 @@ class Codebase:
         self.io = io
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
-        self.check_image_exists = check_image_exists
+        self.get_image_details = get_image_details
         self.find_commit_tag = find_commit_tag
         self.get_image_build_project = get_image_build_project
         self.get_manual_release_pipeline = get_manual_release_pipeline
@@ -165,8 +165,8 @@ class Codebase:
         application, session = self.populate_application_values(app, env)
 
         image_ref = f"commit-{commit}" if commit else ref
-        self.check_image_exists(session, application, codebase, image_ref)
-        image_ref = self.retrieve_commit_tag(application, codebase, image_ref, session)
+        image_details = self.get_image_details(session, application, codebase, image_ref)
+        image_ref = self.retrieve_commit_tag(image_ref, image_details)
 
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
@@ -212,9 +212,9 @@ class Codebase:
                 "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
             )
 
-    def retrieve_commit_tag(self, application, codebase, image_ref, session):
+    def retrieve_commit_tag(self, image_ref, image_details):
         if not image_ref.startswith("commit-"):
-            commit_tag = self.find_commit_tag(session, application, codebase, image_ref)
+            commit_tag = self.find_commit_tag(image_details, image_ref)
             image_ref = commit_tag if commit_tag else image_ref
         return image_ref
 

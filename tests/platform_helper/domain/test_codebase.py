@@ -42,7 +42,7 @@ class CodebaseMocks:
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
-        self.check_image_exists = kwargs.get("check_image_exists", Mock(return_value=""))
+        self.get_image_details = kwargs.get("get_image_details", Mock(return_value=""))
         self.find_commit_tag = kwargs.get("find_commit_tag", Mock(return_value=""))
         self.get_image_build_project = kwargs.get(
             "get_image_build_project",
@@ -60,7 +60,7 @@ class CodebaseMocks:
             "parameter_provider": self.parameter_provider,
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
-            "check_image_exists": self.check_image_exists,
+            "get_image_details": self.get_image_details,
             "find_commit_tag": self.find_commit_tag,
             "get_image_build_project": self.get_image_build_project,
             "get_manual_release_pipeline": self.get_manual_release_pipeline,
@@ -260,10 +260,8 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
 
 def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
     mocks = CodebaseMocks()
-    mock_application = MagicMock()
-    mock_application.name = "test-application"
-    mock_application.environments = {"development": MagicMock()}
-    mocks.load_application.return_value = mock_application
+    mock_image_details = MagicMock()
+    mocks.get_image_details.return_value = mock_image_details
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
@@ -274,9 +272,7 @@ def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
     # 'commit' is None as we're only interested in the scenario where 'ref' is used
     codebase.deploy("test-application", "development", "application", None, "latest")
 
-    mocks.find_commit_tag.assert_called_once_with(
-        mocks.get_aws_session_or_abort(), mock_application, "application", "latest"
-    )
+    mocks.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
 
     client.start_pipeline_execution.assert_called_once_with(
         name="test-application-application-manual-release",
@@ -317,11 +313,9 @@ def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
 @pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
 def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
     if exception_type == ImageNotFoundException:
-        mocks = CodebaseMocks(
-            check_image_exists=Mock(side_effect=exception_type("nonexistent-ref"))
-        )
+        mocks = CodebaseMocks(get_image_details=Mock(side_effect=exception_type("nonexistent-ref")))
     else:
-        mocks = CodebaseMocks(check_image_exists=Mock(side_effect=exception_type("application")))
+        mocks = CodebaseMocks(get_image_details=Mock(side_effect=exception_type("application")))
 
     with pytest.raises(exception_type):
         codebase = Codebase(**mocks.params())
@@ -331,7 +325,7 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
 @pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref):
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
+        get_image_details=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
@@ -345,7 +339,7 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref)
 @pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
 def test_codebase_deploy_aborts_with_a_nonexistent_image_ref(commit, ref):
     mocks = CodebaseMocks(
-        check_image_exists=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
+        get_image_details=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
     )
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)

@@ -420,7 +420,7 @@ def get_image_details(session, application, codebase, image_ref) -> str:
             imageIds=[{"imageTag": image_ref}],
         )
 
-        image_details_exists(image_info, image_ref)
+        check_image_details_exists(image_info, image_ref)
 
         return image_info.get("imageDetails")
     except ecr_client.exceptions.ImageNotFoundException:
@@ -429,20 +429,14 @@ def get_image_details(session, application, codebase, image_ref) -> str:
         raise RepositoryNotFoundException(repository)
 
 
-def image_details_exists(image_info, image_ref):
+def check_image_details_exists(image_info, image_ref):
     if "imageDetails" not in image_info:
         raise ImageNotFoundException(
             f'Unexpected response from AWS ECR: Missing imageDetails for image "{image_ref}"'
         )
 
 
-def check_image_exists(session, application, codebase, image_ref):
-    get_image_details(session, application, codebase, image_ref)
-
-
-def find_commit_tag(session, application, codebase, image_ref) -> str:
-    image_details = get_image_details(session, application, codebase, image_ref)
-
+def find_commit_tag(image_details, image_ref) -> str:
     for image in image_details:
         image_tags = image.get("imageTags")
         for tag in image_tags:
