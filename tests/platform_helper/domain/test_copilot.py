@@ -156,10 +156,14 @@ class TestMakeAddonsCommand:
 
         mocks = CopilotMocks()
 
-        config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
         mocks.session.side_effect = [dev_session, prod_session]
-        environment_config = {"environments": {"development": {}, "production": {}}}
-        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+
+        config = {
+            "application": "test-app",
+            "extensions": S3_STORAGE_CONTENTS,
+            "environments": {"development": {}, "production": {}},
+        }
+        mocks.config_provider.apply_environment_defaults = lambda config: config
         mocks.config_provider.load_and_validate_platform_config.return_value = config
         mocks.file_provider = FileProvider  # Allow the use of fakefs
 
@@ -284,10 +288,13 @@ class TestMakeAddonsCommand:
 
         mocks = CopilotMocks()
 
-        mock_config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
-        environment_config = {"environments": {"development": {}, "production": {}}}
-        mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
-        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        config = {
+            "application": "test-app",
+            "extensions": S3_STORAGE_CONTENTS,
+            "environments": {"development": {}, "production": {}},
+        }
+        mocks.config_provider.apply_environment_defaults = lambda config: config
+        mocks.config_provider.load_and_validate_platform_config.return_value = config
         mocks.file_provider = FileProvider  # Allow the use of fakefs
         mocks.kms_provider.return_value.describe_key.return_value = {
             "KeyMetadata": {"Arn": "kms-key-not-found"}
@@ -384,7 +391,7 @@ class TestMakeAddonsCommand:
 
         mocks = CopilotMocks()
 
-        mock_config = yaml.dump({"application": "test-app", "extensions": S3_STORAGE_CONTENTS})
+        mock_config = {"application": "test-app", "extensions": S3_STORAGE_CONTENTS}
         environment_config = {"environments": {"development": {}, "production": {}}}
         mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
         mocks.config_provider.apply_environment_defaults.return_value = environment_config
@@ -716,12 +723,16 @@ class TestMakeAddonsCommand:
     ):
         create_test_manifests(addon_config, fakefs)
         mocks = CopilotMocks()
-        mock_config = yaml.dump({"application": "test-app", "extensions": addon_config})
-        environment_config = {"environments": {"development": {}, "production": {}}}
+        mock_config = {
+            "application": "test-app",
+            "extensions": addon_config,
+            "environments": {"development": {}, "production": {}},
+        }
+
         mocks.config_provider = Mock(spec=ConfigProvider)
         mocks.config_provider.config_file_check.return_value = True
         mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
-        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        mocks.config_provider.apply_environment_defaults = lambda config: config
         mocks.parameter_provider.get_ssm_parameter_by_name.return_value = {
             "Value": '{"prod": "arn:cwl_log_destination_prod", "dev": "arn:dev_cwl_log_destination"}'
         }
@@ -738,10 +749,6 @@ class TestMakeAddonsCommand:
                 in mocks.io.info.call_args_list[-1][0][0]
             )
 
-    # TODO this test set up has changed significantly in order to get it to pass
-    # Review against previous version with debugging to assure that the test needing changed was
-    # not indicative of a change in functionality in the domain
-    # In particular, the test would not pass with the previous mock config data.
     @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
     @patch(
         "dbt_platform_helper.domain.copilot.Copilot._get_log_destination_arn",
