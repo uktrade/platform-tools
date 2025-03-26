@@ -236,7 +236,7 @@ platform-helper codebase build --app <application> --codebase <codebase>
 
 ```
 platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase> 
-                                --commit <commit> 
+                                [--ref <ref>] [--commit <commit>] 
 ```
 
 ## Options
@@ -247,8 +247,10 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
   - AWS Copilot environment
 - `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
+- `--ref <text>`
+  - AWS ECR image tag, usually in one of the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>.
 - `--commit <text>`
-  - GitHub commit hash
+  - (DEPRECATED) Use --ref instead to pass the AWS ECR image tag.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

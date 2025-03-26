@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
+import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.codebase import build
@@ -179,18 +180,21 @@ class TestCodebaseDeploy:
 
         assert result.exit_code == 0
 
+    @pytest.mark.parametrize(
+        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+    )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
-        self, mock_codebase_object, mock_parameter_provider, mock_session
+        self, mock_codebase_object, mock_parameter_provider, mock_session, flag, commit, ref
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
 
         mock_ssm_client = Mock()
         mock_session.return_value.client.return_value = mock_ssm_client
 
-        CliRunner().invoke(
+        result = CliRunner().invoke(
             deploy,
             [
                 "--app",
@@ -199,27 +203,33 @@ class TestCodebaseDeploy:
                 "development",
                 "--codebase",
                 "application",
-                "--commit",
-                "ab1c23d",
+                flag,
+                commit if commit else ref,
             ],
             input="y\n",
         )
 
-        mock_session.return_value.client.assert_called_once_with("ssm")
-        mock_parameter_provider.assert_called_with(mock_ssm_client)
-        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
-        mock_codebase_object.return_value.deploy.assert_called_once()
-
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "ab1c23d"
+            "test-application", "development", "application", commit, ref
         )
+        assert result.exit_code == 0
 
+    @pytest.mark.parametrize(
+        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+    )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
-    def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_image_tag(
-        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
+    def test_codebase_deploy_aborts_with_a_nonexistent_image_repository_or_ref(
+        self,
+        mock_click,
+        mock_codebase_object,
+        mock_parameter_provider,
+        mock_session,
+        flag,
+        commit,
+        ref,
     ):
 
         mock_ssm_client = Mock()
@@ -236,8 +246,8 @@ class TestCodebaseDeploy:
                 "development",
                 "--codebase",
                 "application",
-                "--commit",
-                "nonexistent-commit-hash",
+                flag,
+                commit if commit else ref,
             ],
         )
 
@@ -247,16 +257,26 @@ class TestCodebaseDeploy:
         mock_codebase_object.return_value.deploy.assert_called_once()
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", "nonexistent-commit-hash"
+            "test-application", "development", "application", commit, ref
         )
         assert result.exit_code == 1
 
+    @pytest.mark.parametrize(
+        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "commit-ab1c23d")]
+    )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_without_an_application(
-        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
+        self,
+        mock_click,
+        mock_codebase_object,
+        mock_parameter_provider,
+        mock_session,
+        flag,
+        commit,
+        ref,
     ):
 
         mock_ssm_client = Mock()
@@ -275,8 +295,8 @@ class TestCodebaseDeploy:
                 "dev",
                 "--codebase",
                 "application",
-                "--commit",
-                "ab1c23d",
+                flag,
+                commit if commit else ref,
             ],
         )
 
@@ -286,16 +306,26 @@ class TestCodebaseDeploy:
         mock_codebase_object.return_value.deploy.assert_called_once()
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "not-an-application", "dev", "application", "ab1c23d"
+            "not-an-application", "dev", "application", commit, ref
         )
         assert result.exit_code == 1
 
+    @pytest.mark.parametrize(
+        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+    )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_with_missing_environment(
-        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
+        self,
+        mock_click,
+        mock_codebase_object,
+        mock_parameter_provider,
+        mock_session,
+        flag,
+        commit,
+        ref,
     ):
         mock_ssm_client = Mock()
         mock_session.return_value.client.return_value = mock_ssm_client
@@ -313,8 +343,8 @@ class TestCodebaseDeploy:
                 "not-an-environment",
                 "--codebase",
                 "application",
-                "--commit",
-                "ab1c23d",
+                flag,
+                commit if commit else ref,
             ],
         )
 
@@ -324,16 +354,26 @@ class TestCodebaseDeploy:
         mock_codebase_object.return_value.deploy.assert_called_once()
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "not-an-environment", "application", "ab1c23d"
+            "test-application", "not-an-environment", "application", commit, ref
         )
         assert result.exit_code == 1
 
+    @pytest.mark.parametrize(
+        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+    )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     @patch("click.secho")
     def test_codebase_deploy_does_not_trigger_build_with_missing_codebase(
-        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
+        self,
+        mock_click,
+        mock_codebase_object,
+        mock_parameter_provider,
+        mock_session,
+        flag,
+        commit,
+        ref,
     ):
         mock_ssm_client = Mock()
         mock_session.return_value.client.return_value = mock_ssm_client
@@ -351,8 +391,8 @@ class TestCodebaseDeploy:
                 "test-environment",
                 "--codebase",
                 "not-a-codebase",
-                "--commit",
-                "ab1c23d",
+                flag,
+                commit if commit else ref,
             ],
         )
 
@@ -362,7 +402,7 @@ class TestCodebaseDeploy:
         mock_codebase_object.return_value.deploy.assert_called_once()
 
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "test-environment", "not-a-codebase", "ab1c23d"
+            "test-application", "test-environment", "not-a-codebase", commit, ref
         )
         assert result.exit_code == 1
 

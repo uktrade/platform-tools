@@ -66,11 +66,21 @@ def build(app, codebase, commit):
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
-@click.option("--commit", help="GitHub commit hash", required=True)
-def deploy(app, env, codebase, commit):
+@click.option(
+    "--ref",
+    help="AWS ECR image tag, usually in one of the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>.",
+    required=False,
+)
+@click.option(
+    "--commit",
+    help="(DEPRECATED) Use --ref instead to pass the AWS ECR image tag.",
+    required=False,
+)
+def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = None):
+
     try:
         Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).deploy(
-            app, env, codebase, commit
+            app, env, codebase, commit, ref
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
