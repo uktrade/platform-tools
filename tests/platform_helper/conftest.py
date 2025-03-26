@@ -800,6 +800,8 @@ environments:
       dns:
         name: "platform-sandbox-test"
         id: "2222222222"
+    versions:
+        terraform-platform-modules: "7.0.0"
   prod:
     accounts:
       deploy:
@@ -825,6 +827,40 @@ environment_pipelines:
        trigger_on_push: false
        environments:
          prod:
+    """
+    )
+
+
+@pytest.fixture()
+def platform_config_for_env_pipelines_without_deprecated_tpm_default_versions():
+    return yaml.safe_load(
+        """
+application: test-app
+deploy_repository: uktrade/test-app-name-deploy
+
+default_versions:
+    platform-helper: 13.0.0
+
+environments:
+  dev:
+    accounts:
+      deploy:
+        name: "platform-sandbox-test"
+        id: "1111111111"
+      dns:
+        name: "platform-sandbox-test"
+        id: "2222222222"
+    versions:
+        terraform-platform-modules: "7.0.0"
+  prod:
+    accounts:
+      deploy:
+        name: "platform-prod-test"
+        id: "3333333333"
+      dns:
+        name: "platform-prod-test"
+        id: "4444444444"
+    requires_approval: true
     """
     )
 
