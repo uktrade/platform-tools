@@ -11,15 +11,11 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.legacy_versions import LegacyVersionsProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
+from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.tool_versioning import (
-    check_terraform_platform_modules_version,
-)
-from dbt_platform_helper.utils.tool_versioning import (
-    get_required_platform_helper_version,
-)
 
 
 class Pipelines:
@@ -49,7 +45,7 @@ class Pipelines:
     ):
         platform_config = self.config_provider.load_and_validate_platform_config()
 
-        check_terraform_platform_modules_version(
+        LegacyVersionsProvider().check_terraform_platform_modules_version(
             self.io, cli_terraform_platform_modules_version, platform_config
         )
 
@@ -59,10 +55,6 @@ class Pipelines:
         if not (has_codebase_pipelines or has_environment_pipelines):
             self.io.warn("No pipelines defined: nothing to do.")
             return
-
-        platform_config_platform_helper_default_version = platform_config.get(
-            "default_versions", {}
-        ).get("platform-helper", "")
 
         app_name = get_application_name()
 
@@ -79,10 +71,14 @@ class Pipelines:
 
         self._clean_pipeline_config(copilot_pipelines_dir)
 
-        platform_helper_version = get_required_platform_helper_version(
-            cli_platform_helper_version,
-            platform_config_platform_helper_default_version,
-        )
+        platform_config_platform_helper_default_version = platform_config.get(
+            "default_versions", {}
+        ).get("platform-helper", "")
+
+        platform_helper_version = PlatformHelperVersionStatus(
+            cli_override=cli_platform_helper_version,
+            platform_config_default=platform_config_platform_helper_default_version,
+        ).get_required_platform_helper_version(self.io)
 
         # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
