@@ -204,15 +204,6 @@ def set_ssm_param(
     client.put_parameter(**parameter_args)
 
 
-def check_response(response):
-    if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-        click.secho(
-            f"Unknown response error from AWS.\nStatus Code: {response['ResponseMetadata']['HTTPStatusCode']}",
-            fg="red",
-        )
-        exit()
-
-
 def get_codestar_connection_arn(app_name):
     session = get_aws_session_or_abort()
     response = session.client("codestar-connections").list_connections()
@@ -228,16 +219,6 @@ def get_account_details(sts_client=None):
     response = sts_client.get_caller_identity()
 
     return response["Account"], response["UserId"]
-
-
-def get_public_repository_arn(repository_uri):
-    session = get_aws_session_or_abort()
-    response = session.client("ecr-public", region_name="us-east-1").describe_repositories()
-    repository = [
-        repo for repo in response["repositories"] if repo["repositoryUri"] == repository_uri
-    ]
-
-    return repository[0]["repositoryArn"] if repository else None
 
 
 def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):

@@ -28,13 +28,11 @@ from dbt_platform_helper.utils.aws import (
     get_postgres_connection_data_updated_with_master_secret,
 )
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
-from dbt_platform_helper.utils.aws import get_public_repository_arn
 from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from tests.platform_helper.conftest import mock_aws_client
 from tests.platform_helper.conftest import mock_codestar_connections_boto_client
-from tests.platform_helper.conftest import mock_ecr_public_repositories_boto_client
 from tests.platform_helper.conftest import mock_get_caller_identity
 
 
@@ -393,23 +391,6 @@ def test_get_codestar_connection_arn(
     mock_codestar_connections_boto_client(mock_get_aws_session_or_abort, connection_names)
 
     result = get_codestar_connection_arn(app_name)
-
-    assert result == expected_arn
-
-
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@pytest.mark.parametrize(
-    "repository_uri, expected_arn",
-    [
-        ("public.ecr.aws/abc123/my/app", "arn:aws:ecr-public::000000000000:repository/my/app"),
-        ("public.ecr.aws/abc123/my/app2", "arn:aws:ecr-public::000000000000:repository/my/app2"),
-        ("public.ecr.aws/abc123/does-not/exist", None),
-    ],
-)
-def test_get_public_repository_arn(mock_get_aws_session_or_abort, repository_uri, expected_arn):
-    mock_ecr_public_repositories_boto_client(mock_get_aws_session_or_abort)
-
-    result = get_public_repository_arn(repository_uri)
 
     assert result == expected_arn
 
