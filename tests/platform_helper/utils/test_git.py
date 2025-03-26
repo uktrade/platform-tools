@@ -40,7 +40,7 @@ def test_check_if_commit_exists_success(mock_run):
     mock_result.stdout = b"origin/my-branch"
     mock_result.stderr = None
     mock_run.return_value = mock_result
-    dbt_platform_helper.utils.git.check_if_commit_exists("58c122ae2234f24083b16ad20dbc295e44e8d480")
+    dbt_platform_helper.utils.git.check_if_commit_exists("1234")
 
 
 @patch("subprocess.run")
