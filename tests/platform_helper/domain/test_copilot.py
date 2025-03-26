@@ -732,7 +732,6 @@ class TestMakeAddonsCommand:
             "environments": {"development": {}, "production": {}},
         }
 
-        mocks.config_provider = Mock(spec=ConfigProvider)
         mocks.config_provider.config_file_check.return_value = True
         mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
         mocks.config_provider.apply_environment_defaults = lambda config: config
