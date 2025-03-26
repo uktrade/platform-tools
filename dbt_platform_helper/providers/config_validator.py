@@ -17,7 +17,10 @@ class ConfigValidatorError(PlatformException):
 class ConfigValidator:
 
     def __init__(
-        self, validations: Callable[[dict], None] = None, io: ClickIOProvider = ClickIOProvider()
+        self,
+        validations: Callable[[dict], None] = None,
+        io: ClickIOProvider = ClickIOProvider(),
+        session: boto3.Session = None,
     ):
         self.validations = validations or [
             self.validate_supported_redis_versions,
