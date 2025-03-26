@@ -73,7 +73,7 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_platfo
     )
 
 
-def test_check_terraform_platform_modules_version_detects_tpm_versions_in_cli(
+def test_check_terraform_platform_modules_version_detects_tpm_versions_in_cli_and_has_valid_config(
     fakefs,
     platform_config_for_env_pipelines_without_deprecated_tpm_default_versions,
 ):

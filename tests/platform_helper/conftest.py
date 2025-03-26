@@ -402,7 +402,6 @@ def valid_platform_config():
 application: test-app
 default_versions: 
     platform-helper: 10.2.0
-    terraform-platform-modules: 1.2.3
 environments:
   "*":
     accounts:
@@ -416,8 +415,6 @@ environments:
     vpc: non-prod-vpc
   dev:
   test:
-    versions:
-        terraform-platform-modules: 1.2.3
   staging:
   hotfix:
     accounts:
@@ -706,7 +703,6 @@ legacy_project: false
 
 default_versions: 
     platform-helper: 1.2.3
-    terraform-platform-modules: 9.9.9
 
 environments:
   dev:
@@ -779,7 +775,7 @@ environment_pipelines:
     )
 
 
-# todo: remove once `terraform-platform-modules` is fully deprecated
+# Todo: merge - remove once `terraform-platform-modules` is fully deprecated
 @pytest.fixture()
 def platform_config_for_env_pipelines_with_deprecated_tpm_default_versions():
     return yaml.safe_load(
@@ -801,7 +797,7 @@ environments:
         name: "platform-sandbox-test"
         id: "2222222222"
     versions:
-        terraform-platform-modules: "7.0.0"
+        terraform-platform-modules: 7.0.0
   prod:
     accounts:
       deploy:
@@ -850,8 +846,6 @@ environments:
       dns:
         name: "platform-sandbox-test"
         id: "2222222222"
-    versions:
-        terraform-platform-modules: "7.0.0"
   prod:
     accounts:
       deploy:
