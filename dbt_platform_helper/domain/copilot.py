@@ -154,7 +154,6 @@ class Copilot:
             if self._is_service(path)
         ]
 
-    # TODO - potentially worth moving into config provider?
     def _validate_and_normalise_extensions_config(self, config_file, key_in_config_file=None):
         """Load a config file, validate it against the extensions schemas and
         return the normalised config dict."""
@@ -254,7 +253,6 @@ class Copilot:
 
         return normalised_config
 
-    # TODO - as part of the domain refactor, move this code into make-addons maybe?
     def _get_log_destination_arn(self):
         """Get destination arns stored in param store in projects aws
         account."""
