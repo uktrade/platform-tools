@@ -607,6 +607,7 @@ def test_get_load_balancer_domain_and_configuration(tmp_path, svc_name):
         LoadBalancerArn=mocked_load_balancer_arn,
         DefaultActions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
         Port=443,
+        Protocol="HTTPS",
     )
     mocked_ecs_client = session.client("ecs")
     mocked_ecs_client.create_cluster(clusterName=cluster_name)

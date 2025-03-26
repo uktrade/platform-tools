@@ -79,7 +79,10 @@ class TestCommandHelperMethods:
             Name="test-load-balancer", Subnets=[subnet_id]
         )["LoadBalancers"][0]["LoadBalancerArn"]
         return elbv2_client.create_listener(
-            LoadBalancerArn=load_balancer_arn, DefaultActions=[{"Type": "forward"}], Port=443
+            LoadBalancerArn=load_balancer_arn,
+            DefaultActions=[{"Type": "forward"}],
+            Port=443,
+            Protocol="HTTPS",
         )["Listeners"][0]["ListenerArn"]
 
     def _create_listener_rule(self, elbv2_client=None, listener_arn=None, priority=1):
