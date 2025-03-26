@@ -21,7 +21,7 @@ from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 def set_up_retry():
     session = Session()
-    retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[403, 500, 502, 503, 504])
+    retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[403, 500, 502, 503, 504])
     session.mount("https://", HTTPAdapter(max_retries=retries))
     return session
 
