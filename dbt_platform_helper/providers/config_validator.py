@@ -206,21 +206,14 @@ class ConfigValidator:
                         f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                     )
 
+                # TODO - The from_account and to_account properties are deprecated and will be removed when terraform-platform-modules is merged with platform-tools
                 if from_account != to_account:
-                    if "from_account" not in section:
-                        errors.append(
-                            f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'from_account' parameter must be present."
-                        )
-                    elif section["from_account"] != from_account:
+                    if "from_account" in section and section["from_account"] != from_account:
                         errors.append(
                             f"Incorrect value for 'from_account' for environment '{from_env}'"
                         )
 
-                    if "to_account" not in section:
-                        errors.append(
-                            f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'to_account' parameter must be present."
-                        )
-                    elif section["to_account"] != to_account:
+                    if "to_account" in section and section["to_account"] != to_account:
                         errors.append(
                             f"Incorrect value for 'to_account' for environment '{to_env}'"
                         )

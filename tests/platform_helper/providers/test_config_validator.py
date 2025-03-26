@@ -185,56 +185,6 @@ def test_validate_database_copy_multi_postgres_failures():
     )
 
 
-def test_validate_database_copy_fails_if_cross_account_with_no_from_account():
-    config = {
-        "application": "test-app",
-        "environments": {
-            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
-            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
-        },
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-                "database_copy": [{"from": "prod", "to": "dev"}],
-            }
-        },
-    }
-
-    with pytest.raises(ConfigValidatorError) as exception:
-        ConfigValidator().validate_database_copy_section(config)
-
-    console_message = str(exception.value)
-
-    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'from_account' parameter must be present."
-    assert msg in console_message
-
-
-def test_validate_database_copy_fails_if_cross_account_with_no_to_account():
-    config = {
-        "application": "test-app",
-        "environments": {
-            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
-            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
-        },
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-                "database_copy": [{"from": "prod", "to": "dev", "from_account": "9999999999"}],
-            }
-        },
-    }
-
-    with pytest.raises(ConfigValidatorError) as exception:
-        ConfigValidator().validate_database_copy_section(config)
-
-    console_message = str(exception.value)
-
-    msg = f"Environments 'prod' and 'dev' are in different AWS accounts. The 'to_account' parameter must be present."
-    assert msg in console_message
-
-
 def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_ids():
     config = {
         "application": "test-app",
