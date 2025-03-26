@@ -1,6 +1,5 @@
 import click
 
-from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
@@ -93,7 +92,9 @@ def generate(name):
 )
 @click.option(
     "--terraform-platform-modules-version",
-    help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
+    help=f"""Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
+    The platform-tools and terraform-platform-modules repositories have now been merged. 
+    Please use the '--platform-helper-version' flag when stating the desired version of platform-tools and terraform-platform-modules.""",
 )
 def generate_terraform(name, platform_helper_version, terraform_platform_modules_version):
     click_io = ClickIOProvider()

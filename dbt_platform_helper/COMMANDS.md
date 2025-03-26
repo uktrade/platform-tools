@@ -495,7 +495,9 @@ platform-helper environment generate-terraform --name <name> [--platform-helper-
 - `--platform-helper-version <text>`
   - Override the default version of platform-helper. (Default version is the installed version for `dbt-platform-helper`.
 - `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules. (Default version is '7').
+  - Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
+The platform-tools and terraform-platform-modules repositories have now been merged. 
+Please use the '--platform-helper-version' flag when stating the desired version of platform-tools and terraform-platform-modules.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
