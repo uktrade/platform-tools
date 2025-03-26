@@ -1,0 +1,6 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps(dev)"
