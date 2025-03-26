@@ -1,8 +1,10 @@
 import re
 import subprocess
 
+from dbt_platform_helper.platform_exception import PlatformException
 
-class CommitNotFoundException(Exception):
+
+class CommitNotFoundException(PlatformException):
     pass
 
 
