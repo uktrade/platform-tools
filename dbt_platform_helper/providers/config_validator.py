@@ -80,10 +80,10 @@ class ConfigValidator:
                 f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
             )
 
-    def _get_client(self, type: str):
+    def _get_client(self, service_name: str):
         if self.session:
-            return self.session.client(type)
-        return boto3.client(type)
+            return self.session.client(service_name)
+        return boto3.client(service_name)
 
     def validate_supported_redis_versions(self, config):
         return self._validate_extension_supported_versions(
