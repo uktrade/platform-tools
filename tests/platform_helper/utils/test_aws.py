@@ -10,13 +10,9 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
-from dbt_platform_helper.providers.aws.exceptions import (
-    CopilotCodebaseNotFoundException,
-)
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
-from dbt_platform_helper.utils.aws import check_codebase_exists
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
@@ -393,67 +389,6 @@ def test_get_codestar_connection_arn(
     result = get_codestar_connection_arn(app_name)
 
     assert result == expected_arn
-
-
-@mock_aws
-def test_check_codebase_exists(mock_application):
-    mock_application.environments["development"].session.client("ssm")
-    mock_ssm = boto3.client("ssm")
-    mock_ssm.put_parameter(
-        Name="/copilot/applications/test-application/codebases/application",
-        Type="String",
-        Value="""
-                                             {
-                                                "name": "test-app", 
-                                                "repository": "uktrade/test-app",
-                                                "services": "1234"
-                                             }
-                                        """,
-    )
-
-    check_codebase_exists(
-        mock_application.environments["development"].session, mock_application, "application"
-    )
-
-
-@mock_aws
-def test_check_codebase_does_not_exist(mock_application):
-    mock_application.environments["development"].session.client("ssm")
-    mock_ssm = boto3.client("ssm")
-    mock_ssm.put_parameter(
-        Name="/copilot/applications/test-application/codebases/application",
-        Type="String",
-        Value="""
-                                             {
-                                                "name": "test-app", 
-                                                "repository": "uktrade/test-app",
-                                                "services": "1234"
-                                             }
-                                        """,
-    )
-
-    with pytest.raises(CopilotCodebaseNotFoundException):
-        check_codebase_exists(
-            mock_application.environments["development"].session,
-            mock_application,
-            "not-found-application",
-        )
-
-
-@mock_aws
-def test_check_codebase_errors_when_json_is_malformed(mock_application):
-    mock_application.environments["development"].session.client("ssm")
-    mock_ssm = boto3.client("ssm")
-    mock_ssm.put_parameter(
-        Name="/copilot/applications/test-application/codebases/application",
-        Type="String",
-        Value="not valid JSON",
-    )
-
-    with pytest.raises(CopilotCodebaseNotFoundException):
-        check_codebase_exists(
-            mock_application.environments["development"].session, mock_application, "application"
-        )
 
 
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")

@@ -14,9 +14,6 @@ from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws.exceptions import (
-    CopilotCodebaseNotFoundException,
-)
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
@@ -269,25 +266,6 @@ def start_build_extraction(codebuild_client, build_options):
 def start_pipeline_and_return_execution_id(codepipeline_client, build_options):
     response = codepipeline_client.start_pipeline_execution(**build_options)
     return response["pipelineExecutionId"]
-
-
-# Todo: This should probably be in the AWS Copilot provider
-def check_codebase_exists(session: Session, application, codebase: str):
-    try:
-        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
-        ssm_client = session.client("ssm")
-        json.loads(
-            ssm_client.get_parameter(
-                Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
-            )["Parameter"]["Value"]
-        )
-    except (
-        KeyError,
-        ValueError,
-        ssm_client.exceptions.ParameterNotFound,
-        json.JSONDecodeError,
-    ):
-        raise CopilotCodebaseNotFoundException(codebase)
 
 
 def check_image_exists(session, application, codebase, commit):
