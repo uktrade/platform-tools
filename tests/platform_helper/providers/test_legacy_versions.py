@@ -23,11 +23,7 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_cli_an
 
     config_object = ConfigProvider().load_and_validate_platform_config()
 
-    result = LegacyVersionsProvider().check_terraform_platform_modules_version(
-        mock_io, "7.0.0", config_object
-    )
-
-    assert result is None
+    LegacyVersionsProvider(mock_io).check_terraform_platform_modules_version("7.0.0", config_object)
 
     mock_io.warn.assert_called_once_with(
         "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
@@ -44,9 +40,8 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_platfo
     fakefs,
     platform_config_for_env_pipelines_with_deprecated_tpm_default_versions,
 ):
-    """Test that, given a CLI entry for terraform-platform-modules version or a
-    platform config object that contains deprecated terraform-platform-modules
-    versions, will raise a warning."""
+    """Test that, given a platform config object that contains deprecated
+    terraform-platform-modules versions, will raise a warning."""
 
     mock_io = Mock()
     fakefs.create_file(
@@ -56,11 +51,7 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_platfo
 
     config_object = ConfigProvider().load_and_validate_platform_config()
 
-    result = LegacyVersionsProvider().check_terraform_platform_modules_version(
-        mock_io, "", config_object
-    )
-
-    assert result is None
+    LegacyVersionsProvider(mock_io).check_terraform_platform_modules_version(None, config_object)
 
     mock_io.warn.assert_called_once_with(
         "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
@@ -77,9 +68,8 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_cli_an
     fakefs,
     platform_config_for_env_pipelines_without_deprecated_tpm_default_versions,
 ):
-    """Test that, given a CLI entry for terraform-platform-modules version or a
-    platform config object that contains deprecated terraform-platform-modules
-    versions, will raise a warning."""
+    """Test that, given a CLI entry for terraform-platform-modules version, will
+    raise a warning."""
 
     mock_io = Mock()
     fakefs.create_file(
@@ -91,11 +81,7 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_cli_an
 
     config_object = ConfigProvider().load_and_validate_platform_config()
 
-    result = LegacyVersionsProvider().check_terraform_platform_modules_version(
-        mock_io, "7.0.0", config_object
-    )
-
-    assert result is None
+    LegacyVersionsProvider(mock_io).check_terraform_platform_modules_version("7.0.0", config_object)
 
     mock_io.warn.assert_called_once_with(
         "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "

@@ -1,7 +1,13 @@
+from dbt_platform_helper.providers.io import ClickIOProvider
+
+
 class LegacyVersionsProvider:
 
+    def __init__(self, io: ClickIOProvider = ClickIOProvider()):
+        self.io = io
+
     def check_terraform_platform_modules_version(
-        self, io, cli_terraform_platform_modules_version, config
+        self, cli_terraform_platform_modules_version, config
     ):
         has_deprecated_default = config.get("default_versions", {}).get(
             "terraform-platform-modules"
@@ -18,7 +24,7 @@ class LegacyVersionsProvider:
             or has_deprecated_default
             or has_deprecated_version
         ):
-            io.warn(
+            self.io.warn(
                 "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
                 "Please use the `--platform-helper-version` flag instead.\n\n"
                 "The `terraform-platform-modules` key set in the platform-config.yml file in the following locations: `default_versions: terraform-platform-modules` and "
@@ -27,4 +33,3 @@ class LegacyVersionsProvider:
                 "See full platform config reference in the docs: "
                 "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
             )
-            return None

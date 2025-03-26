@@ -11,6 +11,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.legacy_versions import LegacyVersionsProvider
 
 
 class PipelineMocks:
@@ -27,6 +28,7 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
+        self.mock_legacy_provider = LegacyVersionsProvider(io=self.io)
 
     def params(self):
         return {
@@ -36,6 +38,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
+            "legacy_provider": self.mock_legacy_provider,
         }
 
 
@@ -188,6 +191,7 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_re
     platform_config_for_env_pipelines,
 ):
     app_name = "test-app"
+    # Adding the deprecated TPM keyword to config file
     platform_config_for_env_pipelines["environments"]["dev"]["versions"] = {
         "terraform-platform-modules": "12.0.0"
     }

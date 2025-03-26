@@ -94,7 +94,7 @@ def generate(name):
     "--terraform-platform-modules-version",
     help=f"""Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
     The platform-tools and terraform-platform-modules repositories have now been merged. 
-    Please use the '--platform-helper-version' flag when stating the desired version of platform-tools and terraform-platform-modules.""",
+    Please use the '--platform-helper-version' flag when stating the desired version of platform-tools/terraform.""",
 )
 def generate_terraform(name, platform_helper_version, terraform_platform_modules_version):
     click_io = ClickIOProvider()

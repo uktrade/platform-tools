@@ -497,7 +497,7 @@ platform-helper environment generate-terraform --name <name> [--platform-helper-
 - `--terraform-platform-modules-version <text>`
   - Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
 The platform-tools and terraform-platform-modules repositories have now been merged. 
-Please use the '--platform-helper-version' flag when stating the desired version of platform-tools and terraform-platform-modules.
+Please use the '--platform-helper-version' flag when stating the desired version of platform-tools/terraform.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -572,7 +572,7 @@ platform-helper pipeline generate [--terraform-platform-modules-version <terrafo
 - `--terraform-platform-modules-version <text>`
   - Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
 The platform-tools and terraform-platform-modules repositories have now been merged. 
-Please use the '--platform-helper-version' flag when stating the desired version of platform-tools and terraform-platform-modules.
+Please use the '--platform-helper-version' flag when stating the desired version of platform-tools/terraform.
 - `--platform-helper-version <text>`
   - Override the default version of platform-helper with a specific version or branch. 
 Precedence of version used is version supplied via CLI, then the version found in 
