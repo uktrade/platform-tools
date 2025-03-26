@@ -6,7 +6,8 @@
         "include-v-in-tag": false,
         "draft": false,
         "pull-request-header": ":robot: Next release",
-        "pull-request-footer": " "
+        "pull-request-footer": " ",
+        "pull-request-title-pattern": "chore${scope}: Release ${version} (off-ticket)"
     }
   }
 }
