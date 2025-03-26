@@ -1,4 +1,5 @@
 from importlib.metadata import PackageNotFoundError
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
@@ -46,29 +47,64 @@ class TestInstalledVersionProvider:
 
 
 class TestGithubLatestVersionProvider:
-    @patch("requests.get", return_value=MockGithubReleaseResponse())
-    def test_get_semantic_version_from_releases(self, request_get):
-        assert GithubLatestVersionProvider.get_semantic_version("test/repo") == SemanticVersion(
-            1, 1, 1
-        )
-        request_get.assert_called_once_with(
+    def test_get_semantic_version_from_releases(self):
+        requests_mock = MagicMock()
+        requests_mock.get.return_value = MockGithubReleaseResponse()
+        assert GithubLatestVersionProvider.get_semantic_version(
+            "test/repo", request_session=requests_mock
+        ) == SemanticVersion(1, 1, 1)
+        requests_mock.get.assert_called_once_with(
             "https://api.github.com/repos/test/repo/releases/latest"
         )
 
-    @patch("requests.get", return_value=MockGithubTagResponse())
-    def test_get_semantic_version_from_tags(self, request_get):
+    def test_get_semantic_version_from_tags(self):
+        requests_mock = MagicMock()
+        requests_mock.get.return_value = MockGithubTagResponse()
         assert GithubLatestVersionProvider.get_semantic_version(
-            "test/repo", True
+            "test/repo", True, request_session=requests_mock
         ) == SemanticVersion(1, 2, 3)
-        request_get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
+        requests_mock.get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
+
+    def test_get_semantic_version_returns_none_on_error(self):
+        mock_io = MagicMock()
+        requests_mock = MagicMock()
+        requests_mock.get.side_effect = Exception("doesnt-matter")
+        assert (
+            GithubLatestVersionProvider.get_semantic_version(
+                "test/repo", request_session=requests_mock, io=mock_io
+            )
+            is None
+        )
+        mock_io.error.assert_called_with(
+            "Exception occured when calling Github with:\ndoesnt-matter"
+        )
+        requests_mock.get.assert_called_once_with(
+            "https://api.github.com/repos/test/repo/releases/latest"
+        )
 
 
 class TestPyPiLatestVersionProvider:
-    @patch("requests.get", return_value=MockPyPiResponse())
-    def test_get_semantic_version(self, request_get):
-        result = PyPiLatestVersionProvider.get_semantic_version("foo")
+    def test_get_semantic_version(self):
+        requests_mock = MagicMock()
+        requests_mock.get.return_value = MockPyPiResponse()
+        result = PyPiLatestVersionProvider.get_semantic_version(
+            "foo", request_session=requests_mock
+        )
         assert result == SemanticVersion(1, 2, 3)
-        request_get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
+        requests_mock.get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
+
+    def test_get_semantic_version_returns_none_on_error(self):
+        mock_io = MagicMock()
+        requests_mock = MagicMock()
+        requests_mock.get.side_effect = Exception("doesnt-matter")
+        assert (
+            PyPiLatestVersionProvider.get_semantic_version(
+                "foo", request_session=requests_mock, io=mock_io
+            )
+            is None
+        )
+        mock_io.error.assert_called_with("Exception occured when calling PyPi with:\ndoesnt-matter")
+        requests_mock.get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
 
 
 @pytest.mark.parametrize(
