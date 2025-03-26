@@ -14,11 +14,6 @@ from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
-# TODOs
-# Inject session into class, remove get_aws_session_or_abort from domain. Patching needs to be moved to dbt_platform_helper.commands.copilot instead of dbt_platform_helper.domain.copilot.
-# Validate unit tests are running - add additional patching if needed.
-# Check test coverage via codecov, shouldn't have gone down.
-
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def copilot():
