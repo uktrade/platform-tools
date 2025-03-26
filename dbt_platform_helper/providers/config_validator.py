@@ -206,6 +206,7 @@ class ConfigValidator:
                         f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                     )
 
+                # TODO - The from_account and to_account properties are deprecated and will be removed when terraform-platform-modules is merged with platform-tools
                 if from_account != to_account:
                     if "from_account" in section and section["from_account"] != from_account:
                         errors.append(
