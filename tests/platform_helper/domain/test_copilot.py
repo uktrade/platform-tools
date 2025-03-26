@@ -391,10 +391,13 @@ class TestMakeAddonsCommand:
 
         mocks = CopilotMocks()
 
-        mock_config = {"application": "test-app", "extensions": S3_STORAGE_CONTENTS}
-        environment_config = {"environments": {"development": {}, "production": {}}}
-        mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
-        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        config = {
+            "application": "test-app",
+            "extensions": S3_STORAGE_CONTENTS,
+            "environments": {"development": {}, "production": {}},
+        }
+        mocks.config_provider.apply_environment_defaults = lambda config: config
+        mocks.config_provider.load_and_validate_platform_config.return_value = config
         mocks.file_provider = FileProvider  # Allow the use of fakefs
 
         addons_dir = FIXTURES_DIR / "make_addons"
@@ -852,10 +855,14 @@ class TestMakeAddonsCommand:
 
         mocks = CopilotMocks()
 
-        environment_config = {"environments": {"development": {}, "production": {}}}
-        mocks.config_provider = Mock(spec=ConfigProvider)
-        mocks.config_provider.load_and_validate_platform_config.return_value = environment_config
-        mocks.config_provider.apply_environment_defaults.return_value = environment_config
+        config = {
+            "application": "test-app",
+            "extensions": S3_STORAGE_CONTENTS,
+            "environments": {"development": {}, "production": {}},
+        }
+        # Return value set explicitly so that calls can be asserted on the mock
+        mocks.config_provider.apply_environment_defaults.return_value = config
+        mocks.config_provider.load_and_validate_platform_config.return_value = config
 
         mocks.copilot_templating = Mock(spec=CopilotTemplating)
         mocks.copilot_templating.generate_cross_account_s3_policies.return_value = "TestData"
@@ -873,7 +880,7 @@ class TestMakeAddonsCommand:
         exp["s3"]["environments"]["production"]["kms_key_arn"] = "arn-for-kms-alias"
 
         mocks.config_provider.load_and_validate_platform_config.assert_called()
-        mocks.config_provider.apply_environment_defaults.assert_called_with(environment_config)
+        mocks.config_provider.apply_environment_defaults.assert_called_with(config)
         mocks.copilot_templating.generate_cross_account_s3_policies.assert_called_with(
             {"development": {}, "production": {}}, exp
         )
