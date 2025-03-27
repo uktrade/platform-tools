@@ -21,12 +21,6 @@ my-datadog-bad-contact-email:
     default:
       contact_email: 123
 
-my-datadog-bad-repository:
-  type: datadog
-  environments:
-    default:
-      repository: 123
-
 my-datadog-bad-docs:
   type: datadog
   environments:
