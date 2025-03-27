@@ -723,6 +723,7 @@ class TestMakeAddonsCommand:
         addon_type,
         secret_name,
         fakefs,
+        capsys,
     ):
         create_test_manifests(addon_config, fakefs)
         mocks = CopilotMocks()
@@ -740,6 +741,18 @@ class TestMakeAddonsCommand:
         }
 
         Copilot(**mocks.params()).make_addons()
+
+        assert any(
+            ">>> Generating Terraform compatible addons CloudFormation" in str(arg)
+            for arg in mocks.io.info.call_args_list
+        )
+
+        if addon_type == "redis":
+            assert "DATABASE_CREDENTIALS" not in capsys.readouterr().out
+            assert all(
+                "DATABASE_CREDENTIALS" not in str(arg) for arg in mocks.io.info.call_args_list
+            )
+
         if addon_type == "redis":
             assert (
                 "REDIS_ENDPOINT: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/REDIS"
