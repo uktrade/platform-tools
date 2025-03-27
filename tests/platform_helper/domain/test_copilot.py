@@ -191,7 +191,7 @@ class TestMakeAddonsCommand:
         )
 
         dev_session.client.assert_called_once_with("kms")
-        prod_session.client.assert_called_with("kms")
+        prod_session.client.assert_called_once_with("kms")
         assert mocks.kms_provider.return_value.describe_key.call_count == 2
 
         assert "alias/test-app-production-my-bucket-prod-key" in str(
