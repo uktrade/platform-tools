@@ -37,14 +37,15 @@ def environment_progress(
         io = ClickIOProvider()
         client = SlackClient(slack_token, slack_channel_id)
         response = Notify(client).environment_progress(
-            slack_ref,
-            message,
-            build_arn,
-            repository,
-            commit_sha,
+            slack_ref=slack_ref,
+            message=message,
+            build_arn=build_arn,
+            repository=repository,
+            commit_sha=commit_sha,
         )
 
         io.info(response["ts"])
+    # TODO I don't think PlatformException gets raised anywhere currently
     except PlatformException as err:
         io.abort_with_error(str(err))
 
