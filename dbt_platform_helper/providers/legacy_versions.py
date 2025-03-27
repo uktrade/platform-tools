@@ -18,15 +18,18 @@ class LegacyVersionsProvider:
         )
 
         has_deprecated_version = any(
-            "versions" in env and "terraform-platform-modules" in env["versions"]
-            for env in config.get("environments", {}).values()
-            if isinstance(env, dict)
+            isinstance(env, dict)
+            and "versions" in env
+            and isinstance(env["versions"], dict)
+            and "terraform-platform-modules" in env["versions"]
+            for key, env in config.get("environments", {}).items()
+            if key != "default_versions"
         )
 
         if cli_terraform_platform_modules_version:
             self.io.warn(
                 "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-                "Please use the `--platform-helper-version` flag instead."
+                "Please use the `--platform-helper-version` flag instead.\n"
             )
 
         if has_deprecated_default:
@@ -34,7 +37,7 @@ class LegacyVersionsProvider:
                 "The `terraform-platform-modules` key set in the platform-config.yml file in the following location: `default_versions: terraform-platform-modules` is now deprecated. "
                 "Please use the `default_versions: platform-helper` value instead. "
                 "See full platform config reference in the docs: "
-                "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+                "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
             )
 
         if has_deprecated_version:
@@ -42,5 +45,5 @@ class LegacyVersionsProvider:
                 "The `terraform-platform-modules` key set in the platform-config.yml file in the following location:  `environments: <env>: versions: terraform-platform-modules` is now deprecated. "
                 "Please use the `default_versions: platform-helper` value instead. "
                 "See full platform config reference in the docs: "
-                "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+                "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
             )

@@ -174,7 +174,7 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_mo
 
     mocks.io.warn.assert_called_once_with(
         "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-        "Please use the `--platform-helper-version` flag instead."
+        "Please use the `--platform-helper-version` flag instead.\n"
     )
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
 
@@ -203,7 +203,7 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_re
         "The `terraform-platform-modules` key set in the platform-config.yml file in the following location: `default_versions: terraform-platform-modules` is now deprecated. "
         "Please use the `default_versions: platform-helper` value instead. "
         "See full platform config reference in the docs: "
-        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
     )
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
 
@@ -233,7 +233,7 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_re
         "The `terraform-platform-modules` key set in the platform-config.yml file in the following location:  `environments: <env>: versions: terraform-platform-modules` is now deprecated. "
         "Please use the `default_versions: platform-helper` value instead. "
         "See full platform config reference in the docs: "
-        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
     )
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
 

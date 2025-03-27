@@ -27,7 +27,7 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_cli(
 
     mock_io.warn.assert_called_once_with(
         "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-        "Please use the `--platform-helper-version` flag instead."
+        "Please use the `--platform-helper-version` flag instead.\n"
     )
 
 
@@ -52,7 +52,7 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_platfo
         "The `terraform-platform-modules` key set in the platform-config.yml file in the following location: `default_versions: terraform-platform-modules` is now deprecated. "
         "Please use the `default_versions: platform-helper` value instead. "
         "See full platform config reference in the docs: "
-        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
     )
 
 
@@ -79,5 +79,5 @@ def test_check_terraform_platform_modules_version_detects_tpm_versions_in_config
         "The `terraform-platform-modules` key set in the platform-config.yml file in the following location:  `environments: <env>: versions: terraform-platform-modules` is now deprecated. "
         "Please use the `default_versions: platform-helper` value instead. "
         "See full platform config reference in the docs: "
-        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
     )
