@@ -44,7 +44,7 @@ class TerraformEnvironment:
             )
 
         platform_config_platform_helper_default_version = config.get("default_versions", {}).get(
-            "platform-helper", ""
+            "platform-helper"
         )
 
         platform_helper_version = PlatformHelperVersionStatus(

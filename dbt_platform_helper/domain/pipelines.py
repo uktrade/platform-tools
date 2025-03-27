@@ -75,7 +75,7 @@ class Pipelines:
 
         platform_config_platform_helper_default_version = platform_config.get(
             "default_versions", {}
-        ).get("platform-helper", "")
+        ).get("platform-helper")
 
         platform_helper_version = PlatformHelperVersionStatus(
             cli_override=cli_platform_helper_version,
