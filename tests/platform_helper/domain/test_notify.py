@@ -120,40 +120,32 @@ def test_environment_progress(
             assert element.text == exp_text
 
 
-# @pytest.mark.parametrize(
-#     "title, broadcast, expected_text",
-#     (
-#         (None, False, "The comment"),
-#         (None, True, "The comment"),
-#         ("My title", False, "My title"),
-#         ("My title", True, "My title"),
-#     ),
-# )
-# @patch("dbt_platform_helper.domain.notify.SlackClient")
-# def test_add_comment(webclient, title: str, broadcast: bool, expected_text: str):
-#     mock_slack_client = Mock(spec=SlackClient)
-#     webclient.return_value = mock_slack_client
-#     cli_args = [
-#         "my-slack-channel-id",
-#         "my-slack-token",
-#         "1234.56",
-#         "The comment",
-#     ]
+@pytest.mark.parametrize(
+    "title, broadcast, expected_text",
+    (
+        (None, False, "The comment"),
+        (None, True, "The comment"),
+        ("My title", False, "My title"),
+        ("My title", True, "My title"),
+    ),
+)
+def test_add_comment(title: str, broadcast: bool, expected_text: str):
+    mock_slack_client = Mock(spec=SlackClient)
+    mock_slack_client.slack_channel_id = "my-slack-channel-id"
+    mock_slack_client.slack_token = "my-slack-token"
+    slack_ref = "1234.56"
 
-#     if broadcast:
-#         cli_args.extend(["--send-to-main-channel", "true"])
-#     if title:
-#         cli_args.extend(["--title", title])
+    Notify(mock_slack_client).add_comment(
+        slack_ref, message="The comment", title=title, send_to_main_channel=broadcast
+    )
 
-#     CliRunner().invoke(add_comment, cli_args)
-
-#     calls = webclient().chat_postMessage.call_args_list
-#     assert len(calls) == 1
-#     call_args = calls[0].kwargs
-#     assert call_args["channel"] == "my-slack-channel-id"
-#     assert call_args["text"] == expected_text
-#     assert call_args["reply_broadcast"] == broadcast
-#     assert call_args["unfurl_links"] == False
-#     assert call_args["unfurl_media"] == False
-#     assert call_args["thread_ts"] == "1234.56"
-#     assert call_args["blocks"][0].text.text == "The comment"
+    calls = mock_slack_client.chat_postMessage.call_args_list
+    assert len(calls) == 1
+    call_args = calls[0].kwargs
+    assert call_args["channel"] == "my-slack-channel-id"
+    assert call_args["text"] == expected_text
+    assert call_args["reply_broadcast"] == broadcast
+    assert call_args["unfurl_links"] == False
+    assert call_args["unfurl_media"] == False
+    assert call_args["thread_ts"] == "1234.56"
+    assert call_args["blocks"][0].text.text == "The comment"
