@@ -190,7 +190,7 @@ class TestMakeAddonsCommand:
             s3_addon["Mappings"]["s3EnvironmentConfigMap"]["production"]["KmsKeyArn"] == kms_key_arn
         )
 
-        dev_session.client.assert_called_with("kms")
+        dev_session.client.assert_called_once_with("kms")
         prod_session.client.assert_called_with("kms")
         assert mocks.kms_provider.return_value.describe_key.call_count == 2
 
