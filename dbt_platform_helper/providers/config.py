@@ -1,5 +1,4 @@
 from copy import deepcopy
-from pathlib import Path
 
 from schema import SchemaError
 
@@ -63,15 +62,6 @@ class ConfigProvider:
             return self.file_provider.load(path)
         except FileProviderException:
             return {}
-
-    # TODO remove function and push logic to where this is called.
-    # removed usage from config domain, code is very generic and doesn't require the overhead of a function
-    def config_file_check(self, path=PLATFORM_CONFIG_FILE):
-        if not Path(path).exists():
-            self.io.abort_with_error(
-                f"`{path}` is missing. "
-                "Please check it exists and you are in the root directory of your deployment project."
-            )
 
     @staticmethod
     def apply_environment_defaults(config):
