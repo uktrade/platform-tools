@@ -7,13 +7,9 @@ from dbt_platform_helper.commands.notify import add_comment
 from dbt_platform_helper.commands.notify import environment_progress
 from dbt_platform_helper.domain.notify import Notify
 from dbt_platform_helper.domain.notify import SlackClient
-from dbt_platform_helper.domain.notify import get_build_url
 from dbt_platform_helper.providers.io import ClickIOProvider
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
-BUILD_ARN_MESSAGE = f"<{get_build_url(BUILD_ARN)}|Build Logs>"
-EXP_REPO_TEXT = "*Repository*: <https://github.com/%(name)s|%(name)s>"
-EXP_SHA_TEXT = "*Revision*: <https://github.com/%(name)s/commit/%(sha)s|%(sha)s>"
 
 
 @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
