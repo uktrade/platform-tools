@@ -799,9 +799,7 @@ class TestMakeAddonsCommand:
 
         mocks = CopilotMocks()
 
-        mocks.file_provider = (
-            FileProvider  # TODO rename attribute to file_writer as it's only used for writing?
-        )
+        mocks.file_provider = FileProvider
 
         mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
         mocks.config_provider.apply_environment_defaults = lambda conf: conf
