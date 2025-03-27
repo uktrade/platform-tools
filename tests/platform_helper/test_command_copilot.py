@@ -28,15 +28,12 @@ class TestMakeAddonsCommand:
     ):
 
         mock_session = MagicMock()
-        mock_kms_client = MagicMock()
-        mock_session.client.return_value = mock_kms_client
         mock_get_aws_session_or_abort.return_value = mock_session
         mock_copilot_instance = mock_copilot.return_value
 
         result = CliRunner().invoke(make_addons, [])
 
         mock_get_aws_session_or_abort.assert_called_once()
-        mock_kms_provider.assert_called_once_with(mock_kms_client)
         mock_config_validator.assert_called_once()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
 
@@ -46,7 +43,8 @@ class TestMakeAddonsCommand:
             mock_parameter_store.return_value,
             mock_file_provider.return_value,
             mock_copilot_templating.return_value,
-            mock_kms_provider.return_value,
+            mock_kms_provider,
+            mock_session,
         )
         mock_copilot_instance.make_addons.assert_called_once()
 
@@ -72,8 +70,6 @@ class TestMakeAddonsCommand:
         mock_get_aws_session_or_abort,
     ):
         mock_session = MagicMock()
-        mock_kms_client = MagicMock()
-        mock_session.client.return_value = mock_kms_client
         mock_get_aws_session_or_abort.return_value = mock_session
         mock_copilot_instance = mock_copilot.return_value
         mock_copilot_instance.make_addons.side_effect = Exception("Something bad happened")
@@ -81,7 +77,6 @@ class TestMakeAddonsCommand:
         result = CliRunner().invoke(make_addons, [])
 
         mock_get_aws_session_or_abort.assert_called_once()
-        mock_kms_provider.assert_called_once_with(mock_kms_client)
         mock_config_validator.assert_called_once()
         mock_config_provider.assert_called_once_with(mock_config_validator.return_value)
 
@@ -91,7 +86,8 @@ class TestMakeAddonsCommand:
             mock_parameter_store.return_value,
             mock_file_provider.return_value,
             mock_copilot_templating.return_value,
-            mock_kms_provider.return_value,
+            mock_kms_provider,
+            mock_session,
         )
         mock_copilot_instance.make_addons.assert_called_once()
         mock_click.assert_called_with("Error: Something bad happened", err=True, fg="red")
