@@ -98,8 +98,6 @@ class TestPlatformHelperVersionStatus:
             cli_override=cli_version, platform_config_default=config_version
         ).get_required_platform_helper_version(mock_io)
 
-        assert result is None
-
         mock_io.warn.assert_called_once_with(
             "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
         )

@@ -28,7 +28,7 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
-        self.mock_legacy_provider = LegacyVersionsProvider(io=self.io)
+        self.mock_legacy_versions_provider = LegacyVersionsProvider(io=self.io)
 
     def params(self):
         return {
@@ -38,7 +38,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
-            "legacy_provider": self.mock_legacy_provider,
+            "legacy_versions_provider": self.mock_legacy_versions_provider,
         }
 
 

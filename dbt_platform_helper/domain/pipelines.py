@@ -28,7 +28,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
-        legacy_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
+        legacy_versions_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -37,7 +37,7 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.legacy_provider = legacy_provider
+        self.legacy_versions_provider = legacy_versions_provider
 
     def generate(
         self,
@@ -47,7 +47,7 @@ class Pipelines:
     ):
         platform_config = self.config_provider.load_and_validate_platform_config()
 
-        self.legacy_provider.check_terraform_platform_modules_version(
+        self.legacy_versions_provider.check_terraform_platform_modules_version(
             cli_terraform_platform_modules_version, platform_config
         )
 

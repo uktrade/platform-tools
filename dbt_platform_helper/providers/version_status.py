@@ -96,4 +96,3 @@ class PlatformHelperVersionStatus(VersionStatus):
             io.warn(
                 "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
             )
-            return None
