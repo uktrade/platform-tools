@@ -94,9 +94,8 @@ def generate(name):
 def generate_terraform(name, terraform_platform_modules_version):
     click_io = ClickIOProvider()
     try:
-        # TODO = pass the session to ConfigValidator
-        get_aws_session_or_abort()
-        config_provider = ConfigProvider(ConfigValidator())
+        session = get_aws_session_or_abort()
+        config_provider = ConfigProvider(ConfigValidator(session=session))
         TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
     except PlatformException as err:
         click_io.abort_with_error(str(err))
