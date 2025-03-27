@@ -1,13 +1,17 @@
+from typing import Any
+from typing import Dict
+from typing import Optional
+
 from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 class LegacyVersionsProvider:
 
     def __init__(self, io: ClickIOProvider = ClickIOProvider()):
-        self.io = io
+        self.io: ClickIOProvider = io
 
     def check_terraform_platform_modules_version(
-        self, cli_terraform_platform_modules_version, config
+        self, cli_terraform_platform_modules_version: Optional[str], config: Dict[str, Any]
     ):
         has_deprecated_default = config.get("default_versions", {}).get(
             "terraform-platform-modules"

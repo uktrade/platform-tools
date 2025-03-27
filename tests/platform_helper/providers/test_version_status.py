@@ -94,7 +94,7 @@ class TestPlatformHelperVersionStatus:
     ):
         mock_io = Mock()
 
-        result = PlatformHelperVersionStatus(
+        PlatformHelperVersionStatus(
             cli_override=cli_version, platform_config_default=config_version
         ).get_required_platform_helper_version(mock_io)
 

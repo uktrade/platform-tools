@@ -29,6 +29,7 @@ class Pipelines:
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         legacy_versions_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
+        platform_helper_version_status: PlatformHelperVersionStatus = PlatformHelperVersionStatus(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -38,6 +39,7 @@ class Pipelines:
         self.io = io
         self.file_provider = file_provider
         self.legacy_versions_provider = legacy_versions_provider
+        self.platform_helper_version_status = platform_helper_version_status
 
     def generate(
         self,
@@ -77,10 +79,14 @@ class Pipelines:
             "default_versions", {}
         ).get("platform-helper")
 
-        platform_helper_version = PlatformHelperVersionStatus(
-            cli_override=cli_platform_helper_version,
-            platform_config_default=platform_config_platform_helper_default_version,
-        ).get_required_platform_helper_version(self.io)
+        self.platform_helper_version_status.cli_override = cli_platform_helper_version
+        self.platform_helper_version_status.platform_config_default = (
+            platform_config_platform_helper_default_version
+        )
+
+        platform_helper_version = (
+            self.platform_helper_version_status.get_required_platform_helper_version(self.io)
+        )
 
         # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
