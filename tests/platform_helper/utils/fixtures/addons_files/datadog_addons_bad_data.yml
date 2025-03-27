@@ -20,11 +20,11 @@ my-datadog-bad-contact-email:
     default:
       contact_email: 123
 
-my-datadog-bad-docs:
+my-datadog-bad-documentation-url:
   type: datadog
   environments:
     default:
-      docs: []
+      documentation_url: []
 
 my-datadog-bad-services-to-monitor:
   type: datadog

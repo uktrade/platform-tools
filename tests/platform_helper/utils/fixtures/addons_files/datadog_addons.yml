@@ -5,7 +5,7 @@ demodjango-datadog:
       team_name: dbt-platform-team
       contact_name: David Smith
       contact_email: david.smith@digital.trade.gov.uk
-      docs: https://github.com/uktrade/demodjango/blob/main/README.md
+      documentation_url: https://github.com/uktrade/demodjango/blob/main/README.md
       services_to_monitor:
         - api
         - web

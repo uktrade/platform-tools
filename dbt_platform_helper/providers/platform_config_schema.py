@@ -431,7 +431,7 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f" {e}" for e in errors))
+                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
             )
 
         return True
@@ -445,7 +445,7 @@ class PlatformConfigSchema:
                     Optional("team_name"): str,
                     Optional("contact_name"): str,
                     Optional("contact_email"): str,
-                    Optional("docs"): str,
+                    Optional("documentation_url"): str,
                     Optional("services_to_monitor"): list,
                 }
             },
