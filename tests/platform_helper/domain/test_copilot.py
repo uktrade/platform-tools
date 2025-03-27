@@ -747,8 +747,10 @@ class TestMakeAddonsCommand:
             for arg in mocks.io.info.call_args_list
         )
 
+        # Assert on multiple ways that db credentials could be exposed in output
         if addon_type == "redis":
-            assert "DATABASE_CREDENTIALS" not in capsys.readouterr().out
+            captured = capsys.readouterr()
+            assert "DATABASE_CREDENTIALS" not in captured.out
             assert all(
                 "DATABASE_CREDENTIALS" not in str(arg) for arg in mocks.io.info.call_args_list
             )
