@@ -19,12 +19,12 @@ class TerraformEnvironment:
         config_provider,
         manifest_provider: TerraformManifestProvider = None,
         io: ClickIOProvider = ClickIOProvider(),
-        legacy_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
+        legacy_versions_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
     ):
         self.io = io
         self.config_provider = config_provider
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
-        self.legacy_provider = legacy_provider
+        self.legacy_versions_provider = legacy_versions_provider
 
     def generate(
         self,
@@ -34,7 +34,7 @@ class TerraformEnvironment:
     ):
         config = self.config_provider.get_enriched_config()
 
-        self.legacy_provider.check_terraform_platform_modules_version(
+        self.legacy_versions_provider.check_terraform_platform_modules_version(
             cli_terraform_platform_modules_version, config
         )
 
