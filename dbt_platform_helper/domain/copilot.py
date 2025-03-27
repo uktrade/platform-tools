@@ -7,7 +7,6 @@ from pathlib import PosixPath
 
 import botocore
 import botocore.errorfactory
-from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
@@ -58,10 +57,7 @@ class Copilot:
         self.session = session
 
     def make_addons(self):
-        try:
-            config = self.config_provider.load_and_validate_platform_config()
-        except SchemaError as ex:
-            self.io.abort_with_error(f"Invalid `{PLATFORM_CONFIG_FILE}` file: {str(ex)}")
+        config = self.config_provider.load_and_validate_platform_config()
 
         templates = setup_templates()
         extensions = self._get_extensions()
