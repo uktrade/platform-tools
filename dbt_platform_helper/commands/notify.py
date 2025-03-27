@@ -1,9 +1,11 @@
 import click
-from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
+from dbt_platform_helper.domain.notify import Notify
+from dbt_platform_helper.domain.notify import SlackClient
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
-from dbt_platform_helper.utils.arn_parser import ARN
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -31,56 +33,20 @@ def environment_progress(
     commit_sha: str,
     slack_ref: str,
 ):
-    args = _get_slack_args(build_arn, commit_sha, message, repository, slack_channel_id)
-    slack = _get_slack_client(slack_token)
-
-    if slack_ref:
-        response = slack.chat_update(ts=slack_ref, **args)
-    else:
-        response = slack.chat_postMessage(ts=slack_ref, **args)
-
-    print(response["ts"])
-
-
-def _get_slack_args(
-    build_arn: str, commit_sha: str, message: str, repository: str, slack_channel_id: str
-):
-    context_elements = []
-    if repository:
-        context_elements.append(f"*Repository*: <https://github.com/{repository}|{repository}>")
-        if commit_sha:
-            context_elements.append(
-                f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
-            )
-    if build_arn:
-        context_elements.append(f"<{get_build_url(build_arn)}|Build Logs>")
-    message_blocks = [
-        blocks.SectionBlock(
-            text=blocks.TextObject(type="mrkdwn", text=message),
-        ),
-    ]
-
-    if context_elements:
-        message_blocks.append(
-            blocks.ContextBlock(
-                elements=[
-                    blocks.TextObject(type="mrkdwn", text=element) for element in context_elements
-                ]
-            )
+    try:
+        io = ClickIOProvider()
+        client = SlackClient(slack_token, slack_channel_id)
+        response = Notify(client).environment_progress(
+            slack_ref,
+            message,
+            build_arn,
+            repository,
+            commit_sha,
         )
 
-    args = {
-        "channel": slack_channel_id,
-        "blocks": message_blocks,
-        "text": message,
-        "unfurl_links": False,
-        "unfurl_media": False,
-    }
-    return args
-
-
-def _get_slack_client(token: str):
-    return WebClient(token=token)
+        io.info(response["ts"])
+    except PlatformException as err:
+        io.abort_with_error(str(err))
 
 
 @notify.command(help="Add a comment to an existing Slack message")
@@ -98,31 +64,15 @@ def add_comment(
     title: str,
     send_to_main_channel: bool,
 ):
-    slack = _get_slack_client(slack_token)
-
-    slack.chat_postMessage(
-        channel=slack_channel_id,
-        blocks=[blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))],
-        text=title if title else message,
-        reply_broadcast=send_to_main_channel,
-        unfurl_links=False,
-        unfurl_media=False,
-        thread_ts=slack_ref,
-    )
-
-
-def get_build_url(build_arn: str):
     try:
-        arn = ARN(build_arn)
-        url = (
-            "https://{region}.console.aws.amazon.com/codesuite/codebuild/{account}/projects/{"
-            "project}/build/{project}%3A{build_id}"
+        client = SlackClient(slack_token, slack_channel_id)
+        Notify(client).add_comment(
+            blocks=[blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))],
+            text=title if title else message,
+            reply_broadcast=send_to_main_channel,
+            unfurl_links=False,
+            unfurl_media=False,
+            thread_ts=slack_ref,
         )
-        return url.format(
-            region=arn.region,
-            account=arn.account_id,
-            project=arn.project.replace("build/", ""),
-            build_id=arn.build_id,
-        )
-    except ValueError:
-        return ""
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
