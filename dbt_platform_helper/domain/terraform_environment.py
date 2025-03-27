@@ -20,11 +20,13 @@ class TerraformEnvironment:
         manifest_provider: TerraformManifestProvider = None,
         io: ClickIOProvider = ClickIOProvider(),
         legacy_versions_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
+        platform_helper_version_status: PlatformHelperVersionStatus = PlatformHelperVersionStatus(),
     ):
         self.io = io
         self.config_provider = config_provider
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
         self.legacy_versions_provider = legacy_versions_provider
+        self.platform_helper_version_status = platform_helper_version_status
 
     def generate(
         self,
@@ -47,10 +49,14 @@ class TerraformEnvironment:
             "platform-helper"
         )
 
-        platform_helper_version = PlatformHelperVersionStatus(
-            cli_override=cli_platform_helper_version,
-            platform_config_default=platform_config_platform_helper_default_version,
-        ).get_required_platform_helper_version(self.io)
+        self.platform_helper_version_status.cli_override = cli_platform_helper_version
+        self.platform_helper_version_status.platform_config_default = (
+            platform_config_platform_helper_default_version
+        )
+
+        platform_helper_version = (
+            self.platform_helper_version_status.get_required_platform_helper_version(self.io)
+        )
 
         self.manifest_provider.generate_environment_config(
             config, environment_name, platform_helper_version
