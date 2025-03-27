@@ -15,6 +15,11 @@ variable "deploy_repository" {
   default = null
 }
 
+variable "deploy_repository_branch" {
+  type    = string
+  default = "main"
+}
+
 variable "additional_ecr_repository" {
   type    = string
   default = null
