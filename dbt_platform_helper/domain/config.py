@@ -7,6 +7,8 @@ from typing import Dict
 from prettytable import PrettyTable
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.domain.versioning import AWSVersioning
+from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
@@ -14,12 +16,10 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
-from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.semantic_version import VersionStatus
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.providers.version import AWSVersionProvider
-from dbt_platform_helper.providers.version import CopilotVersionProvider
+from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.version_status import VersionStatus
 
 yes = "\033[92m✔\033[0m"
 no = "\033[91m✖\033[0m"
@@ -75,16 +75,16 @@ class Config:
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),
-        platform_helper_versioning_domain: PlatformHelperVersioning = PlatformHelperVersioning(),
-        aws_versions: AWSVersionProvider = AWSVersionProvider,
-        copilot_versions: CopilotVersionProvider = CopilotVersionProvider,
+        platform_helper_versioning: PlatformHelperVersioning = PlatformHelperVersioning(),
+        aws_versioning: AWSVersioning = AWSVersioning(),
+        copilot_versioning: CopilotVersioning = CopilotVersioning(),
         sso: SSOAuthProvider = None,
     ):
         self.oidc_app = None
         self.io = io
-        self.platform_helper_versioning_domain = platform_helper_versioning_domain
-        self.aws_versions = aws_versions
-        self.copilot_versions = copilot_versions
+        self.platform_helper_versioning = platform_helper_versioning
+        self.aws_versioning = aws_versioning
+        self.copilot_versioning = copilot_versioning
         self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
 
@@ -95,14 +95,16 @@ class Config:
             raise NoPlatformConfigException()
 
         self.io.debug("\nDetected a deployment repository\n")
-        platform_helper_version_status = self.platform_helper_versioning_domain._get_version_status(
+        platform_helper_version_status = self.platform_helper_versioning._get_version_status(
             include_project_versions=True
         )
         self.io.process_messages(platform_helper_version_status.validate())
-        aws_versions = self.aws_versions.get_version_status()
-        copilot_versions = self.copilot_versions.get_version_status()
+        aws_version_status = self.aws_versioning.get_version_status()
+        copilot_version_status = self.copilot_versioning.get_version_status()
 
-        self._check_tool_versions(platform_helper_version_status, aws_versions, copilot_versions)
+        self._check_tool_versions(
+            platform_helper_version_status, aws_version_status, copilot_version_status
+        )
 
         compatible = self._check_addon_versions(platform_helper_version_status)
 
@@ -168,22 +170,32 @@ class Config:
         )
         return accounts_list
 
+    def _add_version_status_row(
+        self, table: PrettyTable, header: str, version_status: VersionStatus
+    ):
+        table.add_row(
+            [
+                header,
+                str(version_status.installed),
+                str(version_status.latest),
+                no if version_status.is_outdated() else yes,
+            ]
+        )
+
     def _check_tool_versions(
         self,
-        platform_helper_versions: PlatformHelperVersionStatus,
-        aws_versions: VersionStatus,
-        copilot_versions: VersionStatus,
+        platform_helper_version_status: PlatformHelperVersionStatus,
+        aws_version_status: VersionStatus,
+        copilot_version_status: VersionStatus,
     ):
         self.io.debug("Checking tooling versions...")
 
         recommendations = {}
 
-        local_copilot_version = copilot_versions.installed
-        copilot_latest_release = copilot_versions.latest
-        if local_copilot_version is None:
+        if copilot_version_status.installed is None:
             recommendations["install-copilot"] = RECOMMENDATIONS["install-copilot"]
 
-        if aws_versions.installed is None:
+        if aws_version_status.installed is None:
             recommendations["install-aws"] = RECOMMENDATIONS["install-aws"]
 
         tool_versions_table = PrettyTable()
@@ -195,49 +207,30 @@ class Config:
         ]
         tool_versions_table.align["Tool"] = "l"
 
-        tool_versions_table.add_row(
-            [
-                "aws",
-                str(aws_versions.installed),
-                str(aws_versions.latest),
-                no if aws_versions.is_outdated() else yes,
-            ]
-        )
-        tool_versions_table.add_row(
-            [
-                "copilot",
-                str(copilot_versions.installed),
-                str(copilot_versions.latest),
-                no if copilot_versions.is_outdated() else yes,
-            ]
-        )
-        tool_versions_table.add_row(
-            [
-                "dbt-platform-helper",
-                str(platform_helper_versions.installed),
-                str(platform_helper_versions.latest),
-                no if platform_helper_versions.is_outdated() else yes,
-            ]
+        self._add_version_status_row(tool_versions_table, "aws", aws_version_status)
+        self._add_version_status_row(tool_versions_table, "copilot", copilot_version_status)
+        self._add_version_status_row(
+            tool_versions_table, "dbt-platform-helper", platform_helper_version_status
         )
 
         self.io.info(tool_versions_table)
 
-        if aws_versions.is_outdated() and "install-aws" not in recommendations:
+        if aws_version_status.is_outdated() and "install-aws" not in recommendations:
             recommendations["aws-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
                 tool="AWS CLI",
-                version=str(aws_versions.latest),
+                version=str(aws_version_status.latest),
             )
 
-        if copilot_versions.is_outdated() and "install-copilot" not in recommendations:
+        if copilot_version_status.is_outdated() and "install-copilot" not in recommendations:
             recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
                 tool="AWS Copilot",
-                version=str(copilot_latest_release),
+                version=str(copilot_version_status.latest),
             )
 
-        if platform_helper_versions.is_outdated():
+        if platform_helper_version_status.is_outdated():
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
-            ].format(version=str(platform_helper_versions.latest))
+            ].format(version=str(platform_helper_version_status.latest))
             recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade-note"
             ]
@@ -344,7 +337,7 @@ class Config:
     def __get_template_generated_with_version(self, template_file_path: str) -> SemanticVersion:
         try:
             template_contents = Path(template_file_path).read_text()
-            template_version = re.match(
+            template_version = re.search(
                 r"# Generated by platform-helper ([v.\-0-9]+)", template_contents
             ).group(1)
             return SemanticVersion.from_string(template_version)

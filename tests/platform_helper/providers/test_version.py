@@ -1,16 +1,16 @@
 from importlib.metadata import PackageNotFoundError
-from unittest.mock import Mock
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
 
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.version import AWSVersionProvider
-from dbt_platform_helper.providers.version import CopilotVersionProvider
-from dbt_platform_helper.providers.version import GithubVersionProvider
+from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
+from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
+from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProviderException
-from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 
 
 class MockGithubReleaseResponse:
@@ -33,67 +33,115 @@ class MockPyPiResponse:
 
 class TestInstalledVersionProvider:
     @patch("dbt_platform_helper.providers.version.version", return_value="1.1.1")
-    def test_get_locally_installed_tool_version(self, mock_version):
-        assert InstalledVersionProvider.get_installed_tool_version("test") == SemanticVersion(
-            1, 1, 1
-        )
+    def test_get_semantic_version(self, mock_version):
+        assert InstalledVersionProvider.get_semantic_version("test") == SemanticVersion(1, 1, 1)
         mock_version.assert_called_once_with("test")
 
     @patch("dbt_platform_helper.providers.version.version", return_value="")
-    def test_get_locally_installed_tool_version_given_package_not_found_exception(
-        self, mock_version
-    ):
+    def test_get_semantic_version_given_package_not_found_exception(self, mock_version):
         mock_version.side_effect = PackageNotFoundError
         with pytest.raises(InstalledVersionProviderException) as exc:
-            InstalledVersionProvider.get_installed_tool_version("test")
+            InstalledVersionProvider.get_semantic_version("test")
 
         assert "Package 'test' not found" in str(exc)
 
 
-class TestGithubVersionProvider:
-    @patch("requests.get", return_value=MockGithubReleaseResponse())
-    def test_get_github_version_from_releases(self, request_get):
-        assert GithubVersionProvider.get_latest_version("test/repo") == SemanticVersion(1, 1, 1)
-        request_get.assert_called_once_with(
+class TestGithubLatestVersionProvider:
+    def test_get_semantic_version_from_releases(self):
+        requests_mock = MagicMock()
+        requests_mock.get.return_value = MockGithubReleaseResponse()
+        assert GithubLatestVersionProvider.get_semantic_version(
+            "test/repo", request_session=requests_mock
+        ) == SemanticVersion(1, 1, 1)
+        requests_mock.get.assert_called_once_with(
             "https://api.github.com/repos/test/repo/releases/latest"
         )
 
-    @patch("requests.get", return_value=MockGithubTagResponse())
-    def test_get_github_version_from_tags(self, request_get):
-        assert GithubVersionProvider.get_latest_version("test/repo", True) == SemanticVersion(
-            1, 2, 3
+    def test_get_semantic_version_from_tags(self):
+        requests_mock = MagicMock()
+        requests_mock.get.return_value = MockGithubTagResponse()
+        assert GithubLatestVersionProvider.get_semantic_version(
+            "test/repo", True, request_session=requests_mock
+        ) == SemanticVersion(1, 2, 3)
+        requests_mock.get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
+
+    def test_get_semantic_version_returns_none_on_error(self):
+        mock_io = MagicMock()
+        requests_mock = MagicMock()
+        requests_mock.get.side_effect = Exception("doesnt-matter")
+        assert (
+            GithubLatestVersionProvider.get_semantic_version(
+                "test/repo", request_session=requests_mock, io=mock_io
+            )
+            is None
         )
-        request_get.assert_called_once_with("https://api.github.com/repos/test/repo/tags")
+        mock_io.error.assert_called_with(
+            "Exception occured when calling Github with:\ndoesnt-matter"
+        )
+        requests_mock.get.assert_called_once_with(
+            "https://api.github.com/repos/test/repo/releases/latest"
+        )
 
 
-class TestPyPiVersionProvider:
-    @patch("requests.get", return_value=MockPyPiResponse())
-    def test_get_latest_version(self, request_get):
-        result = PyPiVersionProvider.get_latest_version("foo")
+class TestPyPiLatestVersionProvider:
+    def test_get_semantic_version(self):
+        requests_mock = MagicMock()
+        requests_mock.get.return_value = MockPyPiResponse()
+        result = PyPiLatestVersionProvider.get_semantic_version(
+            "foo", request_session=requests_mock
+        )
         assert result == SemanticVersion(1, 2, 3)
-        request_get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
+        requests_mock.get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
+
+    def test_get_semantic_version_returns_none_on_error(self):
+        mock_io = MagicMock()
+        requests_mock = MagicMock()
+        requests_mock.get.side_effect = Exception("doesnt-matter")
+        assert (
+            PyPiLatestVersionProvider.get_semantic_version(
+                "foo", request_session=requests_mock, io=mock_io
+            )
+            is None
+        )
+        mock_io.error.assert_called_with("Exception occured when calling PyPi with:\ndoesnt-matter")
+        requests_mock.get.assert_called_once_with(f"https://pypi.org/pypi/foo/json")
 
 
-class TestAWSVersionProvider:
+@pytest.mark.parametrize(
+    "mock_run_stdout, expected",
+    (
+        (b"aws-cli/1.0.0", SemanticVersion(1, 0, 0)),
+        (b"aws-cli/1.0.1", SemanticVersion(1, 0, 1)),
+        (b"aws-cli/1.1.1", SemanticVersion(1, 1, 1)),
+        (b"aws-cli/2.0.0", SemanticVersion(2, 0, 0)),
+        (b"command not found: copilot", None),
+    ),
+)
+class TestAWSCLIInstalledVersionProvider:
     @patch("subprocess.run")
-    def test_get_aws_versions(self, mock_run):
-        mock_run.return_value.stdout = b"aws-cli/1.0.0"
-        github_response = Mock()
-        github_response.get_latest_version.return_value = SemanticVersion(2, 0, 0)
-        versions = AWSVersionProvider.get_version_status(github_response)
+    def test_get_semantic_version(self, mock_run, mock_run_stdout, expected):
+        mock_run.return_value.stdout = mock_run_stdout
 
-        assert versions.installed == SemanticVersion(1, 0, 0)
-        assert versions.latest == SemanticVersion(2, 0, 0)
+        result = AWSCLIInstalledVersionProvider.get_semantic_version()
+
+        assert result == expected
 
 
-class TestCopilotVersionProvider:
+class TestCopilotVersioning:
+    @pytest.mark.parametrize(
+        "mock_run_stdout, expected",
+        (
+            (b"1.0.0", SemanticVersion(1, 0, 0)),
+            (b"1.0.1", SemanticVersion(1, 0, 1)),
+            (b"1.1.1", SemanticVersion(1, 1, 1)),
+            (b"2.0.0", SemanticVersion(2, 0, 0)),
+            (b"command not found: copilot", None),
+        ),
+    )
     @patch("subprocess.run")
-    def test_copilot_versions(self, mock_run):
-        mock_run.return_value.stdout = b"1.0.0"
+    def test_get_semantic_version(self, mock_run, mock_run_stdout, expected):
+        mock_run.return_value.stdout = mock_run_stdout
 
-        github_response = Mock()
-        github_response.get_latest_version.return_value = SemanticVersion(2, 0, 0)
-        versions = CopilotVersionProvider.get_version_status(github_response)
+        result = CopilotInstalledVersionProvider().get_semantic_version()
 
-        assert versions.installed == SemanticVersion(1, 0, 0)
-        assert versions.latest == SemanticVersion(2, 0, 0)
+        assert result == expected
