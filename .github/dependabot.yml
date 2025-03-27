@@ -2,5 +2,9 @@ version: 2
 updates:
   - package-ecosystem: "pip"
     commit-message:
+      # So the release-please-action includes production
+      # dependencies in the release notes.
       prefix: "deps"
-      prefix-development: "deps(dev)"
+      # Don't include dev dependencies in release notes, they
+      # are of no interest outside this repositories maintainers.
+      prefix-development: "chore"
