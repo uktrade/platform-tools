@@ -14,10 +14,6 @@ from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
-# TODOs
-# Figure out a pattern for copilot templating and the new copilot domain - probably a lot of overlap here that really belongs in the copilottemplating domain instead (atleast whatever is concerned with "templating")
-# Check for E2E test coverage.
-
 
 @click.group(chain=True, cls=ClickDocOptGroup)
 def copilot():
@@ -31,9 +27,13 @@ def make_addons():
         session = get_aws_session_or_abort()
         parameter_provider = ParameterStore(session.client("ssm"))
         config_provider = ConfigProvider(ConfigValidator())
-        kms_provider = KMSProvider(session.client("kms"))
         Copilot(
-            config_provider, parameter_provider, FileProvider(), CopilotTemplating(), kms_provider
+            config_provider,
+            parameter_provider,
+            FileProvider(),
+            CopilotTemplating(),
+            KMSProvider,
+            session,
         ).make_addons()
     except Exception as err:
         ClickIOProvider().abort_with_error(str(err))
