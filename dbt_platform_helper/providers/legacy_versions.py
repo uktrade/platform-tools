@@ -19,16 +19,23 @@ class LegacyVersionsProvider:
             if isinstance(env, dict)
         )
 
-        if (
-            cli_terraform_platform_modules_version
-            or has_deprecated_default
-            or has_deprecated_version
-        ):
+        if cli_terraform_platform_modules_version:
             self.io.warn(
                 "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-                "Please use the `--platform-helper-version` flag instead.\n\n"
-                "The `terraform-platform-modules` key set in the platform-config.yml file in the following locations: `default_versions: terraform-platform-modules` and "
-                "`environments: <env>: versions: terraform-platform-modules`, are now deprecated. "
+                "Please use the `--platform-helper-version` flag instead."
+            )
+
+        if has_deprecated_default:
+            self.io.warn(
+                "The `terraform-platform-modules` key set in the platform-config.yml file in the following location: `default_versions: terraform-platform-modules` is now deprecated. "
+                "Please use the `default_versions: platform-helper` value instead. "
+                "See full platform config reference in the docs: "
+                "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
+            )
+
+        if has_deprecated_version:
+            self.io.warn(
+                "The `terraform-platform-modules` key set in the platform-config.yml file in the following location:  `environments: <env>: versions: terraform-platform-modules` is now deprecated. "
                 "Please use the `default_versions: platform-helper` value instead. "
                 "See full platform config reference in the docs: "
                 "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"

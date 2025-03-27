@@ -164,14 +164,14 @@ class PlatformConfigSchema:
     @staticmethod
     def __default_versions_schema() -> dict:
         return {
-            # Todo: merge - remove terraform-platform-modules
+            # Todo: deprecated - remove once terraform-platform-modules is no longer used
             Optional("terraform-platform-modules"): str,
             Optional("platform-helper"): str,
         }
 
     @staticmethod
     def __environments_schema() -> dict:
-        # Todo: merge - remove terraform-platform-modules
+        # Todo: deprecated - remove once terraform-platform-modules is no longer used
         _valid_environment_specific_version_overrides = {
             Optional("terraform-platform-modules"): str,
         }
@@ -192,7 +192,7 @@ class PlatformConfigSchema:
                     },
                     # Todo: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
                     Optional("requires_approval"): bool,
-                    # Todo: merge - remove terraform-platform-modules
+                    # Todo: deprecated - remove once terraform-platform-modules is no longer used
                     Optional("versions"): _valid_environment_specific_version_overrides,
                     Optional("vpc"): str,
                 },

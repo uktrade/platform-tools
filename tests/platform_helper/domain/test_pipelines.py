@@ -152,6 +152,35 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
 
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_modules_version_cli_flag_is_present(
+    fakefs,
+    platform_config_for_env_pipelines,
+):
+    app_name = "test-app"
+    fakefs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(platform_config_for_env_pipelines),
+    )
+    mocks = PipelineMocks(app_name)
+    pipelines = Pipelines(**mocks.params())
+
+    pipelines.generate(
+        "terraform_platform_modules_version", "platform-helper-version", "any-branch"
+    )
+
+    expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
+    assert expected_files_dir.exists()
+    content = expected_files_dir.read_text()
+
+    mocks.io.warn.assert_called_once_with(
+        "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
+        "Please use the `--platform-helper-version` flag instead."
+    )
+    assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
+
+
+@freeze_time("2024-10-28 12:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_repository_key_present_in_default_config(
     fakefs,
     platform_config_for_env_pipelines_with_deprecated_tpm_default_versions,
@@ -164,19 +193,14 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_re
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(
-        "terraform-platform-modules-version", "platform-helper-version", "any-branch"
-    )
+    pipelines.generate(None, "platform-helper-version", "any-branch")
 
     expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
 
     mocks.io.warn.assert_called_once_with(
-        "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-        "Please use the `--platform-helper-version` flag instead.\n\n"
-        "The `terraform-platform-modules` key set in the platform-config.yml file in the following locations: `default_versions: terraform-platform-modules` and "
-        "`environments: <env>: versions: terraform-platform-modules`, are now deprecated. "
+        "The `terraform-platform-modules` key set in the platform-config.yml file in the following location: `default_versions: terraform-platform-modules` is now deprecated. "
         "Please use the `default_versions: platform-helper` value instead. "
         "See full platform config reference in the docs: "
         "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
@@ -199,19 +223,14 @@ def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_re
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(
-        "terraform-platform-modules-version", "platform-helper-version", "any-branch"
-    )
+    pipelines.generate(None, "platform-helper-version", "any-branch")
 
     expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
 
     mocks.io.warn.assert_called_once_with(
-        "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-        "Please use the `--platform-helper-version` flag instead.\n\n"
-        "The `terraform-platform-modules` key set in the platform-config.yml file in the following locations: `default_versions: terraform-platform-modules` and "
-        "`environments: <env>: versions: terraform-platform-modules`, are now deprecated. "
+        "The `terraform-platform-modules` key set in the platform-config.yml file in the following location:  `environments: <env>: versions: terraform-platform-modules` is now deprecated. "
         "Please use the `default_versions: platform-helper` value instead. "
         "See full platform config reference in the docs: "
         "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration"
