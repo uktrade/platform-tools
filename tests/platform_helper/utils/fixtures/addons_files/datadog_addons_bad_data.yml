@@ -2,7 +2,6 @@ my-datadog-bad-key:
   type: datadog
   bad_key:
 
-
 my-datadog-bad-team-name:
   type: datadog
   environments:
