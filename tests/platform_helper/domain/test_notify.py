@@ -149,3 +149,6 @@ def test_add_comment(title: str, broadcast: bool, expected_text: str):
     assert call_args["unfurl_media"] == False
     assert call_args["thread_ts"] == "1234.56"
     assert call_args["blocks"][0].text.text == "The comment"
+
+
+# TODO add a test for the slack client to ensure the webclient is correctly set, or maybe just remove the SlackClient wrapper
