@@ -29,14 +29,6 @@ class LogGroupNotFoundException(AWSException):
         super().__init__(f"""No log group called "{log_group_name}".""")
 
 
-# Todo: This should probably be in the AWS Copilot provider, but was causing circular import when we tried it pre refactoring the utils/aws.py
-class CopilotCodebaseNotFoundException(PlatformException):
-    def __init__(self, codebase: str):
-        super().__init__(
-            f"""The codebase "{codebase}" either does not exist or has not been deployed."""
-        )
-
-
 class CreateAccessTokenException(AWSException):
     def __init__(self, client_id: str):
         super().__init__(f"""Failed to create access token for Client "{client_id}".""")
