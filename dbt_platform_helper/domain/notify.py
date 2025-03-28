@@ -10,6 +10,7 @@ class SlackClient(WebClient):
         super().__init__(token=slack_token)
 
 
+# TODO untangle responsibilities
 class Notify:
     def __init__(self, client: SlackClient):
         self.client = client
