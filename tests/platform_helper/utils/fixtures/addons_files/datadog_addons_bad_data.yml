@@ -1,0 +1,33 @@
+my-datadog-bad-key:
+  type: datadog
+  bad_key:
+
+my-datadog-bad-team-name:
+  type: datadog
+  environments:
+    default:
+      team_name: False
+
+my-datadog-bad-contact-name:
+  type: datadog
+  environments:
+    default:
+      contact_name: ["not a name"]
+
+my-datadog-bad-contact-email:
+  type: datadog
+  environments:
+    default:
+      contact_email: 123
+
+my-datadog-bad-documentation-url:
+  type: datadog
+  environments:
+    default:
+      documentation_url: []
+
+my-datadog-bad-services-to-monitor:
+  type: datadog
+  environments:
+    default:
+      services_to_monitor: "string"
