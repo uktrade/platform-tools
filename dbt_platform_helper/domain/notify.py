@@ -52,7 +52,6 @@ class SlackChannelNotifier:
         return message_blocks
 
 
-# TODO untangle responsibilities
 class Notify:
     def __init__(self, notifier: SlackChannelNotifier):
         self.notifier = notifier
