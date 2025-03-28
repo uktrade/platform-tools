@@ -9,7 +9,7 @@ class SlackChannelNotifier:
         self.client = WebClient(slack_token)
         self.slack_channel_id = slack_channel_id
 
-    def post_update(self, slack_ref, message, context_elements=None):
+    def post_update(self, message_ref, message, context_elements=None):
         args = {
             "channel": self.slack_channel_id,
             "blocks": self._build_message_blocks(context_elements, message),
@@ -17,10 +17,10 @@ class SlackChannelNotifier:
             "unfurl_links": False,
             "unfurl_media": False,
         }
-        self.client.chat_update(ts=slack_ref, **args)
+        self.client.chat_update(ts=message_ref, **args)
 
     def post_new(
-        self, message, context_elements=None, title=None, reply_broadcast=None, thread_ts=None
+        self, message, context_elements=None, title=None, reply_broadcast=None, thread_ref=None
     ):
         args = {
             "channel": self.slack_channel_id,
@@ -29,7 +29,7 @@ class SlackChannelNotifier:
             "reply_broadcast": reply_broadcast,
             "unfurl_links": False,
             "unfurl_media": False,
-            "thread_ts": thread_ts,
+            "thread_ts": thread_ref,
         }
         self.client.chat_postMessage(ts=None, **args)
 
@@ -104,7 +104,7 @@ class Notify:
             title=title,
             context_elements=[],
             reply_broadcast=send_to_main_channel,
-            thread_ts=slack_ref,
+            thread_ref=slack_ref,
         )
 
 
