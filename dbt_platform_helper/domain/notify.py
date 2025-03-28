@@ -9,6 +9,28 @@ class SlackChannelNotifier:
         self.client = WebClient(slack_token)
         self.slack_channel_id = slack_channel_id
 
+    def post_update(self, slack_ref, message_blocks, message):
+        args = {
+            "channel": self.slack_channel_id,
+            "blocks": message_blocks,
+            "text": message,
+            "unfurl_links": False,
+            "unfurl_media": False,
+        }
+        self.client.chat_update(ts=slack_ref, **args)
+
+    def post_new(self, message_blocks, message, reply_broadcast=None, thread_ts=None):
+        args = {
+            "channel": self.slack_channel_id,
+            "blocks": message_blocks,
+            "text": message,
+            "reply_broadcast": reply_broadcast,
+            "unfurl_links": False,
+            "unfurl_media": False,
+            "thread_ts": thread_ts,
+        }
+        self.client.chat_postMessage(ts=None, **args)
+
 
 # TODO untangle responsibilities
 class Notify:
@@ -23,18 +45,14 @@ class Notify:
         commit_sha: str = None,
         slack_ref: str = None,
     ):
-        args = self._get_slack_args(
-            build_arn, commit_sha, message, repository, self.notifier.slack_channel_id
-        )
+        message_blocks = self._get_message_blocks(build_arn, commit_sha, message, repository)
 
         if slack_ref:
-            return self.notifier.client.chat_update(ts=slack_ref, **args)
+            return self.notifier.post_update(slack_ref, message_blocks, message)
         else:
-            return self.notifier.client.chat_postMessage(ts=slack_ref, **args)
+            return self.notifier.post_new(message_blocks, message)
 
-    def _get_slack_args(
-        self, build_arn: str, commit_sha: str, message: str, repository: str, slack_channel_id: str
-    ):
+    def _get_message_blocks(self, build_arn: str, commit_sha: str, message: str, repository: str):
         context_elements = []
         if repository:
             context_elements.append(f"*Repository*: <https://github.com/{repository}|{repository}>")
@@ -44,6 +62,7 @@ class Notify:
                 )
         if build_arn:
             context_elements.append(f"<{get_build_url(build_arn)}|Build Logs>")
+
         message_blocks = [
             blocks.SectionBlock(
                 text=blocks.TextObject(type="mrkdwn", text=message),
@@ -59,15 +78,7 @@ class Notify:
                     ]
                 )
             )
-
-        args = {
-            "channel": slack_channel_id,
-            "blocks": message_blocks,
-            "text": message,
-            "unfurl_links": False,
-            "unfurl_media": False,
-        }
-        return args
+        return message_blocks
 
     def add_comment(
         self,
@@ -76,13 +87,11 @@ class Notify:
         title: str,
         send_to_main_channel: bool,
     ):
-        self.notifier.client.chat_postMessage(
-            channel=self.notifier.slack_channel_id,
-            blocks=[blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))],
-            text=title if title else message,
+        message_blocks = [blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))]
+        self.notifier.post_new(
+            message_blocks=message_blocks,
+            message=title if title else message,
             reply_broadcast=send_to_main_channel,
-            unfurl_links=False,
-            unfurl_media=False,
             thread_ts=slack_ref,
         )
 

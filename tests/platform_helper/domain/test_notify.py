@@ -1,4 +1,3 @@
-from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
@@ -89,11 +88,10 @@ def test_environment_progress(
     expected_text: list[str],
     expect_update: bool,
 ):
-    mock_slack_notifier = Mock(spec=SlackChannelNotifier)
-    mock_slack_notifier.client = mock_slack_client
-    mock_slack_notifier.slack_channel_id = "my-slack-channel-id"
+    slack_notifier = SlackChannelNotifier("my-slack-token", "my-slack-channel-id")
+    slack_notifier.client = mock_slack_client
 
-    Notify(mock_slack_notifier).environment_progress(
+    Notify(slack_notifier).environment_progress(
         message="The very important thing everyone should know",
         slack_ref=slack_ref,
         repository=repository,
@@ -101,8 +99,8 @@ def test_environment_progress(
         build_arn=build_arn,
     )
 
-    post_calls = mock_slack_notifier.client.chat_postMessage.call_args_list
-    update_calls = mock_slack_notifier.client.chat_update.call_args_list
+    post_calls = mock_slack_client.chat_postMessage.call_args_list
+    update_calls = mock_slack_client.chat_update.call_args_list
 
     if expect_update:
         calls = update_calls
@@ -139,13 +137,11 @@ def test_environment_progress(
 )
 @patch("dbt_platform_helper.domain.notify.WebClient")
 def test_add_comment(mock_slack_client, title: str, broadcast: bool, expected_text: str):
-    mock_slack_notifier = Mock(spec=SlackChannelNotifier)
-    mock_slack_notifier.client = mock_slack_client
-    mock_slack_notifier.slack_channel_id = "my-slack-channel-id"
-    slack_ref = "1234.56"
+    slack_notifier = SlackChannelNotifier("token", "my-slack-channel-id")
+    slack_notifier.client = mock_slack_client
 
-    Notify(mock_slack_notifier).add_comment(
-        slack_ref, message="The comment", title=title, send_to_main_channel=broadcast
+    Notify(slack_notifier).add_comment(
+        "1234.56", message="The comment", title=title, send_to_main_channel=broadcast
     )
 
     calls = mock_slack_client.chat_postMessage.call_args_list
