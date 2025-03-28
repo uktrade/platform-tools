@@ -1,7 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
-    schedule: daily
+    schedule:
+      interval: "daily"
     commit-message:
       # So the release-please-action includes production
       # dependencies in the release notes.
@@ -11,7 +12,8 @@ updates:
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
-    schedule: daily
+    schedule:
+      interval: "daily"
     commit-message:
       # So the release-please-action includes production
       # dependencies in the release notes.
