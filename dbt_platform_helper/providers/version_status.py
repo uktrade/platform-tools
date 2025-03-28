@@ -3,8 +3,8 @@ from dataclasses import field
 from typing import Dict
 from typing import Optional
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 

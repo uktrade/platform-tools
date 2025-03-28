@@ -4,10 +4,18 @@ import time
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import CONDUIT_DOCKER_IMAGE_LOCATION
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.exceptions import CreateTaskTimeoutException
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.messages import abort_with_error
+
+
+class CopilotCodebaseNotFoundException(PlatformException):
+    def __init__(self, codebase: str):
+        super().__init__(
+            f"""The codebase "{codebase}" either does not exist or has not been deployed."""
+        )
 
 
 def create_addon_client_task(

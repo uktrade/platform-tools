@@ -13,8 +13,8 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.cache import Cache
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
