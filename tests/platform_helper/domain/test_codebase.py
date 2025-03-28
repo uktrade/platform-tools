@@ -42,8 +42,7 @@ class CodebaseMocks:
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
-        self.get_image_details = kwargs.get("get_image_details", Mock(return_value=""))
-        self.find_commit_tag = kwargs.get("find_commit_tag", Mock(return_value=""))
+        self.ecr_provider = kwargs.get("ecr_provider", Mock())
         self.get_image_build_project = kwargs.get(
             "get_image_build_project",
             Mock(return_value="test-application-application-codebase-image-build"),
@@ -60,8 +59,7 @@ class CodebaseMocks:
             "parameter_provider": self.parameter_provider,
             "load_application": self.load_application,
             "get_aws_session_or_abort": self.get_aws_session_or_abort,
-            "get_image_details": self.get_image_details,
-            "find_commit_tag": self.find_commit_tag,
+            "ecr_provider": self.ecr_provider,
             "get_image_build_project": self.get_image_build_project,
             "get_manual_release_pipeline": self.get_manual_release_pipeline,
             "io": self.io,
@@ -261,18 +259,18 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
 def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
     mocks = CodebaseMocks()
     mock_image_details = MagicMock()
-    mocks.get_image_details.return_value = mock_image_details
+    mocks.ecr_provider.get_image_details.return_value = mock_image_details
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
 
-    mocks.find_commit_tag.return_value = "commit-abc123"
+    mocks.ecr_provider.find_commit_tag.return_value = "commit-abc123"
     codebase = Codebase(**mocks.params())
 
     # 'commit' is None as we're only interested in the scenario where 'ref' is used
     codebase.deploy("test-application", "development", "application", None, "latest")
 
-    mocks.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
+    mocks.ecr_provider.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
 
     client.start_pipeline_execution.assert_called_once_with(
         name="test-application-application-manual-release",
@@ -299,7 +297,7 @@ def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
     # 'ref' is None as we're only interested in the scenario where 'commit' is used
     codebase.deploy("test-application", "development", "application", "abc123", None)
 
-    mocks.find_commit_tag.assert_not_called()
+    mocks.ecr_provider.find_commit_tag.assert_not_called()
 
     client.start_pipeline_execution.assert_called_once_with(
         name="test-application-application-manual-release",
@@ -310,14 +308,20 @@ def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
     )
 
 
-@pytest.mark.parametrize("exception_type", [RepositoryNotFoundException, ImageNotFoundException])
-def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
-    if exception_type == ImageNotFoundException:
-        mocks = CodebaseMocks(get_image_details=Mock(side_effect=exception_type("nonexistent-ref")))
-    else:
-        mocks = CodebaseMocks(get_image_details=Mock(side_effect=exception_type("application")))
+def test_codebase_deploy_propagates_repository_not_found_exception():
+    mocks = CodebaseMocks()
+    mocks.ecr_provider.get_image_details.side_effect = RepositoryNotFoundException("application")
 
-    with pytest.raises(exception_type):
+    with pytest.raises(RepositoryNotFoundException):
+        codebase = Codebase(**mocks.params())
+        codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
+
+
+def test_codebase_deploy_propagates_image_not_found_exception():
+    mocks = CodebaseMocks()
+    mocks.ecr_provider.get_image_details.side_effect = ImageNotFoundException("nonexistent-ref")
+
+    with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
 
@@ -325,18 +329,18 @@ def test_codebase_deploy_exception_with_a_nonexistent_codebase(exception_type):
 def test_codebase_deploy_uses_ref_when_commit_tag_not_found():
     mocks = CodebaseMocks()
     mock_image_details = MagicMock()
-    mocks.get_image_details.return_value = mock_image_details
+    mocks.ecr_provider.get_image_details.return_value = mock_image_details
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
 
-    mocks.find_commit_tag.return_value = None
+    mocks.ecr_provider.find_commit_tag.return_value = None
     codebase = Codebase(**mocks.params())
 
     # 'commit' is None as we're only interested in the scenario where 'ref' is used
     codebase.deploy("test-application", "development", "application", None, "latest")
 
-    mocks.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
+    mocks.ecr_provider.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
 
     client.start_pipeline_execution.assert_called_once_with(
         name="test-application-application-manual-release",
@@ -349,9 +353,9 @@ def test_codebase_deploy_uses_ref_when_commit_tag_not_found():
 
 @pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
 def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref):
-    mocks = CodebaseMocks(
-        get_image_details=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
-    )
+
+    mocks = CodebaseMocks()
+    mocks.ecr_provider.get_image_details.side_effect = ImageNotFoundException("nonexistent-ref")
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.describe_images.side_effect = ecr_exceptions.RepositoryNotFoundException({}, "")
@@ -363,9 +367,8 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_repository(commit, ref)
 
 @pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
 def test_codebase_deploy_aborts_with_a_nonexistent_image_ref(commit, ref):
-    mocks = CodebaseMocks(
-        get_image_details=Mock(side_effect=ImageNotFoundException("nonexistent-ref"))
-    )
+    mocks = CodebaseMocks()
+    mocks.ecr_provider.get_image_details.side_effect = ImageNotFoundException("nonexistent-ref")
 
     client = mock_aws_client(mocks.get_aws_session_or_abort)
     client.describe_images.side_effect = ecr_exceptions.ImageNotFoundException({}, "")
@@ -375,12 +378,13 @@ def test_codebase_deploy_aborts_with_a_nonexistent_image_ref(commit, ref):
         codebase.deploy("test-application", "development", "application", commit, ref)
 
 
-@pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])
+@pytest.mark.parametrize("commit, ref", [(None, "tag-1.2.3"), ("ab1c23d", None)])
 def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(commit, ref):
     mocks = CodebaseMocks()
     mocks.run_subprocess.return_value.stderr = ""
     mocks.io.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
+    mocks.ecr_provider.find_commit_tag.return_value = "commit-ab1c23d"
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
@@ -388,13 +392,12 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(co
 
     assert str(exc.value) == "Your deployment for application was not triggered."
     assert isinstance(exc.value, ApplicationDeploymentNotTriggered)
-
-    image_ref = f"commit-{commit}" if commit else ref
+    f"commit-{commit}" if commit else ref
 
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                f'You are about to deploy "test-application" for "application" with image reference "{image_ref}" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                f'You are about to deploy "test-application" for "application" with image reference "commit-ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )

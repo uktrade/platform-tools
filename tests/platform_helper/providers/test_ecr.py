@@ -1,9 +1,14 @@
 from datetime import datetime
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 
+import botocore
 import pytest
 
+from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.ecr import ECRProvider
+from dbt_platform_helper.utils.application import Application
 
 
 def test_aws_get_ecr_repos_success(two_pages_of_describe_repository_data):
@@ -90,3 +95,95 @@ def two_pages_of_describe_repository_data():
             ],
         },
     ]
+
+
+def test_get_image_details_returns_details():
+    session_mock = MagicMock()
+    client_mock = MagicMock()
+    session_mock.client.return_value = client_mock
+    image_info = {"imageDetails": [{"imageTags": ["tag-4.2.0", "commit-ab1c23d", "latest"]}]}
+    client_mock.describe_images.return_value = image_info
+    ecr = ECRProvider(session_mock)
+
+    image_details_retrieved = ecr.get_image_details(
+        Application(name="test_application"), "test_codebase", "commit-ab1c23d"
+    )
+    assert image_details_retrieved == [{"imageTags": ["tag-4.2.0", "commit-ab1c23d", "latest"]}]
+    client_mock.describe_images.assert_called_once_with(
+        repositoryName="test_application/test_codebase", imageIds=[{"imageTag": "commit-ab1c23d"}]
+    )
+
+
+def test_get_image_details_raises_image_details_not_found_when_there_are_no_image_details():
+    session_mock = MagicMock()
+    client_mock = MagicMock()
+    session_mock.client.return_value = client_mock
+    image_info = {}
+    client_mock.describe_images.return_value = image_info
+    ecr = ECRProvider(session_mock)
+
+    with pytest.raises(ImageNotFoundException) as exception_info:
+        ecr.get_image_details(
+            Application(name="test_application"), "test_codebase", "commit-ab1c23d"
+        )
+
+    actual_error = str(exception_info.value)
+    expected_error = 'An image labelled "commit-ab1c23d" could not be found in your image repository. Try the `platform-helper codebase build` command first.'
+
+    assert actual_error == expected_error
+
+
+def test_get_image_details_raises_image_not_found():
+    session_mock = MagicMock()
+    client_mock = MagicMock()
+    session_mock.client.return_value = client_mock
+    client_mock.describe_images.side_effect = botocore.exceptions.ClientError(
+        {
+            "Error": {"Code": "ImageNotFoundException"},
+        },
+        operation_name="DescribeImages",
+    )
+
+    ecr = ECRProvider(session_mock)
+
+    with pytest.raises(ImageNotFoundException) as exception_info:
+        ecr.get_image_details(
+            Application(name="test_application"), "test_codebase", "commit-ab1c23d"
+        )
+
+    actual_error = str(exception_info.value)
+    expected_error = 'An image labelled "commit-ab1c23d" could not be found in your image repository. Try the `platform-helper codebase build` command first.'
+
+    assert actual_error == expected_error
+
+
+def test_get_image_details_raises_repository_not_found():
+    session_mock = MagicMock()
+    client_mock = MagicMock()
+    session_mock.client.return_value = client_mock
+    client_mock.describe_images.side_effect = botocore.exceptions.ClientError(
+        {
+            "Error": {"Code": "RepositoryNotFoundException"},
+        },
+        operation_name="DescribeImages",
+    )
+
+    ecr = ECRProvider(session_mock)
+
+    with pytest.raises(RepositoryNotFoundException) as exception_info:
+        ecr.get_image_details(
+            Application(name="test_application"), "test_codebase", "commit-ab1c23d"
+        )
+
+    actual_error = str(exception_info.value)
+    expected_error = 'The ECR repository "test_application/test_codebase" could not be found.'
+
+    assert actual_error == expected_error
+
+
+def test_find_commit_tag_returns_commit_tag():
+    return None
+
+
+def test_find_commit_tag_returns_none_if_no_commit_tag():
+    return None

@@ -10,6 +10,7 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
@@ -18,12 +19,10 @@ from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
 )
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import find_commit_tag
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
 from dbt_platform_helper.utils.aws import get_image_build_project
-from dbt_platform_helper.utils.aws import get_image_details
 from dbt_platform_helper.utils.aws import get_manual_release_pipeline
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
@@ -39,8 +38,7 @@ class Codebase:
         io: ClickIOProvider = ClickIOProvider(),
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
-        get_image_details: Callable[[str], str] = get_image_details,
-        find_commit_tag: Callable[[str], str] = find_commit_tag,
+        ecr_provider: ECRProvider = ECRProvider(),
         get_image_build_project: Callable[[str], str] = get_image_build_project,
         get_manual_release_pipeline: Callable[[str], str] = get_manual_release_pipeline,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
@@ -59,8 +57,7 @@ class Codebase:
         self.io = io
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
-        self.get_image_details = get_image_details
-        self.find_commit_tag = find_commit_tag
+        self.ecr_provider = ecr_provider
         self.get_image_build_project = get_image_build_project
         self.get_manual_release_pipeline = get_manual_release_pipeline
         self.get_build_url_from_arn = get_build_url_from_arn
@@ -166,7 +163,7 @@ class Codebase:
         application, session = self._populate_application_values(app, env)
 
         image_ref = f"commit-{commit}" if commit else ref
-        image_details = self.get_image_details(session, application, codebase, image_ref)
+        image_details = self.ecr_provider.get_image_details(application, codebase, image_ref)
         image_ref = self._retrieve_commit_tag(image_ref, image_details)
 
         codepipeline_client = session.client("codepipeline")
@@ -213,9 +210,9 @@ class Codebase:
                 "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
             )
 
-    def _retrieve_commit_tag(self, image_ref: str, image_details: dict) -> str:
+    def _retrieve_commit_tag(self, image_ref: str, image_details: list[dict]) -> str:
         if not image_ref.startswith("commit-"):
-            commit_tag = self.find_commit_tag(image_details, image_ref)
+            commit_tag = self.ecr_provider.find_commit_tag(image_details, image_ref)
             image_ref = commit_tag if commit_tag else image_ref
         return image_ref
 
