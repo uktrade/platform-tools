@@ -164,12 +164,14 @@ class PlatformConfigSchema:
     @staticmethod
     def __default_versions_schema() -> dict:
         return {
+            # Todo: deprecated - remove once terraform-platform-modules is no longer used
             Optional("terraform-platform-modules"): str,
             Optional("platform-helper"): str,
         }
 
     @staticmethod
     def __environments_schema() -> dict:
+        # Todo: deprecated - remove once terraform-platform-modules is no longer used
         _valid_environment_specific_version_overrides = {
             Optional("terraform-platform-modules"): str,
         }
@@ -190,6 +192,7 @@ class PlatformConfigSchema:
                     },
                     # Todo: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
                     Optional("requires_approval"): bool,
+                    # Todo: deprecated - remove once terraform-platform-modules is no longer used
                     Optional("versions"): _valid_environment_specific_version_overrides,
                     Optional("vpc"): str,
                 },
@@ -315,8 +318,6 @@ class PlatformConfigSchema:
         _valid_postgres_database_copy = {
             "from": PlatformConfigSchema.__valid_environment_name(),
             "to": PlatformConfigSchema.__valid_environment_name(),
-            Optional("from_account"): str,
-            Optional("to_account"): str,
             Optional("pipeline"): {Optional("schedule"): str},
         }
 
@@ -429,7 +430,7 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n" + "\n".join(f"  {e}" for e in errors)
             )
 
         return True

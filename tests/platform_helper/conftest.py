@@ -402,7 +402,6 @@ def valid_platform_config():
 application: test-app
 default_versions: 
     platform-helper: 10.2.0
-    terraform-platform-modules: 1.2.3
 environments:
   "*":
     accounts:
@@ -416,8 +415,6 @@ environments:
     vpc: non-prod-vpc
   dev:
   test:
-    versions:
-        terraform-platform-modules: 1.2.3
   staging:
   hotfix:
     accounts:
@@ -706,7 +703,6 @@ legacy_project: false
 
 default_versions: 
     platform-helper: 1.2.3
-    terraform-platform-modules: 9.9.9
 
 environments:
   dev:
@@ -740,6 +736,56 @@ def platform_config_for_env_pipelines():
         """
 application: test-app
 deploy_repository: uktrade/test-app-weird-name-deploy
+
+environments:
+  dev:
+    accounts:
+      deploy:
+        name: "platform-sandbox-test"
+        id: "1111111111"
+      dns:
+        name: "platform-sandbox-test"
+        id: "2222222222"
+  prod:
+    accounts:
+      deploy:
+        name: "platform-prod-test"
+        id: "3333333333"
+      dns:
+        name: "platform-prod-test"
+        id: "4444444444"
+    requires_approval: true
+
+environment_pipelines:
+   main:
+       account: platform-sandbox-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         dev:
+   prod-main:
+       account: platform-prod-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         prod:
+    """
+    )
+
+
+# Todo: deprecated - remove once terraform-platform-modules is no longer used
+@pytest.fixture()
+def platform_config_for_env_pipelines_with_deprecated_tpm_default_versions():
+    return yaml.safe_load(
+        """
+application: test-app
+deploy_repository: uktrade/test-app-weird-name-deploy
+
+default_versions:
+    platform-helper: 12.0.0
+    terraform-platform-modules: 7.0.0
 
 environments:
   dev:

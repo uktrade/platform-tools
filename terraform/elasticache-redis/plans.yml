@@ -1,0 +1,85 @@
+# t-shirt sizes for ElastiCache Redis
+
+# 0.5GB RAM, single node, no failover.
+micro:
+  replicas: 0
+  instance: cache.t4g.micro
+  automatic_failover_enabled: false
+  multi_az_enabled: false
+
+# 0.5GB RAM, highly-available.
+micro-ha:
+  replicas: 2
+  instance: cache.t4g.micro
+  automatic_failover_enabled: true
+  multi_az_enabled: true
+
+# 1.37GB RAM, single node, no failover.
+tiny:
+  replicas: 0
+  instance: cache.t4g.small
+  automatic_failover_enabled: false
+  multi_az_enabled: false
+
+# 1.37GB RAM, highly-available
+tiny-ha:
+  replicas: 2
+  instance: cache.t4g.small
+  automatic_failover_enabled: true
+  multi_az_enabled: true
+
+# 3.09GB RAM, single node, no failover.
+small:
+  replicas: 0
+  instance: cache.t4g.medium
+  automatic_failover_enabled: false
+  multi_az_enabled: false
+
+# 3.09GB RAM, highly-available
+small-ha:
+  replicas: 2
+  instance: cache.t4g.medium
+  automatic_failover_enabled: true
+  multi_az_enabled: true
+
+# 6.38GB RAM, single node, no failover.
+medium:
+  replicas: 0
+  instance: cache.m6g.large
+  automatic_failover_enabled: false
+  multi_az_enabled: false
+
+# 6.38GB RAM, highly-available
+medium-ha:
+  replicas: 2
+  instance: 'cache.m6g.large'
+  automatic_failover_enabled: true
+  multi_az_enabled: true
+
+# 12.93GB RAM, single node, no failover.
+large:
+  replicas: 0
+  instance: cache.m6g.xlarge
+  automatic_failover_enabled: false
+  multi_az_enabled: false
+
+# 12.93GB RAM, highly-available
+large-ha:
+  replicas: 2
+  instance: cache.m6g.xlarge
+  automatic_failover_enabled: true
+  multi_az_enabled: true
+
+# 26.04GB RAM, single node, no failover.
+x-large:
+  replicas: 0
+  instance: cache.m6g.2xlarge
+  automatic_failover_enabled: false
+  multi_az_enabled: false
+
+# 26.04GB RAM, highly-available
+x-large-ha:
+  replicas: 2
+  instance: cache.m6g.2xlarge
+  automatic_failover_enabled: true
+  multi_az_enabled: true
