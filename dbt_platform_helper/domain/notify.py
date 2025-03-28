@@ -9,7 +9,7 @@ class SlackChannelNotifier:
         self.client = WebClient(slack_token)
         self.slack_channel_id = slack_channel_id
 
-    def post_update(self, slack_ref, context_elements, message):
+    def post_update(self, slack_ref, message, context_elements=None):
         args = {
             "channel": self.slack_channel_id,
             "blocks": self._build_message_blocks(context_elements, message),
@@ -68,7 +68,7 @@ class Notify:
         context_elements = self._get_context_elements(build_arn, commit_sha, repository)
 
         if slack_ref:
-            return self.notifier.post_update(slack_ref, context_elements, message)
+            return self.notifier.post_update(slack_ref, message, context_elements)
         else:
             return self.notifier.post_new(message, context_elements)
 
