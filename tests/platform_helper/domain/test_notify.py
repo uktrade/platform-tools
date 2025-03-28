@@ -123,21 +123,28 @@ class TestSlackChannelNotifier:
         else:
             assert len(call_args["blocks"]) == 1
 
+    @pytest.mark.parametrize(
+        "title, message, expected",
+        (
+            (None, "The comment", "The comment"),
+            ("The title", "The comment", "The title"),
+        ),
+    )
     @patch("dbt_platform_helper.domain.notify.WebClient")
     def test_post_new_text_defaults_to_message_if_no_title(
-        self,
-        mock_webclient,
+        self, mock_webclient, title, message, expected
     ):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
 
         SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
-            message="The comment",
-            title=None,
+            message=message,
+            title=title,
         )
 
         call_args = mock_slack_client_instance.chat_postMessage.call_args_list[0].kwargs
-        assert call_args["text"] == "The comment"
+        assert call_args["text"] == expected
+        assert call_args["blocks"][0].text.text == message
 
 
 class TestNotify:
