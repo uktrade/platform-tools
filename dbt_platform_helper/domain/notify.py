@@ -45,14 +45,14 @@ class Notify:
         commit_sha: str = None,
         slack_ref: str = None,
     ):
-        message_blocks = self._get_message_blocks(build_arn, commit_sha, message, repository)
+        message_blocks = self._get_context_elements(build_arn, commit_sha, message, repository)
 
         if slack_ref:
             return self.notifier.post_update(slack_ref, message_blocks, message)
         else:
             return self.notifier.post_new(message_blocks, message)
 
-    def _get_message_blocks(self, build_arn: str, commit_sha: str, message: str, repository: str):
+    def _get_context_elements(self, build_arn: str, commit_sha: str, message: str, repository: str):
         if repository:
             repository_text = f"*Repository*: <https://github.com/{repository}|{repository}>"
             if commit_sha:
