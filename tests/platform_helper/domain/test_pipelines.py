@@ -8,8 +8,8 @@ import yaml
 from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 

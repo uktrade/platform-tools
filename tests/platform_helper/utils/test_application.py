@@ -8,7 +8,7 @@ from unittest.mock import patch
 import boto3
 from moto import mock_aws
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment

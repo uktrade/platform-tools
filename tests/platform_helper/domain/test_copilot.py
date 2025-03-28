@@ -11,9 +11,9 @@ import yaml
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider

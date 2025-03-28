@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.pipeline import generate
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 from tests.platform_helper.conftest import FIXTURES_DIR
 
