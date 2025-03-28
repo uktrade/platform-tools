@@ -1,6 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
+    directory: "/"
     schedule:
       interval: "daily"
     commit-message:
@@ -12,6 +13,7 @@ updates:
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
+    directory: "/terraform"
     schedule:
       interval: "daily"
     commit-message:
