@@ -128,5 +128,6 @@ class TestSlackChannelNotifier:
         )
 
         call_args = mock_slack_client_instance.chat_postMessage.call_args_list[0].kwargs
+
         assert call_args["text"] == expected
         assert call_args["blocks"][0].text.text == message
