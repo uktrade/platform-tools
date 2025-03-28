@@ -12,18 +12,18 @@ class SlackChannelNotifier:
     def post_update(self, slack_ref, context_elements, message):
         args = {
             "channel": self.slack_channel_id,
-            "blocks": context_elements,
+            "blocks": self._build_message_blocks(context_elements, message),
             "text": message,
             "unfurl_links": False,
             "unfurl_media": False,
         }
         self.client.chat_update(ts=slack_ref, **args)
 
-    def post_new(self, context_elements, message, reply_broadcast=None, thread_ts=None):
+    def post_new(self, context_elements, title, message, reply_broadcast=None, thread_ts=None):
         args = {
             "channel": self.slack_channel_id,
-            "blocks": context_elements,
-            "text": message,
+            "blocks": self._build_message_blocks(context_elements, message),
+            "text": title if title else message,
             "reply_broadcast": reply_broadcast,
             "unfurl_links": False,
             "unfurl_media": False,
@@ -31,45 +31,7 @@ class SlackChannelNotifier:
         }
         self.client.chat_postMessage(ts=None, **args)
 
-
-# TODO untangle responsibilities
-class Notify:
-    def __init__(self, notifier: SlackChannelNotifier):
-        self.notifier = notifier
-
-    def environment_progress(
-        self,
-        message: str,
-        build_arn: str = None,
-        repository: str = None,
-        commit_sha: str = None,
-        slack_ref: str = None,
-    ):
-        context_elements = self._get_context_elements(build_arn, commit_sha, message, repository)
-
-        if slack_ref:
-            return self.notifier.post_update(slack_ref, context_elements, message)
-        else:
-            return self.notifier.post_new(context_elements, message)
-
-    def _get_context_elements(self, build_arn: str, commit_sha: str, message: str, repository: str):
-        if repository:
-            repository_text = f"*Repository*: <https://github.com/{repository}|{repository}>"
-            if commit_sha:
-                revision_text = f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
-        if build_arn:
-            build_logs_text = f"<{get_build_url(build_arn)}|Build Logs>"
-
-        context_elements = []
-
-        if repository:
-            context_elements.append(repository_text)
-            if commit_sha:
-                context_elements.append(revision_text)
-
-        if build_arn:
-            context_elements.append(build_logs_text)
-
+    def _build_message_blocks(self, context_elements, message):
         message_blocks = [
             blocks.SectionBlock(
                 text=blocks.TextObject(type="mrkdwn", text=message),
@@ -87,6 +49,47 @@ class Notify:
             )
         return message_blocks
 
+
+# TODO untangle responsibilities
+class Notify:
+    def __init__(self, notifier: SlackChannelNotifier):
+        self.notifier = notifier
+
+    def environment_progress(
+        self,
+        message: str,
+        build_arn: str = None,
+        repository: str = None,
+        commit_sha: str = None,
+        slack_ref: str = None,
+    ):
+        context_elements = self._get_context_elements(build_arn, commit_sha, repository)
+
+        if slack_ref:
+            return self.notifier.post_update(slack_ref, context_elements, message)
+        else:
+            return self.notifier.post_new(context_elements, None, message)
+
+    def _get_context_elements(self, build_arn: str, commit_sha: str, repository: str):
+        if repository:
+            repository_text = f"*Repository*: <https://github.com/{repository}|{repository}>"
+            if commit_sha:
+                revision_text = f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
+        if build_arn:
+            build_logs_text = f"<{get_build_url(build_arn)}|Build Logs>"
+
+        context_elements = []
+
+        if repository:
+            context_elements.append(repository_text)
+            if commit_sha:
+                context_elements.append(revision_text)
+
+        if build_arn:
+            context_elements.append(build_logs_text)
+
+        return context_elements
+
     def add_comment(
         self,
         slack_ref: str,
@@ -94,10 +97,10 @@ class Notify:
         title: str,
         send_to_main_channel: bool,
     ):
-        message_blocks = [blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))]
         self.notifier.post_new(
-            context_elements=message_blocks,
-            message=title if title else message,
+            context_elements=[],
+            title=title,
+            message=message,
             reply_broadcast=send_to_main_channel,
             thread_ts=slack_ref,
         )
