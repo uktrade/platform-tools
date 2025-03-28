@@ -9,20 +9,20 @@ class SlackChannelNotifier:
         self.client = WebClient(slack_token)
         self.slack_channel_id = slack_channel_id
 
-    def post_update(self, slack_ref, message_blocks, message):
+    def post_update(self, slack_ref, context_elements, message):
         args = {
             "channel": self.slack_channel_id,
-            "blocks": message_blocks,
+            "blocks": context_elements,
             "text": message,
             "unfurl_links": False,
             "unfurl_media": False,
         }
         self.client.chat_update(ts=slack_ref, **args)
 
-    def post_new(self, message_blocks, message, reply_broadcast=None, thread_ts=None):
+    def post_new(self, context_elements, message, reply_broadcast=None, thread_ts=None):
         args = {
             "channel": self.slack_channel_id,
-            "blocks": message_blocks,
+            "blocks": context_elements,
             "text": message,
             "reply_broadcast": reply_broadcast,
             "unfurl_links": False,
@@ -45,12 +45,12 @@ class Notify:
         commit_sha: str = None,
         slack_ref: str = None,
     ):
-        message_blocks = self._get_context_elements(build_arn, commit_sha, message, repository)
+        context_elements = self._get_context_elements(build_arn, commit_sha, message, repository)
 
         if slack_ref:
-            return self.notifier.post_update(slack_ref, message_blocks, message)
+            return self.notifier.post_update(slack_ref, context_elements, message)
         else:
-            return self.notifier.post_new(message_blocks, message)
+            return self.notifier.post_new(context_elements, message)
 
     def _get_context_elements(self, build_arn: str, commit_sha: str, message: str, repository: str):
         if repository:
@@ -96,7 +96,7 @@ class Notify:
     ):
         message_blocks = [blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))]
         self.notifier.post_new(
-            message_blocks=message_blocks,
+            context_elements=message_blocks,
             message=title if title else message,
             reply_broadcast=send_to_main_channel,
             thread_ts=slack_ref,
