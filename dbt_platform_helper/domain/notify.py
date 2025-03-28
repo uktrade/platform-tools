@@ -53,15 +53,22 @@ class Notify:
             return self.notifier.post_new(message_blocks, message)
 
     def _get_message_blocks(self, build_arn: str, commit_sha: str, message: str, repository: str):
-        context_elements = []
         if repository:
-            context_elements.append(f"*Repository*: <https://github.com/{repository}|{repository}>")
+            repository_text = f"*Repository*: <https://github.com/{repository}|{repository}>"
             if commit_sha:
-                context_elements.append(
-                    f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
-                )
+                revision_text = f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
         if build_arn:
-            context_elements.append(f"<{get_build_url(build_arn)}|Build Logs>")
+            build_logs_text = f"<{get_build_url(build_arn)}|Build Logs>"
+
+        context_elements = []
+
+        if repository:
+            context_elements.append(repository_text)
+            if commit_sha:
+                context_elements.append(revision_text)
+
+        if build_arn:
+            context_elements.append(build_logs_text)
 
         message_blocks = [
             blocks.SectionBlock(
