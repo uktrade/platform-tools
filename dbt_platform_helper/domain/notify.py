@@ -4,16 +4,16 @@ from slack_sdk.models import blocks
 from dbt_platform_helper.utils.arn_parser import ARN
 
 
-class SlackClient(WebClient):
+class SlackChannelNotifier:
     def __init__(self, slack_token: str, slack_channel_id: str):
+        self.client = WebClient(slack_token)
         self.slack_channel_id = slack_channel_id
-        super().__init__(token=slack_token)
 
 
 # TODO untangle responsibilities
 class Notify:
-    def __init__(self, client: SlackClient):
-        self.client = client
+    def __init__(self, notifier: SlackChannelNotifier):
+        self.notifier = notifier
 
     def environment_progress(
         self,
@@ -24,13 +24,13 @@ class Notify:
         slack_ref: str = None,
     ):
         args = self._get_slack_args(
-            build_arn, commit_sha, message, repository, self.client.slack_channel_id
+            build_arn, commit_sha, message, repository, self.notifier.slack_channel_id
         )
 
         if slack_ref:
-            return self.client.chat_update(ts=slack_ref, **args)
+            return self.notifier.client.chat_update(ts=slack_ref, **args)
         else:
-            return self.client.chat_postMessage(ts=slack_ref, **args)
+            return self.notifier.client.chat_postMessage(ts=slack_ref, **args)
 
     def _get_slack_args(
         self, build_arn: str, commit_sha: str, message: str, repository: str, slack_channel_id: str
@@ -76,8 +76,8 @@ class Notify:
         title: str,
         send_to_main_channel: bool,
     ):
-        self.client.chat_postMessage(
-            channel=self.client.slack_channel_id,
+        self.notifier.client.chat_postMessage(
+            channel=self.notifier.slack_channel_id,
             blocks=[blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))],
             text=title if title else message,
             reply_broadcast=send_to_main_channel,

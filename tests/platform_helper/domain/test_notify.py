@@ -1,9 +1,10 @@
 from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 
 from dbt_platform_helper.domain.notify import Notify
-from dbt_platform_helper.domain.notify import SlackClient
+from dbt_platform_helper.domain.notify import SlackChannelNotifier
 from dbt_platform_helper.domain.notify import get_build_url
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
@@ -78,14 +79,21 @@ def test_getting_build_url():
         ),
     ),
 )
+@patch("dbt_platform_helper.domain.notify.WebClient")
 def test_environment_progress(
-    slack_ref, repository, sha, build_arn, expected_text: list[str], expect_update: bool
+    mock_slack_client,
+    slack_ref,
+    repository,
+    sha,
+    build_arn,
+    expected_text: list[str],
+    expect_update: bool,
 ):
-    mock_slack_client = Mock(spec=SlackClient)
-    mock_slack_client.slack_channel_id = "my-slack-channel-id"
-    mock_slack_client.slack_token = "my-slack-token"
+    mock_slack_notifier = Mock(spec=SlackChannelNotifier)
+    mock_slack_notifier.client = mock_slack_client
+    mock_slack_notifier.slack_channel_id = "my-slack-channel-id"
 
-    Notify(mock_slack_client).environment_progress(
+    Notify(mock_slack_notifier).environment_progress(
         message="The very important thing everyone should know",
         slack_ref=slack_ref,
         repository=repository,
@@ -93,8 +101,8 @@ def test_environment_progress(
         build_arn=build_arn,
     )
 
-    post_calls = mock_slack_client.chat_postMessage.call_args_list
-    update_calls = mock_slack_client.chat_update.call_args_list
+    post_calls = mock_slack_notifier.client.chat_postMessage.call_args_list
+    update_calls = mock_slack_notifier.client.chat_update.call_args_list
 
     if expect_update:
         calls = update_calls
@@ -129,13 +137,14 @@ def test_environment_progress(
         ("My title", True, "My title"),
     ),
 )
-def test_add_comment(title: str, broadcast: bool, expected_text: str):
-    mock_slack_client = Mock(spec=SlackClient)
-    mock_slack_client.slack_channel_id = "my-slack-channel-id"
-    mock_slack_client.slack_token = "my-slack-token"
+@patch("dbt_platform_helper.domain.notify.WebClient")
+def test_add_comment(mock_slack_client, title: str, broadcast: bool, expected_text: str):
+    mock_slack_notifier = Mock(spec=SlackChannelNotifier)
+    mock_slack_notifier.client = mock_slack_client
+    mock_slack_notifier.slack_channel_id = "my-slack-channel-id"
     slack_ref = "1234.56"
 
-    Notify(mock_slack_client).add_comment(
+    Notify(mock_slack_notifier).add_comment(
         slack_ref, message="The comment", title=title, send_to_main_channel=broadcast
     )
 

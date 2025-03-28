@@ -2,7 +2,7 @@ import click
 from slack_sdk.models import blocks
 
 from dbt_platform_helper.domain.notify import Notify
-from dbt_platform_helper.domain.notify import SlackClient
+from dbt_platform_helper.domain.notify import SlackChannelNotifier
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -35,7 +35,7 @@ def environment_progress(
 ):
     try:
         io = ClickIOProvider()
-        client = SlackClient(slack_token, slack_channel_id)
+        client = SlackChannelNotifier(slack_token, slack_channel_id)
         response = Notify(client).environment_progress(
             slack_ref=slack_ref,
             message=message,
@@ -66,7 +66,7 @@ def add_comment(
     send_to_main_channel: bool,
 ):
     try:
-        client = SlackClient(slack_token, slack_channel_id)
+        client = SlackChannelNotifier(slack_token, slack_channel_id)
         Notify(client).add_comment(
             blocks=[blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))],
             text=title if title else message,

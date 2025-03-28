@@ -6,18 +6,18 @@ from click.testing import CliRunner
 from dbt_platform_helper.commands.notify import add_comment
 from dbt_platform_helper.commands.notify import environment_progress
 from dbt_platform_helper.domain.notify import Notify
-from dbt_platform_helper.domain.notify import SlackClient
+from dbt_platform_helper.domain.notify import SlackChannelNotifier
 from dbt_platform_helper.providers.io import ClickIOProvider
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
 
 
 @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
-@patch("dbt_platform_helper.commands.notify.SlackClient")
+@patch("dbt_platform_helper.commands.notify.SlackChannelNotifier")
 @patch("dbt_platform_helper.commands.notify.Notify")
 def test_environment_progress(
     mock_domain,
-    mock_client,
+    mock_notifier,
     mock_io,
 ):
     mock_io_instance = Mock(spec=ClickIOProvider)
@@ -25,8 +25,8 @@ def test_environment_progress(
     mock_domain_instance = Mock(spec=Notify)
     mock_domain.return_value = mock_domain_instance
     mock_domain_instance.environment_progress.return_value = {"ts": "success"}
-    mock_client_instance = Mock(spec=SlackClient)
-    mock_client.return_value = mock_client_instance
+    mock_notifier_instance = Mock(spec=SlackChannelNotifier)
+    mock_notifier.return_value = mock_notifier_instance
 
     options = [
         "--slack-ref",
@@ -49,8 +49,8 @@ def test_environment_progress(
         + options,
     )
 
-    mock_client.assert_called_once_with("my-slack-token", "my-slack-channel-id")
-    mock_domain.assert_called_once_with(mock_client_instance)
+    mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
+    mock_domain.assert_called_once_with(mock_notifier_instance)
     mock_domain_instance.environment_progress.assert_called_once_with(
         slack_ref="10000.10",
         message="The very important thing everyone should know",
@@ -63,16 +63,16 @@ def test_environment_progress(
 
 @patch("dbt_platform_helper.commands.notify.blocks.SectionBlock")
 @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
-@patch("dbt_platform_helper.commands.notify.SlackClient")
+@patch("dbt_platform_helper.commands.notify.SlackChannelNotifier")
 @patch("dbt_platform_helper.commands.notify.Notify")
-def test_add_comment(mock_domain, mock_client, mock_io, mock_blocks):
+def test_add_comment(mock_domain, mock_notifier, mock_io, mock_blocks):
     mock_io_instance = Mock(spec=ClickIOProvider)
     mock_io.return_value = mock_io_instance
     mock_domain_instance = Mock(spec=Notify)
     mock_domain.return_value = mock_domain_instance
 
-    mock_client_instance = Mock(spec=SlackClient)
-    mock_client.return_value = mock_client_instance
+    mock_notifier_instance = Mock(spec=SlackChannelNotifier)
+    mock_notifier.return_value = mock_notifier_instance
 
     message = "The comment"
     mock_blocks.return_value = message
@@ -90,8 +90,8 @@ def test_add_comment(mock_domain, mock_client, mock_io, mock_blocks):
 
     CliRunner().invoke(add_comment, cli_args)
 
-    mock_client.assert_called_once_with("my-slack-token", "my-slack-channel-id")
-    mock_domain.assert_called_once_with(mock_client_instance)
+    mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
+    mock_domain.assert_called_once_with(mock_notifier_instance)
     mock_domain_instance.add_comment.assert_called_once_with(
         blocks=["The comment"],
         text="The title",
