@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    commit-message:
+      # So the release-please-action includes production
+      # dependencies in the release notes.
+      prefix: "deps"
+      # Don't include dev dependencies in release notes, they
+      # are of no interest outside this repositories maintainers.
+      prefix-development: "chore(deps-dev)"
+
+  - package-ecosystem: "terraform"
+    directory: "/terraform"
+    schedule:
+      interval: "daily"
+    commit-message:
+      # So the release-please-action includes production
+      # dependencies in the release notes.
+      prefix: "deps"
+      # Don't include dev dependencies in release notes, they
+      # are of no interest outside this repositories maintainers.
+      prefix-development: "chore(deps-dev)"
