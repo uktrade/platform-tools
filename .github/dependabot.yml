@@ -8,7 +8,7 @@ updates:
       prefix: "deps"
       # Don't include dev dependencies in release notes, they
       # are of no interest outside this repositories maintainers.
-      prefix-development: "chore"
+      prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
     schedule: daily
@@ -18,4 +18,4 @@ updates:
       prefix: "deps"
       # Don't include dev dependencies in release notes, they
       # are of no interest outside this repositories maintainers.
-      prefix-development: "chore"
+      prefix-development: "chore(deps-dev)"
