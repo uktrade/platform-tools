@@ -65,32 +65,22 @@ class Notify:
         commit_sha: str = None,
         slack_ref: str = None,
     ):
-        context_elements = self._get_context_elements(build_arn, commit_sha, repository)
+        context = []
+
+        if repository:
+            context.append(f"*Repository*: <https://github.com/{repository}|{repository}>")
+            if commit_sha:
+                context.append(
+                    f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
+                )
+
+        if build_arn:
+            context.append(f"<{get_build_url(build_arn)}|Build Logs>")
 
         if slack_ref:
-            return self.notifier.post_update(slack_ref, message, context_elements)
+            return self.notifier.post_update(slack_ref, message, context)
         else:
-            return self.notifier.post_new(message, context_elements)
-
-    def _get_context_elements(self, build_arn: str, commit_sha: str, repository: str):
-        if repository:
-            repository_text = f"*Repository*: <https://github.com/{repository}|{repository}>"
-            if commit_sha:
-                revision_text = f"*Revision*: <https://github.com/{repository}/commit/{commit_sha}|{commit_sha}>"
-        if build_arn:
-            build_logs_text = f"<{get_build_url(build_arn)}|Build Logs>"
-
-        context_elements = []
-
-        if repository:
-            context_elements.append(repository_text)
-            if commit_sha:
-                context_elements.append(revision_text)
-
-        if build_arn:
-            context_elements.append(build_logs_text)
-
-        return context_elements
+            return self.notifier.post_new(message, context)
 
     def add_comment(
         self,
