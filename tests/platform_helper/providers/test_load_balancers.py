@@ -386,7 +386,7 @@ def test_https_certificate_for_application(mock_application):
     session = mock_application.environments["development"].session
     certificate_arn, _, _ = _create_listener_with_cert(session)
 
-    # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
+    # TODO mocking because isDefault is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
     mock_response = {"Certificates": [{"CertificateArn": certificate_arn, "IsDefault": True}]}
     alb_provider = LoadBalancerProvider(session)
     with patch.object(
@@ -404,7 +404,7 @@ def test_multiple_https_certificate_for_application(mock_application):
     certificate_arn, _, load_balancer_arn = _create_listener_with_cert(session)
     certificate_arn_2, _, _ = _create_listener_with_cert(session, False, load_balancer_arn)
 
-    # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
+    # TODO mocking because IsDefault is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
     mock_response = {
         "Certificates": [
             {"CertificateArn": certificate_arn, "IsDefault": "True"},
@@ -426,7 +426,7 @@ def test_when_no_certificate_present_for_application(mock_application):
     session = mock_application.environments["development"].session
     _, _, _ = _create_listener_with_cert(session)
 
-    # TODO mocking because isDeafult is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
+    # TODO mocking because IsDefault is lost when adding cert to listener https://github.com/getmoto/moto/blob/9e8bc74f3610ed390e7fad4bb90af574b68dd1f1/moto/elbv2/models.py#L2017
     mock_response = {"Certificates": []}
     alb_provider = LoadBalancerProvider(session)
     with patch.object(
