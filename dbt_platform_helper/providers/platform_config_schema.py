@@ -318,8 +318,6 @@ class PlatformConfigSchema:
         _valid_postgres_database_copy = {
             "from": PlatformConfigSchema.__valid_environment_name(),
             "to": PlatformConfigSchema.__valid_environment_name(),
-            Optional("from_account"): str,
-            Optional("to_account"): str,
             Optional("pipeline"): {Optional("schedule"): str},
         }
 
