@@ -19,7 +19,9 @@ class SlackChannelNotifier:
         }
         self.client.chat_update(ts=slack_ref, **args)
 
-    def post_new(self, context_elements, title, message, reply_broadcast=None, thread_ts=None):
+    def post_new(
+        self, message, context_elements=None, title=None, reply_broadcast=None, thread_ts=None
+    ):
         args = {
             "channel": self.slack_channel_id,
             "blocks": self._build_message_blocks(context_elements, message),
@@ -68,7 +70,7 @@ class Notify:
         if slack_ref:
             return self.notifier.post_update(slack_ref, context_elements, message)
         else:
-            return self.notifier.post_new(context_elements, None, message)
+            return self.notifier.post_new(message, context_elements)
 
     def _get_context_elements(self, build_arn: str, commit_sha: str, repository: str):
         if repository:
@@ -98,9 +100,9 @@ class Notify:
         send_to_main_channel: bool,
     ):
         self.notifier.post_new(
-            context_elements=[],
-            title=title,
             message=message,
+            title=title,
+            context_elements=[],
             reply_broadcast=send_to_main_channel,
             thread_ts=slack_ref,
         )
