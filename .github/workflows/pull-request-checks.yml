@@ -26,6 +26,7 @@ jobs:
           subjectPatternError: |
             The subject "{subject}" found in the pull request title "{title}"
             didn't match the expected pattern. E.g. "feat: Add new feature (DBTP-1234)".
-          # Do not check Dependabot pull requests as we do no control the titles
+          # Do not check pull requests where us taking control of the titles is either not possible, or would add more overhead than value
           ignoreLabels: |
+            autorelease: pending
             dependencies
