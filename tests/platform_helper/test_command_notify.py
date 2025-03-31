@@ -68,7 +68,7 @@ def test_environment_progress(
     mock_io_instance.info.assert_called_once_with("success")
 
 
-@patch("dbt_platform_helper.commands.notify.blocks.SectionBlock")
+@patch("dbt_platform_helper.providers.notifier.blocks.SectionBlock")
 @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
 @patch("dbt_platform_helper.commands.notify.SlackChannelNotifier")
 @patch("dbt_platform_helper.commands.notify.Notify")
