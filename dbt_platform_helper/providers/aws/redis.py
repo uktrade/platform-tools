@@ -2,6 +2,8 @@ import boto3
 
 
 class Redis:
+    EXTENSION = "redis"
+    VERSION_KEY = "engine"
 
     def __init__(self, client: boto3.client):
         self.client = client
