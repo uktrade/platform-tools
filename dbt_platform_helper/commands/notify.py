@@ -70,7 +70,7 @@ def add_comment(
             message=message,
             title=title,
             send_to_main_channel=send_to_main_channel,
-            slack_ref=slack_ref,
+            original_message_ref=slack_ref,
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

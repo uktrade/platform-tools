@@ -33,7 +33,7 @@ class Notify:
 
     def add_comment(
         self,
-        slack_ref: str,
+        original_message_ref: str,
         message: str,
         title: str,
         send_to_main_channel: bool,
@@ -43,7 +43,7 @@ class Notify:
             title=title,
             context=[],
             reply_broadcast=send_to_main_channel,
-            thread_ref=slack_ref,
+            thread_ref=original_message_ref,
         )
 
 

@@ -104,7 +104,7 @@ def test_add_comment(mock_domain, mock_notifier, mock_io, mock_blocks):
     EXPECTED_ADD_COMMENT.bind(None, *args, **kwargs)
 
     mock_domain_instance.add_comment.assert_called_once_with(
-        slack_ref="1234.56",
+        original_message_ref="1234.56",
         message="The comment",
         title="The title",
         send_to_main_channel=True,
