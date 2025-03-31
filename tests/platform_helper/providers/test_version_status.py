@@ -4,6 +4,7 @@ import pytest
 
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.version_status import UnsupportedVersionException
 from dbt_platform_helper.providers.version_status import VersionStatus
 
 
@@ -62,11 +63,11 @@ class TestPlatformHelperVersionStatus:
     @pytest.mark.parametrize(
         "cli_version, config_version, expected",
         [
-            ("13.0.0", "12.0.0", "13.0.0"),
-            (None, "12.0.0", "12.0.0"),
-            ("", "12.0.0", "12.0.0"),
-            ("13.0.0", None, "13.0.0"),
-            ("13.0.0", "", "13.0.0"),
+            ("14.0.0", "12.0.0", "14.0.0"),
+            (None, "14.0.0", "14.0.0"),
+            ("", "14.0.0", "14.0.0"),
+            ("14.0.0", None, "14.0.0"),
+            ("14.0.0", "", "14.0.0"),
         ],
     )
     def test_get_required_platform_helper_version_valid_sources(
@@ -101,3 +102,27 @@ class TestPlatformHelperVersionStatus:
         mock_io.warn.assert_called_once_with(
             "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
         )
+
+    @pytest.mark.parametrize(
+        "cli_version, config_version, deprecated_version",
+        [
+            ("13.0.0", None, None),
+            (None, "13.0.0", None),
+            (None, None, "13.0.0"),
+        ],
+    )
+    def test_get_required_platform_helper_version_errors_when_version_below_14(
+        self, cli_version, config_version, deprecated_version
+    ):
+        mock_io = Mock()
+
+        with pytest.raises(UnsupportedVersionException):
+            PlatformHelperVersionStatus(
+                cli_override=cli_version,
+                platform_config_default=config_version,
+                deprecated_version_file=deprecated_version,
+            ).get_required_platform_helper_version(mock_io)
+
+            mock_io.error.assert_called_once_with(
+                "Platform-helper version 13.0.0 is not compatible with platform-helper. Please install version platform-helper version 14 or later."
+            )

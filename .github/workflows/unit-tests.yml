@@ -51,9 +51,6 @@ jobs:
   terraform_python_tests:
     name: Test terraform python code against Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: terraform
 
     strategy:
       fail-fast: false
@@ -74,12 +71,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pwd
           pip install poetry
           poetry install
 
       - name: Run pytest
-        run: pwd; poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy
+        run: poetry run pytest --cov --cov-report=xml --junitxml=junit.xml -o junit_family=legacy terraform
         env:
           AWS_DEFAULT_REGION: eu-west-2
           PYTHON_VERSION: ${{ matrix.python-version }}

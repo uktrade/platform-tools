@@ -21,8 +21,6 @@ my-rds-db:
       to: hotfix
       pipeline: { }
     - from: prod
-      from_account: "9999999999"
       to: staging
-      to_account: "1122334455"
       pipeline:
         schedule: "0 0 * * WED"

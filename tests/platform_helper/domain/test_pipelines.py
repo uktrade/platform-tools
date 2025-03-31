@@ -72,17 +72,17 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @pytest.mark.parametrize(
     "cli_terraform_platform_modules_version, cli_platform_helper_version, config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        ("7", "13", True, "13", None, None),  # Case with cli_platform_helper_version
+        ("7", "14", True, "14", None, None),  # Case with cli_platform_helper_version
         (
             "7",
             None,
             True,
-            "12.0.0",
+            "14.0.0",
             "demodjango-branch",
             "demodjango-branch",
         ),  # Case with config_platform_helper_version and specific branch
-        ("7", None, True, "12.0.0", None, None),
-        (None, None, True, "12.0.0", None, None),
+        ("7", None, True, "14.0.0", None, None),
+        (None, None, True, "14.0.0", None, None),
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
@@ -98,7 +98,7 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
 
     app_name = "test-app"
     if config_platform_helper_version:
-        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "12.0.0"}
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "14.0.0"}
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
