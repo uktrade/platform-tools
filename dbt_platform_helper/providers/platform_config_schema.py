@@ -441,12 +441,12 @@ class PlatformConfigSchema:
         return {
             "type": "datadog",
             Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    Optional("team_name"): str,
-                    Optional("contact_name"): str,
-                    Optional("contact_email"): str,
-                    Optional("documentation_url"): str,
-                    Optional("services_to_monitor"): list,
+                Optional(PlatformConfigSchema.__valid_environment_name()): {
+                    "team_name": str,
+                    "contact_name": str,
+                    "contact_email": str,
+                    "documentation_url": str,
+                    "services_to_monitor": list,
                 }
             },
         }
