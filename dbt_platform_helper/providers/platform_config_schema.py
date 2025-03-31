@@ -28,7 +28,7 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__monitoring_schema(),
                         PlatformConfigSchema.__opensearch_schema(),
                         PlatformConfigSchema.__postgres_schema(),
-                        Optional(PlatformConfigSchema.__datadog_schema()),
+                        PlatformConfigSchema.__datadog_schema(),
                         PlatformConfigSchema.__prometheus_policy_schema(),
                         PlatformConfigSchema.__redis_schema(),
                         PlatformConfigSchema.__s3_bucket_schema(),
