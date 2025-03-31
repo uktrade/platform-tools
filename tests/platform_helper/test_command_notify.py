@@ -1,3 +1,4 @@
+import inspect
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -10,6 +11,8 @@ from dbt_platform_helper.domain.notify import SlackChannelNotifier
 from dbt_platform_helper.providers.io import ClickIOProvider
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
+EXPECTED_ADD_COMMENT = inspect.signature(Notify.add_comment)
+EXPECTED_ENVIRONMENT_PROGRESS = inspect.signature(Notify.environment_progress)
 
 
 @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
@@ -51,6 +54,10 @@ def test_environment_progress(
 
     mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
     mock_domain.assert_called_once_with(mock_notifier_instance)
+
+    args, kwargs = mock_domain_instance.environment_progress.call_args
+    EXPECTED_ENVIRONMENT_PROGRESS.bind(None, *args, **kwargs)
+
     mock_domain_instance.environment_progress.assert_called_once_with(
         slack_ref="10000.10",
         message="The very important thing everyone should know",
@@ -92,11 +99,13 @@ def test_add_comment(mock_domain, mock_notifier, mock_io, mock_blocks):
 
     mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
     mock_domain.assert_called_once_with(mock_notifier_instance)
+
+    args, kwargs = mock_domain_instance.add_comment.call_args
+    EXPECTED_ADD_COMMENT.bind(None, *args, **kwargs)
+
     mock_domain_instance.add_comment.assert_called_once_with(
-        blocks=["The comment"],
-        text="The title",
-        reply_broadcast=True,
-        unfurl_links=False,
-        unfurl_media=False,
-        thread_ts="1234.56",
+        slack_ref="1234.56",
+        message="The comment",
+        title="The title",
+        send_to_main_channel=True,
     )

@@ -1,5 +1,4 @@
 import click
-from slack_sdk.models import blocks
 
 from dbt_platform_helper.domain.notify import Notify
 from dbt_platform_helper.domain.notify import SlackChannelNotifier
@@ -68,12 +67,10 @@ def add_comment(
     try:
         client = SlackChannelNotifier(slack_token, slack_channel_id)
         Notify(client).add_comment(
-            blocks=[blocks.SectionBlock(text=blocks.TextObject(type="mrkdwn", text=message))],
-            text=title if title else message,
-            reply_broadcast=send_to_main_channel,
-            unfurl_links=False,
-            unfurl_media=False,
-            thread_ts=slack_ref,
+            message=message,
+            title=title,
+            send_to_main_channel=send_to_main_channel,
+            slack_ref=slack_ref,
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
