@@ -205,7 +205,7 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
         codebase.build("test-application", "application", "ab1c234")
 
 
-@pytest.mark.parametrize("commit, ref", [(None, "commit-ab1c23d"), ("ab1c23d", None)])
+@pytest.mark.parametrize("commit, ref", [(None, "commit-abc123"), ("abc123", None)])
 def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     mock_application, commit, ref
 ):
@@ -224,11 +224,19 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     client.start_pipeline_execution.return_value = {
         "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
     }
+    image_details = [{"imageTags": ["tag-1.2.3", "branch-main", "commit-abc123"]}]
+    mocks.ecr_provider.get_image_details.return_value = image_details
+    mocks.ecr_provider.find_commit_tag.return_value = "commit-abc123"
 
     codebase = Codebase(**mocks.params())
     codebase.deploy("test-application", "development", "application", commit, ref)
 
     image_ref = f"commit-{commit}" if commit else ref
+
+    codebase.ecr_provider.get_image_details.assert_called_once_with(
+        mock_application, "application", image_ref
+    )
+    codebase.ecr_provider.find_commit_tag.assert_called_once_with(image_details, image_ref)
 
     client.start_pipeline_execution.assert_called_with(
         name="test-application-application-manual-release",
@@ -281,33 +289,6 @@ def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag():
     )
 
 
-def test_codebase_deploy_does_not_call_find_commit_tag_when_commit_is_passed():
-
-    mocks = CodebaseMocks()
-    mock_application = MagicMock()
-    mock_application.name = "test-application"
-    mock_application.environments = {"development": MagicMock()}
-    mocks.load_application.return_value = mock_application
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
-
-    codebase = Codebase(**mocks.params())
-
-    # 'ref' is None as we're only interested in the scenario where 'commit' is used
-    codebase.deploy("test-application", "development", "application", "abc123", None)
-
-    mocks.ecr_provider.find_commit_tag.assert_not_called()
-
-    client.start_pipeline_execution.assert_called_once_with(
-        name="test-application-application-manual-release",
-        variables=[
-            {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "commit-abc123"},
-        ],
-    )
-
-
 def test_codebase_deploy_propagates_repository_not_found_exception():
     mocks = CodebaseMocks()
     mocks.ecr_provider.get_image_details.side_effect = RepositoryNotFoundException("application")
@@ -324,31 +305,6 @@ def test_codebase_deploy_propagates_image_not_found_exception():
     with pytest.raises(ImageNotFoundException):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", None, "nonexistent-ref")
-
-
-def test_codebase_deploy_uses_ref_when_commit_tag_not_found():
-    mocks = CodebaseMocks()
-    mock_image_details = MagicMock()
-    mocks.ecr_provider.get_image_details.return_value = mock_image_details
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
-
-    mocks.ecr_provider.find_commit_tag.return_value = None
-    codebase = Codebase(**mocks.params())
-
-    # 'commit' is None as we're only interested in the scenario where 'ref' is used
-    codebase.deploy("test-application", "development", "application", None, "latest")
-
-    mocks.ecr_provider.find_commit_tag.assert_called_once_with(mock_image_details, "latest")
-
-    client.start_pipeline_execution.assert_called_once_with(
-        name="test-application-application-manual-release",
-        variables=[
-            {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "latest"},
-        ],
-    )
 
 
 @pytest.mark.parametrize("commit, ref", [(None, "ab1c23d"), ("ab1c23d", None)])

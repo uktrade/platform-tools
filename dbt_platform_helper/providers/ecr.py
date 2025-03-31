@@ -9,9 +9,9 @@ from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
 class ECRProvider:
-    def __init__(self, session: Session = None):
+    def __init__(self, session: Session = None, click_io: ClickIOProvider = ClickIOProvider()):
         self.session = session
-        self.client = None
+        self.click_io = click_io
 
     def _get_client(self):
         if not self.session:
@@ -41,9 +41,6 @@ class ECRProvider:
 
             self._check_image_details_exists(image_info, image_ref)
 
-            # print('AAAAAAAABBBBBBBBCCCCCC')
-            # print(image_info.get("repositoryName"))
-
             return image_info.get("imageDetails")
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Code"] == "ImageNotFoundException":
@@ -51,12 +48,8 @@ class ECRProvider:
             if e.response["Error"]["Code"] == "RepositoryNotFoundException":
                 raise RepositoryNotFoundException(repository)
 
-        # except ecr_client.exceptions.ImageNotFoundException:
-        #     raise ImageNotFoundException(image_ref)
-        # except ecr_client.exceptions.RepositoryNotFoundException:
-        #     raise RepositoryNotFoundException(repository)
-
-    def _check_image_details_exists(self, image_info: dict, image_ref: str):
+    @staticmethod
+    def _check_image_details_exists(image_info: dict, image_ref: str):
         """Error handling for any unexpected scenario where AWS ECR returns a
         malformed response."""
 
@@ -67,15 +60,19 @@ class ECRProvider:
         """Loop through imageTags list to query for an image tag starting with
         'commit-', and return that value if found."""
 
-        for image in image_details:
-            image_tags = image.get("imageTags")  # TODO test for this
-            for tag in image_tags:
-                if tag.startswith("commit-"):
-                    ClickIOProvider().info(
-                        f'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{tag}" instead.'
-                    )
-                    return tag
-        ClickIOProvider().warn(
-            f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag. Note that moving tags (e.g. tag-latest) may change when a new version image is built.'
+        if image_ref.startswith("commit-"):
+            return image_ref
+
+        if image_details:
+            for image in image_details:
+                image_tags = image.get("imageTags", {})
+                for tag in image_tags:
+                    if tag.startswith("commit-"):
+                        self.click_io.info(
+                            f'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{tag}" instead.'
+                        )
+                        return tag
+        self.click_io.warn(
+            f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note that it cannot be guaranteed that this image will remain identical over time.'
         )
-        return None
+        return image_ref

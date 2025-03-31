@@ -164,7 +164,7 @@ class Codebase:
 
         image_ref = f"commit-{commit}" if commit else ref
         image_details = self.ecr_provider.get_image_details(application, codebase, image_ref)
-        image_ref = self._retrieve_commit_tag(image_ref, image_details)
+        image_ref = self.ecr_provider.find_commit_tag(image_details, image_ref)
 
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
@@ -209,12 +209,6 @@ class Codebase:
             self.io.abort_with_error(
                 "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
             )
-
-    def _retrieve_commit_tag(self, image_ref: str, image_details: list[dict]) -> str:
-        if not image_ref.startswith("commit-"):
-            commit_tag = self.ecr_provider.find_commit_tag(image_details, image_ref)
-            image_ref = commit_tag if commit_tag else image_ref
-        return image_ref
 
     def _populate_application_values(self, app: str, env: str) -> Tuple[Application, Session]:
         session = self.get_aws_session_or_abort()

@@ -181,9 +181,66 @@ def test_get_image_details_raises_repository_not_found():
     assert actual_error == expected_error
 
 
-def test_find_commit_tag_returns_commit_tag():
-    return None
+def test_find_commit_tag_returns_commit_tag_from_image_details():
+    ecr = ECRProvider(Mock(), Mock())
+    image_details = [{"imageTags": ["tag-1.2.3", "branch-main", "commit-abc123"]}]
+    actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
+
+    ecr.click_io.info.assert_called_once_with(
+        'INFO: The tag "tag-1.2.3" is not a unique, commit-specific tag. Deploying the corresponding commit tag "commit-abc123" instead.'
+    )
+    assert actual_tag == "commit-abc123"
 
 
-def test_find_commit_tag_returns_none_if_no_commit_tag():
-    return None
+@pytest.mark.parametrize(
+    "image_details",
+    [
+        None,
+        [],
+        [{}],
+        [{"imageDetails": None}],
+        [{"imageDetails": [{"imageTags": ["commit-987zxy"]}]}],
+    ],
+)
+def test_find_commit_tag_returns_commit_tag_from_a_commit_tag_ignoring_image_details(image_details):
+    ecr = ECRProvider(Mock(), Mock())
+
+    actual_tag = ecr.find_commit_tag(image_details, "commit-abc123")
+
+    ecr.click_io.info.assert_not_called()
+    ecr.click_io.warn.assert_not_called()
+    assert actual_tag == "commit-abc123"
+
+
+def test_find_commit_tag_returns_the_original_ref_if_no_commit_tag():
+    ecr = ECRProvider(Mock(), Mock())
+
+    image_details = [{"imageTags": ["tag-1.2.3", "branch-main"]}]
+
+    actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
+
+    ecr.click_io.warn.assert_called_once_with(
+        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note that it cannot be guaranteed that this image will remain identical over time.'
+    )
+    assert actual_tag == "tag-1.2.3"
+
+
+@pytest.mark.parametrize(
+    "image_details",
+    [
+        None,
+        [],
+        [{}],
+        [{"imageDetails": None}],
+        [{"imageDetails": []}],
+    ],
+)
+def test_find_commit_tag_handles_malformed_image_details(image_details):
+    ecr = ECRProvider(Mock(), Mock())
+
+    actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
+
+    ecr.click_io.warn.assert_called_once_with(
+        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note that it cannot be guaranteed that this image will remain identical over time.'
+    )
+    assert actual_tag == "tag-1.2.3"
