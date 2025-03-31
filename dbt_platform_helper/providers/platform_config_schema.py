@@ -274,7 +274,8 @@ class PlatformConfigSchema:
                     Optional("ebs_volume_type"): str,
                     Optional("instance"): str,
                     Optional("instances"): int,
-                    Optional("master"): bool, # Deprecated, will need to be removed.
+                    # Explicitly setting 'master' is now deprecated and will need to be removed in the future. This property is now built in to the OpenSearch plans.
+                    Optional("master"): bool,
                     Optional("es_app_log_retention_in_days"): int,
                     Optional("index_slow_log_retention_in_days"): int,
                     Optional("audit_log_retention_in_days"): int,
@@ -430,7 +431,7 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n{'\\n'.join(f'  {e}' for e in errors)}"
             )
 
         return True
