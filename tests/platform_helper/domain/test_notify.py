@@ -98,7 +98,7 @@ class TestNotify:
 
         Notify(mock_notifier).environment_progress(
             message="The very important thing everyone should know",
-            slack_ref=slack_ref,
+            original_message_ref=slack_ref,
             repository=repository,
             commit_sha=sha,
             build_arn=build_arn,

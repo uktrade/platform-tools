@@ -59,7 +59,7 @@ def test_environment_progress(
     EXPECTED_ENVIRONMENT_PROGRESS.bind(None, *args, **kwargs)
 
     mock_domain_instance.environment_progress.assert_called_once_with(
-        slack_ref="10000.10",
+        original_message_ref="10000.10",
         message="The very important thing everyone should know",
         build_arn=BUILD_ARN,
         repository="repo3",

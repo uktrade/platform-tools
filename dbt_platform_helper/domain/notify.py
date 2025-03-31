@@ -12,7 +12,7 @@ class Notify:
         build_arn: str = None,
         repository: str = None,
         commit_sha: str = None,
-        slack_ref: str = None,
+        original_message_ref: str = None,
     ):
         context = []
 
@@ -26,8 +26,8 @@ class Notify:
         if build_arn:
             context.append(f"<{get_build_url(build_arn)}|Build Logs>")
 
-        if slack_ref:
-            return self.notifier.post_update(slack_ref, message, context)
+        if original_message_ref:
+            return self.notifier.post_update(original_message_ref, message, context)
         else:
             return self.notifier.post_new(message, context)
 

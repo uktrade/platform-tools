@@ -36,7 +36,7 @@ def environment_progress(
         io = ClickIOProvider()
         slack_notifier = SlackChannelNotifier(slack_token, slack_channel_id)
         response = Notify(slack_notifier).environment_progress(
-            slack_ref=slack_ref,
+            original_message_ref=slack_ref,
             message=message,
             build_arn=build_arn,
             repository=repository,
