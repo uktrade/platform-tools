@@ -9,11 +9,16 @@ from dbt_platform_helper.providers.semantic_version import (
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMinorVersionException,
 )
-from dbt_platform_helper.providers.semantic_version import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
+from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
 from dbt_platform_helper.providers.version import DeprecatedVersionFileVersionProvider
+from dbt_platform_helper.providers.version import GithubLatestVersionProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
-from dbt_platform_helper.providers.version import PyPiVersionProvider
+from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
+from dbt_platform_helper.providers.version import VersionProvider
+from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.providers.version_status import VersionStatus
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
@@ -38,14 +43,14 @@ class PlatformHelperVersioning:
             YamlFileProvider
         ),
         config_provider: ConfigProvider = ConfigProvider(),
-        pypi_provider: PyPiVersionProvider = PyPiVersionProvider,
+        latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
     ):
         self.io = io
         self.version_file_version_provider = version_file_version_provider
         self.config_provider = config_provider
-        self.pypi_provider = pypi_provider
+        self.latest_version_provider = latest_version_provider
         self.installed_version_provider = installed_version_provider
         self.skip_versioning_checks = (
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
@@ -100,11 +105,11 @@ class PlatformHelperVersioning:
         self,
         include_project_versions: bool = True,
     ) -> PlatformHelperVersionStatus:
-        locally_installed_version = self.installed_version_provider.get_installed_tool_version(
+        locally_installed_version = self.installed_version_provider.get_semantic_version(
             "dbt-platform-helper"
         )
 
-        latest_release = self.pypi_provider.get_latest_version("dbt-platform-helper")
+        latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         if not include_project_versions:
             return PlatformHelperVersionStatus(
@@ -129,7 +134,7 @@ class PlatformHelperVersioning:
         out = PlatformHelperVersionStatus(
             installed=locally_installed_version,
             latest=latest_release,
-            deprecated_version_file=self.version_file_version_provider.get_required_version(),
+            deprecated_version_file=self.version_file_version_provider.get_semantic_version(),
             platform_config_default=platform_config_default,
             pipeline_overrides=pipeline_overrides,
         )
@@ -155,3 +160,39 @@ class PlatformHelperVersioning:
             raise PlatformHelperVersionNotFoundException
 
         return out
+
+
+class AWSVersioning:
+    def __init__(
+        self,
+        latest_version_provider: VersionProvider = None,
+        installed_version_provider: VersionProvider = None,
+    ):
+        self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
+        self.installed_version_provider = (
+            installed_version_provider or AWSCLIInstalledVersionProvider
+        )
+
+    def get_version_status(self) -> VersionStatus:
+        return VersionStatus(
+            self.installed_version_provider.get_semantic_version(),
+            self.latest_version_provider.get_semantic_version("aws/aws-cli", True),
+        )
+
+
+class CopilotVersioning:
+    def __init__(
+        self,
+        latest_version_provider: VersionProvider = None,
+        installed_version_provider: VersionProvider = None,
+    ):
+        self.latest_version_provider = latest_version_provider or GithubLatestVersionProvider
+        self.installed_version_provider = (
+            installed_version_provider or CopilotInstalledVersionProvider
+        )
+
+    def get_version_status(self) -> VersionStatus:
+        return VersionStatus(
+            self.installed_version_provider.get_semantic_version(),
+            self.latest_version_provider.get_semantic_version("aws/copilot-cli"),
+        )

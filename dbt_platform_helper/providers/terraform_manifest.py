@@ -128,6 +128,7 @@ class TerraformManifestProvider:
                 "codebase": "${each.key}",
                 "repository": "${each.value.repository}",
                 "deploy_repository": f"{deploy_repository}",
+                "deploy_repository_branch": '${lookup(each.value, "deploy_repository_branch", "main")}',
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
                 "pipelines": '${lookup(each.value, "pipelines", [])}',
                 "services": "${each.value.services}",
