@@ -44,7 +44,6 @@ def environment_progress(
         )
 
         io.info(response["ts"])
-    # TODO I don't think PlatformException gets raised anywhere currently
     except PlatformException as err:
         io.abort_with_error(str(err))
 
