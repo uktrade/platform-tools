@@ -169,7 +169,7 @@ class Codebase:
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
 
-        confirmation_message = f'You are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+        confirmation_message = f'\nYou are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
         build_options = {
             "name": pipeline_name,
             "variables": [

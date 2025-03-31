@@ -30,11 +30,10 @@ class ECRProvider:
         """Check if image exists in AWS ECR, and return a list of dictionaries
         containing image metadata."""
 
-        ecr_client = self.session.client("ecr")
         repository = f"{application.name}/{codebase}"
 
         try:
-            image_info = ecr_client.describe_images(
+            image_info = self._get_client().describe_images(
                 repositoryName=repository,
                 imageIds=[{"imageTag": image_ref}],
             )

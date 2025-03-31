@@ -248,7 +248,7 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                'You are about to deploy "test-application" for "application" with image reference '
+                '\nYou are about to deploy "test-application" for "application" with image reference '
                 f'"{image_ref}" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
@@ -353,7 +353,7 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(co
     mocks.io.confirm.assert_has_calls(
         [
             call(
-                f'You are about to deploy "test-application" for "application" with image reference "commit-ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
+                f'\nYou are about to deploy "test-application" for "application" with image reference "commit-ab1c23d" to the "development" environment using the "test-application-application-manual-release" deployment pipeline. Do you want to continue?'
             ),
         ]
     )
