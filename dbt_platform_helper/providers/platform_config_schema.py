@@ -28,6 +28,7 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__monitoring_schema(),
                         PlatformConfigSchema.__opensearch_schema(),
                         PlatformConfigSchema.__postgres_schema(),
+                        PlatformConfigSchema.__datadog_schema(),
                         PlatformConfigSchema.__prometheus_policy_schema(),
                         PlatformConfigSchema.__redis_schema(),
                         PlatformConfigSchema.__s3_bucket_schema(),
@@ -48,6 +49,7 @@ class PlatformConfigSchema:
             "postgres": Schema(PlatformConfigSchema.__postgres_schema()),
             "prometheus-policy": Schema(PlatformConfigSchema.__prometheus_policy_schema()),
             "redis": Schema(PlatformConfigSchema.__redis_schema()),
+            "datadog": Schema(PlatformConfigSchema.__datadog_schema()),
             "s3": Schema(PlatformConfigSchema.__s3_bucket_schema()),
             "s3-policy": Schema(PlatformConfigSchema.__s3_bucket_policy_schema()),
             "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
@@ -434,6 +436,21 @@ class PlatformConfigSchema:
             )
 
         return True
+
+    @staticmethod
+    def __datadog_schema() -> dict:
+        return {
+            "type": "datadog",
+            Optional("environments"): {
+                Optional(PlatformConfigSchema.__valid_environment_name()): {
+                    "team_name": str,
+                    "contact_name": str,
+                    "contact_email": str,
+                    "documentation_url": str,
+                    "services_to_monitor": list,
+                }
+            },
+        }
 
     @staticmethod
     def __s3_bucket_schema() -> dict:
