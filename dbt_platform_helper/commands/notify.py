@@ -69,7 +69,7 @@ def add_comment(
         Notify(client).add_comment(
             message=message,
             title=title,
-            send_to_main_channel=send_to_main_channel,
+            reply_broadcast=send_to_main_channel,
             original_message_ref=slack_ref,
         )
     except PlatformException as err:

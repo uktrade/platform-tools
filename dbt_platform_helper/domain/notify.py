@@ -36,13 +36,13 @@ class Notify:
         original_message_ref: str,
         message: str,
         title: str,
-        send_to_main_channel: bool,
+        reply_broadcast: bool,
     ):
         self.notifier.post_new(
             message=message,
             title=title,
             context=[],
-            reply_broadcast=send_to_main_channel,
+            reply_broadcast=reply_broadcast,
             thread_ref=original_message_ref,
         )
 

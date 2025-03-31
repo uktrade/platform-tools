@@ -107,5 +107,5 @@ def test_add_comment(mock_domain, mock_notifier, mock_io, mock_blocks):
         original_message_ref="1234.56",
         message="The comment",
         title="The title",
-        send_to_main_channel=True,
+        reply_broadcast=True,
     )

@@ -127,7 +127,7 @@ class TestNotify:
         mock_slack_notifier = Mock(spec=SlackChannelNotifier)
 
         Notify(mock_slack_notifier).add_comment(
-            "1234.56", message="The comment", title=title, send_to_main_channel=broadcast
+            "1234.56", message="The comment", title=title, reply_broadcast=broadcast
         )
 
         mock_slack_notifier.post_new.assert_called_once_with(
