@@ -36,7 +36,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       configuration = {
         ConnectionArn    = data.aws_codestarconnections_connection.github_codestar_connection.arn
         FullRepositoryId = var.deploy_repository != null ? var.deploy_repository : "uktrade/${var.application}-deploy"
-        BranchName       = "main"
+        BranchName       = var.deploy_repository_branch
         DetectChanges    = false
       }
     }
@@ -46,6 +46,9 @@ resource "aws_codepipeline" "codebase_pipeline" {
     for_each = each.value.environments
     content {
       name = "Deploy-${stage.value.name}"
+      on_failure {
+        result = "ROLLBACK"
+      }
 
       dynamic "action" {
         for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
@@ -136,7 +139,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       configuration = {
         ConnectionArn    = data.aws_codestarconnections_connection.github_codestar_connection.arn
         FullRepositoryId = var.deploy_repository != null ? var.deploy_repository : "uktrade/${var.application}-deploy"
-        BranchName       = "main"
+        BranchName       = var.deploy_repository_branch
         DetectChanges    = false
       }
     }
@@ -176,24 +179,4 @@ resource "aws_codepipeline" "manual_release_pipeline" {
   }
 
   tags = local.tags
-}
-
-# This is a temporary workaround until automatic stage rollback is implemented in terraform-provider-aws
-# https://github.com/hashicorp/terraform-provider-aws/issues/37244
-resource "terraform_data" "update_pipeline" {
-  provisioner "local-exec" {
-    command = "python ${path.module}/custom_pipeline_update/update_pipeline.py"
-    quiet   = true
-    environment = {
-      PIPELINES = jsonencode(local.pipeline_names)
-    }
-  }
-  triggers_replace = [
-    aws_codepipeline.codebase_pipeline,
-    file("${path.module}/custom_pipeline_update/update_pipeline.py")
-  ]
-  depends_on = [
-    aws_codepipeline.codebase_pipeline,
-    aws_codepipeline.manual_release_pipeline
-  ]
 }

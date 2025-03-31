@@ -70,6 +70,13 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.env_manager_access
+  values = {
+    json = "{\"Sid\": \"AssumeEnvManagerAccess\"}"
+  }
+}
+
 variables {
   env_config = {
     "*" = {
@@ -477,6 +484,24 @@ run "test_deploy_repository" {
   }
 }
 
+run "test_deploy_repository_branch" {
+  command = plan
+
+  variables {
+    deploy_repository_branch = "feature-branch"
+  }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.BranchName == "feature-branch"
+    error_message = "Should be: feature-branch"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.BranchName == "feature-branch"
+    error_message = "Should be: feature-branch"
+  }
+}
+
 run "test_main_branch_filter" {
   command = plan
 
@@ -682,6 +707,18 @@ run "test_iam" {
   assert {
     condition     = aws_iam_role_policy.codestar_connection_access_for_codebase_pipeline.role == "my-app-my-codebase-codebase-pipeline"
     error_message = "Should be: 'my-app-my-codebase-codebase-pipeline'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.env_manager_access.name == "env-manager-access"
+    error_message = "Should be: 'env-manager-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.env_manager_access.role == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.env_manager_access.policy == "{\"Sid\": \"AssumeEnvManagerAccess\"}"
+    error_message = "Should be: {\"Sid\": \"AssumeEnvManagerAccess\"}"
   }
 }
 
@@ -904,6 +941,73 @@ run "test_iam_documents" {
     condition     = one(data.aws_iam_policy_document.deploy_ssm_access.statement[0].resources) == "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/codebuild/slack_*"
     error_message = "Unexpected resources"
   }
+
+  # Copilot env manager access
+  assert {
+    condition     = data.aws_iam_policy_document.env_manager_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.env_manager_access.statement[0].actions == toset([
+      "sts:AssumeRole"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.env_manager_access.statement[0].resources == toset([
+      "arn:aws:iam::000123456789:role/my-app-*-EnvManagerRole",
+      "arn:aws:iam::123456789000:role/my-app-*-EnvManagerRole"
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.env_manager_access.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.env_manager_access.statement[1].actions == toset([
+      "ssm:GetParameter"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.env_manager_access.statement[1].resources == toset([
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app/environments/*",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app/components/*"
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.env_manager_access.statement[2].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.env_manager_access.statement[2].actions == toset([
+      "cloudformation:GetTemplate",
+      "cloudformation:GetTemplateSummary",
+      "cloudformation:DescribeStackSet",
+      "cloudformation:UpdateStackSet",
+      "cloudformation:DescribeStackSetOperation",
+      "cloudformation:ListStackInstances",
+      "cloudformation:DescribeStacks",
+      "cloudformation:DescribeChangeSet",
+      "cloudformation:CreateChangeSet",
+      "cloudformation:ExecuteChangeSet",
+      "cloudformation:DescribeStackEvents",
+      "cloudformation:DeleteStack"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.env_manager_access.statement[2].resources == toset([
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/my-app-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/StackSet-my-app-infrastructure-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stackset/my-app-infrastructure:*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/my-app-*"
+    ])
+    error_message = "Unexpected resources"
+  }
 }
 
 
@@ -1089,6 +1193,10 @@ run "test_main_pipeline" {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].on_failure[0].result == "ROLLBACK"
+    error_message = "Should be: ROLLBACK"
+  }
 
   # Deploy service-1 action
   assert {
@@ -1239,6 +1347,10 @@ run "test_tagged_pipeline" {
   assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[1].name == "Deploy-staging"
     error_message = "Should be: Deploy-staging"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].on_failure[0].result == "ROLLBACK"
+    error_message = "Should be: ROLLBACK"
   }
 
   # Deploy service-1 action
@@ -1877,6 +1989,10 @@ run "test_pipeline_multiple_run_groups_multiple_environment_approval" {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].on_failure[0].result == "ROLLBACK"
+    error_message = "Should be: ROLLBACK"
+  }
 
   # service-1
   assert {
@@ -1975,11 +2091,90 @@ run "test_pipeline_multiple_run_groups_multiple_environment_approval" {
   }
 }
 
-run "test_pipeline_update_script" {
+run "test_ssm_parameter" {
   command = plan
 
   assert {
-    condition     = length(terraform_data.update_pipeline.triggers_replace) == 2
-    error_message = "Should be: 2"
+    condition     = aws_ssm_parameter.codebase_config.name == "/copilot/applications/my-app/codebases/my-codebase"
+    error_message = "Should be: /copilot/applications/my-app/codebases/my-codebase"
+  }
+  assert {
+    condition     = aws_ssm_parameter.codebase_config.type == "String"
+    error_message = "Should be: String"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).name == "my-codebase"
+    error_message = "Should be: my-codebase"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).repository == "my-repository"
+    error_message = "Should be: my-repository"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).deploy_repository_branch == "main"
+    error_message = "Should be: main"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).additional_ecr_repository == null
+    error_message = "Should be: null"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).slack_channel == "/fake/slack/channel"
+    error_message = "Should be: /fake/slack/channel"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).requires_image_build == true
+    error_message = "Should be: true"
+  }
+  assert {
+    condition = jsondecode(aws_ssm_parameter.codebase_config.value).services == [
+      {
+        "run_group_1" : [
+          "service-1"
+        ]
+      },
+      {
+        "run_group_2" : [
+          "service-2"
+        ]
+      }
+    ]
+    error_message = "Unexpected services"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[0].name == "main"
+    error_message = "Should be main"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[0].branch == "main"
+    error_message = "Should be main"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[0].environments[0].name == "dev"
+    error_message = "Should be dev"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[1].name == "tagged"
+    error_message = "Should be tagged"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[1].tag == true
+    error_message = "Should be true"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[1].environments[0].name == "staging"
+    error_message = "Should be staging"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[1].environments[1].name == "prod"
+    error_message = "Should be prod"
+  }
+  assert {
+    condition     = jsondecode(aws_ssm_parameter.codebase_config.value).pipelines[1].environments[1].requires_approval == true
+    error_message = "Should be true"
+  }
+  assert {
+    condition     = jsonencode(aws_ssm_parameter.codebase_config.tags) == jsonencode(var.expected_tags)
+    error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
 }

@@ -315,3 +315,58 @@ data "aws_iam_policy_document" "deploy_ssm_access" {
     ]
   }
 }
+
+resource "aws_iam_role_policy" "env_manager_access" {
+  name   = "env-manager-access"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.env_manager_access.json
+}
+
+data "aws_iam_policy_document" "env_manager_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole"
+    ]
+    resources = [
+      for id in local.deploy_account_ids :
+      "arn:aws:iam::${id}:role/${var.application}-*-EnvManagerRole"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter"
+    ]
+    resources = [
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.application}",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.application}/environments/*",
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.application}/components/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudformation:GetTemplate",
+      "cloudformation:GetTemplateSummary",
+      "cloudformation:DescribeStackSet",
+      "cloudformation:UpdateStackSet",
+      "cloudformation:DescribeStackSetOperation",
+      "cloudformation:ListStackInstances",
+      "cloudformation:DescribeStacks",
+      "cloudformation:DescribeChangeSet",
+      "cloudformation:CreateChangeSet",
+      "cloudformation:ExecuteChangeSet",
+      "cloudformation:DescribeStackEvents",
+      "cloudformation:DeleteStack"
+    ]
+    resources = [
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.application}-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/StackSet-${var.application}-infrastructure-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stackset/${var.application}-infrastructure:*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.application}-*"
+    ]
+  }
+}

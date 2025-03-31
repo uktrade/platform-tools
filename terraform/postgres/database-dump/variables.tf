@@ -14,8 +14,8 @@ variable "tasks" {
   type = list(object({
     from         = string
     to           = string
-    from_account = optional(string)
-    to_account   = optional(string)
+    from_account = string
+    to_account   = string
     pipeline     = optional(object({}))
   }))
 }

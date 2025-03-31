@@ -75,6 +75,7 @@ data "aws_iam_policy_document" "artifact_store_access" {
     actions = [
       "codebuild:BatchGetBuilds",
       "codebuild:StartBuild",
+      "codebuild:StopBuild"
     ]
 
     resources = ["*"]
@@ -178,3 +179,22 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
     ]
   }
 }
+
+resource "aws_iam_role_policy" "cloudformation_access" {
+  name   = "cloudformation-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.cloudformation_access.json
+}
+
+data "aws_iam_policy_document" "cloudformation_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudformation:GetTemplate"
+    ]
+    resources = [
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.args.application}-${var.environment}-*"
+    ]
+  }
+}
+

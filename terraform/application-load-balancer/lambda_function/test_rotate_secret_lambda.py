@@ -226,8 +226,14 @@ class TestDistributionUpdates:
                             "CustomHeaders": {
                                 "Quantity": 2,
                                 "Items": [
-                                    {"HeaderName": "x-origin-verify", "HeaderValue": "old-value"},
-                                    {"HeaderName": "other-header", "HeaderValue": "unchanged"},
+                                    {
+                                        "HeaderName": "x-origin-verify",
+                                        "HeaderValue": "old-value",
+                                    },
+                                    {
+                                        "HeaderName": "other-header",
+                                        "HeaderValue": "unchanged",
+                                    },
                                 ],
                             },
                         },
@@ -236,7 +242,10 @@ class TestDistributionUpdates:
                             "CustomHeaders": {
                                 "Quantity": 1,
                                 "Items": [
-                                    {"HeaderName": "x-origin-verify", "HeaderValue": "old-value"}
+                                    {
+                                        "HeaderName": "x-origin-verify",
+                                        "HeaderValue": "old-value",
+                                    }
                                 ],
                             },
                         },
@@ -290,8 +299,14 @@ class TestDistributionUpdates:
                             "CustomHeaders": {
                                 "Quantity": 2,
                                 "Items": [
-                                    {"HeaderName": "x-origin-verify", "HeaderValue": "old-value"},
-                                    {"HeaderName": "other-header", "HeaderValue": "unchanged"},
+                                    {
+                                        "HeaderName": "x-origin-verify",
+                                        "HeaderValue": "old-value",
+                                    },
+                                    {
+                                        "HeaderName": "other-header",
+                                        "HeaderValue": "unchanged",
+                                    },
                                 ],
                             },
                         }
@@ -524,7 +539,9 @@ class TestSecretManagement:
             [
                 call(SecretId="test-arn", VersionStage="AWSCURRENT"),  # First call for AWSCURRENT
                 call(
-                    SecretId="test-arn", VersionId="test-token", VersionStage="AWSPENDING"
+                    SecretId="test-arn",
+                    VersionId="test-token",
+                    VersionStage="AWSPENDING",
                 ),  # Second call for AWSPENDING
             ]
         )
@@ -598,7 +615,10 @@ class TestRotationProcess:
 
         # Mock secrets and metadata
         mock_metadata = {
-            "VersionIdsToStages": {"current-version": ["AWSCURRENT"], "test-token": ["AWSPENDING"]}
+            "VersionIdsToStages": {
+                "current-version": ["AWSCURRENT"],
+                "test-token": ["AWSPENDING"],
+            }
         }
         mock_credentials = {
             "Credentials": {
@@ -611,7 +631,10 @@ class TestRotationProcess:
         mock_current_secret = {"SecretString": json.dumps({"HEADERVALUE": "current-secret"})}
 
         mock_boto_client = MagicMock()
-        mock_boto_client.get_secret_value.side_effect = [mock_pending_secret, mock_current_secret]
+        mock_boto_client.get_secret_value.side_effect = [
+            mock_pending_secret,
+            mock_current_secret,
+        ]
         mock_boto_client.describe_secret.return_value = mock_metadata
         mock_boto_client.assume_role.return_value = mock_credentials
 
@@ -667,7 +690,10 @@ class TestRotationProcess:
 
         # Mock secrets and metadata
         mock_metadata = {
-            "VersionIdsToStages": {"current-version": ["AWSCURRENT"], "test-token": ["AWSPENDING"]}
+            "VersionIdsToStages": {
+                "current-version": ["AWSCURRENT"],
+                "test-token": ["AWSPENDING"],
+            }
         }
         mock_credentials = {
             "Credentials": {
@@ -681,7 +707,10 @@ class TestRotationProcess:
 
         # Mock boto3 client
         mock_boto_client = MagicMock()
-        mock_boto_client.get_secret_value.side_effect = [mock_pending_secret, mock_current_secret]
+        mock_boto_client.get_secret_value.side_effect = [
+            mock_pending_secret,
+            mock_current_secret,
+        ]
         mock_boto_client.describe_secret.return_value = mock_metadata
         mock_boto_client.assume_role.return_value = mock_credentials
 
@@ -718,7 +747,10 @@ class TestRotationProcess:
         mock_pending_secret = {"SecretString": json.dumps({"HEADERVALUE": "new-secret"})}
         mock_current_secret = {"SecretString": json.dumps({"HEADERVALUE": "current-secret"})}
         mock_metadata = {
-            "VersionIdsToStages": {"current-version": ["AWSCURRENT"], "test-token": ["AWSPENDING"]}
+            "VersionIdsToStages": {
+                "current-version": ["AWSCURRENT"],
+                "test-token": ["AWSPENDING"],
+            }
         }
 
         mock_service_client = MagicMock()
@@ -756,7 +788,10 @@ class TestFinishSecretStage:
         """
         mock_service_client = MagicMock()
         mock_service_client.describe_secret.return_value = {
-            "VersionIdsToStages": {"old-version": ["AWSCURRENT"], "test-token": ["AWSPENDING"]}
+            "VersionIdsToStages": {
+                "old-version": ["AWSCURRENT"],
+                "test-token": ["AWSPENDING"],
+            }
         }
 
         rotator.finish_secret(mock_service_client, "test-arn", "test-token")
@@ -928,7 +963,11 @@ class TestLambdaHandler:
 
     def test_executes_correct_rotation_step(self):
         """Lambda must execute the correct rotation step based on the event."""
-        event = {"SecretId": "test-arn", "ClientRequestToken": "test-token", "Step": "createSecret"}
+        event = {
+            "SecretId": "test-arn",
+            "ClientRequestToken": "test-token",
+            "Step": "createSecret",
+        }
 
         mock_rotator = MagicMock()
         mock_boto_client = MagicMock()
@@ -963,12 +1002,18 @@ class TestLambdaHandler:
 
         mock_metadata = {
             "RotationEnabled": True,
-            "VersionIdsToStages": {"current-token": ["AWSCURRENT"], "test-token": ["AWSPENDING"]},
+            "VersionIdsToStages": {
+                "current-token": ["AWSCURRENT"],
+                "test-token": ["AWSPENDING"],
+            },
         }
 
         mock_boto_client = MagicMock()
         mock_boto_client.describe_secret.return_value = mock_metadata
-        mock_boto_client.get_secret_value.side_effect = [mock_pending_secret, mock_current_secret]
+        mock_boto_client.get_secret_value.side_effect = [
+            mock_pending_secret,
+            mock_current_secret,
+        ]
 
         rotator.get_deployed_distributions = MagicMock()
         rotator.get_deployed_distributions.return_value = mock_distributions

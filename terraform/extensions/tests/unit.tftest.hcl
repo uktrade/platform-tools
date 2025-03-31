@@ -144,6 +144,12 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.cloudformation_access
+  values = {
+    json = "{\"Sid\": \"CloudFormationAccess\"}"
+  }
+}
 
 run "aws_ssm_parameter_unit_test" {
   command = plan
@@ -639,6 +645,7 @@ run "codebase_deploy_iam_test" {
     condition = data.aws_iam_policy_document.artifact_store_access.statement[1].actions == toset([
       "codebuild:BatchGetBuilds",
       "codebuild:StartBuild",
+      "codebuild:StopBuild"
     ])
     error_message = "Unexpected actions"
   }
@@ -789,6 +796,34 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-environment/*"
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition     = aws_iam_role_policy.cloudformation_access.name == "cloudformation-access"
+    error_message = "Should be: 'cloudformation-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.cloudformation_access.role == "test-application-test-environment-codebase-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-environment-codebase-pipeline-deploy'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.cloudformation_access.policy == "{\"Sid\": \"CloudFormationAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CloudFormationAccess\"}"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.cloudformation_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.cloudformation_access.statement[0].actions == toset([
+      "cloudformation:GetTemplate"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.cloudformation_access.statement[0].resources == toset([
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/test-application-test-environment-*"
+    ])
     error_message = "Unexpected resources"
   }
 }

@@ -55,7 +55,9 @@ variables {
   database_name = "test-db"
   task = {
     from : "prod"
+    from_account = "123456789000"
     to : "dev"
+    to_account = "000123456789"
     pipeline : {
       schedule : "0 1 * * ? *"
     }
@@ -260,23 +262,8 @@ run "test_pipeline" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "DUMP_ROLE_ARN"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/test-app-prod-test-db-dump-task"
+    var.value if var.name == "DUMP_ROLE_ARN"]) == "arn:aws:iam::123456789000:role/test-app-prod-test-db-dump-task"
     error_message = "DUMP_ROLE_ARN environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "LOAD_ROLE_ARN"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/test-app-dev-test-db-load-task"
-    error_message = "LOAD_ROLE_ARN environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "FROM_ACCOUNT"]) == "${data.aws_caller_identity.current.account_id}"
-    error_message = "FROM_ACCOUNT environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TO_ACCOUNT"]) == "${data.aws_caller_identity.current.account_id}"
-    error_message = "TO_ACCOUNT environment variable incorrect"
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
@@ -342,13 +329,8 @@ run "test_pipeline" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "LOAD_ROLE_ARN"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/test-app-dev-test-db-load-task"
+    var.value if var.name == "LOAD_ROLE_ARN"]) == "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"
     error_message = "LOAD_ROLE_ARN environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TO_ACCOUNT"]) == "${data.aws_caller_identity.current.account_id}"
-    error_message = "TO_ACCOUNT environment variable incorrect"
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
@@ -742,20 +724,20 @@ run "test_iam" {
   }
   assert {
     condition = data.aws_iam_policy_document.assume_account_role.statement[0].resources == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/test-app-prod-test-db-dump-task",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/test-app-dev-test-db-load-task"
+      "arn:aws:iam::123456789000:role/test-app-prod-test-db-dump-task",
+      "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"
     ])
     error_message = "Unexpected resources"
   }
 }
 
-run "test_cross_account_iam" {
+run "test_same_account_iam" {
   command = plan
 
   variables {
     task = {
-      from : "prod"
-      from_account = "123456789000"
+      from : "staging"
+      from_account = "000123456789"
       to : "dev"
       to_account = "000123456789"
       pipeline : {}
@@ -764,37 +746,17 @@ run "test_cross_account_iam" {
 
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "DUMP_ROLE_ARN"]) == "arn:aws:iam::123456789000:role/test-app-prod-test-db-dump-task"
+    var.value if var.name == "DUMP_ROLE_ARN"]) == "arn:aws:iam::000123456789:role/test-app-staging-test-db-dump-task"
     error_message = "DUMP_ROLE_ARN environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "LOAD_ROLE_ARN"]) == "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"
-    error_message = "LOAD_ROLE_ARN environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "FROM_ACCOUNT"]) == "123456789000"
-    error_message = "FROM_ACCOUNT environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TO_ACCOUNT"]) == "000123456789"
-    error_message = "TO_ACCOUNT environment variable incorrect"
-  }
-  assert {
     condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "LOAD_ROLE_ARN"]) == "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"
     error_message = "LOAD_ROLE_ARN environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.database_copy_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TO_ACCOUNT"]) == "000123456789"
-    error_message = "TO_ACCOUNT environment variable incorrect"
   }
   assert {
     condition = data.aws_iam_policy_document.assume_account_role.statement[0].resources == toset([
-      "arn:aws:iam::123456789000:role/test-app-prod-test-db-dump-task",
+      "arn:aws:iam::000123456789:role/test-app-staging-test-db-dump-task",
       "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"
     ])
     error_message = "Unexpected resources"

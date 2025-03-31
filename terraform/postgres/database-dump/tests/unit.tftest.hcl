@@ -2,12 +2,12 @@ variables {
   application   = "test-app"
   environment   = "test-env"
   database_name = "test-db"
-  tasks = [
-    {
-      from : "prod"
-      to : "dev"
-    }
-  ]
+  tasks = [{
+    from : "staging"
+    from_account = "000123456789"
+    to : "dev"
+    to_account = "000123456789"
+  }]
 }
 
 mock_provider "aws" {}
@@ -292,7 +292,7 @@ run "data_dump_unit_test" {
   }
 
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.data_dump_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/test-app-dev-test-db-load-task"]
+    condition     = flatten([for el in data.aws_iam_policy_document.data_dump_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"]
     error_message = "Bucket policy principals incorrect"
   }
 
@@ -307,7 +307,7 @@ run "data_dump_unit_test" {
   }
 
   assert {
-    condition     = strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root") && !strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task")
+    condition     = strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root") && strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task")
     error_message = "Unexpected KMS key policy principal"
   }
 
@@ -344,14 +344,12 @@ run "cross_account_data_dump_unit_test" {
   command = plan
 
   variables {
-    tasks = [
-      {
-        from : "prod"
-        from_account : "123456789000"
-        to : "dev"
-        to_account : "000123456789"
-      }
-    ]
+    tasks = [{
+      from : "dev"
+      from_account : "000123456789"
+      to : "hotfix"
+      to_account : "123456789000"
+    }]
   }
 
   assert {
@@ -359,7 +357,7 @@ run "cross_account_data_dump_unit_test" {
     error_message = "Should be: AWS"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.data_dump_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task"]
+    condition     = flatten([for el in data.aws_iam_policy_document.data_dump_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::123456789000:role/test-app-hotfix-test-db-load-task"]
     error_message = "Bucket policy principals incorrect"
   }
   assert {
@@ -372,7 +370,7 @@ run "cross_account_data_dump_unit_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root") && strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::000123456789:role/test-app-dev-test-db-load-task")
+    condition     = strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root") && strcontains(aws_kms_key.data_dump_kms_key.policy, "arn:aws:iam::123456789000:role/test-app-hotfix-test-db-load-task")
     error_message = "Unexpected KMS key policy principal"
   }
 }
@@ -381,15 +379,13 @@ run "pipeline_unit_test" {
   command = plan
 
   variables {
-    tasks = [
-      {
-        from : "prod"
-        from_account : "123456789000"
-        to : "dev"
-        to_account : "000123456789"
-        pipeline : {}
-      }
-    ]
+    tasks = [{
+      from : "prod"
+      from_account : "123456789000"
+      to : "dev"
+      to_account : "000123456789"
+      pipeline : {}
+    }]
   }
 
   assert {

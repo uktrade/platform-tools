@@ -87,9 +87,6 @@ resource "aws_codepipeline" "database_copy_pipeline" {
           { name : "FROM_ENVIRONMENT", value : var.task.from },
           { name : "TO_ENVIRONMENT", value : var.task.to },
           { name : "DUMP_ROLE_ARN", value : local.dump_role_arn },
-          { name : "LOAD_ROLE_ARN", value : local.load_role_arn },
-          { name : "FROM_ACCOUNT", value : local.from_account },
-          { name : "TO_ACCOUNT", value : local.to_account },
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" }
         ])
       }
@@ -117,7 +114,6 @@ resource "aws_codepipeline" "database_copy_pipeline" {
           { name : "FROM_ENVIRONMENT", value : var.task.from },
           { name : "TO_ENVIRONMENT", value : var.task.to },
           { name : "LOAD_ROLE_ARN", value : local.load_role_arn },
-          { name : "TO_ACCOUNT", value : local.to_account },
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" }
         ])
       }

@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "assume_ecs_task_role" {
 
       principals {
         type        = "AWS"
-        identifiers = ["arn:aws:iam::${coalesce(statement.value.to_account, data.aws_caller_identity.current.account_id)}:role/${var.database_name}-${statement.value.from}-to-${statement.value.to}-copy-pipeline-codebuild"]
+        identifiers = ["arn:aws:iam::${statement.value.to_account}:role/${var.database_name}-${statement.value.from}-to-${statement.value.to}-copy-pipeline-codebuild"]
       }
 
       actions = ["sts:AssumeRole"]
@@ -345,7 +345,7 @@ data "aws_iam_policy_document" "data_dump_bucket_policy" {
       type = "AWS"
       identifiers = [
         for el in var.tasks :
-        "arn:aws:iam::${coalesce(el.to_account, data.aws_caller_identity.current.account_id)}:role/${var.application}-${el.to}-${var.database_name}-load-task"
+        "arn:aws:iam::${el.to_account}:role/${var.application}-${el.to}-${var.database_name}-load-task"
       ]
     }
     actions = [
@@ -382,7 +382,7 @@ resource "aws_kms_key" "data_dump_kms_key" {
           "AWS" : flatten([
             "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root",
             [for el in var.tasks :
-              "arn:aws:iam::${coalesce(el.to_account, data.aws_caller_identity.current.account_id)}:role/${var.application}-${el.to}-${var.database_name}-load-task"
+              "arn:aws:iam::${el.to_account}:role/${var.application}-${el.to}-${var.database_name}-load-task"
             ]
           ])
         },

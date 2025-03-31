@@ -53,8 +53,4 @@ locals {
     ]
   ])
 
-  pipeline_names = flatten(concat([for pipeline in local.pipeline_map :
-    "${var.application}-${var.codebase}-${pipeline.name}-codebase"],
-    ["${var.application}-${var.codebase}-manual-release"]
-  ))
 }

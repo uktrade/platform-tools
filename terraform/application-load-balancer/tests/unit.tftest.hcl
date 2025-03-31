@@ -27,6 +27,7 @@ override_data {
   values = {
     id         = "vpc-00112233aabbccdef"
     cidr_block = "10.0.0.0/16"
+    tags       = { "Name" : "vpc-name" }
   }
 }
 override_data {
@@ -35,6 +36,14 @@ override_data {
     ids = ["subnet-000111222aaabbb01"]
   }
 }
+
+override_data {
+  target = data.aws_subnets.private-subnets
+  values = {
+    ids = ["subnet-aaa111", "subnet-bbb222"]
+  }
+}
+
 override_data {
   target = data.aws_route53_zone.domain-root
   values = {
@@ -54,6 +63,12 @@ override_data {
   target = data.aws_iam_policy_document.origin_verify_rotate_policy
   values = {
     json = "{\"Sid\": \"LambdaExecutionRolePolicy\"}"
+  }
+}
+override_data {
+  target = data.aws_security_group.vpc_base_sg
+  values = {
+    id = "!abcd5f"
   }
 }
 
@@ -500,6 +515,40 @@ run "waf_and_rotate_lambda" {
   }
 
   assert {
+    condition     = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.WAF_SLEEP_DURATION == "75"
+    error_message = "WAF_SLEEP_DURATION should be 75"
+  }
+
+  assert {
+    condition     = contains(aws_lambda_function.origin-secret-rotate-function[""].vpc_config[0].security_group_ids, data.aws_security_group.vpc_base_sg.id)
+    error_message = "Security group should include VPC base security group"
+  }
+
+  # Requires executing run block with 'apply' to evaluate despite configuring with an override block
+  #  assert {
+  #   condition     = contains(aws_lambda_function.origin-secret-rotate-function[""].vpc_config[0].security_group_ids, aws_security_group.alb-security-group["http"].id)
+  #   error_message = "Security group should include ALB HTTP security group"
+  # }
+
+  assert {
+    condition     = length(aws_lambda_function.origin-secret-rotate-function[""].vpc_config[0].subnet_ids) == 2
+    error_message = "Lambda function should be associated with 2 subnets"
+  }
+
+  assert {
+    condition     = contains(aws_lambda_function.origin-secret-rotate-function[""].vpc_config[0].subnet_ids, "subnet-aaa111")
+    error_message = "Lambda function should be in subnet-aaa111"
+  }
+
+  assert {
+    condition     = contains(aws_lambda_function.origin-secret-rotate-function[""].vpc_config[0].subnet_ids, "subnet-bbb222")
+    error_message = "Lambda function should be in subnet-bbb222"
+  }
+
+
+  # ---- End of testing LAMBDA FUNCTION -----
+
+  assert {
     condition     = aws_lambda_permission.rotate-function-invoke-permission[""].statement_id == "AllowSecretsManagerInvocation"
     error_message = "Invalid statement_id for aws_lambda_permission.rotate-function-invoke-permission"
   }
@@ -519,6 +568,8 @@ run "waf_and_rotate_lambda" {
     error_message = "Invalid principal for aws_lambda_permission.rotate-function-invoke-permission"
   }
 
+  # ---- End of testing LAMBDA PERMISSIONS -----
+
   assert {
     condition     = aws_iam_role.origin-secret-rotate-execution-role[""].name == "${var.application}-${var.environment}-origin-secret-rotate-role"
     error_message = "Invalid name for aws_iam_role.origin-secret-rotate-execution-role"
@@ -529,7 +580,260 @@ run "waf_and_rotate_lambda" {
     error_message = "Invalid assume_role_policy for aws_iam_role.origin-secret-rotate-execution-role"
   }
 
-  # Cannot assert against the arn in a plan. Requires an apply to evaluate.
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[0].effect == "Allow"
+    error_message = "First statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[0].actions == toset(["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"])
+    error_message = "First statement actions incorrect"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[0].resources) == "arn:aws:logs:eu-west-2:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/*origin-secret-rotate*"
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].effect == "Allow"
+    error_message = "Second statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].actions == toset(["secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue", "secretsmanager:PutSecretValue", "secretsmanager:UpdateSecretVersionStage"])
+    error_message = "Second statement actions incorrect"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].resources) == "arn:aws:secretsmanager:eu-west-2:${data.aws_caller_identity.current.account_id}:secret:${var.application}-${var.environment}-origin-verify-header-secret-*"
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = length(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].condition) > 0
+    error_message = "Second statement should have a condition block"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].condition :
+      c.test == "ArnEquals"
+    ])
+    error_message = "Second statement condition test should be 'ArnEquals'"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].condition :
+      c.variable == "aws:PrincipalArn"
+    ])
+    error_message = "Second statement condition variable should be 'aws:PrincipalArn'"
+  }
+
+  # Requires executing run block with 'apply' to evaluate "aws_iam_role.origin-secret-rotate-execution-role[""].arn"
+  # assert {
+  #   condition = anytrue([
+  #     for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[1].condition :
+  #     contains(c.values, aws_iam_role.origin-secret-rotate-execution-role[""].arn)
+  #   ])
+  #   error_message = "Second statement condition values should contain the expected IAM role ARN"
+  # }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[2].effect == "Allow"
+    error_message = "Third statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[2].actions == toset(["secretsmanager:GetRandomPassword"])
+    error_message = "Third statement action should be: secretsmanager:GetRandomPassword"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[2].resources) == "*"
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[3].effect == "Allow"
+    error_message = "Fourth statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[3].actions == toset(["cloudfront:GetDistribution", "cloudfront:GetDistributionConfig", "cloudfront:ListDistributions", "cloudfront:UpdateDistribution"])
+    error_message = "Fourth statement actions incorrect"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[3].resources) == "arn:aws:cloudfront::${var.dns_account_id}:distribution/*"
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[4].effect == "Allow"
+    error_message = "Fifth statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[4].actions == toset(["wafv2:*"])
+    error_message = "Fifth statement action should be: wafv2:*"
+  }
+
+  # Requires executing run block with 'apply' to evaluate
+  # assert {
+  #   condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[4].resources) == aws_wafv2_web_acl.waf-acl.arn
+  #   error_message = "Unexpected resources"
+  # }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[5].effect == "Allow"
+    error_message = "Sixth statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[5].actions == toset(["wafv2:UpdateWebACL"])
+    error_message = "Sixth statement action should be: wafv2:UpdateWebACL"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[5].resources) == "arn:aws:wafv2:eu-west-2:${data.aws_caller_identity.current.account_id}:regional/managedruleset/*/*"
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[6].effect == "Allow"
+    error_message = "Seventh statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[6].actions == toset(["sts:AssumeRole"])
+    error_message = "Seventh statement action should be: sts:AssumeRole"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[6].resources) == "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation"
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[7].effect == "Allow"
+    error_message = "Eighth statement effect should be: Allow"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[7].actions == toset(["kms:Decrypt", "kms:DescribeKey", "kms:Encrypt", "kms:GenerateDataKey"])
+    error_message = "Eighth statement actions incorrect"
+  }
+
+  # Requires executing run block with 'apply' to evaluate
+  # assert {
+  #   condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[7].resources) ==  aws_kms_key.origin_verify_secret_key.arn
+  #   error_message = "Unexpected resources"
+  # }
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].effect == "Allow"
+    error_message = "Ninth statement effect should be: Allow"
+  }
+
+  assert {
+    condition = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].actions == toset([
+      "ec2:AttachNetworkInterface",
+      "ec2:CreateNetworkInterface",
+      "ec2:DeleteNetworkInterface",
+    ])
+    error_message = "Ninth statement actions incorrect"
+  }
+
+  # Requires executing run block with 'apply' to evaluate "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:security-group/${aws_security_group.alb-security-group["http"].id}
+  assert {
+    condition = alltrue(
+      [
+        contains(
+          data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].resources,
+          "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+        )
+      ]
+    )
+    error_message = "Missing expected resources in IAM policy"
+  }
+
+  assert {
+    condition     = length(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].condition) > 0
+    error_message = "Ninth statement should have a condition block"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].condition :
+      c.test == "ArnEquals"
+    ])
+    error_message = "Ninth statement condition test should be 'ArnEquals'"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].condition :
+      c.variable == "aws:PrincipalArn"
+    ])
+    error_message = "Ninth statement condition variable should be 'aws:PrincipalArn'"
+  }
+
+  # Requires executing run block with 'apply' to evaluate "aws_iam_role.origin-secret-rotate-execution-role[""].arn"
+  # assert {
+  #   condition = anytrue([
+  #     for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].condition :
+  #     contains(c.values, aws_iam_role.origin-secret-rotate-execution-role[""].arn)
+  #   ])
+  #   error_message = "Ninth statement condition values should contain the expected IAM role ARN"
+  # }
+
+
+  assert {
+    condition     = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[9].effect == "Allow"
+    error_message = "Tenth statement effect should be: Allow"
+  }
+
+  assert {
+    condition = data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[9].actions == toset([
+      "ec2:DescribeSubnets",
+      "ec2:DescribeVpcs",
+      "ec2:DescribeInstances",
+      "ec2:DescribeDhcpOptions",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeNetworkInterfaces",
+    ])
+    error_message = "Tenth statement actions incorrect"
+  }
+
+  assert {
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[9].resources) == "*"
+    error_message = "Resources should be '*' when non-resource level actions are used"
+  }
+
+  assert {
+    condition     = length(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[9].condition) > 0
+    error_message = "Tenth statement should have a condition block"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[9].condition :
+      c.test == "ArnEquals"
+    ])
+    error_message = "Tenth statement condition test should be 'ArnEquals'"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[9].condition :
+      c.variable == "aws:PrincipalArn"
+    ])
+    error_message = "Tenth statement condition variable should be 'aws:PrincipalArn'"
+  }
+
+  #  ---- End of testing LAMBDA DATA POLICY PERMISSIONS -----
 
   assert {
     condition     = aws_secretsmanager_secret_rotation.origin-verify-rotate-schedule[""].rotation_rules[0].automatically_after_days == 7
@@ -656,3 +960,5 @@ run "waf_and_rotate_lambda_cdn_domains_disabled" {
     error_message = "No secret should be created"
   }
 }
+
+# Trigger repo run tests actions

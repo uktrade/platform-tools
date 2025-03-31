@@ -14,6 +14,10 @@ variable "vpc_name" {
   type = string
 }
 
+variable "env_config" {
+  type = any
+}
+
 variable "config" {
   type = object({
     version               = number

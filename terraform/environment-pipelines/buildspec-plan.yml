@@ -26,7 +26,7 @@ phases:
       - echo "Working on environment ${ENVIRONMENT}"
       - |
         if [ "${APPLICATION}" == "demodjango" ] && [ "${ENVIRONMENT}" == "toolspr" ]; then
-          echo "Skipping platform-helper environment generate-terraform for demodjango toolspr environment until we can make it use platform-tools/terraform main branch"
+          echo "Skipping platform-helper environment generate-terraform for demodjango toolspr environment until we can make it use terraform-platform-modules main branch"
         else
           platform-helper environment generate-terraform --name "${ENVIRONMENT}"
         fi

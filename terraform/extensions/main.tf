@@ -24,6 +24,7 @@ module "postgres" {
   environment = var.environment
   name        = each.key
   vpc_name    = local.vpc_name
+  env_config  = var.args.env_config
 
   config = each.value
 }

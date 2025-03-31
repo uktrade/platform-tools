@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "assume_ecs_task_role" {
 
       principals {
         type        = "AWS"
-        identifiers = ["arn:aws:iam::${coalesce(var.task.to_account, data.aws_caller_identity.current.account_id)}:role/${var.database_name}-${var.task.from}-to-${var.task.to}-copy-pipeline-codebuild"]
+        identifiers = ["arn:aws:iam::${var.task.to_account}:role/${var.database_name}-${var.task.from}-to-${var.task.to}-copy-pipeline-codebuild"]
       }
 
       actions = ["sts:AssumeRole"]
@@ -112,7 +112,7 @@ data "aws_iam_policy_document" "data_load" {
     actions = [
       "kms:Decrypt"
     ]
-    resources = ["arn:aws:kms:eu-west-2:${coalesce(var.task.from_account, data.aws_caller_identity.current.account_id)}:key/*"]
+    resources = ["arn:aws:kms:eu-west-2:${var.task.from_account}:key/*"]
   }
 }
 

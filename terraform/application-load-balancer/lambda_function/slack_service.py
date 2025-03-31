@@ -17,7 +17,11 @@ class SlackNotificationService:
         self.slack_api_url = "https://slack.com/api/chat.postMessage"
 
     def send_test_failures(
-        self, failures: List[Dict], environment: str, application: str, channel: str = None
+        self,
+        failures: List[Dict],
+        environment: str,
+        application: str,
+        channel: str = None,
     ) -> None:
         """Send formatted test failure notifications to Slack."""
         try:
@@ -37,7 +41,9 @@ class SlackNotificationService:
                 for i in range(0, len(failure_text), max_length):
                     thread_text = failure_text[i : i + max_length]
                     self._send_message(
-                        channel or self.slack_channel, thread_text, thread_ts=response["ts"]
+                        channel or self.slack_channel,
+                        thread_text,
+                        thread_ts=response["ts"],
                     )
                     logger.info("Additional failure details sent in thread")
 
