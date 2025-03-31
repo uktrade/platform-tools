@@ -206,12 +206,12 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--platform-helper-version", "12.0.0"],
+            ["--name", "test", "--platform-helper-version", "14.0.0"],
         )
 
         assert result.exit_code == 0
 
-        mock_terraform_environment_instance.generate.assert_called_with("test", "12.0.0", None)
+        mock_terraform_environment_instance.generate.assert_called_with("test", "14.0.0", None)
 
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
@@ -244,12 +244,12 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--platform-helper-version", "12.0.0"],
+            ["--name", "test", "--platform-helper-version", "14.0.0"],
         )
 
         assert result.exit_code == 1
         mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
-        mock_terraform_environment_instance.generate.assert_called_with("test", "12.0.0", None)
+        mock_terraform_environment_instance.generate.assert_called_with("test", "14.0.0", None)
 
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     @patch("click.secho")
@@ -265,7 +265,7 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--platform-helper-version", "12.0.0"],
+            ["--name", "test", "--platform-helper-version", "14.0.0"],
         )
 
         assert result.exit_code == 1

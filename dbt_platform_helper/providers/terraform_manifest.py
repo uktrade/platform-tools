@@ -17,9 +17,6 @@ class TerraformManifestProvider:
         self.file_provider = file_provider
         self.io = io
 
-    def copy_platform_config(self):
-        pass
-
     def generate_codebase_pipeline_config(
         self,
         platform_config: dict,

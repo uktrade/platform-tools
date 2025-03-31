@@ -28,7 +28,7 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        platform_helper_version="13",
+        platform_helper_version="14",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
     )
@@ -78,7 +78,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     module = json_content["module"]["codebase-pipelines"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=13"
+        == f"git::https://github.com/uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14"
     )
     assert module["for_each"] == "${local.all_codebases}"
     assert module["application"] == "${local.application}"
@@ -123,7 +123,7 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
 
     template_provider.generate_codebase_pipeline_config(
         config,
-        platform_helper_version="13",
+        platform_helper_version="14",
         ecr_imports={"application": "test_project/application"},
         deploy_repository="uktrade/my-app-deploy",
     )
@@ -148,7 +148,7 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        platform_helper_version="13",
+        platform_helper_version="14",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
     )
@@ -162,9 +162,9 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 @pytest.mark.parametrize(
     "app, env, platform_helper_version, expected_aws_account",
     [
-        ("app1", "dev", "13", "non-prod-acc"),
+        ("app1", "dev", "14", "non-prod-acc"),
         ("app2", "staging", "12", "non-prod-acc"),
-        ("app3", "prod", "13", "prod-acc"),
+        ("app3", "prod", "14", "prod-acc"),
     ],
 )
 def test_generate_environment_config_creates_file(
@@ -267,7 +267,7 @@ def test_generate_environment_config_with_multiple_extensions_adds_moved_blocks_
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
     template_provider.generate_environment_config(
-        platform_env_config, env="dev", platform_helper_version="13"
+        platform_env_config, env="dev", platform_helper_version="14"
     )
 
     _, _, contents, _ = mock_file_provider.mkfile.call_args.args
@@ -341,7 +341,7 @@ def test_generate_environment_config_when_old_manifest_not_deleted_does_not_outp
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
     template_provider.generate_environment_config(
-        platform_env_config, env="dev", platform_helper_version="13"
+        platform_env_config, env="dev", platform_helper_version="14"
     )
 
     mock_io.info.assert_called_once_with("File created")
