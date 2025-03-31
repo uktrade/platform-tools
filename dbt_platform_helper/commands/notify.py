@@ -34,8 +34,8 @@ def environment_progress(
 ):
     try:
         io = ClickIOProvider()
-        client = SlackChannelNotifier(slack_token, slack_channel_id)
-        response = Notify(client).environment_progress(
+        slack_notifier = SlackChannelNotifier(slack_token, slack_channel_id)
+        response = Notify(slack_notifier).environment_progress(
             slack_ref=slack_ref,
             message=message,
             build_arn=build_arn,
@@ -65,8 +65,8 @@ def add_comment(
     send_to_main_channel: bool,
 ):
     try:
-        client = SlackChannelNotifier(slack_token, slack_channel_id)
-        Notify(client).add_comment(
+        slack_notifier = SlackChannelNotifier(slack_token, slack_channel_id)
+        Notify(slack_notifier).add_comment(
             message=message,
             title=title,
             reply_broadcast=send_to_main_channel,
