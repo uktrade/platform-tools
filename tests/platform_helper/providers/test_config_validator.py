@@ -13,30 +13,14 @@ from dbt_platform_helper.providers.config_validator import ConfigValidatorError
         None,
         [{"from": "dev", "to": "test"}],
         [{"from": "test", "to": "dev"}],
-        [
-            {
-                "from": "prod",
-                "to": "test",
-                "from_account": "9999999999",
-                "to_account": "1122334455",
-            }
-        ],
-        [
-            {
-                "from": "dev",
-                "to": "test",
-                "from_account": "9999999999",
-                "to_account": "9999999999",
-            }
-        ],
+        [{"from": "prod", "to": "test"}],
+        [{"from": "dev", "to": "test"}],
         [{"from": "test", "to": "dev", "pipeline": {}}],
         [{"from": "test", "to": "dev", "pipeline": {"schedule": "0 0 * * WED"}}],
         [
             {
                 "from": "test",
                 "to": "dev",
-                "from_account": "9999999999",
-                "to_account": "1122334455",
                 "pipeline": {"schedule": "0 0 * * WED"},
             }
         ],
