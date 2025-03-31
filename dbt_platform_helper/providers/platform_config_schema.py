@@ -28,7 +28,7 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__monitoring_schema(),
                         PlatformConfigSchema.__opensearch_schema(),
                         PlatformConfigSchema.__postgres_schema(),
-                        PlatformConfigSchema.__datadog_schema(),
+                        Optional(PlatformConfigSchema.__datadog_schema()),
                         PlatformConfigSchema.__prometheus_policy_schema(),
                         PlatformConfigSchema.__redis_schema(),
                         PlatformConfigSchema.__s3_bucket_schema(),
@@ -431,7 +431,7 @@ class PlatformConfigSchema:
         if errors:
             # Todo: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n{'\\n'.join(f'  {e}' for e in errors)}"
             )
 
         return True
