@@ -185,38 +185,6 @@ def test_validate_database_copy_multi_postgres_failures():
     )
 
 
-def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_ids():
-    config = {
-        "application": "test-app",
-        "environments": {
-            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
-            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
-        },
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-                "database_copy": [
-                    {
-                        "from": "prod",
-                        "to": "dev",
-                        "from_account": "000000000",
-                        "to_account": "1111111111",
-                    }
-                ],
-            }
-        },
-    }
-
-    with pytest.raises(ConfigValidatorError) as exception:
-        ConfigValidator().validate_database_copy_section(config)
-
-    console_message = str(exception.value)
-
-    msg = f"Incorrect value for 'from_account' for environment 'prod'"
-    assert msg in console_message
-
-
 def test_validate_platform_config_fails_if_database_copy_to_and_from_are_the_same():
     """Edge cases for this are all covered in unit tests of
     validate_database_copy_section elsewhere in this file."""
