@@ -276,7 +276,7 @@ class PlatformConfigSchema:
                     Optional("ebs_volume_type"): str,
                     Optional("instance"): str,
                     Optional("instances"): int,
-                    # Explicitly setting 'master' is now deprecated and will need to be removed in the future. This property is now built in to the OpenSearch plans.
+                    # Explicitly setting 'master' is now deprecated and will need to be removed in the future. This property is now built-in to the OpenSearch plans.yml
                     Optional("master"): bool,
                     Optional("es_app_log_retention_in_days"): int,
                     Optional("index_slow_log_retention_in_days"): int,
