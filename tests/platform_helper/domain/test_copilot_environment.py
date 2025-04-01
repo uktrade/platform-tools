@@ -507,6 +507,7 @@ class TestCopilotGenerate:
         mock_config_provider = Mock()
         config = {
             "application": "test-app",
+            "vpc": "a-really-cool-vpc",
             "environments": {"test_environment": self.VALID_ENVIRONMENT_CONFIG},
         }
         mock_config_provider.get_enriched_config.return_value = config
