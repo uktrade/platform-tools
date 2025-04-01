@@ -16,7 +16,7 @@ from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.exceptions import (
     CopilotCodebaseNotFoundException,
-from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+)
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 
@@ -286,20 +286,6 @@ def check_codebase_exists(session: Session, application, codebase: str):
         json.JSONDecodeError,
     ):
         raise CopilotCodebaseNotFoundException(codebase)
-
-
-def check_image_exists(session, application, codebase, commit):
-    ecr_client = session.client("ecr")
-    repository = f"{application.name}/{codebase}"
-    try:
-        ecr_client.describe_images(
-            repositoryName=repository,
-            imageIds=[{"imageTag": f"commit-{commit}"}],
-        )
-    except ecr_client.exceptions.ImageNotFoundException:
-        raise ImageNotFoundException(commit)
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        raise RepositoryNotFoundException(repository)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
