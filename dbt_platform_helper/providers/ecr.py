@@ -72,6 +72,6 @@ class ECRProvider:
                         )
                         return tag
         self.click_io.warn(
-            f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note that it cannot be guaranteed that this image will remain identical over time.'
+            f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
         )
         return image_ref
