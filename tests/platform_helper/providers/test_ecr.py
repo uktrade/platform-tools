@@ -220,7 +220,7 @@ def test_find_commit_tag_returns_the_original_ref_if_no_commit_tag():
     actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
 
     ecr.click_io.warn.assert_called_once_with(
-        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note that it cannot be guaranteed that this image will remain identical over time.'
+        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
     )
     assert actual_tag == "tag-1.2.3"
 
@@ -241,6 +241,6 @@ def test_find_commit_tag_handles_malformed_image_details(image_details):
     actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
 
     ecr.click_io.warn.assert_called_once_with(
-        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note that it cannot be guaranteed that this image will remain identical over time.'
+        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
     )
     assert actual_tag == "tag-1.2.3"
