@@ -67,20 +67,27 @@ def build(app, codebase, commit):
     required=True,
 )
 @click.option(
-    "--ref",
-    help="AWS ECR image tag, usually in one of the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>.",
+    "--tag",
+    help="Git tag that has been built into an image. Typically a semantic version of the form 1.2.3 or v1.2.3.",
+    required=False,
+)
+@click.option(
+    "--branch",
+    help="Git branch that has been built into an image.",
     required=False,
 )
 @click.option(
     "--commit",
-    help="(DEPRECATED) Use --ref instead to pass the AWS ECR image tag.",
+    help="Git sha hash that has been built into an image.",
     required=False,
 )
-def deploy(app: str, env: str, codebase: str, commit: str = None, ref: str = None):
+def deploy(
+    app: str, env: str, codebase: str, commit: str = None, tag: str = None, branch: str = None
+):
 
     try:
         Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).deploy(
-            app, env, codebase, commit, ref
+            app, env, codebase, commit, tag, branch
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

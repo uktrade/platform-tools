@@ -155,21 +155,41 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def deploy(self, app: str, env: str, codebase: str, commit: str = None, ref: str = None):
+    def deploy(
+        self,
+        app: str,
+        env: str,
+        codebase: str,
+        commit: str = None,
+        tag: str = None,
+        branch: str = None,
+    ):
         """Trigger a CodePipeline pipeline based deployment."""
 
-        self._validate_commit_and_ref_flags(commit, ref)
+        self._validate_commit_and_ref_flags(commit, tag, branch)
 
         application, session = self._populate_application_values(app, env)
 
-        image_ref = f"commit-{commit}" if commit else ref
+        image_ref = None
+        if commit:
+            image_ref = f"commit-{commit}"
+        if tag:
+            image_ref = f"tag-{tag}"
+        if branch:
+            image_ref = f"branch-{branch}"
         image_details = self.ecr_provider.get_image_details(application, codebase, image_ref)
         image_ref = self.ecr_provider.find_commit_tag(image_details, image_ref)
 
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
 
-        confirmation_message = f'\nYou are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+        corresponding_to = ""
+        if tag:
+            corresponding_to = f"(corresponding to tag {tag}) "
+        elif branch:
+            corresponding_to = f"(corresponding to branch {branch}) "
+
+        confirmation_message = f'\nYou are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" {corresponding_to}to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
         build_options = {
             "name": pipeline_name,
             "variables": [
@@ -193,21 +213,16 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def _validate_commit_and_ref_flags(self, commit: str, ref: str):
-        if commit:
-            self.io.warn(
-                "WARNING: The --commit option is deprecated and will be removed in a future release. Use --ref instead to pass the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
-            )
+    def _validate_commit_and_ref_flags(self, commit: str, tag: str, branch: str):
+        provided = [ref for ref in [commit, tag, branch] if ref]
 
-        none_provided = not (commit or ref)
-        both_provided = commit and ref
-        if none_provided:
+        if len(provided) == 0:
             self.io.abort_with_error(
-                "To deploy, you must provide a --ref option with the AWS ECR image tag in the following formats: tag-<image_tag>, commit-<commit_hash> or branch-<branch_name>."
+                "To deploy, you must provide one of the options --commit, --tag or --branch."
             )
-        elif both_provided:
+        elif len(provided) > 1:
             self.io.abort_with_error(
-                "You have provided both --ref and --commit. The latter is deprecated, please supply just --ref."
+                "You have provided more than one of the --tag, --branch and --commit options but these are mutually exclusive. Please provide only one of these options."
             )
 
     def _populate_application_values(self, app: str, env: str) -> Tuple[Application, Session]:

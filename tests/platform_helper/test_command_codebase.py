@@ -148,13 +148,13 @@ class TestCodebaseBuild:
 
 class TestCodebaseDeploy:
     @pytest.mark.parametrize(
-        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+        "flag, ref", [("--commit", "ab1c23d"), ("--tag", "1,2,3"), ("--branch", "test-branch")]
     )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
     @patch("dbt_platform_helper.commands.codebase.Codebase")
     def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
-        self, mock_codebase_object, mock_parameter_provider, mock_session, flag, commit, ref
+        self, mock_codebase_object, mock_parameter_provider, mock_session, flag, ref
     ):
         mock_codebase_object_instance = mock_codebase_object.return_value
 
@@ -171,7 +171,7 @@ class TestCodebaseDeploy:
                 "--codebase",
                 "application",
                 flag,
-                commit if commit else ref,
+                ref,
             ],
             input="y\n",
         )
@@ -179,13 +179,18 @@ class TestCodebaseDeploy:
         mock_session.return_value.client.assert_called_once_with("ssm")
         mock_parameter_provider.assert_called_with(mock_ssm_client)
         mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
+
+        exp_commit = ref if flag == "--commit" else None
+        exp_tag = ref if flag == "--tag" else None
+        exp_branch = ref if flag == "--branch" else None
+
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", commit, ref
+            "test-application", "development", "application", exp_commit, exp_tag, exp_branch
         )
         assert result.exit_code == 0
 
     @pytest.mark.parametrize(
-        "flag, commit, ref", [("--commit", "ab1c23d", None), ("--ref", None, "ab1c23d")]
+        "flag, ref", [("--commit", "ab1c23d"), ("--tag", "ab1c23d"), ("--branch", "test-branch")]
     )
     @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.codebase.ParameterStore")
@@ -198,7 +203,6 @@ class TestCodebaseDeploy:
         mock_parameter_provider,
         mock_session,
         flag,
-        commit,
         ref,
     ):
         mock_click.return_value.abort_with_error.side_effect = SystemExit(1)
@@ -217,7 +221,7 @@ class TestCodebaseDeploy:
                 "--codebase",
                 "application",
                 flag,
-                commit if commit else ref,
+                ref,
             ],
         )
 
@@ -225,8 +229,13 @@ class TestCodebaseDeploy:
         mock_parameter_provider.assert_called_with(mock_ssm_client)
         mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
         mock_codebase_object.return_value.deploy.assert_called_once()
+
+        exp_commit = ref if flag == "--commit" else None
+        exp_tag = ref if flag == "--tag" else None
+        exp_branch = ref if flag == "--branch" else None
+
         mock_codebase_object_instance.deploy.assert_called_once_with(
-            "test-application", "development", "application", commit, ref
+            "test-application", "development", "application", exp_commit, exp_tag, exp_branch
         )
         mock_click.return_value.abort_with_error.assert_called_once_with("Error message")
 
