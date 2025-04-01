@@ -21,12 +21,6 @@ def pipeline():
 
 @pipeline.command()
 @click.option(
-    "--terraform-platform-modules-version",
-    help=f"""Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
-    The platform-tools and terraform-platform-modules repositories have now been merged. 
-    Please use the '--platform-helper-version' flag when stating the desired version of platform-tools/terraform.""",
-)
-@click.option(
     "--platform-helper-version",
     help=f"""Override the default version of platform-helper with a specific version or branch. 
     Precedence of version used is version supplied via CLI, then the version found in 
@@ -40,7 +34,7 @@ def pipeline():
     <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
     default=None,
 )
-def generate(terraform_platform_modules_version, platform_helper_version: str, deploy_branch: str):
+def generate(platform_helper_version: str, deploy_branch: str):
     """
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
@@ -65,8 +59,6 @@ def generate(terraform_platform_modules_version, platform_helper_version: str, d
             get_codestar_connection_arn,
             io,
         )
-        pipelines.generate(
-            terraform_platform_modules_version, platform_helper_version, deploy_branch
-        )
+        pipelines.generate(platform_helper_version, deploy_branch)
     except Exception as exc:
         io.abort_with_error(str(exc))

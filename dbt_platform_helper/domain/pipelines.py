@@ -11,7 +11,6 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.legacy_versions import LegacyVersionsProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.utils.application import get_application_name
@@ -28,7 +27,6 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
-        legacy_versions_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
         platform_helper_version_status: PlatformHelperVersionStatus = PlatformHelperVersionStatus(),
     ):
         self.config_provider = config_provider
@@ -38,20 +36,14 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.legacy_versions_provider = legacy_versions_provider
         self.platform_helper_version_status = platform_helper_version_status
 
     def generate(
         self,
-        cli_terraform_platform_modules_version,
         cli_platform_helper_version: str,
         deploy_branch: str,
     ):
         platform_config = self.config_provider.load_and_validate_platform_config()
-
-        self.legacy_versions_provider.check_terraform_platform_modules_version(
-            cli_terraform_platform_modules_version, platform_config
-        )
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
         has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in platform_config

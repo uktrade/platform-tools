@@ -1,6 +1,5 @@
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.legacy_versions import LegacyVersionsProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 
@@ -19,26 +18,19 @@ class TerraformEnvironment:
         config_provider,
         manifest_provider: TerraformManifestProvider = None,
         io: ClickIOProvider = ClickIOProvider(),
-        legacy_versions_provider: LegacyVersionsProvider = LegacyVersionsProvider(),
         platform_helper_version_status: PlatformHelperVersionStatus = PlatformHelperVersionStatus(),
     ):
         self.io = io
         self.config_provider = config_provider
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
-        self.legacy_versions_provider = legacy_versions_provider
         self.platform_helper_version_status = platform_helper_version_status
 
     def generate(
         self,
         environment_name,
         cli_platform_helper_version=None,
-        cli_terraform_platform_modules_version=None,
     ):
         config = self.config_provider.get_enriched_config()
-
-        self.legacy_versions_provider.check_terraform_platform_modules_version(
-            cli_terraform_platform_modules_version, config
-        )
 
         if environment_name not in config.get("environments").keys():
             raise EnvironmentNotFoundException(

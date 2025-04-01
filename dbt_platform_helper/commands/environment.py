@@ -90,20 +90,12 @@ def generate(name):
     "--platform-helper-version",
     help=f"Override the default version of platform-helper. (Default version is the installed version for `dbt-platform-helper`.",
 )
-@click.option(
-    "--terraform-platform-modules-version",
-    help=f"""Warning. The use of the '--terraform-platform-modules-version' flag is deprecated.
-    The platform-tools and terraform-platform-modules repositories have now been merged. 
-    Please use the '--platform-helper-version' flag when stating the desired version of platform-tools/terraform.""",
-)
-def generate_terraform(name, platform_helper_version, terraform_platform_modules_version):
+def generate_terraform(name, platform_helper_version):
     click_io = ClickIOProvider()
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator(session=session))
-        TerraformEnvironment(config_provider).generate(
-            name, platform_helper_version, terraform_platform_modules_version
-        )
+        TerraformEnvironment(config_provider).generate(name, platform_helper_version)
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))

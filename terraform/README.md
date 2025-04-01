@@ -1,4 +1,4 @@
-# Terraform Platform Modules
+# Terraform used by Platform-tools
 
 ## Setup
 
@@ -94,7 +94,7 @@ locals {
 }
 
 module "extensions" {
-  source     = "git::ssh://git@github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref=main"
+  source     = "git::ssh://git@github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref=main"
 
   args        = local.args
   environment = "my-env"

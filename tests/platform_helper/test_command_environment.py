@@ -211,7 +211,7 @@ class TestGenerateTerraform:
 
         assert result.exit_code == 0
 
-        mock_terraform_environment_instance.generate.assert_called_with("test", "14.0.0", None)
+        mock_terraform_environment_instance.generate.assert_called_with("test", "14.0.0")
 
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
@@ -228,7 +228,7 @@ class TestGenerateTerraform:
 
         assert result.exit_code == 0
 
-        mock_terraform_environment_instance.generate.assert_called_with("test", None, None)
+        mock_terraform_environment_instance.generate.assert_called_with("test", None)
 
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
@@ -249,7 +249,7 @@ class TestGenerateTerraform:
 
         assert result.exit_code == 1
         mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
-        mock_terraform_environment_instance.generate.assert_called_with("test", "14.0.0", None)
+        mock_terraform_environment_instance.generate.assert_called_with("test", "14.0.0")
 
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     @patch("click.secho")

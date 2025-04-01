@@ -13,36 +13,24 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 @pytest.mark.parametrize(
     "cli_args, expected_pipeline_args",
     [
-        ([], [None, None, None]),
+        ([], [None, None]),
         (
             [
-                "--terraform-platform-modules-version",
-                "7.0.0",
                 "--platform-helper-version",
                 "14.0.0",
                 "--deploy-branch",
                 "my-branch",
             ],
-            ["7.0.0", "14.0.0", "my-branch"],
+            ["14.0.0", "my-branch"],
         ),
         (
             [
-                "--terraform-platform-modules-version",
-                "7.0.0",
                 "--platform-helper-version",
                 "14.0.0",
             ],
-            ["7.0.0", "14.0.0", None],
+            ["14.0.0", None],
         ),
-        (["--deploy-branch", "my-branch"], [None, None, "my-branch"]),
-        (
-            ["--platform-helper-version", "14.0.0", "--deploy-branch", "my-branch"],
-            [None, "14.0.0", "my-branch"],
-        ),
-        (
-            ["--terraform-platform-modules-version", "7.0.0", "--deploy-branch", "my-branch"],
-            ["7.0.0", None, "my-branch"],
-        ),
+        (["--deploy-branch", "my-branch"], [None, "my-branch"]),
     ],
 )
 @patch("dbt_platform_helper.commands.pipeline.Pipelines", return_value="uktrade/test-app-deploy")

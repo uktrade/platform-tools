@@ -11,7 +11,6 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.legacy_versions import LegacyVersionsProvider
 
 
 class PipelineMocks:
@@ -28,7 +27,6 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
-        self.mock_legacy_versions_provider = LegacyVersionsProvider(io=self.io)
 
     def params(self):
         return {
@@ -38,7 +36,6 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
-            "legacy_versions_provider": self.mock_legacy_versions_provider,
         }
 
 
@@ -50,7 +47,7 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
     mocks.mock_config_provider = mock_config_provider
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(None, None, None)
+    pipelines.generate(None, None)
 
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
@@ -62,7 +59,7 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
     mocks.mock_config_provider = mock_config_provider
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(None, None, None)
+    pipelines.generate(None, None)
 
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
@@ -70,24 +67,22 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "cli_terraform_platform_modules_version, cli_platform_helper_version, config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
+    "cli_platform_helper_version, config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        ("7", "14", True, "14", None, None),  # Case with cli_platform_helper_version
+        ("14", True, "14", None, None),  # Case with cli_platform_helper_version
         (
-            "7",
             None,
             True,
             "14.0.0",
             "demodjango-branch",
             "demodjango-branch",
         ),  # Case with config_platform_helper_version and specific branch
-        ("7", None, True, "14.0.0", None, None),
-        (None, None, True, "14.0.0", None, None),
+        (None, True, "14.0.0", None, None),
+        (None, True, "14.0.0", None, None),
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
     fakefs,
-    cli_terraform_platform_modules_version,
     cli_platform_helper_version,
     config_platform_helper_version,
     expected_platform_helper_version,
@@ -103,9 +98,7 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(
-        cli_terraform_platform_modules_version, cli_platform_helper_version, cli_demodjango_branch
-    )
+    pipelines.generate(cli_platform_helper_version, cli_demodjango_branch)
 
     assert_terraform(
         app_name,
@@ -135,7 +128,7 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate("cli-tpm-version", "an-unimportant-platform-version", "a-branch")
+    pipelines.generate("an-unimportant-platform-version", "a-branch")
 
     expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
     assert expected_files_dir.exists()
@@ -150,99 +143,10 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
-@freeze_time("2024-10-28 12:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_modules_version_cli_flag_is_present(
-    fakefs,
-    platform_config_for_env_pipelines,
-):
-    app_name = "test-app"
-    fakefs.create_file(
-        PLATFORM_CONFIG_FILE,
-        contents=yaml.dump(platform_config_for_env_pipelines),
-    )
-    mocks = PipelineMocks(app_name)
-    pipelines = Pipelines(**mocks.params())
-
-    pipelines.generate(
-        "terraform_platform_modules_version", "platform-helper-version", "any-branch"
-    )
-
-    expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
-    assert expected_files_dir.exists()
-    content = expected_files_dir.read_text()
-
-    mocks.io.warn.assert_called_once_with(
-        "The `--terraform-platform-modules-version` flag for the pipeline generate command is deprecated. "
-        "Please use the `--platform-helper-version` flag instead.\n"
-    )
-    assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
-
-
-@freeze_time("2024-10-28 12:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_repository_key_present_in_default_config(
-    fakefs,
-    platform_config_for_env_pipelines_with_deprecated_tpm_default_versions,
-):
-    app_name = "test-app"
-    fakefs.create_file(
-        PLATFORM_CONFIG_FILE,
-        contents=yaml.dump(platform_config_for_env_pipelines_with_deprecated_tpm_default_versions),
-    )
-    mocks = PipelineMocks(app_name)
-    pipelines = Pipelines(**mocks.params())
-
-    pipelines.generate(None, "platform-helper-version", "any-branch")
-
-    expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
-    assert expected_files_dir.exists()
-    content = expected_files_dir.read_text()
-
-    mocks.io.warn.assert_called_once_with(
-        "The `terraform-platform-modules` key set in the platform-config.yml file in the following location: `default_versions: terraform-platform-modules` is now deprecated. "
-        "Please use the `default_versions: platform-helper` value instead. "
-        "See full platform config reference in the docs: "
-        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
-    )
-    assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
-
-
-@freeze_time("2024-10-28 12:00:00")
-@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
-def test_generate_pipeline_creates_warning_when_deprecated_terraform_platform_repository_key_present_in_environment_config(
-    fakefs,
-    platform_config_for_env_pipelines,
-):
-    app_name = "test-app"
-    # Adding the deprecated TPM keyword to config file
-    platform_config_for_env_pipelines["environments"]["dev"]["versions"] = {
-        "terraform-platform-modules": "12.0.0"
-    }
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
-    mocks = PipelineMocks(app_name)
-    pipelines = Pipelines(**mocks.params())
-
-    pipelines.generate(None, "platform-helper-version", "any-branch")
-
-    expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
-    assert expected_files_dir.exists()
-    content = expected_files_dir.read_text()
-
-    mocks.io.warn.assert_called_once_with(
-        "The `terraform-platform-modules` key set in the platform-config.yml file in the following location:  `environments: <env>: versions: terraform-platform-modules` is now deprecated. "
-        "Please use the `default_versions: platform-helper` value instead. "
-        "See full platform config reference in the docs: "
-        "https://platform.readme.trade.gov.uk/reference/platform-config-yml/#core-configuration.\n"
-    )
-    assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
-
-
 def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_version(
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
-    cli_tpm_version = ("7",)
     cli_platform_helper_version = "13"
     exp_version = "13"
     app_name = "test-app"
@@ -253,7 +157,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_vers
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(cli_tpm_version, cli_platform_helper_version, None)
+    pipelines.generate(cli_platform_helper_version, None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
@@ -281,7 +185,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_imports(
     ]
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate("7", "13", None)
+    pipelines.generate("13", None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
