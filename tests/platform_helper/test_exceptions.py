@@ -76,8 +76,8 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
         ),
         (
             ImageNotFoundException,
-            {"image_ref": "abc1234"},
-            """An image labelled "abc1234" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
+            {"image_ref": "does-not-exist"},
+            """An image labelled "does-not-exist" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
         ),
         (
             LogGroupNotFoundException,
