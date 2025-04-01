@@ -17,7 +17,10 @@ class ConfigValidatorError(PlatformException):
 class ConfigValidator:
 
     def __init__(
-        self, validations: Callable[[dict], None] = None, io: ClickIOProvider = ClickIOProvider()
+        self,
+        validations: Callable[[dict], None] = None,
+        io: ClickIOProvider = ClickIOProvider(),
+        session: boto3.Session = None,
     ):
         self.validations = validations or [
             self.validate_supported_redis_versions,
@@ -28,6 +31,7 @@ class ConfigValidator:
             self.validate_database_migration_input_sources,
         ]
         self.io = io
+        self.session = session
 
     def run_validations(self, config: dict):
         for validation in self.validations:
@@ -76,10 +80,15 @@ class ConfigValidator:
                 f"{extension_type} version for environment {version_failure['environment']} is not in the list of supported {extension_type} versions: {supported_extension_versions}. Provided Version: {version_failure['version']}",
             )
 
+    def _get_client(self, service_name: str):
+        if self.session:
+            return self.session.client(service_name)
+        return boto3.client(service_name)
+
     def validate_supported_redis_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            aws_provider=Redis(boto3.client("elasticache")),
+            aws_provider=Redis(self._get_client("elasticache")),
             extension_type="redis",  # TODO this is information which can live in the RedisProvider
             version_key="engine",  # TODO this is information which can live in the RedisProvider
         )
@@ -87,7 +96,7 @@ class ConfigValidator:
     def validate_supported_opensearch_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
-            aws_provider=Opensearch(boto3.client("opensearch")),
+            aws_provider=Opensearch(self._get_client("opensearch")),
             extension_type="opensearch",  # TODO this is information which can live in the OpensearchProvider
             version_key="engine",  # TODO this is information which can live in the OpensearchProvider
         )
@@ -206,21 +215,14 @@ class ConfigValidator:
                         f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                     )
 
+                # TODO - The from_account and to_account properties are deprecated and will be removed when terraform-platform-modules is merged with platform-tools
                 if from_account != to_account:
-                    if "from_account" not in section:
-                        errors.append(
-                            f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'from_account' parameter must be present."
-                        )
-                    elif section["from_account"] != from_account:
+                    if "from_account" in section and section["from_account"] != from_account:
                         errors.append(
                             f"Incorrect value for 'from_account' for environment '{from_env}'"
                         )
 
-                    if "to_account" not in section:
-                        errors.append(
-                            f"Environments '{from_env}' and '{to_env}' are in different AWS accounts. The 'to_account' parameter must be present."
-                        )
-                    elif section["to_account"] != to_account:
+                    if "to_account" in section and section["to_account"] != to_account:
                         errors.append(
                             f"Incorrect value for 'to_account' for environment '{to_env}'"
                         )
