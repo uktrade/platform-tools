@@ -8,12 +8,15 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+CURRENT_SCHEMA_VERSION = 2
+
 
 class PlatformConfigSchema:
     @staticmethod
     def schema() -> Schema:
         return Schema(
             {
+                "schema_version": int,
                 "application": str,
                 Optional("deploy_repository"): str,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),

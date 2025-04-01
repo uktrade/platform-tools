@@ -11,6 +11,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.platform_config_schema import CURRENT_SCHEMA_VERSION
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import InvalidYamlException
 from tests.platform_helper.conftest import FIXTURES_DIR
@@ -105,7 +106,7 @@ class TestLoadAndValidate:
         with open(path, "r") as fd:
             conf = yaml.safe_load(fd)
 
-        assert validated == conf
+        assert validated == {"schema_version": CURRENT_SCHEMA_VERSION, **conf}
 
     def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(self, fakefs):
         fakefs.create_file(
@@ -118,14 +119,17 @@ class TestLoadAndValidate:
         config_provider = ConfigProvider()
         config = config_provider.load_unvalidated_config_file()
 
-        assert config == {"test": {"some_key": "some_value"}}
+        assert config == {
+            "schema_version": CURRENT_SCHEMA_VERSION,
+            "test": {"some_key": "some_value"},
+        }
 
-    def test_load_unvalidated_config_file_returns_empty_dict_given_invalid_yaml(self, fakefs):
+    def test_load_unvalidated_config_file_returns_minimal_dict_given_invalid_yaml(self, fakefs):
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="{")
         config_provider = ConfigProvider()
         config = config_provider.load_unvalidated_config_file()
 
-        assert config == {}
+        assert config == {"schema_version": CURRENT_SCHEMA_VERSION}
 
 
 class TestDataMigrationValidation:
@@ -133,6 +137,7 @@ class TestDataMigrationValidation:
         """Edge cases for this are all covered in unit tests of
         validate_database_copy_section elsewhere in this file."""
         config = {
+            "schema_version": CURRENT_SCHEMA_VERSION,
             "application": "test-app",
             "extensions": {
                 "test-s3-bucket": {
@@ -150,6 +155,7 @@ class TestDataMigrationValidation:
         mock_file_provider = Mock(spec=FileProvider)
         mock_file_provider.load.return_value = config
         mock_io = Mock()
+
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider, mock_io)
 
         config_provider.load_and_validate_platform_config()
@@ -162,6 +168,7 @@ class TestDataMigrationValidation:
         """Edge cases for this are all covered in unit tests of
         validate_database_copy_section elsewhere in this file."""
         config = {
+            "schema_version": CURRENT_SCHEMA_VERSION,
             "application": "test-app",
             "extensions": {
                 "test-s3-bucket": {
@@ -205,6 +212,7 @@ class TestGetEnrichedConfig:
     def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):
         mock_file_provider = Mock(spec=FileProvider)
         mock_file_provider.load.return_value = {
+            "schema_version": CURRENT_SCHEMA_VERSION,
             "application": "test-app",
             "environments": {
                 "*": {
@@ -219,6 +227,7 @@ class TestGetEnrichedConfig:
         }
 
         expected_enriched_config = {
+            "schema_version": CURRENT_SCHEMA_VERSION,
             "application": "test-app",
             "environments": {
                 "test": {

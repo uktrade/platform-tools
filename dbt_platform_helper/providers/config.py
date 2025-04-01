@@ -7,7 +7,10 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.platform_config_schema import CURRENT_SCHEMA_VERSION
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.schema_migrations import ALL_MIGRATIONS
+from dbt_platform_helper.providers.schema_migrations import Migrator
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -19,11 +22,13 @@ class ConfigProvider:
         config_validator: ConfigValidator = None,
         file_provider: YamlFileProvider = None,
         io: ClickIOProvider = None,
+        migrator: Migrator = None,
     ):
         self.config = {}
         self.validator = config_validator or ConfigValidator()
         self.io = io or ClickIOProvider()
         self.file_provider = file_provider or YamlFileProvider
+        self.migrator = migrator or Migrator(*ALL_MIGRATIONS)
 
     # TODO refactor so that apply_environment_defaults isn't set, discarded and set again
     def get_enriched_config(self):
@@ -51,6 +56,7 @@ class ConfigProvider:
         except FileProviderException as e:
             self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
 
+        self.config = self.run_schema_migrations(self.config)
         try:
             self._validate_platform_config()
         except SchemaError as e:
@@ -60,9 +66,12 @@ class ConfigProvider:
 
     def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
         try:
-            return self.file_provider.load(path)
+            return self.run_schema_migrations(self.file_provider.load(path))
         except FileProviderException:
-            return {}
+            return {"schema_version": CURRENT_SCHEMA_VERSION}
+
+    def run_schema_migrations(self, config):
+        return self.migrator.migrate(config)
 
     # TODO remove function and push logic to where this is called.
     # removed usage from config domain, code is very generic and doesn't require the overhead of a function
