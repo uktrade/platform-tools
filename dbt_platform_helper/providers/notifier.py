@@ -1,4 +1,5 @@
 from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 from slack_sdk.models import blocks
 
 from dbt_platform_helper.platform_exception import PlatformException
@@ -22,12 +23,11 @@ class SlackChannelNotifier:
             "unfurl_media": False,
         }
 
-        response = self.client.chat_update(ts=message_ref, **args)
-
         try:
+            response = self.client.chat_update(ts=message_ref, **args)
             return response["ts"]
-        except (KeyError, TypeError):
-            raise SlackChannelNotifierException(f"Slack notification unsuccessful: {response}")
+        except SlackApiError as e:
+            raise SlackChannelNotifierException(f"Slack notification unsuccessful: {e}")
 
     def post_new(self, message, context=None, title=None, reply_broadcast=None, thread_ref=None):
         args = {
@@ -40,12 +40,11 @@ class SlackChannelNotifier:
             "thread_ts": thread_ref,
         }
 
-        response = self.client.chat_postMessage(ts=None, **args)
-
         try:
+            response = self.client.chat_postMessage(ts=None, **args)
             return response["ts"]
-        except (KeyError, TypeError):
-            raise SlackChannelNotifierException(f"Slack notification unsuccessful: {response}")
+        except SlackApiError as e:
+            raise SlackChannelNotifierException(f"Slack notification unsuccessful: {e}")
 
     def _build_message_blocks(self, message, context):
         message_blocks = [

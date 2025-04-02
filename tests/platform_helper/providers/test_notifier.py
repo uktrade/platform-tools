@@ -2,6 +2,7 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
+from slack_sdk.errors import SlackApiError
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.notifier import SlackChannelNotifier
@@ -146,10 +147,12 @@ class TestSlackChannelNotifier:
     def test_post_update_raises_platform_exception_if_bad_response(self, mock_webclient):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
-        mock_slack_client_instance.chat_update.return_value = {"ok": "False"}
-
+        mock_slack_client_instance.chat_update.side_effect = SlackApiError(
+            message="bad", response={"ok": False}
+        )
         with pytest.raises(
-            PlatformException, match="Slack notification unsuccessful: {'ok': 'False'}"
+            PlatformException,
+            match="Slack notification unsuccessful: bad\nThe server responded with: {'ok': False}",
         ):
             SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_update(
                 message="test", message_ref="1234"
@@ -159,10 +162,13 @@ class TestSlackChannelNotifier:
     def test_post_new_raises_platform_exception_if_bad_response(self, mock_webclient):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
-        mock_slack_client_instance.chat_postMessage.return_value = {"ok": "False"}
+        mock_slack_client_instance.chat_postMessage.side_effect = SlackApiError(
+            message="bad", response={"ok": False}
+        )
 
         with pytest.raises(
-            PlatformException, match="Slack notification unsuccessful: {'ok': 'False'}"
+            PlatformException,
+            match="Slack notification unsuccessful: bad\nThe server responded with: {'ok': False}",
         ):
             SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
                 message="test",
