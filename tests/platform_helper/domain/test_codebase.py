@@ -209,6 +209,7 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
     "commit, tag, branch, expected_ref, expected_corresponding_to",
     [
         ("abc123", None, None, "commit-abc123", ""),
+        ("abc1234c190419c3755de305581c2f9e4df9ece1", None, None, "commit-abc1234", ""),
         (None, "1.2.3", None, "tag-1.2.3", "(corresponding to tag 1.2.3) "),
         (None, None, "feature_one", "branch-feature_one", "(corresponding to branch feature_one) "),
     ],
