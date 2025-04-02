@@ -13,11 +13,6 @@ class ECRProvider:
         self.session = session
         self.click_io = click_io
 
-    def _get_client(self):
-        if not self.session:
-            self.session = get_aws_session_or_abort()
-        return self.session.client("ecr")
-
     def get_ecr_repo_names(self) -> list[str]:
         out = []
         for page in self._get_client().get_paginator("describe_repositories").paginate():
@@ -47,14 +42,6 @@ class ECRProvider:
             if e.response["Error"]["Code"] == "RepositoryNotFoundException":
                 raise RepositoryNotFoundException(repository)
 
-    @staticmethod
-    def _check_image_details_exists(image_info: dict, image_ref: str):
-        """Error handling for any unexpected scenario where AWS ECR returns a
-        malformed response."""
-
-        if "imageDetails" not in image_info:
-            raise ImageNotFoundException(image_ref)
-
     def find_commit_tag(self, image_details: list[dict], image_ref: str) -> str:
         """Loop through imageTags list to query for an image tag starting with
         'commit-', and return that value if found."""
@@ -75,3 +62,16 @@ class ECRProvider:
             f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
         )
         return image_ref
+
+    @staticmethod
+    def _check_image_details_exists(image_info: dict, image_ref: str):
+        """Error handling for any unexpected scenario where AWS ECR returns a
+        malformed response."""
+
+        if "imageDetails" not in image_info:
+            raise ImageNotFoundException(image_ref)
+
+    def _get_client(self):
+        if not self.session:
+            self.session = get_aws_session_or_abort()
+        return self.session.client("ecr")

@@ -461,7 +461,7 @@ def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided():
         ("abc123", "1.2.3", "test-branch"),
     ],
 )
-def test_codebase_deploy_raises_error_when_both_multiple_refs_are_provided(commit, tag, branch):
+def test_codebase_deploy_raises_error_when_multiple_refs_are_provided(commit, tag, branch):
     mocks = CodebaseMocks()
     mocks.io.abort_with_error.side_effect = SystemExit(1)
     codebase = Codebase(**mocks.params())

@@ -166,7 +166,7 @@ class Codebase:
     ):
         """Trigger a CodePipeline pipeline based deployment."""
 
-        self._validate_commit_and_ref_flags(commit, tag, branch)
+        self._validate_reference_flags(commit, tag, branch)
 
         application, session = self._populate_application_values(app, env)
 
@@ -213,7 +213,7 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def _validate_commit_and_ref_flags(self, commit: str, tag: str, branch: str):
+    def _validate_reference_flags(self, commit: str, tag: str, branch: str):
         provided = [ref for ref in [commit, tag, branch] if ref]
 
         if len(provided) == 0:
