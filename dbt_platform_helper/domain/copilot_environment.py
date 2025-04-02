@@ -12,7 +12,6 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.providers.vpc import Vpc
-from dbt_platform_helper.providers.vpc import VpcNotFoundForNameException
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.template import S3_CROSS_ACCOUNT_POLICY
 from dbt_platform_helper.utils.template import camel_case
@@ -60,9 +59,7 @@ class CopilotEnvironment:
             app_name, environment_name
         )
 
-        vpc = self._get_environment_vpc(
-            self.session, app_name, environment_name, env_config.get("vpc", None)
-        )
+        vpc = self.vpc_provider.get_vpc(app_name, environment_name, env_config.get("vpc", None))
 
         copilot_environment_manifest = self.copilot_templating.generate_copilot_environment_manifest(
             environment_name=environment_name,
@@ -76,24 +73,6 @@ class CopilotEnvironment:
                 environment_name, copilot_environment_manifest
             )
         )
-
-    # TODO: There should always be a vpc_name as defaults have been applied to the config.  This function can
-    # probably fall away. We shouldn't need to check 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})
-    # To be checked.
-    def _get_environment_vpc(self, session: Session, app_name, env_name: str, vpc_name: str) -> Vpc:
-
-        if not vpc_name:
-            vpc_name = f"{session.profile_name}-{env_name}"
-
-        try:
-            vpc = self.vpc_provider.get_vpc(app_name, env_name, vpc_name)
-        except VpcNotFoundForNameException:
-            vpc = self.vpc_provider.get_vpc(app_name, env_name, session.profile_name)
-
-        if not vpc:
-            raise VpcNotFoundForNameException
-
-        return vpc
 
     def _match_subnet_id_order_to_cloudformation_exports(
         self, environment_name: str, vpc: Vpc

@@ -11,9 +11,9 @@ import yaml
 from botocore.exceptions import ClientError
 from freezegun import freeze_time
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot import Copilot
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -733,7 +733,6 @@ class TestMakeAddonsCommand:
             "environments": {"development": {}, "production": {}},
         }
 
-        mocks.config_provider.config_file_check.return_value = True
         mocks.config_provider.load_and_validate_platform_config.return_value = mock_config
         mocks.config_provider.apply_environment_defaults = lambda config: config
         mocks.parameter_provider.get_ssm_parameter_by_name.return_value = {

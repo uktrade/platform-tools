@@ -10,7 +10,7 @@ from moto import mock_aws
 
 from dbt_platform_helper.commands.secrets import copy
 from dbt_platform_helper.commands.secrets import list
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.providers.config import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.utils.aws import SSM_PATH
 from tests.platform_helper.conftest import FIXTURES_DIR
 

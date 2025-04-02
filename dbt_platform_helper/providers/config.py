@@ -1,9 +1,7 @@
 from copy import deepcopy
-from pathlib import Path
 
 from schema import SchemaError
 
-from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -11,6 +9,8 @@ from dbt_platform_helper.providers.platform_config_schema import PlatformConfigS
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
+
+PLATFORM_CONFIG_FILE = "platform-config.yml"
 
 
 class ConfigProvider:
@@ -63,15 +63,6 @@ class ConfigProvider:
             return self.file_provider.load(path)
         except FileProviderException:
             return {}
-
-    # TODO remove function and push logic to where this is called.
-    # removed usage from config domain, code is very generic and doesn't require the overhead of a function
-    def config_file_check(self, path=PLATFORM_CONFIG_FILE):
-        if not Path(path).exists():
-            self.io.abort_with_error(
-                f"`{path}` is missing. "
-                "Please check it exists and you are in the root directory of your deployment project."
-            )
 
     @staticmethod
     def apply_environment_defaults(config):
