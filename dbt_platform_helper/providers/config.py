@@ -71,7 +71,11 @@ class ConfigProvider:
             return {"schema_version": CURRENT_SCHEMA_VERSION}
 
     def run_schema_migrations(self, config):
-        return self.migrator.migrate(config)
+        migrated_config = self.migrator.migrate(config)
+        for message in self.migrator.messages():
+            self.io.warn(message)
+
+        return migrated_config
 
     # TODO remove function and push logic to where this is called.
     # removed usage from config domain, code is very generic and doesn't require the overhead of a function

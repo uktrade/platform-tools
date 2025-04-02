@@ -2,6 +2,7 @@ import os
 import re
 from pathlib import Path
 from unittest.mock import Mock
+from unittest.mock import call
 
 import pytest
 import yaml
@@ -107,6 +108,24 @@ class TestLoadAndValidate:
             conf = yaml.safe_load(fd)
 
         assert validated == {"schema_version": CURRENT_SCHEMA_VERSION, **conf}
+
+    def test_load_and_validate_config_migrations_run_and_print_messages(self):
+        mock_migrator = Mock()
+        mock_migrator.messages.return_value = [
+            "Migration warning one",
+            "Migration warning two",
+        ]
+        mock_io = Mock()
+        config_provider = ConfigProvider(ConfigValidator(), io=mock_io, migrator=mock_migrator)
+        path = FIXTURES_DIR / "pipeline/platform-config.yml"
+        config_provider.load_and_validate_platform_config(path=path)
+
+        mock_migrator.migrate.assert_called_once()
+        mock_migrator.messages.assert_called_once()
+        assert mock_io.warn.call_args_list == [
+            call("Migration warning one"),
+            call("Migration warning two"),
+        ]
 
     def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(self, fakefs):
         fakefs.create_file(
