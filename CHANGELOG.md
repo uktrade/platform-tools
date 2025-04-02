@@ -1,5 +1,29 @@
 # Changelog
 
+## [13.3.0](https://github.com/uktrade/platform-tools/compare/13.2.0...13.3.0) (2025-03-31)
+
+
+### Features
+
+* Add deploy repository branch to pipeline generate (DBTP-1896) ([#814](https://github.com/uktrade/platform-tools/issues/814)) ([f4e91b2](https://github.com/uktrade/platform-tools/commit/f4e91b2a43be784b02a2e6308cdac4a8c6b8a796))
+* Add new field for Datadog ticket (DBTP-1879) ([#823](https://github.com/uktrade/platform-tools/issues/823)) ([2465b1c](https://github.com/uktrade/platform-tools/commit/2465b1cb4860ac6bbd0a4faf884666a4781a4f8b))
+* Allow command options to be set via environment variables (off-ticket) ([#819](https://github.com/uktrade/platform-tools/issues/819)) ([d79deb0](https://github.com/uktrade/platform-tools/commit/d79deb04a5ad0e38dfea1df91837beaee419fbb8))
+
+
+### Bug Fixes
+
+* Correctly resolve versions in config validate table output (off-ticket) ([#818](https://github.com/uktrade/platform-tools/issues/818)) ([d5bf3ff](https://github.com/uktrade/platform-tools/commit/d5bf3fff7a58fcf60a570495ed568cc77aad8b83))
+* From and to account properties no longer required (DBTP-1847) ([#825](https://github.com/uktrade/platform-tools/issues/825)) ([5fa037d](https://github.com/uktrade/platform-tools/commit/5fa037da3bc587b1db61a4746f9475345ae83319))
+* Initialise missing parameter provider for codebase commands (off-ticket) ([#812](https://github.com/uktrade/platform-tools/issues/812)) ([7e32663](https://github.com/uktrade/platform-tools/commit/7e326637da0fa2f630b289a9bb5bac59c02ae66e))
+* Intermittent failures when calling via requests library (off-ticket) ([#826](https://github.com/uktrade/platform-tools/issues/826)) ([84a22dd](https://github.com/uktrade/platform-tools/commit/84a22dd5234587864b53d68ef6163f4d84147181))
+* Update jinja2 for dependabot vulnerability fix ([#804](https://github.com/uktrade/platform-tools/issues/804)) ([66a5959](https://github.com/uktrade/platform-tools/commit/66a59598411349b8abcd4451dbf523dce2c76ac3))
+
+
+### Documentation
+
+* Add initial contributing guidelines (off-ticket) ([#811](https://github.com/uktrade/platform-tools/issues/811)) ([6c4357d](https://github.com/uktrade/platform-tools/commit/6c4357dcb5e4d245eca7caa2f403de3c498c63e8))
+* Correct typo in CONTRIBUTING.md (off-ticket) ([#815](https://github.com/uktrade/platform-tools/issues/815)) ([19e61fe](https://github.com/uktrade/platform-tools/commit/19e61fed7a16cc36e7dce1a24b508efe10315140))
+
 ## [13.2.0](https://github.com/uktrade/platform-tools/compare/13.1.2...13.2.0) (2025-03-07)
 
 
