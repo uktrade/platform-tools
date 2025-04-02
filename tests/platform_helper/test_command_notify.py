@@ -27,7 +27,7 @@ def test_environment_progress(
     mock_io.return_value = mock_io_instance
     mock_domain_instance = Mock(spec=Notify)
     mock_domain.return_value = mock_domain_instance
-    mock_domain_instance.environment_progress.return_value = {"ts": "success"}
+    mock_domain_instance.environment_progress.return_value = "success"
     mock_notifier_instance = Mock(spec=SlackChannelNotifier)
     mock_notifier.return_value = mock_notifier_instance
 

@@ -95,6 +95,8 @@ class TestNotify:
         expect_update,
     ):
         mock_notifier = Mock(spec=SlackChannelNotifier)
+        mock_notifier.post_update.return_value = {"ts": "1234.56789"}
+        mock_notifier.post_new.return_value = {"ts": "1234.56789"}
 
         Notify(mock_notifier).environment_progress(
             message="The very important thing everyone should know",

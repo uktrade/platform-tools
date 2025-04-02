@@ -15,7 +15,7 @@ class SlackChannelNotifier:
             "unfurl_links": False,
             "unfurl_media": False,
         }
-        self.client.chat_update(ts=message_ref, **args)
+        return self.client.chat_update(ts=message_ref, **args)
 
     def post_new(self, message, context=None, title=None, reply_broadcast=None, thread_ref=None):
         args = {
@@ -27,7 +27,7 @@ class SlackChannelNotifier:
             "unfurl_media": False,
             "thread_ts": thread_ref,
         }
-        self.client.chat_postMessage(ts=None, **args)
+        return self.client.chat_postMessage(ts=None, **args)
 
     def _build_message_blocks(self, message, context):
         message_blocks = [

@@ -35,7 +35,7 @@ def environment_progress(
     try:
         io = ClickIOProvider()
         slack_notifier = SlackChannelNotifier(slack_token, slack_channel_id)
-        response = Notify(slack_notifier).environment_progress(
+        result = Notify(slack_notifier).environment_progress(
             original_message_ref=slack_ref,
             message=message,
             build_arn=build_arn,
@@ -43,7 +43,7 @@ def environment_progress(
             commit_sha=commit_sha,
         )
 
-        io.info(response["ts"])
+        io.info(result)
     except PlatformException as err:
         io.abort_with_error(str(err))
 
