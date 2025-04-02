@@ -110,6 +110,9 @@ class Config:
 
         exit(0 if compatible else 1)
 
+    def migrate(self):
+        pass
+
     def generate_aws(self, file_path):
         self.oidc_app = self._create_oidc_application()
         verification_url, device_code = self._get_device_code(self.oidc_app)

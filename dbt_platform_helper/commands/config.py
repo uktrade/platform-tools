@@ -4,6 +4,9 @@ from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.schema_migrations import (
+    PlatformConfigSchemaMigrationException,
+)
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -18,6 +21,19 @@ def validate():
     """Validate deployment or application configuration."""
     try:
         Config().validate()
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
+
+
+@config.command()
+def migrate():
+    """Validate deployment or application configuration."""
+    try:
+        Config().migrate()
+    except PlatformConfigSchemaMigrationException as err:
+        ClickIOProvider().abort_with_error(
+            f"The following migration task could not be performed automatically: {err}"
+        )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 

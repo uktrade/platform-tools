@@ -4,8 +4,12 @@ import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.config import aws
+from dbt_platform_helper.commands.config import migrate
 from dbt_platform_helper.commands.config import validate
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.schema_migrations import (
+    PlatformConfigSchemaMigrationException,
+)
 
 
 @patch("dbt_platform_helper.commands.config.Config")
@@ -67,3 +71,46 @@ def test_command_aws_raises_platform_exception(mock_config_domain, mock_session)
     result = runner.invoke(aws)
 
     assert result.exit_code == 1
+
+
+@patch("dbt_platform_helper.commands.config.Config")
+def test_command_migrate(mock_config_domain):
+    runner = CliRunner()
+    result = runner.invoke(migrate)
+
+    assert result.exit_code == 0
+    mock_config_domain.return_value.migrate.assert_called_once()
+
+
+@patch("dbt_platform_helper.commands.config.ClickIOProvider")
+@patch("dbt_platform_helper.commands.config.Config")
+def test_command_migrate_platform_errors_cause_abort_with_error_message(
+    mock_config_domain, mock_io
+):
+    mock_config_domain.return_value.migrate.side_effect = PlatformException("Some weird error")
+    mock_io.return_value.abort_with_error.side_effect = SystemExit(1)
+
+    runner = CliRunner()
+    result = runner.invoke(migrate)
+
+    assert result.exit_code == 1
+    mock_io.return_value.abort_with_error.assert_called_once_with("Some weird error")
+
+
+@patch("dbt_platform_helper.commands.config.ClickIOProvider")
+@patch("dbt_platform_helper.commands.config.Config")
+def test_command_migrate_platform_migration_errors_cause_abort_with_error_message(
+    mock_config_domain, mock_io
+):
+    mock_config_domain.return_value.migrate.side_effect = PlatformConfigSchemaMigrationException(
+        "Some task that can't be done manually"
+    )
+    mock_io.return_value.abort_with_error.side_effect = SystemExit(1)
+
+    runner = CliRunner()
+    result = runner.invoke(migrate)
+
+    assert result.exit_code == 1
+    mock_io.return_value.abort_with_error.assert_called_once_with(
+        "The following migration task could not be performed automatically: Some task that can't be done manually"
+    )
