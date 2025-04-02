@@ -173,7 +173,7 @@ class Codebase:
         image_ref = None
         if commit:
             image_ref = f"commit-{commit}"
-        if tag:
+        elif tag:
             image_ref = f"tag-{tag}"
         elif branch:
             image_ref = f"branch-{branch}"
