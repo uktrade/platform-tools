@@ -175,7 +175,7 @@ class Codebase:
             image_ref = f"commit-{commit}"
         if tag:
             image_ref = f"tag-{tag}"
-        if branch:
+        elif branch:
             image_ref = f"branch-{branch}"
         image_details = self.ecr_provider.get_image_details(application, codebase, image_ref)
         image_ref = self.ecr_provider.find_commit_tag(image_details, image_ref)
