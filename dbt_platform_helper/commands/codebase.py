@@ -66,11 +66,28 @@ def build(app, codebase, commit):
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
     required=True,
 )
-@click.option("--commit", help="GitHub commit hash", required=True)
-def deploy(app, env, codebase, commit):
+@click.option(
+    "--tag",
+    help="Git tag that has been built into an image. Typically a semantic version of the form 1.2.3 or v1.2.3.",
+    required=False,
+)
+@click.option(
+    "--branch",
+    help="Git branch that has been built into an image.",
+    required=False,
+)
+@click.option(
+    "--commit",
+    help="Git sha hash that has been built into an image.",
+    required=False,
+)
+def deploy(
+    app: str, env: str, codebase: str, commit: str = None, tag: str = None, branch: str = None
+):
+
     try:
         Codebase(ParameterStore(get_aws_session_or_abort().client("ssm"))).deploy(
-            app, env, codebase, commit
+            app, env, codebase, commit, tag, branch
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
