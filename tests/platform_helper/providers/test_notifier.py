@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.notifier import SlackChannelNotifier
 
 
@@ -24,12 +25,15 @@ class TestSlackChannelNotifier:
     ):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
+        mock_slack_client_instance.chat_update.return_value = {"ts": "09876.54321"}
 
-        SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_update(
+        result = SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_update(
             message="The very important thing everyone should know",
             message_ref=slack_ref,
             context=context,
         )
+
+        assert result == "09876.54321"
 
         mock_webclient.assert_called_with("my-slack-token")
 
@@ -74,14 +78,17 @@ class TestSlackChannelNotifier:
     ):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
+        mock_slack_client_instance.chat_postMessage.return_value = {"ts": "12345.67890"}
 
-        SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
+        result = SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
             message="The comment",
             context=context,
             title=title,
             reply_broadcast=reply_broadcast,
             thread_ref=slack_ref,
         )
+
+        assert result == "12345.67890"
 
         mock_webclient.assert_called_with("my-slack-token")
 
@@ -121,13 +128,43 @@ class TestSlackChannelNotifier:
     ):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
+        mock_slack_client_instance.chat_postMessage.return_value = {"ts": "12345.67890"}
 
-        SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
+        result = SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
             message=message,
             title=title,
         )
+
+        assert result == "12345.67890"
 
         call_args = mock_slack_client_instance.chat_postMessage.call_args_list[0].kwargs
 
         assert call_args["text"] == expected
         assert call_args["blocks"][0].text.text == message
+
+    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    def test_post_update_raises_platform_exception_if_bad_response(self, mock_webclient):
+        mock_slack_client_instance = Mock()
+        mock_webclient.return_value = mock_slack_client_instance
+        mock_slack_client_instance.chat_update.return_value = {"ok": "False"}
+
+        with pytest.raises(
+            PlatformException, match="Slack notification unsuccessful: {'ok': 'False'}"
+        ):
+            SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_update(
+                message="test", message_ref="1234"
+            )
+
+    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    def test_post_new_raises_platform_exception_if_bad_response(self, mock_webclient):
+        mock_slack_client_instance = Mock()
+        mock_webclient.return_value = mock_slack_client_instance
+        mock_slack_client_instance.chat_postMessage.return_value = {"ok": "False"}
+
+        with pytest.raises(
+            PlatformException, match="Slack notification unsuccessful: {'ok': 'False'}"
+        ):
+            SlackChannelNotifier("my-slack-token", "my-slack-channel-id").post_new(
+                message="test",
+                title="test title",
+            )

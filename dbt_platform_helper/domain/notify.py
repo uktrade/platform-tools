@@ -1,4 +1,3 @@
-from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.notifier import SlackChannelNotifier
 from dbt_platform_helper.utils.arn_parser import ARN
 
@@ -28,16 +27,9 @@ class Notify:
             context.append(f"<{get_build_url(build_arn)}|Build Logs>")
 
         if original_message_ref:
-            response = self.notifier.post_update(original_message_ref, message, context)
+            return self.notifier.post_update(original_message_ref, message, context)
         else:
-            response = self.notifier.post_new(message, context)
-
-        try:
-            return response["ts"]
-        except (KeyError, TypeError):
-            raise PlatformException(
-                f"Slack environment progress notification unsuccessful: {response}"
-            )
+            return self.notifier.post_new(message, context)
 
     def add_comment(
         self,

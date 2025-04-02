@@ -1,6 +1,12 @@
 from slack_sdk import WebClient
 from slack_sdk.models import blocks
 
+from dbt_platform_helper.platform_exception import PlatformException
+
+
+class SlackChannelNotifierException(PlatformException):
+    pass
+
 
 class SlackChannelNotifier:
     def __init__(self, slack_token: str, slack_channel_id: str):
@@ -15,7 +21,13 @@ class SlackChannelNotifier:
             "unfurl_links": False,
             "unfurl_media": False,
         }
-        return self.client.chat_update(ts=message_ref, **args)
+
+        response = self.client.chat_update(ts=message_ref, **args)
+
+        try:
+            return response["ts"]
+        except (KeyError, TypeError):
+            raise SlackChannelNotifierException(f"Slack notification unsuccessful: {response}")
 
     def post_new(self, message, context=None, title=None, reply_broadcast=None, thread_ref=None):
         args = {
@@ -27,7 +39,13 @@ class SlackChannelNotifier:
             "unfurl_media": False,
             "thread_ts": thread_ref,
         }
-        return self.client.chat_postMessage(ts=None, **args)
+
+        response = self.client.chat_postMessage(ts=None, **args)
+
+        try:
+            return response["ts"]
+        except (KeyError, TypeError):
+            raise SlackChannelNotifierException(f"Slack notification unsuccessful: {response}")
 
     def _build_message_blocks(self, message, context):
         message_blocks = [
