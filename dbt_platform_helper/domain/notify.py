@@ -47,7 +47,6 @@ class Notify:
         )
 
 
-# This utility probably belongs somewhere else
 def get_build_url(build_arn: str):
     try:
         arn = ARN(build_arn)
