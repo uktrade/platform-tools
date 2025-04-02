@@ -64,6 +64,8 @@ class ConfigMocks:
 
         self.copilot_versioning = kwargs.get("copilot_versioning", Mock(spec=CopilotVersioning))
         self.copilot_versioning.get_version_status.return_value = self.copilot_version_status
+        self.config_provider = kwargs.get("config_provider", Mock())
+        self.migrator = kwargs.get("migrator", Mock())
 
     def params(self):
         return {
@@ -72,6 +74,8 @@ class ConfigMocks:
             "platform_helper_versioning": self.platform_helper_versioning,
             "aws_versioning": self.aws_versioning,
             "copilot_versioning": self.copilot_versioning,
+            "config_provider": self.config_provider,
+            "migrator": self.migrator,
         }
 
 
@@ -543,3 +547,18 @@ class TestConfigGenerateAWS:
                 call("\n"),
             ]
         )
+
+
+class TestConfigMigrate:
+    def test_migrate_runs_the_migrator_and_writes_out_its_return_value(self):
+        platform_config = {"application": "test-app"}
+        migrated_config = {"application": "test-app-modified"}
+
+        config_mocks = ConfigMocks()
+        config_domain = Config(**config_mocks.params())
+        config_domain.config_provider.load_unvalidated_config_file.return_value = platform_config
+        config_domain.migrator.migrate.return_value = migrated_config
+
+        config_domain.config_provider.load_unvalidated_config_file.called_once()
+        config_domain.migrator.migrate.assert_called_once_with(platform_config)
+        config_domain.config_provider.write_platform_config.assert_called_once_with(migrated_config)
