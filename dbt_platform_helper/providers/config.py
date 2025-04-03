@@ -25,13 +25,14 @@ class ConfigProvider:
         file_provider: YamlFileProvider = None,
         io: ClickIOProvider = None,
         migrator: Migrator = None,
-        platform_config_schema_version: int = CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+        current_platform_config_schema_version: int = CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
     ):
         self.config = {}
         self.validator = config_validator or ConfigValidator()
         self.io = io or ClickIOProvider()
         self.file_provider = file_provider or YamlFileProvider
         self.migrator = migrator or Migrator(*ALL_MIGRATIONS)
+        self.current_platform_config_schema_version = current_platform_config_schema_version
 
     # TODO refactor so that apply_environment_defaults isn't set, discarded and set again
     def get_enriched_config(self):
@@ -59,6 +60,56 @@ class ConfigProvider:
         except FileProviderException as e:
             self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
 
+        platform_config_schema_version = self.config.get("schema_version")
+        if not platform_config_schema_version:
+            platform_helper_default_version = self.config.get("default_versions", {}).get(
+                "platform-helper", ""
+            )
+            version_parts = platform_helper_default_version.split(".")
+            major_version = int(version_parts[0]) if version_parts[0] else None
+            if major_version and major_version == 13:
+                self.io.abort_with_error(
+                    f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be {self.current_platform_config_schema_version}.
+Your platform-config.yml does not specify a schema_version.
+
+Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
+                )
+
+            if major_version and major_version < 13:
+                self.io.abort_with_error(
+                    f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be {self.current_platform_config_schema_version}.
+Your platform-config.yml does not specify a schema_version.
+
+Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
+                )
+
+            if not major_version:
+                self.io.abort_with_error(
+                    f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be {self.current_platform_config_schema_version}.
+Your platform-config.yml does not specify a schema_version nor a platform-helper default version.
+
+Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
+                )
+
+        if platform_config_schema_version and (
+            platform_config_schema_version < self.current_platform_config_schema_version
+        ):
+            self.io.abort_with_error(
+                f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be {self.current_platform_config_schema_version}.
+Your platform-config.yml specifies version {platform_config_schema_version}.
+
+Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
+            )
+
+        if platform_config_schema_version and (
+            platform_config_schema_version > self.current_platform_config_schema_version
+        ):
+            self.io.abort_with_error(
+                f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be {self.current_platform_config_schema_version}.
+Your platform-config.yml specifies version {platform_config_schema_version}.
+
+Please update your platform-helper to a version that supports schema_version: {platform_config_schema_version}."""
+            )
         try:
             self._validate_platform_config()
         except SchemaError as e:

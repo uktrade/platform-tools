@@ -38,22 +38,142 @@ class TestLoadAndValidate:
 
         assert "Duplicate keys found in your config file: repeated-key" in capsys.readouterr().err
 
-    #     def test_load_and_validate_exits_if_schema_version_is_not_the_current_one(self, capsys):
-    #         mock_file_provider = Mock(spec=YamlFileProvider)
-    #         mock_file_provider.load.return_value = {
-    #             "schema_version": 4,
-    #             "application": "test_application"
-    #         }
-    #         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider, platform_config_schema_version=7)
-    #
-    #         with pytest.raises(SystemExit):
-    #             config_provider.load_and_validate_platform_config()
-    #
-    #         assert f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 7.
-    # Your platform-config.yml specifies version 4.
-    #
-    # Please upgrade your platform-config.yml by running 'platform-helper config migrate'.""" in capsys.readouterr().err
-    #
+        def test_load_and_validate_exits_if_schema_version_is_missing_v_13(self, capsys):
+            """
+            This scenario could occur if your platform-helper version is 13.x.x.
+
+            i.e. prior to the schema_version being introduced but we do provide
+            automated migrations for v13.x.x
+            """
+            mock_file_provider = Mock(spec=YamlFileProvider)
+            mock_file_provider.load.return_value = {
+                "application": "test_application",
+                "default_versions": {"platform-helper": "13.3.0"},
+            }
+            config_provider = ConfigProvider(
+                ConfigValidator(), mock_file_provider, current_platform_config_schema_version=3
+            )
+
+            with pytest.raises(SystemExit):
+                config_provider.load_and_validate_platform_config()
+
+            assert (
+                f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
+Your platform-config.yml does not specify a schema_version.
+
+Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
+                in capsys.readouterr().err
+            )
+
+    def test_load_and_validate_exits_if_schema_version_is_missing_prior_to_13(self, capsys):
+        """
+        This scenario could occur if your platform-helper version is before
+        13.x.x.
+
+        i.e. prior to the schema_version being introduced but we do NOT provide
+        automated migrations for the upgrade
+        """
+        mock_file_provider = Mock(spec=YamlFileProvider)
+        mock_file_provider.load.return_value = {
+            "application": "test_application",
+            "default_versions": {"platform-helper": "12.0.0"},
+        }
+        config_provider = ConfigProvider(
+            ConfigValidator(), mock_file_provider, current_platform_config_schema_version=3
+        )
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert (
+            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
+Your platform-config.yml does not specify a schema_version.
+
+Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
+            in capsys.readouterr().err
+        )
+
+    def test_load_and_validate_exits_if_schema_version_is_missing_prior_and_no_platform_helper_default(
+        self, capsys
+    ):
+        """This scenario could occur if your platform-helper version is very old
+        and does not even have a platform-helper default version."""
+        mock_file_provider = Mock(spec=YamlFileProvider)
+        mock_file_provider.load.return_value = {
+            "application": "test_application",
+        }
+        config_provider = ConfigProvider(
+            ConfigValidator(), mock_file_provider, current_platform_config_schema_version=3
+        )
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert (
+            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
+Your platform-config.yml does not specify a schema_version nor a platform-helper default version.
+
+Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
+            in capsys.readouterr().err
+        )
+
+    def test_load_and_validate_exits_if_schema_version_is_prior_to_the_current_one(self, capsys):
+        """
+        This scenario could occur if you update platform-helper to a newer
+        version that has changed the schema version.
+
+        i.e. your platform-config.yml declares schema_version: 3 and the latest platform-helper
+        requires schema_version: 5
+        """
+        mock_file_provider = Mock(spec=YamlFileProvider)
+        mock_file_provider.load.return_value = {
+            "schema_version": 4,
+            "application": "test_application",
+        }
+        config_provider = ConfigProvider(
+            ConfigValidator(), mock_file_provider, current_platform_config_schema_version=7
+        )
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert (
+            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 7.
+Your platform-config.yml specifies version 4.
+
+Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
+            in capsys.readouterr().err
+        )
+
+    def test_load_and_validate_exits_if_schema_version_is_after_the_current_one(self, capsys):
+        """
+        This scenario could occur if your platform-config.yml declares
+        schema_version: 6 for example but you are using an older version of
+        platform-helper.
+
+        i.e. your platform-config.yml declares schema_version: 6 and the platform-helper you have installed
+        requires schema_version: 5
+        """
+        mock_file_provider = Mock(spec=YamlFileProvider)
+        mock_file_provider.load.return_value = {
+            "schema_version": 4,
+            "application": "test_application",
+        }
+        config_provider = ConfigProvider(
+            ConfigValidator(), mock_file_provider, current_platform_config_schema_version=2
+        )
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert (
+            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 2.
+Your platform-config.yml specifies version 4.
+
+Please update your platform-helper to a version that supports schema_version: 4."""
+            in capsys.readouterr().err
+        )
+
     def test_load_and_validate_exits_with_invalid_yaml(self, capsys):
         """Test that, given the an invalid yaml file, load_and_validate_config
         aborts and prints an error."""
@@ -409,6 +529,7 @@ class TestCodebasePipelineValidations:
     @pytest.mark.parametrize("channel", [1, [], {}, True])
     def test_codebase_slack_channel_fails_if_not_a_string(self, channel, capsys):
         config = {
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "codebase_pipelines": {
                 "application": {
@@ -438,6 +559,7 @@ class TestCodebasePipelineValidations:
     @pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
     def test_codebase_requires_image_build_fails_if_not_a_bool(self, capsys, requires_image):
         config = {
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "codebase_pipelines": {
                 "application": {
