@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.4.0](https://github.com/uktrade/platform-tools/compare/13.3.0...13.4.0) (2025-04-02)
+
+
+### Features
+
+* Allow manual releases based on image reference (DBTP-1165) ([#807](https://github.com/uktrade/platform-tools/issues/807)) ([1a029a1](https://github.com/uktrade/platform-tools/commit/1a029a1d97973e07baac25e3781ec9ee5cbf2cdb))
+
 ## [13.3.0](https://github.com/uktrade/platform-tools/compare/13.2.0...13.3.0) (2025-03-31)
 
 
