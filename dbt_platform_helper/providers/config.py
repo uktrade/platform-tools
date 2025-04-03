@@ -76,7 +76,7 @@ class ConfigProvider:
 
         return self.config
 
-    def _schema_version_abort(self, config_description, action_required):
+    def _abort_due_to_schema_version_error(self, config_description, action_required):
         self.io.abort_with_error(
             "\n".join(
                 [
@@ -97,12 +97,12 @@ class ConfigProvider:
 
     def _handle_schema_version_mismatch(self, platform_config_schema_version):
         if platform_config_schema_version < self.current_platform_config_schema_version:
-            self._schema_version_abort(
+            self._abort_due_to_schema_version_error(
                 SCHEMA_VERSION_MESSAGE.format(platform_config_schema_version),
                 "Please upgrade your platform-config.yml by running 'platform-helper config migrate'.",
             )
         elif platform_config_schema_version > self.current_platform_config_schema_version:
-            self._schema_version_abort(
+            self._abort_due_to_schema_version_error(
                 SCHEMA_VERSION_MESSAGE.format(platform_config_schema_version),
                 f"Please update your platform-helper to a version that supports schema_version: {platform_config_schema_version}.",
             )
@@ -115,17 +115,19 @@ class ConfigProvider:
         version_parts = platform_helper_default_version.split(".")
         major_version = int(version_parts[0]) if version_parts[0] else None
         if not major_version:
-            self._schema_version_abort(
+            self._abort_due_to_schema_version_error(
                 "Your platform-config.yml does not specify a schema_version nor a platform-helper default version.",
                 PLEASE_UPGRADE_TO_V13_MESSAGE,
             )
         if major_version and major_version == FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION:
-            self._schema_version_abort(
+            self._abort_due_to_schema_version_error(
                 MISSING_SCHEMA_VERSION_ERROR,
                 "Please upgrade your platform-config.yml by running 'platform-helper config migrate'.",
             )
         elif major_version and major_version < FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION:
-            self._schema_version_abort(MISSING_SCHEMA_VERSION_ERROR, PLEASE_UPGRADE_TO_V13_MESSAGE)
+            self._abort_due_to_schema_version_error(
+                MISSING_SCHEMA_VERSION_ERROR, PLEASE_UPGRADE_TO_V13_MESSAGE
+            )
         else:
             # TODO: if major_version and major_version > FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION then what?
             pass
