@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import create_autospec
 
 import pytest
 
@@ -94,7 +94,7 @@ class TestNotify:
         expected_context,
         expect_update,
     ):
-        mock_notifier = Mock(spec=SlackChannelNotifier)
+        mock_notifier = create_autospec(SlackChannelNotifier, spec_set=True)
         mock_notifier.post_update.return_value = {"ts": "1234.56789"}
         mock_notifier.post_new.return_value = {"ts": "1234.56789"}
 
@@ -126,13 +126,13 @@ class TestNotify:
         ),
     )
     def test_add_comment(self, title: str, broadcast: bool):
-        mock_slack_notifier = Mock(spec=SlackChannelNotifier)
+        mock_notifier = create_autospec(SlackChannelNotifier, spec_set=True)
 
-        Notify(mock_slack_notifier).add_comment(
+        Notify(mock_notifier).add_comment(
             "1234.56", message="The comment", title=title, reply_broadcast=broadcast
         )
 
-        mock_slack_notifier.post_new.assert_called_once_with(
+        mock_notifier.post_new.assert_called_once_with(
             message="The comment",
             title=title,
             context=[],
