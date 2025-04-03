@@ -8,8 +8,6 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
-CURRENT_SCHEMA_VERSION = 2
-
 
 class PlatformConfigSchema:
     @staticmethod

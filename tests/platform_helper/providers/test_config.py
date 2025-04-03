@@ -3,17 +3,16 @@ import re
 from importlib.metadata import version
 from pathlib import Path
 from unittest.mock import Mock
-from unittest.mock import call
 
 import pytest
 import yaml
 from freezegun import freeze_time
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.constants import CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.platform_config_schema import CURRENT_SCHEMA_VERSION
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import InvalidYamlException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -109,30 +108,12 @@ class TestLoadAndValidate:
         with open(path, "r") as fd:
             conf = yaml.safe_load(fd)
 
-        assert validated == {"schema_version": CURRENT_SCHEMA_VERSION, **conf}
-
-    def test_load_and_validate_config_migrations_run_and_print_messages(self):
-        mock_migrator = Mock()
-        mock_migrator.messages.return_value = [
-            "Migration warning one",
-            "Migration warning two",
-        ]
-        mock_io = Mock()
-        config_provider = ConfigProvider(ConfigValidator(), io=mock_io, migrator=mock_migrator)
-        path = FIXTURES_DIR / "pipeline/platform-config.yml"
-        config_provider.load_and_validate_platform_config(path=path)
-
-        mock_migrator.migrate.assert_called_once()
-        mock_migrator.messages.assert_called_once()
-        assert mock_io.warn.call_args_list == [
-            call("Migration warning one"),
-            call("Migration warning two"),
-        ]
+        assert validated == {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION, **conf}
 
     def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(self, fakefs):
         fakefs.create_file(
             Path(PLATFORM_CONFIG_FILE),
-            contents="""
+            contents=f"""
         test:
             some_key: some_value
         """,
@@ -141,7 +122,6 @@ class TestLoadAndValidate:
         config = config_provider.load_unvalidated_config_file()
 
         assert config == {
-            "schema_version": CURRENT_SCHEMA_VERSION,
             "test": {"some_key": "some_value"},
         }
 
@@ -150,7 +130,7 @@ class TestLoadAndValidate:
         config_provider = ConfigProvider()
         config = config_provider.load_unvalidated_config_file()
 
-        assert config == {"schema_version": CURRENT_SCHEMA_VERSION}
+        assert config == {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
 
 
 class TestDataMigrationValidation:
@@ -158,7 +138,7 @@ class TestDataMigrationValidation:
         """Edge cases for this are all covered in unit tests of
         validate_database_copy_section elsewhere in this file."""
         config = {
-            "schema_version": CURRENT_SCHEMA_VERSION,
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "extensions": {
                 "test-s3-bucket": {
@@ -189,7 +169,7 @@ class TestDataMigrationValidation:
         """Edge cases for this are all covered in unit tests of
         validate_database_copy_section elsewhere in this file."""
         config = {
-            "schema_version": CURRENT_SCHEMA_VERSION,
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "extensions": {
                 "test-s3-bucket": {
@@ -233,7 +213,7 @@ class TestGetEnrichedConfig:
     def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):
         mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = {
-            "schema_version": CURRENT_SCHEMA_VERSION,
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "environments": {
                 "*": {
@@ -248,7 +228,7 @@ class TestGetEnrichedConfig:
         }
 
         expected_enriched_config = {
-            "schema_version": CURRENT_SCHEMA_VERSION,
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "environments": {
                 "test": {
@@ -281,6 +261,7 @@ class TestGetEnrichedConfig:
     ):
         mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = {
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "environments": mock_environment_config,
         }
@@ -382,6 +363,7 @@ class TestApplyEnvironmentDefaults:
 class TestCodebasePipelineValidations:
     def test_codebase_pipeline_run_groups_validate(self):
         platform_config = {
+            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "codebase_pipelines": {
                 "application": {

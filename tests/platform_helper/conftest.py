@@ -13,9 +13,9 @@ from botocore.exceptions import ClientError
 from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
+from dbt_platform_helper.constants import CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.cache import Cache
-from dbt_platform_helper.providers.platform_config_schema import CURRENT_SCHEMA_VERSION
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -399,7 +399,8 @@ def clear_session_cache():
 @pytest.fixture()
 def valid_platform_config():
     return yaml.safe_load(
-        """
+        f"""
+schema_version: {CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
 application: test-app
 default_versions: 
     platform-helper: 10.2.0
@@ -592,7 +593,7 @@ codebase_pipelines:
 @pytest.fixture
 def platform_env_config():
     return {
-        "schema_version": CURRENT_SCHEMA_VERSION,
+        "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
         "application": "my-app",
         "environments": {
             "*": {
@@ -735,7 +736,8 @@ environment_pipelines:
 @pytest.fixture()
 def platform_config_for_env_pipelines():
     return yaml.safe_load(
-        """
+        f"""
+schema_version: {CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
 application: test-app
 deploy_repository: uktrade/test-app-weird-name-deploy
 

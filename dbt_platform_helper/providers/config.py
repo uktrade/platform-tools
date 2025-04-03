@@ -5,11 +5,11 @@ from pathlib import Path
 
 from schema import SchemaError
 
+from dbt_platform_helper.constants import CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.platform_config_schema import CURRENT_SCHEMA_VERSION
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.schema_migrations import ALL_MIGRATIONS
 from dbt_platform_helper.providers.schema_migrations import Migrator
@@ -58,7 +58,6 @@ class ConfigProvider:
         except FileProviderException as e:
             self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
 
-        self.config = self.run_schema_migrations(self.config)
         try:
             self._validate_platform_config()
         except SchemaError as e:
@@ -68,16 +67,9 @@ class ConfigProvider:
 
     def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
         try:
-            return self.run_schema_migrations(self.file_provider.load(path))
+            return self.file_provider.load(path)
         except FileProviderException:
-            return {"schema_version": CURRENT_SCHEMA_VERSION}
-
-    def run_schema_migrations(self, config):
-        migrated_config = self.migrator.migrate(config)
-        for message in self.migrator.messages():
-            self.io.warn(message)
-
-        return migrated_config
+            return {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
 
     # TODO remove function and push logic to where this is called.
     # removed usage from config domain, code is very generic and doesn't require the overhead of a function
