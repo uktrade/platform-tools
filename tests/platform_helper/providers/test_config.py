@@ -38,6 +38,22 @@ class TestLoadAndValidate:
 
         assert "Duplicate keys found in your config file: repeated-key" in capsys.readouterr().err
 
+    #     def test_load_and_validate_exits_if_schema_version_is_not_the_current_one(self, capsys):
+    #         mock_file_provider = Mock(spec=YamlFileProvider)
+    #         mock_file_provider.load.return_value = {
+    #             "schema_version": 4,
+    #             "application": "test_application"
+    #         }
+    #         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider, platform_config_schema_version=7)
+    #
+    #         with pytest.raises(SystemExit):
+    #             config_provider.load_and_validate_platform_config()
+    #
+    #         assert f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 7.
+    # Your platform-config.yml specifies version 4.
+    #
+    # Please upgrade your platform-config.yml by running 'platform-helper config migrate'.""" in capsys.readouterr().err
+    #
     def test_load_and_validate_exits_with_invalid_yaml(self, capsys):
         """Test that, given the an invalid yaml file, load_and_validate_config
         aborts and prints an error."""

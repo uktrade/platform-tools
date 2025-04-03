@@ -15,6 +15,7 @@ class PlatformConfigSchema:
         return Schema(
             {
                 "schema_version": int,
+                # "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
                 "application": str,
                 Optional("deploy_repository"): str,
                 Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),

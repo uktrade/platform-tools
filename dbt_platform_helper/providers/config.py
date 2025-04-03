@@ -25,6 +25,7 @@ class ConfigProvider:
         file_provider: YamlFileProvider = None,
         io: ClickIOProvider = None,
         migrator: Migrator = None,
+        platform_config_schema_version: int = CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
     ):
         self.config = {}
         self.validator = config_validator or ConfigValidator()
