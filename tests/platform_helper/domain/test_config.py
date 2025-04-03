@@ -18,7 +18,9 @@ from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.schema_migrations import Migrator
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.version_status import VersionStatus
@@ -64,8 +66,8 @@ class ConfigMocks:
 
         self.copilot_versioning = kwargs.get("copilot_versioning", Mock(spec=CopilotVersioning))
         self.copilot_versioning.get_version_status.return_value = self.copilot_version_status
-        self.config_provider = kwargs.get("config_provider", Mock())
-        self.migrator = kwargs.get("migrator", Mock())
+        self.config_provider = kwargs.get("config_provider", Mock(spec=ConfigProvider))
+        self.migrator = kwargs.get("migrator", Mock(spec=Migrator))
 
     def params(self):
         return {
@@ -559,6 +561,8 @@ class TestConfigMigrate:
         config_domain.config_provider.load_unvalidated_config_file.return_value = platform_config
         config_domain.migrator.migrate.return_value = migrated_config
 
-        config_domain.config_provider.load_unvalidated_config_file.called_once()
+        config_domain.migrate()
+
+        config_domain.config_provider.load_unvalidated_config_file.assert_called_once()
         config_domain.migrator.migrate.assert_called_once_with(platform_config)
         config_domain.config_provider.write_platform_config.assert_called_once_with(migrated_config)

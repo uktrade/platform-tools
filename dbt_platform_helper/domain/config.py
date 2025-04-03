@@ -117,7 +117,9 @@ class Config:
         exit(0 if compatible else 1)
 
     def migrate(self):
-        self.config_provider.load_unvalidated_config_file()
+        platform_config = self.config_provider.load_unvalidated_config_file()
+        new_platform_config = self.migrator.migrate(platform_config)
+        self.config_provider.write_platform_config(new_platform_config)
 
     def generate_aws(self, file_path):
         self.oidc_app = self._create_oidc_application()

@@ -1,26 +1,28 @@
 import os
 import re
+from importlib.metadata import version
 from pathlib import Path
 from unittest.mock import Mock
 from unittest.mock import call
 
 import pytest
 import yaml
+from freezegun import freeze_time
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.platform_config_schema import CURRENT_SCHEMA_VERSION
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import InvalidYamlException
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 class TestLoadAndValidate:
     def test_comprehensive_platform_config_validates_successfully(self, valid_platform_config):
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = valid_platform_config
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
@@ -28,7 +30,7 @@ class TestLoadAndValidate:
         # No assertions as this will raise an error if there is one.
 
     def test_load_and_validate_exits_if_load_fails_with_duplicate_keys_error(self, capsys):
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.side_effect = DuplicateKeysException("repeated-key")
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
@@ -40,7 +42,7 @@ class TestLoadAndValidate:
     def test_load_and_validate_exits_with_invalid_yaml(self, capsys):
         """Test that, given the an invalid yaml file, load_and_validate_config
         aborts and prints an error."""
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.side_effect = InvalidYamlException("platform-config.yml")
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
@@ -80,7 +82,7 @@ class TestLoadAndValidate:
             }
         }
 
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = platform_env_config
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
@@ -171,7 +173,7 @@ class TestDataMigrationValidation:
             },
         }
 
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = config
         mock_io = Mock()
 
@@ -229,7 +231,7 @@ class TestDataMigrationValidation:
 
 class TestGetEnrichedConfig:
     def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = {
             "schema_version": CURRENT_SCHEMA_VERSION,
             "application": "test-app",
@@ -277,7 +279,7 @@ class TestGetEnrichedConfig:
     def test_get_enriched_config_correctly_resolves_vpc_for_environment_with_environment_defaults_applied(
         self, mock_environment_config, expected_vpc_for_test_environment
     ):
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = {
             "application": "test-app",
             "environments": mock_environment_config,
@@ -296,7 +298,7 @@ class TestVersionValidations:
     ):
         valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
 
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = valid_platform_config
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
 
@@ -318,7 +320,7 @@ class TestVersionValidations:
     ):
         valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
 
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = valid_platform_config
 
         config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
@@ -394,7 +396,7 @@ class TestCodebasePipelineValidations:
                 }
             },
         }
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = platform_config
 
         config = ConfigProvider(
@@ -420,7 +422,7 @@ class TestCodebasePipelineValidations:
                 }
             },
         }
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = config
 
         with pytest.raises(SystemExit):
@@ -450,7 +452,7 @@ class TestCodebasePipelineValidations:
                 }
             },
         }
-        mock_file_provider = Mock(spec=FileProvider)
+        mock_file_provider = Mock(spec=YamlFileProvider)
         mock_file_provider.load.return_value = config
 
         with pytest.raises(SystemExit):
@@ -464,3 +466,20 @@ class TestCodebasePipelineValidations:
             % re.escape(str(requires_image))
         )
         assert re.match(exp, error, re.DOTALL)
+
+
+class TestWritePlatformConfig:
+    @freeze_time("2025-01-16 13:00:00")
+    def test_write_platform_config(self):
+        mock_file_provider = Mock(spec=YamlFileProvider)
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+        config_provider.write_platform_config({"application": "test-app"})
+
+        exp_version = version("dbt-platform-helper")
+        expected_comment = (
+            f"# Generated by platform-helper {exp_version} / 2025-01-16 13:00:00.\n\n"
+        )
+        mock_file_provider.write.assert_called_once_with(
+            PLATFORM_CONFIG_FILE, {"application": "test-app"}, expected_comment
+        )
