@@ -1,4 +1,5 @@
 import inspect
+from unittest import mock
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -28,7 +29,7 @@ class TestEnvironmentProgress:
     ):
         mock_io_instance = Mock(spec=ClickIOProvider)
         mock_io.return_value = mock_io_instance
-        mock_domain_instance = Mock(spec=Notify)
+        mock_domain_instance = mock.create_autospec(Notify, spec_set=True)
         mock_domain.return_value = mock_domain_instance
         mock_domain_instance.environment_progress.return_value = "success"
         mock_notifier_instance = Mock(spec=SlackChannelNotifier)
@@ -45,7 +46,7 @@ class TestEnvironmentProgress:
             BUILD_ARN,
         ]
 
-        CliRunner().invoke(
+        result = CliRunner().invoke(
             environment_progress,
             [
                 "my-slack-channel-id",
@@ -55,11 +56,10 @@ class TestEnvironmentProgress:
             + options,
         )
 
+        assert result.exit_code == 0
+
         mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
         mock_domain.assert_called_once_with(mock_notifier_instance)
-
-        args, kwargs = mock_domain_instance.environment_progress.call_args
-        EXPECTED_ENVIRONMENT_PROGRESS.bind(None, *args, **kwargs)
 
         mock_domain_instance.environment_progress.assert_called_once_with(
             original_message_ref="10000.10",
