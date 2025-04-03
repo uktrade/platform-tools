@@ -1,6 +1,6 @@
 import inspect
-from unittest import mock
 from unittest.mock import Mock
+from unittest.mock import create_autospec
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -29,7 +29,7 @@ class TestEnvironmentProgress:
     ):
         mock_io_instance = Mock(spec=ClickIOProvider)
         mock_io.return_value = mock_io_instance
-        mock_domain_instance = mock.create_autospec(Notify, spec_set=True)
+        mock_domain_instance = create_autospec(Notify, spec_set=True)
         mock_domain.return_value = mock_domain_instance
         mock_domain_instance.environment_progress.return_value = "success"
         mock_notifier_instance = Mock(spec=SlackChannelNotifier)
@@ -99,7 +99,7 @@ class TestAddComment:
     def test_success(self, mock_domain, mock_notifier, mock_io, mock_blocks):
         mock_io_instance = Mock(spec=ClickIOProvider)
         mock_io.return_value = mock_io_instance
-        mock_domain_instance = mock.create_autospec(Notify, spec_set=True)
+        mock_domain_instance = create_autospec(Notify, spec_set=True)
         mock_domain.return_value = mock_domain_instance
 
         mock_notifier_instance = Mock(spec=SlackChannelNotifier)
