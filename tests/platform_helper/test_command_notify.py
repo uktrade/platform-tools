@@ -99,7 +99,7 @@ class TestAddComment:
     def test_success(self, mock_domain, mock_notifier, mock_io, mock_blocks):
         mock_io_instance = Mock(spec=ClickIOProvider)
         mock_io.return_value = mock_io_instance
-        mock_domain_instance = Mock(spec=Notify)
+        mock_domain_instance = mock.create_autospec(Notify, spec_set=True)
         mock_domain.return_value = mock_domain_instance
 
         mock_notifier_instance = Mock(spec=SlackChannelNotifier)
@@ -119,7 +119,9 @@ class TestAddComment:
             "The title",
         ]
 
-        CliRunner().invoke(add_comment, cli_args)
+        result = CliRunner().invoke(add_comment, cli_args)
+
+        assert result.exit_code == 0
 
         mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
         mock_domain.assert_called_once_with(mock_notifier_instance)
