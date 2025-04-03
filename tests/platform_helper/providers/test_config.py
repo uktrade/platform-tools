@@ -7,6 +7,7 @@ from unittest.mock import Mock
 import pytest
 import yaml
 from freezegun import freeze_time
+from schema import SchemaError
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
@@ -342,6 +343,26 @@ class TestDataMigrationValidation:
 
         mock_io.abort_with_error.assert_called_with(
             """Config validation has failed.\nError in 'test-s3-bucket.environments.dev.data_migration': only the 'import_sources' property is required - 'import' is deprecated."""
+        )
+
+    @pytest.mark.parametrize("schema_version", [0, 9000000])
+    def test_validate_data_migration_fails_if_schema_version_wrong(self, schema_version):
+        config = {
+            "schema_version": schema_version,
+            "application": "test-app",
+        }
+
+        config_provider = ConfigProvider(ConfigValidator())
+        config_provider.config = config
+        mock_io = Mock()
+        config_provider.io = mock_io
+
+        with pytest.raises(SchemaError) as exc:
+            config_provider._validate_platform_config()
+
+        assert (
+            str(exc.value)
+            == f"Key 'schema_version' error:\n{CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION} does not match {schema_version}"
         )
 
 
