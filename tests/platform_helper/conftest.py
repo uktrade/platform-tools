@@ -402,7 +402,6 @@ def valid_platform_config():
 application: test-app
 default_versions: 
     platform-helper: 10.2.0
-    terraform-platform-modules: 1.2.3
 environments:
   "*":
     accounts:
@@ -416,8 +415,6 @@ environments:
     vpc: non-prod-vpc
   dev:
   test:
-    versions:
-        terraform-platform-modules: 1.2.3
   staging:
   hotfix:
     accounts:
@@ -706,7 +703,6 @@ legacy_project: false
 
 default_versions: 
     platform-helper: 1.2.3
-    terraform-platform-modules: 9.9.9
 
 environments:
   dev:

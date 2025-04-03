@@ -2,10 +2,10 @@
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 # Todo: Can we get rid of this yet?
 PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
-# Todo: Move to ???
-DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION = "7"
 SUPPORTED_TERRAFORM_VERSION = "~> 1.8"
 SUPPORTED_AWS_PROVIDER_VERSION = "~> 5"
+
+MERGED_TPM_PLATFORM_HELPER_VERSION = 14
 
 # Keys
 CODEBASE_PIPELINES_KEY = "codebase_pipelines"

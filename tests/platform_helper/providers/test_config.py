@@ -214,7 +214,7 @@ class TestGetEnrichedConfig:
                         "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
                     },
                 },
-                "test": {"versions": {"terraform-platform-modules": "123456"}},
+                "test": {},
             },
         }
 
@@ -227,7 +227,6 @@ class TestGetEnrichedConfig:
                         "deploy": {"name": "non-prod-acc", "id": "1122334455"},
                         "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
                     },
-                    "versions": {"terraform-platform-modules": "123456"},
                 }
             },
         }
@@ -283,27 +282,6 @@ class TestVersionValidations:
         (
             "",
             "invalid-key",
-            "platform-helper",  # platform-helper is not valid in the environment overrides.
-        ),
-    )
-    def test_validation_fails_if_invalid_environment_version_override_keys_present(
-        self, invalid_key, valid_platform_config, capsys
-    ):
-        valid_platform_config["environments"]["*"]["versions"] = {invalid_key: "1.2.3"}
-        mock_file_provider = Mock(spec=FileProvider)
-        mock_file_provider.load.return_value = valid_platform_config
-        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
-
-        with pytest.raises(SystemExit):
-            config_provider.load_and_validate_platform_config()
-
-        assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
-
-    @pytest.mark.parametrize(
-        "invalid_key",
-        (
-            "",
-            "invalid-key",
             "terraform-platform-modules",  # terraform-platform-modules is not valid in the pipeline overrides.
         ),
     )
@@ -341,100 +319,11 @@ class TestApplyEnvironmentDefaults:
         assert result == {
             "application": "my-app",
             "environments": {
-                "one": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
-                "two": {"a": "aaa", "b": {"c": "ccc"}, "versions": {}},
-                "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc", "versions": {}},
+                "one": {"a": "aaa", "b": {"c": "ccc"}},
+                "two": {"a": "aaa", "b": {"c": "ccc"}},
+                "three": {"a": "override_aaa", "b": {"d": "ddd"}, "c": "ccc"},
             },
         }
-
-    @pytest.mark.parametrize(
-        "default_versions, env_default_versions, env_versions, expected_result",
-        [
-            # Empty cases
-            (None, None, None, {}),
-            (None, None, {}, {}),
-            (None, {}, None, {}),
-            ({}, None, None, {}),
-            # Env versions populated
-            (
-                None,
-                None,
-                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-            ),
-            (
-                None,
-                None,
-                {"terraform-platform-modules": "2.0.0"},
-                {"terraform-platform-modules": "2.0.0"},
-            ),
-            (None, None, {"platform-helper": "9.0.0"}, {"platform-helper": "9.0.0"}),
-            # env_default_versions populated
-            (None, {"platform-helper": "10.0.0"}, None, {"platform-helper": "10.0.0"}),
-            (None, {"platform-helper": "10.0.0"}, {}, {"platform-helper": "10.0.0"}),
-            (
-                None,
-                {"platform-helper": "10.0.0"},
-                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-                {"platform-helper": "8.0.0", "terraform-platform-modules": "1.0.0"},
-            ),
-            (
-                None,
-                {"platform-helper": "10.0.0"},
-                {"terraform-platform-modules": "2.0.0"},
-                {"platform-helper": "10.0.0", "terraform-platform-modules": "2.0.0"},
-            ),
-            # default_versions populated
-            (
-                None,
-                {"platform-helper": "10.0.0"},
-                {"platform-helper": "9.0.0"},
-                {"platform-helper": "9.0.0"},
-            ),
-            (
-                {"terraform-platform-modules": "1.0.0"},
-                None,
-                None,
-                {"terraform-platform-modules": "1.0.0"},
-            ),
-            (
-                {"terraform-platform-modules": "2.0.0"},
-                {"terraform-platform-modules": "3.0.0"},
-                None,
-                {"terraform-platform-modules": "3.0.0"},
-            ),
-            (
-                {"terraform-platform-modules": "3.0.0"},
-                None,
-                {"terraform-platform-modules": "4.0.0"},
-                {"terraform-platform-modules": "4.0.0"},
-            ),
-            (
-                {"terraform-platform-modules": "4.0.0"},
-                {"terraform-platform-modules": "5.0.0"},
-                {"terraform-platform-modules": "6.0.0"},
-                {"terraform-platform-modules": "6.0.0"},
-            ),
-        ],
-    )
-    def test_apply_defaults_for_versions(
-        self, default_versions, env_default_versions, env_versions, expected_result
-    ):
-        config = {
-            "application": "my-app",
-            "environments": {"*": {}, "one": {}},
-        }
-
-        if default_versions:
-            config["default_versions"] = default_versions
-        if env_default_versions:
-            config["environments"]["*"]["versions"] = env_default_versions
-        if env_versions:
-            config["environments"]["one"]["versions"] = env_versions
-
-        result = ConfigProvider.apply_environment_defaults(config)
-
-        assert result["environments"]["one"].get("versions") == expected_result
 
     def test_apply_defaults_with_no_defaults(self):
         config = {
@@ -453,9 +342,9 @@ class TestApplyEnvironmentDefaults:
         assert result == {
             "application": "my-app",
             "environments": {
-                "one": {"versions": {}},
-                "two": {"versions": {}},
-                "three": {"a": "aaa", "versions": {}},
+                "one": {},
+                "two": {},
+                "three": {"a": "aaa"},
             },
         }
 

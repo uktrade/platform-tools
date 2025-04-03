@@ -3,9 +3,19 @@ from dataclasses import field
 from typing import Dict
 from typing import Optional
 
+from dbt_platform_helper.constants import MERGED_TPM_PLATFORM_HELPER_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+
+
+class UnsupportedVersionException(PlatformException):
+    def __init__(self, version: str):
+        super().__init__(
+            f"""Platform-helper version {version} is not compatible with platform-helper. Please install version platform-helper version 14 or later."""
+        )
 
 
 @dataclass
@@ -33,6 +43,7 @@ class PlatformHelperVersionStatus(VersionStatus):
     latest: Optional[SemanticVersion] = None
     deprecated_version_file: Optional[SemanticVersion] = None
     platform_config_default: Optional[SemanticVersion] = None
+    cli_override: Optional[SemanticVersion] = None
     pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
 
     def __str__(self):
@@ -78,3 +89,25 @@ class PlatformHelperVersionStatus(VersionStatus):
             "warnings": warnings,
             "errors": errors,
         }
+
+    def get_required_platform_helper_version(self, io: ClickIOProvider):
+        version_preference_order = [
+            self.cli_override,
+            self.platform_config_default,
+            self.deprecated_version_file,
+        ]
+
+        valid_versions = [version for version in version_preference_order if version]
+
+        if valid_versions:
+            if SemanticVersion.is_semantic_version(valid_versions[0]):
+                semantic_version = SemanticVersion.from_string(valid_versions[0])
+                if semantic_version and (
+                    semantic_version.major < MERGED_TPM_PLATFORM_HELPER_VERSION
+                ):
+                    raise UnsupportedVersionException(valid_versions[0])
+            return valid_versions[0]
+        else:
+            io.warn(
+                "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
+            )

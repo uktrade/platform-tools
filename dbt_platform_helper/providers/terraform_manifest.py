@@ -20,7 +20,7 @@ class TerraformManifestProvider:
     def generate_codebase_pipeline_config(
         self,
         platform_config: dict,
-        terraform_platform_modules_version: str,
+        platform_helper_version: str,
         ecr_imports: dict[str, str],
         deploy_repository: str,
     ):
@@ -32,9 +32,7 @@ class TerraformManifestProvider:
         self._add_codebase_pipeline_locals(terraform)
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account, state_key_suffix)
-        self._add_codebase_pipeline_module(
-            terraform, terraform_platform_modules_version, deploy_repository
-        )
+        self._add_codebase_pipeline_module(terraform, platform_helper_version, deploy_repository)
         self._add_imports(terraform, ecr_imports)
         self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
@@ -42,7 +40,7 @@ class TerraformManifestProvider:
         self,
         platform_config: dict,
         env: str,
-        terraform_platform_modules_version: str,
+        platform_helper_version: str,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(env, platform_config)
@@ -55,7 +53,7 @@ class TerraformManifestProvider:
         self._add_header(terraform)
         self._add_environment_locals(terraform, application_name)
         self._add_backend(terraform, platform_config, account, state_key_suffix)
-        self._add_extensions_module(terraform, terraform_platform_modules_version, env)
+        self._add_extensions_module(terraform, platform_helper_version, env)
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
@@ -117,9 +115,9 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_codebase_pipeline_module(
-        terraform: dict, terraform_platform_modules_version: str, deploy_repository: str
+        terraform: dict, platform_helper_version: str, deploy_repository: str
     ):
-        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//codebase-pipelines?depth=1&ref={terraform_platform_modules_version}"
+        source = f"git::https://github.com/uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref={platform_helper_version}"
         terraform["module"] = {
             "codebase-pipelines": {
                 "source": source,
@@ -139,8 +137,8 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_extensions_module(terraform: dict, terraform_platform_modules_version: str, env: str):
-        source = f"git::https://github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref={terraform_platform_modules_version}"
+    def _add_extensions_module(terraform: dict, platform_helper_version: str, env: str):
+        source = f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
         terraform["module"] = {
             "extensions": {"source": source, "args": "${local.args}", "environment": env}
         }

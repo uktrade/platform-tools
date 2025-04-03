@@ -75,3 +75,25 @@ class TestSemanticVersion:
         input_version, expected_version = suite
         result = SemanticVersion.from_string(input_version)
         assert result == expected_version
+
+    @pytest.mark.parametrize(
+        "version",
+        ["v1.2.3", "1.2.3", "V1.2.3", "v1-2-3", "v1-2.3"],
+    )
+    def test_is_semantic_version(self, version):
+        result = SemanticVersion.is_semantic_version(version)
+        assert result
+
+    @pytest.mark.parametrize(
+        "version",
+        [
+            "terraform_platform_modules_version",
+            "platform-helper-version",
+            "any-branch",
+            "V1.2.3-alpha",
+            "alpha-v1.2.3",
+        ],
+    )
+    def test_is_not_semantic_version(self, version):
+        result = SemanticVersion.is_semantic_version(version)
+        assert not result

@@ -31,11 +31,11 @@ class ConfigProvider:
 
     def _validate_platform_config(self):
         PlatformConfigSchema.schema().validate(self.config)
-
         # TODO= logically this isn't validation but loading + parsing, to move.
         # also, we apply defaults but discard that data.  Should we just apply
         # defaults to config returned by load_and_validate
         enriched_config = ConfigProvider.apply_environment_defaults(self.config)
+
         try:
             self.validator.run_validations(enriched_config)
         except ConfigValidatorError as exc:
@@ -86,17 +86,12 @@ class ConfigProvider:
             name: data if data else {} for name, data in environments.items() if name != "*"
         }
 
-        default_versions = config.get("default_versions", {})
+        config.get("default_versions", {})
 
         def combine_env_data(data):
             return {
                 **env_defaults,
                 **data,
-                "versions": {
-                    **default_versions,
-                    **env_defaults.get("versions", {}),
-                    **data.get("versions", {}),
-                },
             }
 
         defaulted_envs = {

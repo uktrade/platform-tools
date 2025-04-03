@@ -18,6 +18,7 @@ from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigExce
 from dbt_platform_helper.providers.secrets import InvalidAddonTypeException
 from dbt_platform_helper.providers.secrets import ParameterNotFoundException
 from dbt_platform_helper.providers.secrets import SecretNotFoundException
+from dbt_platform_helper.providers.version_status import UnsupportedVersionException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import ApplicationServiceNotFoundException
 
@@ -108,6 +109,11 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
             ECSAgentNotRunningException,
             {},
             """ECS exec agent never reached "RUNNING" status""",
+        ),
+        (
+            UnsupportedVersionException,
+            {"version": "13.0.0"},
+            """Platform-helper version 13.0.0 is not compatible with platform-helper. Please install version platform-helper version 14 or later.""",
         ),
     ],
 )

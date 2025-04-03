@@ -34,3 +34,12 @@ tests/platform_helper/test-application-deploy/copilot
 dist
 
 .platform-helper-config.yml
+
+.terraform
+*.tfstate
+*.tfstate.backup
+*.zip
+**/.terraform.lock.hcl
+*slack*
+!slack_service.py
+terraform/__pycache__
