@@ -63,16 +63,14 @@ class TestLoadAndValidate:
             config_provider.load_and_validate_platform_config()
 
         assert (
-            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
-Your platform-config.yml does not specify a schema_version.
+            f"""Your platform-config.yml specifies '13.3.0' as the version of platform-helper to use.
+Your platform-helper version is {version("dbt-platform-helper")}.
 
 Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
             in capsys.readouterr().err
         )
 
-    def test_load_and_validate_exits_if_schema_version_is_missing_and_platform_tools_prior_to_13(
-        self, capsys
-    ):
+    def test_load_and_validate_exits_if_platform_tools_prior_to_13(self, capsys):
         """
         This scenario could occur if your platform-helper version is before
         13.x.x.
@@ -93,14 +91,17 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
             config_provider.load_and_validate_platform_config()
 
         assert (
-            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
-Your platform-config.yml does not specify a schema_version.
+            f"""Your platform-config.yml specifies '12.0.0' as the version of platform-helper to use. 
+Your platform-helper version is {version("dbt-platform-helper")}.
 
-Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
+Please either:
+    - Upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and then upgrade to
+     version {version("dbt-platform-helper")} by running: `platform-helper config migrate.
+    - Or downgrade your platform-helper version using `pip install --upgrade dbt-platform-helper==12.0.0`"""
             in capsys.readouterr().err
         )
 
-    def test_load_and_validate_exits_if_schema_version_is_missing_prior_and_no_platform_helper_default(
+    def test_load_and_validate_exits_if_schema_version_is_missing_and_no_platform_helper_default(
         self, capsys
     ):
         """This scenario could occur if your platform-helper version is very old
@@ -116,6 +117,7 @@ Please upgrade to v13 following the instructions in https://platform.readme.trad
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
+        # TODO: Sort this scenario out
         assert (
             f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
 Your platform-config.yml does not specify a schema_version nor a platform-helper default version.
