@@ -10,7 +10,9 @@ from dbt_platform_helper.commands.notify import environment_progress
 from dbt_platform_helper.domain.notify import Notify
 from dbt_platform_helper.domain.notify import SlackChannelNotifier
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.notifier import SlackChannelNotifierException
+from dbt_platform_helper.providers.slack_channel_notifier import (
+    SlackChannelNotifierException,
+)
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
 EXPECTED_ADD_COMMENT = inspect.signature(Notify.add_comment)
@@ -92,7 +94,7 @@ class TestEnvironmentProgress:
 
 
 class TestAddComment:
-    @patch("dbt_platform_helper.providers.notifier.blocks.SectionBlock")
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.blocks.SectionBlock")
     @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
     @patch("dbt_platform_helper.commands.notify.SlackChannelNotifier")
     @patch("dbt_platform_helper.commands.notify.Notify")

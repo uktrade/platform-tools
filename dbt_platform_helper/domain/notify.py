@@ -1,4 +1,4 @@
-from dbt_platform_helper.providers.notifier import SlackChannelNotifier
+from dbt_platform_helper.providers.slack_channel_notifier import SlackChannelNotifier
 from dbt_platform_helper.utils.arn_parser import ARN
 
 

@@ -4,7 +4,7 @@ import pytest
 
 from dbt_platform_helper.domain.notify import Notify
 from dbt_platform_helper.domain.notify import get_build_url
-from dbt_platform_helper.providers.notifier import SlackChannelNotifier
+from dbt_platform_helper.providers.slack_channel_notifier import SlackChannelNotifier
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
 BUILD_ARN_MESSAGE = f"<{get_build_url(BUILD_ARN)}|Build Logs>"

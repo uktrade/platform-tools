@@ -5,7 +5,7 @@ import pytest
 from slack_sdk.errors import SlackApiError
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.notifier import SlackChannelNotifier
+from dbt_platform_helper.providers.slack_channel_notifier import SlackChannelNotifier
 
 
 class TestSlackChannelNotifier:
@@ -17,7 +17,7 @@ class TestSlackChannelNotifier:
             ("10000.10", ["A", "B"]),
         ),
     )
-    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.WebClient")
     def test_post_update_calls_client_with_expected_arguments(
         self,
         mock_webclient,
@@ -68,7 +68,7 @@ class TestSlackChannelNotifier:
             (None, ["A", "B"], "A Title", True),
         ),
     )
-    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.WebClient")
     def test_post_new_calls_client_with_expected_arguments(
         self,
         mock_webclient,
@@ -123,7 +123,7 @@ class TestSlackChannelNotifier:
             ("The title", "The comment", "The title"),
         ),
     )
-    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.WebClient")
     def test_post_new_text_defaults_to_message_if_no_title(
         self, mock_webclient, title, message, expected
     ):
@@ -143,7 +143,7 @@ class TestSlackChannelNotifier:
         assert call_args["text"] == expected
         assert call_args["blocks"][0].text.text == message
 
-    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.WebClient")
     def test_post_update_raises_platform_exception_if_bad_response(self, mock_webclient):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance
@@ -158,7 +158,7 @@ class TestSlackChannelNotifier:
                 message="test", message_ref="1234"
             )
 
-    @patch("dbt_platform_helper.providers.notifier.WebClient")
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.WebClient")
     def test_post_new_raises_platform_exception_if_bad_response(self, mock_webclient):
         mock_slack_client_instance = Mock()
         mock_webclient.return_value = mock_slack_client_instance

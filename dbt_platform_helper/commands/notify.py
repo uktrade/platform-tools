@@ -4,7 +4,7 @@ from dbt_platform_helper.domain.notify import Notify
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.notifier import SlackChannelNotifier
+from dbt_platform_helper.providers.slack_channel_notifier import SlackChannelNotifier
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
