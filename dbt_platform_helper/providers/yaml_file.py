@@ -29,6 +29,7 @@ class DuplicateKeysException(YamlFileProviderException):
 
 
 class YamlFileProvider:
+    @staticmethod
     def load(path: str) -> dict:
         """
         Raises:
@@ -49,10 +50,18 @@ class YamlFileProvider:
 
         return yaml_content
 
+    @staticmethod
     def write(path: str, contents: dict, comment: str = ""):
         with open(path, "w") as file:
             file.write(comment)
-            yaml.dump(contents, file)
+            yaml.safe_dump(
+                contents,
+                file,
+                canonical=False,
+                sort_keys=False,
+                default_style=None,
+                default_flow_style=False,
+            )
 
     @staticmethod
     def lint_yaml_for_duplicate_keys(path):
