@@ -229,44 +229,48 @@ class MaintenancePage:
                 f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
             )
 
-            self.load_balancer.create_rule(
-                listener_arn=listener_arn,
-                priority=next(rule_priority),
-                conditions=[
+            unquie_sorted_host_headers = sorted(
+                list(
                     {
-                        "Field": "path-pattern",
-                        "PathPatternConfig": {"Values": ["/*"]},
-                    },
-                    {
-                        "Field": "host-header",
-                        "HostHeaderConfig": {
-                            "Values": sorted(
-                                list(
-                                    {
-                                        value
-                                        for condition in maintenance_page_host_header_conditions
-                                        for value in condition["HostHeaderConfig"]["Values"]
-                                    }
-                                )
-                            )
-                        },
-                    },
-                ],
-                actions=[
-                    {
-                        "Type": "fixed-response",
-                        "FixedResponseConfig": {
-                            "StatusCode": "503",
-                            "ContentType": "text/html",
-                            "MessageBody": maintenance_page_content,
-                        },
+                        value
+                        for condition in maintenance_page_host_header_conditions
+                        for value in condition["HostHeaderConfig"]["Values"]
                     }
-                ],
-                tags=[
-                    {"Key": "name", "Value": "MaintenancePage"},
-                    {"Key": "type", "Value": template},
-                ],
+                )
             )
+
+            # Can only set 4 host headers per rule as listener rules have a max conditions of 5
+            for i in range(0, len(unquie_sorted_host_headers), 4):
+                self.load_balancer.create_rule(
+                    listener_arn=listener_arn,
+                    priority=next(rule_priority),
+                    conditions=[
+                        {
+                            "Field": "path-pattern",
+                            "PathPatternConfig": {"Values": ["/*"]},
+                        },
+                        {
+                            "Field": "host-header",
+                            "HostHeaderConfig": {
+                                "Values": unquie_sorted_host_headers[i : i + 4],
+                            },
+                        },
+                    ],
+                    actions=[
+                        {
+                            "Type": "fixed-response",
+                            "FixedResponseConfig": {
+                                "StatusCode": "503",
+                                "ContentType": "text/html",
+                                "MessageBody": maintenance_page_content,
+                            },
+                        }
+                    ],
+                    tags=[
+                        {"Key": "name", "Value": "MaintenancePage"},
+                        {"Key": "type", "Value": template},
+                    ],
+                )
         except Exception as e:
             self.__clean_up_maintenance_page_rules(listener_arn)
             raise FailedToActivateMaintenancePageException(
