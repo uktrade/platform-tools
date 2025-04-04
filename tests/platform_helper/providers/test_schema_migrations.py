@@ -4,17 +4,17 @@ from dbt_platform_helper.providers.schema_migrations import (
     InvalidMigrationConfigurationException,
 )
 from dbt_platform_helper.providers.schema_migrations import Migrator
-from dbt_platform_helper.providers.schema_migrations import SchemaV1ToV2Migration
+from dbt_platform_helper.providers.schema_migrations import SchemaV0ToV1Migration
 
 
 class TestSchemaV1ToV2Migration:
     def test_from_version(self):
-        migration = SchemaV1ToV2Migration()
+        migration = SchemaV0ToV1Migration()
 
-        assert migration.from_version() == 1
+        assert migration.from_version() == 0
 
     def test_removes_terraform_platform_modules_version_from_defaults(self):
-        migration = SchemaV1ToV2Migration()
+        migration = SchemaV0ToV1Migration()
         config = {
             "default_versions": {"terraform-platform-modules": "5.1.0", "platform-helper": "14.0.0"}
         }
@@ -29,7 +29,7 @@ class TestSchemaV1ToV2Migration:
         ]
 
     def test_removes_version_overrides_from_envs(self):
-        migration = SchemaV1ToV2Migration()
+        migration = SchemaV0ToV1Migration()
         config = {
             "environments": {
                 "*": {
@@ -59,7 +59,7 @@ class TestSchemaV1ToV2Migration:
         ]
 
     def test_removes_from_and_to_account_from_postgres_extensions(self):
-        migration = SchemaV1ToV2Migration()
+        migration = SchemaV0ToV1Migration()
         config = {
             "extensions": {
                 "first_postgres": {
@@ -146,10 +146,10 @@ class MockMigration:
 class TestMigrator:
     def test_migrator_migration_ordering(self):
         call_record = []
-        migration1 = MockMigration("one", 4, call_record)
-        migration2 = MockMigration("two", 1, call_record)
-        migration3 = MockMigration("three", 3, call_record)
-        migration4 = MockMigration("four", 2, call_record)
+        migration1 = MockMigration("one", 3, call_record)
+        migration2 = MockMigration("two", 0, call_record)
+        migration3 = MockMigration("three", 2, call_record)
+        migration4 = MockMigration("four", 1, call_record)
 
         migrator = Migrator(migration1, migration2, migration3, migration4)
 
@@ -159,10 +159,10 @@ class TestMigrator:
 
     def test_migrator_messages(self):
         call_record = []
-        migration1 = MockMigration("one", 1, call_record)
-        migration2 = MockMigration("two", 2, call_record)
-        migration3 = MockMigration("three", 3, call_record)
-        migration4 = MockMigration("four", 4, call_record)
+        migration1 = MockMigration("one", 0, call_record)
+        migration2 = MockMigration("two", 1, call_record)
+        migration3 = MockMigration("three", 2, call_record)
+        migration4 = MockMigration("four", 3, call_record)
 
         migrator = Migrator(migration1, migration2, migration3, migration4)
 
@@ -192,7 +192,7 @@ class TestMigrator:
 
         actual_config = migrator.migrate({})
 
-        assert actual_config == {"schema_version": 1}
+        assert actual_config == {"schema_version": 0}
 
     def test_migrations_bump_schema_version_correctly(self):
         call_record = []

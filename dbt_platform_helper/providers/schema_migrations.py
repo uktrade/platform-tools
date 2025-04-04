@@ -21,12 +21,12 @@ class SchemaMigrationProtocol(Protocol):
     def messages(self) -> list[str]: ...
 
 
-class SchemaV1ToV2Migration:
+class SchemaV0ToV1Migration:
     def __init__(self):
         self._messages = []
 
     def from_version(self) -> int:
-        return 1
+        return 0
 
     def migrate(self, platform_config: dict) -> dict:
         migrated_config = deepcopy(platform_config)
@@ -73,7 +73,7 @@ class SchemaV1ToV2Migration:
                         )
 
 
-ALL_MIGRATIONS = [SchemaV1ToV2Migration()]
+ALL_MIGRATIONS = [SchemaV0ToV1Migration()]
 
 
 class Migrator:
@@ -91,7 +91,7 @@ class Migrator:
     def migrate(self, platform_config: dict) -> dict:
         out = deepcopy(platform_config)
         if "schema_version" not in out:
-            out["schema_version"] = 1
+            out["schema_version"] = 0
 
         for migration in self.migrations:
             if migration.from_version() != out["schema_version"]:
