@@ -106,7 +106,7 @@ class ConfigProvider:
                 SCHEMA_VERSION_MESSAGE.format(platform_config_schema_version),
                 f"Please update your platform-helper to a version that supports schema_version: {platform_config_schema_version}.",
             )
-        # else we have the correct version
+        # else the schema_version is the correct one so continue.
 
     def _handle_missing_schema_version(self):
         platform_helper_default_version = self.config.get("default_versions", {}).get(
@@ -128,9 +128,8 @@ class ConfigProvider:
             self._abort_due_to_schema_version_error(
                 MISSING_SCHEMA_VERSION_ERROR, PLEASE_UPGRADE_TO_V13_MESSAGE
             )
-        else:
-            # TODO: if major_version and major_version > FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION then what?
-            pass
+        # if major_version and major_version > FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION then
+        # the platform-config.yml is malformed and so should progress to validation if appropriate.
 
     def load_unvalidated_config_file(self, path=PLATFORM_CONFIG_FILE):
         try:

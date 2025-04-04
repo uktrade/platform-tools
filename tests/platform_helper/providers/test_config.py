@@ -39,34 +39,38 @@ class TestLoadAndValidate:
 
         assert "Duplicate keys found in your config file: repeated-key" in capsys.readouterr().err
 
-        def test_load_and_validate_exits_if_schema_version_is_missing_v_13(self, capsys):
-            """
-            This scenario could occur if your platform-helper version is 13.x.x.
+    def test_load_and_validate_exits_if_schema_version_is_missing_and_platform_tools_is_v_13(
+        self, capsys
+    ):
+        """
+        This scenario could occur if your platform-helper version is 13.x.x.
 
-            i.e. prior to the schema_version being introduced but we do provide
-            automated migrations for v13.x.x
-            """
-            mock_file_provider = Mock(spec=YamlFileProvider)
-            mock_file_provider.load.return_value = {
-                "application": "test_application",
-                "default_versions": {"platform-helper": "13.3.0"},
-            }
-            config_provider = ConfigProvider(
-                ConfigValidator(), mock_file_provider, current_platform_config_schema_version=3
-            )
+        i.e. prior to the schema_version being introduced but we do provide
+        automated migrations for v13.x.x
+        """
+        mock_file_provider = Mock(spec=YamlFileProvider)
+        mock_file_provider.load.return_value = {
+            "application": "test_application",
+            "default_versions": {"platform-helper": "13.3.0"},
+        }
+        config_provider = ConfigProvider(
+            ConfigValidator(), mock_file_provider, current_platform_config_schema_version=3
+        )
 
-            with pytest.raises(SystemExit):
-                config_provider.load_and_validate_platform_config()
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
 
-            assert (
-                f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
+        assert (
+            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
 Your platform-config.yml does not specify a schema_version.
 
 Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
-                in capsys.readouterr().err
-            )
+            in capsys.readouterr().err
+        )
 
-    def test_load_and_validate_exits_if_schema_version_is_missing_prior_to_13(self, capsys):
+    def test_load_and_validate_exits_if_schema_version_is_missing_and_platform_tools_prior_to_13(
+        self, capsys
+    ):
         """
         This scenario could occur if your platform-helper version is before
         13.x.x.
@@ -117,6 +121,31 @@ Your platform-config.yml does not specify a schema_version nor a platform-helper
 Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
             in capsys.readouterr().err
         )
+
+        def test_load_and_validate_continues_to_validation_if_schema_version_missing_and_platform_tools_after_13(
+            self, capsys
+        ):
+            """
+            This scenario could occur if your platform-helper version is 14.0.0
+            or later.
+
+            It is invalid configuration at this point as schema_version is
+            mandatory in 14.0.0 and above, so we let schema validation handle
+            it.
+            """
+            mock_file_provider = Mock(spec=YamlFileProvider)
+            mock_file_provider.load.return_value = {
+                "application": "test_application",
+                "default_versions": {"platform-helper": "14.0.0"},
+            }
+            config_provider = ConfigProvider(
+                ConfigValidator(), mock_file_provider, current_platform_config_schema_version=3
+            )
+
+            with pytest.raises(SchemaError) as exc:
+                config_provider.load_and_validate_platform_config()
+
+            assert str(exc.value) == f"Missing key: 'schema_version'"
 
     def test_load_and_validate_exits_if_schema_version_is_prior_to_the_current_one(self, capsys):
         """
@@ -364,6 +393,21 @@ class TestDataMigrationValidation:
             str(exc.value)
             == f"Key 'schema_version' error:\n{CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION} does not match {schema_version}"
         )
+
+    def test_validate_data_migration_fails_if_schema_version_missing(self):
+        config = {
+            "application": "test-app",
+        }
+
+        config_provider = ConfigProvider(ConfigValidator())
+        config_provider.config = config
+        mock_io = Mock()
+        config_provider.io = mock_io
+
+        with pytest.raises(SchemaError) as exc:
+            config_provider._validate_platform_config()
+
+        assert str(exc.value) == f"Missing key: 'schema_version'"
 
 
 class TestGetEnrichedConfig:
