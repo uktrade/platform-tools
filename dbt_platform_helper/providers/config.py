@@ -12,8 +12,6 @@ from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
-from dbt_platform_helper.providers.schema_migrations import ALL_MIGRATIONS
-from dbt_platform_helper.providers.schema_migrations import Migrator
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -31,14 +29,12 @@ class ConfigProvider:
         config_validator: ConfigValidator = None,
         file_provider: YamlFileProvider = None,
         io: ClickIOProvider = None,
-        migrator: Migrator = None,
         current_platform_config_schema_version: int = CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
     ):
         self.config = {}
         self.validator = config_validator or ConfigValidator()
         self.io = io or ClickIOProvider()
         self.file_provider = file_provider or YamlFileProvider
-        self.migrator = migrator or Migrator(*ALL_MIGRATIONS)
         self.current_platform_config_schema_version = current_platform_config_schema_version
 
     # TODO refactor so that apply_environment_defaults isn't set, discarded and set again
@@ -76,7 +72,7 @@ class ConfigProvider:
 
         return self.config
 
-    def _abort_due_to_schema_version_error(self, config_description, action_required):
+    def _abort_due_to_schema_version_error(self, config_description: str, action_required: str):
         self.io.abort_with_error(
             "\n".join(
                 [
@@ -95,7 +91,7 @@ class ConfigProvider:
         else:
             self._handle_missing_schema_version()
 
-    def _handle_schema_version_mismatch(self, platform_config_schema_version):
+    def _handle_schema_version_mismatch(self, platform_config_schema_version: int):
         if platform_config_schema_version < self.current_platform_config_schema_version:
             self._abort_due_to_schema_version_error(
                 SCHEMA_VERSION_MESSAGE.format(platform_config_schema_version),
