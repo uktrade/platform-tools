@@ -1,5 +1,12 @@
 # Changelog
 
+## [13.4.1](https://github.com/uktrade/platform-tools/compare/13.4.0...13.4.1) (2025-04-04)
+
+
+### Bug Fixes
+
+* Maintenance Page - Listener Rule cannot have more than 5 conditions (DBTP-1975) ([#836](https://github.com/uktrade/platform-tools/issues/836)) ([8d4d0cb](https://github.com/uktrade/platform-tools/commit/8d4d0cba11f02e817f672a2cf7458b5faea1465c))
+
 ## [13.4.0](https://github.com/uktrade/platform-tools/compare/13.3.0...13.4.0) (2025-04-02)
 
 
