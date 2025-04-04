@@ -28,7 +28,8 @@ class LoadBalancerProvider:
     def find_target_group(self, app: str, env: str, svc: str) -> str:
         target_group_arn = None
 
-        response = self.rg_tagging_client.get_resources(
+        paginator = self.rg_tagging_client.get_paginator("get_resources")
+        page_iterator = paginator.paginate(
             TagFilters=[
                 {
                     "Key": "copilot-application",
@@ -48,19 +49,21 @@ class LoadBalancerProvider:
             ResourceTypeFilters=[
                 "elasticloadbalancing:targetgroup",
             ],
-        )  # TODO should be paginated
-        for resource in response["ResourceTagMappingList"]:
-            tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
+        )
 
-            if (
-                "copilot-service" in tags
-                and tags["copilot-service"] == svc
-                and "copilot-environment" in tags
-                and tags["copilot-environment"] == env
-                and "copilot-application" in tags
-                and tags["copilot-application"] == app
-            ):
-                target_group_arn = resource["ResourceARN"]
+        for page in page_iterator:
+            for resource in page["ResourceTagMappingList"]:
+                tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
+
+                if (
+                    "copilot-service" in tags
+                    and tags["copilot-service"] == svc
+                    and "copilot-environment" in tags
+                    and tags["copilot-environment"] == env
+                    and "copilot-application" in tags
+                    and tags["copilot-application"] == app
+                ):
+                    target_group_arn = resource["ResourceARN"]
 
         if not target_group_arn:
             self.io.error(
@@ -71,9 +74,11 @@ class LoadBalancerProvider:
 
     def get_https_certificate_for_application(self, app: str, env: str) -> str:
         listener_arn = self.get_https_listener_for_application(app, env)
-        certificates = self.evlb_client.describe_listener_certificates(ListenerArn=listener_arn)[
-            "Certificates"
-        ]  # TODO should be paginated
+        certificates = []
+        paginator = self.evlb_client.get_paginator("describe_listener_certificates")
+        paginator.paginate(ListenerArn=listener_arn)
+        for page in paginator.paginate(ListenerArn=listener_arn):
+            certificates.extend(page["Certificates"])
 
         try:
             certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
@@ -85,9 +90,10 @@ class LoadBalancerProvider:
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
 
-        listeners = self.evlb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)[
-            "Listeners"
-        ]  # TODO should be paginated
+        listeners = []
+        paginator = self.evlb_client.get_paginator("describe_listeners")
+        for page in paginator.paginate(LoadBalancerArn=load_balancer_arn):
+            listeners.extend(page["Listeners"])
 
         listener_arn = None
 
@@ -102,28 +108,31 @@ class LoadBalancerProvider:
         return listener_arn
 
     def get_load_balancer_for_application(self, app: str, env: str) -> str:
-        describe_response = self.evlb_client.describe_load_balancers()
-        load_balancers = [lb["LoadBalancerArn"] for lb in describe_response["LoadBalancers"]]
+        load_balancers = []
+        paginator = self.evlb_client.get_paginator("describe_load_balancers")
+        for page in paginator.paginate():
+            load_balancers.extend(lb["LoadBalancerArn"] for lb in page["LoadBalancers"])
 
         tag_descriptions = []
         for i in range(0, len(load_balancers), 20):
             chunk = load_balancers[i : i + 20]
             tag_descriptions.extend(
                 self.evlb_client.describe_tags(ResourceArns=chunk)["TagDescriptions"]
-            )
+            )  # describe_tags cannot be paginated - 04/04/2025
 
         for lb in tag_descriptions:
             tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
-            # TODO copilot hangover, creates coupling to specific tags could update to check application and environment
+            # TODO: DBTP-1967: copilot hangover, creates coupling to specific tags could update to check application and environment
             if tags.get("copilot-application") == app and tags.get("copilot-environment") == env:
                 return lb["ResourceArn"]
 
         raise LoadBalancerNotFoundException(app, env)
 
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
-        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
-            "Rules"
-        ]  # TODO should be paginated
+        rules = []
+        paginator = self.evlb_client.get_paginator("describe_rules")
+        for page in paginator.paginate(ListenerArn=listener_arn):
+            rules.extend(page["Rules"])
 
         conditions = []
 
@@ -150,9 +159,11 @@ class LoadBalancerProvider:
         return conditions
 
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
-        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
-            "Rules"
-        ]  # TODO should be paginated
+        rules = []
+        paginator = self.evlb_client.get_paginator("describe_rules")
+        for page in paginator.paginate(ListenerArn=listener_arn):
+            rules.extend(page["Rules"])
+
         return self.get_rules_tag_descriptions(rules)
 
     def get_rules_tag_descriptions(self, rules: list) -> list:
@@ -164,7 +175,7 @@ class LoadBalancerProvider:
             resource_arns = [r["RuleArn"] for r in chunk]
             response = self.evlb_client.describe_tags(
                 ResourceArns=resource_arns
-            )  # TODO should be paginated
+            )  # describe_tags cannot be paginated - 04/04/2025
             tag_descriptions.extend(response["TagDescriptions"])
 
         return tag_descriptions
