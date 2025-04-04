@@ -3,9 +3,8 @@ import os
 import webbrowser
 from unittest import mock
 from unittest.mock import ANY
-from unittest.mock import MagicMock
-from unittest.mock import Mock
 from unittest.mock import call
+from unittest.mock import create_autospec
 from unittest.mock import mock_open
 
 import pytest
@@ -40,9 +39,9 @@ maybe = "\033[93m?\033[0m"
 
 class ConfigMocks:
     def __init__(self, *args, **kwargs):
-        self.io = kwargs.get("io", Mock(spec=ClickIOProvider))
+        self.io = kwargs.get("io", create_autospec(spec=ClickIOProvider, spec_set=True))
         self.platform_helper_versioning = kwargs.get(
-            "platform_helper_versioning", MagicMock(spec=PlatformHelperVersioning)
+            "platform_helper_versioning", create_autospec(PlatformHelperVersioning, spec_set=True)
         )
         self.platform_helper_version_status = kwargs.get(
             "platform_helper_version_status",
@@ -52,7 +51,7 @@ class ConfigMocks:
             self.platform_helper_version_status
         )
 
-        self.sso = kwargs.get("sso", Mock(spec=SSOAuthProvider))
+        self.sso = kwargs.get("sso", create_autospec(SSOAuthProvider, spec_set=True))
 
         self.aws_version_status = kwargs.get(
             "aws_version_status", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
@@ -61,13 +60,19 @@ class ConfigMocks:
             "copilot_version_status",
             VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
         )
-        self.aws_versioning = kwargs.get("aws_versioning", Mock(spec=AWSVersioning))
+        self.aws_versioning = kwargs.get(
+            "aws_versioning", create_autospec(spec=AWSVersioning, spec_set=True)
+        )
         self.aws_versioning.get_version_status.return_value = self.aws_version_status
 
-        self.copilot_versioning = kwargs.get("copilot_versioning", Mock(spec=CopilotVersioning))
+        self.copilot_versioning = kwargs.get(
+            "copilot_versioning", create_autospec(spec=CopilotVersioning, spec_set=True)
+        )
         self.copilot_versioning.get_version_status.return_value = self.copilot_version_status
-        self.config_provider = kwargs.get("config_provider", Mock(spec=ConfigProvider))
-        self.migrator = kwargs.get("migrator", Mock(spec=Migrator))
+        self.config_provider = kwargs.get(
+            "config_provider", create_autospec(spec=ConfigProvider, spec_set=True)
+        )
+        self.migrator = kwargs.get("migrator", create_autospec(spec=Migrator, spec_set=True))
 
     def params(self):
         return {
@@ -462,7 +467,7 @@ class TestConfigValidate:
             config_domain.validate()
 
     def test_no_copilot_repo(self, fakefs):
-        config_domain = Config(sso=Mock())
+        config_domain = Config(sso=create_autospec(SSOAuthProvider, spec_set=True))
         with pytest.raises(
             NoDeploymentRepoConfigException,
             match="Could not find a deployment repository, no checks to run.",
