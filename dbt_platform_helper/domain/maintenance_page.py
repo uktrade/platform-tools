@@ -229,7 +229,7 @@ class MaintenancePage:
                 f"\nUse a browser plugin to add `Bypass-Key` header with value {bypass_value} to your requests. For more detail, visit https://platform.readme.trade.gov.uk/next-steps/put-a-service-under-maintenance/",
             )
 
-            unquie_sorted_host_headers = sorted(
+            unique_sorted_host_headers = sorted(
                 list(
                     {
                         value
@@ -240,7 +240,7 @@ class MaintenancePage:
             )
 
             # Can only set 4 host headers per rule as listener rules have a max conditions of 5
-            for i in range(0, len(unquie_sorted_host_headers), 4):
+            for i in range(0, len(unique_sorted_host_headers), 4):
                 self.load_balancer.create_rule(
                     listener_arn=listener_arn,
                     priority=next(rule_priority),
@@ -252,7 +252,7 @@ class MaintenancePage:
                         {
                             "Field": "host-header",
                             "HostHeaderConfig": {
-                                "Values": unquie_sorted_host_headers[i : i + 4],
+                                "Values": unique_sorted_host_headers[i : i + 4],
                             },
                         },
                     ],
