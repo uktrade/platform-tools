@@ -22,6 +22,13 @@ from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
+def expected_schema_pre_validation_header(
+    schema_version: int, config_platform_helper_version: str, config_schema_version: int
+):
+    return f"""Installed version: platform-helper: {version("dbt-platform-helper")} (schema version: {schema_version})
+'platform-config.yml' version: platform-helper: {config_platform_helper_version} (schema version: {config_schema_version})"""
+
+
 class TestLoadAndValidate:
     def test_comprehensive_platform_config_validates_successfully(self, valid_platform_config):
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
@@ -62,11 +69,13 @@ class TestLoadAndValidate:
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
-        assert (
-            f"""Your platform-config.yml specifies '13.3.0' as the version of platform-helper to use.
-Your platform-helper version is {version("dbt-platform-helper")}.
+        expected_header = expected_schema_pre_validation_header(3, "13.3.0", "N/A")
 
-Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
+        assert (
+            f"""{expected_header}
+            
+Please upgrade your platform-config.yml to be compatible with {version("dbt-platform-helper")} by running:
+     'platform-helper config migrate'."""
             in capsys.readouterr().err
         )
 
@@ -90,20 +99,18 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
-        assert (
-            f"""Your platform-config.yml specifies '12.0.0' as the version of platform-helper to use. 
-Your platform-helper version is {version("dbt-platform-helper")}.
+        expected_header = expected_schema_pre_validation_header(3, "12.0.0", "N/A")
 
-Please either:
-    - Upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and then upgrade to
+        assert (
+            f"""{expected_header}
+
+Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and then upgrade to
      version {version("dbt-platform-helper")} by running: `platform-helper config migrate.
-    - Or downgrade your platform-helper version using `pip install --upgrade dbt-platform-helper==12.0.0`"""
+(If you cannot upgrade immediately then downgrade your platform-helper version using 'pip install --upgrade dbt-platform-helper==12.0.0')"""
             in capsys.readouterr().err
         )
 
-    def test_load_and_validate_exits_if_schema_version_is_missing_and_no_platform_helper_default(
-        self, capsys
-    ):
+    def test_load_and_validate_exits_if_and_no_platform_helper_default(self, capsys):
         """This scenario could occur if your platform-helper version is very old
         and does not even have a platform-helper default version."""
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
@@ -117,12 +124,13 @@ Please either:
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
-        # TODO: Sort this scenario out
-        assert (
-            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 3.
-Your platform-config.yml does not specify a schema_version nor a platform-helper default version.
+        expected_header = expected_schema_pre_validation_header(3, "N/A", "N/A")
 
-Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"""
+        assert (
+            f"""{expected_header}
+
+Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and 
+then run 'platform-helper config migrate' to upgrade to the current version."""
             in capsys.readouterr().err
         )
 
@@ -163,6 +171,7 @@ Please upgrade to v13 following the instructions in https://platform.readme.trad
         mock_file_provider.load.return_value = {
             "schema_version": 4,
             "application": "test_application",
+            "default_versions": {"platform-helper": "16.0.0"},
         }
         config_provider = ConfigProvider(
             ConfigValidator(), mock_file_provider, current_platform_config_schema_version=7
@@ -171,9 +180,10 @@ Please upgrade to v13 following the instructions in https://platform.readme.trad
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
+        expected_header = expected_schema_pre_validation_header(7, "16.0.0", 4)
+
         assert (
-            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 7.
-Your platform-config.yml specifies version 4.
+            f"""{expected_header}
 
 Please upgrade your platform-config.yml by running 'platform-helper config migrate'."""
             in capsys.readouterr().err
@@ -192,6 +202,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         mock_file_provider.load.return_value = {
             "schema_version": 4,
             "application": "test_application",
+            "default_versions": {"platform-config": "14.2.0"},
         }
         config_provider = ConfigProvider(
             ConfigValidator(), mock_file_provider, current_platform_config_schema_version=2
@@ -200,9 +211,10 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
+        expected_header = expected_schema_pre_validation_header(2, "14.2.0", 4)
+
         assert (
-            f"""The schema version for platform-helper version {version("dbt-platform-helper")} must be 2.
-Your platform-config.yml specifies version 4.
+            f"""{expected_header}
 
 Please update your platform-helper to a version that supports schema_version: 4."""
             in capsys.readouterr().err
