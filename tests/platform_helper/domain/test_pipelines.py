@@ -15,7 +15,9 @@ from dbt_platform_helper.providers.config_validator import ConfigValidator
 
 class PipelineMocks:
     def __init__(self, app_name):
-        self.mock_config_provider = ConfigProvider(ConfigValidator())
+        self.mock_config_provider = ConfigProvider(
+            ConfigValidator(), current_platform_helper_version="14.0.0"
+        )
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
         self.io = Mock()

@@ -16,11 +16,12 @@ from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
-MISSING_SCHEMA_VERSION_ERROR = "Your platform-config.yml does not specify a schema_version."
-PLEASE_UPGRADE_TO_V13_MESSAGE = (
-    "Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/"
-)
-SCHEMA_VERSION_MESSAGE = "Your platform-config.yml specifies version {}."
+MISSING_SCHEMA_VERSION_ERROR = """Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and then upgrade to
+    version {platform_helper_version} by running: `platform-helper config migrate.
+(If you cannot upgrade immediately then downgrade your platform-helper version using 'pip install --upgrade dbt-platform-helper==12.0.0')"""
+PLEASE_UPGRADE_TO_V13_MESSAGE = "Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and\n    then run 'platform-helper config migrate' to upgrade to the current version."
+SCHEMA_VERSION_MESSAGE = """Installed version: platform-helper: {platform_helper_version} (schema version: {schema_version})
+'platform-config.yml' version: platform-helper: {config_platform_helper_version} (schema version: {config_schema_version})"""
 
 
 class ConfigProvider:
@@ -29,13 +30,19 @@ class ConfigProvider:
         config_validator: ConfigValidator = None,
         file_provider: YamlFileProvider = None,
         io: ClickIOProvider = None,
-        current_platform_config_schema_version: int = CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+        current_platform_config_schema_version: int = None,
+        current_platform_helper_version: str = None,
     ):
         self.config = {}
         self.validator = config_validator or ConfigValidator()
         self.io = io or ClickIOProvider()
         self.file_provider = file_provider or YamlFileProvider
-        self.current_platform_config_schema_version = current_platform_config_schema_version
+        self.current_platform_config_schema_version = (
+            current_platform_config_schema_version or CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
+        )
+        self.current_platform_helper_version = current_platform_helper_version or version(
+            "dbt-platform-helper"
+        )
 
     # TODO refactor so that apply_environment_defaults isn't set, discarded and set again
     def get_enriched_config(self):
@@ -63,7 +70,7 @@ class ConfigProvider:
         except FileProviderException as e:
             self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
 
-        self._pre_validate_schema_version()
+        self._validate_schema_version()
 
         try:
             self._validate_platform_config()
@@ -76,7 +83,6 @@ class ConfigProvider:
         self.io.abort_with_error(
             "\n".join(
                 [
-                    f"The schema version for platform-helper version {version('dbt-platform-helper')} must be {self.current_platform_config_schema_version}.",
                     config_description,
                     "",
                     action_required,
@@ -84,45 +90,59 @@ class ConfigProvider:
             )
         )
 
-    def _pre_validate_schema_version(self):
+    def _validate_schema_version(self):
         platform_config_schema_version = self.config.get("schema_version")
-        if platform_config_schema_version:
-            self._handle_schema_version_mismatch(platform_config_schema_version)
-        else:
-            self._handle_missing_schema_version()
+        platform_helper_default_version = self.config.get("default_versions", {}).get(
+            "platform-helper", ""
+        )
+        header = SCHEMA_VERSION_MESSAGE.format(
+            platform_helper_version=self.current_platform_helper_version,
+            schema_version=self.current_platform_config_schema_version,
+            config_platform_helper_version=(
+                platform_helper_default_version if platform_helper_default_version else "N/A"
+            ),
+            config_schema_version=(
+                platform_config_schema_version if platform_config_schema_version else "N/A"
+            ),
+        )
 
-    def _handle_schema_version_mismatch(self, platform_config_schema_version: int):
+        if platform_config_schema_version:
+            self._handle_schema_version_mismatch(platform_config_schema_version, header)
+        else:
+            self._handle_missing_schema_version(platform_helper_default_version, header)
+
+    def _handle_schema_version_mismatch(self, platform_config_schema_version: int, header: str):
         if platform_config_schema_version < self.current_platform_config_schema_version:
             self._abort_due_to_schema_version_error(
-                SCHEMA_VERSION_MESSAGE.format(platform_config_schema_version),
+                header,
                 "Please upgrade your platform-config.yml by running 'platform-helper config migrate'.",
             )
         elif platform_config_schema_version > self.current_platform_config_schema_version:
             self._abort_due_to_schema_version_error(
-                SCHEMA_VERSION_MESSAGE.format(platform_config_schema_version),
+                header,
                 f"Please update your platform-helper to a version that supports schema_version: {platform_config_schema_version}.",
             )
         # else the schema_version is the correct one so continue.
 
-    def _handle_missing_schema_version(self):
-        platform_helper_default_version = self.config.get("default_versions", {}).get(
-            "platform-helper", ""
-        )
+    def _handle_missing_schema_version(self, platform_helper_default_version: str, header: str):
         version_parts = platform_helper_default_version.split(".")
         major_version = int(version_parts[0]) if version_parts[0] else None
         if not major_version:
             self._abort_due_to_schema_version_error(
-                "Your platform-config.yml does not specify a schema_version nor a platform-helper default version.",
+                header,
                 PLEASE_UPGRADE_TO_V13_MESSAGE,
             )
         if major_version and major_version == FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION:
             self._abort_due_to_schema_version_error(
-                MISSING_SCHEMA_VERSION_ERROR,
-                "Please upgrade your platform-config.yml by running 'platform-helper config migrate'.",
+                header,
+                f"Please upgrade your platform-config.yml to be compatible with {self.current_platform_helper_version} by running: 'platform-helper config migrate'.",
             )
         elif major_version and major_version < FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION:
             self._abort_due_to_schema_version_error(
-                MISSING_SCHEMA_VERSION_ERROR, PLEASE_UPGRADE_TO_V13_MESSAGE
+                header,
+                MISSING_SCHEMA_VERSION_ERROR.format(
+                    platform_helper_version=self.current_platform_helper_version
+                ),
             )
         # if major_version and major_version > FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION then
         # the platform-config.yml is malformed and so should progress to validation if appropriate.
@@ -131,7 +151,7 @@ class ConfigProvider:
         try:
             return self.file_provider.load(path)
         except FileProviderException:
-            return {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
+            return {"schema_version": self.current_platform_config_schema_version}
 
     # TODO remove function and push logic to where this is called.
     # removed usage from config domain, code is very generic and doesn't require the overhead of a function
@@ -173,7 +193,6 @@ class ConfigProvider:
         return enriched_config
 
     def write_platform_config(self, new_platform_config):
-        platform_helper_version = version("dbt-platform-helper")
         current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        message = f"# Generated by platform-helper {platform_helper_version} / {current_date}.\n\n"
+        message = f"# Generated by platform-helper {self.current_platform_helper_version} / {current_date}.\n\n"
         self.file_provider.write(PLATFORM_CONFIG_FILE, new_platform_config, message)

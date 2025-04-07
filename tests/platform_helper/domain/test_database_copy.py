@@ -538,7 +538,7 @@ def test_update_application_from_platform_config_if_application_not_specified(fs
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -577,7 +577,7 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -658,7 +658,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
     )
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -684,7 +684,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
