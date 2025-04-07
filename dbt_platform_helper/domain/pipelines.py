@@ -84,10 +84,10 @@ class Pipelines:
         #     self.platform_helper_version_status.get_required_platform_helper_version(self.io)
         # )
 
-        self.platform_helper_versioning.cli_override = cli_platform_helper_version
-
         platform_helper_version = (
-            self.platform_helper_versioning.get_required_platform_helper_version(self.io)
+            self.platform_helper_versioning.get_required_platform_helper_version(
+                self.io, cli_platform_helper_version
+            )
         )
 
         # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
@@ -132,7 +132,7 @@ class Pipelines:
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                platform_helper_version,
+                str(platform_helper_version),
                 ecrs_that_need_importing,
                 deploy_repository,
             )

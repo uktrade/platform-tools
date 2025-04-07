@@ -154,7 +154,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_vers
     fakefs,
 ):
     cli_platform_helper_version = "13"
-    exp_version = "13"
+    exp_version = "14.0.0"
     app_name = "test-app"
     fakefs.create_file(
         PLATFORM_CONFIG_FILE,
@@ -196,7 +196,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_imports(
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
         codebase_pipeline_config_for_2_pipelines_and_1_run_group,
-        "13",
+        "14.0.0",
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
         "uktrade/my-app-deploy",
     )

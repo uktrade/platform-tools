@@ -41,7 +41,7 @@ class TestGenerateTerraform:
 
     def test_generate_success(self):
         environment_name = "test"
-        tpm_default_version = "123"
+        cli_platform_helper_version = "14.0.0"
 
         mock_manifest_provider = Mock(spec=TerraformManifestProvider)
 
@@ -54,8 +54,8 @@ class TestGenerateTerraform:
             io=Mock(),
         )
 
-        terraform_environment.generate(environment_name, tpm_default_version)
+        terraform_environment.generate(environment_name, cli_platform_helper_version)
 
         mock_manifest_provider.generate_environment_config.assert_called_once_with(
-            self.VALID_ENRICHED_CONFIG, environment_name, tpm_default_version
+            self.VALID_ENRICHED_CONFIG, environment_name, cli_platform_helper_version
         )

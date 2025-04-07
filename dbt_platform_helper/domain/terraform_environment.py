@@ -30,8 +30,8 @@ class TerraformEnvironment:
 
     def generate(
         self,
-        environment_name,
-        cli_platform_helper_version=None,
+        environment_name: str,
+        cli_platform_helper_version: str = None,
     ):
         config = self.config_provider.get_enriched_config()
 
@@ -53,12 +53,12 @@ class TerraformEnvironment:
         #     self.platform_helper_version_status.get_required_platform_helper_version(self.io)
         # )
 
-        self.platform_helper_versioning.cli_override = cli_platform_helper_version
-
         platform_helper_version = (
-            self.platform_helper_versioning.get_required_platform_helper_version(self.io)
+            self.platform_helper_versioning.get_required_platform_helper_version(
+                self.io, cli_platform_helper_version
+            )
         )
 
         self.manifest_provider.generate_environment_config(
-            config, environment_name, platform_helper_version
+            config, environment_name, str(platform_helper_version)
         )
