@@ -31,8 +31,11 @@ class TerraformEnvironment:
     def generate(
         self,
         environment_name: str,
-        cli_platform_helper_version: str = None,
+        # TODO: Remove this option
+        # cli_platform_helper_version: str = None,
     ):
+
+        # Something like cli_platform_helper_version = os.getenv("PLATFORM_HELPER_VERSION_OVERRIDE")
         config = self.config_provider.get_enriched_config()
 
         if environment_name not in config.get("environments").keys():

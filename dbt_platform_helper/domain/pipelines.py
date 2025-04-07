@@ -44,9 +44,11 @@ class Pipelines:
 
     def generate(
         self,
+        # TODO: Remove this
         cli_platform_helper_version: str,
         deploy_branch: str,
     ):
+        # Something like cli_platform_helper_version = os.getenv("PLATFORM_HELPER_VERSION_OVERRIDE")
         platform_config = self.config_provider.load_and_validate_platform_config()
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config

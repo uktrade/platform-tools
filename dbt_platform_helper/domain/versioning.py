@@ -169,7 +169,7 @@ class PlatformHelperVersioning:
         version_preference_order = [
             cli_override,
             str(version_status.platform_config_default),
-            str(version_status.deprecated_version_file),
+            str(version_status.deprecated_version_file),  # TODO: Remove this
         ]
 
         # version_preference_order = [
