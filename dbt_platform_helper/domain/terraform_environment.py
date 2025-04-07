@@ -60,5 +60,5 @@ class TerraformEnvironment:
         )
 
         self.manifest_provider.generate_environment_config(
-            config, environment_name, str(platform_helper_version)
+            config, environment_name, platform_helper_version
         )

@@ -11,7 +11,6 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 class PipelineMocks:
@@ -29,9 +28,7 @@ class PipelineMocks:
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
         self.platform_helper_versioning = Mock()
-        self.platform_helper_versioning.get_required_platform_helper_version.return_value = (
-            SemanticVersion(14, 0, 0)
-        )
+        self.platform_helper_versioning.get_required_platform_helper_version.return_value = "14.0.0"
 
     def params(self):
         return {

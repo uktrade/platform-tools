@@ -132,7 +132,7 @@ class Pipelines:
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                str(platform_helper_version),
+                platform_helper_version,
                 ecrs_that_need_importing,
                 deploy_repository,
             )

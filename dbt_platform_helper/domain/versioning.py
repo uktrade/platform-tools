@@ -163,15 +163,13 @@ class PlatformHelperVersioning:
 
         return out
 
-    def get_required_platform_helper_version(
-        self, io: ClickIOProvider, cli_override: str
-    ) -> SemanticVersion:
+    def get_required_platform_helper_version(self, io: ClickIOProvider, cli_override: str) -> str:
         version_status = self._get_version_status(include_project_versions=True)
 
         version_preference_order = [
-            SemanticVersion.from_string(cli_override),
-            version_status.platform_config_default,
-            version_status.deprecated_version_file,
+            cli_override,
+            str(version_status.platform_config_default),
+            str(version_status.deprecated_version_file),
         ]
 
         # version_preference_order = [
@@ -184,9 +182,13 @@ class PlatformHelperVersioning:
 
         if valid_versions:
             version = valid_versions[0]
-            if version and (version.major < MERGED_TPM_PLATFORM_HELPER_VERSION):
-                raise UnsupportedVersionException(valid_versions[0])
-            return valid_versions[0]
+            if SemanticVersion.is_semantic_version(version):
+                semantic_version = SemanticVersion.from_string(valid_versions[0])
+                if semantic_version and (
+                    semantic_version.major < MERGED_TPM_PLATFORM_HELPER_VERSION
+                ):
+                    raise UnsupportedVersionException(valid_versions[0])
+            return version
         else:
             io.warn(
                 "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
