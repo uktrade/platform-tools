@@ -7,12 +7,14 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+
+# from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
-from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -27,7 +29,8 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
-        platform_helper_version_status: PlatformHelperVersionStatus = PlatformHelperVersionStatus(),
+        # platform_helper_version_status: PlatformHelperVersionStatus = PlatformHelperVersionStatus(),
+        platform_helper_versioning: PlatformHelperVersioning = PlatformHelperVersioning(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -36,7 +39,8 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.platform_helper_version_status = platform_helper_version_status
+        # self.platform_helper_version_status = platform_helper_version_status
+        self.platform_helper_versioning = platform_helper_versioning
 
     def generate(
         self,
@@ -71,13 +75,19 @@ class Pipelines:
             "default_versions", {}
         ).get("platform-helper")
 
-        self.platform_helper_version_status.cli_override = cli_platform_helper_version
-        self.platform_helper_version_status.platform_config_default = (
-            platform_config_platform_helper_default_version
-        )
+        # self.platform_helper_version_status.cli_override = cli_platform_helper_version
+        # self.platform_helper_version_status.platform_config_default = (
+        #     platform_config_platform_helper_default_version
+        # )
+
+        # platform_helper_version = (
+        #     self.platform_helper_version_status.get_required_platform_helper_version(self.io)
+        # )
+
+        self.platform_helper_versioning.cli_override = cli_platform_helper_version
 
         platform_helper_version = (
-            self.platform_helper_version_status.get_required_platform_helper_version(self.io)
+            self.platform_helper_versioning.get_required_platform_helper_version(self.io)
         )
 
         # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
