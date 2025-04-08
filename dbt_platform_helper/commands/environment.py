@@ -86,16 +86,12 @@ def generate(name):
 @click.option(
     "--name", "-n", required=True, help="The name of the environment to generate a manifest for."
 )
-@click.option(
-    "--platform-helper-version",
-    help=f"Override the default version of platform-helper. (Default version is the installed version for `dbt-platform-helper`.",
-)
-def generate_terraform(name, platform_helper_version):
+def generate_terraform(name):
     click_io = ClickIOProvider()
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator(session=session))
-        TerraformEnvironment(config_provider).generate(name, platform_helper_version)
+        TerraformEnvironment(config_provider).generate(name)
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))
