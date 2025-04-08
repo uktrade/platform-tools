@@ -76,8 +76,8 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         certificates = []
         paginator = self.evlb_client.get_paginator("describe_listener_certificates")
-        paginator.paginate(ListenerArn=listener_arn)
-        for page in paginator.paginate(ListenerArn=listener_arn):
+        page_iterator = paginator.paginate(ListenerArn=listener_arn)
+        for page in page_iterator:
             certificates.extend(page["Certificates"])
 
         try:
