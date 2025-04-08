@@ -1,4 +1,5 @@
 import pytest
+import yaml
 
 from dbt_platform_helper.providers.schema_migrations import (
     InvalidMigrationConfigurationException,
@@ -216,3 +217,64 @@ class TestMigrator:
 
         assert actual_config == {"schema_version": 5}
         assert call_record == ["three", "four"]
+
+    @pytest.mark.parametrize(
+        "keys",
+        [
+            [
+                "pre",
+                "application",
+                "padding1",
+                "schema_version",
+                "padding2",
+                "default_versions",
+                "post",
+            ],
+            [
+                "pre",
+                "default_versions",
+                "padding1",
+                "schema_version",
+                "padding2",
+                "application",
+                "post",
+            ],
+            ["pre", "schema_version", "mid", "default_versions", "post"],
+            ["pre", "default_versions", "mid", "application", "post"],
+            ["pre", "schema_version", "mid", "application", "post"],
+            ["pre", "application", "post"],
+            ["pre", "schema_version", "post"],
+            ["pre", "default_versions", "post"],
+        ],
+    )
+    def test_migrate_ensures_application_schema_version_and_default_versions_are_at_the_top_if_they_exist(
+        self, keys
+    ):
+        migrator = Migrator()
+
+        config = {}
+
+        for key in keys:
+            config[key] = key
+
+        actual_config = migrator.migrate(config)
+
+        expected_key_set = set(keys)
+        expected_key_set.add("schema_version")
+
+        expected_order = [
+            key
+            for key in ["application", "schema_version", "default_versions"]
+            if key in expected_key_set
+        ]
+
+        as_yaml = yaml.dump(
+            actual_config,
+            canonical=False,
+            sort_keys=False,
+            default_style=None,
+            default_flow_style=False,
+        ).splitlines()
+
+        for i, exp_key in enumerate(expected_order):
+            assert exp_key in as_yaml[i]

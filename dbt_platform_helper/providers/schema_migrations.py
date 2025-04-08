@@ -1,4 +1,5 @@
 from collections import Counter
+from collections import OrderedDict
 from copy import deepcopy
 from typing import Protocol
 
@@ -89,9 +90,16 @@ class Migrator:
             )
 
     def migrate(self, platform_config: dict) -> dict:
-        out = deepcopy(platform_config)
+        out = OrderedDict(deepcopy(platform_config))
         if "schema_version" not in out:
             out["schema_version"] = 0
+
+        if "default_versions" in out:
+            out.move_to_end("default_versions", last=False)
+        if "schema_version" in out:
+            out.move_to_end("schema_version", last=False)
+        if "application" in out:
+            out.move_to_end("application", last=False)
 
         for migration in self.migrations:
             if migration.from_version() != out["schema_version"]:
@@ -100,7 +108,7 @@ class Migrator:
             out["schema_version"] += 1
             self._messages.extend(migration.messages())
 
-        return out
+        return dict(out)
 
     def messages(self):
         return self._messages
