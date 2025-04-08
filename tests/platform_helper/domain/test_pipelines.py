@@ -27,8 +27,6 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
-        self.platform_helper_versioning = Mock()
-        self.platform_helper_versioning.get_required_platform_helper_version.return_value = "14.0.0"
 
     def params(self):
         return {
@@ -38,7 +36,6 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
-            "platform_helper_versioning": self.platform_helper_versioning,
         }
 
 
@@ -50,7 +47,7 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
     mocks.mock_config_provider = mock_config_provider
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(None, None)
+    pipelines.generate(None)
 
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
@@ -62,7 +59,7 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
     mocks.mock_config_provider = mock_config_provider
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(None, None)
+    pipelines.generate(None)
 
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
@@ -70,23 +67,20 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "cli_platform_helper_version, config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
+    "config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        ("14", True, "14", None, None),  # Case with cli_platform_helper_version
+        (True, "14", None, None),
         (
-            None,
             True,
             "14.0.0",
             "demodjango-branch",
             "demodjango-branch",
-        ),  # Case with config_platform_helper_version and specific branch
-        (None, True, "14.0.0", None, None),
-        (None, True, "14.0.0", None, None),
+        ),
+        (True, "14.0.0", None, None),
     ],
 )
 def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
     fakefs,
-    cli_platform_helper_version,
     config_platform_helper_version,
     expected_platform_helper_version,
     cli_demodjango_branch,
@@ -101,7 +95,7 @@ def test_generate_pipeline_command_generate_terraform_files_for_environment_pipe
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(cli_platform_helper_version, cli_demodjango_branch)
+    pipelines.generate(cli_demodjango_branch)
 
     assert_terraform(
         app_name,
@@ -131,7 +125,7 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate("an-unimportant-platform-version", "a-branch")
+    pipelines.generate("a-branch")
 
     expected_files_dir = Path(f"terraform/environment-pipelines/platform-prod-test/main.tf")
     assert expected_files_dir.exists()
@@ -146,11 +140,10 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
-def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_version(
+def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected_platform_helper_version(
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
-    cli_platform_helper_version = "13"
     exp_version = "14.0.0"
     app_name = "test-app"
     fakefs.create_file(
@@ -160,7 +153,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_expected_tpm_vers
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate(cli_platform_helper_version, None)
+    pipelines.generate(None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
@@ -188,7 +181,7 @@ def test_generate_calls_generate_codebase_pipeline_config_with_imports(
     ]
     pipelines = Pipelines(**mocks.params())
 
-    pipelines.generate("13", None)
+    pipelines.generate(None)
 
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(

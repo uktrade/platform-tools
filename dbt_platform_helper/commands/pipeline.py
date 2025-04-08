@@ -21,12 +21,6 @@ def pipeline():
 
 @pipeline.command()
 @click.option(
-    "--platform-helper-version",
-    help=f"""Override the default version of platform-helper with a specific version or branch. 
-    Precedence of version used is version supplied via CLI, then the version found in 
-    platform-config.yml/default_versions/platform-helper.""",
-)
-@click.option(
     "--deploy-branch",
     help="""Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
     This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
@@ -34,7 +28,7 @@ def pipeline():
     <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
     default=None,
 )
-def generate(platform_helper_version: str, deploy_branch: str):
+def generate(deploy_branch: str):
     """
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
@@ -59,6 +53,6 @@ def generate(platform_helper_version: str, deploy_branch: str):
             get_codestar_connection_arn,
             io,
         )
-        pipelines.generate(platform_helper_version, deploy_branch)
+        pipelines.generate(deploy_branch)
     except Exception as exc:
         io.abort_with_error(str(exc))
