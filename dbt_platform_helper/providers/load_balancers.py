@@ -56,12 +56,9 @@ class LoadBalancerProvider:
                 tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
 
                 if (
-                    "copilot-service" in tags
-                    and tags["copilot-service"] == svc
-                    and "copilot-environment" in tags
-                    and tags["copilot-environment"] == env
-                    and "copilot-application" in tags
-                    and tags["copilot-application"] == app
+                    tags.get("copilot-service") == svc
+                    and tags.get("copilot-environment") == env
+                    and tags.get("copilot-application") == app
                 ):
                     target_group_arn = resource["ResourceARN"]
 
