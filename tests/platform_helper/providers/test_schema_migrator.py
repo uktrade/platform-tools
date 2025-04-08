@@ -8,6 +8,7 @@ from dbt_platform_helper.providers.schema_migrator import (
     InvalidMigrationConfigurationException,
 )
 from dbt_platform_helper.providers.schema_migrator import Migrator
+from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 
 class MockMigration:
@@ -49,7 +50,9 @@ class TestMigrator:
         migration4 = MockMigration("four", 1, call_record)
         mock_io_provider = create_autospec(spec=ClickIOProvider, spec_set=True)
 
-        migrator = Migrator([migration1, migration2, migration3, migration4], mock_io_provider)
+        migrator = Migrator(
+            [migration1, migration2, migration3, migration4], io_provider=mock_io_provider
+        )
 
         migrator.migrate({})
 
@@ -91,7 +94,7 @@ class TestMigrator:
 
         actual_config = migrator.migrate({})
 
-        assert actual_config == {"schema_version": 0}
+        assert actual_config["schema_version"] == 0
 
     def test_migrations_bump_schema_version_correctly(self):
         call_record = []
@@ -101,7 +104,7 @@ class TestMigrator:
 
         actual_config = migrator.migrate({"schema_version": 1})
 
-        assert actual_config == {"schema_version": 3}
+        assert actual_config["schema_version"] == 3
 
     def test_migrations_only_runs_for_migrations_targeting_schema_version_or_later(self):
         call_record = []
@@ -110,12 +113,23 @@ class TestMigrator:
         migration3 = MockMigration("three", 3, call_record)
         migration4 = MockMigration("four", 4, call_record)
         mock_io_provider = create_autospec(spec=ClickIOProvider, spec_set=True)
+        mock_installed_version_provider = create_autospec(
+            spec=InstalledVersionProvider, spec_set=True
+        )
+        mock_installed_version_provider.get_semantic_version.return_value = "14.99.7"
 
-        migrator = Migrator([migration1, migration2, migration3, migration4], mock_io_provider)
+        migrator = Migrator(
+            [migration1, migration2, migration3, migration4],
+            installed_version_provider=mock_installed_version_provider,
+            io_provider=mock_io_provider,
+        )
 
         actual_config = migrator.migrate({"schema_version": 3})
 
-        assert actual_config == {"schema_version": 5}
+        assert actual_config == {
+            "schema_version": 5,
+            "default_versions": {"platform-helper": "14.99.7"},
+        }
         assert call_record == ["three", "four"]
 
         actual_io_output = mock_io_provider.info.call_args_list
@@ -130,6 +144,32 @@ class TestMigrator:
             == "Migrating from platform config schema version 4 to version 5"
         )
         assert actual_io_output[2].args[0] == "\nMigration complete"
+
+    def test_platform_helper_version_added(self):
+        mock_installed_version_provider = create_autospec(
+            spec=InstalledVersionProvider, spec_set=True
+        )
+        mock_installed_version_provider.get_semantic_version.return_value = "14.99.7"
+
+        migrator = Migrator([], installed_version_provider=mock_installed_version_provider)
+
+        actual_config = migrator.migrate({"schema_version": 3})
+
+        assert actual_config["default_versions"]["platform-helper"] == "14.99.7"
+
+    def test_platform_helper_version_updated(self):
+        mock_installed_version_provider = create_autospec(
+            spec=InstalledVersionProvider, spec_set=True
+        )
+        mock_installed_version_provider.get_semantic_version.return_value = "17.77.7"
+
+        migrator = Migrator([], installed_version_provider=mock_installed_version_provider)
+
+        actual_config = migrator.migrate(
+            {"schema_version": 3, "default_versions": {"platform-helper": "14.0.4"}}
+        )
+
+        assert actual_config["default_versions"]["platform-helper"] == "17.77.7"
 
     @pytest.mark.parametrize(
         "keys",
@@ -168,7 +208,7 @@ class TestMigrator:
         config = {}
 
         for key in keys:
-            config[key] = key
+            config[key] = {} if key == "default_versions" else key
 
         actual_config = migrator.migrate(config)
 
