@@ -1,6 +1,9 @@
+from unittest.mock import create_autospec
+
 import pytest
 import yaml
 
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrator import (
     InvalidMigrationConfigurationException,
 )
@@ -32,11 +35,44 @@ class TestMigrator:
         migration3 = MockMigration("three", 2, call_record)
         migration4 = MockMigration("four", 1, call_record)
 
-        migrator = Migrator(migration1, migration2, migration3, migration4)
+        migrator = Migrator([migration1, migration2, migration3, migration4])
 
         migrator.migrate({})
 
         assert call_record == ["two", "four", "three", "one"]
+
+    def test_migrator_migration_messages(self):
+        call_record = []
+        migration1 = MockMigration("one", 3, call_record)
+        migration2 = MockMigration("two", 0, call_record)
+        migration3 = MockMigration("three", 2, call_record)
+        migration4 = MockMigration("four", 1, call_record)
+        mock_io_provider = create_autospec(spec=ClickIOProvider, spec_set=True)
+
+        migrator = Migrator([migration1, migration2, migration3, migration4], mock_io_provider)
+
+        migrator.migrate({})
+
+        actual_io_output = mock_io_provider.info.call_args_list
+
+        assert len(actual_io_output) == 5
+        assert (
+            actual_io_output[0].args[0]
+            == "Migrating from platform config schema version 0 to version 1"
+        )
+        assert (
+            actual_io_output[1].args[0]
+            == "Migrating from platform config schema version 1 to version 2"
+        )
+        assert (
+            actual_io_output[2].args[0]
+            == "Migrating from platform config schema version 2 to version 3"
+        )
+        assert (
+            actual_io_output[3].args[0]
+            == "Migrating from platform config schema version 3 to version 4"
+        )
+        assert actual_io_output[4].args[0] == "\nMigration complete"
 
     def test_migration_migrations_cannot_have_same_from_version(self):
         call_record = []
@@ -46,12 +82,12 @@ class TestMigrator:
         migration4 = MockMigration("four", 1, call_record)
 
         with pytest.raises(InvalidMigrationConfigurationException) as ex:
-            Migrator(migration1, migration2, migration3, migration4)
+            Migrator([migration1, migration2, migration3, migration4])
 
         assert f"{ex.value}" == "`from_version` parameters must be unique amongst migrations"
 
     def test_migrations_adds_version_for_unversioned_config(self):
-        migrator = Migrator()
+        migrator = Migrator([])
 
         actual_config = migrator.migrate({})
 
@@ -61,7 +97,7 @@ class TestMigrator:
         call_record = []
         migration1 = MockMigration("one", 1, call_record)
         migration2 = MockMigration("two", 2, call_record)
-        migrator = Migrator(migration1, migration2)
+        migrator = Migrator([migration1, migration2])
 
         actual_config = migrator.migrate({"schema_version": 1})
 
@@ -73,12 +109,27 @@ class TestMigrator:
         migration2 = MockMigration("two", 2, call_record)
         migration3 = MockMigration("three", 3, call_record)
         migration4 = MockMigration("four", 4, call_record)
-        migrator = Migrator(migration1, migration2, migration3, migration4)
+        mock_io_provider = create_autospec(spec=ClickIOProvider, spec_set=True)
+
+        migrator = Migrator([migration1, migration2, migration3, migration4], mock_io_provider)
 
         actual_config = migrator.migrate({"schema_version": 3})
 
         assert actual_config == {"schema_version": 5}
         assert call_record == ["three", "four"]
+
+        actual_io_output = mock_io_provider.info.call_args_list
+        assert len(actual_io_output) == 3
+
+        assert (
+            actual_io_output[0].args[0]
+            == "Migrating from platform config schema version 3 to version 4"
+        )
+        assert (
+            actual_io_output[1].args[0]
+            == "Migrating from platform config schema version 4 to version 5"
+        )
+        assert actual_io_output[2].args[0] == "\nMigration complete"
 
     @pytest.mark.parametrize(
         "keys",
@@ -112,7 +163,7 @@ class TestMigrator:
     def test_migrate_ensures_application_schema_version_and_default_versions_are_at_the_top_if_they_exist(
         self, keys
     ):
-        migrator = Migrator()
+        migrator = Migrator([])
 
         config = {}
 

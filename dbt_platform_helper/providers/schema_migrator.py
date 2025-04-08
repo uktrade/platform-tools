@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Protocol
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrations.schema_v0_to_v1_migration import (
     SchemaV0ToV1Migration,
 )
@@ -27,8 +28,13 @@ ALL_MIGRATIONS = [SchemaV0ToV1Migration()]
 
 
 class Migrator:
-    def __init__(self, *migrations: SchemaMigrationProtocol):
+    def __init__(
+        self,
+        migrations: list[SchemaMigrationProtocol],
+        io_provider: ClickIOProvider = ClickIOProvider(),
+    ):
         self.migrations = sorted(migrations, key=lambda m: m.from_version())
+        self.io_provider = io_provider
         from_version_counts = Counter([migration.from_version() for migration in self.migrations])
         duplicate_from_versions = [count for count in from_version_counts.values() if count > 1]
 
@@ -53,6 +59,12 @@ class Migrator:
             if migration.from_version() != out["schema_version"]:
                 continue
             out = migration.migrate(out)
+            schema_version = out["schema_version"]
+            self.io_provider.info(
+                f"Migrating from platform config schema version {schema_version} to version {schema_version + 1}"
+            )
             out["schema_version"] += 1
+
+        self.io_provider.info("\nMigration complete")
 
         return dict(out)
