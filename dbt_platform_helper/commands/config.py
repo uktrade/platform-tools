@@ -4,7 +4,7 @@ from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.schema_migrations import (
+from dbt_platform_helper.providers.schema_migrator import (
     PlatformConfigSchemaMigrationException,
 )
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort

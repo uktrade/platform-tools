@@ -14,8 +14,8 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.schema_migrations import ALL_MIGRATIONS
-from dbt_platform_helper.providers.schema_migrations import Migrator
+from dbt_platform_helper.providers.schema_migrator import ALL_MIGRATIONS
+from dbt_platform_helper.providers.schema_migrator import Migrator
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )

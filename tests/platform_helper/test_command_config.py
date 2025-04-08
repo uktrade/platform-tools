@@ -7,7 +7,7 @@ from dbt_platform_helper.commands.config import aws
 from dbt_platform_helper.commands.config import migrate
 from dbt_platform_helper.commands.config import validate
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.schema_migrations import (
+from dbt_platform_helper.providers.schema_migrator import (
     PlatformConfigSchemaMigrationException,
 )
 
