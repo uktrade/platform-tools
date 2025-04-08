@@ -4,8 +4,8 @@ from unittest.mock import call
 import pytest
 import yaml
 
-from dbt_platform_helper.constants import CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.vpc import Vpc
@@ -533,7 +533,7 @@ def test_update_application_from_platform_config_if_application_not_specified(fs
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
             {
-                "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
                 "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
             }
@@ -542,7 +542,7 @@ def test_update_application_from_platform_config_if_application_not_specified(fs
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
+    config_provider = ConfigProvider(config_validator, installed_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -570,7 +570,7 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
             {
-                "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
                 "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"test-env": {"vpc": "test-env-vpc"}},
@@ -582,7 +582,7 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
+    config_provider = ConfigProvider(config_validator, installed_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -655,7 +655,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
             {
-                "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
                 "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"test-env": {"vpc": "test-env-vpc"}},
@@ -664,7 +664,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
     )
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
+    config_provider = ConfigProvider(config_validator, installed_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -681,7 +681,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
             {
-                "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
                 "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"*": {"vpc": "test-env-vpc"}, "test-env": {}},
@@ -691,7 +691,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator, current_platform_helper_version="14.0.0")
+    config_provider = ConfigProvider(config_validator, installed_platform_helper_version="14.0.0")
 
     mocks = DataCopyMocks(config_provider=config_provider)
 

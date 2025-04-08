@@ -331,7 +331,7 @@ platform-helper config validate
 
 [↩ Parent](#platform-helper-config)
 
-    Validate deployment or application configuration.
+    Update configuration to match current schema.
 
 ## Usage
 

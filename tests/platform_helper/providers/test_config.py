@@ -10,8 +10,8 @@ from freezegun import freeze_time
 from schema import SchemaError
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
-from dbt_platform_helper.constants import CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -22,12 +22,12 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 def expected_schema_pre_validation_header(
-    platform_helper_version: str,
-    schema_version: int,
+    installed_platform_helper_version: str,
+    installed_schema_version: int,
     config_platform_helper_version: str,
     config_schema_version: int,
 ):
-    return f"""Installed version: platform-helper: {platform_helper_version} (schema version: {schema_version})
+    return f"""Installed version: platform-helper: {installed_platform_helper_version} (schema version: {installed_schema_version})
 'platform-config.yml' version: platform-helper: {config_platform_helper_version} (schema version: {config_schema_version})"""
 
 
@@ -36,7 +36,7 @@ class TestLoadAndValidate:
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = valid_platform_config
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         )
 
         config_provider.load_and_validate_platform_config()
@@ -46,7 +46,7 @@ class TestLoadAndValidate:
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.side_effect = DuplicateKeysException("repeated-key")
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         )
 
         with pytest.raises(SystemExit):
@@ -71,8 +71,8 @@ class TestLoadAndValidate:
         config_provider = ConfigProvider(
             ConfigValidator(),
             mock_file_provider,
-            current_platform_config_schema_version=3,
-            current_platform_helper_version="14.0.0",
+            installed_schema_version=3,
+            installed_platform_helper_version="14.0.0",
         )
 
         with pytest.raises(SystemExit):
@@ -84,7 +84,10 @@ class TestLoadAndValidate:
 
         assert actual_error.strip() == expected_error
 
-    def test_load_and_validate_exits_if_platform_tools_prior_to_13(self, capsys):
+    @pytest.mark.parametrize("config_platform_helper_version", ["12.0.0", "11.4.0", "12.6.0"])
+    def test_load_and_validate_exits_if_platform_tools_prior_to_13(
+        self, config_platform_helper_version, capsys
+    ):
         """
         This scenario could occur if your platform-helper version is before
         13.x.x.
@@ -95,24 +98,26 @@ class TestLoadAndValidate:
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = {
             "application": "test_application",
-            "default_versions": {"platform-helper": "12.0.0"},
+            "default_versions": {"platform-helper": config_platform_helper_version},
         }
         config_provider = ConfigProvider(
             ConfigValidator(),
             mock_file_provider,
-            current_platform_config_schema_version=3,
-            current_platform_helper_version="14.0.0",
+            installed_schema_version=3,
+            installed_platform_helper_version="14.0.0",
         )
 
         with pytest.raises(SystemExit):
             config_provider.load_and_validate_platform_config()
 
-        expected_header = expected_schema_pre_validation_header("14.0.0", 3, "12.0.0", "N/A")
+        expected_header = expected_schema_pre_validation_header(
+            "14.0.0", 3, config_platform_helper_version, "N/A"
+        )
         expected_error = f"""Error: {expected_header}
 
 Please upgrade to v13 following the instructions in https://platform.readme.trade.gov.uk/ and then upgrade to
     version 14.0.0 by running: `platform-helper config migrate.
-(If you cannot upgrade immediately then downgrade your platform-helper version using 'pip install --upgrade dbt-platform-helper==12.0.0')"""
+(If you cannot upgrade immediately then downgrade your platform-helper version using 'pip install --upgrade dbt-platform-helper=={config_platform_helper_version}')"""
         actual_error = capsys.readouterr().err
 
         assert actual_error.strip() == expected_error
@@ -127,8 +132,8 @@ Please upgrade to v13 following the instructions in https://platform.readme.trad
         config_provider = ConfigProvider(
             ConfigValidator(),
             mock_file_provider,
-            current_platform_config_schema_version=3,
-            current_platform_helper_version="14.0.0",
+            installed_schema_version=3,
+            installed_platform_helper_version="14.0.0",
         )
 
         with pytest.raises(SystemExit):
@@ -161,8 +166,8 @@ Please upgrade to v13 following the instructions in https://platform.readme.trad
         config_provider = ConfigProvider(
             ConfigValidator(),
             mock_file_provider,
-            current_platform_config_schema_version=3,
-            current_platform_helper_version="14.0.0",
+            installed_schema_version=3,
+            installed_platform_helper_version="14.0.0",
         )
 
         with pytest.raises(SystemExit) as exc:
@@ -190,8 +195,8 @@ Please upgrade to v13 following the instructions in https://platform.readme.trad
         config_provider = ConfigProvider(
             ConfigValidator(),
             mock_file_provider,
-            current_platform_config_schema_version=7,
-            current_platform_helper_version="14.0.0",
+            installed_schema_version=7,
+            installed_platform_helper_version="14.0.0",
         )
 
         with pytest.raises(SystemExit):
@@ -226,8 +231,8 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         config_provider = ConfigProvider(
             ConfigValidator(),
             mock_file_provider,
-            current_platform_config_schema_version=2,
-            current_platform_helper_version="14.0.0",
+            installed_schema_version=2,
+            installed_platform_helper_version="14.0.0",
         )
 
         with pytest.raises(SystemExit):
@@ -245,7 +250,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.side_effect = InvalidYamlException("platform-config.yml")
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         )
 
         with pytest.raises(SystemExit):
@@ -259,7 +264,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
 
         with pytest.raises(SystemExit):
             ConfigProvider(
-                ConfigValidator(), current_platform_helper_version="14.0.0"
+                ConfigValidator(), installed_platform_helper_version="14.0.0"
             ).load_and_validate_platform_config()
 
         assert (
@@ -289,7 +294,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = platform_env_config
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         )
 
         # Should not error if config is sound.
@@ -308,7 +313,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         load_and_validate_config returns the loaded yaml unmodified."""
 
         config_provider = ConfigProvider(
-            ConfigValidator(), current_platform_helper_version="14.0.0"
+            ConfigValidator(), installed_platform_helper_version="14.0.0"
         )
 
         path = FIXTURES_DIR / yaml_file
@@ -317,7 +322,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         with open(path, "r") as fd:
             conf = yaml.safe_load(fd)
 
-        assert validated == {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION, **conf}
+        assert validated == {"schema_version": PLATFORM_CONFIG_SCHEMA_VERSION, **conf}
 
     def test_load_unvalidated_config_file_returns_a_dict_given_valid_yaml(self, fakefs):
         fakefs.create_file(
@@ -327,7 +332,7 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
             some_key: some_value
         """,
         )
-        config_provider = ConfigProvider(current_platform_helper_version="14.0.0")
+        config_provider = ConfigProvider(installed_platform_helper_version="14.0.0")
         config = config_provider.load_unvalidated_config_file()
 
         assert config == {
@@ -336,10 +341,10 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
 
     def test_load_unvalidated_config_file_returns_minimal_dict_given_invalid_yaml(self, fakefs):
         fakefs.create_file(Path(PLATFORM_CONFIG_FILE), contents="{")
-        config_provider = ConfigProvider(current_platform_helper_version="14.0.0")
+        config_provider = ConfigProvider(installed_platform_helper_version="14.0.0")
         config = config_provider.load_unvalidated_config_file()
 
-        assert config == {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
+        assert config == {"schema_version": PLATFORM_CONFIG_SCHEMA_VERSION}
 
 
 class TestDataMigrationValidation:
@@ -347,7 +352,7 @@ class TestDataMigrationValidation:
         """Edge cases for this are all covered in unit tests of
         validate_database_copy_section elsewhere in this file."""
         config = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "extensions": {
@@ -368,7 +373,10 @@ class TestDataMigrationValidation:
         mock_io = create_autospec(ClickIOProvider, spec_set=True)
 
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, mock_io, current_platform_helper_version="14.0.0"
+            ConfigValidator(),
+            mock_file_provider,
+            mock_io,
+            installed_platform_helper_version="14.0.0",
         )
 
         config_provider.load_and_validate_platform_config()
@@ -381,7 +389,7 @@ class TestDataMigrationValidation:
         """Edge cases for this are all covered in unit tests of
         validate_database_copy_section elsewhere in this file."""
         config = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "extensions": {
@@ -411,7 +419,7 @@ class TestDataMigrationValidation:
         }
 
         config_provider = ConfigProvider(
-            ConfigValidator(), current_platform_helper_version="14.0.0"
+            ConfigValidator(), installed_platform_helper_version="14.0.0"
         )
         config_provider.config = config
         mock_io = create_autospec(ClickIOProvider, spec_set=True)
@@ -432,7 +440,7 @@ class TestDataMigrationValidation:
         }
 
         config_provider = ConfigProvider(
-            ConfigValidator(), current_platform_helper_version="14.0.0"
+            ConfigValidator(), installed_platform_helper_version="14.0.0"
         )
         config_provider.config = config
         mock_io = create_autospec(ClickIOProvider, spec_set=True)
@@ -443,7 +451,7 @@ class TestDataMigrationValidation:
 
         assert (
             str(exc.value)
-            == f"Key 'schema_version' error:\n{CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION} does not match {schema_version}"
+            == f"Key 'schema_version' error:\n{PLATFORM_CONFIG_SCHEMA_VERSION} does not match {schema_version}"
         )
 
     def test_validate_data_migration_fails_if_schema_version_missing(self):
@@ -453,7 +461,7 @@ class TestDataMigrationValidation:
         }
 
         config_provider = ConfigProvider(
-            ConfigValidator(), current_platform_helper_version="14.0.0"
+            ConfigValidator(), installed_platform_helper_version="14.0.0"
         )
         config_provider.config = config
         mock_io = create_autospec(ClickIOProvider, spec_set=True)
@@ -469,7 +477,7 @@ class TestGetEnrichedConfig:
     def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "environments": {
@@ -485,7 +493,7 @@ class TestGetEnrichedConfig:
         }
 
         expected_enriched_config = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "environments": {
@@ -502,7 +510,7 @@ class TestGetEnrichedConfig:
         mock_config_validator = Mock()
 
         result = ConfigProvider(
-            mock_config_validator, mock_file_provider, current_platform_helper_version="14.0.0"
+            mock_config_validator, mock_file_provider, installed_platform_helper_version="14.0.0"
         ).get_enriched_config()
 
         assert result == expected_enriched_config
@@ -521,14 +529,14 @@ class TestGetEnrichedConfig:
     ):
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "environments": mock_environment_config,
         }
 
         result = ConfigProvider(
-            Mock(), mock_file_provider, current_platform_helper_version="14.0.0"
+            Mock(), mock_file_provider, installed_platform_helper_version="14.0.0"
         ).get_enriched_config()
 
         assert (
@@ -597,7 +605,7 @@ class TestVersionValidations:
         mock_file_provider.load.return_value = valid_platform_config
 
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         )
 
         with pytest.raises(SystemExit):
@@ -657,7 +665,7 @@ class TestApplyEnvironmentDefaults:
 class TestCodebasePipelineValidations:
     def test_codebase_pipeline_run_groups_validate(self):
         platform_config = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "codebase_pipelines": {
@@ -677,7 +685,7 @@ class TestCodebasePipelineValidations:
         mock_file_provider.load.return_value = platform_config
 
         config = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         ).load_and_validate_platform_config()
 
         assert config[CODEBASE_PIPELINES_KEY]["application"]["services"] == [
@@ -688,7 +696,7 @@ class TestCodebasePipelineValidations:
     @pytest.mark.parametrize("channel", [1, [], {}, True])
     def test_codebase_slack_channel_fails_if_not_a_string(self, channel, capsys):
         config = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "codebase_pipelines": {
                 "application": {
@@ -705,7 +713,7 @@ class TestCodebasePipelineValidations:
 
         with pytest.raises(SystemExit):
             ConfigProvider(
-                ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+                ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
             ).load_and_validate_platform_config()
 
         error = capsys.readouterr().err
@@ -718,7 +726,7 @@ class TestCodebasePipelineValidations:
     @pytest.mark.parametrize("requires_image", [1, "brian", [], {}])
     def test_codebase_requires_image_build_fails_if_not_a_bool(self, capsys, requires_image):
         config = {
-            "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
             "application": "test-app",
             "codebase_pipelines": {
                 "application": {
@@ -736,7 +744,7 @@ class TestCodebasePipelineValidations:
 
         with pytest.raises(SystemExit):
             ConfigProvider(
-                ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+                ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
             ).load_and_validate_platform_config()
         error = capsys.readouterr().err
 
@@ -752,7 +760,7 @@ class TestWritePlatformConfig:
     def test_write_platform_config(self):
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         config_provider = ConfigProvider(
-            ConfigValidator(), mock_file_provider, current_platform_helper_version="14.0.0"
+            ConfigValidator(), mock_file_provider, installed_platform_helper_version="14.0.0"
         )
 
         config_provider.write_platform_config({"application": "test-app"})
