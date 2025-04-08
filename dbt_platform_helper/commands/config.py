@@ -27,7 +27,7 @@ def validate():
 
 @config.command()
 def migrate():
-    """Validate deployment or application configuration."""
+    """Update configuration to match current schema."""
     try:
         Config().migrate()
     except PlatformConfigSchemaMigrationException as err:
