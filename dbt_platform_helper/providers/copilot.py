@@ -53,7 +53,7 @@ def create_addon_client_task(
         # We cannot check for botocore.errorfactory.NoSuchEntityException as botocore generates that class on the fly as part of errorfactory.
         # factory. Checking the error code is the recommended way of handling these exceptions.
         if ex.response.get("Error", {}).get("Code", None) != "NoSuchEntity":
-            # TODO When we are refactoring this, raise an exception to be caught at the command layer
+            # TODO: DBTP-1946: When we are refactoring this, raise an exception to be caught at the command layer
             abort_with_error(
                 f"cannot obtain Role {role_name}: {ex.response.get('Error', {}).get('Message', '')}"
             )
@@ -132,7 +132,7 @@ def connect_to_addon_client_task(
     tries = 0
     while tries < 15 and not running:
         tries += 1
-        # Todo: Use from ECS provider when we refactor this
+        # TODO: DBTP-1946: Use from ECS provider when we refactor this
         if get_ecs_task_arns(ecs_client, cluster_arn, task_name):
             subprocess.call(
                 "copilot task exec "
@@ -154,7 +154,7 @@ def _normalise_secret_name(addon_name: str) -> str:
 
 
 def _get_secrets_provider(application: Application, env: str) -> Secrets:
-    # Todo: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
+    # TODO: DBTP-1946: We instantiate the secrets provider here to avoid rabbit holing, but something better probably possible when we are refactoring this area
     return Secrets(
         application.environments[env].session.client("ssm"),
         application.environments[env].session.client("secretsmanager"),
