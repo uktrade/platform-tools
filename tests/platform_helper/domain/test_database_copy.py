@@ -532,7 +532,11 @@ def test_update_application_from_platform_config_if_application_not_specified(fs
     fs.create_file(
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
-            {"schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION, "application": "test-app"}
+            {
+                "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
+                "application": "test-app",
+            }
         ),
     )
 
@@ -567,6 +571,7 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
         contents=yaml.dump(
             {
                 "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"test-env": {"vpc": "test-env-vpc"}},
             }
@@ -651,6 +656,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
         contents=yaml.dump(
             {
                 "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"test-env": {"vpc": "test-env-vpc"}},
             }
@@ -676,6 +682,7 @@ def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
         contents=yaml.dump(
             {
                 "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"*": {"vpc": "test-env-vpc"}, "test-env": {}},
             }

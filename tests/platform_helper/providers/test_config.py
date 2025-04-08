@@ -348,6 +348,7 @@ class TestDataMigrationValidation:
         validate_database_copy_section elsewhere in this file."""
         config = {
             "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "extensions": {
                 "test-s3-bucket": {
@@ -381,6 +382,7 @@ class TestDataMigrationValidation:
         validate_database_copy_section elsewhere in this file."""
         config = {
             "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "extensions": {
                 "test-s3-bucket": {
@@ -425,6 +427,7 @@ class TestDataMigrationValidation:
     def test_validate_data_migration_fails_if_schema_version_wrong(self, schema_version):
         config = {
             "schema_version": schema_version,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
         }
 
@@ -446,6 +449,7 @@ class TestDataMigrationValidation:
     def test_validate_data_migration_fails_if_schema_version_missing(self):
         config = {
             "application": "test-app",
+            "default_versions": {"platform-helper": "14.0.0"},
         }
 
         config_provider = ConfigProvider(
@@ -466,6 +470,7 @@ class TestGetEnrichedConfig:
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = {
             "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "environments": {
                 "*": {
@@ -481,6 +486,7 @@ class TestGetEnrichedConfig:
 
         expected_enriched_config = {
             "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "environments": {
                 "test": {
@@ -516,6 +522,7 @@ class TestGetEnrichedConfig:
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = {
             "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "environments": mock_environment_config,
         }
@@ -533,7 +540,10 @@ class TestVersionValidations:
     def test_validation_fails_if_invalid_default_version_keys_present(
         self, capsys, valid_platform_config
     ):
-        valid_platform_config["default_versions"] = {"something-invalid": "1.2.3"}
+        valid_platform_config["default_versions"] = {
+            "platform-helper": "14.0.0",
+            "something-invalid": "1.2.3",
+        }
 
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
         mock_file_provider.load.return_value = valid_platform_config
@@ -543,6 +553,32 @@ class TestVersionValidations:
             config_provider.load_and_validate_platform_config()
 
         assert "Wrong key 'something-invalid'" in capsys.readouterr().err
+
+    def test_validation_fails_if_default_version_missing(self, capsys, valid_platform_config):
+        del valid_platform_config["default_versions"]
+
+        mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
+        mock_file_provider.load.return_value = valid_platform_config
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert "Missing key: 'default_versions'" in capsys.readouterr().err
+
+    def test_validation_fails_if_default_version_platform_helper_missing(
+        self, capsys, valid_platform_config
+    ):
+        valid_platform_config["default_versions"] = {}
+
+        mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
+        mock_file_provider.load.return_value = valid_platform_config
+        config_provider = ConfigProvider(ConfigValidator(), mock_file_provider)
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert "Missing key: 'platform-helper'" in capsys.readouterr().err
 
     @pytest.mark.parametrize(
         "invalid_key",
@@ -622,6 +658,7 @@ class TestCodebasePipelineValidations:
     def test_codebase_pipeline_run_groups_validate(self):
         platform_config = {
             "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
             "application": "test-app",
             "codebase_pipelines": {
                 "application": {

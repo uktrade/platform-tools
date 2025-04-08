@@ -12,6 +12,7 @@ from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.yaml_file import FileNotFoundException
 from dbt_platform_helper.providers.yaml_file import FileProviderException
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -125,8 +126,8 @@ class ConfigProvider:
         # else the schema_version is the correct one so continue.
 
     def _handle_missing_schema_version(self, platform_helper_default_version: str, header: str):
-        version_parts = platform_helper_default_version.split(".")
-        major_version = int(version_parts[0]) if version_parts[0] else None
+        platform_helper_version = SemanticVersion.from_string(platform_helper_default_version)
+        major_version = platform_helper_version and platform_helper_version.major
         if not major_version:
             self._abort_due_to_schema_version_error(
                 header,

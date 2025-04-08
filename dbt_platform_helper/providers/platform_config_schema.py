@@ -19,7 +19,7 @@ class PlatformConfigSchema:
                 "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
                 "application": str,
                 Optional("deploy_repository"): str,
-                Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
+                "default_versions": PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
@@ -169,7 +169,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __default_versions_schema() -> dict:
         return {
-            Optional("platform-helper"): str,
+            "platform-helper": str,
         }
 
     @staticmethod

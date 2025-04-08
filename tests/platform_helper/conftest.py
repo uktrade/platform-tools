@@ -401,6 +401,8 @@ def valid_platform_config():
     return yaml.safe_load(
         f"""
 schema_version: {CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
+default_versions: 
+  platform-helper: 14.0.0
 application: test-app
 default_versions: 
     platform-helper: 10.2.0
@@ -594,6 +596,7 @@ codebase_pipelines:
 def platform_env_config():
     return {
         "schema_version": CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION,
+        "default_versions": {"platform-helper": "14.0.0"},
         "application": "my-app",
         "environments": {
             "*": {
@@ -738,6 +741,8 @@ def platform_config_for_env_pipelines():
     return yaml.safe_load(
         f"""
 schema_version: {CURRENT_PLATFORM_CONFIG_SCHEMA_VERSION}
+default_versions: 
+  platform-helper: 14.0.0
 application: test-app
 deploy_repository: uktrade/test-app-weird-name-deploy
 

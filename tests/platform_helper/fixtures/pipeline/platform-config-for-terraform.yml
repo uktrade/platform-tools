@@ -1,5 +1,7 @@
 schema_version: 1
 application: test-app
+default_versions:
+  platform-helper: 14.0.0
 
 environments:
   dev:
