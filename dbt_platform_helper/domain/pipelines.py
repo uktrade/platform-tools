@@ -7,6 +7,7 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -66,6 +67,11 @@ class Pipelines:
         platform_config_platform_helper_default_version: str = platform_config.get(
             "default_versions", {}
         ).get("platform-helper")
+
+        if platform_config_platform_helper_default_version is None:
+            raise PlatformHelperVersionNotFoundException(
+                "cannot find 'platform-helper' in 'default_versions' in the platform-config.yml file."
+            )
 
         # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""

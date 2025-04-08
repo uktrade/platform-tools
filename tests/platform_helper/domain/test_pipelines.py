@@ -9,6 +9,7 @@ from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
+from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 
@@ -64,6 +65,23 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
 
+def test_pipeline_generate_raises_a_platform_helper_version_not_found_exception_if_default_versions_is_empty_in_config(
+    fakefs,
+    platform_config_for_env_pipelines,
+):
+    app_name = "test-app"
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
+    mocks = PipelineMocks(app_name)
+    pipelines = Pipelines(**mocks.params())
+
+    with pytest.raises(
+        PlatformHelperVersionNotFoundException,
+        match="cannot find 'platform-helper' in 'default_versions' in the platform-config.yml file.",
+    ):
+
+        pipelines.generate(None)
+
+
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
@@ -79,7 +97,7 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
         (True, "14.0.0", None, None),
     ],
 )
-def test_generate_pipeline_command_generate_terraform_files_for_environment_pipeline_manifest(
+def test_pipeline_generate_command_generate_terraform_files_for_environment_pipeline_manifest(
     fakefs,
     config_platform_helper_version,
     expected_platform_helper_version,
@@ -121,6 +139,7 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     app_name = "test-app"
     # deploy_repository key set on test_fixture so remove it
     platform_config_for_env_pipelines.pop("deploy_repository")
+    platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "14.0.0"}
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
@@ -164,7 +183,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
     )
 
 
-def test_generate_calls_generate_codebase_pipeline_config_with_imports(
+def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     codebase_pipeline_config_for_2_pipelines_and_1_run_group, fakefs
 ):
     app_name = "test-app"
