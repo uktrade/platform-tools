@@ -1,6 +1,5 @@
 import os
 
-from dbt_platform_helper.constants import MERGED_TPM_PLATFORM_HELPER_VERSION
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -19,7 +18,6 @@ from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 from dbt_platform_helper.providers.version import VersionProvider
 from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
-from dbt_platform_helper.providers.version_status import UnsupportedVersionException
 from dbt_platform_helper.providers.version_status import VersionStatus
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
@@ -163,36 +161,31 @@ class PlatformHelperVersioning:
 
         return out
 
-    def get_required_platform_helper_version(self, io: ClickIOProvider, cli_override: str) -> str:
-        version_status = self._get_version_status(include_project_versions=True)
+    # TODO we may require this method if we re-introduce version precedence if using an env var. Tests will be required.
 
-        version_preference_order = [
-            cli_override,
-            str(version_status.platform_config_default),
-            str(version_status.deprecated_version_file),  # TODO: Remove this
-        ]
+    # def get_required_platform_helper_version(self, io: ClickIOProvider) -> str:
+    #     version_status = self._get_version_status(include_project_versions=True)
+    #     print(f"VERSION_STATUS: ---- {version_status}")
 
-        # version_preference_order = [
-        #     self.cli_override,
-        #     self.platform_config_default,
-        #     self.deprecated_version_file,
-        # ]
+    #     version_preference_order = [
+    #         str(version_status.platform_config_default),
+    #     ]
 
-        valid_versions = [version for version in version_preference_order if version]
+    #     valid_versions = [version for version in version_preference_order if version]
 
-        if valid_versions:
-            version = valid_versions[0]
-            if SemanticVersion.is_semantic_version(version):
-                semantic_version = SemanticVersion.from_string(valid_versions[0])
-                if semantic_version and (
-                    semantic_version.major < MERGED_TPM_PLATFORM_HELPER_VERSION
-                ):
-                    raise UnsupportedVersionException(valid_versions[0])
-            return version
-        else:
-            io.warn(
-                "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
-            )
+    #     if valid_versions:
+    #         version = valid_versions[0]
+    #         if SemanticVersion.is_semantic_version(version):
+    #             semantic_version = SemanticVersion.from_string(valid_versions[0])
+    #             if semantic_version and (
+    #                 semantic_version.major < MERGED_TPM_PLATFORM_HELPER_VERSION
+    #             ):
+    #                 raise UnsupportedVersionException(valid_versions[0])
+    #         return version
+    #     else:
+    #         io.warn(
+    #             "No platform-helper version specified. No value was provided via CLI, nor was one found in platform-config.yml under `default_versions`."
+    #         )
 
 
 class AWSVersioning:
