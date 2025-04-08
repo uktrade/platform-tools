@@ -89,16 +89,16 @@ class ConfigValidator:
         return self._validate_extension_supported_versions(
             config=config,
             aws_provider=Redis(self._get_client("elasticache")),
-            extension_type="redis",  # TODO this is information which can live in the RedisProvider
-            version_key="engine",  # TODO this is information which can live in the RedisProvider
+            extension_type="redis",  # TODO: DBTP-1888: this is information which can live in the RedisProvider
+            version_key="engine",  # TODO: DBTP-1888: this is information which can live in the RedisProvider
         )
 
     def validate_supported_opensearch_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
             aws_provider=Opensearch(self._get_client("opensearch")),
-            extension_type="opensearch",  # TODO this is information which can live in the OpensearchProvider
-            version_key="engine",  # TODO this is information which can live in the OpensearchProvider
+            extension_type="opensearch",  # TODO: DBTP-1888: this is information which can live in the OpensearchProvider
+            version_key="engine",  # TODO: DBTP-1888: this is information which can live in the OpensearchProvider
         )
 
     def validate_environment_pipelines(self, config):

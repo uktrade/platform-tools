@@ -111,7 +111,7 @@ def list(app, env):
         else:
             break
 
-    # Todo: DBTP-1953: When we refactor this, the above could probably just use dbt_platform_helper.utils.aws.get_ssm_secret_names so we would end up with print("\n".join(get_ssm_secret_names(app, env)))
+    # TODO: DBTP-1953: When we refactor this, the above could probably just use dbt_platform_helper.utils.aws.get_ssm_secret_names so we would end up with print("\n".join(get_ssm_secret_names(app, env)))
     print("\n".join(sorted(secrets)))
 
 

@@ -61,7 +61,7 @@ class NoDeploymentRepoConfigException(PlatformException):
         super().__init__("Could not find a deployment repository, no checks to run.")
 
 
-# TODO move to generic location so it can be reused
+# TODO: DBTP-1993: move to generic location so it can be reused
 class NoPlatformConfigException(PlatformException):
     def __init__(self):
         super().__init__(

@@ -64,7 +64,7 @@ class ConfigProvider:
         except FileProviderException:
             return {}
 
-    # TODO remove function and push logic to where this is called.
+    # TODO: DBTP-1888: remove function and push logic to where this is called.
     # removed usage from config domain, code is very generic and doesn't require the overhead of a function
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():

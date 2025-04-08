@@ -269,10 +269,10 @@ def start_pipeline_and_return_execution_id(codepipeline_client, build_options):
     return response["pipelineExecutionId"]
 
 
-# Todo: This should probably be in the AWS Copilot provider
+# TODO: DBTP-1888: This should probably be in the AWS Copilot provider
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
-        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
+        # TODO: DBTP-1968: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
         ssm_client = session.client("ssm")
         json.loads(
             ssm_client.get_parameter(
