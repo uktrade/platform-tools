@@ -77,8 +77,8 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
         ),
         (
             ImageNotFoundException,
-            {"commit": "test-commit-hash"},
-            """The commit hash "test-commit-hash" has not been built into an image, try the `platform-helper codebase build` command first.""",
+            {"image_ref": "does-not-exist"},
+            """An image labelled "does-not-exist" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
         ),
         (
             LogGroupNotFoundException,

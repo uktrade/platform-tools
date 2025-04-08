@@ -236,7 +236,8 @@ platform-helper codebase build --app <application> --codebase <codebase>
 
 ```
 platform-helper codebase deploy --app <application> --env <environment> --codebase <codebase> 
-                                --commit <commit> 
+                                [--tag <tag>] [--branch <branch>] 
+                                [--commit <commit>] 
 ```
 
 ## Options
@@ -247,8 +248,12 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
   - AWS Copilot environment
 - `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
+- `--tag <text>`
+  - Git tag that has been built into an image. Typically a semantic version of the form 1.2.3 or v1.2.3.
+- `--branch <text>`
+  - Git branch that has been built into an image.
 - `--commit <text>`
-  - GitHub commit hash
+  - Git sha hash that has been built into an image.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

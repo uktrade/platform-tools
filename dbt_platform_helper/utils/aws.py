@@ -14,9 +14,10 @@ from botocore.exceptions import ClientError
 
 from dbt_platform_helper.constants import REFRESH_TOKEN_MESSAGE
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import (
+    CopilotCodebaseNotFoundException,
+)
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
-from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -268,18 +269,23 @@ def start_pipeline_and_return_execution_id(codepipeline_client, build_options):
     return response["pipelineExecutionId"]
 
 
-def check_image_exists(session, application, codebase, commit):
-    ecr_client = session.client("ecr")
-    repository = f"{application.name}/{codebase}"
+# Todo: This should probably be in the AWS Copilot provider
+def check_codebase_exists(session: Session, application, codebase: str):
     try:
-        ecr_client.describe_images(
-            repositoryName=repository,
-            imageIds=[{"imageTag": f"commit-{commit}"}],
+        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
+        ssm_client = session.client("ssm")
+        json.loads(
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}/codebases/{codebase}"
+            )["Parameter"]["Value"]
         )
-    except ecr_client.exceptions.ImageNotFoundException:
-        raise ImageNotFoundException(commit)
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        raise RepositoryNotFoundException(repository)
+    except (
+        KeyError,
+        ValueError,
+        ssm_client.exceptions.ParameterNotFound,
+        json.JSONDecodeError,
+    ):
+        raise CopilotCodebaseNotFoundException(codebase)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:
