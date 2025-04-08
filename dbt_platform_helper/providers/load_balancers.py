@@ -92,7 +92,8 @@ class LoadBalancerProvider:
 
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
-        for page in paginator.paginate(LoadBalancerArn=load_balancer_arn):
+        page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
+        for page in page_iterator:
             listeners.extend(page["Listeners"])
 
         listener_arn = None
@@ -110,7 +111,8 @@ class LoadBalancerProvider:
     def get_load_balancer_for_application(self, app: str, env: str) -> str:
         load_balancers = []
         paginator = self.evlb_client.get_paginator("describe_load_balancers")
-        for page in paginator.paginate():
+        page_iterator = paginator.paginate()
+        for page in page_iterator:
             load_balancers.extend(lb["LoadBalancerArn"] for lb in page["LoadBalancers"])
 
         tag_descriptions = []
@@ -131,7 +133,8 @@ class LoadBalancerProvider:
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
         rules = []
         paginator = self.evlb_client.get_paginator("describe_rules")
-        for page in paginator.paginate(ListenerArn=listener_arn):
+        page_iterator = paginator.paginate(ListenerArn=listener_arn)
+        for page in page_iterator:
             rules.extend(page["Rules"])
 
         conditions = []
@@ -161,7 +164,8 @@ class LoadBalancerProvider:
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
         rules = []
         paginator = self.evlb_client.get_paginator("describe_rules")
-        for page in paginator.paginate(ListenerArn=listener_arn):
+        page_iterator = paginator.paginate(ListenerArn=listener_arn)
+        for page in page_iterator:
             rules.extend(page["Rules"])
 
         return self.get_rules_tag_descriptions(rules)
