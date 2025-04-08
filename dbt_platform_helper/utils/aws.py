@@ -220,7 +220,7 @@ def get_account_details(sts_client=None):
 
 
 def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):
-    # Todo: This is pretty much the same as dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret
+    # TODO: DBTP-1968: This is pretty much the same as dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret
     ssm_client = session.client("ssm")
     secrets_manager_client = session.client("secretsmanager")
     response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
