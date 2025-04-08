@@ -6,6 +6,8 @@ on:
       - opened
       - edited
       - synchronize
+      - labelled
+      - unlabelled
 
 permissions:
   pull-requests: read
@@ -18,3 +20,13 @@ jobs:
       - uses: amannn/action-semantic-pull-request@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Check the subject matches guidance from https://uktrade.atlassian.net/wiki/spaces/DBTP/pages/4402020487/Git+housekeeping?force_transition=f6ce49ea-c406-402b-ac37-ed6145b46259#Pull-request-titles
+          subjectPattern: ^[A-Z].* \([a-zA-Z]{1,}-[a-zA-Z0-9]{1,}\)+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the expected pattern. E.g. "feat: Add new feature (DBTP-1234)".
+          # Do not check pull requests where us taking control of the titles is either not possible, or would add more overhead than value
+          ignoreLabels: |
+            autorelease: pending
+            dependencies

@@ -13,9 +13,9 @@ class CreateTaskTimeoutException(AWSException):
 
 
 class ImageNotFoundException(AWSException):
-    def __init__(self, commit: str):
+    def __init__(self, image_ref: str):
         super().__init__(
-            f"""The commit hash "{commit}" has not been built into an image, try the `platform-helper codebase build` command first."""
+            f"""An image labelled "{image_ref}" could not be found in your image repository. Try the `platform-helper codebase build` command first."""
         )
 
 
@@ -35,3 +35,13 @@ class CopilotCodebaseNotFoundException(PlatformException):
         super().__init__(
             f"""The codebase "{codebase}" either does not exist or has not been deployed."""
         )
+
+
+class CreateAccessTokenException(AWSException):
+    def __init__(self, client_id: str):
+        super().__init__(f"""Failed to create access token for Client "{client_id}".""")
+
+
+class UnableToRetrieveSSOAccountList(AWSException):
+    def __init__(self):
+        super().__init__("Unable to retrieve AWS SSO account list")

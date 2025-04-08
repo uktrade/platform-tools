@@ -4,13 +4,11 @@ import time
 import urllib.parse
 from configparser import ConfigParser
 from pathlib import Path
-from typing import Tuple
 
 import boto3
 import botocore
 import botocore.exceptions
 import click
-import yaml
 from boto3 import Session
 from botocore.exceptions import ClientError
 
@@ -19,9 +17,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.exceptions import (
     CopilotCodebaseNotFoundException,
 )
-from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
-from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.validation import ValidationException
 
 SSM_BASE_PATH = "/copilot/{app}/{env}/secrets/"
@@ -206,15 +202,6 @@ def set_ssm_param(
     client.put_parameter(**parameter_args)
 
 
-def check_response(response):
-    if response["ResponseMetadata"]["HTTPStatusCode"] != 200:
-        click.secho(
-            f"Unknown response error from AWS.\nStatus Code: {response['ResponseMetadata']['HTTPStatusCode']}",
-            fg="red",
-        )
-        exit()
-
-
 def get_codestar_connection_arn(app_name):
     session = get_aws_session_or_abort()
     response = session.client("codestar-connections").list_connections()
@@ -230,114 +217,6 @@ def get_account_details(sts_client=None):
     response = sts_client.get_caller_identity()
 
     return response["Account"], response["UserId"]
-
-
-def get_public_repository_arn(repository_uri):
-    session = get_aws_session_or_abort()
-    response = session.client("ecr-public", region_name="us-east-1").describe_repositories()
-    repository = [
-        repo for repo in response["repositories"] if repo["repositoryUri"] == repository_uri
-    ]
-
-    return repository[0]["repositoryArn"] if repository else None
-
-
-def get_load_balancer_domain_and_configuration(
-    project_session: Session, app: str, env: str, svc: str
-) -> Tuple[str, dict]:
-    response = get_load_balancer_configuration(project_session, app, env, svc)
-
-    # Find the domain name
-    with open(f"./copilot/{svc}/manifest.yml", "r") as fd:
-        conf = yaml.safe_load(fd)
-        if "environments" in conf:
-            if env in conf["environments"]:
-                for domain in conf["environments"].items():
-                    if domain[0] == env:
-                        if (
-                            domain[1] is None
-                            or domain[1]["http"] is None
-                            or domain[1]["http"]["alias"] is None
-                        ):
-                            click.secho(
-                                f"No domains found, please check the ./copilot/{svc}/manifest.yml file",
-                                fg="red",
-                            )
-                            exit()
-                        domain_name = domain[1]["http"]["alias"]
-            else:
-                click.secho(
-                    f"Environment {env} not found, please check the ./copilot/{svc}/manifest.yml file",
-                    fg="red",
-                )
-                exit()
-
-    return domain_name, response["LoadBalancers"][0]
-
-
-def get_load_balancer_configuration(
-    project_session: Session, app: str, env: str, svc: str
-) -> list[Session]:
-    proj_client = project_session.client("ecs")
-
-    response = proj_client.list_clusters()
-    check_response(response)
-    no_items = True
-    for cluster_arn in response["clusterArns"]:
-        cluster_name = cluster_arn.split("/")[1]
-        if cluster_name.startswith(f"{app}-{env}-Cluster"):
-            no_items = False
-            break
-
-    if no_items:
-        click.echo(
-            click.style("There are no clusters for environment ", fg="red")
-            + click.style(f"{env} ", fg="white", bold=True)
-            + click.style("of application ", fg="red")
-            + click.style(f"{app} ", fg="white", bold=True)
-            + click.style("in AWS account ", fg="red")
-            + click.style(f"{project_session.profile_name}", fg="white", bold=True),
-        )
-        exit()
-
-    response = proj_client.list_services(cluster=cluster_name)
-    check_response(response)
-    no_items = True
-    for service_arn in response["serviceArns"]:
-        fully_qualified_service_name = service_arn.split("/")[2]
-        if fully_qualified_service_name.startswith(f"{app}-{env}-{svc}-Service"):
-            no_items = False
-            break
-
-    if no_items:
-        click.echo(
-            click.style("There are no services called ", fg="red")
-            + click.style(f"{svc} ", fg="white", bold=True)
-            + click.style("for environment ", fg="red")
-            + click.style(f"{env} ", fg="white", bold=True)
-            + click.style("of application ", fg="red")
-            + click.style(f"{app} ", fg="white", bold=True)
-            + click.style("in AWS account ", fg="red")
-            + click.style(f"{project_session.profile_name}", fg="white", bold=True),
-        )
-        exit()
-
-    elb_client = project_session.client("elbv2")
-
-    elb_arn = elb_client.describe_target_groups(
-        TargetGroupArns=[
-            proj_client.describe_services(
-                cluster=cluster_name,
-                services=[
-                    fully_qualified_service_name,
-                ],
-            )["services"][0]["loadBalancers"][0]["targetGroupArn"],
-        ],
-    )["TargetGroups"][0]["LoadBalancerArns"][0]
-
-    response = elb_client.describe_load_balancers(LoadBalancerArns=[elb_arn])
-    check_response(response)
-    return response
 
 
 def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):
@@ -407,20 +286,6 @@ def check_codebase_exists(session: Session, application, codebase: str):
         json.JSONDecodeError,
     ):
         raise CopilotCodebaseNotFoundException(codebase)
-
-
-def check_image_exists(session, application, codebase, commit):
-    ecr_client = session.client("ecr")
-    repository = f"{application.name}/{codebase}"
-    try:
-        ecr_client.describe_images(
-            repositoryName=repository,
-            imageIds=[{"imageTag": f"commit-{commit}"}],
-        )
-    except ecr_client.exceptions.ImageNotFoundException:
-        raise ImageNotFoundException(commit)
-    except ecr_client.exceptions.RepositoryNotFoundException:
-        raise RepositoryNotFoundException(repository)
 
 
 def get_build_url_from_arn(build_arn: str) -> str:

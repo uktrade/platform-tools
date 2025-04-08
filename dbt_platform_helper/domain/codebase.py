@@ -3,12 +3,14 @@ import stat
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
+from typing import Tuple
 
 import requests
 import yaml
 from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
@@ -17,7 +19,6 @@ from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
 )
 from dbt_platform_helper.utils.application import load_application
-from dbt_platform_helper.utils.aws import check_image_exists
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_arn
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
@@ -36,7 +37,7 @@ class Codebase:
         io: ClickIOProvider = ClickIOProvider(),
         load_application: Callable[[str], Application] = load_application,
         get_aws_session_or_abort: Callable[[str], Session] = get_aws_session_or_abort,
-        check_image_exists: Callable[[str], str] = check_image_exists,
+        ecr_provider: ECRProvider = ECRProvider(),
         get_image_build_project: Callable[[str], str] = get_image_build_project,
         get_manual_release_pipeline: Callable[[str], str] = get_manual_release_pipeline,
         get_build_url_from_arn: Callable[[str], str] = get_build_url_from_arn,
@@ -54,7 +55,7 @@ class Codebase:
         self.io = io
         self.load_application = load_application
         self.get_aws_session_or_abort = get_aws_session_or_abort
-        self.check_image_exists = check_image_exists
+        self.ecr_provider = ecr_provider
         self.get_image_build_project = get_image_build_project
         self.get_manual_release_pipeline = get_manual_release_pipeline
         self.get_build_url_from_arn = get_build_url_from_arn
@@ -149,31 +150,54 @@ class Codebase:
 
         raise ApplicationDeploymentNotTriggered(codebase)
 
-    def deploy(self, app, env, codebase, commit):
+    def deploy(
+        self,
+        app: str,
+        env: str,
+        codebase: str,
+        commit: str = None,
+        tag: str = None,
+        branch: str = None,
+    ):
         """Trigger a CodePipeline pipeline based deployment."""
-        session = self.get_aws_session_or_abort()
 
-        application = self.load_application(app, default_session=session)
-        if not application.environments.get(env):
-            raise ApplicationEnvironmentNotFoundException(application.name, env)
+        self._validate_reference_flags(commit, tag, branch)
 
-        self.check_image_exists(session, application, codebase, commit)
+        application, session = self._populate_application_values(app, env)
+
+        image_ref = None
+        if commit:
+            image_ref = f"commit-{commit[0:7]}"
+        elif tag:
+            image_ref = f"tag-{tag}"
+        elif branch:
+            image_ref = f"branch-{branch}"
+        image_details = self.ecr_provider.get_image_details(application, codebase, image_ref)
+        image_ref = self.ecr_provider.find_commit_tag(image_details, image_ref)
 
         codepipeline_client = session.client("codepipeline")
-
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
+
+        corresponding_to = ""
+        if tag:
+            corresponding_to = f"(corresponding to tag {tag}) "
+        elif branch:
+            corresponding_to = f"(corresponding to branch {branch}) "
+
+        confirmation_message = f'\nYou are about to deploy "{app}" for "{codebase}" with image reference "{image_ref}" {corresponding_to}to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+        build_options = {
+            "name": pipeline_name,
+            "variables": [
+                {"name": "ENVIRONMENT", "value": env},
+                {"name": "IMAGE_TAG", "value": image_ref},
+            ],
+        }
 
         build_url = self.__start_pipeline_execution_with_confirmation(
             codepipeline_client,
             self.get_build_url_from_pipeline_execution_id,
-            f'You are about to deploy "{app}" for "{codebase}" with commit "{commit}" to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?',
-            {
-                "name": pipeline_name,
-                "variables": [
-                    {"name": "ENVIRONMENT", "value": env},
-                    {"name": "IMAGE_TAG", "value": f"commit-{commit}"},
-                ],
-            },
+            confirmation_message,
+            build_options,
         )
 
         if build_url:
@@ -183,6 +207,25 @@ class Codebase:
             )
 
         raise ApplicationDeploymentNotTriggered(codebase)
+
+    def _validate_reference_flags(self, commit: str, tag: str, branch: str):
+        provided = [ref for ref in [commit, tag, branch] if ref]
+
+        if len(provided) == 0:
+            self.io.abort_with_error(
+                "To deploy, you must provide one of the options --commit, --tag or --branch."
+            )
+        elif len(provided) > 1:
+            self.io.abort_with_error(
+                "You have provided more than one of the --tag, --branch and --commit options but these are mutually exclusive. Please provide only one of these options."
+            )
+
+    def _populate_application_values(self, app: str, env: str) -> Tuple[Application, Session]:
+        session = self.get_aws_session_or_abort()
+        application = self.load_application(app, default_session=session)
+        if not application.environments.get(env):
+            raise ApplicationEnvironmentNotFoundException(application.name, env)
+        return application, session
 
     def list(self, app: str, with_images: bool):
         """List available codebases for the application."""
