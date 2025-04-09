@@ -20,9 +20,6 @@ class MockMigration:
     def from_version(self) -> int:
         return self._from_version
 
-    def to_version(self) -> int:
-        return self._to_version
-
     def migrate(self, platform_config: dict) -> dict:
         self.call_record_list.append(self.name)
         return platform_config
@@ -31,12 +28,14 @@ class MockMigration:
 class TestMigrator:
     def test_migrator_migration_ordering(self):
         call_record = []
-        migrator = Migrator([
-            MockMigration("3to4", 3, call_record)
-            MockMigration("0to1", 0, call_record)
-            MockMigration("2to3", 2, call_record)
-            MockMigration("1to2", 1, call_record)
-        ])
+        migrator = Migrator(
+            [
+                MockMigration("3to4", 3, call_record),
+                MockMigration("0to1", 0, call_record),
+                MockMigration("2to3", 2, call_record),
+                MockMigration("1to2", 1, call_record),
+            ]
+        )
 
         migrator.migrate({})
 
