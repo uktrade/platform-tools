@@ -31,16 +31,16 @@ class MockMigration:
 class TestMigrator:
     def test_migrator_migration_ordering(self):
         call_record = []
-        migration1 = MockMigration("one", 3, call_record)
-        migration2 = MockMigration("two", 0, call_record)
-        migration3 = MockMigration("three", 2, call_record)
-        migration4 = MockMigration("four", 1, call_record)
-
-        migrator = Migrator([migration1, migration2, migration3, migration4])
+        migrator = Migrator([
+            MockMigration("3to4", 3, call_record)
+            MockMigration("0to1", 0, call_record)
+            MockMigration("2to3", 2, call_record)
+            MockMigration("1to2", 1, call_record)
+        ])
 
         migrator.migrate({})
 
-        assert call_record == ["two", "four", "three", "one"]
+        assert call_record == ["0to1", "1to2", "2to3", "3to4"]
 
     def test_migrator_migration_messages(self):
         call_record = []
