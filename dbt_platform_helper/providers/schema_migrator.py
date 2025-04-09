@@ -25,6 +25,7 @@ class SchemaMigrationProtocol(Protocol):
     def migrate(self, platform_config: dict) -> dict: ...
 
 
+# TODO: Possibly get this programmatically?
 ALL_MIGRATIONS = [SchemaV0ToV1Migration()]
 
 
@@ -59,14 +60,14 @@ class Migrator:
             out.move_to_end("application", last=False)
 
         for migration in self.migrations:
-            if migration.from_version() != out["schema_version"]:
-                continue
-            out = migration.migrate(out)
-            schema_version = out["schema_version"]
-            self.io_provider.info(
-                f"Migrating from platform config schema version {schema_version} to version {schema_version + 1}"
-            )
-            out["schema_version"] += 1
+            migration_can_be_applied = migration.from_version() == out["schema_version"]
+            if migration_can_be_applied:
+                out = migration.migrate(out)
+                schema_version = out["schema_version"]
+                self.io_provider.info(
+                    f"Migrating from platform config schema version {schema_version} to version {schema_version + 1}"
+                )
+                out["schema_version"] += 1
 
         if "default_versions" not in out:
             out["default_versions"] = {}

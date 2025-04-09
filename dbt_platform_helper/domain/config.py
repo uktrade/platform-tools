@@ -82,7 +82,7 @@ class Config:
         copilot_versioning: CopilotVersioning = CopilotVersioning(),
         sso: SSOAuthProvider = None,
         config_provider: ConfigProvider = ConfigProvider(),
-        migrator: Migrator = None,
+        migrator: Migrator = Migrator(ALL_MIGRATIONS, io_provider=ClickIOProvider()),
     ):
         self.oidc_app = None
         self.io = io
@@ -92,7 +92,7 @@ class Config:
         self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
         self.config_provider = config_provider
-        self.migrator = migrator or Migrator(ALL_MIGRATIONS, io_provider=io)
+        self.migrator = migrator
 
     def validate(self):
         if not Path("copilot").exists():

@@ -3,7 +3,7 @@ from dbt_platform_helper.providers.schema_migrations.schema_v0_to_v1_migration i
 )
 
 
-class TestSchemaV1ToV2Migration:
+class TestSchemaV0ToV1Migration:
     def test_from_version(self):
         migration = SchemaV0ToV1Migration()
 

@@ -2,6 +2,7 @@
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 # Todo: Can we get rid of this yet?
 PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
+PLATFORM_HELPER_PACKAGE_NAME = "dbt-platform-helper"
 SUPPORTED_TERRAFORM_VERSION = "~> 1.8"
 SUPPORTED_AWS_PROVIDER_VERSION = "~> 5"
 FIRST_UPGRADABLE_PLATFORM_HELPER_MAJOR_VERSION = 13

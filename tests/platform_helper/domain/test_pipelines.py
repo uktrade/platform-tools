@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from unittest.mock import Mock
+from unittest.mock import create_autospec
 from unittest.mock import patch
 
 import pytest
@@ -11,12 +12,20 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 
 class PipelineMocks:
     def __init__(self, app_name):
+        mock_installed_version_provider = create_autospec(
+            spec=InstalledVersionProvider, spec_set=True
+        )
+        mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            14, 0, 0
+        )
         self.mock_config_provider = ConfigProvider(
-            ConfigValidator(), installed_platform_helper_version="14.0.0"
+            ConfigValidator(), installed_version_provider=mock_installed_version_provider
         )
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
