@@ -625,6 +625,7 @@ def platform_env_config():
 def codebase_pipeline_config_for_1_pipeline_and_2_run_groups(platform_env_config):
     return {
         **platform_env_config,
+        "default_versions": {"platform-helper": "14.0.0"},
         "codebase_pipelines": {
             "test_codebase": {
                 "repository": "uktrade/repo1",
