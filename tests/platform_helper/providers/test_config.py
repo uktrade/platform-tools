@@ -560,7 +560,7 @@ class TestVersionValidations:
 
         assert "Wrong key 'something-invalid'" in capsys.readouterr().err
 
-    def test_validation_fails_if_default_version_missing(self, capsys, valid_platform_config):
+    def test_validation_fails_if_default_versions_missing(self, capsys, valid_platform_config):
         del valid_platform_config["default_versions"]
 
         mock_file_provider = create_autospec(YamlFileProvider, spec_set=True)
