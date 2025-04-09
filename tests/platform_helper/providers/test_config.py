@@ -124,7 +124,7 @@ class TestLoadAndValidate:
         This scenario could occur if your platform-helper version is before
         13.x.x.
 
-        i.e. prior to the schema_version being introduced but we do NOT provide
+        i.e. prior to the schema_version being introduced and too early to use
         automated migrations for the upgrade
         """
         config = {
