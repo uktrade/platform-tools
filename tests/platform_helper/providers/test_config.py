@@ -95,7 +95,8 @@ class TestLoadAndValidate:
         self, capsys
     ):
         """
-        This scenario could occur if the configured platform-helper version is 13.x.x.
+        This scenario could occur if the configured platform-helper version is
+        13.x.x.
 
         i.e. prior to the schema_version being introduced, but we do provide
         automated migrations for v13.x.x
@@ -121,8 +122,8 @@ class TestLoadAndValidate:
         self, config_platform_helper_version, capsys
     ):
         """
-        This scenario could occur if the configured platform-helper version is before
-        13.x.x.
+        This scenario could occur if the configured platform-helper version is
+        before 13.x.x.
 
         i.e. prior to the schema_version being introduced and too early to use
         automated migrations for the upgrade
@@ -178,8 +179,8 @@ Then upgrade platform-helper to version 14.0.0 and run 'platform-helper config m
         self, capsys
     ):
         """
-        This scenario could occur if the configured platform-helper version is 14.0.0 or
-        later.
+        This scenario could occur if the configured platform-helper version is
+        14.0.0 or later.
 
         It is invalid configuration at this point as schema_version is mandatory
         in 14.0.0 and above, so we let schema validation handle it.
