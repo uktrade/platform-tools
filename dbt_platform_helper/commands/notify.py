@@ -23,7 +23,9 @@ def notify():
 @click.option("--repository")
 @click.option("--commit-sha")
 @click.option("--slack-ref", help="Slack message reference of the message to update")
+@click.pass_context
 def environment_progress(
+    ctx,
     slack_channel_id: str,
     slack_token: str,
     message: str,
@@ -36,12 +38,11 @@ def environment_progress(
     instead."""
     io = ClickIOProvider()
     io.warn(
-        "The 'platform-helper notify environment-progress' command is deprecated. Please use 'platform-helper notify post-message' instead.",
-        DeprecationWarning,
-        stacklevel=2,
+        "The 'platform-helper notify environment-progress' command is deprecated. Please use 'platform-helper notify post-message' instead."
     )
 
-    post_message(
+    ctx.invoke(
+        post_message,
         slack_channel_id=slack_channel_id,
         slack_token=slack_token,
         message=message,

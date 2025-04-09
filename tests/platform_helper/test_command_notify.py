@@ -7,6 +7,8 @@ from click.testing import CliRunner
 
 from dbt_platform_helper.commands.notify import add_comment
 from dbt_platform_helper.commands.notify import environment_progress
+
+# from dbt_platform_helper.commands.notify import post_message
 from dbt_platform_helper.domain.notify import Notify
 from dbt_platform_helper.domain.notify import SlackChannelNotifier
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -90,7 +92,7 @@ class TestEnvironmentProgress:
             ],
         )
 
-        mock_io_instance.assert_called_with("Something went wrong")
+        mock_io_instance.abort_with_error.assert_called_with("Something went wrong")
 
 
 # class TestPostMessage:
