@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import pytest
 
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
-from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -44,23 +43,6 @@ class TestGenerateTerraform:
             match="cannot generate terraform for environment not-an-environment.  It does not exist in your configuration",
         ):
             terraform_environment.generate("not-an-environment")
-
-    def test_terraform_environment_raises_a_platform_helper_version_not_found_exception_if_default_versions_is_empty_in_config(
-        self,
-    ):
-        mock_config_provider = Mock(spec=ConfigProvider)
-        mock_config_provider.get_enriched_config.return_value = self.INVALID_ENRICHED_CONFIG
-
-        terraform_environment = TerraformEnvironment(
-            config_provider=mock_config_provider,
-            manifest_provider=Mock(),
-            io=Mock(),
-        )
-        with pytest.raises(
-            PlatformHelperVersionNotFoundException,
-            match="cannot find 'platform-helper' in 'default_versions' in the platform-config.yml file.",
-        ):
-            terraform_environment.generate("test")
 
     def test_generate_success(self):
         environment_name = "test"

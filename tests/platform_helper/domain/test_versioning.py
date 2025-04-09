@@ -9,7 +9,6 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
-from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.domain.versioning import skip_version_checks
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -132,22 +131,6 @@ class TestPlatformHelperVersioningGetRequiredVersionWithInvalidConfig:
         result = PlatformHelperVersioning(**mocks.params()).get_required_version("main")
 
         assert result == pipeline_override_version
-
-    def test_errors_if_version_is_not_specified_in_config_or_default_file(self, mocks):
-        mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
-            1, 0, 1
-        )
-        mocks.version_file_version_provider.get_semantic_version.return_value = None
-        mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 0, 0)
-        mocks.config_provider.load_unvalidated_config_file.return_value = {"application": "my-app"}
-
-        expected_message = f"""Cannot get dbt-platform-helper version from '{PLATFORM_CONFIG_FILE}'.
-Create a section in the root of '{PLATFORM_CONFIG_FILE}':\n\ndefault_versions:\n  platform-helper: 1.0.1\n"""
-
-        with pytest.raises(PlatformHelperVersionNotFoundException):
-            PlatformHelperVersioning(**mocks.params()).get_required_version()
-
-        mocks.io.process_messages.assert_called_with({"warnings": [], "errors": [expected_message]})
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
