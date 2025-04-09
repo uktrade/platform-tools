@@ -1,151 +1,163 @@
+import inspect
+from unittest.mock import Mock
+from unittest.mock import create_autospec
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from dbt_platform_helper.commands.notify import add_comment
 from dbt_platform_helper.commands.notify import environment_progress
-from dbt_platform_helper.commands.notify import get_build_url
+from dbt_platform_helper.domain.notify import Notify
+from dbt_platform_helper.domain.notify import SlackChannelNotifier
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.slack_channel_notifier import (
+    SlackChannelNotifierException,
+)
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
-BUILD_ARN_MESSAGE = f"<{get_build_url(BUILD_ARN)}|Build Logs>"
-EXP_REPO_TEXT = "*Repository*: <https://github.com/%(name)s|%(name)s>"
-EXP_SHA_TEXT = "*Revision*: <https://github.com/%(name)s/commit/%(sha)s|%(sha)s>"
+EXPECTED_ADD_COMMENT = inspect.signature(Notify.add_comment)
+EXPECTED_ENVIRONMENT_PROGRESS = inspect.signature(Notify.environment_progress)
 
 
-def test_getting_build_url():
-    actual_url = get_build_url(
-        "arn:aws:codebuild:region:000000000000:build/project:example-build-id"
-    )
-    exp_url = "https://region.console.aws.amazon.com/codesuite/codebuild/000000000000/projects/project/build/project%3Aexample-build-id"
-    assert actual_url == exp_url
+class TestEnvironmentProgress:
+    @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
+    @patch("dbt_platform_helper.commands.notify.SlackChannelNotifier")
+    @patch("dbt_platform_helper.commands.notify.Notify")
+    def test_success(
+        self,
+        mock_domain,
+        mock_notifier,
+        mock_io,
+    ):
+        mock_io_instance = Mock(spec=ClickIOProvider)
+        mock_io.return_value = mock_io_instance
+        mock_domain_instance = create_autospec(Notify, spec_set=True)
+        mock_domain.return_value = mock_domain_instance
+        mock_domain_instance.environment_progress.return_value = "success"
+        mock_notifier_instance = Mock(spec=SlackChannelNotifier)
+        mock_notifier.return_value = mock_notifier_instance
 
+        options = [
+            "--slack-ref",
+            "10000.10",
+            "--repository",
+            "repo3",
+            "--commit-sha",
+            "xyz1234",
+            "--build-arn",
+            BUILD_ARN,
+        ]
 
-@pytest.mark.parametrize(
-    "options, expected_text, expect_update",
-    (
-        ([], [], False),
-        (["--slack-ref", "10000.10"], [], True),
-        (["--repository", "repo1"], [EXP_REPO_TEXT % {"name": "repo1"}], False),
-        (
-            ["--slack-ref", "10000.10", "--repository", "repo1"],
-            [EXP_REPO_TEXT % {"name": "repo1"}],
-            True,
-        ),
-        (
-            ["--repository", "repo2", "--commit-sha", "abc1234"],
-            [EXP_REPO_TEXT % {"name": "repo2"}, EXP_SHA_TEXT % {"name": "repo2", "sha": "abc1234"}],
-            False,
-        ),
-        (
-            ["--slack-ref", "10000.10", "--repository", "repo2", "--commit-sha", "abc1234"],
-            [EXP_REPO_TEXT % {"name": "repo2"}, EXP_SHA_TEXT % {"name": "repo2", "sha": "abc1234"}],
-            True,
-        ),
-        (["--build-arn", BUILD_ARN], [BUILD_ARN_MESSAGE], False),
-        (["--slack-ref", "10000.10", "--build-arn", BUILD_ARN], [BUILD_ARN_MESSAGE], True),
-        (
-            ["--repository", "repo3", "--commit-sha", "xyz1234", "--build-arn", BUILD_ARN],
+        result = CliRunner().invoke(
+            environment_progress,
             [
-                EXP_REPO_TEXT % {"name": "repo3"},
-                EXP_SHA_TEXT % {"name": "repo3", "sha": "xyz1234"},
-                BUILD_ARN_MESSAGE,
-            ],
-            False,
-        ),
-        (
+                "my-slack-channel-id",
+                "my-slack-token",
+                "The very important thing everyone should know",
+            ]
+            + options,
+        )
+
+        assert result.exit_code == 0
+
+        mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
+        mock_domain.assert_called_once_with(mock_notifier_instance)
+
+        mock_domain_instance.environment_progress.assert_called_once_with(
+            original_message_ref="10000.10",
+            message="The very important thing everyone should know",
+            build_arn=BUILD_ARN,
+            repository="repo3",
+            commit_sha="xyz1234",
+        )
+        mock_io_instance.info.assert_called_once_with("success")
+
+    @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
+    @patch("dbt_platform_helper.commands.notify.Notify")
+    def test_aborts_with_exception_message(self, mock_domain, mock_io):
+        mock_io_instance = Mock(spec=ClickIOProvider)
+        mock_io.return_value = mock_io_instance
+        mock_domain.return_value.environment_progress.side_effect = SlackChannelNotifierException(
+            "Something went wrong"
+        )
+
+        CliRunner().invoke(
+            environment_progress,
             [
-                "--slack-ref",
-                "10000.10",
-                "--repository",
-                "repo3",
-                "--commit-sha",
-                "xyz1234",
-                "--build-arn",
-                BUILD_ARN,
+                "my-slack-channel-id",
+                "my-slack-token",
+                "The very important thing everyone should know",
             ],
-            [
-                EXP_REPO_TEXT % {"name": "repo3"},
-                EXP_SHA_TEXT % {"name": "repo3", "sha": "xyz1234"},
-                BUILD_ARN_MESSAGE,
-            ],
-            True,
-        ),
-    ),
-)
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_environment_progress(
-    webclient, options: list[str], expected_text: list[str], expect_update: bool
-):
-    CliRunner().invoke(
-        environment_progress,
-        [
+        )
+
+        mock_io_instance.abort_with_error.assert_called_with("Something went wrong")
+
+
+class TestAddComment:
+    @patch("dbt_platform_helper.providers.slack_channel_notifier.blocks.SectionBlock")
+    @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
+    @patch("dbt_platform_helper.commands.notify.SlackChannelNotifier")
+    @patch("dbt_platform_helper.commands.notify.Notify")
+    def test_success(self, mock_domain, mock_notifier, mock_io, mock_blocks):
+        mock_io_instance = Mock(spec=ClickIOProvider)
+        mock_io.return_value = mock_io_instance
+        mock_domain_instance = create_autospec(Notify, spec_set=True)
+        mock_domain.return_value = mock_domain_instance
+
+        mock_notifier_instance = Mock(spec=SlackChannelNotifier)
+        mock_notifier.return_value = mock_notifier_instance
+
+        message = "The comment"
+        mock_blocks.return_value = message
+
+        cli_args = [
             "my-slack-channel-id",
             "my-slack-token",
-            "The very important thing everyone should know",
+            "1234.56",
+            "The comment",
+            "--send-to-main-channel",
+            "true",
+            "--title",
+            "The title",
         ]
-        + options,
-    )
 
-    post_calls = webclient().chat_postMessage.call_args_list
-    update_calls = webclient().chat_update.call_args_list
+        result = CliRunner().invoke(add_comment, cli_args)
 
-    if expect_update:
-        calls = update_calls
-        zero_calls = post_calls
-    else:
-        calls = post_calls
-        zero_calls = update_calls
+        assert result.exit_code == 0
 
-    assert len(calls) == 1
-    assert len(zero_calls) == 0
+        mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")
+        mock_domain.assert_called_once_with(mock_notifier_instance)
 
-    call_args = calls[0].kwargs
-    assert call_args["channel"] == "my-slack-channel-id"
-    assert call_args["text"] == "The very important thing everyone should know"
-    assert not call_args["unfurl_links"]
-    assert not call_args["unfurl_media"]
-    assert call_args["blocks"][0].text.text == "The very important thing everyone should know"
+        args, kwargs = mock_domain_instance.add_comment.call_args
+        EXPECTED_ADD_COMMENT.bind(None, *args, **kwargs)
 
-    if expected_text:
-        actual_elements = call_args["blocks"][1].elements
-        assert len(actual_elements) == len(expected_text)
-        for element, exp_text in zip(actual_elements, expected_text):
-            assert element.text == exp_text
+        mock_domain_instance.add_comment.assert_called_once_with(
+            original_message_ref="1234.56",
+            message="The comment",
+            title="The title",
+            reply_broadcast=True,
+        )
 
+    @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
+    @patch("dbt_platform_helper.commands.notify.Notify")
+    def test_aborts_with_exception_message(self, mock_domain, mock_io):
+        mock_io_instance = Mock(spec=ClickIOProvider)
+        mock_io.return_value = mock_io_instance
+        mock_domain.return_value.add_comment.side_effect = SlackChannelNotifierException(
+            "Something went wrong"
+        )
 
-@pytest.mark.parametrize(
-    "title, broadcast, expected_text",
-    (
-        (None, False, "The comment"),
-        (None, True, "The comment"),
-        ("My title", False, "My title"),
-        ("My title", True, "My title"),
-    ),
-)
-@patch("dbt_platform_helper.commands.notify._get_slack_client")
-def test_add_comment(webclient, title: str, broadcast: bool, expected_text: str):
-    cli_args = [
-        "my-slack-channel-id",
-        "my-slack-token",
-        "1234.56",
-        "The comment",
-    ]
+        cli_args = [
+            "my-slack-channel-id",
+            "my-slack-token",
+            "1234.56",
+            "The comment",
+            "--send-to-main-channel",
+            "true",
+            "--title",
+            "The title",
+        ]
 
-    if broadcast:
-        cli_args.extend(["--send-to-main-channel", "true"])
-    if title:
-        cli_args.extend(["--title", title])
+        CliRunner().invoke(add_comment, cli_args)
 
-    CliRunner().invoke(add_comment, cli_args)
-
-    calls = webclient().chat_postMessage.call_args_list
-    assert len(calls) == 1
-    call_args = calls[0].kwargs
-    assert call_args["channel"] == "my-slack-channel-id"
-    assert call_args["text"] == expected_text
-    assert call_args["reply_broadcast"] == broadcast
-    assert call_args["unfurl_links"] == False
-    assert call_args["unfurl_media"] == False
-    assert call_args["thread_ts"] == "1234.56"
-    assert call_args["blocks"][0].text.text == "The comment"
+        mock_io_instance.abort_with_error.assert_called_with("Something went wrong")

@@ -170,6 +170,22 @@ class TestCommandHelperMethods:
             host_header_conditions = [
                 condition for condition in conditions if condition.get("Field") == "host-header"
             ]
+
+            all_header_values = [
+                value
+                for condition in host_header_conditions
+                for value in condition["HostHeaderConfig"]["Values"]
+            ]
+
+            all_path_values = [
+                value
+                for condition in conditions
+                if condition.get("Field") == "path-pattern"
+                for value in condition["PathPatternConfig"]["Values"]
+            ]
+
+            flatten_conditions = all_header_values + all_path_values
+
             if len(host_header_conditions) > 1:
                 raise ClientError(
                     {
@@ -182,13 +198,9 @@ class TestCommandHelperMethods:
                 )
 
             # all conditions paths must be unqiue.
-            if host_header_conditions:
-                all_values = [
-                    value
-                    for condition in host_header_conditions
-                    for value in condition["HostHeaderConfig"]["Values"]
-                ]
-                if len(all_values) != len(set(all_values)):
+            if all_header_values:
+
+                if len(all_header_values) != len(set(all_header_values)):
                     raise ClientError(
                         {
                             "Error": {
@@ -198,6 +210,17 @@ class TestCommandHelperMethods:
                         },
                         "CreateRule",
                     )
+
+            if len(flatten_conditions) > 5:
+                raise ClientError(
+                    {
+                        "Error": {
+                            "Code": "ValidationError",
+                            "Message": "A rule can only have '5' condition values",
+                        }
+                    },
+                    "CreateRule",
+                )
             return original_create_rule(self, listener_arn, conditions, priority, actions, **kwargs)
 
         ELBv2Backend.create_rule = custom_create_rule
@@ -615,6 +638,129 @@ class TestCommandHelperMethods:
         assert len(rules[indices["maintenance_page_index"] + 1]["Conditions"]) == 0
         assert rules[indices["maintenance_page_index"] + 1]["Priority"] == "default"
         assert len(rules) == indices["expected_rules_length"]
+
+    @mock_aws
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    @patch("dbt_platform_helper.domain.maintenance_page.get_maintenance_page_template")
+    def test_multiple_maintenance_page_rules_when_conditions_greater_than_5(
+        self,
+        get_maintenance_page_template,
+        choices,
+        mock_application,
+    ):
+
+        # ------------- Test Setup ------------
+        services = ["web", "web2", "web3"]
+        get_maintenance_page_template.return_value = "default"
+        self._custom_create_rule_with_validation()
+
+        mock_application.services["web2"] = Service("web2", "Load Balanced Web Service")
+        mock_application.services["web3"] = Service("web3", "Load Balanced Web Service")
+
+        elbv2_client = boto3.client("elbv2")
+        listener_arn = self._create_listener(elbv2_client)
+        target_group_arn = self._create_target_group()
+        target_group_arn_2 = self._create_target_group("web2")
+        target_group_arn_3 = self._create_target_group("web3")
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value"}],
+            Conditions=[{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
+            Priority=500,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
+        )
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value-2"}],
+            Conditions=[
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+                }
+            ],
+            Priority=501,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn_2}],
+        )
+        elbv2_client.create_rule(
+            ListenerArn=listener_arn,
+            Tags=[{"Key": "test-key", "Value": "test-value-3"}],
+            Conditions=[
+                {
+                    "Field": "host-header",
+                    "HostHeaderConfig": {
+                        "Values": ["/test-path-3", "/test-path-4", "/test-path-5"]
+                    },
+                }
+            ],
+            Priority=502,
+            Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn_3}],
+        )
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        assert len(rules) == 4
+
+        # ------------- Test Running ------------
+
+        maintenance_page = MaintenancePage(mock_application)
+        maintenance_page.load_balancer = LoadBalancerProvider(boto3.Session())
+        maintenance_page.add_maintenance_page(
+            listener_arn,
+            "test-application",
+            "development",
+            [mock_application.services[service] for service in services],
+            ["1.2.3.4"],
+            template,
+        )
+
+        # ------------- Test assert ------------
+
+        rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
+        tags_descriptions = elbv2_client.describe_tags(
+            ResourceArns=[rule["RuleArn"] for rule in rules]
+        )
+
+        for description in tags_descriptions["TagDescriptions"]:
+            tags = {t["Key"]: t["Value"] for t in description["Tags"]}
+            # assert test tag present
+            if tags.get("test-key"):
+                assert tags["test-key"] in ["test-value", "test-value-2", "test-value-3"]
+
+        assert len(rules) == 15
+
+        # assert test condition present
+        assert rules[0]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path"]},
+        }
+        assert rules[0]["Priority"] == "500"
+        assert rules[1]["Conditions"][0] == {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": ["/test-path", "/test-path-2"]},
+        }
+        assert rules[1]["Priority"] == "501"
+
+        assert rules[12]["Priority"] == "10"
+        assert rules[12]["Conditions"] == [
+            {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+            {
+                "Field": "host-header",
+                "HostHeaderConfig": {
+                    "Values": ["/test-path", "/test-path-2", "/test-path-3", "/test-path-4"]
+                },
+            },
+        ]
+
+        # check a second rule is created for maintenance page
+        assert rules[13]["Priority"] == "11"
+        assert rules[13]["Conditions"] == [
+            {"Field": "path-pattern", "PathPatternConfig": {"Values": ["/*"]}},
+            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path-5"]}},
+        ]
+
+        # default rule after maintenance page rule
+        assert len(rules[14]["Conditions"]) == 0
+        assert rules[14]["Priority"] == "default"
 
 
 class MaintenancePageMocks:
@@ -1191,34 +1337,7 @@ class TestActivateMethod:
 
         maintenance_mocks.load_balancer.create_source_ip_rule.assert_not_called()
 
-        maintenance_mocks.load_balancer.create_rule.assert_called_with(
-            listener_arn="https_listener",
-            priority=1,
-            conditions=[
-                {
-                    "Field": "path-pattern",
-                    "PathPatternConfig": {"Values": ["/*"]},
-                },
-                {
-                    "Field": "host-header",
-                    "HostHeaderConfig": {"Values": []},
-                },
-            ],
-            actions=[
-                {
-                    "Type": "fixed-response",
-                    "FixedResponseConfig": {
-                        "StatusCode": "503",
-                        "ContentType": "text/html",
-                        "MessageBody": ANY,
-                    },
-                }
-            ],
-            tags=[
-                {"Key": "name", "Value": "MaintenancePage"},
-                {"Key": "type", "Value": "default"},
-            ],
-        )
+        maintenance_mocks.load_balancer.create_rule.assert_not_called()
 
         maintenance_mocks.io.confirm.assert_has_calls(
             [

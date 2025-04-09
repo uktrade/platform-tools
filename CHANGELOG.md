@@ -1,5 +1,19 @@
 # Changelog
 
+## [13.4.1](https://github.com/uktrade/platform-tools/compare/13.4.0...13.4.1) (2025-04-04)
+
+
+### Bug Fixes
+
+* Maintenance Page - Listener Rule cannot have more than 5 conditions (DBTP-1975) ([#836](https://github.com/uktrade/platform-tools/issues/836)) ([8d4d0cb](https://github.com/uktrade/platform-tools/commit/8d4d0cba11f02e817f672a2cf7458b5faea1465c))
+
+## [13.4.0](https://github.com/uktrade/platform-tools/compare/13.3.0...13.4.0) (2025-04-02)
+
+
+### Features
+
+* Allow manual releases based on image reference (DBTP-1165) ([#807](https://github.com/uktrade/platform-tools/issues/807)) ([1a029a1](https://github.com/uktrade/platform-tools/commit/1a029a1d97973e07baac25e3781ec9ee5cbf2cdb))
+
 ## [13.3.0](https://github.com/uktrade/platform-tools/compare/13.2.0...13.3.0) (2025-03-31)
 
 
