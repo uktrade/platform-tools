@@ -197,7 +197,7 @@ Then upgrade platform-helper to version 14.0.0 and run 'platform-helper config m
         assert exc.value.code == 1
         assert f"Missing key: 'schema_version'" in capsys.readouterr().err
 
-    def test_load_and_validate_exits_if_schema_version_is_prior_to_the_current_schema_version(
+    def test_load_and_validate_exits_if_schema_version_is_lower_than_the_current_schema_version(
         self, capsys
     ):
         """
