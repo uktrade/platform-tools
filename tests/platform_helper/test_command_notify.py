@@ -17,7 +17,7 @@ from dbt_platform_helper.providers.slack_channel_notifier import (
 
 BUILD_ARN = "arn:aws:codebuild:us-west-1:123456:project:my-app"
 EXPECTED_ADD_COMMENT = inspect.signature(Notify.add_comment)
-# EXPECTED_ENVIRONMENT_PROGRESS = inspect.signature(Notify.environment_progress)
+EXPECTED_ENVIRONMENT_PROGRESS = inspect.signature(Notify.post_message)
 
 
 class TestEnvironmentProgress:
