@@ -15,10 +15,6 @@ class InvalidMigrationConfigurationException(PlatformException):
     pass
 
 
-class PlatformConfigSchemaMigrationException(PlatformException):
-    pass
-
-
 class SchemaMigrationProtocol(Protocol):
     def from_version(self) -> int: ...
 
