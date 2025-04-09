@@ -220,7 +220,7 @@ def get_account_details(sts_client=None):
 
 
 def get_postgres_connection_data_updated_with_master_secret(session, parameter_name, secret_arn):
-    # Todo: This is pretty much the same as dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret
+    # TODO: DBTP-1968: This is pretty much the same as dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret
     ssm_client = session.client("ssm")
     secrets_manager_client = session.client("secretsmanager")
     response = ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)
@@ -269,10 +269,10 @@ def start_pipeline_and_return_execution_id(codepipeline_client, build_options):
     return response["pipelineExecutionId"]
 
 
-# Todo: This should probably be in the AWS Copilot provider
+# TODO: DBTP-1888: This should probably be in the AWS Copilot provider
 def check_codebase_exists(session: Session, application, codebase: str):
     try:
-        # Todo: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
+        # TODO: DBTP-1968: Can this leverage dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn?
         ssm_client = session.client("ssm")
         json.loads(
             ssm_client.get_parameter(

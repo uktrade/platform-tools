@@ -48,7 +48,7 @@ class FailedToActivateMaintenancePageException(MaintenancePageException):
         return f"{super().__str__()}\n" f"Original exception: {self.orginal_exception}"
 
 
-# TODO should this be in its own provider, inside the VPC one, what logic is this sepcific too?
+# TODO: DBTP-1958: should this be in its own provider, inside the VPC one, what logic is this sepcific too?
 def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
     account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
@@ -73,7 +73,7 @@ class MaintenancePage:
     ):
         self.application = application
         self.io = io
-        self.load_balancer_provider = load_balancer_provider  # TODO requires session from environment in application object which is only known during method execution
+        self.load_balancer_provider = load_balancer_provider  # TODO: DBTP-1962: requires session from environment in application object which is only known during method execution
         self.load_balancer: LoadBalancerProvider = None
         self.get_env_ips = get_env_ips
 
@@ -87,7 +87,7 @@ class MaintenancePage:
             raise LoadBalancedWebServiceNotFoundException(app.name)
         return services
 
-    # TODO: inject load balancer provider in activate method to avoid passing load balancer provider in init?
+    # TODO: DBTP-1962: inject load balancer provider in activate method to avoid passing load balancer provider in init?
     def activate(self, env: str, services: List[str], template: str, vpc: Union[str, None]):
 
         services = self._get_deployed_load_balanced_web_services(self.application, services)

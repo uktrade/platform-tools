@@ -48,7 +48,7 @@ class LoadBalancerProvider:
             ResourceTypeFilters=[
                 "elasticloadbalancing:targetgroup",
             ],
-        )  # TODO should be paginated
+        )  # TODO: DBTP-1942: should be paginated
         for resource in response["ResourceTagMappingList"]:
             tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
 
@@ -73,7 +73,7 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         certificates = self.evlb_client.describe_listener_certificates(ListenerArn=listener_arn)[
             "Certificates"
-        ]  # TODO should be paginated
+        ]  # TODO: DBTP-1942: should be paginated
 
         try:
             certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
@@ -87,7 +87,7 @@ class LoadBalancerProvider:
 
         listeners = self.evlb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)[
             "Listeners"
-        ]  # TODO should be paginated
+        ]  # TODO: DBTP-1942: should be paginated
 
         listener_arn = None
 
@@ -114,7 +114,7 @@ class LoadBalancerProvider:
 
         for lb in tag_descriptions:
             tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
-            # TODO copilot hangover, creates coupling to specific tags could update to check application and environment
+            # TODO: DBTP-1967: copilot hangover, creates coupling to specific tags could update to check application and environment
             if tags.get("copilot-application") == app and tags.get("copilot-environment") == env:
                 return lb["ResourceArn"]
 
@@ -123,7 +123,7 @@ class LoadBalancerProvider:
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
         rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
             "Rules"
-        ]  # TODO should be paginated
+        ]  # TODO: DBTP-1942: should be paginated
 
         conditions = []
 
@@ -152,7 +152,7 @@ class LoadBalancerProvider:
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
         rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
             "Rules"
-        ]  # TODO should be paginated
+        ]  # TODO: DBTP-1942: should be paginated
         return self.get_rules_tag_descriptions(rules)
 
     def get_rules_tag_descriptions(self, rules: list) -> list:

@@ -144,7 +144,7 @@ class TestCommandHelperMethods:
         mock_session = MagicMock()
 
         def mock_client(service_name, **kwargs):
-            # TODO for service_name try get from kwargs["mocks"] else default
+            # TODO: DBTP-1970: for service_name try get from kwargs["mocks"] else default
             if service_name == "elbv2":
                 return elbv2_client
             elif service_name == "resourcegroupstaggingapi":

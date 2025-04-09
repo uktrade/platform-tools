@@ -25,7 +25,7 @@ class CopilotEnvironment:
         config_provider: ConfigProvider,
         vpc_provider: VpcProvider = None,
         cloudformation_provider: CloudFormation = None,
-        session: Session = None,  # TODO - this is a temporary fix, will fall away once _get_environment_vpc is updated.
+        session: Session = None,  # TODO: DBTP-1954: - this is a temporary fix, will fall away once _get_environment_vpc is updated.
         copilot_templating=None,
         io: ClickIOProvider = ClickIOProvider(),
         load_balancer_provider: LoadBalancerProvider = LoadBalancerProvider,
@@ -77,7 +77,7 @@ class CopilotEnvironment:
             )
         )
 
-    # TODO: There should always be a vpc_name as defaults have been applied to the config.  This function can
+    # TODO: DBTP-1954: There should always be a vpc_name as defaults have been applied to the config.  This function can
     # probably fall away. We shouldn't need to check 3 different names (vpc_name, session.profile_name, {session.profile_name}-{env_name})
     # To be checked.
     def _get_environment_vpc(self, session: Session, app_name, env_name: str, vpc_name: str) -> Vpc:
@@ -134,7 +134,7 @@ class CopilotTemplating:
         self,
         file_provider: FileProvider = FileProvider(),
         io: ClickIOProvider = ClickIOProvider(),
-        # TODO file_provider can be moved up a layer.  File writing can be the responsibility of CopilotEnvironment generate
+        # TODO: DBTP-1958: file_provider can be moved up a layer.  File writing can be the responsibility of CopilotEnvironment generate
         # Or we align with PlatformTerraformManifestGenerator and rename from Templating to reflect the file writing responsibility
     ):
         self.file_provider = file_provider
