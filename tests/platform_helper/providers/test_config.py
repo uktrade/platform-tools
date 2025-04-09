@@ -178,7 +178,7 @@ Then upgrade platform-helper to version 14.0.0 and run 'platform-helper config m
         self, capsys
     ):
         """
-        This scenario could occur if your platform-helper version is 14.0.0 or
+        This scenario could occur if the configured platform-helper version is 14.0.0 or
         later.
 
         It is invalid configuration at this point as schema_version is mandatory
