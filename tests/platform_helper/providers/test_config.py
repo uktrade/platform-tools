@@ -95,7 +95,7 @@ class TestLoadAndValidate:
         self, capsys
     ):
         """
-        This scenario could occur if your platform-helper version is 13.x.x.
+        This scenario could occur if the configured platform-helper version is 13.x.x.
 
         i.e. prior to the schema_version being introduced, but we do provide
         automated migrations for v13.x.x
