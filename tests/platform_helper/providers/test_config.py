@@ -121,7 +121,7 @@ class TestLoadAndValidate:
         self, config_platform_helper_version, capsys
     ):
         """
-        This scenario could occur if your platform-helper version is before
+        This scenario could occur if the configured platform-helper version is before
         13.x.x.
 
         i.e. prior to the schema_version being introduced and too early to use
