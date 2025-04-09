@@ -3,6 +3,10 @@ from dbt_platform_helper.providers.schema_migrations.schema_v0_to_v1_migration i
 )
 
 
+def assert_original_config_is_not_modified(migrated_config, original_config):
+    assert migrated_config != original_config
+
+
 class TestSchemaV0ToV1Migration:
     def test_from_version(self):
         migration = SchemaV0ToV1Migration()
@@ -11,19 +15,18 @@ class TestSchemaV0ToV1Migration:
 
     def test_removes_terraform_platform_modules_version_from_defaults(self):
         migration = SchemaV0ToV1Migration()
-        config = {
+        original_config = {
             "default_versions": {"terraform-platform-modules": "5.1.0", "platform-helper": "14.0.0"}
         }
 
-        actual_config = migration.migrate(config)
+        migrated_config = migration.migrate(original_config)
 
-        # Ensure the migration does not modify the original
-        assert actual_config != config
-        assert actual_config == {"default_versions": {"platform-helper": "14.0.0"}}
+        assert_original_config_is_not_modified(migrated_config, original_config)
+        assert migrated_config == {"default_versions": {"platform-helper": "14.0.0"}}
 
     def test_removes_version_overrides_from_envs(self):
         migration = SchemaV0ToV1Migration()
-        config = {
+        original_config = {
             "environments": {
                 "*": {
                     "requires_approval": False,
@@ -33,7 +36,7 @@ class TestSchemaV0ToV1Migration:
             }
         }
 
-        actual_config = migration.migrate(config)
+        migrated_config = migration.migrate(original_config)
 
         expected_config = {
             "environments": {
@@ -44,13 +47,12 @@ class TestSchemaV0ToV1Migration:
                 "staging": None,
             }
         }
-        # Ensure migrate does not modify the original
-        assert actual_config != config
-        assert actual_config == expected_config
+        assert_original_config_is_not_modified(migrated_config, original_config)
+        assert migrated_config == expected_config
 
     def test_removes_from_and_to_account_from_postgres_extensions(self):
         migration = SchemaV0ToV1Migration()
-        config = {
+        original_config = {
             "extensions": {
                 "first_postgres": {
                     "type": "postgres",
@@ -78,7 +80,7 @@ class TestSchemaV0ToV1Migration:
             }
         }
 
-        actual_config = migration.migrate(config)
+        migrated_config = migration.migrate(original_config)
 
         exp_config = {
             "extensions": {
@@ -100,6 +102,5 @@ class TestSchemaV0ToV1Migration:
             }
         }
 
-        # Ensure migrate does not modify the original
-        assert actual_config != config
-        assert actual_config == exp_config
+        assert_original_config_is_not_modified(migrated_config, original_config)
+        assert migrated_config == exp_config
