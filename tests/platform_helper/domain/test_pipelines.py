@@ -1,3 +1,4 @@
+import os
 import re
 from pathlib import Path
 from unittest.mock import Mock
@@ -9,6 +10,7 @@ import yaml
 from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
@@ -78,21 +80,25 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
+    "use_config_platform_helper_version, use_environment_variable_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        (True, "14", None, None),
+        (True, False, "14", None, None),
         (
             True,
+            False,
             "14.0.0",
             "demodjango-branch",
             "demodjango-branch",
         ),
-        (True, "14.0.0", None, None),
+        (True, False, "14.0.0", None, None),
+        (False, True, "test-branch", None, None),
+        (True, True, "test-branch", None, None),
     ],
 )
 def test_pipeline_generate_command_generate_terraform_files_for_environment_pipeline_manifest(
     fakefs,
-    config_platform_helper_version,
+    use_config_platform_helper_version,
+    use_environment_variable_platform_helper_version,
     expected_platform_helper_version,
     cli_demodjango_branch,
     expected_demodjango_branch,
@@ -100,8 +106,13 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 ):
 
     app_name = "test-app"
-    if config_platform_helper_version:
+    if use_config_platform_helper_version:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "14.0.0"}
+    if use_environment_variable_platform_helper_version:
+        os.environ[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = "test-branch"
+    elif PLATFORM_HELPER_VERSION_OVERRIDE_KEY in os.environ:
+        del os.environ[PLATFORM_HELPER_VERSION_OVERRIDE_KEY]
+
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
     mocks = PipelineMocks(app_name)
     pipelines = Pipelines(**mocks.params())
