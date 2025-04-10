@@ -1,5 +1,18 @@
 # Changelog
 
+## [14.0.0](https://github.com/uktrade/platform-tools/compare/13.4.1...14.0.0) (2025-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* Force version 14.0.0 (DBTP-1842) ([#845](https://github.com/uktrade/platform-tools/issues/845))
+
+### Features
+
+* Add env var override to pipeline generate (DBTP-1842) ([#846](https://github.com/uktrade/platform-tools/issues/846)) ([e824764](https://github.com/uktrade/platform-tools/commit/e824764b90bab0ee1ef20fd42de151596e60d81a))
+* Force version 14.0.0 (DBTP-1842) ([#845](https://github.com/uktrade/platform-tools/issues/845)) ([4b5dc1e](https://github.com/uktrade/platform-tools/commit/4b5dc1ef96f1a80c67ef7cfd067ed220dbcc2be9))
+* Merge in terraform-platform-modules (DBTP-1842) ([#792](https://github.com/uktrade/platform-tools/issues/792)) ([32b1ce0](https://github.com/uktrade/platform-tools/commit/32b1ce098e0bc8d37e8cc41f8bd258c5b8714ea0))
+
 ## [13.4.1](https://github.com/uktrade/platform-tools/compare/13.4.0...13.4.1) (2025-04-04)
 
 
