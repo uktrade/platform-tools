@@ -12,6 +12,7 @@
     - [platform-helper conduit](#platform-helper-conduit)
     - [platform-helper config](#platform-helper-config)
         - [platform-helper config validate](#platform-helper-config-validate)
+        - [platform-helper config migrate](#platform-helper-config-migrate)
         - [platform-helper config aws](#platform-helper-config-aws)
     - [platform-helper copilot](#platform-helper-copilot)
         - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
@@ -295,7 +296,7 @@ platform-helper conduit <addon_name>
 ## Usage
 
 ```
-platform-helper config (validate|aws) 
+platform-helper config (validate|migrate|aws) 
 ```
 
 ## Options
@@ -306,6 +307,7 @@ platform-helper config (validate|aws)
 ## Commands
 
 - [`aws` ↪](#platform-helper-config-aws)
+- [`migrate` ↪](#platform-helper-config-migrate)
 - [`validate` ↪](#platform-helper-config-validate)
 
 # platform-helper config validate
@@ -318,6 +320,23 @@ platform-helper config (validate|aws)
 
 ```
 platform-helper config validate 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper config migrate
+
+[↩ Parent](#platform-helper-config)
+
+    Update configuration to match current schema.
+
+## Usage
+
+```
+platform-helper config migrate 
 ```
 
 ## Options

@@ -12,7 +12,10 @@ from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.schema_migrator import ALL_MIGRATIONS
+from dbt_platform_helper.providers.schema_migrator import Migrator
 from dbt_platform_helper.providers.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -71,7 +74,6 @@ class NoPlatformConfigException(PlatformException):
 
 
 class Config:
-
     def __init__(
         self,
         io: ClickIOProvider = ClickIOProvider(),
@@ -79,6 +81,8 @@ class Config:
         aws_versioning: AWSVersioning = AWSVersioning(),
         copilot_versioning: CopilotVersioning = CopilotVersioning(),
         sso: SSOAuthProvider = None,
+        config_provider: ConfigProvider = ConfigProvider(),
+        migrator: Migrator = Migrator(ALL_MIGRATIONS, io_provider=ClickIOProvider()),
     ):
         self.oidc_app = None
         self.io = io
@@ -87,6 +91,8 @@ class Config:
         self.copilot_versioning = copilot_versioning
         self.sso = sso or SSOAuthProvider()
         self.SSO_START_URL = "https://uktrade.awsapps.com/start"
+        self.config_provider = config_provider
+        self.migrator = migrator
 
     def validate(self):
         if not Path("copilot").exists():
@@ -109,6 +115,11 @@ class Config:
         compatible = self._check_addon_versions(platform_helper_version_status)
 
         exit(0 if compatible else 1)
+
+    def migrate(self):
+        platform_config = self.config_provider.load_unvalidated_config_file()
+        new_platform_config = self.migrator.migrate(platform_config)
+        self.config_provider.write_platform_config(new_platform_config)
 
     def generate_aws(self, file_path):
         self.oidc_app = self._create_oidc_application()

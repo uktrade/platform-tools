@@ -1,4 +1,3 @@
-from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -38,11 +37,6 @@ class TerraformEnvironment:
         platform_config_platform_helper_default_version: str = config.get(
             "default_versions", {}
         ).get("platform-helper")
-
-        if platform_config_platform_helper_default_version is None:
-            raise PlatformHelperVersionNotFoundException(
-                "cannot find 'platform-helper' in 'default_versions' in the platform-config.yml file."
-            )
 
         self.manifest_provider.generate_environment_config(
             config, environment_name, platform_config_platform_helper_default_version

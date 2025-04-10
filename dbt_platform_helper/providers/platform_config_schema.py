@@ -8,15 +8,18 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
+
 
 class PlatformConfigSchema:
     @staticmethod
     def schema() -> Schema:
         return Schema(
             {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
                 "application": str,
                 Optional("deploy_repository"): str,
-                Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
+                "default_versions": PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
@@ -166,7 +169,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __default_versions_schema() -> dict:
         return {
-            Optional("platform-helper"): str,
+            "platform-helper": str,
         }
 
     @staticmethod

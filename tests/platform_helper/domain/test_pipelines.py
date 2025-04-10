@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from unittest.mock import Mock
+from unittest.mock import create_autospec
 from unittest.mock import patch
 
 import pytest
@@ -9,14 +10,23 @@ from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.pipelines import Pipelines
-from dbt_platform_helper.domain.versioning import PlatformHelperVersionNotFoundException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 
 class PipelineMocks:
     def __init__(self, app_name):
-        self.mock_config_provider = ConfigProvider(ConfigValidator())
+        mock_installed_version_provider = create_autospec(
+            spec=InstalledVersionProvider, spec_set=True
+        )
+        mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            14, 0, 0
+        )
+        self.mock_config_provider = ConfigProvider(
+            ConfigValidator(), installed_version_provider=mock_installed_version_provider
+        )
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
         self.io = Mock()
@@ -63,23 +73,6 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
     pipelines.generate(None)
 
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
-
-
-def test_pipeline_generate_raises_a_platform_helper_version_not_found_exception_if_default_versions_is_empty_in_config(
-    fakefs,
-    platform_config_for_env_pipelines,
-):
-    app_name = "test-app"
-    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
-    mocks = PipelineMocks(app_name)
-    pipelines = Pipelines(**mocks.params())
-
-    with pytest.raises(
-        PlatformHelperVersionNotFoundException,
-        match="cannot find 'platform-helper' in 'default_versions' in the platform-config.yml file.",
-    ):
-
-        pipelines.generate(None)
 
 
 @freeze_time("2024-10-28 12:00:00")
