@@ -49,6 +49,7 @@ class InstalledVersionProvider:
     def get_semantic_version(tool_name: str) -> SemanticVersion:
         try:
             return SemanticVersion.from_string(version(tool_name))
+
         except PackageNotFoundError:
             raise InstalledToolNotFoundException(tool_name)
 

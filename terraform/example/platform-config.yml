@@ -1,0 +1,88 @@
+application: example
+
+environments:
+  "*":
+    accounts:
+      deploy:
+        name: "sandbox"
+        id: "000123456789"
+      dns:
+        name: "dev"
+        id: "000123456789"
+    vpc: my-vpc
+  my-environment:
+
+extensions:
+  dw-redis:
+    type: redis
+    environments:
+      "*":
+        engine: '6.2'
+        plan: small
+      prod:
+        plan: medium-ha
+
+  dw-postgres:
+    type: postgres
+    version: 14
+    environments:
+      "*":
+        multi_az: false
+        backup_retention_days: 3
+      prod:
+        deletion_protection: true
+
+  dw-opensearch:
+    type: opensearch
+    environments:
+      "*":
+        plan: small
+        engine: '1.3'
+        volume_size: 40
+      prod:
+        plan: large-ha
+        engine: '1.3'
+        volume_size: 100
+
+  dw-s3-bucket:
+    type: s3
+    services:
+      - "s3proxy"
+      - "beat"
+      - "web"
+      - "worker"
+    environments:
+      dev:
+        bucket_name: digital-workspace-v2-dev
+        data_migration:
+          import:
+            source_bucket_arn: "arn:aws:s3:::my-application-test"
+            source_kms_key_arn: "arn:aws:kms:eu-west-2:123456789:key/1234-1334-1234-1234"
+            worker_role_arn: "arn:aws:iam::987654321:role/service-role"
+        lifecycle_rules:
+          - filter_prefix: "logs/"
+            expiration_days: 1
+            enabled: true
+          - filter_prefix: "keep_me_longer/"
+            expiration_days: 100
+            enabled: true
+      hotfix:
+        bucket_name: digital-workspace-v2-hotfix
+      prod:
+        bucket_name: digital-workspace-v2-prod
+      staging:
+        bucket_name: xyz-test-acme-widgets-ltd
+        versioning: false
+      training:
+        bucket_name: digital-workspace-v2-training
+      my-environment:
+        bucket_name: digital-workspace-v2-my-environment
+    objects:
+      - key: healthcheck.txt
+        body: S3 Proxy is working.
+
+  monitoring:
+    type: monitoring
+    environments:
+      "*":
+        enable_ops_center: false
