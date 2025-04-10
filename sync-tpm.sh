@@ -2,10 +2,10 @@
 
 rsync -r --exclude ".terraform*" ../terraform-platform-modules/* terraform/
 
-for f in $(git status --porcelain | grep "^ M" | sed 's/^ M //')
-do
-  sed -i 's#source\( *= *\)"git::ssh://git@github.com/uktrade/platform-tools.git//terraform/extensions\?depth=1&ref="#source\1"git::ssh://git@github.com/uktrade/terraform-platform-modules.git//extensions\?depth=1&ref="#' "$f"
-done
+sed -i 's#git::ssh://git@github.com/uktrade/terraform-platform-modules.git//extensions?depth=1&ref=#git::ssh://git@github.com/uktrade/platform-tools.git//terraform/extensions?depth=1\&ref=#' terraform/README.md
+sed -i 's/# Terraform Platform Modules/# Terraform used by Platform-tools/' terraform/README.md
+
+sed -i 's%# checkov:skip=CKV2_AWS_28: WAF is outside of terraform-platform-modules%# checkov:skip=CKV2_AWS_28: WAF is outside of platform-tools/terraform%' terraform/application-load-balancer/main.tf
 
 rm terraform/CHANGELOG.md
 rm terraform/codebase-pipelines/ssm.tf
