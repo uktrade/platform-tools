@@ -28,6 +28,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
+        platform_helper_version_override: str = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -36,6 +37,9 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
+        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
 
     def generate(
         self,
@@ -69,10 +73,8 @@ class Pipelines:
             "platform-helper"
         )
 
-        if PLATFORM_HELPER_VERSION_OVERRIDE_KEY in os.environ:
-            platform_helper_version_for_template = os.environ.get(
-                PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-            )
+        if self.platform_helper_version_override:
+            platform_helper_version_for_template = self.platform_helper_version_override
 
         # TODO: DBTP-1965: - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
