@@ -55,7 +55,7 @@ class PlatformConfigSchema:
             "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
                 "subscription-filter"
             ),
-            # Todo: The next three are no longer relevant. Remove them.
+            # TODO: DBTP-1943: The next three are no longer relevant. Remove them.
             "monitoring": Schema(PlatformConfigSchema.__monitoring_schema()),
             "vpc": PlatformConfigSchema.__no_configuration_required_schema("vpc"),
             "xray": PlatformConfigSchema.__no_configuration_required_schema("xray"),
@@ -185,7 +185,7 @@ class PlatformConfigSchema:
                             "id": str,
                         },
                     },
-                    # Todo: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
+                    # TODO: DBTP-1943: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
                     Optional("requires_approval"): bool,
                     Optional("vpc"): str,
                 },
@@ -244,7 +244,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __opensearch_schema() -> dict:
-        # Todo: Move to OpenSearch provider?
+        # TODO: DBTP-1943: Move to OpenSearch provider?
         _valid_opensearch_plans = Or(
             "tiny",
             "small",
@@ -282,7 +282,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __postgres_schema() -> dict:
-        # Todo: Move to Postgres provider?
+        # TODO: DBTP-1943: Move to Postgres provider?
         _valid_postgres_plans = Or(
             "tiny",
             "small",
@@ -305,7 +305,7 @@ class PlatformConfigSchema:
             "4x-large-high-io",
         )
 
-        # Todo: Move to Postgres provider?
+        # TODO: DBTP-1943: Move to Postgres provider?
         _valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
 
         _valid_postgres_database_copy = {
@@ -358,7 +358,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __redis_schema() -> dict:
-        # Todo move to Redis provider?
+        # TODO: DBTP-1943: move to Redis provider?
         _valid_redis_plans = Or(
             "micro",
             "micro-ha",
@@ -392,7 +392,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def valid_s3_bucket_name(name: str):
-        # Todo: This is a public method becasue that's what the test expect. Perhaps it belongs in an S3 provider?
+        # TODO: DBTP-1943: This is a public method becasue that's what the test expect. Perhaps it belongs in an S3 provider?
         errors = []
         if not (2 < len(name) < 64):
             errors.append("Length must be between 3 and 63 characters inclusive.")
@@ -421,7 +421,7 @@ class PlatformConfigSchema:
                 errors.append(f"Names cannot be suffixed '{suffix}'.")
 
         if errors:
-            # Todo: Raise suitable PlatformException?
+            # TODO: DBTP-1943: Raise suitable PlatformException?
             raise SchemaError(
                 f"Bucket name '{name}' is invalid:\n" + "\n".join(f"  {e}" for e in errors)
             )
@@ -549,10 +549,10 @@ class PlatformConfigSchema:
 
     @staticmethod
     def string_matching_regex(regex_pattern: str) -> Callable:
-        # Todo public for the unit tests, not sure about testing what could be a private method. Perhaps it's covered by other tests anyway?
+        # TODO: DBTP-1943: public for the unit tests, not sure about testing what could be a private method. Perhaps it's covered by other tests anyway?
         def validate(string):
             if not re.match(regex_pattern, string):
-                # Todo: Raise suitable PlatformException?
+                # TODO: DBTP-1943: Raise suitable PlatformException?
                 raise SchemaError(
                     f"String '{string}' does not match the required pattern '{regex_pattern}'."
                 )
@@ -562,11 +562,11 @@ class PlatformConfigSchema:
 
     @staticmethod
     def is_integer_between(lower_limit, upper_limit) -> Callable:
-        # Todo public for the unit tests, not sure about testing what could be a private method. Perhaps it's covered by other tests anyway?
+        # TODO: DBTP-1943: public for the unit tests, not sure about testing what could be a private method. Perhaps it's covered by other tests anyway?
         def validate(value):
             if isinstance(value, int) and lower_limit <= value <= upper_limit:
                 return True
-            # Todo: Raise suitable PlatformException?
+            # TODO: DBTP-1943: Raise suitable PlatformException?
             raise SchemaError(f"should be an integer between {lower_limit} and {upper_limit}")
 
         return validate
@@ -580,7 +580,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __valid_branch_name() -> Callable:
-        # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
+        # TODO: DBTP-1943: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
         return PlatformConfigSchema.string_matching_regex(r"^((?!\*).)*(\*)?$")
 
     @staticmethod
@@ -626,10 +626,10 @@ class PlatformConfigSchema:
 
 
 class ConditionalOpensSearchSchema(Schema):
-    # Todo: Move to OpenSearch provider?
+    # TODO: DBTP-1943: Move to OpenSearch provider?
     _valid_opensearch_min_volume_size: int = 10
 
-    # Todo: Move to OpenSearch provider?
+    # TODO: DBTP-1943: Move to OpenSearch provider?
     _valid_opensearch_max_volume_size: dict = {
         "tiny": 100,
         "small": 200,
@@ -663,11 +663,11 @@ class ConditionalOpensSearchSchema(Schema):
 
                 if volume_size:
                     if not plan:
-                        # Todo: Raise suitable PlatformException?
+                        # TODO: DBTP-1943: Raise suitable PlatformException?
                         raise SchemaError(f"Missing key: 'plan'")
 
                     if volume_size < self._valid_opensearch_min_volume_size:
-                        # Todo: Raise suitable PlatformException?
+                        # TODO: DBTP-1943: Raise suitable PlatformException?
                         raise SchemaError(
                             f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer greater than {self._valid_opensearch_min_volume_size}"
                         )
@@ -677,7 +677,7 @@ class ConditionalOpensSearchSchema(Schema):
                             plan == key
                             and not volume_size <= self._valid_opensearch_max_volume_size[key]
                         ):
-                            # Todo: Raise suitable PlatformException?
+                            # TODO: DBTP-1943: Raise suitable PlatformException?
                             raise SchemaError(
                                 f"Key 'environments' error: Key '{env}' error: Key 'volume_size' error: should be an integer between {self._valid_opensearch_min_volume_size} and {self._valid_opensearch_max_volume_size[key]} for plan {plan}"
                             )

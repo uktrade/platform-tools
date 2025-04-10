@@ -73,7 +73,7 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit_mocks.secrets_provider.get_addon_type.return_value = addon_type
     conduit = Conduit(**conduit_mocks.params())
 
-    # Todo: Should be able to lose these during future refactorings
+    # TODO: DBTP-1971: Should be able to lose these during future refactorings
     ecs_client = conduit.application.environments[env].session.client("ecs")
     ssm_client = conduit.application.environments[env].session.client("ssm")
     iam_client = conduit.application.environments[env].session.client("iam")
@@ -138,7 +138,7 @@ def test_conduit_with_task_already_running():
     conduit_mocks.secrets_provider.get_parameter_name.return_value = "parameter_name"
     conduit_mocks.secrets_provider.get_addon_type.return_value = "postgres"
     conduit = Conduit(**conduit_mocks.params())
-    # Todo: This client can go during further refactoring
+    # TODO: DBTP-1971: This client can go during further refactoring
     ecs_client = conduit.application.environments[env].session.client("ecs")
 
     conduit.start(env, addon_name, "read")
