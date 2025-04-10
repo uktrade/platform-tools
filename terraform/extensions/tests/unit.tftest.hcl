@@ -79,6 +79,10 @@ mock_provider "aws" {
 
 mock_provider "aws" {}
 
+mock_provider "datadog" {
+  alias = "ddog"
+}
+
 override_data {
   target = module.opensearch["test-opensearch"].data.aws_caller_identity.current
   values = {
