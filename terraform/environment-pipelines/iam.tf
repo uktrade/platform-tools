@@ -36,7 +36,7 @@ data "aws_iam_policy_document" "access_artifact_store" {
 
   statement {
     effect    = "Allow"
-    actions   = ["codestar-connections:UseConnection"]
+    actions   = ["codestar-connections:UseConnection", "codeconnections:ListTagsForResource"]
     resources = [data.aws_codestarconnections_connection.github_codestar_connection.arn]
   }
 

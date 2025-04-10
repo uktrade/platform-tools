@@ -1,3 +1,11 @@
+// The DataDog Provider requires an API and APP key which we'll get from AWS Parameter Store
+data "aws_ssm_parameter" "datadog_api_key" {
+  name = "DATADOG_API_KEY"
+}
+data "aws_ssm_parameter" "datadog_app_key" {
+  name = "DATADOG_APP_KEY"
+}
+
 module "s3" {
   source = "../s3"
 
@@ -105,4 +113,17 @@ resource "aws_ssm_parameter" "addons" {
   type  = "String"
   value = jsonencode(local.extensions_for_environment)
   tags  = local.tags
+}
+
+module "datadog" {
+  source = "../datadog"
+
+  for_each = local.datadog
+  providers = {
+    datadog.ddog = datadog.ddog
+  }
+
+  application = var.args.application
+
+  config = each.value
 }
