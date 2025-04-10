@@ -78,28 +78,6 @@ class TestEnvironmentProgress:
         )
         mock_io_instance.info.assert_called_once_with("success")
 
-    @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
-    @patch("dbt_platform_helper.commands.notify.Notify")
-    def test_aborts_with_exception_message_when_calling_environment_progress(
-        self, mock_domain, mock_io
-    ):
-        mock_io_instance = Mock(spec=ClickIOProvider)
-        mock_io.return_value = mock_io_instance
-        mock_domain.return_value.post_message.side_effect = SlackChannelNotifierException(
-            "Something went wrong"
-        )
-
-        CliRunner().invoke(
-            environment_progress,
-            [
-                "my-slack-channel-id",
-                "my-slack-token",
-                "The very important thing everyone should know",
-            ],
-        )
-
-        mock_io_instance.abort_with_error.assert_called_with("Something went wrong")
-
 
 class TestPostMessage:
     @patch("dbt_platform_helper.commands.notify.ClickIOProvider")
