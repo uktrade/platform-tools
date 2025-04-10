@@ -41,7 +41,7 @@ class Secrets:
 
         raise SecretNotFoundException(secret_name)
 
-    # Todo: This probably does not belong in the secrets provider. When it moves, take the Todoed exceptions from below
+    # TODO: DBTP-1946: This probably does not belong in the secrets provider. When it moves, take the Todoed exceptions from below
     def get_addon_type(self, addon_name: str) -> str:
         addon_type = None
         try:
@@ -82,18 +82,18 @@ class Secrets:
         return addon_name.replace("-", "_").upper()
 
 
-# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+# TODO: DBTP-1946: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
 class AddonException(PlatformException):
     pass
 
 
-# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+# TODO: DBTP-1946: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
 class AddonNotFoundException(AddonException):
     def __init__(self, addon_name: str):
         super().__init__(f"""Addon "{addon_name}" does not exist.""")
 
 
-# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+# TODO: DBTP-1946: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
 class AddonTypeMissingFromConfigException(AddonException):
     def __init__(self, addon_name: str):
         super().__init__(
@@ -101,7 +101,7 @@ class AddonTypeMissingFromConfigException(AddonException):
         )
 
 
-# Todo: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
+# TODO: DBTP-1946: This probably does not belong in the secrets provider. Move it when we find a better home for get_addon_type()
 class InvalidAddonTypeException(AddonException):
     def __init__(self, addon_type):
         self.addon_type = addon_type

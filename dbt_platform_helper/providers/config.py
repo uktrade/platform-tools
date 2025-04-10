@@ -43,13 +43,13 @@ class ConfigProvider:
         )
         self.installed_version_provider = installed_version_provider
 
-    # TODO refactor so that apply_environment_defaults isn't set, discarded and set again
+    # TODO: DBTP-1964: refactor so that apply_environment_defaults isn't set, discarded and set again
     def get_enriched_config(self):
         return self.apply_environment_defaults(self.load_and_validate_platform_config())
 
     def _validate_platform_config(self):
         PlatformConfigSchema.schema().validate(self.config)
-        # TODO= logically this isn't validation but loading + parsing, to move.
+        # TODO: DBTP-1964: = logically this isn't validation but loading + parsing, to move.
         # also, we apply defaults but discard that data.  Should we just apply
         # defaults to config returned by load_and_validate
         enriched_config = ConfigProvider.apply_environment_defaults(self.config)
@@ -161,7 +161,7 @@ class ConfigProvider:
         except FileProviderException:
             return {}
 
-    # TODO remove function and push logic to where this is called.
+    # TODO: DBTP-1888: remove function and push logic to where this is called.
     # removed usage from config domain, code is very generic and doesn't require the overhead of a function
     def config_file_check(self, path=PLATFORM_CONFIG_FILE):
         if not Path(path).exists():

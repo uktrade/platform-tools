@@ -67,7 +67,7 @@ class Pipelines:
             "default_versions", {}
         ).get("platform-helper")
 
-        # TODO - this whole code block/if-statement can fall away once the deploy_repository is a required key.
+        # TODO: DBTP-1965: - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
         if "deploy_repository" in platform_config.keys():
             deploy_repository = f"{platform_config['deploy_repository']}"
