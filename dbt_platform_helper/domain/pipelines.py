@@ -1,3 +1,4 @@
+import os
 from collections.abc import Callable
 from os import makedirs
 from pathlib import Path
@@ -5,6 +6,7 @@ from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -26,6 +28,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
+        platform_helper_version_override: str = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -34,6 +37,9 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
+        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
 
     def generate(
         self,
@@ -63,9 +69,12 @@ class Pipelines:
 
         self._clean_pipeline_config(copilot_pipelines_dir)
 
-        platform_config_platform_helper_default_version: str = platform_config.get(
-            "default_versions", {}
-        ).get("platform-helper")
+        platform_helper_version_for_template: str = platform_config.get("default_versions", {}).get(
+            "platform-helper"
+        )
+
+        if self.platform_helper_version_override:
+            platform_helper_version_for_template = self.platform_helper_version_override
 
         # TODO: DBTP-1965: - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
@@ -90,7 +99,7 @@ class Pipelines:
                     platform_config["application"],
                     deploy_repository,
                     account,
-                    platform_config_platform_helper_default_version,
+                    platform_helper_version_for_template,
                     deploy_branch,
                 )
 
@@ -109,7 +118,7 @@ class Pipelines:
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                platform_config_platform_helper_default_version,
+                platform_helper_version_for_template,
                 ecrs_that_need_importing,
                 deploy_repository,
             )

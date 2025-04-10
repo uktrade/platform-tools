@@ -38,6 +38,7 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
+        self.mock_platform_helper_version_override = None
 
     def params(self):
         return {
@@ -47,6 +48,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
+            "platform_helper_version_override": self.mock_platform_helper_version_override,
         }
 
 
@@ -78,21 +80,22 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "config_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
+    "use_environment_variable_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        (True, "14", None, None),
         (
-            True,
+            False,
             "14.0.0",
             "demodjango-branch",
             "demodjango-branch",
         ),
-        (True, "14.0.0", None, None),
+        (False, "14.0.0", None, None),
+        (True, "test-branch", None, None),
+        (True, "test-branch", None, None),
     ],
 )
 def test_pipeline_generate_command_generate_terraform_files_for_environment_pipeline_manifest(
     fakefs,
-    config_platform_helper_version,
+    use_environment_variable_platform_helper_version,
     expected_platform_helper_version,
     cli_demodjango_branch,
     expected_demodjango_branch,
@@ -100,10 +103,12 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 ):
 
     app_name = "test-app"
-    if config_platform_helper_version:
-        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "14.0.0"}
+
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
     mocks = PipelineMocks(app_name)
+    if use_environment_variable_platform_helper_version:
+        mocks.mock_platform_helper_version_override = "test-branch"
+
     pipelines = Pipelines(**mocks.params())
 
     pipelines.generate(cli_demodjango_branch)
@@ -152,17 +157,29 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
+@pytest.mark.parametrize(
+    "use_environment_variable_platform_helper_version, expected_platform_helper_version",
+    [
+        (False, "14.0.0"),
+        (True, "test-branch"),
+    ],
+)
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected_platform_helper_version(
+    use_environment_variable_platform_helper_version,
+    expected_platform_helper_version,
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
-    exp_version = "14.0.0"
     app_name = "test-app"
     fakefs.create_file(
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(codebase_pipeline_config_for_1_pipeline_and_2_run_groups),
     )
+
     mocks = PipelineMocks(app_name)
+    if use_environment_variable_platform_helper_version:
+        mocks.mock_platform_helper_version_override = "test-branch"
+
     pipelines = Pipelines(**mocks.params())
 
     pipelines.generate(None)
@@ -170,7 +187,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        exp_version,
+        expected_platform_helper_version,
         {},
         "uktrade/my-app-deploy",
     )
@@ -214,7 +231,7 @@ def assert_terraform(app_name, aws_account, expected_version, expected_branch):
     assert f'profile                  = "{aws_account}"' in content
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
     assert (
-        f"git::https://github.com/uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"
+        f'"git::https://github.com/uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"'
         in content
     )
     assert f'application         = "{app_name}"' in content
