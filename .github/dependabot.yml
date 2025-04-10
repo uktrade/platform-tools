@@ -9,7 +9,7 @@ updates:
       # dependencies in the release notes.
       prefix: "deps"
       # Don't include dev dependencies in release notes, they
-      # are of no interest outside this repositories maintainers.
+      # are of no interest outside this repository's maintainers.
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
@@ -21,5 +21,5 @@ updates:
       # dependencies in the release notes.
       prefix: "deps"
       # Don't include dev dependencies in release notes, they
-      # are of no interest outside this repositories maintainers.
+      # are of no interest outside this repository's maintainers.
       prefix-development: "chore(deps-dev)"
