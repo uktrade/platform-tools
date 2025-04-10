@@ -45,6 +45,7 @@ def _create_listener(session, load_balancer_arn=None):
         elbv2_client.create_listener(
             LoadBalancerArn=load_balancer_arn,
             DefaultActions=[{"Type": "forward"}],
+            Port=443,
             Protocol="HTTPS",
         )["Listeners"][0]["ListenerArn"],
         load_balancer_arn,
