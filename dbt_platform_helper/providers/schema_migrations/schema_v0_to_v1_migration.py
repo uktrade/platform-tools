@@ -11,6 +11,7 @@ class SchemaV0ToV1Migration:
         self._remove_terraform_platform_modules_default_version(migrated_config)
         self._remove_versions_from_env_config(migrated_config)
         self._remove_to_account_and_from_account_from_database_copy(migrated_config)
+        self._remove_pipeline_platform_helper_override(migrated_config)
 
         return migrated_config
 
@@ -33,3 +34,10 @@ class SchemaV0ToV1Migration:
                         del database_copy_block["from_account"]
                     if "to_account" in database_copy_block:
                         del database_copy_block["to_account"]
+
+    def _remove_pipeline_platform_helper_override(self, migrated_config: dict) -> None:
+        for pipeline_name, pipeline_config in migrated_config.get(
+            "environment_pipelines", {}
+        ).items():
+            if "versions" in pipeline_config:
+                del pipeline_config["versions"]

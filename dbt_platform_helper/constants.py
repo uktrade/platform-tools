@@ -1,7 +1,5 @@
 # TODO: DBTP-1888: Move to Config provider
 PLATFORM_CONFIG_FILE = "platform-config.yml"
-# TODO: DBTP-1950: Can we get rid of this yet?
-PLATFORM_HELPER_VERSION_FILE = ".platform-helper-version"
 PLATFORM_HELPER_VERSION_OVERRIDE_KEY = "PLATFORM_HELPER_VERSION_OVERRIDE"
 PLATFORM_HELPER_PACKAGE_NAME = "dbt-platform-helper"
 SUPPORTED_TERRAFORM_VERSION = "~> 1.8"
