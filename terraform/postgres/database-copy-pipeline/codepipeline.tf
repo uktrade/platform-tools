@@ -10,6 +10,12 @@ resource "aws_codepipeline" "database_copy_pipeline" {
   execution_mode = "QUEUED"
   tags           = local.tags
 
+  variable {
+    name          = "PLATFORM_HELPER_VERSION_OVERRIDE"
+    default_value = "NONE"
+    description   = "Override the platform-helper default version specified in platform-config"
+  }
+
   artifact_store {
     location = aws_s3_bucket.artifact_store.bucket
     type     = "S3"
