@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 import yaml
@@ -87,8 +86,7 @@ class YamlFileProvider:
 
 
 def account_number_representer(dumper, data):
-    just_digits = re.match(r"^[0-9]+$", data)
-    if just_digits:
+    if data.isdigit():
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="'")
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=None)
 
