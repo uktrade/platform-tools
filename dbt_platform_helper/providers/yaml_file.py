@@ -56,10 +56,7 @@ class YamlFileProvider:
         with open(path, "w") as file:
             file.write(comment)
             yaml.add_representer(str, account_number_representer)
-            yaml.add_representer(
-                type(None),
-                lambda dumper, data: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
-            )
+            yaml.add_representer(type(None), null_value_representer)
 
             yaml.dump(
                 contents,
@@ -94,3 +91,7 @@ def account_number_representer(dumper, data):
     if just_digits:
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="'")
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=None)
+
+
+def null_value_representer(dumper, data):
+    return dumper.represent_scalar("tag:yaml.org,2002:null", "")
