@@ -1,3 +1,4 @@
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -34,10 +35,8 @@ class TerraformEnvironment:
                 f"cannot generate terraform for environment {environment_name}.  It does not exist in your configuration"
             )
 
-        platform_config_platform_helper_default_version: str = config.get(
-            "default_versions", {}
-        ).get("platform-helper")
+        platform_helper_version_for_template = PlatformHelperVersioning().get_required_version()
 
         self.manifest_provider.generate_environment_config(
-            config, environment_name, platform_config_platform_helper_default_version
+            config, environment_name, platform_helper_version_for_template
         )

@@ -25,6 +25,3 @@ class VersionStatus:
 
     def is_outdated(self):
         return self.installed != self.latest
-
-    def validate(self):
-        pass

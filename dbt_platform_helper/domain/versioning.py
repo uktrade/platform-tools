@@ -1,5 +1,6 @@
 import os
 
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -40,6 +41,7 @@ class PlatformHelperVersioning:
         latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
+        platform_helper_version_override: str = None,
     ):
         self.io = io
         self.config_provider = config_provider
@@ -48,10 +50,11 @@ class PlatformHelperVersioning:
         self.skip_versioning_checks = (
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
         )
+        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
 
     def get_required_version(self):
-        version_status = self.get_version_status()
-        self.io.process_messages(version_status.validate())
         required_version = self._resolve_required_version()
         self.io.info(required_version)
         return required_version
@@ -62,15 +65,17 @@ class PlatformHelperVersioning:
             return
 
         version_status = self.get_version_status()
-        self.io.process_messages(version_status.validate())
         required_version = self._resolve_required_version()
 
-        if not version_status.installed == required_version:
-            message = (
-                f"WARNING: You are running platform-helper v{version_status.installed} against "
-                f"v{required_version} specified for the project."
-            )
-            self.io.warn(message)
+        if SemanticVersion.is_semantic_version(required_version):
+            required_version_semver = SemanticVersion.from_string(required_version)
+
+            if not version_status.installed == required_version_semver:
+                message = (
+                    f"WARNING: You are running platform-helper v{version_status.installed} against "
+                    f"v{required_version_semver} specified for the project."
+                )
+                self.io.warn(message)
 
     def check_if_needs_update(self):
         if self.skip_versioning_checks:
@@ -101,16 +106,14 @@ class PlatformHelperVersioning:
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
 
     def _resolve_required_version(self) -> str:
-
         platform_config = self.config_provider.load_and_validate_platform_config()
 
-        platform_config_default = SemanticVersion.from_string(
-            platform_config.get("default_versions", {}).get("platform-helper")
-        )
+        platform_helper_version = platform_config.get("default_versions", {}).get("platform-helper")
 
-        # TODO - Check for env var override
+        if self.platform_helper_version_override:
+            platform_helper_version = self.platform_helper_version_override
 
-        return platform_config_default
+        return platform_helper_version
 
 
 class AWSVersioning:

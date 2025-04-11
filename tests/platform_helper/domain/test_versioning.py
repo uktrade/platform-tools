@@ -28,6 +28,7 @@ class PlatformHelperVersioningMocks:
             "installed_version_provider", Mock(spec=InstalledVersionProvider)
         )
         self.skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
+        self.mock_platform_helper_version_override = None
 
     def params(self):
         return {
@@ -36,6 +37,7 @@ class PlatformHelperVersioningMocks:
             "latest_version_provider": self.latest_version_provider,
             "installed_version_provider": self.installed_version_provider,
             "skip_versioning_checks": self.skip_versioning_checks,
+            "platform_helper_version_override": self.mock_platform_helper_version_override,
         }
 
 
@@ -71,51 +73,21 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.io.error.assert_not_called
 
 
-# class TestPlatformHelperVersioningGetRequiredVersion:
-#     @pytest.mark.parametrize(
-#         "platform_helper_version_file_version, platform_config_default_version, pipeline_override, expected_version",
-#         [
-#             (SemanticVersion(0, 0, 1), None, None, "0.0.1"),
-#             (SemanticVersion(0, 0, 1), "1.0.0", None, "1.0.0"),
-#             (None, "3.0.0", "4.0.0", "4.0.0"),
-#             (SemanticVersion(0, 0, 1), "4.0.0", "5.0.0", "5.0.0"),
-#         ],
-#     )
-#     def test_versions_precedence(
-#         self,
-#         mocks,
-#         platform_helper_version_file_version,
-#         platform_config_default_version,
-#         pipeline_override,
-#         expected_version,
-#     ):
-#         platform_config = {
-#             "application": "my-app",
-#             "environments": {"dev": None},
-#             "environment_pipelines": {
-#                 "main": {
-#                     "slack_channel": "abc",
-#                     "trigger_on_push": True,
-#                     "environments": {"dev": None},
-#                 }
-#             },
-#         }
-#
-#         if platform_config_default_version:
-#             platform_config["default_versions"] = {
-#                 "platform-helper": platform_config_default_version
-#             }
-#
-#         if pipeline_override:
-#             platform_config["environment_pipelines"]["main"]["versions"] = {
-#                 "platform-helper": pipeline_override
-#             }
-#
-#         mocks.config_provider.load_and_validate_platform_config.return_value = platform_config
-#
-#         result = PlatformHelperVersioning(**mocks.params()).get_required_version("main")
-#
-#         assert result == expected_version
+class TestPlatformHelperVersioningGetRequiredVersion:
+    @pytest.mark.parametrize(
+        "use_environment_variable_platform_helper_version, expected_version",
+        [(False, "1.0.0"), (True, "test-branch")],
+    )
+    def test_versions_precedence(
+        self, mocks, use_environment_variable_platform_helper_version, expected_version
+    ):
+
+        if use_environment_variable_platform_helper_version:
+            mocks.mock_platform_helper_version_override = "test-branch"
+
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version()
+
+        assert str(result) == expected_version
 
 
 @pytest.mark.parametrize(
