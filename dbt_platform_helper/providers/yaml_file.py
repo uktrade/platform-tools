@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import yaml
@@ -54,7 +55,13 @@ class YamlFileProvider:
     def write(path: str, contents: dict, comment: str = ""):
         with open(path, "w") as file:
             file.write(comment)
-            yaml.safe_dump(
+            yaml.add_representer(str, account_number_representer)
+            yaml.add_representer(
+                type(None),
+                lambda dumper, data: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
+            )
+
+            yaml.dump(
                 contents,
                 file,
                 canonical=False,
@@ -80,3 +87,10 @@ class YamlFileProvider:
             ]
         if duplicate_keys:
             raise DuplicateKeysException(",".join(duplicate_keys))
+
+
+def account_number_representer(dumper, data):
+    just_digits = re.match(r"^[0-9]+$", data)
+    if just_digits:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="'")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=None)
