@@ -227,7 +227,7 @@ data "aws_ssm_parameter" "log-destination-arn" {
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "redis-subscription-filter-engine" {
-  name            = "/aws/elasticache/${var.name}/${var.environment}/engine"
+  name            = "/aws/elasticache/${var.application}/${var.environment}/${var.name}/engine"
   role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
   log_group_name  = aws_cloudwatch_log_group.redis-engine-log-group.name
   filter_pattern  = ""
@@ -235,7 +235,7 @@ resource "aws_cloudwatch_log_subscription_filter" "redis-subscription-filter-eng
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "redis-subscription-filter-slow" {
-  name            = "/aws/elasticache/${var.name}/${var.environment}/slow"
+  name            = "/aws/elasticache/${var.application}/${var.environment}/${var.name}/slow"
   role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
   log_group_name  = aws_cloudwatch_log_group.redis-slow-log-group.name
   filter_pattern  = ""
