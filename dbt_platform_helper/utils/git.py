@@ -1,12 +1,6 @@
 import re
 import subprocess
 
-from dbt_platform_helper.platform_exception import PlatformException
-
-
-class CommitNotFoundException(PlatformException):
-    pass
-
 
 def git_remote():
     git_repo = subprocess.run(
@@ -20,12 +14,3 @@ def extract_repository_name(repository_url):
         return
 
     return re.search(r"([^/:]*/[^/]*)\.git", repository_url).group(1)
-
-
-def check_if_commit_exists(commit):
-    branches_containing_commit = subprocess.run(
-        ["git", "branch", "-r", "--contains", f"{commit}"], capture_output=True, text=True
-    )
-
-    if branches_containing_commit.stderr:
-        raise CommitNotFoundException()
