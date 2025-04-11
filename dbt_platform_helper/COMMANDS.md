@@ -29,6 +29,7 @@
         - [platform-helper secrets list](#platform-helper-secrets-list)
     - [platform-helper notify](#platform-helper-notify)
         - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
+        - [platform-helper notify post-message](#platform-helper-notify-post-message)
         - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
     - [platform-helper database](#platform-helper-database)
         - [platform-helper database dump](#platform-helper-database-dump)
@@ -668,7 +669,7 @@ platform-helper secrets list <application> <environment>
 ## Usage
 
 ```
-platform-helper notify (environment-progress|add-comment) 
+platform-helper notify (environment-progress|post-message|add-comment) 
 ```
 
 ## Options
@@ -680,6 +681,7 @@ platform-helper notify (environment-progress|add-comment)
 
 - [`add-comment` ↪](#platform-helper-notify-add-comment)
 - [`environment-progress` ↪](#platform-helper-notify-environment-progress)
+- [`post-message` ↪](#platform-helper-notify-post-message)
 
 # platform-helper notify environment-progress
 
@@ -696,6 +698,41 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
                                             [--repository <repository>] 
                                             [--commit-sha <commit_sha>] 
                                             [--slack-ref <slack_ref>] 
+```
+
+## Arguments
+
+- `slack-channel-id <text>`
+- `slack-token <text>`
+- `message <text>`
+
+## Options
+
+- `--build-arn <text>`
+
+- `--repository <text>`
+
+- `--commit-sha <text>`
+
+- `--slack-ref <text>`
+  - Slack message reference of the message to update
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper notify post-message
+
+[↩ Parent](#platform-helper-notify)
+
+    Send Slack notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.
+
+## Usage
+
+```
+platform-helper notify post-message <slack_channel_id> <slack_token> 
+                                    <message> 
+                                    [--build-arn <build_arn>] [--repository <repository>] 
+                                    [--commit-sha <commit_sha>] 
+                                    [--slack-ref <slack_ref>] 
 ```
 
 ## Arguments

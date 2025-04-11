@@ -6,7 +6,7 @@ class Notify:
     def __init__(self, notifier: SlackChannelNotifier):
         self.notifier = notifier
 
-    def environment_progress(
+    def post_message(
         self,
         message: str,
         build_arn: str = None,
