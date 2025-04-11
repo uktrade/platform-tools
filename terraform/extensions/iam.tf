@@ -11,7 +11,7 @@ data "aws_iam_policy_document" "assume_codebase_pipeline" {
   statement {
     effect = "Allow"
     principals {
-      type        = "AWS"
+      type = "AWS"
       identifiers = ["arn:aws:iam::${local.pipeline_account_id}:root"]
     }
     condition {
@@ -106,11 +106,12 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:UpdateService",
       "ecs:DescribeServices",
       "ecs:TagResource",
-      "ecs:ListServices"
+      "ecs:ListServices",
+      "ecs:CreateService"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-tf",
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-tf/*"
     ]
   }
 
@@ -121,8 +122,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:TagResource"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-tf",
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}-tf/*"
     ]
   }
 
@@ -133,7 +134,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:TagResource"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/${var.args.application}-${var.environment}-*:*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/${var.args.application}-${var.environment}-*-tf:*"
     ]
   }
 
@@ -143,7 +144,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListTasks"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}-tf/*"
     ]
   }
 
@@ -164,7 +165,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
     resources = ["*"]
     condition {
       test     = "StringLike"
-      values   = ["ecs-tasks.amazonaws.com"]
+      values = ["ecs-tasks.amazonaws.com"]
       variable = "iam:PassedToService"
     }
   }
@@ -175,26 +176,28 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServiceDeployments"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-tf/*"
     ]
   }
-}
 
-resource "aws_iam_role_policy" "cloudformation_access" {
-  name   = "cloudformation-access"
-  role   = aws_iam_role.codebase_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.cloudformation_access.json
-}
-
-data "aws_iam_policy_document" "cloudformation_access" {
   statement {
     effect = "Allow"
     actions = [
-      "cloudformation:GetTemplate"
+      "elasticloadbalancing:DescribeTargetGroups"
     ]
     resources = [
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.args.application}-${var.environment}-*"
+      "*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "servicediscovery:ListNamespaces",
+      "servicediscovery:ListServices"
+    ]
+    resources = [
+      "arn:aws:servicediscovery:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*/*"
     ]
   }
 }
-
