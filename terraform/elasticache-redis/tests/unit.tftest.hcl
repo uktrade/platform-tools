@@ -361,7 +361,7 @@ run "aws_cloudwatch_log_subscription_filter_unit_test" {
 
   ### Test aws_cloudwatch_log_subscription_filter engine resource ###
   assert {
-    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-engine.name == "/aws/elasticache/test-redis/test-environment/engine"
+    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-engine.name == "/aws/elasticache/test-application/test-environment/test-redis/engine"
     error_message = "Invalid config for aws_cloudwatch_log_subscription_filter name"
   }
 
@@ -380,7 +380,7 @@ run "aws_cloudwatch_log_subscription_filter_unit_test" {
 
   ### Test aws_cloudwatch_log_subscription_filter slow resource ###
   assert {
-    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-slow.name == "/aws/elasticache/test-redis/test-environment/slow"
+    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-slow.name == "/aws/elasticache/test-application/test-environment/test-redis/slow"
     error_message = "Invalid config for aws_cloudwatch_log_subscription_filter name"
   }
 
