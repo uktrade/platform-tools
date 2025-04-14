@@ -6,7 +6,6 @@ apiVersion: v3
 kind: system
 metadata:
   name: ${var.application}-${var.environment}
-  displayName: ${var.application}-${var.environment}
   links:
     - name: Documentation
       type: doc
@@ -28,7 +27,6 @@ apiVersion: v3
 kind: service
 metadata:
   name: ${var.application}-${var.environment}-${each.value}
-  displayName: ${var.application}-${var.environment}-${each.value}
   links:
     - name: Documentation
       type: doc
