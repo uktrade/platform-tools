@@ -17,8 +17,8 @@ variables {
 run "datadog_system_entity_test_application" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-system.entity).metadata.name == var.application
-    error_message = "Should be: metadata.name = ${var.application}"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-system.entity).metadata.name == "${var.application}-${var.environment}"
+    error_message = "Should be: metadata.name = ${var.application}-${var.environment}"
   }
 }
 
@@ -33,7 +33,7 @@ run "datadog_system_entity_test_owner" {
 run "datadog_service_entity_test_displayname" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service["test-web"].entity).metadata.displayName == "${var.application}:${var.config.services_to_monitor[0]}"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service["test-web"].entity).metadata.displayName == "${var.application}-${var.environment}-${var.config.services_to_monitor[0]}"
     error_message = "Should be: metadata.displayName = ${var.application}:${var.config.services_to_monitor[0]}"
   }
 }
@@ -41,7 +41,7 @@ run "datadog_service_entity_test_displayname" {
 run "datadog_service_entity_test_parent" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service["test-postgres"].entity).spec.componentOf[0] == "system:test-app"
-    error_message = "Should be: spec.componentOf = system:test-app"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service["test-postgres"].entity).spec.componentOf[0] == "system:test-app-test-env"
+    error_message = "Should be: spec.componentOf = system:test-app-test-env"
   }
 }
