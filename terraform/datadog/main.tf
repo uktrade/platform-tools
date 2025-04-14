@@ -5,8 +5,8 @@ resource "datadog_software_catalog" "datadog-software-catalog-system" {
 apiVersion: v3
 kind: system
 metadata:
-  name: ${var.application}
-  displayName: ${var.application}
+  name: ${var.application}-${var.environment}
+  displayName: ${var.application}-${var.environment}
   links:
     - name: Documentation
       type: doc
@@ -27,8 +27,8 @@ resource "datadog_software_catalog" "datadog-software-catalog-service" {
 apiVersion: v3
 kind: service
 metadata:
-  name: ${each.value}
-  displayName: ${var.application}:${each.value}
+  name: ${var.application}-${var.environment}-${each.value}
+  displayName: ${var.application}-${var.environment}-${each.value}
   links:
     - name: Documentation
       type: doc
@@ -43,7 +43,7 @@ spec:
   tier: "1"
   type: web
   componentOf: 
-    - system:${var.application}
+    - system:${var.application}-${var.environment}
   languages:
     - python
 datadog:

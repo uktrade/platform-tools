@@ -124,6 +124,6 @@ module "datadog" {
   }
 
   application = var.args.application
-
+  environment = var.environment
   config = each.value
 }
