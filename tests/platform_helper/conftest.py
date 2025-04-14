@@ -14,6 +14,7 @@ from moto import mock_aws
 from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.providers.cache import Cache
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
@@ -398,11 +399,13 @@ def clear_session_cache():
 @pytest.fixture()
 def valid_platform_config():
     return yaml.safe_load(
-        """
+        f"""
+schema_version: {PLATFORM_CONFIG_SCHEMA_VERSION}
+default_versions: 
+  platform-helper: 14.0.0
 application: test-app
 default_versions: 
     platform-helper: 10.2.0
-    terraform-platform-modules: 1.2.3
 environments:
   "*":
     accounts:
@@ -416,8 +419,6 @@ environments:
     vpc: non-prod-vpc
   dev:
   test:
-    versions:
-        terraform-platform-modules: 1.2.3
   staging:
   hotfix:
     accounts:
@@ -594,6 +595,8 @@ codebase_pipelines:
 @pytest.fixture
 def platform_env_config():
     return {
+        "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+        "default_versions": {"platform-helper": "14.0.0"},
         "application": "my-app",
         "environments": {
             "*": {
@@ -622,6 +625,7 @@ def platform_env_config():
 def codebase_pipeline_config_for_1_pipeline_and_2_run_groups(platform_env_config):
     return {
         **platform_env_config,
+        "default_versions": {"platform-helper": "14.0.0"},
         "codebase_pipelines": {
             "test_codebase": {
                 "repository": "uktrade/repo1",
@@ -706,7 +710,6 @@ legacy_project: false
 
 default_versions: 
     platform-helper: 1.2.3
-    terraform-platform-modules: 9.9.9
 
 environments:
   dev:
@@ -737,7 +740,10 @@ environment_pipelines:
 @pytest.fixture()
 def platform_config_for_env_pipelines():
     return yaml.safe_load(
-        """
+        f"""
+schema_version: {PLATFORM_CONFIG_SCHEMA_VERSION}
+default_versions: 
+  platform-helper: 14.0.0
 application: test-app
 deploy_repository: uktrade/test-app-weird-name-deploy
 
@@ -792,7 +798,7 @@ def create_invalid_platform_config_file(fakefs):
     )
 
 
-# TODO - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
+# TODO: DBTP-1969: - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.
 @pytest.fixture(autouse=True)
 def mock_get_data(request, monkeypatch):
     if "skip_mock_get_data" in request.keywords:

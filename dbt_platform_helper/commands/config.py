@@ -23,6 +23,15 @@ def validate():
 
 
 @config.command()
+def migrate():
+    """Update configuration to match current schema."""
+    try:
+        Config().migrate()
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
+
+
+@config.command()
 @click.option("--file-path", "-fp", default="~/.aws/config")
 def aws(file_path):
     """

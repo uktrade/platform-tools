@@ -1,12 +1,16 @@
 from unittest.mock import Mock
 from unittest.mock import call
+from unittest.mock import create_autospec
 
 import pytest
 import yaml
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.domain.database_copy import DatabaseCopy
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
@@ -528,11 +532,22 @@ def test_database_copy_account_id():
 
 
 def test_update_application_from_platform_config_if_application_not_specified(fs):
-    fs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump({"application": "test-app"}))
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
+                "application": "test-app",
+            }
+        ),
+    )
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -559,7 +574,12 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
     fs.create_file(
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
-            {"application": "test-app", "environments": {"test-env": {"vpc": "test-env-vpc"}}}
+            {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
+                "application": "test-app",
+                "environments": {"test-env": {"vpc": "test-env-vpc"}},
+            }
         ),
     )
     env = "test-env"
@@ -567,7 +587,9 @@ def test_database_dump_with_no_vpc_works_in_deploy_repo(fs, is_dump):
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -639,12 +661,19 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
     fs.create_file(
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
-            {"application": "test-app", "environments": {"test-env": {"vpc": "test-env-vpc"}}}
+            {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
+                "application": "test-app",
+                "environments": {"test-env": {"vpc": "test-env-vpc"}},
+            }
         ),
     )
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
 
     mocks = DataCopyMocks(config_provider=config_provider)
 
@@ -655,12 +684,20 @@ def test_enrich_vpc_name_enriches_vpc_name_from_platform_config(fs):
     assert vpc_name == "test-env-vpc"
 
 
+def mock_installed_version_provider():
+    installed_version_provider = create_autospec(spec=InstalledVersionProvider, spec_set=True)
+    installed_version_provider.get_semantic_version.return_value = SemanticVersion(14, 0, 0)
+    return installed_version_provider
+
+
 def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
     # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
     fs.create_file(
         PLATFORM_CONFIG_FILE,
         contents=yaml.dump(
             {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "14.0.0"},
                 "application": "test-app",
                 "environments": {"*": {"vpc": "test-env-vpc"}, "test-env": {}},
             }
@@ -669,7 +706,9 @@ def test_enrich_vpc_name_enriches_vpc_name_from_environment_defaults(fs):
 
     config_validator = Mock()
     config_validator.run_validations.return_value = None
-    config_provider = ConfigProvider(config_validator)
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
 
     mocks = DataCopyMocks(config_provider=config_provider)
 

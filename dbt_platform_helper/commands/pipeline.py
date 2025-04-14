@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 import click
 
-from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -22,13 +21,6 @@ def pipeline():
 
 @pipeline.command()
 @click.option(
-    "--terraform-platform-modules-version",
-    help=f"""Override the default version of terraform-platform-modules with a specific version or branch. 
-    Precedence of version used is version supplied via CLI, then the version found in 
-    platform-config.yml/default_versions/terraform-platform-modules. 
-    In absence of these inputs, defaults to version '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}'.""",
-)
-@click.option(
     "--deploy-branch",
     help="""Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
     This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
@@ -36,18 +28,20 @@ def pipeline():
     <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
     default=None,
 )
-def generate(terraform_platform_modules_version: str, deploy_branch: str):
+def generate(deploy_branch: str):
     """
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
 
     This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
       The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
       The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
 
     This command does the following in relation to the codebase pipelines:
-    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
+      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
+      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
     """
     io = ClickIOProvider()
     try:
@@ -59,6 +53,6 @@ def generate(terraform_platform_modules_version: str, deploy_branch: str):
             get_codestar_connection_arn,
             io,
         )
-        pipelines.generate(terraform_platform_modules_version, deploy_branch)
+        pipelines.generate(deploy_branch)
     except Exception as exc:
         io.abort_with_error(str(exc))

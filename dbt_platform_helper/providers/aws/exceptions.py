@@ -29,7 +29,7 @@ class LogGroupNotFoundException(AWSException):
         super().__init__(f"""No log group called "{log_group_name}".""")
 
 
-# Todo: This should probably be in the AWS Copilot provider, but was causing circular import when we tried it pre refactoring the utils/aws.py
+# TODO: DBTP-1976: This should probably be in the AWS Copilot provider, but was causing circular import when we tried it pre refactoring the utils/aws.py
 class CopilotCodebaseNotFoundException(PlatformException):
     def __init__(self, codebase: str):
         super().__init__(

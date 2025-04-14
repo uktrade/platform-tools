@@ -1,0 +1,71 @@
+# t-shirt sizes for OpenSearch
+
+# 2 vCPU, 2GB RAM, volume size range 10-100GB
+tiny:
+  volume_size: 80
+  instances: 1
+  instance: t3.small.search
+  enable_ha: false
+
+# 2 vCPU, 2GB RAM, volume size range 10-100GB
+tiny-ha:
+  volume_size: 80
+  instances: 2
+  instance: t3.small.search
+  enable_ha: true
+
+# 2 vCPU, 4GB RAM, volume size range 10-200GB
+small:
+  volume_size: 200
+  instances: 1
+  instance: t3.medium.search
+  enable_ha: false
+
+# 2 nodes with 2 vCPU, 4GB RAM, volume size range 10-200GB
+small-ha:
+  volume_size: 200
+  instances: 2
+  instance: t3.medium.search
+  enable_ha: true
+
+# 2 vCPU, 8GB RAM, volume size range 10-512GB
+medium:
+  volume_size: 512
+  instances: 1
+  instance: m6g.large.search
+  enable_ha: false
+
+# 2 nodes with 2 vCPU, 8GB RAM, volume size range 10-512GB
+medium-ha:
+  volume_size: 512
+  instances: 2
+  instance: m6g.large.search
+  enable_ha: true
+
+# 4 vCPU, 16GB RAM, volume size range 10-1000GB
+large:
+  volume_size: 1000
+  instances: 1
+  instance: m6g.xlarge.search
+  enable_ha: false
+
+# 2 nodes with 4 vCPU, 16GB RAM, volume size range 10-1000GB
+large-ha:
+  volume_size: 1000
+  instances: 2
+  instance: m6g.xlarge.search
+  enable_ha: true
+
+# 8 vCPU, 32GB RAM, volume size range 10-1500GB
+x-large:
+  volume_size: 1500
+  instances: 1
+  instance: m6g.2xlarge.search
+  enable_ha: false
+
+# 2 nodes with 8 vCPU, 32GB RAM, volume size range 10-1500GB
+x-large-ha:
+  volume_size: 1500
+  instances: 2
+  instance: m6g.2xlarge.search
+  enable_ha: true

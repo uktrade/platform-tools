@@ -79,7 +79,10 @@ class TestCommandHelperMethods:
             Name="test-load-balancer", Subnets=[subnet_id]
         )["LoadBalancers"][0]["LoadBalancerArn"]
         return elbv2_client.create_listener(
-            LoadBalancerArn=load_balancer_arn, DefaultActions=[{"Type": "forward"}]
+            LoadBalancerArn=load_balancer_arn,
+            DefaultActions=[{"Type": "forward"}],
+            Port=443,
+            Protocol="HTTPS",
         )["Listeners"][0]["ListenerArn"]
 
     def _create_listener_rule(self, elbv2_client=None, listener_arn=None, priority=1):
@@ -144,7 +147,7 @@ class TestCommandHelperMethods:
         mock_session = MagicMock()
 
         def mock_client(service_name, **kwargs):
-            # TODO for service_name try get from kwargs["mocks"] else default
+            # TODO: DBTP-1970: for service_name try get from kwargs["mocks"] else default
             if service_name == "elbv2":
                 return elbv2_client
             elif service_name == "resourcegroupstaggingapi":

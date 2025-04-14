@@ -89,16 +89,16 @@ class ConfigValidator:
         return self._validate_extension_supported_versions(
             config=config,
             aws_provider=Redis(self._get_client("elasticache")),
-            extension_type="redis",  # TODO this is information which can live in the RedisProvider
-            version_key="engine",  # TODO this is information which can live in the RedisProvider
+            extension_type="redis",  # TODO: DBTP-1888: this is information which can live in the RedisProvider
+            version_key="engine",  # TODO: DBTP-1888: this is information which can live in the RedisProvider
         )
 
     def validate_supported_opensearch_versions(self, config):
         return self._validate_extension_supported_versions(
             config=config,
             aws_provider=Opensearch(self._get_client("opensearch")),
-            extension_type="opensearch",  # TODO this is information which can live in the OpensearchProvider
-            version_key="engine",  # TODO this is information which can live in the OpensearchProvider
+            extension_type="opensearch",  # TODO: DBTP-1888: this is information which can live in the OpensearchProvider
+            version_key="engine",  # TODO: DBTP-1888: this is information which can live in the OpensearchProvider
         )
 
     def validate_environment_pipelines(self, config):
@@ -180,21 +180,6 @@ class ConfigValidator:
                 from_env = section["from"]
                 to_env = section["to"]
 
-                from_account = (
-                    config.get("environments", {})
-                    .get(from_env, {})
-                    .get("accounts", {})
-                    .get("deploy", {})
-                    .get("id")
-                )
-                to_account = (
-                    config.get("environments", {})
-                    .get(to_env, {})
-                    .get("accounts", {})
-                    .get("deploy", {})
-                    .get("id")
-                )
-
                 if from_env == to_env:
                     errors.append(
                         f"database_copy 'to' and 'from' cannot be the same environment in extension '{extension_name}'."
@@ -214,18 +199,6 @@ class ConfigValidator:
                     errors.append(
                         f"database_copy 'to' parameter must be a valid environment ({all_envs_string}) but was '{to_env}' in extension '{extension_name}'."
                     )
-
-                # TODO - The from_account and to_account properties are deprecated and will be removed when terraform-platform-modules is merged with platform-tools
-                if from_account != to_account:
-                    if "from_account" in section and section["from_account"] != from_account:
-                        errors.append(
-                            f"Incorrect value for 'from_account' for environment '{from_env}'"
-                        )
-
-                    if "to_account" in section and section["to_account"] != to_account:
-                        errors.append(
-                            f"Incorrect value for 'to_account' for environment '{to_env}'"
-                        )
 
         if errors:
             raise ConfigValidatorError("\n".join(errors))

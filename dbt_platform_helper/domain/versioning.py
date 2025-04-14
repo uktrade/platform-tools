@@ -31,8 +31,8 @@ def skip_version_checks():
 
 
 class PlatformHelperVersionNotFoundException(PlatformException):
-    def __init__(self):
-        super().__init__(f"""Platform helper version could not be resolved.""")
+    def __init__(self, message=None):
+        super().__init__(message or "Platform helper version could not be resolved.")
 
 
 class PlatformHelperVersioning:
