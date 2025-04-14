@@ -42,7 +42,7 @@ slack-sdk = "^3.27.1"
 jsonschema = "~=4.17.0"
 cfn-lint = "^1.4.2"
 psycopg2-binary = "^2.9.9"
-rustworkx = "^0.14.0"
+rustworkx = "^0.16.0"
 
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^5.0.28"}
