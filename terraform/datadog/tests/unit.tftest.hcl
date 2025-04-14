@@ -30,10 +30,10 @@ run "datadog_system_entity_test_owner" {
   }
 }
 
-run "datadog_service_entity_test_displayname" {
+run "datadog_service_entity_test_name" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service["test-web"].entity).metadata.displayName == "${var.application}-${var.environment}-${var.config.services_to_monitor[0]}"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service["test-web"].entity).metadata.name == "${var.application}-${var.environment}-${var.config.services_to_monitor[0]}"
     error_message = "Should be: metadata.displayName = ${var.application}:${var.config.services_to_monitor[0]}"
   }
 }
