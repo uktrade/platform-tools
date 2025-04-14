@@ -1,3 +1,4 @@
+import os
 from collections.abc import Callable
 from os import makedirs
 from pathlib import Path
@@ -5,6 +6,7 @@ from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -14,9 +16,6 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
-from dbt_platform_helper.utils.tool_versioning import (
-    get_required_terraform_platform_modules_version,
-)
 
 
 class Pipelines:
@@ -29,6 +28,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
+        platform_helper_version_override: str = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -37,8 +37,14 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
+        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
 
-    def generate(self, cli_terraform_platform_modules_version: str, deploy_branch: str):
+    def generate(
+        self,
+        deploy_branch: str,
+    ):
         platform_config = self.config_provider.load_and_validate_platform_config()
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
@@ -47,10 +53,6 @@ class Pipelines:
         if not (has_codebase_pipelines or has_environment_pipelines):
             self.io.warn("No pipelines defined: nothing to do.")
             return
-
-        platform_config_terraform_modules_default_version = platform_config.get(
-            "default_versions", {}
-        ).get("terraform-platform-modules", "")
 
         app_name = get_application_name()
 
@@ -67,10 +69,12 @@ class Pipelines:
 
         self._clean_pipeline_config(copilot_pipelines_dir)
 
-        terraform_platform_modules_version = get_required_terraform_platform_modules_version(
-            cli_terraform_platform_modules_version,
-            platform_config_terraform_modules_default_version,
+        platform_helper_version_for_template: str = platform_config.get("default_versions", {}).get(
+            "platform-helper"
         )
+
+        if self.platform_helper_version_override:
+            platform_helper_version_for_template = self.platform_helper_version_override
 
         # TODO: DBTP-1965: - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
@@ -95,7 +99,7 @@ class Pipelines:
                     platform_config["application"],
                     deploy_repository,
                     account,
-                    terraform_platform_modules_version,
+                    platform_helper_version_for_template,
                     deploy_branch,
                 )
 
@@ -114,7 +118,7 @@ class Pipelines:
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                terraform_platform_modules_version,
+                platform_helper_version_for_template,
                 ecrs_that_need_importing,
                 deploy_repository,
             )
@@ -129,7 +133,7 @@ class Pipelines:
         application: str,
         deploy_repository: str,
         aws_account: str,
-        terraform_platform_modules_version: str,
+        platform_helper_version: str,
         deploy_branch: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
@@ -139,7 +143,7 @@ class Pipelines:
                 "application": application,
                 "deploy_repository": deploy_repository,
                 "aws_account": aws_account,
-                "terraform_platform_modules_version": terraform_platform_modules_version,
+                "platform_helper_version": platform_helper_version,
                 "deploy_branch": deploy_branch,
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,

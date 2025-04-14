@@ -485,7 +485,6 @@ class TestCopilotGenerate:
             "deploy": {"name": "non-prod-acc", "id": "1122334455"},
             "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
         },
-        "versions": {"terraform-platform-modules": "123456"},
     }
 
     MOCK_VPC = Vpc(

@@ -8,15 +8,18 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
+
 
 class PlatformConfigSchema:
     @staticmethod
     def schema() -> Schema:
         return Schema(
             {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
                 "application": str,
                 Optional("deploy_repository"): str,
-                Optional("default_versions"): PlatformConfigSchema.__default_versions_schema(),
+                "default_versions": PlatformConfigSchema.__default_versions_schema(),
                 Optional("environments"): PlatformConfigSchema.__environments_schema(),
                 Optional("codebase_pipelines"): PlatformConfigSchema.__codebase_pipelines_schema(),
                 Optional(
@@ -166,16 +169,11 @@ class PlatformConfigSchema:
     @staticmethod
     def __default_versions_schema() -> dict:
         return {
-            Optional("terraform-platform-modules"): str,
-            Optional("platform-helper"): str,
+            "platform-helper": str,
         }
 
     @staticmethod
     def __environments_schema() -> dict:
-        _valid_environment_specific_version_overrides = {
-            Optional("terraform-platform-modules"): str,
-        }
-
         return {
             str: Or(
                 None,
@@ -192,7 +190,6 @@ class PlatformConfigSchema:
                     },
                     # TODO: DBTP-1943: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
                     Optional("requires_approval"): bool,
-                    Optional("versions"): _valid_environment_specific_version_overrides,
                     Optional("vpc"): str,
                 },
             )
@@ -317,8 +314,6 @@ class PlatformConfigSchema:
         _valid_postgres_database_copy = {
             "from": PlatformConfigSchema.__valid_environment_name(),
             "to": PlatformConfigSchema.__valid_environment_name(),
-            Optional("from_account"): str,
-            Optional("to_account"): str,
             Optional("pipeline"): {Optional("schedule"): str},
         }
 
@@ -431,7 +426,7 @@ class PlatformConfigSchema:
         if errors:
             # TODO: DBTP-1943: Raise suitable PlatformException?
             raise SchemaError(
-                "Bucket name '{}' is invalid:\n{}".format(name, "\n".join(f"  {e}" for e in errors))
+                f"Bucket name '{name}' is invalid:\n" + "\n".join(f"  {e}" for e in errors)
             )
 
         return True

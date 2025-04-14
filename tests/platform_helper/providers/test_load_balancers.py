@@ -47,6 +47,7 @@ def _create_listener(session, load_balancer_arn=None):
             DefaultActions=[{"Type": "forward"}],
             Port=443,
             Protocol="HTTPS",
+            Port=443,
         )["Listeners"][0]["ListenerArn"],
         load_balancer_arn,
     )

@@ -1,6 +1,5 @@
 import click
 
-from dbt_platform_helper.constants import DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION
 from dbt_platform_helper.domain.copilot_environment import CopilotEnvironment
 from dbt_platform_helper.domain.maintenance_page import MaintenancePage
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
@@ -87,15 +86,12 @@ def generate(name):
 @click.option(
     "--name", "-n", required=True, help="The name of the environment to generate a manifest for."
 )
-@click.option(
-    "--terraform-platform-modules-version",
-    help=f"Override the default version of terraform-platform-modules. (Default version is '{DEFAULT_TERRAFORM_PLATFORM_MODULES_VERSION}').",
-)
-def generate_terraform(name, terraform_platform_modules_version):
+def generate_terraform(name):
     click_io = ClickIOProvider()
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator(session=session))
-        TerraformEnvironment(config_provider).generate(name, terraform_platform_modules_version)
+        TerraformEnvironment(config_provider).generate(name)
+
     except PlatformException as err:
         click_io.abort_with_error(str(err))
