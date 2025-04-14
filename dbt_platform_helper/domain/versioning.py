@@ -1,6 +1,5 @@
 import os
 
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -41,7 +40,6 @@ class PlatformHelperVersioning:
         latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
-        platform_helper_version_override: str = None,
     ):
         self.io = io
         self.config_provider = config_provider
@@ -50,12 +48,10 @@ class PlatformHelperVersioning:
         self.skip_versioning_checks = (
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
         )
-        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-        )
 
     def get_required_version(self):
-        required_version = self._resolve_required_version()
+        platform_config = self.config_provider.load_and_validate_platform_config()
+        required_version = platform_config.get("default_versions", {}).get("platform-helper")
         self.io.info(required_version)
         return required_version
 
@@ -65,7 +61,7 @@ class PlatformHelperVersioning:
             return
 
         version_status = self.get_version_status()
-        required_version = self._resolve_required_version()
+        required_version = self.get_required_version()
 
         if SemanticVersion.is_semantic_version(required_version):
             required_version_semver = SemanticVersion.from_string(required_version)
@@ -104,16 +100,6 @@ class PlatformHelperVersioning:
         latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
-
-    def _resolve_required_version(self) -> str:
-        platform_config = self.config_provider.load_and_validate_platform_config()
-
-        platform_helper_version = platform_config.get("default_versions", {}).get("platform-helper")
-
-        if self.platform_helper_version_override:
-            platform_helper_version = self.platform_helper_version_override
-
-        return platform_helper_version
 
 
 class AWSVersioning:

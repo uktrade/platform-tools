@@ -28,7 +28,6 @@ class PlatformHelperVersioningMocks:
             "installed_version_provider", Mock(spec=InstalledVersionProvider)
         )
         self.skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
-        self.mock_platform_helper_version_override = None
 
     def params(self):
         return {
@@ -37,7 +36,6 @@ class PlatformHelperVersioningMocks:
             "latest_version_provider": self.latest_version_provider,
             "installed_version_provider": self.installed_version_provider,
             "skip_versioning_checks": self.skip_versioning_checks,
-            "platform_helper_version_override": self.mock_platform_helper_version_override,
         }
 
 
@@ -74,20 +72,10 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
-    @pytest.mark.parametrize(
-        "use_environment_variable_platform_helper_version, expected_version",
-        [(False, "1.0.0"), (True, "test-branch")],
-    )
-    def test_versions_precedence(
-        self, mocks, use_environment_variable_platform_helper_version, expected_version
-    ):
-
-        if use_environment_variable_platform_helper_version:
-            mocks.mock_platform_helper_version_override = "test-branch"
-
+    def test_platform_helper_get_required_version(self, mocks):
         result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
-        assert str(result) == expected_version
+        assert str(result) == "1.0.0"
 
 
 @pytest.mark.parametrize(
