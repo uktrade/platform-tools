@@ -59,11 +59,6 @@ class TestEnvironmentProgress:
             + options,
         )
 
-        mock_io_instance.warn.assert_called_once_with(
-            "The 'platform-helper notify environment-progress' command is deprecated. "
-            "Please use 'platform-helper notify post-message' instead."
-        )
-
         assert result.exit_code == 0
 
         mock_notifier.assert_called_once_with("my-slack-token", "my-slack-channel-id")

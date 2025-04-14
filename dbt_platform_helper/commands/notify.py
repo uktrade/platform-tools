@@ -14,7 +14,8 @@ def notify():
 
 
 @notify.command(
-    help="Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel."
+    help="Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.",
+    deprecated=True,
 )
 @click.argument("slack-channel-id")
 @click.argument("slack-token")
@@ -34,12 +35,6 @@ def environment_progress(
     commit_sha: str,
     slack_ref: str,
 ):
-    """[DEPRECATED] Use the 'platform-helper notify post_message' command
-    instead."""
-    io = ClickIOProvider()
-    io.warn(
-        "The 'platform-helper notify environment-progress' command is deprecated. Please use 'platform-helper notify post-message' instead."
-    )
 
     ctx.invoke(
         post_message,
