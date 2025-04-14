@@ -73,49 +73,16 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 }
 
-data "aws_iam_policy_document" "restrict_pipeline_to_start_environment_codebuild" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "codebuild:StartBuild",
-      "codebuild:BatchGetBuilds"
-    ]
-
-    resources = compact([
-      aws_codebuild_project.environment_pipeline_build.arn,
-      aws_codebuild_project.environment_pipeline_plan.arn,
-      aws_codebuild_project.environment_pipeline_apply.arn,
-      local.triggers_another_pipeline ? aws_codebuild_project.trigger_other_environment_pipeline[""].arn : null
-    ])
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values   = [aws_codepipeline.environment_pipeline.arn]
-    }
-  }
-}
-
 data "aws_iam_policy_document" "assume_codebuild_role" {
   statement {
     effect = "Allow"
+
     principals {
       type        = "Service"
       identifiers = ["codebuild.amazonaws.com"]
     }
 
     actions = ["sts:AssumeRole"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values = compact([
-        aws_codebuild_project.environment_pipeline_build.arn,
-        aws_codebuild_project.environment_pipeline_plan.arn,
-        aws_codebuild_project.environment_pipeline_apply.arn,
-        local.triggers_another_pipeline ? aws_codebuild_project.trigger_other_environment_pipeline[""].arn : null
-      ])
-    }
   }
 
   statement {
@@ -1221,12 +1188,6 @@ resource "aws_iam_role_policy" "artifact_store_access_for_environment_codepipeli
   name   = "${var.application}-${var.pipeline_name}-artifact-store-access-for-environment-codepipeline"
   role   = aws_iam_role.environment_pipeline_codepipeline.name
   policy = data.aws_iam_policy_document.access_artifact_store.json
-}
-
-resource "aws_iam_role_policy" "restrict_environment_pipeline_codebuild_start" {
-  name   = "${var.application}-${var.pipeline_name}-restrict-codebuild-start"
-  role   = aws_iam_role.environment_pipeline_codepipeline.name
-  policy = data.aws_iam_policy_document.restrict_pipeline_to_start_environment_codebuild.json
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_environment_codebuild" {

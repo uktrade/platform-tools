@@ -9,11 +9,6 @@ resource "aws_iam_role" "codebase_image_build" {
 }
 
 data "aws_iam_policy_document" "assume_codebuild_role" {
-  for_each = {
-    deploy       = aws_codebuild_project.codebase_deploy.arn,
-    image_build  = var.requires_image_build ? aws_codebuild_project.codebase_image_build[""].arn : null
-  }
-
   statement {
     effect = "Allow"
 
@@ -23,12 +18,6 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
     }
 
     actions = ["sts:AssumeRole"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values   = [each.value]
-    }
   }
 }
 
@@ -264,40 +253,6 @@ data "aws_iam_policy_document" "access_artifact_store" {
     ]
   }
 }
-
-resource "aws_iam_role_policy" "restrict_pipeline_start_codebuild" {
-  for_each = local.pipeline_map
-
-  name   = "restrict-startbuild-${each.key}"
-  role   = aws_iam_role.codebase_deploy_pipeline.name
-  policy = data.aws_iam_policy_document.restrict_pipeline_to_start_build[each.key].json
-}
-
-data "aws_iam_policy_document" "restrict_pipeline_to_start_build" {
-  for_each = local.pipeline_map
-
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "codebuild:StartBuild",
-      "codebuild:BatchGetBuilds"
-    ]
-
-    resources = [
-      aws_codebuild_project.codebase_deploy.arn
-    ]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values = [
-        "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_codepipeline.codebase_pipeline[each.key].name}"
-      ]
-    }
-  }
-}
-
 
 resource "aws_iam_role" "codebase_deploy" {
   name               = "${var.application}-${var.codebase}-codebase-deploy"
