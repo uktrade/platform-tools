@@ -3,9 +3,8 @@ import os
 import webbrowser
 from unittest import mock
 from unittest.mock import ANY
-from unittest.mock import MagicMock
-from unittest.mock import Mock
 from unittest.mock import call
+from unittest.mock import create_autospec
 from unittest.mock import mock_open
 
 import pytest
@@ -18,7 +17,9 @@ from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
+from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.schema_migrator import Migrator
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.version_status import VersionStatus
@@ -38,9 +39,9 @@ maybe = "\033[93m?\033[0m"
 
 class ConfigMocks:
     def __init__(self, *args, **kwargs):
-        self.io = kwargs.get("io", Mock(spec=ClickIOProvider))
+        self.io = kwargs.get("io", create_autospec(spec=ClickIOProvider, spec_set=True))
         self.platform_helper_versioning = kwargs.get(
-            "platform_helper_versioning", MagicMock(spec=PlatformHelperVersioning)
+            "platform_helper_versioning", create_autospec(PlatformHelperVersioning, spec_set=True)
         )
         self.platform_helper_version_status = kwargs.get(
             "platform_helper_version_status",
@@ -50,7 +51,7 @@ class ConfigMocks:
             self.platform_helper_version_status
         )
 
-        self.sso = kwargs.get("sso", Mock(spec=SSOAuthProvider))
+        self.sso = kwargs.get("sso", create_autospec(SSOAuthProvider, spec_set=True))
 
         self.aws_version_status = kwargs.get(
             "aws_version_status", VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))
@@ -59,11 +60,19 @@ class ConfigMocks:
             "copilot_version_status",
             VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)),
         )
-        self.aws_versioning = kwargs.get("aws_versioning", Mock(spec=AWSVersioning))
+        self.aws_versioning = kwargs.get(
+            "aws_versioning", create_autospec(spec=AWSVersioning, spec_set=True)
+        )
         self.aws_versioning.get_version_status.return_value = self.aws_version_status
 
-        self.copilot_versioning = kwargs.get("copilot_versioning", Mock(spec=CopilotVersioning))
+        self.copilot_versioning = kwargs.get(
+            "copilot_versioning", create_autospec(spec=CopilotVersioning, spec_set=True)
+        )
         self.copilot_versioning.get_version_status.return_value = self.copilot_version_status
+        self.config_provider = kwargs.get(
+            "config_provider", create_autospec(spec=ConfigProvider, spec_set=True)
+        )
+        self.migrator = kwargs.get("migrator", create_autospec(spec=Migrator, spec_set=True))
 
     def params(self):
         return {
@@ -72,6 +81,8 @@ class ConfigMocks:
             "platform_helper_versioning": self.platform_helper_versioning,
             "aws_versioning": self.aws_versioning,
             "copilot_versioning": self.copilot_versioning,
+            "config_provider": self.config_provider,
+            "migrator": self.migrator,
         }
 
 
@@ -456,7 +467,7 @@ class TestConfigValidate:
             config_domain.validate()
 
     def test_no_copilot_repo(self, fakefs):
-        config_domain = Config(sso=Mock())
+        config_domain = Config(sso=create_autospec(SSOAuthProvider, spec_set=True))
         with pytest.raises(
             NoDeploymentRepoConfigException,
             match="Could not find a deployment repository, no checks to run.",
@@ -543,3 +554,20 @@ class TestConfigGenerateAWS:
                 call("\n"),
             ]
         )
+
+
+class TestConfigMigrate:
+    def test_migrate_runs_the_migrator_and_writes_out_its_return_value(self):
+        platform_config = {"application": "test-app"}
+        migrated_config = {"application": "test-app-modified"}
+
+        config_mocks = ConfigMocks()
+        config_domain = Config(**config_mocks.params())
+        config_domain.config_provider.load_unvalidated_config_file.return_value = platform_config
+        config_domain.migrator.migrate.return_value = migrated_config
+
+        config_domain.migrate()
+
+        config_domain.config_provider.load_unvalidated_config_file.assert_called_once()
+        config_domain.migrator.migrate.assert_called_once_with(platform_config)
+        config_domain.config_provider.write_platform_config.assert_called_once_with(migrated_config)

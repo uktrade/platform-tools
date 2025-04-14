@@ -5,7 +5,15 @@ from typing import Optional
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.semantic_version import SemanticVersion
+
+
+class UnsupportedVersionException(PlatformException):
+    def __init__(self, version: str):
+        super().__init__(
+            f"""Platform-helper version {version} is not compatible with platform-helper. Please install version platform-helper version 14 or later."""
+        )
 
 
 @dataclass
@@ -33,6 +41,7 @@ class PlatformHelperVersionStatus(VersionStatus):
     latest: Optional[SemanticVersion] = None
     deprecated_version_file: Optional[SemanticVersion] = None
     platform_config_default: Optional[SemanticVersion] = None
+    cli_override: Optional[SemanticVersion] = None
     pipeline_overrides: Optional[Dict[str, str]] = field(default_factory=dict)
 
     def __str__(self):

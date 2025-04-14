@@ -19,7 +19,7 @@ class IncompatibleMinorVersionException(ValidationException):
 
 
 class SemanticVersion:
-    def __init__(self, major, minor, patch):
+    def __init__(self, major: int, minor: int, patch: int):
         self.major = major
         self.minor = minor
         self.patch = patch
@@ -74,3 +74,8 @@ class SemanticVersion:
         major, minor, patch = [self._cast_to_int_with_fallback(s) for s in version_segments]
 
         return SemanticVersion(major, minor, patch)
+
+    @staticmethod
+    def is_semantic_version(version_string):
+        valid_semantic_string_regex = r"(?i)^v?[0-9]+[.-][0-9]+[.-][0-9]+$"
+        return re.match(valid_semantic_string_regex, version_string)

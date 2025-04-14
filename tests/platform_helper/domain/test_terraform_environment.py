@@ -16,10 +16,15 @@ class TestGenerateTerraform:
             "deploy": {"name": "non-prod-acc", "id": "1122334455"},
             "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
         },
-        "versions": {"terraform-platform-modules": "123456"},
     }
 
     VALID_ENRICHED_CONFIG = {
+        "application": "test-app",
+        "default_versions": {"platform-helper": "14.0.0"},
+        "environments": {"test": VALID_ENV_CONFIG},
+    }
+
+    INVALID_ENRICHED_CONFIG = {
         "application": "test-app",
         "environments": {"test": VALID_ENV_CONFIG},
     }
@@ -41,7 +46,7 @@ class TestGenerateTerraform:
 
     def test_generate_success(self):
         environment_name = "test"
-        tpm_default_version = "123"
+        platform_helper_version = "14.0.0"
 
         mock_manifest_provider = Mock(spec=TerraformManifestProvider)
 
@@ -54,8 +59,8 @@ class TestGenerateTerraform:
             io=Mock(),
         )
 
-        terraform_environment.generate(environment_name, tpm_default_version)
+        terraform_environment.generate(environment_name)
 
         mock_manifest_provider.generate_environment_config.assert_called_once_with(
-            self.VALID_ENRICHED_CONFIG, environment_name, tpm_default_version
+            self.VALID_ENRICHED_CONFIG, environment_name, platform_helper_version
         )
