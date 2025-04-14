@@ -66,7 +66,8 @@ resource "aws_codepipeline" "database_copy_pipeline" {
           { name : "PIPELINE_NAME", value : local.pipeline_name },
           { name : "DATABASE_NAME", value : var.database_name },
           { name : "FROM_ENVIRONMENT", value : var.task.from },
-          { name : "TO_ENVIRONMENT", value : var.task.to }
+          { name : "TO_ENVIRONMENT", value : var.task.to },
+          { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
         ])
       }
     }
