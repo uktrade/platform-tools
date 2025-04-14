@@ -27,7 +27,6 @@ from dbt_platform_helper.utils.aws import get_manual_release_pipeline
 from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
 from dbt_platform_helper.utils.aws import start_pipeline_and_return_execution_id
-from dbt_platform_helper.utils.git import check_if_commit_exists
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -50,7 +49,6 @@ class Codebase:
         start_pipeline_and_return_execution_id: Callable[
             [str], str
         ] = start_pipeline_and_return_execution_id,
-        check_if_commit_exists: Callable[[str], str] = check_if_commit_exists,
         run_subprocess: Callable[[str], str] = subprocess.run,
     ):
         self.parameter_provider = parameter_provider
@@ -65,7 +63,6 @@ class Codebase:
         self.list_latest_images = list_latest_images
         self.start_build_extraction = start_build_extraction
         self.start_pipeline_and_return_execution_id = start_pipeline_and_return_execution_id
-        self.check_if_commit_exists = check_if_commit_exists
         self.run_subprocess = run_subprocess
 
     def prepare(self):
@@ -132,8 +129,6 @@ class Codebase:
         """Trigger a CodePipeline pipeline based build."""
         session = self.get_aws_session_or_abort()
         self.load_application(app, default_session=session)
-
-        self.check_if_commit_exists(commit)
 
         codebuild_client = session.client("codebuild")
         project_name = self.get_image_build_project(codebuild_client, app, codebase)
