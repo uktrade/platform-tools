@@ -26,7 +26,7 @@ phases:
       - echo "Working on environment ${ENVIRONMENT}"
       - |
         if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
-          unset PLATFORM_HELPER_VERSION_OVERRIDE
+          export PLATFORM_HELPER_VERSION_OVERRIDE=""
         fi
       - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
       - cd terraform/environments/${ENVIRONMENT}
