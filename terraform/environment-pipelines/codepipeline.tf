@@ -14,6 +14,12 @@ resource "aws_codepipeline" "environment_pipeline" {
     description   = "This can be set by a triggering pipeline to continue an existing message thread"
   }
 
+  variable {
+    name          = "PLATFORM_HELPER_VERSION_OVERRIDE"
+    default_value = "NONE"
+    description   = "Override the platform-helper default version specified in platform-config"
+  }
+
   artifact_store {
     location = aws_s3_bucket.artifact_store.bucket
     type     = "S3"
@@ -80,6 +86,7 @@ resource "aws_codepipeline" "environment_pipeline" {
           { name : "REPOSITORY", value : var.repository },
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
+          { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
         ])
       }
     }
