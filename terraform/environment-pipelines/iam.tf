@@ -11,6 +11,14 @@ data "aws_iam_policy_document" "assume_codepipeline_role" {
     }
 
     actions = ["sts:AssumeRole"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = [
+        "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${var.application}-${var.pipeline_name}-environment-pipeline"
+      ]
+    }
   }
 }
 
@@ -83,6 +91,17 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
     }
 
     actions = ["sts:AssumeRole"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = compact([
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-plan",
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-build",
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply",
+        local.triggers_another_pipeline ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-trigger" : null
+      ])
+    }
   }
 
   statement {
