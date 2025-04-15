@@ -37,12 +37,11 @@ requests = "^2.31.0"
 prettytable = "^3.9.0"
 semver = "^3.0.2"
 tomlkit = "^0.12.2"
-checkov = "^3.2.403"
 slack-sdk = "^3.27.1"
 jsonschema = "~=4.17.0"
 cfn-lint = "^1.4.2"
 psycopg2-binary = "^2.9.9"
-rustworkx = "^0.16.0"
+checkov = "^3.2.405"
 
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^5.0.28"}
