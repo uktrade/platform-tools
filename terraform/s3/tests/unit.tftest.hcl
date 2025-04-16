@@ -1,8 +1,9 @@
 variables {
-  vpc_name    = "s3-test-vpc-name"
-  application = "s3-test-application"
-  environment = "dev"
-  name        = "s3-test-name"
+  vpc_name         = "s3-test-vpc-name"
+  application      = "s3-test-application"
+  dns_account_name = "dev"
+  environment      = "dev"
+  name             = "s3-test-name"
   config = {
     "bucket_name" = "dbt-terraform-test-s3-module",
     "type"        = "string",
