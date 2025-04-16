@@ -15,10 +15,11 @@ module "s3" {
     aws.domain-cdn = aws.domain-cdn
   }
 
-  application = var.args.application
-  environment = var.environment
-  name        = each.key
-  vpc_name    = local.vpc_name
+  application      = var.args.application
+  dns_account_name = local.dns_account_name
+  environment      = var.environment
+  name             = each.key
+  vpc_name         = local.vpc_name
 
   config = each.value
 }
@@ -70,10 +71,11 @@ module "alb" {
   providers = {
     aws.domain = aws.domain
   }
-  application    = var.args.application
-  environment    = var.environment
-  vpc_name       = local.vpc_name
-  dns_account_id = local.dns_account_id
+  application      = var.args.application
+  environment      = var.environment
+  vpc_name         = local.vpc_name
+  dns_account_id   = local.dns_account_id
+  dns_account_name = local.dns_account_name
 
   config = each.value
 }
