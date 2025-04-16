@@ -61,6 +61,7 @@ locals {
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" },
           { name : "NEEDS_APPROVAL", value : lookup(env, "requires_approval", false) ? "yes" : "no" },
           { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
+          { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
         ])
       }
       namespace : "${env.name}-plan"
