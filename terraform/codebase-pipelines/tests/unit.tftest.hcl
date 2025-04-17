@@ -77,6 +77,13 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.ecr_policy
+  values = {
+    json = "{\"Sid\": \"ECRPolicy\"}"
+  }
+}
+
 variables {
   env_config = {
     "*" = {
@@ -153,6 +160,38 @@ run "test_ecr" {
   assert {
     condition     = jsonencode(aws_ecr_repository.this.tags) == jsonencode(var.expected_ecr_tags)
     error_message = "Should be: ${jsonencode(var.expected_ecr_tags)}"
+  }
+  assert {
+    condition     = aws_ecr_repository_policy.ecr_policy.repository == "my-app/my-codebase"
+    error_message = "Should be: 'my-app/my-codebase'"
+  }
+  assert {
+    condition     = aws_ecr_repository_policy.ecr_policy.policy == "{\"Sid\": \"ECRPolicy\"}"
+    error_message = "Should be: {\"Sid\": \"ECRPolicy\"}"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.ecr_policy.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.ecr_policy.statement[0].actions == toset([
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition     = [for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.type][0] == "AWS"
+    error_message = "Should be: AWS"
+  }
+  assert {
+    condition     = flatten([for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
+    error_message = "ECR policy principals incorrect"
   }
 }
 
