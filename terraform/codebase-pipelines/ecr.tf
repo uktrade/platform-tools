@@ -22,22 +22,22 @@ data "aws_iam_policy_document" "ecr_policy" {
   statement {
     effect = "Allow"
 
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ]
+
     principals {
-      type        = "AWS"
+      type = "AWS"
       identifiers = [
         for id in local.deploy_account_ids :
         "arn:aws:iam::${id}:root"
       ]
     }
-
-    actions = [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:BatchGetImage",
-        "ecr:CompleteLayerUpload",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:InitiateLayerUpload",
-        "ecr:PutImage",
-        "ecr:UploadLayerPart"
-    ]
   }
 }
