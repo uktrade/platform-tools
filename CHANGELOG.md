@@ -1,5 +1,12 @@
 # Changelog
 
+## [14.1.1](https://github.com/uktrade/platform-tools/compare/14.1.0...14.1.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* Reinstate version command (DBTP-2006) ([#858](https://github.com/uktrade/platform-tools/issues/858)) ([eec2de7](https://github.com/uktrade/platform-tools/commit/eec2de700a994e509ea696a349c5ba7501cbb444))
+
 ## [14.1.0](https://github.com/uktrade/platform-tools/compare/14.0.0...14.1.0) (2025-04-16)
 
 
