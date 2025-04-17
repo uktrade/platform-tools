@@ -24,6 +24,10 @@ phases:
       - echo "Terraform Plan Phase"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting terraform plan phase for the ${ENVIRONMENT} environment."
       - echo "Working on environment ${ENVIRONMENT}"
+      - |
+        if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
+          export PLATFORM_HELPER_VERSION_OVERRIDE=""
+        fi
       - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
       - cd terraform/environments/${ENVIRONMENT}
       - terraform init
