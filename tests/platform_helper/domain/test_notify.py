@@ -85,7 +85,7 @@ class TestNotify:
             ),
         ),
     )
-    def test_environment_progress(
+    def test_post_message(
         self,
         slack_ref,
         repository,
@@ -98,7 +98,7 @@ class TestNotify:
         mock_notifier.post_update.return_value = {"ts": "1234.56789"}
         mock_notifier.post_new.return_value = {"ts": "1234.56789"}
 
-        Notify(mock_notifier).environment_progress(
+        Notify(mock_notifier).post_message(
             message="The very important thing everyone should know",
             original_message_ref=slack_ref,
             repository=repository,

@@ -14,7 +14,8 @@ def notify():
 
 
 @notify.command(
-    help="Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel."
+    help="Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.",
+    deprecated=True,
 )
 @click.argument("slack-channel-id")
 @click.argument("slack-token")
@@ -23,7 +24,41 @@ def notify():
 @click.option("--repository")
 @click.option("--commit-sha")
 @click.option("--slack-ref", help="Slack message reference of the message to update")
+@click.pass_context
 def environment_progress(
+    ctx,
+    slack_channel_id: str,
+    slack_token: str,
+    message: str,
+    build_arn: str,
+    repository: str,
+    commit_sha: str,
+    slack_ref: str,
+):
+
+    ctx.invoke(
+        post_message,
+        slack_channel_id=slack_channel_id,
+        slack_token=slack_token,
+        message=message,
+        build_arn=build_arn,
+        repository=repository,
+        commit_sha=commit_sha,
+        slack_ref=slack_ref,
+    )
+
+
+@notify.command(
+    help="Send Slack notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel."
+)
+@click.argument("slack-channel-id")
+@click.argument("slack-token")
+@click.argument("message")
+@click.option("--build-arn")
+@click.option("--repository")
+@click.option("--commit-sha")
+@click.option("--slack-ref", help="Slack message reference of the message to update")
+def post_message(
     slack_channel_id: str,
     slack_token: str,
     message: str,
@@ -35,7 +70,7 @@ def environment_progress(
     try:
         io = ClickIOProvider()
         slack_notifier = SlackChannelNotifier(slack_token, slack_channel_id)
-        result = Notify(slack_notifier).environment_progress(
+        result = Notify(slack_notifier).post_message(
             original_message_ref=slack_ref,
             message=message,
             build_arn=build_arn,
