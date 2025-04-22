@@ -15,6 +15,7 @@ from dbt_platform_helper.commands.generate import generate as generate_commands
 from dbt_platform_helper.commands.notify import notify as notify_commands
 from dbt_platform_helper.commands.pipeline import pipeline as pipeline_commands
 from dbt_platform_helper.commands.secrets import secrets as secrets_commands
+from dbt_platform_helper.commands.upgrade import upgrade
 from dbt_platform_helper.commands.version import version as version_commands
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -28,6 +29,7 @@ def platform_helper():
     pass
 
 
+platform_helper.add_command(upgrade)
 platform_helper.add_command(application_commands)
 platform_helper.add_command(codebase_commands)
 platform_helper.add_command(conduit_commands)

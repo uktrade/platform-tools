@@ -1,6 +1,7 @@
 # Commands Reference
 
 - [platform-helper](#platform-helper)
+    - [platform-helper upgrade](#platform-helper-upgrade)
     - [platform-helper application](#platform-helper-application)
         - [platform-helper application container-stats](#platform-helper-application-container-stats)
         - [platform-helper application task-stats](#platform-helper-application-task-stats)
@@ -66,7 +67,25 @@ platform-helper <command> [--version]
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
+- [`upgrade` ↪](#platform-helper-upgrade)
 - [`version` ↪](#platform-helper-version)
+
+# platform-helper upgrade
+
+[↩ Parent](#platform-helper)
+
+    Update platform-helper to the latest version.
+
+## Usage
+
+```
+platform-helper upgrade [OPTIONS]
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
 
 # platform-helper application
 
