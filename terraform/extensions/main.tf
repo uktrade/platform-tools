@@ -88,6 +88,7 @@ module "cdn" {
     aws.domain-cdn = aws.domain-cdn
   }
   application = var.args.application
+  dns_account_name = local.dns_account_name
   environment = var.environment
 
   origin_verify_secret_id = one(values(module.alb)).origin_verify_secret_id

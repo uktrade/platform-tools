@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  serve_static_domain = var.environment == "prod" ? "${var.config.bucket_name}.${var.application}.prod.uktrade.digital" : "${var.config.bucket_name}.${var.environment}.${var.application}.uktrade.digital"
+  serve_static_domain = var.dns_account_name == "live" ? "${var.config.bucket_name}.${var.application}.prod.uktrade.digital" : "${var.config.bucket_name}.${var.environment}.${var.application}.uktrade.digital"
   ssm_param_name      = coalesce(var.config.serve_static_param_name, "STATIC_S3_ENDPOINT")
 }
 
