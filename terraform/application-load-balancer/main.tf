@@ -441,6 +441,11 @@ data "archive_file" "lambda" {
   ]
 }
 
+data "aws_lambda_layer_version" "python_requests_layer" {
+  layer_name = "python-requests"
+}
+
+
 # Secrets Manager Rotation Lambda Function
 resource "aws_lambda_function" "origin-secret-rotate-function" {
   # Precedence in the Postgres Lambda to skip first 2 checks
@@ -480,7 +485,8 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
     }
   }
 
-  layers           = ["arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:1"]
+  # layers           = ["arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:1"]
+  layers           = [data.aws_lambda_layer_version.python-requests_layer.arn]
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   vpc_config {
