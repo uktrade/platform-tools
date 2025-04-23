@@ -44,8 +44,7 @@ class TestCodebasePrepare:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
-    def test_aborts_when_not_in_a_codebase_repository(self, mock_click, mock_codebase_object):
+    def test_aborts_when_not_in_a_codebase_repository(self, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.prepare.side_effect = NotInCodeBaseRepositoryException
         os.environ["AWS_PROFILE"] = "foo"
