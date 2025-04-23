@@ -118,7 +118,7 @@ class TestPyPiLatestVersionProvider:
     ),
 )
 class TestAWSCLIInstalledVersionProvider:
-    @patch("subprocess.run")
+    @patch("dbt_platform_helper.providers.version.subprocess.run")
     def test_get_semantic_version(self, mock_run, mock_run_stdout, expected):
         mock_run.return_value.stdout = mock_run_stdout
 
@@ -138,7 +138,7 @@ class TestCopilotVersioning:
             (b"command not found: copilot", None),
         ),
     )
-    @patch("subprocess.run")
+    @patch("dbt_platform_helper.providers.version.subprocess.run")
     def test_get_semantic_version(self, mock_run, mock_run_stdout, expected):
         mock_run.return_value.stdout = mock_run_stdout
 

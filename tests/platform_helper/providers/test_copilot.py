@@ -271,7 +271,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     )
 
 
-@patch("click.secho")
+@patch("dbt_platform_helper.commands.copilot.click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
     mock_application,
