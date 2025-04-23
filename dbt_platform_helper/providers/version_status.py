@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 class UnsupportedVersionException(PlatformException):

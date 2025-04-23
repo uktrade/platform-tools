@@ -11,10 +11,10 @@ from schema import SchemaError
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.yaml_file import DuplicateKeysException
 from dbt_platform_helper.providers.yaml_file import InvalidYamlException
