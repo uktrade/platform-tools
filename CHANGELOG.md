@@ -1,5 +1,18 @@
 # Changelog
 
+## [14.2.0](https://github.com/uktrade/platform-tools/compare/14.1.1...14.2.0) (2025-04-23)
+
+
+### Features
+
+* Deprecate platform helper notify environment progress (DBTP-1221) ([#842](https://github.com/uktrade/platform-tools/issues/842)) ([167f235](https://github.com/uktrade/platform-tools/commit/167f23591f26c3bcb1f4fd8a3218140e8f17e744))
+
+
+### Bug Fixes
+
+* Add in moving major and minor version tags to the release (DBTP-1939) ([#861](https://github.com/uktrade/platform-tools/issues/861)) ([4e8f558](https://github.com/uktrade/platform-tools/commit/4e8f5586aa69aff5a013592516faab4b5f641141))
+* Add missing ECR policy (DBTP-1837) ([#857](https://github.com/uktrade/platform-tools/issues/857)) ([8add310](https://github.com/uktrade/platform-tools/commit/8add310b471417541f119ff3c2ae4cd37c626e5a))
+
 ## [14.1.1](https://github.com/uktrade/platform-tools/compare/14.1.0...14.1.1) (2025-04-17)
 
 
