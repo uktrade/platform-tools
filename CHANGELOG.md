@@ -1,5 +1,38 @@
 # Changelog
 
+## [14.2.0](https://github.com/uktrade/platform-tools/compare/14.1.1...14.2.0) (2025-04-23)
+
+
+### Features
+
+* Deprecate platform helper notify environment progress (DBTP-1221) ([#842](https://github.com/uktrade/platform-tools/issues/842)) ([167f235](https://github.com/uktrade/platform-tools/commit/167f23591f26c3bcb1f4fd8a3218140e8f17e744))
+
+
+### Bug Fixes
+
+* Add in moving major and minor version tags to the release (DBTP-1939) ([#861](https://github.com/uktrade/platform-tools/issues/861)) ([4e8f558](https://github.com/uktrade/platform-tools/commit/4e8f5586aa69aff5a013592516faab4b5f641141))
+* Add missing ECR policy (DBTP-1837) ([#857](https://github.com/uktrade/platform-tools/issues/857)) ([8add310](https://github.com/uktrade/platform-tools/commit/8add310b471417541f119ff3c2ae4cd37c626e5a))
+
+## [14.1.1](https://github.com/uktrade/platform-tools/compare/14.1.0...14.1.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* Reinstate version command (DBTP-2006) ([#858](https://github.com/uktrade/platform-tools/issues/858)) ([eec2de7](https://github.com/uktrade/platform-tools/commit/eec2de700a994e509ea696a349c5ba7501cbb444))
+
+## [14.1.0](https://github.com/uktrade/platform-tools/compare/14.0.0...14.1.0) (2025-04-16)
+
+
+### Features
+
+* Python 3.13 support (off-ticket) ([#850](https://github.com/uktrade/platform-tools/issues/850)) ([1370c85](https://github.com/uktrade/platform-tools/commit/1370c85fe01ec7c48f86508ad24d7072fb9c2186))
+* Updates to software catalog service names (DBTP-1999) ([#855](https://github.com/uktrade/platform-tools/issues/855)) ([65d84a3](https://github.com/uktrade/platform-tools/commit/65d84a32159a3f0de0ced7716d47bfb7927806af))
+
+
+### Bug Fixes
+
+* Fix error parsing platform-helper version number (off-ticket) ([#854](https://github.com/uktrade/platform-tools/issues/854)) ([ba62201](https://github.com/uktrade/platform-tools/commit/ba622015c57ff29c1af0d2d6a5370278f7edaa9c))
+
 ## [14.0.0](https://github.com/uktrade/platform-tools/compare/13.4.1...14.0.0) (2025-04-15)
 
 
