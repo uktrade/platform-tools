@@ -12,6 +12,7 @@
 * Do not validate config in the version command (DBTP-2016) ([#867](https://github.com/uktrade/platform-tools/issues/867)) ([5ca2ce5](https://github.com/uktrade/platform-tools/commit/5ca2ce5431202f4d94f87c63181c04c327852f4d))
 * Sort list of subnets for Opensearch (DBTP-1994) ([#856](https://github.com/uktrade/platform-tools/issues/856)) ([019cefa](https://github.com/uktrade/platform-tools/commit/019cefab6d3ec172e9b012e0bb6708449e84e86b))
 
+
 ### Features
 
 * Restrict trust policies for CodePipeline & CodeBuild IAM roles (DBTP-1945) ([#852](https://github.com/uktrade/platform-tools/issues/852)) ([d0e00bf](https://github.com/uktrade/platform-tools/commit/d0e00bfaa8680a3c2f5955a077c349b0db129486))
