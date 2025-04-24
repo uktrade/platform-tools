@@ -50,7 +50,7 @@ class PlatformHelperVersioning:
         )
 
     def get_required_version(self):
-        platform_config = self.config_provider.load_and_validate_platform_config()
+        platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         self.io.info(required_version)
         return required_version

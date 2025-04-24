@@ -45,6 +45,7 @@ def mocks():
 
     mocks = PlatformHelperVersioningMocks()
     mocks.config_provider.load_and_validate_platform_config.return_value = platform_config
+    mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
     return mocks
 
 
@@ -76,6 +77,8 @@ class TestPlatformHelperVersioningGetRequiredVersion:
         result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
         assert str(result) == "1.0.0"
+        mocks.config_provider.load_unvalidated_config_file.assert_called_once()
+        mocks.config_provider.load_and_validate_platform_config.assert_not_called()
 
 
 @pytest.mark.parametrize(
