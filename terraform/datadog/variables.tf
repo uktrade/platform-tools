@@ -17,3 +17,8 @@ variable "config" {
     }
   )
 }
+
+variable "repository" {
+  type = string
+}
+

@@ -9,3 +9,8 @@ variable "args" {
 variable "environment" {
   type = string
 }
+
+variable "repository" {
+  type = string
+  default = null
+}
