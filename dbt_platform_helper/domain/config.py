@@ -10,16 +10,16 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.entities.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrator import ALL_MIGRATIONS
 from dbt_platform_helper.providers.schema_migrator import Migrator
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMajorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.version_status import VersionStatus
 

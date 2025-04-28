@@ -1,6 +1,6 @@
 import pytest
 
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version_status import VersionStatus
 
 

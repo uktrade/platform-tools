@@ -289,7 +289,7 @@ def test_command_copy_success_with_maintenance_page(mock_database_copy_object):
 
 
 @patch("dbt_platform_helper.commands.database.DatabaseCopy")
-@patch("click.secho")
+@patch("dbt_platform_helper.commands.database.click.secho")
 def test_command_copy_raises_platform_exception(mock_click, mock_database_copy_object):
     mock_database_copy_instance = mock_database_copy_object.return_value
     mock_database_copy_instance.copy.side_effect = PlatformException("i've failed")
@@ -328,7 +328,7 @@ def test_command_copy_raises_platform_exception(mock_click, mock_database_copy_o
 
 
 @patch("dbt_platform_helper.commands.database.DatabaseCopy")
-@patch("click.secho")
+@patch("dbt_platform_helper.commands.database.click.secho")
 def test_command_load_raises_platform_exception(mock_click, mock_database_copy_object):
     mock_database_copy_instance = mock_database_copy_object.return_value
     mock_database_copy_instance.load.side_effect = PlatformException("i've failed")
@@ -355,7 +355,7 @@ def test_command_load_raises_platform_exception(mock_click, mock_database_copy_o
 
 
 @patch("dbt_platform_helper.commands.database.DatabaseCopy")
-@patch("click.secho")
+@patch("dbt_platform_helper.commands.database.click.secho")
 def test_command_dump_raises_platform_exception(mock_click, mock_database_copy_object):
     mock_database_copy_instance = mock_database_copy_object.return_value
     mock_database_copy_instance.dump.side_effect = PlatformException("i've failed")

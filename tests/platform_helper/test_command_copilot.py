@@ -56,7 +56,7 @@ class TestMakeAddonsCommand:
     @patch("dbt_platform_helper.commands.copilot.ConfigValidator")
     @patch("dbt_platform_helper.commands.copilot.FileProvider")
     @patch("dbt_platform_helper.commands.copilot.CopilotTemplating")
-    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.copilot.click.secho")
     def test_prints_error_message_if_exception_is_thrown_by_make_addons(
         self,
         mock_click,

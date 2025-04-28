@@ -10,9 +10,9 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 
 
 def set_up_retry():

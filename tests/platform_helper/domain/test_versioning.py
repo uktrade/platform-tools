@@ -8,9 +8,9 @@ from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import skip_version_checks
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 from dbt_platform_helper.providers.version import VersionProvider
@@ -45,6 +45,7 @@ def mocks():
 
     mocks = PlatformHelperVersioningMocks()
     mocks.config_provider.load_and_validate_platform_config.return_value = platform_config
+    mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
     return mocks
 
 
@@ -76,6 +77,8 @@ class TestPlatformHelperVersioningGetRequiredVersion:
         result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
         assert str(result) == "1.0.0"
+        mocks.config_provider.load_unvalidated_config_file.assert_called_once()
+        mocks.config_provider.load_and_validate_platform_config.assert_not_called()
 
 
 @pytest.mark.parametrize(
