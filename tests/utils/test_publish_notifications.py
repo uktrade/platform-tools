@@ -17,7 +17,7 @@ class FakeOpts:
         self.__dict__ = data
 
 
-@patch("subprocess.run")
+@patch("utils.notify.publish_notification.subprocess.run")
 class TestPublishNotify(unittest.TestCase):
     def setUp(self):
         os.environ["SLACK_TOKEN"] = "slack-token"
