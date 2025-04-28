@@ -5,7 +5,7 @@ import pytest
 import yaml
 from schema import SchemaError
 
-from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.entities.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.validation import validate_addons
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 

@@ -1,7 +1,7 @@
 from schema import SchemaError
 
+from dbt_platform_helper.entities.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
 
 
 def validate_addons(addons: dict):
