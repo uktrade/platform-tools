@@ -1,12 +1,12 @@
 import pytest
 
-from dbt_platform_helper.providers.semantic_version import (
+from dbt_platform_helper.entities.semantic_version import (
     IncompatibleMajorVersionException,
 )
-from dbt_platform_helper.providers.semantic_version import (
+from dbt_platform_helper.entities.semantic_version import (
     IncompatibleMinorVersionException,
 )
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 
 
 class TestSemanticVersion:

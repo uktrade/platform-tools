@@ -8,9 +8,9 @@ from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.domain.versioning import skip_version_checks
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 from dbt_platform_helper.providers.version import VersionProvider

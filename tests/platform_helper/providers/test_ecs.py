@@ -124,7 +124,7 @@ def test_ecs_exec_is_available(mock_cluster_client_task, mocked_cluster, mock_ap
     )
 
 
-@patch("time.sleep", return_value=None)
+@patch("dbt_platform_helper.providers.ecs.time.sleep", return_value=None)
 @mock_aws
 def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
     sleep, mock_cluster_client_task, mocked_cluster, mock_application

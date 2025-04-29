@@ -65,7 +65,7 @@ class CodebaseMocks:
         }
 
 
-@patch("requests.get")
+@patch("dbt_platform_helper.domain.codebase.requests.get")
 def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_path):
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
