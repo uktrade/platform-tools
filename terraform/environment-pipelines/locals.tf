@@ -140,6 +140,7 @@ locals {
   stages = [for stage in local.all_stages : merge(stage, local.stage_config[stage["type"]])]
 
   account_region = "${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}"
-
+  
+  # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
 }
