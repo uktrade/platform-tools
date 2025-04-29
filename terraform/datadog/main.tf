@@ -1,20 +1,20 @@
 locals {
-# Dependency of back-end services such as redis, postgres etc on web
+  # Dependency of back-end services such as redis, postgres etc on web
   depends_on = <<EOF
   dependsOn:
     - service:${var.application}-${var.environment}-web
 EOF
 
-# Dependency of all services (child) to the system (parent)
+  # Dependency of all services (child) to the system (parent)
   component_of = <<EOF
   componentOf: 
     - system:${var.application}-${var.environment}
 EOF
 
-# For all non-web services, they will have both of the above dependencies
+  # For all non-web services, they will have both of the above dependencies
   both = "${local.component_of}${local.depends_on}"
 
-# Sections to add useful metadata to the services and system
+  # Sections to add useful metadata to the services and system
   doc = <<EOF
     - name: Documentation
       type: doc
@@ -38,7 +38,7 @@ EOF
   owner: ${var.config.team_name}
 EOF
 
-# Create list of database types which can then be labelled as 'database' in the metadata
+  # Create list of database types which can then be labelled as 'database' in the metadata
   db_list = ["postgres"]
 
 }
