@@ -45,4 +45,6 @@ locals {
 
   # Does the environment have a CDN configured
   cdn_enabled = length(try({ for cdn_domain_name, cdn_config in var.config.cdn_domains_list : cdn_domain_name => cdn_config if !contains(cdn_config, "disable_cdn") }, {})) > 0
+
+  lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
 }

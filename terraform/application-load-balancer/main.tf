@@ -441,7 +441,6 @@ data "archive_file" "lambda" {
   ]
 }
 
-
 # Secrets Manager Rotation Lambda Function
 resource "aws_lambda_function" "origin-secret-rotate-function" {
   # Precedence in the Postgres Lambda to skip first 2 checks
@@ -482,7 +481,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
   }
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
-  layers           = ["arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"]
+  layers           = [local.lambda_layer]
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   vpc_config {
