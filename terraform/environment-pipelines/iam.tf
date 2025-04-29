@@ -867,6 +867,7 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
   }
 
   statement {
+    sid    = "LambdaLayerAccess"
     effect = "Allow"
     actions = [
       "lambda:GetLayerVersion"
