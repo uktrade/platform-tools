@@ -441,10 +441,6 @@ data "archive_file" "lambda" {
   ]
 }
 
-data "aws_lambda_layer_version" "python_requests_layer" {
-  layer_name = "python-requests"
-}
-
 
 # Secrets Manager Rotation Lambda Function
 resource "aws_lambda_function" "origin-secret-rotate-function" {
