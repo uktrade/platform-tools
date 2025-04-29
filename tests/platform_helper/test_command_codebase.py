@@ -44,8 +44,7 @@ class TestCodebasePrepare:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
-    def test_aborts_when_not_in_a_codebase_repository(self, mock_click, mock_codebase_object):
+    def test_aborts_when_not_in_a_codebase_repository(self, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.prepare.side_effect = NotInCodeBaseRepositoryException
         os.environ["AWS_PROFILE"] = "foo"
@@ -84,9 +83,8 @@ class TestCodebaseBuild:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
     def test_codebase_build_does_not_trigger_build_without_an_application(
-        self, mock_click, mock_codebase_object
+        self, mock_codebase_object
     ):
 
         mock_codebase_object_instance = mock_codebase_object.return_value
@@ -228,8 +226,7 @@ class TestCodebaseList:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
-    def test_aborts_when_application_does_not_exist(self, mock_click, mock_codebase_object):
+    def test_aborts_when_application_does_not_exist(self, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.list.side_effect = ApplicationNotFoundException
         os.environ["AWS_PROFILE"] = "foo"

@@ -23,7 +23,7 @@ def test_extract_repository_name_from_https_clone():
     assert result == "uktrade/platform-tools"
 
 
-@patch("subprocess.run")
+@patch("dbt_platform_helper.utils.git.subprocess.run")
 def test_repository_name_fetched_from_subprocess(subprocess_run):
     mock_stdout = Mock(**{"stdout.strip.return_value": "https://github.com/testorg/testrepo.git"})
     subprocess_run.return_value = mock_stdout

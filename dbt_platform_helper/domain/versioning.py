@@ -1,15 +1,15 @@
 import os
 
+from dbt_platform_helper.entities.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.entities.semantic_version import (
+    IncompatibleMinorVersionException,
+)
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMajorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMinorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
 from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
 from dbt_platform_helper.providers.version import GithubLatestVersionProvider
@@ -50,7 +50,7 @@ class PlatformHelperVersioning:
         )
 
     def get_required_version(self):
-        platform_config = self.config_provider.load_and_validate_platform_config()
+        platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         self.io.info(required_version)
         return required_version

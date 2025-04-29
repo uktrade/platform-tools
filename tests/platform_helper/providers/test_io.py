@@ -59,37 +59,37 @@ class TestClickIOProvider:
                 ClickIOProvider().confirm("Is that really your name?")
             assert str(e.value) == "Is that really your name? [y/N]: Error: invalid input"
 
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_warn_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         io.warn("Warning!")
         mock_echo.assert_called_once_with("Warning!", fg="magenta")
 
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_error_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         io.error("Error!")
         mock_echo.assert_called_once_with("Error: Error!", fg="red")
 
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_info_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         io.info("Info.")
         mock_echo.assert_called_once_with("Info.")
 
-    @patch("click.prompt")
+    @patch("dbt_platform_helper.providers.io.click.prompt")
     def test_input(self, mock_prompt):
         io = ClickIOProvider()
         io.input("Please select a service")
         mock_prompt.assert_called_once_with("Please select a service")
 
-    @patch("click.confirm")
+    @patch("dbt_platform_helper.providers.io.click.confirm")
     def test_confirm(self, mock_confirm):
         io = ClickIOProvider()
         io.confirm("Are you sure?")
         mock_confirm.assert_called_once_with("Are you sure?")
 
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_info_calls_secho_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         with pytest.raises(SystemExit):
@@ -98,21 +98,21 @@ class TestClickIOProvider:
 
 
 class TestClickIOProviderProcessMessages:
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_with_empty_messages(self, mock_echo):
         io = ClickIOProvider()
         messages = {"errors": [], "warnings": [], "info": []}
         io.process_messages(messages)
         mock_echo.assert_not_called()
 
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_with_none_messages(self, mock_echo):
         io = ClickIOProvider()
         messages = {"errors": [], "warnings": [], "info": []}
         io.process_messages(None)
         mock_echo.assert_not_called()
 
-    @patch("click.secho")
+    @patch("dbt_platform_helper.providers.io.click.secho")
     def test_echos_populated_messages_with_correct_formatting(self, mock_echo):
         io = ClickIOProvider()
         messages = {

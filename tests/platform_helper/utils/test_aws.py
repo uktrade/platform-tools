@@ -51,7 +51,7 @@ def get_mock_session(name):
     return session
 
 
-@patch("boto3.session.Session")
+@patch("dbt_platform_helper.utils.aws.boto3.session.Session")
 def test_get_aws_session_caches_sessions_per_profile(mock_session):
     mock_session.side_effect = (get_mock_session("one"), get_mock_session("two"))
     session1 = get_aws_session_or_abort()
@@ -118,8 +118,8 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
     ],
 )
 @patch("dbt_platform_helper.utils.aws.get_account_details")
-@patch("boto3.session.Session")
-@patch("click.secho")
+@patch("dbt_platform_helper.utils.aws.boto3.session.Session")
+@patch("dbt_platform_helper.utils.aws.click.secho")
 def test_get_aws_session_or_abort_errors(
     mock_secho,
     mock_session,
@@ -141,8 +141,8 @@ def test_get_aws_session_or_abort_errors(
     assert mock_secho.call_args[0][0] == expected_error_message
 
 
-@patch("boto3.session.Session")
-@patch("click.secho")
+@patch("dbt_platform_helper.utils.aws.boto3.session.Session")
+@patch("dbt_platform_helper.utils.aws.click.secho")
 def test_get_aws_session_or_abort_with_misconfigured_profile(mock_secho, mock_session):
     misconfigured_profile = "nonexistent_profile"
     expected_error_message = f"""AWS profile "{misconfigured_profile}" is not configured."""

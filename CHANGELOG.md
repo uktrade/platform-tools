@@ -1,5 +1,35 @@
 # Changelog
 
+## [15.0.0](https://github.com/uktrade/platform-tools/compare/14.2.0...15.0.0) (2025-04-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* Sort list of subnets for Opensearch (DBTP-1994) ([#856](https://github.com/uktrade/platform-tools/issues/856))
+
+### Bug Fixes
+
+* Do not validate config in the version command (DBTP-2016) ([#867](https://github.com/uktrade/platform-tools/issues/867)) ([5ca2ce5](https://github.com/uktrade/platform-tools/commit/5ca2ce5431202f4d94f87c63181c04c327852f4d))
+* Sort list of subnets for Opensearch (DBTP-1994) ([#856](https://github.com/uktrade/platform-tools/issues/856)) ([019cefa](https://github.com/uktrade/platform-tools/commit/019cefab6d3ec172e9b012e0bb6708449e84e86b))
+
+
+### Features
+
+* Restrict trust policies for CodePipeline & CodeBuild IAM roles (DBTP-1945) ([#852](https://github.com/uktrade/platform-tools/issues/852)) ([d0e00bf](https://github.com/uktrade/platform-tools/commit/d0e00bfaa8680a3c2f5955a077c349b0db129486))
+
+## [14.2.0](https://github.com/uktrade/platform-tools/compare/14.1.1...14.2.0) (2025-04-23)
+
+
+### Features
+
+* Deprecate platform helper notify environment progress (DBTP-1221) ([#842](https://github.com/uktrade/platform-tools/issues/842)) ([167f235](https://github.com/uktrade/platform-tools/commit/167f23591f26c3bcb1f4fd8a3218140e8f17e744))
+
+
+### Bug Fixes
+
+* Add in moving major and minor version tags to the release (DBTP-1939) ([#861](https://github.com/uktrade/platform-tools/issues/861)) ([4e8f558](https://github.com/uktrade/platform-tools/commit/4e8f5586aa69aff5a013592516faab4b5f641141))
+* Add missing ECR policy (DBTP-1837) ([#857](https://github.com/uktrade/platform-tools/issues/857)) ([8add310](https://github.com/uktrade/platform-tools/commit/8add310b471417541f119ff3c2ae4cd37c626e5a))
+
 ## [14.1.1](https://github.com/uktrade/platform-tools/compare/14.1.0...14.1.1) (2025-04-17)
 
 
