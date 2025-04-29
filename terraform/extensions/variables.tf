@@ -12,5 +12,5 @@ variable "environment" {
 
 variable "repository" {
   type = string
-  default = null
+  default = null # Default to null in case the repository isn't provided in platform-config.yml
 }
