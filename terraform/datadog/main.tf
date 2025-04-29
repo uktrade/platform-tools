@@ -70,7 +70,7 @@ ${local.doc}${local.repo}${local.contacts}${local.team}
 spec:
   lifecycle: production
   tier: "1"
-  type: ${contains(local.db_list, each.value) ? "database" : "web"}
+  type: ${contains(local.db_list, each.value) ? "db" : "web"}
 ${each.value == "web" ? local.component_of : local.both}
   languages:
     - python
