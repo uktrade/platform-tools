@@ -872,7 +872,7 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
       "lambda:GetLayerVersion"
     ]
     resources = [
-      "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:1"
+      "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
     ]
   }
 
