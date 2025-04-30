@@ -37,8 +37,42 @@ class Conduit:
             addon_name, access
         )
 
+        mode = self._detect_mode(addon_type)
+
+        if mode == "terraform":
+            self._start_with_terraform(env, addon_name, addon_type, cluster_arn, task_name)
+        else:
+            self._start_with_copilot(
+                clients, env, addon_name, addon_type, cluster_arn, parameter_name, task_name, access
+            )
+
+    def _detect_mode(self, addon_type: str) -> str:
+        paginator = self.ecs_provider.ecs_client.get_paginator("list_task_definitions")
+        prefix = f"conduit-ecstask-postgres-{addon_type}-"
+
+        for page in paginator.paginate():
+            for arn in page["taskDefinitionArns"]:
+                if arn.split("/")[-1].startswith(prefix):
+                    self.io.info(f"Detected Terraform-defined ECS task definition: {arn}")
+                    return "terraform"
+
+        self.io.info("Defaulting to copilot mode.")
+        return "copilot"
+
+    def _start_with_copilot(
+        self,
+        clients,
+        env: str,
+        addon_name: str,
+        addon_type: str,
+        cluster_arn: str,
+        parameter_name: str,
+        task_name: str,
+        access: str,
+    ):
         self.io.info(f"Checking if a conduit task is already running for {addon_type}")
         task_arns = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
+
         if not task_arns:
             self.io.info("Creating conduit task")
             self.create_addon_client_task(
@@ -65,7 +99,6 @@ class Conduit:
             )
 
             task_arns = self.ecs_provider.get_ecs_task_arns(cluster_arn, task_name)
-
         else:
             self.io.info("Conduit task already running")
 
@@ -77,6 +110,10 @@ class Conduit:
         self.connect_to_addon_client_task(
             clients["ecs"], self.subprocess, self.application.name, env, cluster_arn, task_name
         )
+
+    def _start_with_terraform(self, env, addon_name, addon_type, cluster_arn, task_name):
+        self.io.info(f"Starting ECS task using Terraform-defined task definition.")
+        # TODO
 
     def _initialise_clients(self, env):
         return {
