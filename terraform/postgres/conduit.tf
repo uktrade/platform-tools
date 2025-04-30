@@ -2,7 +2,7 @@ resource "aws_ecs_task_definition" "conduit-postgres" {
   # family = local.task_name
   container_definitions = jsonencode([
     {
-      name      = local.name
+      name      = "conduit-ecstask-postgres-${local.name}"
       image     = "public.ecr.aws/uktrade/tunnel:postgres-decopilot-test"
       essential = true
       secrets = [
