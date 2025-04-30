@@ -13,6 +13,7 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
+    # TODO take in secrets and vars pass them in as config overrides for connection secret
     def start_ecs_task(self, task_def_arn, vpc_config):
 
         response = self.ecs_client.run_task(
