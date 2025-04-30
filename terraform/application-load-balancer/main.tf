@@ -480,7 +480,8 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
     }
   }
 
-  layers           = ["arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:1"]
+  # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
+  layers           = [local.lambda_layer]
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   vpc_config {
