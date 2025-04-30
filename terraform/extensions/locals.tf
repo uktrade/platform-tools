@@ -78,6 +78,10 @@ locals {
     for extension_name, extension_config in local.extensions :
     extension_name => extension_config if extension_config.type == "alb"
   }
+  datadog = {
+    for extension_name, extension_config in local.extensions :
+    extension_name => extension_config if extension_config.type == "datadog"
+  }
 
   tags = {
     application         = var.args.application
