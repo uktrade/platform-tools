@@ -77,8 +77,8 @@ class VpcProvider:
         return vpc_id
 
     def _get_security_groups(self, app: str, env: str, vpc_id: str) -> list:
-
         vpc_filter = {"Name": "vpc-id", "Values": [vpc_id]}
+        # TODO this is copilot specific make generic or set this value for the env security group
         tag_filter = {"Name": f"tag:Name", "Values": [f"copilot-{app}-{env}-env"]}
         response = self.ec2_client.describe_security_groups(Filters=[vpc_filter, tag_filter])
 

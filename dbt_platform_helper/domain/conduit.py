@@ -6,6 +6,8 @@ from dbt_platform_helper.providers.copilot import create_addon_client_task
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.secrets import Secrets
+from dbt_platform_helper.providers.vpc import VpcProvider
+from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
 
 
@@ -17,6 +19,7 @@ class Conduit:
         cloudformation_provider: CloudFormation,
         ecs_provider: ECS,
         io: ClickIOProvider = ClickIOProvider(),
+        vpc_provider=VpcProvider,
         subprocess: subprocess = subprocess,
         connect_to_addon_client_task=connect_to_addon_client_task,
         create_addon_client_task=create_addon_client_task,
@@ -28,27 +31,29 @@ class Conduit:
         self.ecs_provider = ecs_provider
         self.subprocess = subprocess
         self.io = io
+        self.vpc_provider = vpc_provider
         self.connect_to_addon_client_task = connect_to_addon_client_task
         self.create_addon_client_task = create_addon_client_task
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         clients = self._initialise_clients(env)
-        addon_type, cluster_arn, parameter_name, task_name = self._get_addon_details(
-            addon_name, access
-        )
-
-        mode = self._detect_mode(addon_type)
+        mode = self._detect_mode(self.application.name, env, addon_name)
 
         if mode == "terraform":
-            self._start_with_terraform(env, addon_name, addon_type, cluster_arn, task_name)
+            cluster_arn = self.ecs_provider.get_cluster_arn_tf()
+
+            self._start_with_terraform(env, addon_name, cluster_arn)
         else:
+            addon_type, cluster_arn, parameter_name, task_name = self._get_addon_details(
+                addon_name, access
+            )
             self._start_with_copilot(
                 clients, env, addon_name, addon_type, cluster_arn, parameter_name, task_name, access
             )
 
-    def _detect_mode(self, addon_type: str) -> str:
+    def _detect_mode(self, application, environment, addon_name: str) -> str:
         paginator = self.ecs_provider.ecs_client.get_paginator("list_task_definitions")
-        prefix = f"conduit-ecstask-postgres-{addon_type}-"
+        prefix = f"conduit-{application}-{environment}-{addon_name}"
 
         for page in paginator.paginate():
             for arn in page["taskDefinitionArns"]:
@@ -111,9 +116,38 @@ class Conduit:
             clients["ecs"], self.subprocess, self.application.name, env, cluster_arn, task_name
         )
 
-    def _start_with_terraform(self, env, addon_name, addon_type, cluster_arn, task_name):
+    def _start_with_terraform(self, env, addon_name, cluster_arn):
+
         self.io.info(f"Starting ECS task using Terraform-defined task definition.")
-        # TODO
+        task_arns = self.ecs_provider.get_ecs_task_arns_tf(addon_name)
+
+        if not task_arns:
+            self.io.info("Creating conduit task")
+            task_def_arn = f"conduit-{self.application.name}-{env}-{addon_name}"
+
+            environments = self.application.environments
+            environment = environments.get(env)
+            env_session = environment.session
+            try:
+                vpc_provider = self.vpc_provider(env_session)
+                vpc_config = vpc_provider.get_vpc(
+                    self.application.name, env, "platform-sandbox-dev"
+                )
+            except VpcProviderException as ex:
+                self.io.abort_with_error(str(ex))
+
+            self.ecs_provider.start_ecs_task(task_def_arn, vpc_config)
+            task_arns = self.ecs_provider.get_ecs_task_arns_tf(addon_name)
+        else:
+            self.io.info("Conduit task already running")
+
+        self.io.info(f"Checking if exec is available for conduit task...")
+
+        self.ecs_provider.ecs_exec_is_available(cluster_arn, task_arns)
+
+        self.io.info("Connecting to conduit task")
+
+        self.ecs_provider.exec_task(cluster_arn, task_arns)
 
     def _initialise_clients(self, env):
         return {

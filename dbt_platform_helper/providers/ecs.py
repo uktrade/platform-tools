@@ -13,6 +13,35 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
+    def start_ecs_task(self, task_def_arn, vpc_config):
+
+        response = self.ecs_client.run_task(
+            taskDefinition=task_def_arn,
+            cluster=f"{self.application_name}-{self.env}-tf",
+            capacityProviderStrategy=[
+                {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+            ],
+            enableExecuteCommand=True,
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": vpc_config.public_subnets,
+                    "securityGroups": vpc_config.security_groups,
+                    "assignPublicIp": "ENABLED",
+                }
+            },
+        )
+
+        return response.get("tasks", [{}])[0].get("taskArn")
+
+    def get_cluster_arn_tf(self):
+        clusters = self.ecs_client.describe_clusters(
+            clusters=[
+                f"{self.application_name}-{self.env}-tf",
+            ],
+        )["clusters"]
+        if len(clusters) == 1:
+            return clusters[0]["clusterArn"]
+
     def get_cluster_arn(self) -> str:
         """Returns the ARN of the ECS cluster for the given application and
         environment."""
@@ -45,6 +74,21 @@ class ECS:
             random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
             return f"conduit-{self.application_name}-{self.env}-{addon_name}-{random_id}"
 
+    def get_ecs_task_arns_tf(
+        self,
+        addon_name: str,
+    ):
+        tasks = self.ecs_client.list_tasks(
+            cluster=f"{self.application_name}-{self.env}-tf",
+            family=f"conduit-{self.application_name}-{self.env}-{addon_name}",
+            desiredStatus="RUNNING",
+        )
+
+        if not tasks["taskArns"]:
+            return []
+
+        return tasks["taskArns"]
+
     def get_ecs_task_arns(self, cluster_arn: str, task_name: str):
         """Gets the ECS task ARNs for a given task name and cluster ARN."""
         tasks = self.ecs_client.list_tasks(
@@ -57,6 +101,11 @@ class ECS:
             return []
 
         return tasks["taskArns"]
+
+    def exec_task(self, clusterArn, taskArns):
+        self.ecs_client.execute_command(
+            cluster=clusterArn, command="/bin/bash", interactive=True, task=taskArns[0]
+        )
 
     def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]):
         """
@@ -73,14 +122,18 @@ class ECS:
 
             task_details = self.ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
 
-            managed_agents = task_details["tasks"][0]["containers"][0]["managedAgents"]
+            container_details = task_details["tasks"][0]["containers"][0]
+            if container_details.get("managedAgents", None):
+                managed_agents = container_details["managedAgents"]
+            else:
+                raise PlatformException("No managed agent on ecs task")
             execute_command_agent_status = [
                 agent["lastStatus"]
                 for agent in managed_agents
                 if agent["name"] == "ExecuteCommandAgent"
             ][0]
             if execute_command_agent_status != "RUNNING":
-                time.sleep(1)
+                time.sleep(3)
 
         if execute_command_agent_status != "RUNNING":
             raise ECSAgentNotRunningException

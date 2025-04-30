@@ -1,20 +1,28 @@
 resource "aws_ecs_task_definition" "conduit-postgres" {
-  # family = local.task_name
+  family = "conduit-${local.name}"
   container_definitions = jsonencode([
     {
-      name      = "conduit-ecstask-postgres-${local.name}"
-      image     = "public.ecr.aws/uktrade/tunnel:postgres-decopilot-test"
+      name      = "conduit-${local.name}"
+      image     = "public.ecr.aws/uktrade/tunnel:postgres" #postgres-decopilot-test
       essential = true
-      secrets = [
-        {
+      environment= [
+          {
             "name": "CONNECTION_SECRET",
-            "valueFrom": "provided during task creation in platform-helper"
+            "value": "provided during task creation in platform-helper"
         }
       ]
+      # secrets = [
+
+      # ]
+
+      runtimePlatform = {
+        cpuArchitecture = "ARM64",
+        operatingSystemFamily = "LINUX"
+      },
       logConfiguration = {
         logDriver = "awslogs",
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.conduit-logs.arn
+          awslogs-group         = aws_cloudwatch_log_group.conduit-logs.name
           awslogs-region        = "eu-west-2"
           mode                  = "non-blocking"
           awslogs-create-group  = "true"
@@ -128,7 +136,8 @@ resource "aws_cloudwatch_log_group" "conduit-logs" {
   name              = "/conduit/postgres/${var.name}/${var.environment}/${var.name}"
   retention_in_days = 7
   tags              = local.tags
-  kms_key_id        = aws_kms_key.conduit-log-group-kms-key
+  kms_key_id        = aws_kms_key.conduit-log-group-kms-key.arn
+
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "conduit-logs-filter" {
@@ -137,4 +146,34 @@ resource "aws_cloudwatch_log_subscription_filter" "conduit-logs-filter" {
   log_group_name  = aws_cloudwatch_log_group.conduit-logs.name
   filter_pattern  = ""
   destination_arn = local.central_log_group_destination
+}
+
+
+data "aws_region" "current" {}
+
+resource "aws_kms_key_policy" "conduit-to-cloudwatch" {
+  key_id = aws_kms_key.conduit-log-group-kms-key.key_id
+  policy = jsonencode({
+    Id = "ConduitToCloudWatch"
+    Statement = [
+      {
+        "Sid" : "Enable IAM User Permissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        },
+        "Action" : "kms:*",
+        "Resource" : "*"
+      },
+      {
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "logs.${data.aws_region.current.name}.amazonaws.com"
+        },
+        "Action" : "kms:*",
+        "Resource" : "*"
+      }
+    ]
+    Version = "2012-10-17"
+  })
 }

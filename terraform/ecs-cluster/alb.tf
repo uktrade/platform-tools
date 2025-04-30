@@ -21,7 +21,7 @@ resource "aws_security_group" "environment_security_group" {
   name        = "${var.application}-${var.environment}-environment"
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
-  tags        = local.tags
+  tags        = merge(local.tags, {"Name": "copilot-${var.application}-${var.environment}-env"})
 
   ingress {
     description = "Allow from ALB"
