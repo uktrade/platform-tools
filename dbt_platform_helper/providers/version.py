@@ -4,19 +4,15 @@ from abc import ABC
 from abc import abstractmethod
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version
-from pathlib import Path
 from typing import Union
 
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_FILE
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.yaml_file import FileProviderException
-from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 def set_up_retry():
@@ -94,20 +90,6 @@ class PyPiLatestVersionProvider(VersionProvider):
         except Exception as e:
             io.error(f"Exception occured when calling PyPi with:\n{str(e)}")
         return semantic_version
-
-
-class DeprecatedVersionFileVersionProvider(VersionProvider):
-    def __init__(self, file_provider: YamlFileProvider):
-        self.file_provider = file_provider or YamlFileProvider
-
-    def get_semantic_version(self) -> Union[SemanticVersion, None]:
-        deprecated_version_file = Path(PLATFORM_HELPER_VERSION_FILE)
-        try:
-            loaded_version = self.file_provider.load(deprecated_version_file)
-            version_from_file = SemanticVersion.from_string(loaded_version)
-        except FileProviderException:
-            version_from_file = None
-        return version_from_file
 
 
 class AWSCLIInstalledVersionProvider(VersionProvider):

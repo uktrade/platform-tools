@@ -16,12 +16,11 @@ from dbt_platform_helper.domain.config import NoPlatformConfigException
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrator import Migrator
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
-from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.version_status import VersionStatus
 
 START_URL = "https://uktrade.awsapps.com/start"
@@ -45,9 +44,9 @@ class ConfigMocks:
         )
         self.platform_helper_version_status = kwargs.get(
             "platform_helper_version_status",
-            (PlatformHelperVersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))),
+            (VersionStatus(SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0))),
         )
-        self.platform_helper_versioning._get_version_status.return_value = (
+        self.platform_helper_versioning.get_version_status.return_value = (
             self.platform_helper_version_status
         )
 
@@ -95,10 +94,8 @@ class TestConfigValidate:
         )
 
         config_mocks = ConfigMocks(
-            platform_helper_version_status=PlatformHelperVersionStatus(
-                SemanticVersion(1, 0, 0),
-                SemanticVersion(1, 0, 0),
-                platform_config_default=SemanticVersion(1, 0, 0),
+            platform_helper_version_status=VersionStatus(
+                SemanticVersion(1, 0, 0), SemanticVersion(1, 0, 0)
             )
         )
 
@@ -186,11 +183,7 @@ class TestConfigValidate:
             ],
         )
 
-        config_mocks.platform_helper_versioning._get_version_status.assert_called_with(
-            include_project_versions=True
-        )
-
-        config_mocks.io.process_messages.assert_called_with({})
+        config_mocks.platform_helper_versioning.get_version_status.assert_called()
         config_mocks.aws_versioning.get_version_status.assert_called()
         config_mocks.copilot_versioning.get_version_status.assert_called()
 
@@ -302,18 +295,7 @@ class TestConfigValidate:
             ],
         )
 
-        config_mocks.platform_helper_versioning._get_version_status.assert_called_with(
-            include_project_versions=True
-        )
-
-        config_mocks.io.process_messages.assert_called_with(
-            {
-                "warnings": [],
-                "errors": [
-                    "Cannot get dbt-platform-helper version from 'platform-config.yml'.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 1.0.0\n"
-                ],
-            }
-        )
+        config_mocks.platform_helper_versioning.get_version_status.assert_called()
         config_mocks.aws_versioning.get_version_status.assert_called()
         config_mocks.copilot_versioning.get_version_status.assert_called()
 
@@ -325,7 +307,7 @@ class TestConfigValidate:
         )
 
         config_mocks = ConfigMocks(
-            platform_helper_version_status=PlatformHelperVersionStatus(
+            platform_helper_version_status=VersionStatus(
                 SemanticVersion(1, 0, 0), SemanticVersion(2, 0, 0)
             ),
             aws_version_status=VersionStatus(SemanticVersion(0, 2, 0), SemanticVersion(2, 0, 0)),
@@ -436,18 +418,7 @@ class TestConfigValidate:
             ],
         )
 
-        config_mocks.platform_helper_versioning._get_version_status.assert_called_with(
-            include_project_versions=True
-        )
-
-        config_mocks.io.process_messages.assert_called_with(
-            {
-                "warnings": [],
-                "errors": [
-                    "Cannot get dbt-platform-helper version from 'platform-config.yml'.\nCreate a section in the root of 'platform-config.yml':\n\ndefault_versions:\n  platform-helper: 1.0.0\n"
-                ],
-            }
-        )
+        config_mocks.platform_helper_versioning.get_version_status.assert_called()
         config_mocks.aws_versioning.get_version_status.assert_called()
         config_mocks.copilot_versioning.get_version_status.assert_called()
 

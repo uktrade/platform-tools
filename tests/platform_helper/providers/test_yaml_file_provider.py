@@ -64,7 +64,8 @@ opensearch:
 
     YamlFileProvider.write(test_path, test_content, test_comment)
     with open(test_path, "r") as test_yaml_file:
-        assert expected_test_cache_file in test_yaml_file.read()
+        actual_cache_file = test_yaml_file.read()
+        assert expected_test_cache_file in actual_cache_file
 
 
 def test_writes_with_no_comment(fs):
@@ -87,4 +88,31 @@ opensearch:
 
     YamlFileProvider.write(test_path, test_content)
     with open(test_path, "r") as test_yaml_file:
-        assert expected_test_cache_file in test_yaml_file.read()
+        actual_cache_file = test_yaml_file.read()
+        assert expected_test_cache_file in actual_cache_file
+
+
+def test_writes_account_numbers_as_quoted_strings(fs):
+    test_path = "./test"
+    test_content = {
+        "accounts": {
+            "deploy": {"name": "account1", "id": "0123456789"},
+            "dns": {"name": "account2", "id": "9876543210"},
+            "other": None,
+            "one_more": None,
+        }
+    }
+    expected_test_cache_file = """accounts:
+  deploy:
+    name: account1
+    id: '0123456789'
+  dns:
+    name: account2
+    id: '9876543210'
+  other:
+  one_more:
+"""
+
+    YamlFileProvider.write(test_path, test_content)
+    with open(test_path, "r") as test_yaml_file:
+        assert expected_test_cache_file.strip() == test_yaml_file.read().strip()

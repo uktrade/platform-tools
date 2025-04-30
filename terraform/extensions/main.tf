@@ -116,3 +116,16 @@ resource "aws_ssm_parameter" "addons" {
   value = jsonencode(local.extensions_for_environment)
   tags  = local.tags
 }
+
+module "datadog" {
+  source = "../datadog"
+
+  for_each = local.datadog
+  providers = {
+    datadog.ddog = datadog.ddog
+  }
+
+  application = var.args.application
+  environment = var.environment
+  config      = each.value
+}

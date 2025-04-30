@@ -10,18 +10,17 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.entities.semantic_version import (
+    IncompatibleMajorVersionException,
+)
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrator import ALL_MIGRATIONS
 from dbt_platform_helper.providers.schema_migrator import Migrator
-from dbt_platform_helper.providers.semantic_version import (
-    IncompatibleMajorVersionException,
-)
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.validation import ValidationException
-from dbt_platform_helper.providers.version_status import PlatformHelperVersionStatus
 from dbt_platform_helper.providers.version_status import VersionStatus
 
 yes = "\033[92m✔\033[0m"
@@ -101,10 +100,7 @@ class Config:
             raise NoPlatformConfigException()
 
         self.io.debug("\nDetected a deployment repository\n")
-        platform_helper_version_status = self.platform_helper_versioning._get_version_status(
-            include_project_versions=True
-        )
-        self.io.process_messages(platform_helper_version_status.validate())
+        platform_helper_version_status = self.platform_helper_versioning.get_version_status()
         aws_version_status = self.aws_versioning.get_version_status()
         copilot_version_status = self.copilot_versioning.get_version_status()
 
@@ -195,7 +191,7 @@ class Config:
 
     def _check_tool_versions(
         self,
-        platform_helper_version_status: PlatformHelperVersionStatus,
+        platform_helper_version_status: VersionStatus,
         aws_version_status: VersionStatus,
         copilot_version_status: VersionStatus,
     ):
@@ -248,7 +244,7 @@ class Config:
 
         self._render_recommendations(recommendations)
 
-    def _check_addon_versions(self, platform_helper_versions: PlatformHelperVersionStatus) -> bool:
+    def _check_addon_versions(self, platform_helper_versions: VersionStatus) -> bool:
 
         self.io.debug("Checking addons templates versions...")
 
