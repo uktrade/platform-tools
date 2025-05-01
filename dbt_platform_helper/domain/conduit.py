@@ -1,8 +1,10 @@
 import subprocess
 
 from dbt_platform_helper.providers.cloudformation import CloudFormation
+from dbt_platform_helper.providers.copilot import _normalise_secret_name
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
+from dbt_platform_helper.providers.copilot import get_postgres_admin_connection_string
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.secrets import Secrets
@@ -42,7 +44,7 @@ class Conduit:
         if mode == "terraform":
             cluster_arn = self.ecs_provider.get_cluster_arn_tf()
 
-            self._start_with_terraform(env, addon_name, cluster_arn)
+            self._start_with_terraform(clients, env, addon_name, cluster_arn)
         else:
             addon_type, cluster_arn, parameter_name, task_name = self._get_addon_details(
                 addon_name, access
@@ -116,7 +118,7 @@ class Conduit:
             clients["ecs"], self.subprocess, self.application.name, env, cluster_arn, task_name
         )
 
-    def _start_with_terraform(self, env, addon_name, cluster_arn):
+    def _start_with_terraform(self, clients, env, addon_name, cluster_arn):
 
         self.io.info(f"Starting ECS task using Terraform-defined task definition.")
         task_arns = self.ecs_provider.get_ecs_task_arns_tf(addon_name)
@@ -136,7 +138,23 @@ class Conduit:
             except VpcProviderException as ex:
                 self.io.abort_with_error(str(ex))
 
-            self.ecs_provider.start_ecs_task(task_def_arn, vpc_config)
+            self.ecs_provider.start_ecs_task(
+                f"conduit-{self.application.name}-{env}-{addon_name}",
+                task_def_arn,
+                vpc_config,
+                [
+                    {
+                        "name": "CONNECTION_SECRET",
+                        "value": get_postgres_admin_connection_string(
+                            clients.get("ssm"),
+                            f"/copilot/{self.application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}",
+                            self.application,
+                            env,
+                            addon_name,
+                        ),
+                    },
+                ],
+            )
             task_arns = self.ecs_provider.get_ecs_task_arns_tf(addon_name)
         else:
             self.io.info("Conduit task already running")

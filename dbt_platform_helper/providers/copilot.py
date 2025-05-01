@@ -71,16 +71,7 @@ def create_addon_client_task(
     )
 
 
-def create_postgres_admin_task(
-    ssm_client,
-    subprocess,
-    app: Application,
-    addon_name: str,
-    addon_type: str,
-    env: str,
-    secret_name: str,
-    task_name: str,
-):
+def get_postgres_admin_connection_string(ssm_client, secret_name, app, env, addon_name):
     read_only_secret_name = secret_name + "_READ_ONLY_USER"
     master_secret_name = (
         f"/copilot/{app.name}/{env}/secrets/{_normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
@@ -92,6 +83,24 @@ def create_postgres_admin_task(
         _get_secrets_provider(app, env).get_postgres_connection_data_updated_with_master_secret(
             read_only_secret_name, master_secret_arn
         )
+    )
+
+    return connection_string
+
+
+def create_postgres_admin_task(
+    ssm_client,
+    subprocess,
+    app: Application,
+    addon_name: str,
+    addon_type: str,
+    env: str,
+    secret_name: str,
+    task_name: str,
+):
+
+    connection_string = get_postgres_admin_connection_string(
+        ssm_client, secret_name, app, env, addon_name
     )
 
     subprocess.call(

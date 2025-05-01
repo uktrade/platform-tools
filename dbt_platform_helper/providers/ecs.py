@@ -15,7 +15,7 @@ class ECS:
         self.env = env
 
     # TODO take in secrets and vars pass them in as config overrides for connection secret
-    def start_ecs_task(self, task_def_arn, vpc_config):
+    def start_ecs_task(self, container_name, task_def_arn, vpc_config, env_vars):
 
         response = self.ecs_client.run_task(
             taskDefinition=task_def_arn,
@@ -30,6 +30,14 @@ class ECS:
                     "securityGroups": vpc_config.security_groups,
                     "assignPublicIp": "ENABLED",
                 }
+            },
+            overrides={
+                "containerOverrides": [
+                    {
+                        "name": container_name,
+                        "environment": env_vars,
+                    }
+                ]
             },
         )
 
