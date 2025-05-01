@@ -19,6 +19,9 @@ resource "aws_ecs_task_definition" "conduit-postgres" {
         cpuArchitecture = "ARM64",
         operatingSystemFamily = "LINUX"
       },
+      linuxParameters = {
+        initProcessEnabled = true
+      }
       logConfiguration = {
         logDriver = "awslogs",
         options = {

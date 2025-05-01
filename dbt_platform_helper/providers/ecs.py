@@ -1,5 +1,6 @@
 import random
 import string
+import subprocess
 import time
 from typing import List
 
@@ -104,8 +105,11 @@ class ECS:
         return tasks["taskArns"]
 
     def exec_task(self, clusterArn, taskArns):
-        self.ecs_client.execute_command(
-            cluster=clusterArn, command="/bin/bash", interactive=True, task=taskArns[0]
+        subprocess.call(
+            f"aws ecs execute-command --cluster {clusterArn} "
+            f"--task {taskArns[0]} "
+            f"--interactive --command bash ",
+            shell=True,
         )
 
     def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]):
