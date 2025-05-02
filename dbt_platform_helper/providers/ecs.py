@@ -15,11 +15,11 @@ class ECS:
         self.env = env
 
     # TODO take in secrets and vars pass them in as config overrides for connection secret
-    def start_ecs_task(self, container_name, task_def_arn, vpc_config, env_vars):
+    def start_ecs_task(self, cluster_name, container_name, task_def_arn, vpc_config, env_vars):
 
         response = self.ecs_client.run_task(
             taskDefinition=task_def_arn,
-            cluster=f"{self.application_name}-{self.env}-tf",
+            cluster=cluster_name,
             capacityProviderStrategy=[
                 {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
             ],
@@ -51,6 +51,8 @@ class ECS:
         )["clusters"]
         if len(clusters) == 1:
             return clusters[0]["clusterArn"]
+
+        raise NoClusterException(self.application_name, self.env)
 
     def get_cluster_ar_by_copilot_tag(self) -> str:
         """Returns the ARN of the ECS cluster for the given application and

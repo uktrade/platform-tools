@@ -77,6 +77,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             self.io.abort_with_error(str(ex))
 
         self.ecs_provider.start_ecs_task(
+            f"{self.application.name}-{self.env}-tf",
             f"conduit-{self.application.name}-{self.env}-{self.addon_name}",
             data_context["task_def_family"],
             vpc_config,

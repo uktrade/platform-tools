@@ -1,12 +1,15 @@
+import json
 from unittest.mock import patch
 
 import boto3
 import pytest
 from moto import mock_aws
+from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
+from dbt_platform_helper.providers.vpc import Vpc
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -19,9 +22,36 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
     env = "development"
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
-    cluster_arn = ecs_manager.get_cluster_arn()
+    print(ecs_client.list_clusters())
+    cluster_arn = ecs_manager.get_cluster_arn_by_name("default")
 
     assert cluster_arn == mocked_cluster["cluster"]["clusterArn"]
+
+
+@mock_aws
+def test_get_cluster_arn_copilot(mocked_cluster, mock_application):
+    ecs_client = mock_application.environments["development"].session.client("ecs")
+    ssm_client = mock_application.environments["development"].session.client("ssm")
+    application_name = mock_application.name
+    env = "development"
+    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
+
+    cluster_arn = ecs_manager.get_cluster_ar_by_copilot_tag()
+
+    assert cluster_arn == mocked_cluster["cluster"]["clusterArn"]
+
+
+@mock_aws
+def test_get_cluster_arn_copilot_with_no_cluster_raises_error(mock_application):
+    ecs_client = mock_application.environments["development"].session.client("ecs")
+    ssm_client = mock_application.environments["development"].session.client("ssm")
+    application_name = mock_application.name
+    env = "does-not-exist"
+
+    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
+
+    with pytest.raises(NoClusterException):
+        ecs_manager.get_cluster_ar_by_copilot_tag()
 
 
 @mock_aws
@@ -34,11 +64,11 @@ def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
     with pytest.raises(NoClusterException):
-        ecs_manager.get_cluster_arn()
+        ecs_manager.get_cluster_arn_by_name("doesnt_exist")
 
 
 @mock_aws
-def test_get_ecs_task_arns_with_running_task(
+def test_copilot_get_ecs_task_arns_with_running_task(
     mock_cluster_client_task, mocked_cluster, mock_application
 ):
     addon_type = "redis"
@@ -51,7 +81,9 @@ def test_get_ecs_task_arns_with_running_task(
         mock_application.name,
         "development",
     )
-    assert ecs_manager.get_ecs_task_arns(mocked_cluster_arn, mock_task_name(addon_type))
+    assert ecs_manager.get_ecs_task_arns(
+        mocked_cluster_arn, f"copilot-{mock_task_name(addon_type)}"
+    )
 
 
 @mock_aws
@@ -176,3 +208,61 @@ def test_get_or_create_task_name_appends_random_id(mock_application):
 
     assert task_name.rsplit("-", 1)[0] == mock_task_name("app-postgres").rsplit("-", 1)[0]
     assert random_id.isalnum() and random_id.islower() and len(random_id) == 12
+
+
+@mock_aws
+def test_start_ecs_task(mocked_cluster, mock_application):
+    ecs_client = mock_application.environments["development"].session.client("ecs")
+    ssm_client = mock_application.environments["development"].session.client("ssm")
+    application_name = mock_application.name
+    env = "development"
+    mocked_ec2_client = boto3.client("ec2")
+    mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
+    mocked_ec2_client.run_instances(
+        ImageId=mocked_ec2_images[0]["ImageId"],
+        MinCount=1,
+        MaxCount=1,
+    )
+    mocked_ec2_instances = boto3.client("ec2").describe_instances()
+    mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0]["InstanceId"]
+
+    mocked_ec2 = boto3.resource("ec2")
+    mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
+    mocked_instance_id_document = json.dumps(
+        ec2_utils.generate_instance_identity_document(mocked_ec2_instance),
+    )
+
+    ecs_client.register_container_instance(
+        cluster="default",
+        instanceIdentityDocument=mocked_instance_id_document,
+    )
+
+    mocked_task_definition_arn = ecs_client.register_task_definition(
+        family="doesnt-matter",
+        containerDefinitions=[
+            {
+                "name": "test_container",
+                "image": "test_image",
+                "cpu": 256,
+                "memory": 512,
+                "essential": True,
+            }
+        ],
+    )["taskDefinition"]["taskDefinitionArn"]
+
+    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
+    actual_response = ecs_manager.start_ecs_task(
+        "default",
+        "test_container",
+        mocked_task_definition_arn,
+        Vpc("doesnt-matter", ["public-subnet"], ["private-subnet"], ["security-group"]),
+        [{"name": "FAKE", "value": "var"}],
+    )
+
+    assert actual_response
+
+    task_details = ecs_client.describe_tasks(cluster="default", tasks=[actual_response])
+    assert task_details["tasks"][0]["containers"][0]["name"] == "test_container"
+    assert task_details["tasks"][0]["overrides"]["containerOverrides"][0]["environment"] == [
+        {"name": "FAKE", "value": "var"}
+    ]
