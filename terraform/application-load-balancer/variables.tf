@@ -14,6 +14,10 @@ variable "dns_account_id" {
   type = string
 }
 
+variable "dns_account_name" {
+  type = string
+}
+
 variable "config" {
   type = object({
     domain_prefix                           = optional(string)

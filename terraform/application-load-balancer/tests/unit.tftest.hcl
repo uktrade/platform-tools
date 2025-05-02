@@ -74,11 +74,12 @@ override_data {
 
 
 variables {
-  application    = "app"
-  environment    = "env"
-  vpc_name       = "vpc-name"
-  dns_account_id = "123456789012"
-  cloudfront_id  = ["123456789"]
+  application      = "app"
+  environment      = "env"
+  vpc_name         = "vpc-name"
+  dns_account_id   = "123456789012"
+  dns_account_name = "dev"
+  cloudfront_id    = ["123456789"]
   config = {
     domain_prefix = "dom-prefix",
     cdn_domains_list = {

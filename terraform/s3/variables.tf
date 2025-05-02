@@ -2,6 +2,10 @@ variable "application" {
   type = string
 }
 
+variable "dns_account_name" {
+  type = string
+}
+
 variable "environment" {
   type = string
 }
