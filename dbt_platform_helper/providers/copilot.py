@@ -1,4 +1,5 @@
 import json
+import subprocess
 import time
 
 from botocore.exceptions import ClientError
@@ -13,13 +14,13 @@ from dbt_platform_helper.utils.messages import abort_with_error
 def create_addon_client_task(
     iam_client,
     ssm_client,
-    subprocess,
     application: Application,
     env: str,
     addon_type: str,
     addon_name: str,
     task_name: str,
     access: str,
+    subprocess=subprocess,
 ):
     secret_name = f"/copilot/{application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}"
 
@@ -90,13 +91,13 @@ def get_postgres_admin_connection_string(ssm_client, secret_name, app, env, addo
 
 def create_postgres_admin_task(
     ssm_client,
-    subprocess,
     app: Application,
     addon_name: str,
     addon_type: str,
     env: str,
     secret_name: str,
     task_name: str,
+    subprocess=subprocess,
 ):
 
     connection_string = get_postgres_admin_connection_string(
@@ -130,12 +131,12 @@ def _temp_until_refactor_get_ecs_task_arns(ecs_client, cluster_arn: str, task_na
 
 def connect_to_addon_client_task(
     ecs_client,
-    subprocess,
     application_name,
     env,
     cluster_arn,
     task_name,
     get_ecs_task_arns=_temp_until_refactor_get_ecs_task_arns,
+    subprocess=subprocess,
 ):
     running = False
     tries = 0

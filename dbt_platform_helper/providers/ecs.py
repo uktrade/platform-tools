@@ -43,7 +43,8 @@ class ECS:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    def get_cluster_arn_tf(self):
+    # TODO pass in name of cluster
+    def get_cluster_arn_by_name(self) -> str:
         clusters = self.ecs_client.describe_clusters(
             clusters=[
                 f"{self.application_name}-{self.env}-tf",
@@ -52,7 +53,7 @@ class ECS:
         if len(clusters) == 1:
             return clusters[0]["clusterArn"]
 
-    def get_cluster_arn(self) -> str:
+    def get_cluster_ar_by_copilot_tag(self) -> str:
         """Returns the ARN of the ECS cluster for the given application and
         environment."""
         for cluster_arn in self.ecs_client.list_clusters()["clusterArns"]:
@@ -84,27 +85,12 @@ class ECS:
             random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
             return f"conduit-{self.application_name}-{self.env}-{addon_name}-{random_id}"
 
-    def get_ecs_task_arns_tf(
-        self,
-        addon_name: str,
-    ):
-        tasks = self.ecs_client.list_tasks(
-            cluster=f"{self.application_name}-{self.env}-tf",
-            family=f"conduit-{self.application_name}-{self.env}-{addon_name}",
-            desiredStatus="RUNNING",
-        )
-
-        if not tasks["taskArns"]:
-            return []
-
-        return tasks["taskArns"]
-
-    def get_ecs_task_arns(self, cluster_arn: str, task_name: str):
+    def get_ecs_task_arns(self, cluster_arn: str, task_def_family: str):
         """Gets the ECS task ARNs for a given task name and cluster ARN."""
         tasks = self.ecs_client.list_tasks(
             cluster=cluster_arn,
             desiredStatus="RUNNING",
-            family=f"copilot-{task_name}",
+            family=task_def_family,
         )
 
         if not tasks["taskArns"]:
@@ -112,10 +98,10 @@ class ECS:
 
         return tasks["taskArns"]
 
-    def exec_task(self, clusterArn, taskArns):
+    def exec_task(self, cluster_arn, task_arn):
         subprocess.call(
-            f"aws ecs execute-command --cluster {clusterArn} "
-            f"--task {taskArns[0]} "
+            f"aws ecs execute-command --cluster {cluster_arn} "
+            f"--task {task_arn} "
             f"--interactive --command bash ",
             shell=True,
         )
