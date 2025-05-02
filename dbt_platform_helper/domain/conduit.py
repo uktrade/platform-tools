@@ -39,6 +39,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         env: str,
         io: ClickIOProvider = ClickIOProvider(),
         vpc_provider=VpcProvider,
+        get_postgres_admin_connection_string=get_postgres_admin_connection_string,
     ):
         self.clients = clients
         self.ecs_provider = ecs_provider
@@ -48,17 +49,19 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         self.addon_name = addon_name
         self.application = application
         self.env = env
+        self.get_postgres_admin_connection_string = get_postgres_admin_connection_string
 
     def get_data(self):
         self.io.info("Starting ECS task using Terraform-defined task definition.")
-
         return {
-            "cluster_arn": self.ecs_provider.get_cluster_arn_by_name(),
+            "cluster_arn": self.ecs_provider.get_cluster_arn_by_name(
+                f"{self.application.name}-{self.env}-tf"
+            ),
             "task_def_family": f"conduit-{self.application.name}-{self.env}-{self.addon_name}",
+            "vpc_name": "platform-sandbox-dev",  # TODO update hard coding
         }
 
-    def start_task(self, data_context=None):
-        task_def_arn = f"conduit-{self.application.name}-{self.env}-{self.addon_name}"
+    def start_task(self, data_context):
 
         environments = self.application.environments
         environment = environments.get(self.env)
@@ -66,23 +69,21 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         try:
             vpc_provider = self.vpc_provider(env_session)
             vpc_config = vpc_provider.get_vpc(
-                # TODO update hard coding
                 self.application.name,
                 self.env,
-                "platform-sandbox-dev",
+                data_context["vpc_name"],
             )
         except VpcProviderException as ex:
             self.io.abort_with_error(str(ex))
 
         self.ecs_provider.start_ecs_task(
             f"conduit-{self.application.name}-{self.env}-{self.addon_name}",
-            task_def_arn,
+            data_context["task_def_family"],
             vpc_config,
             [
                 {
                     "name": "CONNECTION_SECRET",
-                    # TODO inject get_postgres_admin_connection_string so it can be mocked during testing
-                    "value": get_postgres_admin_connection_string(
+                    "value": self.get_postgres_admin_connection_string(
                         self.clients.get("ssm"),
                         f"/copilot/{self.application.name}/{self.env}/secrets/{_normalise_secret_name(self.addon_name)}",
                         self.application,
@@ -200,12 +201,12 @@ class Conduit:
         self.vpc_provider = vpc_provider
 
     def start(self, env: str, addon_name: str, access: str = "read"):
-        clients = self._initialise_clients(env)
+        self.clients = self._initialise_clients(env)
         mode = self._detect_mode(self.application.name, env, addon_name)
 
         if mode == "terraform":
             strategy = TerraformConduitStrategy(
-                clients,
+                self.clients,
                 self.ecs_provider,
                 self.application,
                 addon_name,
@@ -214,7 +215,7 @@ class Conduit:
             )
         else:
             strategy = CopilotConduitStrategy(
-                clients,
+                self.clients,
                 self.ecs_provider,
                 self.secrets_provider,
                 self.cloudformation_provider,
@@ -249,7 +250,7 @@ class Conduit:
         strategy.exec_task(data_context)
 
     def _detect_mode(self, application, environment, addon_name: str) -> str:
-        paginator = self.ecs_provider.ecs_client.get_paginator("list_task_definitions")
+        paginator = self.clients.get("ecs").get_paginator("list_task_definitions")
         prefix = f"conduit-{application}-{environment}-{addon_name}"
 
         for page in paginator.paginate():

@@ -43,11 +43,10 @@ class ECS:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    # TODO pass in name of cluster
-    def get_cluster_arn_by_name(self) -> str:
+    def get_cluster_arn_by_name(self, cluster_name) -> str:
         clusters = self.ecs_client.describe_clusters(
             clusters=[
-                f"{self.application_name}-{self.env}-tf",
+                cluster_name,
             ],
         )["clusters"]
         if len(clusters) == 1:
