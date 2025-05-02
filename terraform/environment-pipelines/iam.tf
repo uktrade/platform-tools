@@ -867,12 +867,13 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
   }
 
   statement {
+    sid    = "LambdaLayerAccess"
     effect = "Allow"
     actions = [
       "lambda:GetLayerVersion"
     ]
     resources = [
-      "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:1"
+      local.lambda_layer
     ]
   }
 
