@@ -14,8 +14,12 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
-    # TODO take in secrets and vars pass them in as config overrides for connection secret
-    def start_ecs_task(self, cluster_name, container_name, task_def_arn, vpc_config, env_vars):
+    def start_ecs_task(self, cluster_name, container_name, task_def_arn, vpc_config, env_vars=None):
+
+        container_overrides = {"name": container_name}
+        if env_vars:
+            container_overrides["environment"] = env_vars
+        overrides = {"containerOverrides": [container_overrides]}
 
         response = self.ecs_client.run_task(
             taskDefinition=task_def_arn,
@@ -31,14 +35,7 @@ class ECS:
                     "assignPublicIp": "ENABLED",
                 }
             },
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": container_name,
-                        "environment": env_vars,
-                    }
-                ]
-            },
+            overrides=overrides,
         )
 
         return response.get("tasks", [{}])[0].get("taskArn")
@@ -137,6 +134,16 @@ class ECS:
 
         if execute_command_agent_status != "RUNNING":
             raise ECSAgentNotRunningException
+
+    def wait_for_task_to_register(self, cluster_arn: str, task_family: str, max_attempts: int = 20):
+        for attempt in range(max_attempts):
+            task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
+            if task_arns:
+                return task_arns
+            time.sleep(3)
+        raise ECSException(
+            f"ECS task for '{task_family}' did not register after {max_attempts * 3} seconds."
+        )
 
 
 class ECSException(PlatformException):

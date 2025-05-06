@@ -35,6 +35,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         ecs_provider: ECS,
         application: Application,
         addon_name: str,
+        addon_type: str,
         access: str,
         env: str,
         io: ClickIOProvider = ClickIOProvider(),
@@ -47,6 +48,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         self.vpc_provider = vpc_provider
         self.access = access
         self.addon_name = addon_name
+        self.addon_type = addon_type
         self.application = application
         self.env = env
         self.get_postgres_admin_connection_string = get_postgres_admin_connection_string
@@ -57,8 +59,10 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             "cluster_arn": self.ecs_provider.get_cluster_arn_by_name(
                 f"{self.application.name}-{self.env}-tf"
             ),
-            "task_def_family": f"conduit-{self.application.name}-{self.env}-{self.addon_name}",
+            "task_def_family": self._generate_container_name(),
             "vpc_name": "platform-sandbox-dev",  # TODO update hard coding
+            "addon_type": self.addon_type,
+            "access": self.access,
         }
 
     def start_task(self, data_context):
@@ -76,12 +80,9 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         except VpcProviderException as ex:
             self.io.abort_with_error(str(ex))
 
-        self.ecs_provider.start_ecs_task(
-            f"{self.application.name}-{self.env}-tf",
-            f"conduit-{self.application.name}-{self.env}-{self.addon_name}",
-            data_context["task_def_family"],
-            vpc_config,
-            [
+        env_vars = None
+        if data_context["addon_type"] == "postgres" and data_context["access"] == "admin":
+            env_vars = [
                 {
                     "name": "CONNECTION_SECRET",
                     "value": self.get_postgres_admin_connection_string(
@@ -92,11 +93,24 @@ class TerraformConduitStrategy(ConduitECSStrategy):
                         self.addon_name,
                     ),
                 },
-            ],
+            ]
+
+        self.ecs_provider.start_ecs_task(
+            f"{self.application.name}-{self.env}-tf",
+            self._generate_container_name(),
+            data_context["task_def_family"],
+            vpc_config,
+            env_vars,
         )
 
     def exec_task(self, data_context):
         self.ecs_provider.exec_task(data_context["cluster_arn"], data_context["task_arns"][0])
+
+    def _generate_container_name(self):
+        return f"conduit-{self.addon_type}-{self.access}-{self.application.name}-{self.env}-{self.addon_name}"
+
+    def _resolve_vpc_name(self):
+        return self.application.environments[self.env].session.profile_name
 
 
 class CopilotConduitStrategy(ConduitECSStrategy):
@@ -203,7 +217,12 @@ class Conduit:
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         self.clients = self._initialise_clients(env)
-        mode = self._detect_mode(self.application.name, env, addon_name)
+        addon_type = self.secrets_provider.get_addon_type(addon_name)
+
+        if (addon_type == "opensearch" or addon_type == "redis") and (access != "read"):
+            access = "read"
+
+        mode = self._detect_mode(self.application.name, env, addon_name, addon_type, access)
 
         if mode == "terraform":
             strategy = TerraformConduitStrategy(
@@ -211,6 +230,7 @@ class Conduit:
                 self.ecs_provider,
                 self.application,
                 addon_name,
+                addon_type,
                 access,
                 env,
             )
@@ -232,6 +252,13 @@ class Conduit:
             data_context["cluster_arn"], data_context["task_def_family"]
         )
 
+        self.io.info(
+            f"Checking if a conduit ECS task is already running for:"
+            f"\n  Addon Name : {addon_name}"
+            f"\n  Addon Type  : {addon_type}"
+            f"{f'\n  Access Level : {access}' if addon_type == 'postgres' else ''}"
+        )
+
         if not data_context["task_arns"]:
             self.io.info("Creating conduit task")
             strategy.start_task(data_context)
@@ -239,9 +266,11 @@ class Conduit:
                 data_context["cluster_arn"], data_context["task_def_family"]
             )
         else:
-            self.io.info("Conduit task already running")
+            self.io.info(
+                f"Found an already running task: {data_context['task_arns'][0].split(" / ")[-1]}."
+            )
 
-        self.io.info(f"Checking if exec is available for conduit task...")
+        self.io.info(f"Waiting for ECS Exec agent to become available on the conduit task...")
 
         self.ecs_provider.ecs_exec_is_available(
             data_context["cluster_arn"], data_context["task_arns"]
@@ -250,14 +279,16 @@ class Conduit:
         self.io.info("Connecting to conduit task")
         strategy.exec_task(data_context)
 
-    def _detect_mode(self, application, environment, addon_name: str) -> str:
+    def _detect_mode(
+        self, application, environment, addon_name: str, addon_type: str, access: str
+    ) -> str:
+        """Detect if Terraform-based conduit task definitions are present,
+        otherwise default to Copilot mode."""
         paginator = self.clients.get("ecs").get_paginator("list_task_definitions")
-        prefix = f"conduit-{application}-{environment}-{addon_name}"
-
+        prefix = f"conduit-{addon_type}-{access}-{application}-{environment}-{addon_name}"
         for page in paginator.paginate():
             for arn in page["taskDefinitionArns"]:
                 if arn.split("/")[-1].startswith(prefix):
-                    self.io.info(f"Detected Terraform-defined ECS task definition: {arn}")
                     return "terraform"
 
         self.io.info("Defaulting to copilot mode.")
