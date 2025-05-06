@@ -1,4 +1,5 @@
 import json
+import subprocess
 import time
 
 from botocore.exceptions import ClientError
@@ -13,13 +14,13 @@ from dbt_platform_helper.utils.messages import abort_with_error
 def create_addon_client_task(
     iam_client,
     ssm_client,
-    subprocess,
     application: Application,
     env: str,
     addon_type: str,
     addon_name: str,
     task_name: str,
     access: str,
+    subprocess=subprocess,
 ):
     secret_name = f"/copilot/{application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}"
 
@@ -31,13 +32,13 @@ def create_addon_client_task(
         elif access == "admin":
             create_postgres_admin_task(
                 ssm_client,
-                subprocess,
                 application,
                 addon_name,
                 addon_type,
                 env,
                 secret_name,
                 task_name,
+                subprocess,
             )
             return
     elif addon_type == "redis" or addon_type == "opensearch":
@@ -71,16 +72,7 @@ def create_addon_client_task(
     )
 
 
-def create_postgres_admin_task(
-    ssm_client,
-    subprocess,
-    app: Application,
-    addon_name: str,
-    addon_type: str,
-    env: str,
-    secret_name: str,
-    task_name: str,
-):
+def get_postgres_admin_connection_string(ssm_client, secret_name, app, env, addon_name):
     read_only_secret_name = secret_name + "_READ_ONLY_USER"
     master_secret_name = (
         f"/copilot/{app.name}/{env}/secrets/{_normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
@@ -92,6 +84,24 @@ def create_postgres_admin_task(
         _get_secrets_provider(app, env).get_postgres_connection_data_updated_with_master_secret(
             read_only_secret_name, master_secret_arn
         )
+    )
+
+    return connection_string
+
+
+def create_postgres_admin_task(
+    ssm_client,
+    app: Application,
+    addon_name: str,
+    addon_type: str,
+    env: str,
+    secret_name: str,
+    task_name: str,
+    subprocess=subprocess,
+):
+
+    connection_string = get_postgres_admin_connection_string(
+        ssm_client, secret_name, app, env, addon_name
     )
 
     subprocess.call(
@@ -121,12 +131,12 @@ def _temp_until_refactor_get_ecs_task_arns(ecs_client, cluster_arn: str, task_na
 
 def connect_to_addon_client_task(
     ecs_client,
-    subprocess,
     application_name,
     env,
     cluster_arn,
     task_name,
     get_ecs_task_arns=_temp_until_refactor_get_ecs_task_arns,
+    subprocess=subprocess,
 ):
     running = False
     tries = 0

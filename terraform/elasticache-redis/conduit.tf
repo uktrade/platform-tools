@@ -1,41 +1,46 @@
-data "aws_region" "current" {}
-
-resource "aws_ecs_task_definition" "conduit_postgres" {
-  for_each = local.conduit_task_definitions
-
-  family = "conduit-postgres-${each.key}-${local.name}"
+resource "aws_ecs_task_definition" "conduit-redis" {
+  family = "conduit-redis-read-${var.application}-${var.environment}-${var.name}"
   container_definitions = jsonencode([
-    merge({
-      name      = "conduit-postgres-${each.key}-${local.name}"
-      image     = "public.ecr.aws/uktrade/tunnel:postgres"
+    {
+      name      = "conduit-redis-read-${var.application}-${var.environment}-${var.name}"
+      image     = "public.ecr.aws/uktrade/tunnel:redis"
       essential = true
+      secrets= [
+          {
+            "name": "CONNECTION_SECRET",
+            "valueFrom": aws_ssm_parameter.endpoint.arn
+        }
+      ]
       runtimePlatform = {
-        cpuArchitecture        = "ARM64"
-        operatingSystemFamily  = "LINUX"
-      }
+        cpuArchitecture = "ARM64",
+        operatingSystemFamily = "LINUX"
+      },
       linuxParameters = {
         initProcessEnabled = true
       }
       logConfiguration = {
-        logDriver = "awslogs"
+        logDriver = "awslogs",
         options = {
           awslogs-group         = aws_cloudwatch_log_group.conduit-logs.name
           awslogs-region        = data.aws_region.current.name
           mode                  = "non-blocking"
           awslogs-create-group  = "true"
           max-buffer-size       = "25m"
-          awslogs-stream-prefix = "conduit/postgres-${each.key}"
+          awslogs-stream-prefix = "conduit/redis"
         }
       }
-    }, each.value)
+    }
   ])
 
-  cpu                    = 512
-  memory                 = 1024
+  cpu    = 512
+  memory = 1024
+
   requires_compatibilities = ["FARGATE"]
-  task_role_arn          = aws_iam_role.conduit-task-role.arn
-  execution_role_arn     = aws_iam_role.conduit-execution-role.arn
-  network_mode           = "awsvpc"
+
+  task_role_arn      = aws_iam_role.conduit-task-role.arn
+  execution_role_arn = aws_iam_role.conduit-execution-role.arn
+  network_mode       = "awsvpc"
+
   runtime_platform {
     cpu_architecture        = "ARM64"
     operating_system_family = "LINUX"
@@ -43,22 +48,9 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
 }
 
 resource "aws_iam_role" "conduit-task-role" {
-  name = "${local.name}-conduit-task-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
+  name = "${var.application}-${var.environment}-${var.name}-conduit-task-role"
+  assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json #TODO - Re-using existing resource
   tags = local.tags
-}
-
-data "aws_iam_policy_document" "assume_ecstask_role" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["ecs-tasks.amazonaws.com"]
-    }
-
-    actions = ["sts:AssumeRole"]
-  }
 }
 
 resource "aws_iam_role_policy" "access_for_conduit_ecs_task" {
@@ -96,7 +88,7 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
 }
 
 resource "aws_iam_role" "conduit-execution-role" {
-  name = "${local.name}-conduit-execution-role"
+  name = "${var.application}-${var.environment}-${var.name}-conduit-execution-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
   tags = local.tags
 }
@@ -127,18 +119,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
-    ]
-  }
-
-  statement {
-    actions = [
-      "secretsmanager:GetSecretValue"
-    ]
-    effect = "Allow"
-    resources = [
-       aws_db_instance.default.master_user_secret[0].secret_arn
+      "*"
     ]
   }
 
@@ -150,20 +131,20 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
+      aws_ssm_parameter.endpoint.arn,
+      aws_kms_key.ssm_redis_endpoint.arn
     ]
   }
 }
 
 resource "aws_kms_key" "conduit-log-group-kms-key" {
-  description         = "KMS Key for ${var.name}-${var.environment} Postgres Log encryption"
+  description         = "KMS Key for ${var.name}-${var.environment} conduit redis log encryption"
   enable_key_rotation = true
   tags                = local.tags
 }
 
 resource "aws_cloudwatch_log_group" "conduit-logs" {
-  name              = "/conduit/postgres/${var.name}/${var.environment}/${var.name}"
+  name              = "/conduit/redis/${var.name}/${var.environment}/${var.name}"
   retention_in_days = 7
   tags              = local.tags
   kms_key_id        = aws_kms_key.conduit-log-group-kms-key.arn
@@ -171,7 +152,7 @@ resource "aws_cloudwatch_log_group" "conduit-logs" {
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "conduit-logs-filter" {
-  name            = "/conduit/postgres/${var.application}/${var.environment}/${var.name}"
+  name            = "/conduit/redis/${var.application}/${var.environment}/${var.name}"
   role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
   log_group_name  = aws_cloudwatch_log_group.conduit-logs.name
   filter_pattern  = ""
