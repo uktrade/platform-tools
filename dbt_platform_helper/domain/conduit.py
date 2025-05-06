@@ -111,8 +111,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         return f"conduit-{self.addon_type}-{self.access}-{self.application.name}-{self.env}-{self.addon_name}"
 
     def _resolve_vpc_name(self):
-        profile_name = self.application.environments[self.env].session.profile_name
-        return profile_name
+        return self.application.environments[self.env].session.profile_name
 
 
 class CopilotConduitStrategy(ConduitECSStrategy):
@@ -218,6 +217,10 @@ class Conduit:
     def start(self, env: str, addon_name: str, access: str = "read"):
         self.clients = self._initialise_clients(env)
         addon_type = self.secrets_provider.get_addon_type(addon_name)
+
+        if (addon_type == "opensearch" or addon_type == "redis") and (access != "read"):
+            access = "read"
+
         mode = self._detect_mode(self.application.name, env, addon_name, addon_type, access)
 
         if mode == "terraform":
@@ -251,8 +254,8 @@ class Conduit:
         self.io.info(
             f"Checking if a conduit ECS task is already running for:\n"
             f"  Addon Name : {addon_name}\n"
-            f"  Addon Type  : {addon_type}\n"
-            f"  Access Level : {access}"
+            f"  Addon Type : {addon_type}"
+            f"{f'\n  Access Level : {access}' if addon_type == 'postgres' else ''}"
         )
 
         if not data_context["task_arns"]:
