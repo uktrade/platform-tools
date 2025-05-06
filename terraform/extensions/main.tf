@@ -125,6 +125,6 @@ module "datadog" {
 
   application = var.args.application
   environment = var.environment
-  repository  = var.repository
+  repos  = var.repos
   config      = each.value
 }

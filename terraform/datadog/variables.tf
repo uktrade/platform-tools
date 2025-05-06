@@ -18,7 +18,8 @@ variable "config" {
   )
 }
 
-variable "repository" {
-  type = string
+variable "repos" {
+  type = list(string)
 }
+
 

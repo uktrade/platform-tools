@@ -216,6 +216,10 @@ def test_generate_environment_config_creates_file(
         "services": '${local.config["extensions"]}',
         "env_config": "${local.env_config}",
     }
+    assert (
+        local["codebase_pipeline_repos"]
+        == "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}"
+    )
 
     terraform = json_content["terraform"]
     assert terraform["required_version"] == SUPPORTED_TERRAFORM_VERSION
@@ -241,6 +245,10 @@ def test_generate_environment_config_creates_file(
     )
     assert module["args"] == "${local.args}"
     assert module["environment"] == env
+    assert (
+        module["repos"]
+        == "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}"
+    )
 
     moved = json_content["moved"]
     assert len(moved) == 1

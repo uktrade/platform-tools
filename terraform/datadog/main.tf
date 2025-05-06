@@ -21,10 +21,12 @@ EOF
       url: ${var.config.documentation_url}
 EOF
 
-  repo = var.repository == null ? "" : <<EOF
-    - name: Repository
+  repos = var.repos == null ? "" : <<EOF
+  %{ for r in var.repos }
+    - name: ${r}
       type: repo
-      url: https://github.com/${var.repository}
+      url: https://github.com/${r}
+  %{ endfor }
 EOF
 
   contacts = <<EOF
@@ -52,7 +54,7 @@ kind: system
 metadata:
   name: ${var.application}-${var.environment}
   links:
-${local.doc}${local.repo}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.contacts}${local.team}
 EOF
 }
 
@@ -66,7 +68,7 @@ kind: service
 metadata:
   name: ${var.application}-${var.environment}-${each.value}
   links:
-${local.doc}${local.repo}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.contacts}${local.team}
 spec:
   lifecycle: production
   tier: "1"
