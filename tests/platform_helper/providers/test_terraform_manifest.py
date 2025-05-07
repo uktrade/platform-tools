@@ -216,7 +216,10 @@ def test_generate_environment_config_creates_file(
         "services": '${local.config["extensions"]}',
         "env_config": "${local.env_config}",
     }
-    assert local["codebase_pipeline_repos"] == "${try({for k, v in local.config[\"codebase_pipelines\"]: k => v.repository}, null)}"
+    assert (
+        local["codebase_pipeline_repos"]
+        == '${try({for k, v in local.config["codebase_pipelines"]: k => v.repository}, null)}'
+    )
 
     terraform = json_content["terraform"]
     assert terraform["required_version"] == SUPPORTED_TERRAFORM_VERSION
