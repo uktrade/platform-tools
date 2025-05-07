@@ -144,7 +144,7 @@ class TerraformManifestProvider:
                 "source": source,
                 "args": "${local.args}",
                 "environment": env,
-                "repos": "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}"
+                "repos": "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}",
             }
         }
 
@@ -168,7 +168,7 @@ class TerraformManifestProvider:
                 "services": '${local.config["extensions"]}',
                 "env_config": "${local.env_config}",
             },
-            "codebase_pipeline_repos": "${try({for k, v in local.config[\"codebase_pipelines\"]: k => v.repository}, null)}",
+            "codebase_pipeline_repos": '${try({for k, v in local.config["codebase_pipelines"]: k => v.repository}, null)}',
         }
 
     @staticmethod
