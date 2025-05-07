@@ -5,7 +5,7 @@ mock_provider "datadog" {
 variables {
   application = "test-app"
   environment = "test-env"
-  repos  = "test-repo"
+  repos  = ["test-repo1", "test-repo2"]
   config = {
     team_name           = "test-team",
     contact_name        = "test-contact-name",
