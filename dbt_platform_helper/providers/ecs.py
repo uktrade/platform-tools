@@ -14,8 +14,10 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
-    # TODO take in secrets and vars pass them in as config overrides for connection secret
-    def start_ecs_task_postgres_admin(self, container_name, task_def_arn, vpc_config, env_vars):
+    def start_ecs_task(self, container_name, task_def_arn, vpc_config, env_vars=None):
+        container_override = {"name": container_name}
+        if env_vars:
+            container_override["environment"] = env_vars
 
         response = self.ecs_client.run_task(
             taskDefinition=task_def_arn,
@@ -31,40 +33,7 @@ class ECS:
                     "assignPublicIp": "ENABLED",
                 }
             },
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": container_name,
-                        "environment": env_vars,
-                    }
-                ]
-            },
-        )
-
-        return response.get("tasks", [{}])[0].get("taskArn")
-
-    def start_ecs_task(self, container_name, task_def_arn, vpc_config):
-        response = self.ecs_client.run_task(
-            taskDefinition=task_def_arn,
-            cluster=f"{self.application_name}-{self.env}",
-            capacityProviderStrategy=[
-                {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
-            ],
-            enableExecuteCommand=True,
-            networkConfiguration={
-                "awsvpcConfiguration": {
-                    "subnets": vpc_config.public_subnets,
-                    "securityGroups": vpc_config.security_groups,
-                    "assignPublicIp": "ENABLED",
-                }
-            },
-            overrides={
-                "containerOverrides": [
-                    {
-                        "name": container_name,
-                    }
-                ]
-            },
+            overrides={"containerOverrides": [container_override]},
         )
 
         return response.get("tasks", [{}])[0].get("taskArn")

@@ -20,7 +20,6 @@ def create_addon_client_task(
     addon_name: str,
     task_name: str,
     access: str,
-    subprocess=subprocess,
 ):
     secret_name = f"/copilot/{application.name}/{env}/secrets/{_normalise_secret_name(addon_name)}"
 
@@ -38,7 +37,6 @@ def create_addon_client_task(
                 env,
                 secret_name,
                 task_name,
-                subprocess,
             )
             return
     elif addon_type == "redis" or addon_type == "opensearch":
@@ -97,7 +95,6 @@ def create_postgres_admin_task(
     env: str,
     secret_name: str,
     task_name: str,
-    subprocess=subprocess,
 ):
 
     connection_string = get_postgres_admin_connection_string(
@@ -136,7 +133,6 @@ def connect_to_addon_client_task(
     cluster_arn,
     task_name,
     get_ecs_task_arns=_temp_until_refactor_get_ecs_task_arns,
-    subprocess=subprocess,
 ):
     running = False
     tries = 0

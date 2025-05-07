@@ -81,28 +81,27 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         except VpcProviderException as ex:
             self.io.abort_with_error(str(ex))
 
+        postgres_admin_env_vars = None
         if data_context["addon_type"] == "postgres" and data_context["access"] == "admin":
-            self.ecs_provider.start_ecs_task_postgres_admin(
-                self._generate_container_name(),
-                data_context["task_def_family"],
-                vpc_config,
-                [
-                    {
-                        "name": "CONNECTION_SECRET",
-                        "value": self.get_postgres_admin_connection_string(
-                            self.clients.get("ssm"),
-                            f"/copilot/{self.application.name}/{self.env}/secrets/{_normalise_secret_name(self.addon_name)}",
-                            self.application,
-                            self.env,
-                            self.addon_name,
-                        ),
-                    },
-                ],
-            )
-        else:
-            self.ecs_provider.start_ecs_task(
-                self._generate_container_name(), data_context["task_def_family"], vpc_config
-            )
+            postgres_admin_env_vars = [
+                {
+                    "name": "CONNECTION_SECRET",
+                    "value": self.get_postgres_admin_connection_string(
+                        self.clients.get("ssm"),
+                        f"/copilot/{self.application.name}/{self.env}/secrets/{_normalise_secret_name(self.addon_name)}",
+                        self.application,
+                        self.env,
+                        self.addon_name,
+                    ),
+                },
+            ]
+
+        self.ecs_provider.start_ecs_task(
+            self._generate_container_name(),
+            data_context["task_def_family"],
+            vpc_config,
+            postgres_admin_env_vars,
+        )
 
     def exec_task(self, data_context):
         self.ecs_provider.exec_task(data_context["cluster_arn"], data_context["task_arns"][0])
@@ -266,7 +265,7 @@ class Conduit:
             )
         else:
             self.io.info(
-                f"Found an already running task: {data_context['task_arns'][0].split(" / ")[-1]}."
+                f"Found a task already running: {data_context['task_arns'][0].split(" / ")[-1]}"
             )
 
         self.io.info(f"Waiting for ECS Exec agent to become available on the conduit task...")
