@@ -22,11 +22,11 @@ EOF
 EOF
 
   repos = var.repos == null ? "" : <<EOF
-  %{ for r in var.repos }
+  %{for r in var.repos}
     - name: ${r}
       type: repo
       url: https://github.com/${r}
-  %{ endfor }
+  %{endfor}
 EOF
 
   contacts = <<EOF
