@@ -1,5 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
+from typing import Callable
+from typing import Optional
 
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.copilot import _normalise_secret_name
@@ -38,9 +40,9 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         addon_type: str,
         access: str,
         env: str,
-        io: ClickIOProvider = ClickIOProvider(),
-        vpc_provider=VpcProvider,
-        get_postgres_admin_connection_string=get_postgres_admin_connection_string,
+        io: ClickIOProvider,
+        vpc_provider: Callable,
+        get_postgres_admin_connection_string: Callable,
     ):
         self.clients = clients
         self.ecs_provider = ecs_provider
@@ -96,7 +98,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             ]
 
         self.ecs_provider.start_ecs_task(
-            f"{self.application.name}-{self.env}",
+            f"{self.application.name}-{self.env}-tf",
             self._generate_container_name(),
             data_context["task_def_family"],
             vpc_config,
@@ -133,9 +135,9 @@ class CopilotConduitStrategy(ConduitECSStrategy):
         addon_name: str,
         access: str,
         env: str,
-        io: ClickIOProvider = ClickIOProvider(),
-        connect_to_addon_client_task=connect_to_addon_client_task,
-        create_addon_client_task=create_addon_client_task,
+        io: ClickIOProvider,
+        connect_to_addon_client_task: Callable,
+        create_addon_client_task: Callable,
     ):
         self.clients = clients
         self.cloudformation_provider = cloudformation_provider
@@ -204,27 +206,73 @@ class CopilotConduitStrategy(ConduitECSStrategy):
         )
 
 
-def detect_mode(
-    ecs_client,
-    application,
-    environment,
-    addon_name: str,
-    addon_type: str,
-    access: str,
-    io: ClickIOProvider = ClickIOProvider(),
-) -> str:
-    """Detect if Terraform-based conduit task definitions are present, otherwise
-    default to Copilot mode."""
-    paginator = ecs_client.get_paginator("list_task_definitions")
-    prefix = f"conduit-{addon_type}-{access}-{application}-{environment}-{addon_name}"
+class ConduitStrategyFactory:
 
-    for page in paginator.paginate():
-        for arn in page["taskDefinitionArns"]:
-            if arn.split("/")[-1].startswith(prefix):
-                return "terraform"
+    @staticmethod
+    def detect_mode(
+        ecs_client,
+        application,
+        environment,
+        addon_name: str,
+        addon_type: str,
+        access: str,
+        io: ClickIOProvider,
+    ) -> str:
+        """Detect if Terraform-based conduit task definitions are present,
+        otherwise default to Copilot mode."""
+        paginator = ecs_client.get_paginator("list_task_definitions")
+        prefix = f"conduit-{addon_type}-{access}-{application}-{environment}-{addon_name}"
 
-    io.info("Defaulting to copilot mode.")
-    return "copilot"
+        for page in paginator.paginate():
+            for arn in page["taskDefinitionArns"]:
+                if arn.split("/")[-1].startswith(prefix):
+                    return "terraform"
+
+        io.info("Defaulting to copilot mode.")
+        return "copilot"
+
+    @staticmethod
+    def create_strategy(
+        mode: str,
+        clients,
+        ecs_provider: ECS,
+        secrets_provider: Secrets,
+        cloudformation_provider: CloudFormation,
+        application: Application,
+        addon_name: str,
+        addon_type: str,
+        access: str,
+        env: str,
+        io: ClickIOProvider,
+    ):
+
+        if mode == "terraform":
+            return TerraformConduitStrategy(
+                clients,
+                ecs_provider,
+                application,
+                addon_name,
+                addon_type,
+                access,
+                env,
+                io,
+                vpc_provider=VpcProvider,
+                get_postgres_admin_connection_string=get_postgres_admin_connection_string,
+            )
+        else:
+            return CopilotConduitStrategy(
+                clients,
+                ecs_provider,
+                secrets_provider,
+                cloudformation_provider,
+                application,
+                addon_name,
+                access,
+                env,
+                io,
+                connect_to_addon_client_task=connect_to_addon_client_task,
+                create_addon_client_task=create_addon_client_task,
+            )
 
 
 class Conduit:
@@ -236,7 +284,7 @@ class Conduit:
         ecs_provider: ECS,
         io: ClickIOProvider = ClickIOProvider(),
         vpc_provider=VpcProvider,
-        detect_mode=detect_mode,
+        strategy_factory: Optional[ConduitStrategyFactory] = None,
     ):
 
         self.application = application
@@ -245,7 +293,7 @@ class Conduit:
         self.ecs_provider = ecs_provider
         self.io = io
         self.vpc_provider = vpc_provider
-        self.detect_mode = detect_mode
+        self.strategy_factory = strategy_factory or ConduitStrategyFactory()
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         self.clients = self._initialise_clients(env)
@@ -254,31 +302,29 @@ class Conduit:
         if (addon_type == "opensearch" or addon_type == "redis") and (access != "read"):
             access = "read"
 
-        mode = self.detect_mode(
-            self.clients.get("ecs"), self.application.name, env, addon_name, addon_type, access
+        mode = self.strategy_factory.detect_mode(
+            self.clients.get("ecs"),
+            self.application.name,
+            env,
+            addon_name,
+            addon_type,
+            access,
+            self.io,
         )
 
-        if mode == "terraform":
-            strategy = TerraformConduitStrategy(
-                self.clients,
-                self.ecs_provider,
-                self.application,
-                addon_name,
-                addon_type,
-                access,
-                env,
-            )
-        else:
-            strategy = CopilotConduitStrategy(
-                self.clients,
-                self.ecs_provider,
-                self.secrets_provider,
-                self.cloudformation_provider,
-                self.application,
-                addon_name,
-                access,
-                env,
-            )
+        strategy = self.strategy_factory.create_strategy(
+            mode=mode,
+            clients=self.clients,
+            ecs_provider=self.ecs_provider,
+            secrets_provider=self.secrets_provider,
+            cloudformation_provider=self.cloudformation_provider,
+            application=self.application,
+            addon_name=addon_name,
+            addon_type=addon_type,
+            access=access,
+            env=env,
+            io=self.io,
+        )
 
         data_context = strategy.get_data()
 

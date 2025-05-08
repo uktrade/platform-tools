@@ -215,10 +215,6 @@ def test_start_ecs_task(mocked_cluster, mock_application):
     ssm_client = mock_application.environments["development"].session.client("ssm")
     application_name = mock_application.name
     env = "development"
-    # cluster_name = f"{application_name}-{env}"
-    #
-    # ecs_client.create_cluster(clusterName=cluster_name)
-
     mocked_ec2_client = boto3.client("ec2")
     mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
     mocked_ec2_client.run_instances(

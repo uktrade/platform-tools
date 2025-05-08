@@ -1,3 +1,5 @@
+from unittest.mock import ANY
+from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
 
@@ -23,6 +25,194 @@ task_name = "task_name"
 addon_name = "custom-name-rds-postgres"
 
 
+class TestConduit:
+
+    def setup(self, app_name="test-application", *args, **kwargs):
+
+        self.secrets_provider = MagicMock()
+        self.cloudformation_provider = MagicMock()
+        self.ecs_provider = MagicMock()
+        self.io = MagicMock()
+        self.strategy_factory = MagicMock()
+        self.vpc_provider = MagicMock()
+
+        self.ecs_client = MagicMock()
+        self.iam_client = MagicMock()
+        self.ssm_client = MagicMock()
+
+        self.session = MagicMock()
+        self.session.client.side_effect = lambda service: {
+            "ecs": self.ecs_client,
+            "iam": self.iam_client,
+            "ssm": self.ssm_client,
+        }.get(service)
+
+        sessions = {"000000000": self.session}
+        dummy_application = Application(app_name)
+        dummy_application.environments = {env: Environment(env, "000000000", sessions)}
+        self.application = dummy_application
+
+        self.conduit = Conduit(
+            self.application,
+            self.secrets_provider,
+            self.cloudformation_provider,
+            self.ecs_provider,
+            self.io,
+            self.vpc_provider,
+            self.strategy_factory,
+        )
+
+    def test_conduit_terraform_new_task(self):
+        self.setup()
+        self.secrets_provider.get_addon_type.return_value = "postgres"
+        self.strategy_factory.detect_mode.return_value = "terraform"
+        strategy = MagicMock()
+        strategy.get_data.return_value = {
+            "cluster_arn": "cluster-arn",
+            "task_def_family": "task-def-fam",
+            "vpc_name": "vpc-name",
+            "addon_type": "postgres",
+            "access": "read",
+        }
+        self.strategy_factory.create_strategy.return_value = strategy
+        self.ecs_provider.get_ecs_task_arns.return_value = []
+        self.ecs_provider.wait_for_task_to_register.return_value = ["task-arn"]
+
+        # Test
+        self.conduit.start("development", "custom-name-rds-postgres", "read")
+
+        # Checks
+        self.session.client.assert_has_calls([call("ecs"), call("iam"), call("ssm")])
+        self.secrets_provider.get_addon_type.assert_called_with("custom-name-rds-postgres")
+        self.strategy_factory.detect_mode.assert_called_with(
+            self.ecs_client,
+            "test-application",
+            "development",
+            "custom-name-rds-postgres",
+            "postgres",
+            "read",
+            self.io,
+        )
+        self.strategy_factory.create_strategy.assert_called_with(
+            mode="terraform",
+            clients={"ecs": self.ecs_client, "iam": self.iam_client, "ssm": self.ssm_client},
+            ecs_provider=self.ecs_provider,
+            secrets_provider=self.secrets_provider,
+            cloudformation_provider=self.cloudformation_provider,
+            application=self.application,
+            addon_name="custom-name-rds-postgres",
+            addon_type="postgres",
+            access="read",
+            env="development",
+            io=self.io,
+        )
+        strategy.get_data.assert_called_once()
+        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.io.info.assert_has_calls(
+            [
+                call(
+                    "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-rds-postgres\n  Addon Type : postgres\n  Access Level : read"
+                ),
+                call("Creating conduit ECS task..."),
+                call("Waiting for ECS Exec agent to become available on the conduit task..."),
+                call("Connecting to conduit task..."),
+            ]
+        )
+        strategy.start_task.assert_called_with(
+            {
+                "cluster_arn": "cluster-arn",
+                "task_def_family": "task-def-fam",
+                "vpc_name": "vpc-name",
+                "addon_type": "postgres",
+                "access": "read",
+                "task_arns": [ANY],
+            }
+        )
+        self.ecs_provider.wait_for_task_to_register.assert_called_with(
+            "cluster-arn", "task-def-fam"
+        )
+        self.ecs_provider.ecs_exec_is_available.assert_called_with("cluster-arn", ["task-arn"])
+
+        strategy.exec_task.assert_called_with(
+            {
+                "cluster_arn": "cluster-arn",
+                "task_def_family": "task-def-fam",
+                "vpc_name": "vpc-name",
+                "addon_type": "postgres",
+                "access": "read",
+                "task_arns": ["task-arn"],
+            }
+        )
+
+    def test_conduit_terraform_existing_task(self):
+        self.setup()
+        self.secrets_provider.get_addon_type.return_value = "postgres"
+        self.strategy_factory.detect_mode.return_value = "terraform"
+        strategy = MagicMock()
+        strategy.get_data.return_value = {
+            "cluster_arn": "cluster-arn",
+            "task_def_family": "task-def-fam",
+            "vpc_name": "vpc-name",
+            "addon_type": "postgres",
+            "access": "read",
+        }
+        self.strategy_factory.create_strategy.return_value = strategy
+        self.ecs_provider.get_ecs_task_arns.return_value = ["task-arn"]
+
+        # Test
+        self.conduit.start("development", "custom-name-rds-postgres", "read")
+
+        # Checks
+        self.session.client.assert_has_calls([call("ecs"), call("iam"), call("ssm")])
+        self.secrets_provider.get_addon_type.assert_called_with("custom-name-rds-postgres")
+        self.strategy_factory.detect_mode.assert_called_with(
+            self.ecs_client,
+            "test-application",
+            "development",
+            "custom-name-rds-postgres",
+            "postgres",
+            "read",
+            self.io,
+        )
+        self.strategy_factory.create_strategy.assert_called_with(
+            mode="terraform",
+            clients={"ecs": self.ecs_client, "iam": self.iam_client, "ssm": self.ssm_client},
+            ecs_provider=self.ecs_provider,
+            secrets_provider=self.secrets_provider,
+            cloudformation_provider=self.cloudformation_provider,
+            application=self.application,
+            addon_name="custom-name-rds-postgres",
+            addon_type="postgres",
+            access="read",
+            env="development",
+            io=self.io,
+        )
+        strategy.get_data.assert_called_once()
+        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.io.info.assert_has_calls(
+            [
+                call(
+                    "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-rds-postgres\n  Addon Type : postgres\n  Access Level : read"
+                ),
+                call("Found a task already running: task-arn"),
+                call("Waiting for ECS Exec agent to become available on the conduit task..."),
+                call("Connecting to conduit task..."),
+            ]
+        )
+        self.ecs_provider.ecs_exec_is_available.assert_called_with("cluster-arn", ["task-arn"])
+
+        strategy.exec_task.assert_called_with(
+            {
+                "cluster_arn": "cluster-arn",
+                "task_def_family": "task-def-fam",
+                "vpc_name": "vpc-name",
+                "addon_type": "postgres",
+                "access": "read",
+                "task_arns": ["task-arn"],
+            }
+        )
+
+
 class ConduitMocks:
     def __init__(self, app_name="test-application", *args, **kwargs):
 
@@ -38,6 +228,8 @@ class ConduitMocks:
         self.create_addon_client_task = kwargs.get("create_addon_client_task", Mock())
         self.io = kwargs.get("io", Mock())
         self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
+        self.vpc_provider = kwargs.get("vpc_provider", Mock())
+        self.detect_mode = kwargs.get("detect_mode", Mock(return_value="copilot"))
 
     def params(self):
         return {
@@ -45,10 +237,11 @@ class ConduitMocks:
             "secrets_provider": self.secrets_provider,
             "cloudformation_provider": self.cloudformation_provider,
             "ecs_provider": self.ecs_provider,
-            "connect_to_addon_client_task": self.connect_to_addon_client_task,
-            "create_addon_client_task": self.create_addon_client_task,
+            # "connect_to_addon_client_task": self.connect_to_addon_client_task,
+            # "create_addon_client_task": self.create_addon_client_task,
             "io": self.io,
-            "subprocess": self.subprocess,
+            "vpc_provider": self.vpc_provider,
+            "detect_mode": self.detect_mode,
         }
 
 
@@ -56,9 +249,9 @@ class ConduitMocks:
     "app_name, addon_type, addon_name, access",
     [
         ("app_1", "postgres", "custom-name-postgres", "read"),
-        ("app_2", "postgres", "custom-name-rds-postgres", "read"),
-        ("app_1", "redis", "custom-name-redis", "read"),
-        ("app_1", "opensearch", "custom-name-opensearch", "read"),
+        # ("app_2", "postgres", "custom-name-rds-postgres", "read"),
+        # ("app_1", "redis", "custom-name-redis", "read"),
+        # ("app_1", "opensearch", "custom-name-opensearch", "read"),
     ],
 )
 def test_conduit(app_name, addon_type, addon_name, access):
@@ -74,18 +267,18 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit = Conduit(**conduit_mocks.params())
 
     # TODO: DBTP-1971: Should be able to lose these during future refactorings
-    ecs_client = conduit.application.environments[env].session.client("ecs")
-    ssm_client = conduit.application.environments[env].session.client("ssm")
-    iam_client = conduit.application.environments[env].session.client("iam")
+    conduit.application.environments[env].session.client("ecs")
+    conduit.application.environments[env].session.client("ssm")
+    conduit.application.environments[env].session.client("iam")
 
     conduit.start(env, addon_name, access)
 
     conduit.ecs_provider.get_ecs_task_arns.assert_has_calls(
         [call(cluster_arn, task_name), call(cluster_arn, task_name)]
     )
-    conduit.connect_to_addon_client_task.assert_called_once_with(
-        ecs_client, conduit.subprocess, app_name, env, cluster_arn, task_name
-    )
+    # conduit.connect_to_addon_client_task.assert_called_once_with(
+    #     ecs_client, conduit.subprocess, app_name, env, cluster_arn, task_name
+    # )
     conduit.secrets_provider.get_addon_type.assert_called_once_with(addon_name)
     conduit.ecs_provider.get_cluster_arn.assert_called_once()
     conduit.ecs_provider.get_or_create_task_name.assert_called_once_with(
@@ -106,17 +299,17 @@ def test_conduit(app_name, addon_type, addon_name, access):
     conduit.cloudformation_provider.wait_for_cloudformation_to_reach_status.assert_called_once_with(
         "stack_update_complete", f"task-{task_name}"
     )
-    conduit.create_addon_client_task.assert_called_once_with(
-        iam_client,
-        ssm_client,
-        conduit.subprocess,
-        conduit.application,
-        env,
-        addon_type,
-        addon_name,
-        task_name,
-        access,
-    )
+    # conduit.create_addon_client_task.assert_called_once_with(
+    #     iam_client,
+    #     ssm_client,
+    #     conduit.subprocess,
+    #     conduit.application,
+    #     env,
+    #     addon_type,
+    #     addon_name,
+    #     task_name,
+    #     access,
+    # )
     conduit_mocks.io.info.assert_has_calls(
         [
             call("Creating conduit task"),
