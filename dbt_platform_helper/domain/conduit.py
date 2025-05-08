@@ -204,6 +204,29 @@ class CopilotConduitStrategy(ConduitECSStrategy):
         )
 
 
+def detect_mode(
+    ecs_client,
+    application,
+    environment,
+    addon_name: str,
+    addon_type: str,
+    access: str,
+    io: ClickIOProvider = ClickIOProvider(),
+) -> str:
+    """Detect if Terraform-based conduit task definitions are present, otherwise
+    default to Copilot mode."""
+    paginator = ecs_client.get_paginator("list_task_definitions")
+    prefix = f"conduit-{addon_type}-{access}-{application}-{environment}-{addon_name}"
+
+    for page in paginator.paginate():
+        for arn in page["taskDefinitionArns"]:
+            if arn.split("/")[-1].startswith(prefix):
+                return "terraform"
+
+    io.info("Defaulting to copilot mode.")
+    return "copilot"
+
+
 class Conduit:
     def __init__(
         self,
@@ -213,6 +236,7 @@ class Conduit:
         ecs_provider: ECS,
         io: ClickIOProvider = ClickIOProvider(),
         vpc_provider=VpcProvider,
+        detect_mode=detect_mode,
     ):
 
         self.application = application
@@ -221,6 +245,7 @@ class Conduit:
         self.ecs_provider = ecs_provider
         self.io = io
         self.vpc_provider = vpc_provider
+        self.detect_mode = detect_mode
 
     def start(self, env: str, addon_name: str, access: str = "read"):
         self.clients = self._initialise_clients(env)
@@ -229,7 +254,9 @@ class Conduit:
         if (addon_type == "opensearch" or addon_type == "redis") and (access != "read"):
             access = "read"
 
-        mode = self._detect_mode(self.application.name, env, addon_name, addon_type, access)
+        mode = self.detect_mode(
+            self.clients.get("ecs"), self.application.name, env, addon_name, addon_type, access
+        )
 
         if mode == "terraform":
             strategy = TerraformConduitStrategy(
@@ -284,22 +311,6 @@ class Conduit:
 
         self.io.info("Connecting to conduit task...")
         strategy.exec_task(data_context)
-
-    def _detect_mode(
-        self, application, environment, addon_name: str, addon_type: str, access: str
-    ) -> str:
-        """Detect if Terraform-based conduit task definitions are present,
-        otherwise default to Copilot mode."""
-        paginator = self.clients.get("ecs").get_paginator("list_task_definitions")
-        prefix = f"conduit-{addon_type}-{access}-{application}-{environment}-{addon_name}"
-
-        for page in paginator.paginate():
-            for arn in page["taskDefinitionArns"]:
-                if arn.split("/")[-1].startswith(prefix):
-                    return "terraform"
-
-        self.io.info("Defaulting to copilot mode.")
-        return "copilot"
 
     def _initialise_clients(self, env):
         return {
