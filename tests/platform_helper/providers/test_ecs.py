@@ -22,7 +22,6 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
     env = "development"
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
-    print(ecs_client.list_clusters())
     cluster_arn = ecs_manager.get_cluster_arn_by_name("default")
 
     assert cluster_arn == mocked_cluster["cluster"]["clusterArn"]
@@ -264,3 +263,9 @@ def test_start_ecs_task(mocked_cluster, mock_application):
     )
 
     assert actual_response.startswith("arn:aws:ecs:")
+
+    task_details = ecs_client.describe_tasks(cluster="default", tasks=[actual_response])
+    assert task_details["tasks"][0]["containers"][0]["name"] == "test_container"
+    assert task_details["tasks"][0]["overrides"]["containerOverrides"][0]["environment"] == [
+        {"name": "TEST_VAR", "value": "test"}
+    ]
