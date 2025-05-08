@@ -60,8 +60,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
                 f"{self.application.name}-{self.env}"
             ),
             "task_def_family": self._generate_container_name(),
-            # "vpc_name": self._resolve_vpc_name(),
-            "vpc_name": "platform-sandbox-dev",  # TODO - Remove hardcoding
+            "vpc_name": self._resolve_vpc_name(),
             "addon_type": self.addon_type,
             "access": self.access,
         }
@@ -110,7 +109,16 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         return f"conduit-{self.addon_type}-{self.access}-{self.application.name}-{self.env}-{self.addon_name}"
 
     def _resolve_vpc_name(self):
-        return self.application.environments[self.env].session.profile_name
+        ssm_client = self.clients["ssm"]
+        parameter_key = f"/conduit/{self.application.name}/{self.env}/{_normalise_secret_name(self.addon_name)}_VPC_NAME"
+
+        try:
+            response = ssm_client.get_parameter(Name=parameter_key)
+            return response["Parameter"]["Value"]
+        except ssm_client.exceptions.ParameterNotFound:
+            self.io.abort_with_error(
+                f"Could not find VPC name for {self.addon_name}. Missing SSM param: {parameter_key}"
+            )
 
 
 class CopilotConduitStrategy(ConduitECSStrategy):

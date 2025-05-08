@@ -47,6 +47,13 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
   }
 }
 
+resource aws_ssm_parameter "opensearch_vpc_name" {
+  name = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
+  type = "String"
+  value = var.vpc_name
+  tags = local.tags
+}
+
 resource "aws_iam_role" "conduit-task-role" {
   name = "${var.application}-${var.environment}-${var.name}-conduit-task-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json #TODO - Re-using existing resource
