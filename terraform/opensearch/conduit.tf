@@ -146,12 +146,6 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
   }
 }
 
-# resource "aws_kms_key" "conduit-log-group-kms-key" {
-#   description         = "KMS Key for ${var.name}-${var.environment} conduit opensearch log encryption"
-#   enable_key_rotation = true
-#   tags                = local.tags
-# }
-
 resource "aws_cloudwatch_log_group" "conduit-logs" {
   name              = "/conduit/opensearch/${var.name}/${var.environment}/${var.name}"
   retention_in_days = 7
@@ -167,30 +161,3 @@ resource "aws_cloudwatch_log_subscription_filter" "conduit-logs-filter" {
   filter_pattern  = ""
   destination_arn = local.central_log_group_destination
 }
-
-# resource "aws_kms_key_policy" "conduit-to-cloudwatch" {
-#   key_id = aws_kms_key.conduit-log-group-kms-key.key_id
-#   policy = jsonencode({
-#     Id = "ConduitToCloudWatch"
-#     Statement = [
-#       {
-#         "Sid" : "Enable IAM User Permissions",
-#         "Effect" : "Allow",
-#         "Principal" : {
-#           "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-#         },
-#         "Action" : "kms:*",
-#         "Resource" : "*"
-#       },
-#       {
-#         "Effect" : "Allow",
-#         "Principal" : {
-#           "Service" : "logs.${data.aws_region.current.name}.amazonaws.com"
-#         },
-#         "Action" : "kms:*",
-#         "Resource" : "*"
-#       }
-#     ]
-#     Version = "2012-10-17"
-#   })
-# }
