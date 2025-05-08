@@ -84,7 +84,8 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:logs:*:*:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:*",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:log-stream:*"
     ]
   }
 
@@ -122,7 +123,8 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:logs:*:*:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:*",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:log-stream:*"
     ]
   }
 
