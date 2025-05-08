@@ -14,14 +14,14 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
-    def start_ecs_task(self, container_name, task_def_arn, vpc_config, env_vars=None):
+    def start_ecs_task(self, cluster_name, container_name, task_def_arn, vpc_config, env_vars=None):
         container_override = {"name": container_name}
         if env_vars:
             container_override["environment"] = env_vars
 
         response = self.ecs_client.run_task(
             taskDefinition=task_def_arn,
-            cluster=f"{self.application_name}-{self.env}",
+            cluster=cluster_name,
             capacityProviderStrategy=[
                 {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
             ],

@@ -96,6 +96,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             ]
 
         self.ecs_provider.start_ecs_task(
+            f"{self.application.name}-{self.env}",
             self._generate_container_name(),
             data_context["task_def_family"],
             vpc_config,

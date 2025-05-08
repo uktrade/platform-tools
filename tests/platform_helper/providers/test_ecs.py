@@ -215,9 +215,9 @@ def test_start_ecs_task(mocked_cluster, mock_application):
     ssm_client = mock_application.environments["development"].session.client("ssm")
     application_name = mock_application.name
     env = "development"
-    cluster_name = f"{application_name}-{env}"
-
-    ecs_client.create_cluster(clusterName=cluster_name)
+    # cluster_name = f"{application_name}-{env}"
+    #
+    # ecs_client.create_cluster(clusterName=cluster_name)
 
     mocked_ec2_client = boto3.client("ec2")
     mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
@@ -236,7 +236,7 @@ def test_start_ecs_task(mocked_cluster, mock_application):
     )
 
     ecs_client.register_container_instance(
-        cluster=cluster_name,
+        cluster="default",
         instanceIdentityDocument=mocked_instance_id_document,
     )
 
@@ -256,7 +256,8 @@ def test_start_ecs_task(mocked_cluster, mock_application):
 
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
     actual_response = ecs_manager.start_ecs_task(
-        cluster_name,
+        "default",
+        "test_container",
         mocked_task_definition_arn,
         Vpc("test-vpc", ["public-subnet"], ["private-subnet"], ["security-group"]),
         [{"name": "TEST_VAR", "value": "test"}],
@@ -265,6 +266,7 @@ def test_start_ecs_task(mocked_cluster, mock_application):
     assert actual_response.startswith("arn:aws:ecs:")
 
     task_details = ecs_client.describe_tasks(cluster="default", tasks=[actual_response])
+    print(task_details)
     assert task_details["tasks"][0]["containers"][0]["name"] == "test_container"
     assert task_details["tasks"][0]["overrides"]["containerOverrides"][0]["environment"] == [
         {"name": "TEST_VAR", "value": "test"}
