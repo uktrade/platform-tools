@@ -12,7 +12,6 @@ from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.secrets import Secrets
 from dbt_platform_helper.providers.vpc import VpcProvider
-from dbt_platform_helper.providers.vpc import VpcProviderException
 from dbt_platform_helper.utils.application import Application
 
 
@@ -72,15 +71,13 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         environments = self.application.environments
         environment = environments.get(self.env)
         env_session = environment.session
-        try:
-            vpc_provider = self.vpc_provider(env_session)
-            vpc_config = vpc_provider.get_vpc(
-                self.application.name,
-                self.env,
-                data_context["vpc_name"],
-            )
-        except VpcProviderException as ex:
-            self.io.abort_with_error(str(ex))
+
+        vpc_provider = self.vpc_provider(env_session)
+        vpc_config = vpc_provider.get_vpc(
+            self.application.name,
+            self.env,
+            data_context["vpc_name"],
+        )
 
         postgres_admin_env_vars = None
         if data_context["addon_type"] == "postgres" and data_context["access"] == "admin":
