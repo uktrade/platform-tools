@@ -1,5 +1,6 @@
 import random
 import string
+import subprocess
 import time
 from typing import List
 
@@ -13,7 +14,42 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
-    def get_cluster_arn(self) -> str:
+    def start_ecs_task(self, cluster_name, container_name, task_def_arn, vpc_config, env_vars=None):
+        container_override = {"name": container_name}
+        if env_vars:
+            container_override["environment"] = env_vars
+
+        response = self.ecs_client.run_task(
+            taskDefinition=task_def_arn,
+            cluster=cluster_name,
+            capacityProviderStrategy=[
+                {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+            ],
+            enableExecuteCommand=True,
+            networkConfiguration={
+                "awsvpcConfiguration": {
+                    "subnets": vpc_config.public_subnets,
+                    "securityGroups": vpc_config.security_groups,
+                    "assignPublicIp": "ENABLED",
+                }
+            },
+            overrides={"containerOverrides": [container_override]},
+        )
+
+        return response.get("tasks", [{}])[0].get("taskArn")
+
+    def get_cluster_arn_by_name(self, cluster_name) -> str:
+        clusters = self.ecs_client.describe_clusters(
+            clusters=[
+                cluster_name,
+            ],
+        )["clusters"]
+        if len(clusters) == 1:
+            return clusters[0]["clusterArn"]
+
+        raise NoClusterException(self.application_name, self.env)
+
+    def get_cluster_arn_by_copilot_tag(self) -> str:
         """Returns the ARN of the ECS cluster for the given application and
         environment."""
         for cluster_arn in self.ecs_client.list_clusters()["clusterArns"]:
@@ -45,18 +81,31 @@ class ECS:
             random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
             return f"conduit-{self.application_name}-{self.env}-{addon_name}-{random_id}"
 
-    def get_ecs_task_arns(self, cluster_arn: str, task_name: str):
+    def get_ecs_task_arns(self, cluster_arn: str, task_def_family: str):
         """Gets the ECS task ARNs for a given task name and cluster ARN."""
         tasks = self.ecs_client.list_tasks(
             cluster=cluster_arn,
             desiredStatus="RUNNING",
-            family=f"copilot-{task_name}",
+            family=task_def_family,
         )
 
         if not tasks["taskArns"]:
             return []
 
         return tasks["taskArns"]
+
+    def exec_task(self, cluster_arn, task_arn):
+        for attempt in range(3):
+            result = subprocess.call(
+                f"aws ecs execute-command --cluster {cluster_arn} "
+                f"--task {task_arn} "
+                f"--interactive --command bash ",
+                shell=True,
+            )
+            if result == 0:
+                return
+            time.sleep(3)
+        raise PlatformException("Failed to exec into ECS task after 3 attempts.")
 
     def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]):
         """
@@ -73,17 +122,31 @@ class ECS:
 
             task_details = self.ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
 
-            managed_agents = task_details["tasks"][0]["containers"][0]["managedAgents"]
+            container_details = task_details["tasks"][0]["containers"][0]
+            if container_details.get("managedAgents", None):
+                managed_agents = container_details["managedAgents"]
+            else:
+                raise PlatformException("No managed agent on ecs task")
             execute_command_agent_status = [
                 agent["lastStatus"]
                 for agent in managed_agents
                 if agent["name"] == "ExecuteCommandAgent"
             ][0]
             if execute_command_agent_status != "RUNNING":
-                time.sleep(1)
+                time.sleep(3)
 
         if execute_command_agent_status != "RUNNING":
             raise ECSAgentNotRunningException
+
+    def wait_for_task_to_register(self, cluster_arn: str, task_family: str, max_attempts: int = 20):
+        for attempt in range(max_attempts):
+            task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
+            if task_arns:
+                return task_arns
+            time.sleep(3)
+        raise ECSException(
+            f"ECS task for '{task_family}' did not register after {max_attempts * 3} seconds."
+        )
 
 
 class ECSException(PlatformException):

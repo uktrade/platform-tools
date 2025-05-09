@@ -19,11 +19,12 @@ env = "development"
 
 
 @mock_aws
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch(  # Nested function within provider function
     "dbt_platform_helper.providers.secrets.Secrets.get_postgres_connection_data_updated_with_master_secret",
     return_value="connection string",
 )
-def test_create_postgres_admin_task(mock_update_parameter, mock_application):
+def test_create_postgres_admin_task(mock_get_connection_string, mock_subprocess, mock_application):
 
     addon_name = "dummy-postgres"
     master_secret_name = (
@@ -34,11 +35,9 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
     boto3.client("ssm").put_parameter(
         Name=master_secret_name, Value="master-secret-arn", Type="String"
     )
-    mock_subprocess = Mock()
 
     create_postgres_admin_task(
         ssm_client,
-        mock_subprocess,
         mock_application,
         addon_name,
         "postgres",
@@ -47,7 +46,7 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
         "test-task",
     )
 
-    mock_update_parameter.assert_called_once_with(
+    mock_get_connection_string.assert_called_once_with(
         "POSTGRES_SECRET_NAME_READ_ONLY_USER",
         "master-secret-arn",
     )
@@ -79,12 +78,14 @@ def test_create_postgres_admin_task(mock_update_parameter, mock_application):
         ("opensearch", "custom-name-opensearch"),
     ],
 )
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch(
     "dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn",
     return_value="test-arn",
 )
 def test_create_redis_or_opensearch_addon_client_task(
     get_connection_secret_arn,
+    mock_subprocess,
     access,
     addon_type,
     addon_name,
@@ -96,8 +97,8 @@ def test_create_redis_or_opensearch_addon_client_task(
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
+
     task_name = mock_task_name(addon_name)
-    mock_subprocess = Mock()
 
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
@@ -105,7 +106,6 @@ def test_create_redis_or_opensearch_addon_client_task(
     create_addon_client_task(
         iam_client,
         ssm_client,
-        mock_subprocess,
         mock_application,
         env,
         addon_type,
@@ -135,22 +135,24 @@ def test_create_redis_or_opensearch_addon_client_task(
         "write",
     ],
 )
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch(
     "dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn",
     return_value="test-arn",
 )
 def test_create_postgres_addon_client_task(
     get_connection_secret_arn,
+    mock_subprocess,
     access,
 ):
 
     addon_name = "custom-name-postgres"
     addon_type = "postgres"
+
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
     task_name = mock_task_name(addon_name)
-    mock_subprocess = Mock()
 
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
@@ -158,7 +160,6 @@ def test_create_postgres_addon_client_task(
     create_addon_client_task(
         iam_client,
         ssm_client,
-        mock_subprocess,
         mock_application,
         env,
         "postgres",
@@ -166,6 +167,7 @@ def test_create_postgres_addon_client_task(
         task_name,
         access,
     )
+
     secret_name = expected_connection_secret_name(mock_application, addon_type, addon_name, access)
     get_connection_secret_arn.assert_called_once_with(secret_name)
     mock_subprocess.call.assert_called()
@@ -182,22 +184,22 @@ def test_create_postgres_addon_client_task(
     )
 
 
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch("dbt_platform_helper.providers.copilot.create_postgres_admin_task")
 def test_create_postgres_addon_client_task_admin(
     mock_create_postgres_admin_task,
+    mock_subprocess,
     mock_application,
 ):
 
     addon_name = "custom-name-postgres"
     task_name = mock_task_name(addon_name)
-    mock_subprocess = Mock()
 
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
     create_addon_client_task(
         iam_client,
         ssm_client,
-        mock_subprocess,
         mock_application,
         env,
         "postgres",
@@ -209,7 +211,6 @@ def test_create_postgres_addon_client_task_admin(
 
     mock_create_postgres_admin_task.assert_called_once_with(
         ssm_client,
-        mock_subprocess,
         mock_application,
         addon_name,
         "postgres",
@@ -219,12 +220,14 @@ def test_create_postgres_addon_client_task_admin(
     )
 
 
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch(
     "dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn",
     return_value="test-arn",
 )
 def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     get_connection_secret_arn,
+    mock_subprocess,
     mock_application,
 ):
     """Test that, given app, env and permissions, create_addon_client_task calls
@@ -234,7 +237,7 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     addon_name = "postgres"
     addon_type = "custom-name-postgres"
     access = "read"
-    mock_subprocess = Mock()
+
     mock_application.environments[env] = Mock()
     mock_application.environments[env].session.client.return_value = Mock()
     mock_application.environments[env].session.client.return_value.get_role.side_effect = (
@@ -247,7 +250,6 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     create_addon_client_task(
         mock_application.environments[env].session.client("iam"),
         ssm_client,
-        mock_subprocess,
         mock_application,
         env,
         addon_type,
@@ -271,9 +273,11 @@ def test_create_addon_client_task_does_not_add_execution_role_if_role_not_found(
     )
 
 
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch("dbt_platform_helper.commands.copilot.click.secho")
 def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     mock_secho,
+    mock_subprocess,
     mock_application,
 ):
     """Test that if an unexpected ClientError is throw when trying to get the
@@ -282,7 +286,7 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     addon_name = "postgres"
     addon_type = "custom-name-postgres"
     access = "read"
-    mock_subprocess = Mock()
+
     mock_application.environments[env] = Mock()
     mock_application.environments[env].session.client.return_value = Mock()
     mock_application.environments[env].session.client.return_value.get_role.side_effect = (
@@ -299,7 +303,6 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
         create_addon_client_task(
             iam_client,
             ssm_client,
-            mock_subprocess,
             mock_application,
             env,
             addon_type,
@@ -316,8 +319,9 @@ def test_create_addon_client_task_abort_with_message_on_other_exceptions(
     )
 
 
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch("dbt_platform_helper.providers.secrets.Secrets.get_connection_secret_arn")
-def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn):
+def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn, mock_subprocess):
     """Test that, given app, environment and secret name strings,
     create_addon_client_task raises a NoConnectionSecretError and does not call
     subprocess.call."""
@@ -325,7 +329,7 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     mock_application = Mock()
     mock_application.name = "test-application"
     mock_application.environments = {"development": Mock()}
-    mock_subprocess = Mock()
+
     iam_client = mock_application.environments[env].session.client("iam")
     ssm_client = mock_application.environments[env].session.client("ssm")
 
@@ -337,7 +341,6 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
         create_addon_client_task(
             iam_client,
             ssm_client,
-            mock_subprocess,
             mock_application,
             env,
             "postgres",
@@ -353,7 +356,8 @@ def test_create_addon_client_task_when_no_secret_found(get_connection_secret_arn
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
-def test_connect_to_addon_client_task(addon_type, mock_application):
+@patch("dbt_platform_helper.providers.copilot.subprocess")
+def test_connect_to_addon_client_task(mock_subprocess, addon_type, mock_application):
     """
     Test that, given app, env, ECS cluster ARN and addon type,
     connect_to_addon_client_task calls addon_client_is_running with cluster ARN
@@ -365,12 +369,11 @@ def test_connect_to_addon_client_task(addon_type, mock_application):
 
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
-    mock_subprocess = Mock()
+
     addon_client_is_running = Mock(return_value=True)
 
     connect_to_addon_client_task(
         ecs_client,
-        mock_subprocess,
         mock_application.name,
         env,
         "test-arn",
@@ -391,9 +394,10 @@ def test_connect_to_addon_client_task(addon_type, mock_application):
     "addon_type",
     ["postgres", "redis", "opensearch"],
 )
+@patch("dbt_platform_helper.providers.copilot.subprocess")
 @patch("time.sleep", return_value=None)
 def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
-    sleep, addon_type, mock_application
+    sleep, mock_subprocess, addon_type, mock_application
 ):
     """Test that, given app, env, ECS cluster ARN and addon type, when the
     client agent fails to start, connect_to_addon_client_task calls
@@ -402,13 +406,12 @@ def test_connect_to_addon_client_task_with_timeout_reached_throws_exception(
 
     task_name = mock_task_name(addon_type)
     ecs_client = mock_application.environments[env].session.client("ecs")
-    mock_subprocess = Mock()
+
     get_ecs_task_arns = Mock(return_value=[])
 
     with pytest.raises(CreateTaskTimeoutException):
         connect_to_addon_client_task(
             ecs_client,
-            mock_subprocess,
             mock_application,
             env,
             "test-arn",
