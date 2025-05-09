@@ -262,7 +262,6 @@ def test_start_ecs_task(mocked_cluster, mock_application):
     assert actual_response.startswith("arn:aws:ecs:")
 
     task_details = ecs_client.describe_tasks(cluster="default", tasks=[actual_response])
-    print(task_details)
     assert task_details["tasks"][0]["containers"][0]["name"] == "test_container"
     assert task_details["tasks"][0]["overrides"]["containerOverrides"][0]["environment"] == [
         {"name": "TEST_VAR", "value": "test"}

@@ -16,16 +16,8 @@ from dbt_platform_helper.providers.secrets import SecretNotFoundException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
-app_name = "failed_app"
-addon_name = "important-db"
-addon_type = "postgres"
-env = "development"
-cluster_arn = "arn:aws:ecs:eu-west-2:123456789012:cluster/MyECSCluster1"
-task_name = "task_name"
-addon_name = "custom-name-rds-postgres"
 
-
-class TestConduit:
+class TestConduitTerraform:
 
     def setup(self, app_name="test-application", *args, **kwargs):
 
@@ -47,6 +39,7 @@ class TestConduit:
             "ssm": self.ssm_client,
         }.get(service)
 
+        env = "development"
         sessions = {"000000000": self.session}
         dummy_application = Application(app_name)
         dummy_application.environments = {env: Environment(env, "000000000", sessions)}
@@ -62,47 +55,87 @@ class TestConduit:
             self.strategy_factory,
         )
 
-    def test_conduit_terraform_new_task(self):
+    @pytest.mark.parametrize(
+        "mode, addon_type, addon_name, access, info_message",
+        [
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : read",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "write",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : write",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "admin",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : admin",
+            ),
+            (
+                "copilot",
+                "opensearch",
+                "custom-name-opensearch",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-opensearch\n  Addon Type : opensearch",
+            ),
+            (
+                "copilot",
+                "redis",
+                "custom-name-redis",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-redis\n  Addon Type : redis",
+            ),
+        ],
+    )
+    def test_conduit_terraform_new_task(self, mode, addon_type, addon_name, access, info_message):
         self.setup()
-        self.secrets_provider.get_addon_type.return_value = "postgres"
-        self.strategy_factory.detect_mode.return_value = "terraform"
+        self.secrets_provider.get_addon_type.return_value = addon_type
+        self.strategy_factory.detect_mode.return_value = mode
         strategy = MagicMock()
         strategy.get_data.return_value = {
             "cluster_arn": "cluster-arn",
             "task_def_family": "task-def-fam",
             "vpc_name": "vpc-name",
-            "addon_type": "postgres",
-            "access": "read",
+            "addon_type": addon_type,
+            "access": access,
         }
         self.strategy_factory.create_strategy.return_value = strategy
         self.ecs_provider.get_ecs_task_arns.return_value = []
         self.ecs_provider.wait_for_task_to_register.return_value = ["task-arn"]
 
         # Test
-        self.conduit.start("development", "custom-name-rds-postgres", "read")
+        self.conduit.start("development", addon_name, access)
 
         # Checks
         self.session.client.assert_has_calls([call("ecs"), call("iam"), call("ssm")])
-        self.secrets_provider.get_addon_type.assert_called_with("custom-name-rds-postgres")
+        self.secrets_provider.get_addon_type.assert_called_with(addon_name)
         self.strategy_factory.detect_mode.assert_called_with(
             self.ecs_client,
             "test-application",
             "development",
-            "custom-name-rds-postgres",
-            "postgres",
-            "read",
+            addon_name,
+            addon_type,
+            access,
             self.io,
         )
         self.strategy_factory.create_strategy.assert_called_with(
-            mode="terraform",
+            mode=mode,
             clients={"ecs": self.ecs_client, "iam": self.iam_client, "ssm": self.ssm_client},
             ecs_provider=self.ecs_provider,
             secrets_provider=self.secrets_provider,
             cloudformation_provider=self.cloudformation_provider,
             application=self.application,
-            addon_name="custom-name-rds-postgres",
-            addon_type="postgres",
-            access="read",
+            addon_name=addon_name,
+            addon_type=addon_type,
+            access=access,
             env="development",
             io=self.io,
         )
@@ -110,9 +143,7 @@ class TestConduit:
         self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
         self.io.info.assert_has_calls(
             [
-                call(
-                    "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-rds-postgres\n  Addon Type : postgres\n  Access Level : read"
-                ),
+                call(info_message),
                 call("Creating conduit ECS task..."),
                 call("Waiting for ECS Exec agent to become available on the conduit task..."),
                 call("Connecting to conduit task..."),
@@ -123,8 +154,8 @@ class TestConduit:
                 "cluster_arn": "cluster-arn",
                 "task_def_family": "task-def-fam",
                 "vpc_name": "vpc-name",
-                "addon_type": "postgres",
-                "access": "read",
+                "addon_type": addon_type,
+                "access": access,
                 "task_arns": [ANY],
             }
         )
@@ -138,52 +169,94 @@ class TestConduit:
                 "cluster_arn": "cluster-arn",
                 "task_def_family": "task-def-fam",
                 "vpc_name": "vpc-name",
-                "addon_type": "postgres",
-                "access": "read",
+                "addon_type": addon_type,
+                "access": access,
                 "task_arns": ["task-arn"],
             }
         )
 
-    def test_conduit_terraform_existing_task(self):
+    @pytest.mark.parametrize(
+        "mode, addon_type, addon_name, access, info_message",
+        [
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : read",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "write",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : write",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "admin",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : admin",
+            ),
+            (
+                "copilot",
+                "opensearch",
+                "custom-name-opensearch",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-opensearch\n  Addon Type : opensearch",
+            ),
+            (
+                "copilot",
+                "redis",
+                "custom-name-redis",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-redis\n  Addon Type : redis",
+            ),
+        ],
+    )
+    def test_conduit_terraform_existing_task(
+        self, mode, addon_type, addon_name, access, info_message
+    ):
         self.setup()
-        self.secrets_provider.get_addon_type.return_value = "postgres"
-        self.strategy_factory.detect_mode.return_value = "terraform"
+        self.secrets_provider.get_addon_type.return_value = addon_type
+        self.strategy_factory.detect_mode.return_value = mode
         strategy = MagicMock()
         strategy.get_data.return_value = {
             "cluster_arn": "cluster-arn",
             "task_def_family": "task-def-fam",
             "vpc_name": "vpc-name",
-            "addon_type": "postgres",
-            "access": "read",
+            "addon_type": addon_type,
+            "access": access,
         }
         self.strategy_factory.create_strategy.return_value = strategy
         self.ecs_provider.get_ecs_task_arns.return_value = ["task-arn"]
 
         # Test
-        self.conduit.start("development", "custom-name-rds-postgres", "read")
+        self.conduit.start("development", addon_name, access)
 
         # Checks
         self.session.client.assert_has_calls([call("ecs"), call("iam"), call("ssm")])
-        self.secrets_provider.get_addon_type.assert_called_with("custom-name-rds-postgres")
+        self.secrets_provider.get_addon_type.assert_called_with(addon_name)
         self.strategy_factory.detect_mode.assert_called_with(
             self.ecs_client,
             "test-application",
             "development",
-            "custom-name-rds-postgres",
-            "postgres",
-            "read",
+            addon_name,
+            addon_type,
+            access,
             self.io,
         )
         self.strategy_factory.create_strategy.assert_called_with(
-            mode="terraform",
+            mode=mode,
             clients={"ecs": self.ecs_client, "iam": self.iam_client, "ssm": self.ssm_client},
             ecs_provider=self.ecs_provider,
             secrets_provider=self.secrets_provider,
             cloudformation_provider=self.cloudformation_provider,
             application=self.application,
-            addon_name="custom-name-rds-postgres",
-            addon_type="postgres",
-            access="read",
+            addon_name=addon_name,
+            addon_type=addon_type,
+            access=access,
             env="development",
             io=self.io,
         )
@@ -191,9 +264,7 @@ class TestConduit:
         self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
         self.io.info.assert_has_calls(
             [
-                call(
-                    "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-rds-postgres\n  Addon Type : postgres\n  Access Level : read"
-                ),
+                call(info_message),
                 call("Found a task already running: task-arn"),
                 call("Waiting for ECS Exec agent to become available on the conduit task..."),
                 call("Connecting to conduit task..."),
@@ -206,8 +277,274 @@ class TestConduit:
                 "cluster_arn": "cluster-arn",
                 "task_def_family": "task-def-fam",
                 "vpc_name": "vpc-name",
-                "addon_type": "postgres",
-                "access": "read",
+                "addon_type": addon_type,
+                "access": access,
+                "task_arns": ["task-arn"],
+            }
+        )
+
+
+class TestConduitCopilot:
+    def setup(self):
+        self.secrets_provider = MagicMock()
+        self.cloudformation_provider = MagicMock()
+        self.ecs_provider = MagicMock()
+        self.io = MagicMock()
+        self.strategy_factory = MagicMock()
+        self.vpc_provider = MagicMock()
+
+        self.ecs_client = MagicMock()
+        self.iam_client = MagicMock()
+        self.ssm_client = MagicMock()
+
+        self.session = MagicMock()
+        self.session.client.side_effect = lambda service: {
+            "ecs": self.ecs_client,
+            "iam": self.iam_client,
+            "ssm": self.ssm_client,
+        }.get(service)
+
+        self.application = Application("test-application")
+        self.application.environments = {
+            "development": Environment("development", "000000000", {"000000000": self.session})
+        }
+
+        self.conduit = Conduit(
+            self.application,
+            self.secrets_provider,
+            self.cloudformation_provider,
+            self.ecs_provider,
+            self.io,
+            self.vpc_provider,
+            self.strategy_factory,
+        )
+
+        self.strategy = MagicMock()
+
+        self.strategy_factory.create_strategy.return_value = self.strategy
+
+    @pytest.mark.parametrize(
+        "mode, addon_type, addon_name, access, info_message",
+        [
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : read",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "write",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : write",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "admin",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : admin",
+            ),
+            (
+                "copilot",
+                "opensearch",
+                "custom-name-opensearch",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-opensearch\n  Addon Type : opensearch",
+            ),
+            (
+                "copilot",
+                "redis",
+                "custom-name-redis",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-redis\n  Addon Type : redis",
+            ),
+        ],
+    )
+    def test_copilot_creates_new_task(self, mode, addon_type, addon_name, access, info_message):
+        self.setup()
+        self.secrets_provider.get_addon_type.return_value = addon_type
+        self.strategy_factory.detect_mode.return_value = mode
+
+        self.strategy.get_data.return_value = {
+            "cluster_arn": "cluster-arn",
+            "addon_type": addon_type,
+            "task_def_family": "task-def-fam",
+            "parameter_name": "param-name",
+            "task_name": "task-name",
+        }
+
+        self.strategy_factory.create_strategy.return_value = self.strategy
+
+        self.ecs_provider.get_ecs_task_arns.return_value = []
+        self.ecs_provider.wait_for_task_to_register.return_value = ["task-arn"]
+
+        self.conduit.start("development", addon_name, access)
+
+        self.session.client.assert_has_calls([call("ecs"), call("iam"), call("ssm")])
+        self.secrets_provider.get_addon_type.assert_called_with(addon_name)
+        self.strategy_factory.detect_mode.assert_called_with(
+            self.ecs_client,
+            "test-application",
+            "development",
+            addon_name,
+            addon_type,
+            access,
+            self.io,
+        )
+        self.strategy_factory.create_strategy.assert_called_with(
+            mode=mode,
+            clients={"ecs": self.ecs_client, "iam": self.iam_client, "ssm": self.ssm_client},
+            ecs_provider=self.ecs_provider,
+            secrets_provider=self.secrets_provider,
+            cloudformation_provider=self.cloudformation_provider,
+            application=self.application,
+            addon_name=addon_name,
+            addon_type=addon_type,
+            access=access,
+            env="development",
+            io=self.io,
+        )
+        self.strategy.get_data.assert_called_once()
+        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.io.info.assert_has_calls(
+            [
+                call(info_message),
+                call("Creating conduit ECS task..."),
+                call("Waiting for ECS Exec agent to become available on the conduit task..."),
+                call("Connecting to conduit task..."),
+            ]
+        )
+        self.strategy.start_task.assert_called_with(
+            {
+                "cluster_arn": "cluster-arn",
+                "addon_type": addon_type,
+                "task_def_family": "task-def-fam",
+                "parameter_name": "param-name",
+                "task_name": "task-name",
+                "task_arns": ["task-arn"],
+            }
+        )
+        self.ecs_provider.wait_for_task_to_register.assert_called_with(
+            "cluster-arn", "task-def-fam"
+        )
+        self.ecs_provider.ecs_exec_is_available.assert_called_with("cluster-arn", ["task-arn"])
+
+        self.strategy.exec_task.assert_called_with(
+            {
+                "cluster_arn": "cluster-arn",
+                "addon_type": addon_type,
+                "task_def_family": "task-def-fam",
+                "parameter_name": "param-name",
+                "task_name": "task-name",
+                "task_arns": ["task-arn"],
+            }
+        )
+
+    @pytest.mark.parametrize(
+        "mode, addon_type, addon_name, access, info_message",
+        [
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : read",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "write",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : write",
+            ),
+            (
+                "copilot",
+                "postgres",
+                "custom-name-postgres",
+                "admin",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-postgres\n  Addon Type : postgres\n  Access Level : admin",
+            ),
+            (
+                "copilot",
+                "opensearch",
+                "custom-name-opensearch",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-opensearch\n  Addon Type : opensearch",
+            ),
+            (
+                "copilot",
+                "redis",
+                "custom-name-redis",
+                "read",
+                "Checking if a conduit ECS task is already running for:\n  Addon Name : custom-name-redis\n  Addon Type : redis",
+            ),
+        ],
+    )
+    def test_copilot_uses_existing_task(self, mode, addon_type, addon_name, access, info_message):
+        self.setup()
+        self.secrets_provider.get_addon_type.return_value = addon_type
+        self.strategy_factory.detect_mode.return_value = mode
+
+        self.strategy.get_data.return_value = {
+            "cluster_arn": "cluster-arn",
+            "addon_type": addon_type,
+            "task_def_family": "task-def-fam",
+            "parameter_name": "param-name",
+            "task_name": "task-name",
+        }
+
+        self.strategy_factory.create_strategy.return_value = self.strategy
+
+        self.ecs_provider.get_ecs_task_arns.return_value = ["task-arn"]
+
+        self.conduit.start("development", addon_name, access)
+
+        self.session.client.assert_has_calls([call("ecs"), call("iam"), call("ssm")])
+        self.secrets_provider.get_addon_type.assert_called_with(addon_name)
+        self.strategy_factory.detect_mode.assert_called_with(
+            self.ecs_client,
+            "test-application",
+            "development",
+            addon_name,
+            addon_type,
+            access,
+            self.io,
+        )
+        self.strategy_factory.create_strategy.assert_called_with(
+            mode=mode,
+            clients={"ecs": self.ecs_client, "iam": self.iam_client, "ssm": self.ssm_client},
+            ecs_provider=self.ecs_provider,
+            secrets_provider=self.secrets_provider,
+            cloudformation_provider=self.cloudformation_provider,
+            application=self.application,
+            addon_name=addon_name,
+            addon_type=addon_type,
+            access=access,
+            env="development",
+            io=self.io,
+        )
+        self.strategy.get_data.assert_called_once()
+        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.io.info.assert_has_calls(
+            [
+                call(info_message),
+                call("Found a task already running: task-arn"),
+                call("Waiting for ECS Exec agent to become available on the conduit task..."),
+                call("Connecting to conduit task..."),
+            ]
+        )
+        self.ecs_provider.ecs_exec_is_available.assert_called_with("cluster-arn", ["task-arn"])
+
+        self.strategy.exec_task.assert_called_with(
+            {
+                "cluster_arn": "cluster-arn",
+                "addon_type": addon_type,
+                "task_def_family": "task-def-fam",
+                "parameter_name": "param-name",
+                "task_name": "task-name",
                 "task_arns": ["task-arn"],
             }
         )
