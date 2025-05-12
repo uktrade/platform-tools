@@ -347,7 +347,7 @@ class Conduit:
                 data_context["cluster_arn"], data_context["task_def_family"]
             )
         else:
-            self.io.info(f"Found a task already running: {data_context['task_arns'][0].split("/")[-1]}")  # fmt: skip
+            self.io.info(f"Found a task already running: {data_context['task_arns'][0]}")
 
         self.io.info(f"Waiting for ECS Exec agent to become available on the conduit task...")
         self.ecs_provider.ecs_exec_is_available(
