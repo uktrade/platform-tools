@@ -21,11 +21,11 @@ class ConduitECSStrategy(ABC):
         pass
 
     @abstractmethod
-    def start_task(self, data_context):
+    def start_task(self, data_context: dict):
         pass
 
     @abstractmethod
-    def exec_task(self, data_context):
+    def exec_task(self, data_context: dict):
         pass
 
 
@@ -66,7 +66,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             "access": self.access,
         }
 
-    def start_task(self, data_context):
+    def start_task(self, data_context: dict):
 
         environments = self.application.environments
         environment = environments.get(self.env)
@@ -102,7 +102,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             postgres_admin_env_vars,
         )
 
-    def exec_task(self, data_context):
+    def exec_task(self, data_context: dict):
         self.ecs_provider.exec_task(data_context["cluster_arn"], data_context["task_arns"][0])
 
     def _generate_container_name(self):
@@ -165,7 +165,7 @@ class CopilotConduitStrategy(ConduitECSStrategy):
             "task_name": task_name,
         }
 
-    def start_task(self, data_context):
+    def start_task(self, data_context: dict):
         self.create_addon_client_task(
             self.clients["iam"],
             self.clients["ssm"],
@@ -193,7 +193,7 @@ class CopilotConduitStrategy(ConduitECSStrategy):
             "stack_update_complete", stack_name
         )
 
-    def exec_task(self, data_context):
+    def exec_task(self, data_context: dict):
         self.connect_to_addon_client_task(
             self.clients["ecs"],
             self.application.name,

@@ -5,6 +5,7 @@ import time
 from typing import List
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.vpc import Vpc
 
 
 class ECS:
@@ -14,7 +15,14 @@ class ECS:
         self.application_name = application_name
         self.env = env
 
-    def start_ecs_task(self, cluster_name, container_name, task_def_arn, vpc_config, env_vars=None):
+    def start_ecs_task(
+        self,
+        cluster_name: str,
+        container_name: str,
+        task_def_arn: str,
+        vpc_config: Vpc,
+        env_vars: List[dict] = None,
+    ):
         container_override = {"name": container_name}
         if env_vars:
             container_override["environment"] = env_vars
@@ -38,7 +46,7 @@ class ECS:
 
         return response.get("tasks", [{}])[0].get("taskArn")
 
-    def get_cluster_arn_by_name(self, cluster_name) -> str:
+    def get_cluster_arn_by_name(self, cluster_name: str) -> str:
         clusters = self.ecs_client.describe_clusters(
             clusters=[
                 cluster_name,
@@ -94,7 +102,7 @@ class ECS:
 
         return tasks["taskArns"]
 
-    def exec_task(self, cluster_arn, task_arn):
+    def exec_task(self, cluster_arn: str, task_arn: str):
         for attempt in range(3):
             result = subprocess.call(
                 f"aws ecs execute-command --cluster {cluster_arn} "
