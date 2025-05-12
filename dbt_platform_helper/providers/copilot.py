@@ -70,7 +70,9 @@ def create_addon_client_task(
     )
 
 
-def get_postgres_admin_connection_string(ssm_client, secret_name, app, env, addon_name):
+def get_postgres_admin_connection_string(
+    ssm_client, secret_name: str, app: Application, env: str, addon_name: str
+):
     read_only_secret_name = secret_name + "_READ_ONLY_USER"
     master_secret_name = (
         f"/copilot/{app.name}/{env}/secrets/{_normalise_secret_name(addon_name)}_RDS_MASTER_ARN"
