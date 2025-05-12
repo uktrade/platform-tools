@@ -20,10 +20,23 @@ locals {
     }
   }
 
+  production_domain_suffix = coalesce(var.config.env_root, "prod.uktrade.digital")
+  non_production_domain_suffix = coalesce(var.config.env_root, "uktrade.digital")
+
+  is_production = var.environment == "prod" ? true : false
+ 
+  # This would change to:
+  # is_production = var.environment == "prod" || var.environment == "prode2e" ? true : false
+  
+  exclude_env_from_domain = var.environment == "prod" ? true : false
+  
   # The primary domain for every application follows these naming standard.  See README.md 
   domain_prefix             = coalesce(var.config.domain_prefix, "internal")
-  domain_suffix             = var.environment == "prod" ? coalesce(var.config.env_root, "prod.uktrade.digital") : coalesce(var.config.env_root, "uktrade.digital")
-  domain_name               = var.environment == "prod" ? "${local.domain_prefix}.${var.application}.${local.domain_suffix}" : "${local.domain_prefix}.${var.environment}.${var.application}.${local.domain_suffix}"
+  
+  domain_suffix             = local.is_production ? local.production_domain_suffix : local.non_production_domain_suffix
+
+  domain_name               = local.exclude_env_from_domain ? "${local.domain_prefix}.${var.application}.${local.domain_suffix}" : "${local.domain_prefix}.${var.environment}.${var.application}.${local.domain_suffix}"
+  
   additional_address_domain = try(var.environment == "prod" ? "${var.application}.${local.domain_suffix}" : "${var.environment}.${var.application}.${local.domain_suffix}")
 
   # Create map of all items in address list with its base domain. eg { x.y.base.com: base.com }
