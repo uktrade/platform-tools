@@ -10,8 +10,8 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
       image     = "public.ecr.aws/uktrade/tunnel:postgres"
       essential = true
       runtimePlatform = {
-        cpuArchitecture        = "ARM64"
-        operatingSystemFamily  = "LINUX"
+        cpuArchitecture       = "ARM64"
+        operatingSystemFamily = "LINUX"
       }
       linuxParameters = {
         initProcessEnabled = true
@@ -27,36 +27,36 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
           awslogs-stream-prefix = "conduit/postgres-${each.key}"
         }
       }
-      readonlyRootFilesystem  = true
+      readonlyRootFilesystem = true
     }, each.value)
   ])
 
-  cpu                    = 512
-  memory                 = 1024
+  cpu                      = 512
+  memory                   = 1024
   requires_compatibilities = ["FARGATE"]
-  task_role_arn          = aws_iam_role.conduit-task-role.arn
-  execution_role_arn     = aws_iam_role.conduit-execution-role.arn
-  network_mode           = "awsvpc"
+  task_role_arn            = aws_iam_role.conduit-task-role.arn
+  execution_role_arn       = aws_iam_role.conduit-execution-role.arn
+  network_mode             = "awsvpc"
   runtime_platform {
     cpu_architecture        = "ARM64"
     operating_system_family = "LINUX"
   }
 }
 
-resource aws_ssm_parameter "postgres_vpc_name" {
+resource "aws_ssm_parameter" "postgres_vpc_name" {
   # checkov:skip=CKV2_AWS_34: AWS SSM Parameter doesn't need to be Encrypted
   # checkov:skip=CKV_AWS_337: AWS SSM Parameter doesn't need to be Encrypted
-  name = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
-  type = "String"
+  name  = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
+  type  = "String"
   value = var.vpc_name
-  tags = local.tags
+  tags  = local.tags
 
 }
 
 resource "aws_iam_role" "conduit-task-role" {
-  name = "${local.name}-conduit-task-role"
+  name               = "${local.name}-conduit-task-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
-  tags = local.tags
+  tags               = local.tags
 }
 
 data "aws_iam_policy_document" "assume_ecstask_role" {
@@ -108,9 +108,9 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
 }
 
 resource "aws_iam_role" "conduit-execution-role" {
-  name = "${local.name}-conduit-execution-role"
+  name               = "${local.name}-conduit-execution-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
-  tags = local.tags
+  tags               = local.tags
 }
 
 resource "aws_iam_role_policy" "conduit-execution-policy" {
@@ -132,7 +132,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
   }
 
-    statement {
+  statement {
     actions = [
       "ssm:Describe*",
       "ssm:Get*",
@@ -151,7 +151,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-       aws_db_instance.default.master_user_secret[0].secret_arn
+      aws_db_instance.default.master_user_secret[0].secret_arn
     ]
   }
 

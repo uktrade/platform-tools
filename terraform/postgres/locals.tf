@@ -69,30 +69,30 @@ locals {
   )) : env => lookup(local.base_env_config, env, null) }
 
   conduit_task_definitions = {
-      admin = {
-        env_vars = [
-          {
-            name  = "CONNECTION_SECRET"
-            value = "provided during task creation by platform-helper"
-          }
-        ]
-      }
-      read = {
-        secrets = [
-          {
-            name      = "CONNECTION_SECRET"
-            valueFrom = "/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
-          }
-        ]
-      }
-      write = {
-        secrets = [
-          {
-            name      = "CONNECTION_SECRET"
-            valueFrom = "/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}"
-          }
-        ]
-      }
+    admin = {
+      env_vars = [
+        {
+          name  = "CONNECTION_SECRET"
+          value = "provided during task creation by platform-helper"
+        }
+      ]
     }
+    read = {
+      secrets = [
+        {
+          name      = "CONNECTION_SECRET"
+          valueFrom = "/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
+        }
+      ]
+    }
+    write = {
+      secrets = [
+        {
+          name      = "CONNECTION_SECRET"
+          valueFrom = "/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}"
+        }
+      ]
+    }
+  }
 
 }

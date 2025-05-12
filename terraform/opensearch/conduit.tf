@@ -5,14 +5,14 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
       name      = "conduit-opensearch-read-${var.application}-${var.environment}-${var.name}"
       image     = "public.ecr.aws/uktrade/tunnel:opensearch"
       essential = true
-      secrets= [
-          {
-            "name": "CONNECTION_SECRET",
-            "valueFrom": aws_ssm_parameter.opensearch_endpoint.arn
+      secrets = [
+        {
+          "name" : "CONNECTION_SECRET",
+          "valueFrom" : aws_ssm_parameter.opensearch_endpoint.arn
         }
       ]
       runtimePlatform = {
-        cpuArchitecture = "ARM64",
+        cpuArchitecture       = "ARM64",
         operatingSystemFamily = "LINUX"
       },
       linuxParameters = {
@@ -29,7 +29,7 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
           awslogs-stream-prefix = "conduit/opensearch"
         }
       }
-      readonlyRootFilesystem  = true
+      readonlyRootFilesystem = true
     }
   ])
 
@@ -51,17 +51,17 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
 resource "aws_ssm_parameter" "opensearch_vpc_name" {
   # checkov:skip=CKV2_AWS_34: AWS SSM Parameter doesn't need to be Encrypted
   # checkov:skip=CKV_AWS_337: AWS SSM Parameter doesn't need to be Encrypted
-  name = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
-  type = "String"
+  name  = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
+  type  = "String"
   value = var.vpc_name
-  tags = local.tags
+  tags  = local.tags
 
 }
 
 resource "aws_iam_role" "conduit-task-role" {
-  name = "${var.application}-${var.environment}-${var.name}-conduit-task-role"
+  name               = "${var.application}-${var.environment}-${var.name}-conduit-task-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json #TODO - Re-using existing resource
-  tags = local.tags
+  tags               = local.tags
 }
 
 resource "aws_iam_role_policy" "access_for_conduit_ecs_task" {
@@ -100,9 +100,9 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
 }
 
 resource "aws_iam_role" "conduit-execution-role" {
-  name = "${var.application}-${var.environment}-${var.name}-conduit-execution-role"
+  name               = "${var.application}-${var.environment}-${var.name}-conduit-execution-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
-  tags = local.tags
+  tags               = local.tags
 }
 
 resource "aws_iam_role_policy" "conduit-execution-policy" {
@@ -124,7 +124,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
   }
 
-    statement {
+  statement {
     actions = [
       "ssm:Describe*",
       "ssm:Get*",
