@@ -329,12 +329,16 @@ class Conduit:
             data_context["cluster_arn"], data_context["task_def_family"]
         )
 
-        self.io.info(
+        info_log = (
             f"Checking if a conduit ECS task is already running for:\n"
             f"  Addon Name : {addon_name}\n"
             f"  Addon Type : {addon_type}"
-            f"{f'\n  Access Level : {access}' if addon_type == 'postgres' else ''}"
         )
+
+        if addon_type == "postgres":
+            info_log += f"\n  Access Level : {access}"
+
+        self.io.info(info_log)
 
         if not data_context["task_arns"]:
             self.io.info("Creating conduit ECS task...")
