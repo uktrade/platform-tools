@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.1.0](https://github.com/uktrade/platform-tools/compare/15.0.0...15.1.0) (2025-04-30)
+
+
+### Features
+
+* Retrieve python-requests lambda layer & assign to lambda function (DBTP-1915) ([#862](https://github.com/uktrade/platform-tools/issues/862)) ([ca4d2cb](https://github.com/uktrade/platform-tools/commit/ca4d2cb703c505a02746dac70be7dc1cc44a3a8c))
+
 ## [15.0.0](https://github.com/uktrade/platform-tools/compare/14.2.0...15.0.0) (2025-04-24)
 
 
