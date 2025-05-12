@@ -29,6 +29,7 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
           awslogs-stream-prefix = "conduit/opensearch"
         }
       }
+      readonlyRootFilesystem  = true
     }
   ])
 
@@ -47,11 +48,13 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
   }
 }
 
-resource aws_ssm_parameter "opensearch_vpc_name" {
+resource "aws_ssm_parameter" "opensearch_vpc_name" {
   name = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
   type = "String"
   value = var.vpc_name
   tags = local.tags
+
+  key_id      = aws_kms_key.ssm_opensearch_endpoint.arn
 }
 
 resource "aws_iam_role" "conduit-task-role" {
@@ -128,7 +131,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "*"
+      aws_ssm_parameter.opensearch_endpoint.arn
     ]
   }
 
@@ -147,6 +150,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
 }
 
 resource "aws_cloudwatch_log_group" "conduit-logs" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 7 days instead of 1 year
   name              = "/conduit/opensearch/${var.name}/${var.environment}/${var.name}"
   retention_in_days = 7
   tags              = local.tags

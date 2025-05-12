@@ -27,6 +27,7 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
           awslogs-stream-prefix = "conduit/postgres-${each.key}"
         }
       }
+      readonlyRootFilesystem  = true
     }, each.value)
   ])
 
@@ -47,6 +48,8 @@ resource aws_ssm_parameter "postgres_vpc_name" {
   type = "String"
   value = var.vpc_name
   tags = local.tags
+
+  key_id = aws_kms_key.conduit-log-group-kms-key.arn
 }
 
 resource "aws_iam_role" "conduit-task-role" {
@@ -172,6 +175,7 @@ resource "aws_kms_key" "conduit-log-group-kms-key" {
 }
 
 resource "aws_cloudwatch_log_group" "conduit-logs" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 7 days instead of 1 year
   name              = "/conduit/postgres/${var.name}/${var.environment}/${var.name}"
   retention_in_days = 7
   tags              = local.tags

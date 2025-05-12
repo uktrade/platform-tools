@@ -29,6 +29,7 @@ resource "aws_ecs_task_definition" "conduit-redis" {
           awslogs-stream-prefix = "conduit/redis"
         }
       }
+      readonlyRootFilesystem  = true
     }
   ])
 
@@ -52,6 +53,8 @@ resource aws_ssm_parameter "redis_vpc_name" {
   type = "String"
   value = var.vpc_name
   tags = local.tags
+
+  key_id = aws_kms_key.ssm_redis_endpoint.arn
 }
 
 resource "aws_iam_role" "conduit-task-role" {
@@ -128,7 +131,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "*"
+      aws_ssm_parameter.endpoint.arn
     ]
   }
 
@@ -147,6 +150,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
 }
 
 resource "aws_cloudwatch_log_group" "conduit-logs" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 7 days instead of 1 year
   name              = "/conduit/redis/${var.name}/${var.environment}/${var.name}"
   retention_in_days = 7
   tags              = local.tags
