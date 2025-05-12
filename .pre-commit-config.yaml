@@ -57,12 +57,3 @@ repos:
         entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore'
         language: system
         stages: ["commit", "push"]
-  - repo: local
-    hooks:
-      - id: terraform-fmt
-        name: Format Terraform code
-        entry: terraform fmt -recursive
-        language: system
-        pass_filenames: false
-        files: \.tf$
-        exclude: ^dbt_platform_helper/templates/

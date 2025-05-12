@@ -100,7 +100,7 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
 }
 
 resource "aws_iam_role" "conduit-execution-role" {
-  name               = "${var.application}-${var.environment}-${var.name}-conduit-execution-role"
+  name               = "${var.application}-${var.environment}-${var.name}-conduit-exec-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
   tags               = local.tags
 }
