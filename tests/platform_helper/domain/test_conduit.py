@@ -2,9 +2,12 @@ from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import call
 
+import boto3
 import pytest
+from moto import mock_aws
 
 from dbt_platform_helper.domain.conduit import Conduit
+from dbt_platform_helper.domain.conduit import ConduitStrategyFactory
 from dbt_platform_helper.domain.conduit import CopilotConduitStrategy
 from dbt_platform_helper.domain.conduit import TerraformConduitStrategy
 from dbt_platform_helper.providers.vpc import Vpc
@@ -675,6 +678,44 @@ class TestTerraformConduitStrategy:
             "development",
             "custom-name-postgres",
         )
+
+
+@pytest.mark.parametrize(
+    "task_def_family, expected_mode",
+    [
+        ("conduit-postgres-read-test-application-development-custom-name-postgres", "terraform"),
+        ("doesnt-matter", "copilot"),
+    ],
+)
+@mock_aws
+def test_detect_mode(task_def_family, expected_mode):
+    ecs_client = boto3.client("ecs")
+    ecs_client.register_task_definition(
+        family=task_def_family,
+        requiresCompatibilities=["FARGATE"],
+        networkMode="awsvpc",
+        containerDefinitions=[
+            {
+                "name": "test_container",
+                "image": "test_image",
+                "cpu": 256,
+                "memory": 512,
+                "essential": True,
+            }
+        ],
+    )
+
+    result = ConduitStrategyFactory.detect_mode(
+        ecs_client,
+        "test-application",
+        "development",
+        "custom-name-postgres",
+        "postgres",
+        "read",
+        MagicMock(),
+    )
+
+    assert result == expected_mode
 
 
 class TestCopilotConduitStrategy:
