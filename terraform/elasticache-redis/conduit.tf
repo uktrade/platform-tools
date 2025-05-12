@@ -49,12 +49,12 @@ resource "aws_ecs_task_definition" "conduit-redis" {
 }
 
 resource aws_ssm_parameter "redis_vpc_name" {
+  # checkov:skip=CKV2_AWS_34: AWS SSM Parameter doesn't need to be Encrypted
   name = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
   type = "String"
   value = var.vpc_name
   tags = local.tags
 
-  key_id = aws_kms_key.ssm_redis_endpoint.arn
 }
 
 resource "aws_iam_role" "conduit-task-role" {
