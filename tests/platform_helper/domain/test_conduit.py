@@ -1,6 +1,5 @@
 from unittest.mock import ANY
 from unittest.mock import MagicMock
-from unittest.mock import Mock
 from unittest.mock import call
 
 import pytest
@@ -578,7 +577,6 @@ class TestTerraformConduitStrategy:
             self.get_postgres_admin_connection_string,
         )
 
-    # TODO add admin test
     def test_strategy_methods(self):
         self.setup()
         self.ecs_provider.get_cluster_arn_by_name.return_value = "cluster-arn"
@@ -619,6 +617,40 @@ class TestTerraformConduitStrategy:
         self.strategy.exec_task(result)
 
         self.ecs_provider.exec_task.assert_called_with("cluster-arn", "task-arn")
+
+    def test_strategy_postgres_admin(self):
+        self.setup()
+        self.ecs_provider.get_cluster_arn_by_name.return_value = "cluster-arn"
+
+        vpc_instance = MagicMock()
+        vpc_instance.get_vpc.return_value = Vpc(
+            "id", ["public-subnets"], ["private-subnets"], ["security-groups"]
+        )
+        self.vpc_provider.return_value = vpc_instance
+
+        # Postgres admin scenario
+        self.strategy.access = "admin"
+        self.strategy.addon_type = "postgres"
+
+        data_context = {
+            "cluster_arn": "cluster-arn",
+            "task_def_family": "conduit-postgres-admin-test-application-development-custom-name-postgres",
+            "vpc_name": "vpc-name",
+            "addon_type": "postgres",
+            "access": "admin",
+        }
+
+        # Execute
+        self.strategy.start_task(data_context)
+
+        # Validate
+        self.get_postgres_admin_connection_string.assert_called_once_with(
+            self.clients["ssm"],
+            "/copilot/test-application/development/secrets/CUSTOM_NAME_POSTGRES",
+            self.application,
+            "development",
+            "custom-name-postgres",
+        )
 
 
 class TestCopilotConduitStrategy:
@@ -711,35 +743,3 @@ class TestCopilotConduitStrategy:
         self.connect_to_addon_client_task.assert_called_with(
             self.clients["ecs"], "test-application", "development", "cluster-arn", "task-name"
         )
-
-
-class ConduitMocks:
-    def __init__(self, app_name="test-application", *args, **kwargs):
-
-        session = Mock()
-        sessions = {"000000000": session}
-        dummy_application = Application(app_name)
-        dummy_application.environments = {env: Environment(env, "000000000", sessions)}
-        self.application = dummy_application
-        self.secrets_provider = kwargs.get("secrets_provider", Mock())
-        self.cloudformation_provider = kwargs.get("cloudformation_provider", Mock())
-        self.ecs_provider = kwargs.get("ecs_provider", Mock())
-        self.connect_to_addon_client_task = kwargs.get("connect_to_addon_client_task", Mock())
-        self.create_addon_client_task = kwargs.get("create_addon_client_task", Mock())
-        self.io = kwargs.get("io", Mock())
-        self.subprocess = kwargs.get("subprocess", Mock(return_value="task_name"))
-        self.vpc_provider = kwargs.get("vpc_provider", Mock())
-        self.detect_mode = kwargs.get("detect_mode", Mock(return_value="copilot"))
-
-    def params(self):
-        return {
-            "application": self.application,
-            "secrets_provider": self.secrets_provider,
-            "cloudformation_provider": self.cloudformation_provider,
-            "ecs_provider": self.ecs_provider,
-            # "connect_to_addon_client_task": self.connect_to_addon_client_task,
-            # "create_addon_client_task": self.create_addon_client_task,
-            "io": self.io,
-            "vpc_provider": self.vpc_provider,
-            "detect_mode": self.detect_mode,
-        }
