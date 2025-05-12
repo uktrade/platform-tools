@@ -564,21 +564,31 @@ class TestTerraformConduitStrategy:
             "development": Environment("development", "000000000", {"000000000": self.session})
         }
 
+    @pytest.mark.parametrize(
+        "addon_type, addon_name, access",
+        [
+            ("postgres", "custom-name-postgres", "read"),
+            ("postgres", "custom-name-postgres", "write"),
+            ("opensearch", "custom-name-opensearch", "read"),
+            ("redis", "custom-name-redis", "read"),
+        ],
+    )
+    def test_strategy_methods(self, addon_type, addon_name, access):
+        self.setup()
+
         self.strategy = TerraformConduitStrategy(
             self.clients,
             self.ecs_provider,
             self.application,
-            "custom-name-postgres",
-            "postgres",
-            "read",
+            addon_name,
+            addon_type,
+            access,
             "development",
             self.io,
             self.vpc_provider,
             self.get_postgres_admin_connection_string,
         )
 
-    def test_strategy_methods(self):
-        self.setup()
         self.ecs_provider.get_cluster_arn_by_name.return_value = "cluster-arn"
         vpc_instance = MagicMock()
         vpc_instance.get_vpc.return_value = Vpc(
@@ -591,10 +601,10 @@ class TestTerraformConduitStrategy:
 
         assert result == {
             "cluster_arn": "cluster-arn",
-            "task_def_family": "conduit-postgres-read-test-application-development-custom-name-postgres",
+            "task_def_family": f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             "vpc_name": "vpc-name",
-            "addon_type": "postgres",
-            "access": "read",
+            "addon_type": addon_type,
+            "access": access,
         }
 
         self.io.info.assert_has_calls(
@@ -607,8 +617,8 @@ class TestTerraformConduitStrategy:
 
         self.ecs_provider.start_ecs_task.assert_called_with(
             "test-application-development",
-            "conduit-postgres-read-test-application-development-custom-name-postgres",
-            "conduit-postgres-read-test-application-development-custom-name-postgres",
+            f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
+            f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             Vpc("id", ["public-subnets"], ["private-subnets"], ["security-groups"]),
             None,
         )
@@ -620,6 +630,20 @@ class TestTerraformConduitStrategy:
 
     def test_strategy_postgres_admin(self):
         self.setup()
+
+        self.strategy = TerraformConduitStrategy(
+            self.clients,
+            self.ecs_provider,
+            self.application,
+            "custom-name-postgres",
+            "postgres",
+            "admin",
+            "development",
+            self.io,
+            self.vpc_provider,
+            self.get_postgres_admin_connection_string,
+        )
+
         self.ecs_provider.get_cluster_arn_by_name.return_value = "cluster-arn"
 
         vpc_instance = MagicMock()
@@ -671,23 +695,34 @@ class TestCopilotConduitStrategy:
             "development": Environment("development", "000000000", {"000000000": self.session})
         }
 
+    @pytest.mark.parametrize(
+        "addon_type, addon_name, access",
+        [
+            ("postgres", "custom-name-postgres", "read"),
+            ("postgres", "custom-name-postgres", "write"),
+            ("postgres", "custom-name-postgres", "admin"),
+            ("opensearch", "custom-name-opensearch", "read"),
+            ("redis", "custom-name-redis", "read"),
+        ],
+    )
+    def test_strategy_methods(self, addon_type, addon_name, access):
+        self.setup()
+
         self.strategy = CopilotConduitStrategy(
             self.clients,
             self.ecs_provider,
             self.secrets_provider,
             self.cloudformation_provider,
             self.application,
-            "custom-name-postgres",
-            "read",
+            addon_name,
+            access,
             "development",
             self.io,
             self.connect_to_addon_client_task,
             self.create_addon_client_task,
         )
 
-    def test_strategy_methods(self):
-        self.setup()
-        self.secrets_provider.get_addon_type.return_value = "postgres"
+        self.secrets_provider.get_addon_type.return_value = addon_type
         self.secrets_provider.get_parameter_name.return_value = "parameter-name"
         self.ecs_provider.get_or_create_task_name.return_value = "task-name"
         self.ecs_provider.get_cluster_arn_by_copilot_tag.return_value = "cluster-arn"
@@ -698,7 +733,7 @@ class TestCopilotConduitStrategy:
 
         assert result == {
             "cluster_arn": "cluster-arn",
-            "addon_type": "postgres",
+            "addon_type": addon_type,
             "task_def_family": "copilot-task-name",
             "parameter_name": "parameter-name",
             "task_name": "task-name",
@@ -711,10 +746,10 @@ class TestCopilotConduitStrategy:
             self.clients["ssm"],
             self.application,
             "development",
-            "postgres",
-            "custom-name-postgres",
+            addon_type,
+            addon_name,
             "task-name",
-            "read",
+            access,
         )
         self.io.info.assert_has_calls(
             [
@@ -728,11 +763,11 @@ class TestCopilotConduitStrategy:
         self.cloudformation_provider.update_conduit_stack_resources.assert_called_with(
             "test-application",
             "development",
-            "postgres",
-            "custom-name-postgres",
+            addon_type,
+            addon_name,
             "task-name",
             "parameter-name",
-            "read",
+            access,
         )
         self.cloudformation_provider.wait_for_cloudformation_to_reach_status.assert_called_with(
             "stack_update_complete", "stack-name"
