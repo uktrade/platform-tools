@@ -3,7 +3,7 @@ mock_provider "aws" {}
 variables {
   vpc_name    = "sandbox-elasticache-redis"
   application = "test-application"
-  environment = "test-environment"
+  environment = "test-env"
   name        = "test-redis"
   config = {
     "engine" = "6.2",
@@ -11,10 +11,10 @@ variables {
   }
   expected_tags = {
     application         = "test-application"
-    environment         = "test-environment"
+    environment         = "test-env"
     managed-by          = "DBT Platform - Terraform"
     copilot-application = "test-application"
-    copilot-environment = "test-environment"
+    copilot-environment = "test-env"
   }
 }
 
@@ -54,17 +54,50 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.conduit_task_role_access
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
 run "aws_elasticache_replication_group_unit_test" {
   command = plan
 
   ### Test aws_elasticache_replication_group resource ###
   assert {
-    condition     = aws_elasticache_replication_group.redis.replication_group_id == "test-redis-test-environment"
+    condition     = aws_elasticache_replication_group.redis.replication_group_id == "test-redis-test-env"
     error_message = "Invalid config for aws_elasticache_replication_group replication_group_id"
   }
 
   assert {
-    condition     = aws_elasticache_replication_group.redis.subnet_group_name == "test-redis-test-environment-cache-subnet"
+    condition     = aws_elasticache_replication_group.redis.subnet_group_name == "test-redis-test-env-cache-subnet"
     error_message = "Invalid config for aws_elasticache_replication_group subnet_group_name"
   }
 
@@ -119,12 +152,12 @@ run "aws_elasticache_replication_group_unit_test" {
   # aws_elasticache_replication_group.redis.auth_token_update_strategy == "ROTATE"
 
   assert {
-    condition     = [for el in aws_elasticache_replication_group.redis.log_delivery_configuration : el.destination if el.log_type == "engine-log"][0] == "/aws/elasticache/test-redis/test-environment/test-redisRedis/engine"
+    condition     = [for el in aws_elasticache_replication_group.redis.log_delivery_configuration : el.destination if el.log_type == "engine-log"][0] == "/aws/elasticache/test-redis/test-env/test-redisRedis/engine"
     error_message = "Invalid config for aws_elasticache_replication_group log_delivery_configuration"
   }
 
   assert {
-    condition     = [for el in aws_elasticache_replication_group.redis.log_delivery_configuration : el.destination if el.log_type == "slow-log"][0] == "/aws/elasticache/test-redis/test-environment/test-redisRedis/slow"
+    condition     = [for el in aws_elasticache_replication_group.redis.log_delivery_configuration : el.destination if el.log_type == "slow-log"][0] == "/aws/elasticache/test-redis/test-env/test-redisRedis/slow"
     error_message = "Invalid config for aws_elasticache_replication_group log_delivery_configuration"
   }
 
@@ -202,7 +235,7 @@ run "aws_security_group_unit_test" {
 
   ### Test aws_security_group resource ###
   assert {
-    condition     = aws_security_group.redis.name == "test-redis-test-environment-redis-security-group"
+    condition     = aws_security_group.redis.name == "test-redis-test-env-redis-security-group"
     error_message = "Invalid config for aws_security_group name"
   }
 
@@ -219,7 +252,7 @@ run "aws_ssm_parameter_endpoint_unit_test" {
   command = plan
 
   assert {
-    condition     = aws_ssm_parameter.endpoint.name == "/copilot/test-application/test-environment/secrets/TEST_REDIS_ENDPOINT"
+    condition     = aws_ssm_parameter.endpoint.name == "/copilot/test-application/test-env/secrets/TEST_REDIS_ENDPOINT"
     error_message = "Invalid config for aws_ssm_parameter name"
   }
 
@@ -240,7 +273,7 @@ run "aws_ssm_parameter_endpoint_short_unit_test" {
   command = plan
 
   assert {
-    condition     = aws_ssm_parameter.endpoint_short.name == "/copilot/test-application/test-environment/secrets/TEST_REDIS"
+    condition     = aws_ssm_parameter.endpoint_short.name == "/copilot/test-application/test-env/secrets/TEST_REDIS"
     error_message = "Invalid config for aws_ssm_parameter name"
   }
 
@@ -261,7 +294,7 @@ run "aws_ssm_parameter_redis_url_unit_test" {
   command = plan
 
   assert {
-    condition     = aws_ssm_parameter.redis_url.name == "/copilot/test-application/test-environment/secrets/TEST_REDIS_URL"
+    condition     = aws_ssm_parameter.redis_url.name == "/copilot/test-application/test-env/secrets/TEST_REDIS_URL"
     error_message = "Invalid config for aws_ssm_parameter name"
   }
 
@@ -282,7 +315,7 @@ run "aws_kms_key_unit_test" {
   command = plan
 
   assert {
-    condition     = aws_kms_key.ssm_redis_endpoint.description == "KMS key for test-redis-test-application-test-environment-redis-cluster SSM parameters"
+    condition     = aws_kms_key.ssm_redis_endpoint.description == "KMS key for test-redis-test-application-test-env-redis-cluster SSM parameters"
     error_message = "Should be"
   }
 
@@ -302,8 +335,8 @@ run "aws_kms_key_unit_test" {
   }
 
   assert {
-    condition     = aws_kms_key.redis-log-group-kms-key.description == "KMS Key for test-redis-test-environment Redis Log encryption"
-    error_message = "Should be: KMS key for test-redis-test-environment Redis Log encryption"
+    condition     = aws_kms_key.redis-log-group-kms-key.description == "KMS Key for test-redis-test-env Redis Log encryption"
+    error_message = "Should be: KMS key for test-redis-test-env Redis Log encryption"
   }
 
   assert {
@@ -324,7 +357,7 @@ run "aws_cloudwatch_log_group_unit_test" {
 
   ### Test aws_cloudwatch_log_group slow resource ###
   assert {
-    condition     = aws_cloudwatch_log_group.redis-slow-log-group.name == "/aws/elasticache/test-redis/test-environment/test-redisRedis/slow"
+    condition     = aws_cloudwatch_log_group.redis-slow-log-group.name == "/aws/elasticache/test-redis/test-env/test-redisRedis/slow"
     error_message = "Invalid config for aws_cloudwatch_log_group name"
   }
 
@@ -338,7 +371,7 @@ run "aws_cloudwatch_log_group_unit_test" {
 
   ### Test aws_cloudwatch_log_group engine resource ###
   assert {
-    condition     = aws_cloudwatch_log_group.redis-engine-log-group.name == "/aws/elasticache/test-redis/test-environment/test-redisRedis/engine"
+    condition     = aws_cloudwatch_log_group.redis-engine-log-group.name == "/aws/elasticache/test-redis/test-env/test-redisRedis/engine"
     error_message = "Invalid config for aws_cloudwatch_log_group name"
   }
 
@@ -361,7 +394,7 @@ run "aws_cloudwatch_log_subscription_filter_unit_test" {
 
   ### Test aws_cloudwatch_log_subscription_filter engine resource ###
   assert {
-    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-engine.name == "/aws/elasticache/test-application/test-environment/test-redis/engine"
+    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-engine.name == "/aws/elasticache/test-application/test-env/test-redis/engine"
     error_message = "Invalid config for aws_cloudwatch_log_subscription_filter name"
   }
 
@@ -380,7 +413,7 @@ run "aws_cloudwatch_log_subscription_filter_unit_test" {
 
   ### Test aws_cloudwatch_log_subscription_filter slow resource ###
   assert {
-    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-slow.name == "/aws/elasticache/test-application/test-environment/test-redis/slow"
+    condition     = aws_cloudwatch_log_subscription_filter.redis-subscription-filter-slow.name == "/aws/elasticache/test-application/test-env/test-redis/slow"
     error_message = "Invalid config for aws_cloudwatch_log_subscription_filter name"
   }
 
@@ -420,8 +453,8 @@ run "test_create_conduit_iam_role" {
   command = plan
 
   assert {
-    condition     = aws_iam_role.conduit_ecs_task_role.name == "test-redis-test-application-test-environment-conduitEcsTask"
-    error_message = "Should be: test-redis-test-application-test-environment-conduitEcsTask"
+    condition     = aws_iam_role.conduit_ecs_task_role.name == "test-redis-test-application-test-env-conduitEcsTask"
+    error_message = "Should be: test-redis-test-application-test-env-conduitEcsTask"
   }
 
   # Check that the correct aws_iam_policy_document is used from the mocked data json
@@ -450,7 +483,7 @@ run "test_create_conduit_iam_role" {
     error_message = "Should be: 'AllowReadingofCMKSecrets'"
   }
   assert {
-    condition     = aws_iam_role_policy.kms_access_for_conduit_ecs_task.role == "test-redis-test-application-test-environment-conduitEcsTask"
-    error_message = "Should be: 'test-redis-test-application-test-environment-conduitEcsTask'"
+    condition     = aws_iam_role_policy.kms_access_for_conduit_ecs_task.role == "test-redis-test-application-test-env-conduitEcsTask"
+    error_message = "Should be: 'test-redis-test-application-test-env-conduitEcsTask'"
   }
 }

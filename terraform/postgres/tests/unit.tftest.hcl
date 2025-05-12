@@ -134,6 +134,60 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.assume_ecstask_role
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      }
+    }
+  ]
+}
+EOT
+  }
+}
+
+
+override_data {
+  target = data.aws_iam_policy_document.conduit_task_role_access
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
 variables {
   application = "test-application"
   environment = "test-env"

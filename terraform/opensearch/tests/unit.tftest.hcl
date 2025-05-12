@@ -36,6 +36,40 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.conduit_task_role_access
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
+
 run "test_create_opensearch" {
   command = plan
 
@@ -321,7 +355,7 @@ run "test_domain_name_truncation" {
 
   variables {
     application = "my_app"
-    environment = "my_prod_environment"
+    environment = "my_prod_env"
     name        = "my_really_large_name"
     vpc_name    = "terraform-tests-vpc"
 
@@ -335,8 +369,8 @@ run "test_domain_name_truncation" {
   }
 
   assert {
-    condition     = aws_opensearch_domain.this.domain_name == "my-prod-environment-my-reall"
-    error_message = "Should be: 'my-prod-environment-my-reall'"
+    condition     = aws_opensearch_domain.this.domain_name == "my-prod-env-my-really-large-"
+    error_message = "Should be: 'my-prod-env-my-really-large-'"
   }
 }
 
