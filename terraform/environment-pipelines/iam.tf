@@ -1040,12 +1040,12 @@ data "aws_iam_policy_document" "iam" {
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-task",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-copy-pipeline-*",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-codebase-pipeline-deploy",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/demodjango-${statement.value.name}-demodjango-opensearch-conduit-task-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/demodjango-${statement.value.name}-demodjango-postgres-conduit-task-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/demodjango-${statement.value.name}-demodjango-redis-conduit-task-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/demodjango-${statement.value.name}-demodjango-opensearch-conduit-execution-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/demodjango-${statement.value.name}-demodjango-postgres-conduit-execution-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/demodjango-${statement.value.name}-demodjango-redis-conduit-execution-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-demodjango-opensearch-conduit-task-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-demodjango-postgres-conduit-task-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-demodjango-redis-conduit-task-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-demodjango-opensearch-conduit-exec-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-demodjango-postgres-conduit-exec-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-demodjango-redis-conduit-exec-role",
       ]
     }
   }
