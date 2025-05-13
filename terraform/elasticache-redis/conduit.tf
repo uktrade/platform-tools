@@ -1,4 +1,5 @@
 resource "aws_ecs_task_definition" "conduit-redis" {
+  # checkov:skip=CKV_AWS_336:Cannot set 'readonlyRootFilesystem = true' as it breaks ecs exec command used by conduits
   family = "conduit-redis-read-${var.application}-${var.environment}-${var.name}"
   container_definitions = jsonencode([
     {

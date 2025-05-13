@@ -1,6 +1,7 @@
 data "aws_region" "current" {}
 
 resource "aws_ecs_task_definition" "conduit_postgres" {
+  # checkov:skip=CKV_AWS_336:Cannot set 'readonlyRootFilesystem = true' as it breaks ecs exec command used by conduits
   for_each = local.conduit_task_definitions
 
   family = "conduit-postgres-${each.key}-${local.name}"
