@@ -29,7 +29,6 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
           awslogs-stream-prefix = "conduit/opensearch"
         }
       }
-      readonlyRootFilesystem = true
     }
   ])
 

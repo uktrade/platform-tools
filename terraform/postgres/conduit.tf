@@ -27,7 +27,6 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
           awslogs-stream-prefix = "conduit/postgres-${each.key}"
         }
       }
-      readonlyRootFilesystem = true
     }, each.value)
   ])
 

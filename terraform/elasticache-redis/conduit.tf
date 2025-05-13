@@ -29,7 +29,6 @@ resource "aws_ecs_task_definition" "conduit-redis" {
           awslogs-stream-prefix = "conduit/redis"
         }
       }
-      readonlyRootFilesystem = true
     }
   ])
 
