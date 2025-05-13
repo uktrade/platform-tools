@@ -17,3 +17,9 @@ variable "config" {
     }
   )
 }
+
+variable "repos" {
+  type = list(string)
+}
+
+
