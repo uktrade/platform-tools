@@ -85,6 +85,8 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
     ]
   }
 
+  # Needs 'resources = ["*"]' permission because the SSM agent running inside the conduit ECS task communicates with Amazon Message Gateway Service via ssmmessages actions.
+  # See https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonmessagegatewayservice.html#amazonmessagegatewayservice-resources-for-iam-policies
   statement {
     actions = [
       "ssmmessages:CreateControlChannel",
