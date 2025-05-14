@@ -3,3 +3,7 @@
 # error and abort.
 class PlatformException(Exception):
     pass
+
+
+class ValidationException(PlatformException):
+    pass

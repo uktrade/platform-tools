@@ -3,14 +3,32 @@ import random
 import string
 import subprocess
 import time
+from typing import Callable
 from typing import List
 from typing import Optional
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.platform_exception import ValidationException
 from dbt_platform_helper.providers.vpc import Vpc
 
 SECONDS_BEFORE_RETRY = 3
 RETRY_MAX_ATTEMPTS = 3
+
+
+class ECSException(PlatformException):
+    pass
+
+
+class ECSAgentNotRunningException(ECSException):
+    def __init__(self):
+        super().__init__("""ECS exec agent never reached "RUNNING" status""")
+
+
+class NoClusterException(ECSException):
+    def __init__(self, application_name: str, environment: str):
+        super().__init__(
+            f"""No ECS cluster found for "{application_name}" in "{environment}" environment."""
+        )
 
 
 class RetryException(PlatformException):
@@ -44,6 +62,45 @@ def retry(
                     # Debug log?
                     if attempt < max_attempts - 1:
                         time.sleep(delay)
+            if raise_custom_exception:
+                raise custom_exception(func.__name__, max_attempts, last_exception)
+            raise last_exception
+
+        return wrapper
+
+    return decorator
+
+
+def wait_until(
+    exceptions_to_catch: tuple = (PlatformException,),
+    max_attempts: int = RETRY_MAX_ATTEMPTS,
+    delay: int = SECONDS_BEFORE_RETRY,
+    raise_custom_exception: bool = True,
+    custom_exception=RetryException,
+    message_on_false="Condition not met",
+):
+    """Wrap a function which returns a boolean."""
+
+    def decorator(func: Callable[..., bool]):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_attempts):
+                try:
+                    result = func(*args, **kwargs)
+                except exceptions_to_catch as e:
+                    result = False
+                    last_exception = e
+
+                if result:
+                    return result
+
+                if attempt < max_attempts - 1:
+                    time.sleep(delay)
+
+            # TODO is this the way we want it?
+            if not result:
+                last_exception = PlatformException(message_on_false)
             if raise_custom_exception:
                 raise custom_exception(func.__name__, max_attempts, last_exception)
             raise last_exception
@@ -159,36 +216,36 @@ class ECS:
             raise PlatformException(f"Failed to exec into ECS task.")
         return result
 
-    def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str], max_attempts=25):
+    @wait_until(
+        max_attempts=25,
+        exceptions_to_catch=(ECSException,),
+        message_on_false="ECS Agent Not running",
+    )
+    def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]) -> bool:
         """
         Checks if the ExecuteCommandAgent is running on the specified ECS task.
 
         Waits for up to 25 attempts, then raises ECSAgentNotRunning if still not
         running.
         """
-        current_attempts = 0
-        execute_command_agent_status = ""
+        if not task_arns:
+            raise ValidationException("No task ARNs provided")
+        task_details = self.ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
 
-        while execute_command_agent_status != "RUNNING" and current_attempts < max_attempts:
-            current_attempts += 1
+        if not task_details["tasks"]:
+            raise ECSException("No ECS tasks returned.")
+        container_details = task_details["tasks"][0]["containers"][0]
+        if container_details.get("managedAgents", None):
+            managed_agents = container_details["managedAgents"]
+        else:
+            raise ECSException("No managed agent on ecs task.")
 
-            task_details = self.ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
-
-            container_details = task_details["tasks"][0]["containers"][0]
-            if container_details.get("managedAgents", None):
-                managed_agents = container_details["managedAgents"]
-            else:
-                raise PlatformException("No managed agent on ecs task")
-            execute_command_agent_status = [
-                agent["lastStatus"]
-                for agent in managed_agents
-                if agent["name"] == "ExecuteCommandAgent"
-            ][0]
-            if execute_command_agent_status != "RUNNING":
-                time.sleep(SECONDS_BEFORE_RETRY)
-
-        if execute_command_agent_status != "RUNNING":
-            raise ECSAgentNotRunningException
+        execute_command_agent = [
+            agent for agent in managed_agents if agent["name"] == "ExecuteCommandAgent"
+        ]
+        if not execute_command_agent:
+            raise ECSException("No ExecuteCommandAgent on ecs task.")
+        return execute_command_agent[0]["lastStatus"] == "RUNNING"
 
     def wait_for_task_to_register(self, cluster_arn: str, task_family: str, max_attempts: int = 20):
         for attempt in range(max_attempts):
@@ -198,20 +255,4 @@ class ECS:
             time.sleep(SECONDS_BEFORE_RETRY)
         raise ECSException(
             f"ECS task for '{task_family}' did not register after {max_attempts * SECONDS_BEFORE_RETRY} seconds."
-        )
-
-
-class ECSException(PlatformException):
-    pass
-
-
-class ECSAgentNotRunningException(ECSException):
-    def __init__(self):
-        super().__init__("""ECS exec agent never reached "RUNNING" status""")
-
-
-class NoClusterException(ECSException):
-    def __init__(self, application_name: str, environment: str):
-        super().__init__(
-            f"""No ECS cluster found for "{application_name}" in "{environment}" environment."""
         )
