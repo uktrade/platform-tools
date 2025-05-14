@@ -39,30 +39,73 @@ def test_get_cluster_arn_copilot(mocked_cluster, mock_application):
     assert cluster_arn == mocked_cluster["cluster"]["clusterArn"]
 
 
-@mock_aws
-def test_get_cluster_arn_copilot_with_no_cluster_raises_error(mock_application):
-    ecs_client = mock_application.environments["development"].session.client("ecs")
-    ssm_client = mock_application.environments["development"].session.client("ssm")
-    application_name = mock_application.name
-    env = "does-not-exist"
+def test_get_cluster_arn_copilot_with_no_cluster_raises_error():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
 
-    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
+    ecs_client.list_clusters.return_value = {"clusterArns": []}
+
+    ecs_manager = ECS(ecs_client, ssm_client, application_name="my-app", env="development")
 
     with pytest.raises(NoClusterException):
         ecs_manager.get_cluster_arn_by_copilot_tag()
 
+    ecs_client.list_clusters.assert_called_once()
 
-@mock_aws
-def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
-    ecs_client = mock_application.environments["development"].session.client("ecs")
-    ssm_client = mock_application.environments["development"].session.client("ssm")
-    application_name = mock_application.name
-    env = "does-not-exist"
 
-    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
+def test_get_cluster_arn_with_no_cluster_raises_error():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+
+    ecs_client.describe_clusters.return_value = {"clusters": []}
+
+    ecs_manager = ECS(ecs_client, ssm_client, application_name="my-app", env="development")
 
     with pytest.raises(NoClusterException):
-        ecs_manager.get_cluster_arn_by_name("doesnt_exist")
+        ecs_manager.get_cluster_arn_by_name("does-not_exist")
+
+    ecs_client.describe_clusters.assert_called_once_with(clusters=["does-not_exist"])
+
+
+def test_get_cluster_arn_by_name_multiple_clusters_returns_error():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_clusters.return_value = {
+        "clusters": [
+            {"clusterArn": "arn:1"},
+            {"clusterArn": "arn:2"},
+        ]
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+
+    with pytest.raises(NoClusterException):
+        ecs.get_cluster_arn_by_name("some-cluster")
+
+    ecs_client.describe_clusters.assert_called_once_with(clusters=["some-cluster"])
+
+
+def test_get_cluster_arn_by_name_missing_arn_raises():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_clusters.return_value = {"clusters": [{}]}  # Without 'clusterArn' field
+
+    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+
+    with pytest.raises(NoClusterException):
+        ecs.get_cluster_arn_by_name("some-cluster")
+
+
+def test_get_cluster_arn_by_name_passes_correct_cluster():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_clusters.return_value = {"clusters": [{"clusterArn": "arn:cluster"}]}
+
+    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+    arn = ecs.get_cluster_arn_by_name("my-cluster")
+
+    assert arn == "arn:cluster"
+    ecs_client.describe_clusters.assert_called_once_with(clusters=["my-cluster"])
 
 
 @mock_aws
@@ -288,11 +331,25 @@ def test_start_ecs_task():
 
     # Assert
     assert task_arn == "arn:aws:ecs:region::task/task-id"
-    mock_ecs_client.run_task.assert_called_once()
 
-    args, kwargs = mock_ecs_client.run_task.call_args
-    assert kwargs["taskDefinition"] == "test-task-def"
-    assert kwargs["cluster"] == "my-cluster"
-    assert kwargs["overrides"]["containerOverrides"][0]["environment"] == [
-        {"name": "TEST_VAR", "value": "test-value"}
-    ]
+    mock_ecs_client.run_task.assert_called_once_with(
+        taskDefinition="test-task-def",
+        cluster="my-cluster",
+        capacityProviderStrategy=[{"capacityProvider": "FARGATE", "weight": 1, "base": 0}],
+        enableExecuteCommand=True,
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": ["public-subnet"],
+                "securityGroups": ["security-group"],
+                "assignPublicIp": "ENABLED",
+            }
+        },
+        overrides={
+            "containerOverrides": [
+                {
+                    "name": "test-container",
+                    "environment": [{"name": "TEST_VAR", "value": "test-value"}],
+                }
+            ]
+        },
+    )
