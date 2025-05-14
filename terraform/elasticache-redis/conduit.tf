@@ -60,7 +60,7 @@ resource "aws_ssm_parameter" "redis_vpc_name" {
 
 resource "aws_iam_role" "conduit-task-role" {
   name               = "${var.application}-${var.environment}-${var.name}-conduit-task-role"
-  assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json #TODO - Re-using existing resource
+  assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json
   tags               = local.tags
 }
 

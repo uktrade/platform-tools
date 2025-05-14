@@ -172,7 +172,7 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
 }
 
 resource "aws_kms_key" "conduit-log-group-kms-key" {
-  description         = "KMS Key for ${var.name}-${var.environment} Postgres Log encryption"
+  description         = "KMS Key for ${var.name}-${var.environment} conduit postgres log encryption"
   enable_key_rotation = true
   tags                = local.tags
 }
