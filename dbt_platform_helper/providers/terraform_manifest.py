@@ -140,7 +140,12 @@ class TerraformManifestProvider:
     def _add_extensions_module(terraform: dict, platform_helper_version: str, env: str):
         source = f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
         terraform["module"] = {
-            "extensions": {"source": source, "args": "${local.args}", "environment": env}
+            "extensions": {
+                "source": source,
+                "args": "${local.args}",
+                "environment": env,
+                "repos": "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}",
+            }
         }
 
     @staticmethod
@@ -163,6 +168,7 @@ class TerraformManifestProvider:
                 "services": '${local.config["extensions"]}',
                 "env_config": "${local.env_config}",
             },
+            "codebase_pipeline_repos": '${try({for k, v in local.config["codebase_pipelines"]: k => v.repository}, null)}',
         }
 
     @staticmethod
