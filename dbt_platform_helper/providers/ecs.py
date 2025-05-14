@@ -121,8 +121,8 @@ class ECS:
         return tasks["taskArns"]
 
     @retry()
-    def exec_task(self, cluster_arn: str, task_arn: str):
-        result = subprocess.call(
+    def exec_task(self, cluster_arn: str, task_arn: str, subprocess_call=subprocess.call):
+        result = subprocess_call(
             f"aws ecs execute-command --cluster {cluster_arn} "
             f"--task {task_arn} "
             f"--interactive --command bash ",

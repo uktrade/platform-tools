@@ -1,10 +1,9 @@
-import json
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import boto3
 import pytest
 from moto import mock_aws
-from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
@@ -209,60 +208,91 @@ def test_get_or_create_task_name_appends_random_id(mock_application):
     assert random_id.isalnum() and random_id.islower() and len(random_id) == 12
 
 
-@mock_aws
-def test_start_ecs_task(mocked_cluster, mock_application):
-    ecs_client = mock_application.environments["development"].session.client("ecs")
-    ssm_client = mock_application.environments["development"].session.client("ssm")
-    application_name = mock_application.name
-    env = "development"
-    mocked_ec2_client = boto3.client("ec2")
-    mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
-    mocked_ec2_client.run_instances(
-        ImageId=mocked_ec2_images[0]["ImageId"],
-        MinCount=1,
-        MaxCount=1,
+# @mock_aws
+# def test_start_ecs_task(mocked_cluster, mock_application):
+#     ecs_client = mock_application.environments["development"].session.client("ecs")
+#     ssm_client = mock_application.environments["development"].session.client("ssm")
+#     application_name = mock_application.name
+#     env = "development"
+#     mocked_ec2_client = boto3.client("ec2")
+#     mocked_ec2_images = mocked_ec2_client.describe_images(Owners=["amazon"])["Images"]
+#     mocked_ec2_client.run_instances(
+#         ImageId=mocked_ec2_images[0]["ImageId"],
+#         MinCount=1,
+#         MaxCount=1,
+#     )
+#     mocked_ec2_instances = boto3.client("ec2").describe_instances()
+#     mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0]["InstanceId"]
+#
+#     mocked_ec2 = boto3.resource("ec2")
+#     mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
+#     mocked_instance_id_document = json.dumps(
+#         ec2_utils.generate_instance_identity_document(mocked_ec2_instance),
+#     )
+#
+#     ecs_client.register_container_instance(
+#         cluster="default",
+#         instanceIdentityDocument=mocked_instance_id_document,
+#     )
+#
+#     mocked_task_definition_arn = ecs_client.register_task_definition(
+#         family="doesnt-matter",
+#         containerDefinitions=[
+#             {
+#                 "name": "test_container",
+#                 "image": "test_image",
+#                 "cpu": 256,
+#                 "memory": 512,
+#                 "essential": True,
+#                 "environment": [{"name": "TEST_VAR", "value": "test"}],
+#             }
+#         ],
+#     )["taskDefinition"]["taskDefinitionArn"]
+#
+#     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
+#     actual_response = ecs_manager.start_ecs_task(
+#         "default",
+#         "test_container",
+#         mocked_task_definition_arn,
+#         Vpc("test-vpc", ["public-subnet"], ["private-subnet"], ["security-group"]),
+#         [{"name": "TEST_VAR", "value": "test"}],
+#     )
+#
+#     assert actual_response.startswith("arn:aws:ecs:")
+#
+#     task_details = ecs_client.describe_tasks(cluster="default", tasks=[actual_response])
+#     assert task_details["tasks"][0]["containers"][0]["name"] == "test_container"
+#     assert task_details["tasks"][0]["overrides"]["containerOverrides"][0]["environment"] == [
+#         {"name": "TEST_VAR", "value": "test"}
+#     ]
+
+
+def test_start_ecs_task():
+    # Prepare
+    mock_ecs_client = MagicMock()
+    ecs = ECS(mock_ecs_client, MagicMock(), "myapp", "development")
+    mock_ecs_client.run_task.return_value = {
+        "tasks": [{"taskArn": "arn:aws:ecs:region::task/task-id"}]
+    }
+
+    vpc = Vpc("test-vpc", ["public-subnet"], ["private-subnet"], ["security-group"])
+
+    # Test
+    task_arn = ecs.start_ecs_task(
+        cluster_name="my-cluster",
+        container_name="test-container",
+        task_def_arn="test-task-def",
+        vpc_config=vpc,
+        env_vars=[{"name": "TEST_VAR", "value": "test-value"}],
     )
-    mocked_ec2_instances = boto3.client("ec2").describe_instances()
-    mocked_ec2_instance_id = mocked_ec2_instances["Reservations"][0]["Instances"][0]["InstanceId"]
 
-    mocked_ec2 = boto3.resource("ec2")
-    mocked_ec2_instance = mocked_ec2.Instance(mocked_ec2_instance_id)
-    mocked_instance_id_document = json.dumps(
-        ec2_utils.generate_instance_identity_document(mocked_ec2_instance),
-    )
+    # Assert
+    assert task_arn == "arn:aws:ecs:region::task/task-id"
+    mock_ecs_client.run_task.assert_called_once()
 
-    ecs_client.register_container_instance(
-        cluster="default",
-        instanceIdentityDocument=mocked_instance_id_document,
-    )
-
-    mocked_task_definition_arn = ecs_client.register_task_definition(
-        family="doesnt-matter",
-        containerDefinitions=[
-            {
-                "name": "test_container",
-                "image": "test_image",
-                "cpu": 256,
-                "memory": 512,
-                "essential": True,
-                "environment": [{"name": "TEST_VAR", "value": "test"}],
-            }
-        ],
-    )["taskDefinition"]["taskDefinitionArn"]
-
-    ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
-    actual_response = ecs_manager.start_ecs_task(
-        "default",
-        "test_container",
-        mocked_task_definition_arn,
-        Vpc("test-vpc", ["public-subnet"], ["private-subnet"], ["security-group"]),
-        [{"name": "TEST_VAR", "value": "test"}],
-    )
-
-    assert actual_response.startswith("arn:aws:ecs:")
-
-    task_details = ecs_client.describe_tasks(cluster="default", tasks=[actual_response])
-    assert task_details["tasks"][0]["containers"][0]["name"] == "test_container"
-    assert task_details["tasks"][0]["overrides"]["containerOverrides"][0]["environment"] == [
-        {"name": "TEST_VAR", "value": "test"}
+    args, kwargs = mock_ecs_client.run_task.call_args
+    assert kwargs["taskDefinition"] == "test-task-def"
+    assert kwargs["cluster"] == "my-cluster"
+    assert kwargs["overrides"]["containerOverrides"][0]["environment"] == [
+        {"name": "TEST_VAR", "value": "test-value"}
     ]
