@@ -52,7 +52,7 @@ class ECS:
                 cluster_name,
             ],
         )["clusters"]
-        if len(clusters) == 1:
+        if len(clusters) == 1 and "clusterArn" in clusters[0]:
             return clusters[0]["clusterArn"]
 
         raise NoClusterException(self.application_name, self.env)
