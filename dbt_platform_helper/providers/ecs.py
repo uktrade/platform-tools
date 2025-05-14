@@ -1,13 +1,56 @@
+import functools
 import random
 import string
 import subprocess
 import time
 from typing import List
+from typing import Optional
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.vpc import Vpc
 
 SECONDS_BEFORE_RETRY = 3
+RETRY_MAX_ATTEMPTS = 3
+
+
+class RetryException(PlatformException):
+
+    def __init__(
+        self, function_name: str, max_attempts: int, original_exception: Optional[Exception] = None
+    ):
+        message = f"F:{function_name} failed after {max_attempts} attempts"
+        self.original_exception = original_exception
+        if original_exception:
+            message += f": \n{str(original_exception)}"
+        super.__init__(message)
+
+
+def retry(
+    exceptions_to_catch: tuple = (Exception,),
+    max_attempts: int = RETRY_MAX_ATTEMPTS,
+    delay: int = SECONDS_BEFORE_RETRY,
+    raise_custom_exception: bool = True,
+    custom_exception: type = RetryException,
+):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception = None
+            for attempt in range(max_attempts):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions_to_catch as e:
+                    last_exception = e
+                    # Debug log?
+                    if attempt < max_attempts - 1:
+                        time.sleep(delay)
+            if raise_custom_exception:
+                raise custom_exception(func.__name__, max_attempts, last_exception)
+            raise last_exception
+
+        return wrapper
+
+    return decorator
 
 
 class ECS:
@@ -104,18 +147,17 @@ class ECS:
 
         return tasks["taskArns"]
 
-    def exec_task(self, cluster_arn: str, task_arn: str, max_attempts=3):
-        for attempt in range(max_attempts):
-            result = subprocess.call(
-                f"aws ecs execute-command --cluster {cluster_arn} "
-                f"--task {task_arn} "
-                f"--interactive --command bash ",
-                shell=True,
-            )
-            if result == 0:
-                return
-            time.sleep(SECONDS_BEFORE_RETRY)
-        raise PlatformException(f"Failed to exec into ECS task after {max_attempts} attempts.")
+    @retry()
+    def exec_task(self, cluster_arn: str, task_arn: str):
+        result = subprocess.call(
+            f"aws ecs execute-command --cluster {cluster_arn} "
+            f"--task {task_arn} "
+            f"--interactive --command bash ",
+            shell=True,
+        )
+        if result != 0:
+            raise PlatformException(f"Failed to exec into ECS task.")
+        return result
 
     def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str], max_attempts=25):
         """
