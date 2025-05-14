@@ -247,12 +247,13 @@ class ECS:
             raise ECSException("No ExecuteCommandAgent on ecs task.")
         return execute_command_agent[0]["lastStatus"] == "RUNNING"
 
-    def wait_for_task_to_register(self, cluster_arn: str, task_family: str, max_attempts: int = 20):
-        for attempt in range(max_attempts):
-            task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
-            if task_arns:
-                return task_arns
-            time.sleep(SECONDS_BEFORE_RETRY)
-        raise ECSException(
-            f"ECS task for '{task_family}' did not register after {max_attempts * SECONDS_BEFORE_RETRY} seconds."
-        )
+    @wait_until(
+        max_attempts=20,
+        delay=SECONDS_BEFORE_RETRY,
+        message_on_false="ECS task did not register in time",
+    )
+    def wait_for_task_to_register(self, cluster_arn: str, task_family: str) -> list[str]:
+        task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
+        if task_arns:
+            return task_arns
+        return False
