@@ -7,6 +7,8 @@ from typing import List
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.vpc import Vpc
 
+SECONDS_BEFORE_RETRY = 3
+
 
 class ECS:
     def __init__(self, ecs_client, ssm_client, application_name: str, env: str):
@@ -102,8 +104,8 @@ class ECS:
 
         return tasks["taskArns"]
 
-    def exec_task(self, cluster_arn: str, task_arn: str):
-        for attempt in range(3):
+    def exec_task(self, cluster_arn: str, task_arn: str, max_attempts=3):
+        for attempt in range(max_attempts):
             result = subprocess.call(
                 f"aws ecs execute-command --cluster {cluster_arn} "
                 f"--task {task_arn} "
@@ -112,10 +114,10 @@ class ECS:
             )
             if result == 0:
                 return
-            time.sleep(3)
-        raise PlatformException("Failed to exec into ECS task after 3 attempts.")
+            time.sleep(SECONDS_BEFORE_RETRY)
+        raise PlatformException(f"Failed to exec into ECS task after {max_attempts} attempts.")
 
-    def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]):
+    def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str], max_attempts=25):
         """
         Checks if the ExecuteCommandAgent is running on the specified ECS task.
 
@@ -125,7 +127,7 @@ class ECS:
         current_attempts = 0
         execute_command_agent_status = ""
 
-        while execute_command_agent_status != "RUNNING" and current_attempts < 25:
+        while execute_command_agent_status != "RUNNING" and current_attempts < max_attempts:
             current_attempts += 1
 
             task_details = self.ecs_client.describe_tasks(cluster=cluster_arn, tasks=task_arns)
@@ -141,7 +143,7 @@ class ECS:
                 if agent["name"] == "ExecuteCommandAgent"
             ][0]
             if execute_command_agent_status != "RUNNING":
-                time.sleep(3)
+                time.sleep(SECONDS_BEFORE_RETRY)
 
         if execute_command_agent_status != "RUNNING":
             raise ECSAgentNotRunningException
@@ -151,9 +153,9 @@ class ECS:
             task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
             if task_arns:
                 return task_arns
-            time.sleep(3)
+            time.sleep(SECONDS_BEFORE_RETRY)
         raise ECSException(
-            f"ECS task for '{task_family}' did not register after {max_attempts * 3} seconds."
+            f"ECS task for '{task_family}' did not register after {max_attempts * SECONDS_BEFORE_RETRY} seconds."
         )
 
 
