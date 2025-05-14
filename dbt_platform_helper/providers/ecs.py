@@ -9,6 +9,7 @@ from typing import Optional
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.platform_exception import ValidationException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.vpc import Vpc
 
 SECONDS_BEFORE_RETRY = 3
@@ -49,6 +50,7 @@ def retry(
     delay: int = SECONDS_BEFORE_RETRY,
     raise_custom_exception: bool = True,
     custom_exception: type = RetryException,
+    io: ClickIOProvider = ClickIOProvider(),
 ):
     def decorator(func):
         @functools.wraps(func)
@@ -59,7 +61,9 @@ def retry(
                     return func(*args, **kwargs)
                 except exceptions_to_catch as e:
                     last_exception = e
-                    # Debug log?
+                    io.debug(
+                        f"Attempt {attempt+1}/{max_attempts} for {func.__name__} failed with exception {str(last_exception)}"
+                    )
                     if attempt < max_attempts - 1:
                         time.sleep(delay)
             if raise_custom_exception:
@@ -78,6 +82,7 @@ def wait_until(
     raise_custom_exception: bool = True,
     custom_exception=RetryException,
     message_on_false="Condition not met",
+    io: ClickIOProvider = ClickIOProvider(),
 ):
     """Wrap a function which returns a boolean."""
 
@@ -88,22 +93,28 @@ def wait_until(
             for attempt in range(max_attempts):
                 try:
                     result = func(*args, **kwargs)
+                    if result:
+                        return result
+                    io.debug(
+                        f"Attempt {attempt+1}/{max_attempts} for {func.__name__} returned falsy"
+                    )
                 except exceptions_to_catch as e:
-                    result = False
                     last_exception = e
-
-                if result:
-                    return result
+                    io.debug(
+                        f"Attempt {attempt+1}/{max_attempts} for {func.__name__} failed with exception {str(last_exception)}"
+                    )
 
                 if attempt < max_attempts - 1:
                     time.sleep(delay)
 
-            # TODO is this the way we want it?
-            if not result:
+            if not last_exception:  # If func returns false set last_exception
                 last_exception = PlatformException(message_on_false)
-            if raise_custom_exception:
+            if (
+                not raise_custom_exception
+            ):  # Raise last_exception when you don't want custom exception
+                raise last_exception
+            else:
                 raise custom_exception(func.__name__, max_attempts, last_exception)
-            raise last_exception
 
         return wrapper
 
