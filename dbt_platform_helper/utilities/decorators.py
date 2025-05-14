@@ -15,11 +15,11 @@ class RetryException(PlatformException):
     def __init__(
         self, function_name: str, max_attempts: int, original_exception: Optional[Exception] = None
     ):
-        message = f"F:{function_name} failed after {max_attempts} attempts"
+        message = f"Function: {function_name} failed after {max_attempts} attempts"
         self.original_exception = original_exception
         if original_exception:
             message += f": \n{str(original_exception)}"
-        super.__init__(message)
+        super().__init__(message)
 
 
 def retry(
