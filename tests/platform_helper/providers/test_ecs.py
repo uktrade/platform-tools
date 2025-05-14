@@ -1,14 +1,14 @@
 from unittest.mock import MagicMock
-from unittest.mock import patch
 
 import boto3
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECS
-from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.vpc import Vpc
+from dbt_platform_helper.utilities.decorators import RetryException
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -197,10 +197,9 @@ def test_ecs_exec_is_available(mock_cluster_client_task, mocked_cluster, mock_ap
     )
 
 
-@patch("dbt_platform_helper.providers.ecs.time.sleep", return_value=None)
 @mock_aws
 def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
-    sleep, mock_cluster_client_task, mocked_cluster, mock_application
+    mock_cluster_client_task, mocked_cluster, mock_application
 ):
     mocked_ecs_client = mock_cluster_client_task("postgres", "PENDING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
@@ -210,10 +209,15 @@ def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
         mock_application.name,
         "development",
     )
-    with pytest.raises(ECSAgentNotRunningException):
+    with pytest.raises(RetryException, match="ECS Agent Not running"):
         ecs_manager.ecs_exec_is_available(
             mocked_cluster_arn, ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
         )
+
+
+def test_ecs_exec_is_available_wrapped_by_wait_until():
+    ecs = ECS(MagicMock(), MagicMock(), "name", "development")
+    assert ecs.ecs_exec_is_available.__wrapped_by__ == "wait_until"
 
 
 @mock_aws
@@ -353,3 +357,29 @@ def test_start_ecs_task():
             ]
         },
     )
+
+
+def test_exec_task_uses_retry_decorator():
+    ecs = ECS(MagicMock(), MagicMock(), "myapp", "development")
+
+    mock_suprocess = MagicMock(return_value=0)
+
+    ecs.exec_task("cluster-arn", "task-arn", mock_suprocess)
+
+    assert ecs.exec_task.__wrapped_by__ == "retry"
+    mock_suprocess.assert_called()
+
+
+def test_exec_task_raises_platform_exception():
+    ecs = ECS(MagicMock(), MagicMock(), "myapp", "development")
+
+    mock_suprocess = MagicMock(return_value=1)
+
+    with pytest.raises(
+        PlatformException,
+        match="Failed to exec into ECS task.",
+    ):
+        ecs.exec_task("cluster-arn", "task-arn", mock_suprocess)
+
+    assert ecs.exec_task.__wrapped_by__ == "retry"
+    mock_suprocess.assert_called()

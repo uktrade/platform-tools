@@ -129,7 +129,7 @@ class ECS:
             shell=True,
         )
         if result != 0:
-            raise PlatformException(f"Failed to exec into ECS task.")
+            raise PlatformException("Failed to exec into ECS task.")
         return result
 
     @wait_until(
