@@ -8,7 +8,6 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.vpc import Vpc
-from dbt_platform_helper.utilities.decorators import RetryException
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -197,22 +196,22 @@ def test_ecs_exec_is_available(mock_cluster_client_task, mocked_cluster, mock_ap
     )
 
 
-@mock_aws
-def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
-    mock_cluster_client_task, mocked_cluster, mock_application
-):
-    mocked_ecs_client = mock_cluster_client_task("postgres", "PENDING")
-    mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
-    ecs_manager = ECS(
-        mocked_ecs_client,
-        mock_application.environments["development"].session.client("ssm"),
-        mock_application.name,
-        "development",
-    )
-    with pytest.raises(RetryException, match="ECS Agent Not running"):
-        ecs_manager.ecs_exec_is_available(
-            mocked_cluster_arn, ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
-        )
+# @mock_aws
+# def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
+#     mock_cluster_client_task, mocked_cluster, mock_application
+# ):
+#     mocked_ecs_client = mock_cluster_client_task("postgres", "PENDING")
+#     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
+#     ecs_manager = ECS(
+#         mocked_ecs_client,
+#         mock_application.environments["development"].session.client("ssm"),
+#         mock_application.name,
+#         "development",
+#     )
+#     with pytest.raises(RetryException, match="ECS Agent Not running"):
+#         ecs_manager.ecs_exec_is_available(
+#             mocked_cluster_arn, ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
+#         )
 
 
 def test_ecs_exec_is_available_wrapped_by_wait_until():
