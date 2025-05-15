@@ -105,9 +105,13 @@ class TestConfigValidate:
             config_domain.validate()
         assert excinfo.value.code == 0
 
-        config_mocks.io.debug.assert_has_calls(
+        config_mocks.io.info.assert_has_calls(
             [
                 call("\nDetected a deployment repository\n"),
+            ]
+        )
+        config_mocks.io.debug.assert_has_calls(
+            [
                 call("Checking tooling versions..."),
                 call("Checking addons templates versions..."),
             ]
@@ -209,9 +213,13 @@ class TestConfigValidate:
         for call_args in config_mocks.io.info.call_args_list:
             print(repr(call_args))
 
-        config_mocks.io.debug.assert_has_calls(
+        config_mocks.io.info.assert_has_calls(
             [
                 call("\nDetected a deployment repository\n"),
+            ]
+        )
+        config_mocks.io.debug.assert_has_calls(
+            [
                 call("Checking tooling versions..."),
                 call("Checking addons templates versions..."),
             ]
@@ -325,9 +333,13 @@ class TestConfigValidate:
         for call_args in config_mocks.io.info.call_args_list:
             print(repr(call_args))
 
-        config_mocks.io.debug.assert_has_calls(
+        config_mocks.io.info.assert_has_calls(
             [
                 call("\nDetected a deployment repository\n"),
+            ]
+        )
+        config_mocks.io.debug.assert_has_calls(
+            [
                 call("Checking tooling versions..."),
                 call("Checking addons templates versions..."),
             ]
