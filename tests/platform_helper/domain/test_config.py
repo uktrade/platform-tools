@@ -105,11 +105,6 @@ class TestConfigValidate:
             config_domain.validate()
         assert excinfo.value.code == 0
 
-        config_mocks.io.info.assert_has_calls(
-            [
-                call("\nDetected a deployment repository\n"),
-            ]
-        )
         config_mocks.io.debug.assert_has_calls(
             [
                 call("Checking tooling versions..."),
@@ -172,10 +167,10 @@ class TestConfigValidate:
             ]
         )
 
-        assert repr(config_mocks.io.info.call_args_list[0][0][0]) == repr(
+        assert repr(config_mocks.io.info.call_args_list[1][0][0]) == repr(
             expected_tool_version_table
         )
-        assert repr(config_mocks.io.info.call_args_list[1][0][0]) == repr(expected_addon_table)
+        assert repr(config_mocks.io.info.call_args_list[2][0][0]) == repr(expected_addon_table)
         config_mocks.io.info.assert_has_calls(
             [
                 call(
@@ -213,11 +208,6 @@ class TestConfigValidate:
         for call_args in config_mocks.io.info.call_args_list:
             print(repr(call_args))
 
-        config_mocks.io.info.assert_has_calls(
-            [
-                call("\nDetected a deployment repository\n"),
-            ]
-        )
         config_mocks.io.debug.assert_has_calls(
             [
                 call("Checking tooling versions..."),
@@ -276,10 +266,10 @@ class TestConfigValidate:
             ]
         )
 
-        assert repr(config_mocks.io.info.call_args_list[0][0][0]) == repr(
+        assert repr(config_mocks.io.info.call_args_list[1][0][0]) == repr(
             expected_tool_version_table
         )
-        assert repr(config_mocks.io.info.call_args_list[5][0][0]) == repr(expected_addon_table)
+        assert repr(config_mocks.io.info.call_args_list[6][0][0]) == repr(expected_addon_table)
         config_mocks.io.info.assert_has_calls(
             [
                 call(
@@ -333,11 +323,6 @@ class TestConfigValidate:
         for call_args in config_mocks.io.info.call_args_list:
             print(repr(call_args))
 
-        config_mocks.io.info.assert_has_calls(
-            [
-                call("\nDetected a deployment repository\n"),
-            ]
-        )
         config_mocks.io.debug.assert_has_calls(
             [
                 call("Checking tooling versions..."),
@@ -397,10 +382,10 @@ class TestConfigValidate:
             ]
         )
 
-        assert repr(config_mocks.io.info.call_args_list[0][0][0]) == repr(
+        assert repr(config_mocks.io.info.call_args_list[1][0][0]) == repr(
             expected_tool_version_table
         )
-        assert repr(config_mocks.io.info.call_args_list[7][0][0]) == repr(expected_addon_table)
+        assert repr(config_mocks.io.info.call_args_list[8][0][0]) == repr(expected_addon_table)
         config_mocks.io.info.assert_has_calls(
             [
                 call(
