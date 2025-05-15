@@ -4,6 +4,7 @@ from unittest.mock import call
 import pytest
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.platform_exception import ValidationException
 from dbt_platform_helper.utilities.decorators import RetryException
 from dbt_platform_helper.utilities.decorators import retry
 from dbt_platform_helper.utilities.decorators import wait_until
@@ -33,6 +34,29 @@ class TestRetryDecorator:
         expected_calls = [call("arg", kwarg="kwarg")] * 3
         mock_func.call_args_list == expected_calls
         assert result == "success"
+
+    def test_retry_raises_unexpected_error(self):
+        mock_func = MagicMock(
+            side_effect=[
+                ValueError("error-1"),
+                ValidationException("exception not to retry"),
+                ValueError("error-2"),
+                "success",
+            ]
+        )
+        mock_func.__name__ = "mocked"
+
+        wrapped_func = retry(max_attempts=3, delay=0.01, exceptions_to_catch=(ValueError,))(
+            mock_func
+        )
+
+        with pytest.raises(ValidationException) as actual_exec:
+            wrapped_func("arg", kwarg="kwarg")
+
+        mock_func.assert_called_with("arg", kwarg="kwarg")
+
+        assert "exception not to retry" in str(actual_exec.value)
+        assert mock_func.call_count == 2
 
     def test_retry_exhausted_raises_custom_exception(self):
         mock_func = MagicMock(side_effect=ValueError("error"))
@@ -126,6 +150,29 @@ class TestWaitUntilDecorator:
         assert mock_func.__name__ in str(actual_exec.value)
         assert "3 attempts" in str(actual_exec.value)
         assert "error in function" in str(actual_exec.value)
+        assert mock_func.call_count == 3
+
+    def test_wait_until_raises_unexpected_error(self):
+        mock_func = MagicMock(
+            side_effect=[
+                ValueError("error in function"),
+                False,
+                ValidationException("exception not to retry"),
+                "success",
+            ]
+        )
+        mock_func.__name__ = "mocked"
+
+        wrapped_func = wait_until(max_attempts=5, delay=0.01, exceptions_to_catch=(ValueError,))(
+            mock_func
+        )
+
+        with pytest.raises(ValidationException) as actual_exec:
+            wrapped_func("arg", kwarg="kwarg")
+
+        mock_func.assert_called_with("arg", kwarg="kwarg")
+
+        assert "exception not to retry" in str(actual_exec.value)
         assert mock_func.call_count == 3
 
     def test_wait_until_exhausted_reraising_orginal_exception(self):
