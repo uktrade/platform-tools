@@ -99,7 +99,7 @@ class Config:
         if not Path(PLATFORM_CONFIG_FILE).exists():
             raise NoPlatformConfigException()
 
-        self.io.info("\nDetected a deployment repository\n")
+        self.io.debug("\nDetected a deployment repository\n")
         platform_helper_version_status = self.platform_helper_versioning.get_version_status()
         aws_version_status = self.aws_versioning.get_version_status()
         copilot_version_status = self.copilot_versioning.get_version_status()
