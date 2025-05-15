@@ -25,7 +25,7 @@ class RetryException(PlatformException):
 def retry(
     exceptions_to_catch: tuple = (Exception,),
     max_attempts: int = RETRY_MAX_ATTEMPTS,
-    delay: int = SECONDS_BEFORE_RETRY,
+    delay: float = SECONDS_BEFORE_RETRY,
     raise_custom_exception: bool = True,
     custom_exception: type = RetryException,
     io: ClickIOProvider = ClickIOProvider(),
@@ -58,7 +58,7 @@ def retry(
 def wait_until(
     exceptions_to_catch: tuple = (PlatformException,),
     max_attempts: int = RETRY_MAX_ATTEMPTS,
-    delay: int = SECONDS_BEFORE_RETRY,
+    delay: float = SECONDS_BEFORE_RETRY,
     raise_custom_exception: bool = True,
     custom_exception=RetryException,
     message_on_false="Condition not met",
