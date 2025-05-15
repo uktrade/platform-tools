@@ -42,6 +42,10 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
     poetry run pre-commit install
     ```
 
+5. (Optional) Enable more detailed Debug logging
+   ```shell
+   export DEBUG=True
+   ```
 ### Platform Helper architecture
 
 `platform-helper` is split into the following layers:

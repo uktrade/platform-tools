@@ -506,7 +506,8 @@ data "aws_iam_policy_document" "logs" {
       "arn:aws:logs:${local.account_region}:log-group:/aws/opensearch/*",
       "arn:aws:logs:${local.account_region}:log-group:/aws/rds/*",
       "arn:aws:logs:${local.account_region}:log-group:/aws/elasticache/*",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/*"
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/*",
+      "arn:aws:logs:${local.account_region}:log-group:/conduit/*"
     ]
   }
 }
@@ -1038,7 +1039,9 @@ data "aws_iam_policy_document" "iam" {
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-exec",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-task",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-copy-pipeline-*",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-codebase-pipeline-deploy"
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-codebase-pipeline-deploy",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*-conduit-task-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*-conduit-exec-role",
       ]
     }
   }

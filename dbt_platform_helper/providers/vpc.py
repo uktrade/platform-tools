@@ -77,8 +77,8 @@ class VpcProvider:
         return vpc_id
 
     def _get_security_groups(self, app: str, env: str, vpc_id: str) -> list:
-
         vpc_filter = {"Name": "vpc-id", "Values": [vpc_id]}
+        # TODO Handle terraformed environment SG https://uktrade.atlassian.net/browse/DBTP-2074
         tag_filter = {"Name": f"tag:Name", "Values": [f"copilot-{app}-{env}-env"]}
         response = self.ec2_client.describe_security_groups(Filters=[vpc_filter, tag_filter])
 

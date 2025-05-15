@@ -6,12 +6,12 @@ variables {
         "type" : "s3",
         "services" : ["web"],
         "environments" : {
-          "test-environment" : {
+          "test-env" : {
             "bucket_name" : "extensions-test-bucket",
             "versioning" : false
           },
-          "other-environment" : {
-            "bucket_name" : "other-environment-extensions-test-bucket",
+          "other-env" : {
+            "bucket_name" : "other-env-extensions-test-bucket",
             "versioning" : false
           }
         }
@@ -20,12 +20,12 @@ variables {
         "type" : "opensearch",
         "name" : "test-small",
         "environments" : {
-          "test-environment" : {
+          "test-env" : {
             "engine" : "2.11",
             "plan" : "small",
             "volume_size" : 512
           },
-          "other-environment" : {
+          "other-env" : {
             "engine" : "2.11",
             "plan" : "small",
             "volume_size" : 512
@@ -47,7 +47,7 @@ variables {
         }
         vpc : "test-vpc"
       },
-      "test-environment" = {
+      "test-env" = {
         accounts = {
           deploy = {
             name = "sandbox"
@@ -62,7 +62,7 @@ variables {
       }
     }
   }
-  environment = "test-environment"
+  environment = "test-env"
 }
 
 mock_provider "aws" {
@@ -120,6 +120,39 @@ override_data {
 }
 
 override_data {
+  target = module.opensearch["test-opensearch"].data.aws_iam_policy_document.conduit_task_role_access
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
   target = module.elasticache-redis["test-redis"].data.aws_ssm_parameter.log-destination-arn
   values = {
     value = "{\"dev\":\"arn:aws:logs:eu-west-2:763451185160:log-group:/copilot/tools/central_log_groups_dev\"}"
@@ -149,6 +182,39 @@ override_data {
 }
 
 override_data {
+  target = module.elasticache-redis["test-redis"].data.aws_iam_policy_document.conduit_task_role_access
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssmmessages:CreateControlChannel",
+        "ssmmessages:OpenControlChannel",
+        "ssmmessages:CreateDataChannel",
+        "ssmmessages:OpenDataChannel"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.cloudformation_access
   values = {
     json = "{\"Sid\": \"CloudFormationAccess\"}"
@@ -160,7 +226,7 @@ run "aws_ssm_parameter_unit_test" {
 
   # Configuration
   assert {
-    condition     = aws_ssm_parameter.addons.name == "/copilot/applications/test-application/environments/test-environment/addons"
+    condition     = aws_ssm_parameter.addons.name == "/copilot/applications/test-application/environments/test-env/addons"
     error_message = "Invalid config for aws_ssm_parameter name"
   }
   assert {
@@ -174,11 +240,11 @@ run "aws_ssm_parameter_unit_test" {
 
   # Value only includes current environment
   assert {
-    condition     = strcontains(aws_ssm_parameter.addons.value, "test-environment")
+    condition     = strcontains(aws_ssm_parameter.addons.value, "test-env")
     error_message = ""
   }
   assert {
-    condition     = strcontains(aws_ssm_parameter.addons.value, "other-environment") == false
+    condition     = strcontains(aws_ssm_parameter.addons.value, "other-env") == false
     error_message = ""
   }
 
@@ -192,11 +258,11 @@ run "aws_ssm_parameter_unit_test" {
     error_message = ""
   }
   assert {
-    condition     = aws_ssm_parameter.addons.tags["environment"] == "test-environment"
+    condition     = aws_ssm_parameter.addons.tags["environment"] == "test-env"
     error_message = ""
   }
   assert {
-    condition     = aws_ssm_parameter.addons.tags["copilot-environment"] == "test-environment"
+    condition     = aws_ssm_parameter.addons.tags["copilot-environment"] == "test-env"
     error_message = ""
   }
   assert {
@@ -272,7 +338,7 @@ run "opensearch_plan_medium_ha_service_test" {
           "type" : "opensearch",
           "name" : "test-medium-ha"
           "environments" : {
-            "test-environment" : {
+            "test-env" : {
               "engine" : "2.11",
               "plan" : "medium-ha"
             }
@@ -293,7 +359,7 @@ run "opensearch_plan_medium_ha_service_test" {
           }
           vpc : "test-vpc"
         },
-        "test-environment" = {
+        "test-env" = {
           accounts = {
             deploy = {
               name = "sandbox"
@@ -308,7 +374,7 @@ run "opensearch_plan_medium_ha_service_test" {
         }
       }
     }
-    environment = "test-environment"
+    environment = "test-env"
   }
 
   command = plan
@@ -360,7 +426,7 @@ run "redis_plan_medium_service_test" {
           "type" : "redis",
           "name" : "test-medium",
           "environments" : {
-            "test-environment" : {
+            "test-env" : {
               "engine" : "7.1",
               "plan" : "medium"
             }
@@ -381,7 +447,7 @@ run "redis_plan_medium_service_test" {
           }
           vpc : "test-vpc"
         },
-        "test-environment" = {
+        "test-env" = {
           accounts = {
             deploy = {
               name = "sandbox"
@@ -396,7 +462,7 @@ run "redis_plan_medium_service_test" {
         }
       }
     }
-    environment = "test-environment"
+    environment = "test-env"
   }
 
   assert {
@@ -436,7 +502,7 @@ run "redis_plan_medium_ha_service_test" {
           "type" : "redis",
           "name" : "test-medium-ha",
           "environments" : {
-            "test-environment" : {
+            "test-env" : {
               "engine" : "7.1",
               "plan" : "medium-ha"
             }
@@ -457,7 +523,7 @@ run "redis_plan_medium_ha_service_test" {
           }
           vpc : "test-vpc"
         },
-        "test-environment" = {
+        "test-env" = {
           accounts = {
             deploy = {
               name = "sandbox"
@@ -472,7 +538,7 @@ run "redis_plan_medium_ha_service_test" {
         }
       }
     }
-    environment = "test-environment"
+    environment = "test-env"
   }
 
   assert {
@@ -544,8 +610,8 @@ run "codebase_deploy_iam_test" {
   }
 
   assert {
-    condition     = aws_iam_role.codebase_pipeline_deploy.name == "test-application-test-environment-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-environment-codebase-pipeline-deploy'"
+    condition     = aws_iam_role.codebase_pipeline_deploy.name == "test-application-test-env-codebase-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
   }
   assert {
     condition     = aws_iam_role.codebase_pipeline_deploy.assume_role_policy == "{\"Sid\": \"CodeBaseDeployAssume\"}"
@@ -592,8 +658,8 @@ run "codebase_deploy_iam_test" {
     error_message = "Should be: 'ecr-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.ecr_access.role == "test-application-test-environment-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-environment-codebase-pipeline-deploy'"
+    condition     = aws_iam_role_policy.ecr_access.role == "test-application-test-env-codebase-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
   }
   assert {
     condition     = aws_iam_role_policy.ecr_access.policy == "{\"Sid\": \"ECRAccess\"}"
@@ -616,8 +682,8 @@ run "codebase_deploy_iam_test" {
     error_message = "Should be: 'artifact-store-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access.role == "test-application-test-environment-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-environment-codebase-pipeline-deploy'"
+    condition     = aws_iam_role_policy.artifact_store_access.role == "test-application-test-env-codebase-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
   }
   assert {
     condition     = aws_iam_role_policy.artifact_store_access.policy == "{\"Sid\": \"ArtifactStoreAccess\"}"
@@ -677,8 +743,8 @@ run "codebase_deploy_iam_test" {
     error_message = "Should be: 'ecs-deploy-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.ecs_deploy_access.role == "test-application-test-environment-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-environment-codebase-pipeline-deploy'"
+    condition     = aws_iam_role_policy.ecs_deploy_access.role == "test-application-test-env-codebase-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
   }
   assert {
     condition     = aws_iam_role_policy.ecs_deploy_access.policy == "{\"Sid\": \"ECSDeployAccess\"}"
@@ -699,8 +765,8 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.ecs_deploy_access.statement[0].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-environment",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-environment/*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -717,8 +783,8 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.ecs_deploy_access.statement[1].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-environment",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/test-application-test-environment/*"
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
+      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -734,7 +800,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[2].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/test-application-test-environment-*:*"
+    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[2].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/test-application-test-env-*:*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -746,7 +812,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-environment/*"
+    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env/*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -799,7 +865,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-environment/*"
+    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -807,8 +873,8 @@ run "codebase_deploy_iam_test" {
     error_message = "Should be: 'cloudformation-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.cloudformation_access.role == "test-application-test-environment-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-environment-codebase-pipeline-deploy'"
+    condition     = aws_iam_role_policy.cloudformation_access.role == "test-application-test-env-codebase-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
   }
   assert {
     condition     = aws_iam_role_policy.cloudformation_access.policy == "{\"Sid\": \"CloudFormationAccess\"}"
@@ -826,7 +892,7 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.cloudformation_access.statement[0].resources == toset([
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/test-application-test-environment-*"
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/test-application-test-env-*"
     ])
     error_message = "Unexpected resources"
   }
