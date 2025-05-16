@@ -34,9 +34,12 @@ class MultipleImagesFoundException(AWSException):
         )
 
 
+REPOSITORY_NOT_FOUND_TEMPLATE = """The ECR repository "{repository}" could not be found."""
+
+
 class RepositoryNotFoundException(AWSException):
     def __init__(self, repository: str):
-        super().__init__(f"""The ECR repository "{repository}" could not be found.""")
+        super().__init__(REPOSITORY_NOT_FOUND_TEMPLATE.format(repository=repository))
 
 
 class LogGroupNotFoundException(AWSException):

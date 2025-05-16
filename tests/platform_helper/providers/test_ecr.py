@@ -5,7 +5,10 @@ from unittest.mock import Mock
 import botocore
 import pytest
 
+from dbt_platform_helper.providers.aws.exceptions import IMAGE_NOT_FOUND_TEMPLATE
 from dbt_platform_helper.providers.aws.exceptions import MULTIPLE_IMAGES_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import REPOSITORY_NOT_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
@@ -210,7 +213,7 @@ def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
         ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-abc123")
 
     actual_error = str(ex.value)
-    expected_error = 'An image labelled "commit-abc123" could not be found in your image repository. Try the `platform-helper codebase build` command first.'
+    expected_error = IMAGE_NOT_FOUND_TEMPLATE.format(image_ref="commit-abc123")
 
     assert actual_error == expected_error
 
@@ -231,8 +234,42 @@ def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
     assert actual_error == expected_error
 
 
-def test_get_commit_tag_for_reference_recasts_exceptions_as_platform_exceptions():
-    pass
+@pytest.mark.parametrize(
+    "boto_exception, expected_exception, expected_message",
+    [
+        (
+            "RepositoryNotFoundException",
+            RepositoryNotFoundException,
+            REPOSITORY_NOT_FOUND_TEMPLATE.format(repository="test_app/test_codebase"),
+        ),
+        (
+            "SomeOtherException",
+            AWSException,
+            "Unexpected error for repo 'test_app/test_codebase' and image reference 'commit-abc123': "
+            "An error occurred (SomeOtherException) when calling the ListImages operation: Unknown",
+        ),
+    ],
+)
+def test_get_commit_tag_for_reference_recasts_exceptions_as_platform_exceptions(
+    boto_exception, expected_exception, expected_message
+):
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.side_effect = botocore.exceptions.ClientError(
+        {
+            "Error": {"Code": boto_exception},
+        },
+        operation_name="ListImages",
+    )
+
+    ecr_provider = ECRProvider(**mocks.params())
+
+    with pytest.raises(expected_exception) as ex:
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-abc123")
+
+    actual_error = str(ex.value)
+    expected_error = expected_message
+
+    assert actual_error == expected_error
 
 
 def test_get_image_details_returns_details():

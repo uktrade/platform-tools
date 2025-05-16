@@ -3,6 +3,7 @@ from collections import defaultdict
 import botocore
 from boto3 import Session
 
+from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
@@ -32,11 +33,7 @@ class ECRProvider:
         digest_map = defaultdict(dict)
 
         while True:
-            params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
-            if next_page_token:
-                params["nextToken"] = next_page_token
-
-            image_list = self._get_client().list_images(**params)
+            image_list = self._get_ecr_images(repository, image_ref, next_page_token)
             next_page_token = image_list.get("nextToken")
 
             for image in image_list["imageIds"]:
@@ -69,6 +66,21 @@ class ECRProvider:
             else:
                 self.click_io.warn(NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=image_ref))
                 return image_ref
+
+    def _get_ecr_images(self, repository, image_ref, next_page_token):
+        params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
+        if next_page_token:
+            params["nextToken"] = next_page_token
+        try:
+            image_list = self._get_client().list_images(**params)
+            return image_list
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Code"] == "RepositoryNotFoundException":
+                raise RepositoryNotFoundException(repository)
+            else:
+                raise AWSException(
+                    f"Unexpected error for repo '{repository}' and image reference '{image_ref}': {e}"
+                )
 
     def get_image_details(
         self, application: Application, codebase: str, image_ref: str

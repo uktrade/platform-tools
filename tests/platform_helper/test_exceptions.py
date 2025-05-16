@@ -5,7 +5,9 @@ import pytest
 from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.providers.aws.exceptions import IMAGE_NOT_FOUND_TEMPLATE
 from dbt_platform_helper.providers.aws.exceptions import MULTIPLE_IMAGES_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import REPOSITORY_NOT_FOUND_TEMPLATE
 from dbt_platform_helper.providers.aws.exceptions import (
     CopilotCodebaseNotFoundException,
 )
@@ -13,6 +15,7 @@ from dbt_platform_helper.providers.aws.exceptions import CreateTaskTimeoutExcept
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
+from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.secrets import AddonNotFoundException
@@ -80,7 +83,12 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
         (
             ImageNotFoundException,
             {"image_ref": "does-not-exist"},
-            """An image labelled "does-not-exist" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
+            IMAGE_NOT_FOUND_TEMPLATE.format(image_ref="does-not-exist"),
+        ),
+        (
+            RepositoryNotFoundException,
+            {"repository": "does-not-exist"},
+            REPOSITORY_NOT_FOUND_TEMPLATE.format(repository="does-not-exist"),
         ),
         (
             MultipleImagesFoundException,
