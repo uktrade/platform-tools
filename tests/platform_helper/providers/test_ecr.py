@@ -7,6 +7,7 @@ import pytest
 
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
+from dbt_platform_helper.providers.ecr import NOT_A_UNIQUE_TAG_INFO
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.utils.application import Application
 
@@ -137,18 +138,18 @@ def return_image_pages(**kwargs):
 
 
 @pytest.mark.parametrize(
-    "test_name, reference, expected_tag",
+    "test_name, reference, expected_tag, expect_info_message",
     [
-        ("commit page 1", "commit-09dc178af5", "commit-09dc178af5"),
-        ("branch page 2", "branch-fix-truncation-error", "commit-76e34"),
-        ("tag page 3", "tag-1.2.3", "commit-79dc178af5"),
-        ("single match commit", "commit-73ee4f5123abc", "commit-73ee4f5"),
-        ("cross page commit", "commit-23ee4f5", "commit-23ee4f5"),
-        ("cross page branch", "branch-across-pages", "commit-23ee4f5"),
-        ("cross page tag", "tag-across-pages", "commit-23ee4f5"),
+        ("commit page 1", "commit-09dc178af5", "commit-09dc178af5", False),
+        ("branch page 2", "branch-fix-truncation-error", "commit-76e34", True),
+        ("tag page 3", "tag-1.2.3", "commit-79dc178af5", True),
+        ("single match commit", "commit-73ee4f5123abc", "commit-73ee4f5", False),
+        ("cross page commit", "commit-23ee4f5", "commit-23ee4f5", False),
+        ("cross page branch", "branch-across-pages", "commit-23ee4f5", True),
+        ("cross page tag", "tag-across-pages", "commit-23ee4f5", True),
     ],
 )
-def test_get_commit_tag_for_reference(test_name, reference, expected_tag):
+def test_get_commit_tag_for_reference(test_name, reference, expected_tag, expect_info_message):
     session_mock = Mock()
     client_mock = Mock()
     session_mock.client.return_value = client_mock
@@ -160,6 +161,22 @@ def test_get_commit_tag_for_reference(test_name, reference, expected_tag):
     actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
     assert actual == expected_tag, f"'{test_name}' test case failed"
+    if expect_info_message:
+        mock_io.info.assert_called_once_with(
+            NOT_A_UNIQUE_TAG_INFO.format(image_ref=reference, commit_tag=expected_tag)
+        )
+
+
+def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning():
+    pass
+
+
+def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
+    pass
+
+
+def test_get_commit_tag_for_reference_recasts_exceptions_as_platform_exceptions():
+    pass
 
 
 def test_get_image_details_returns_details():
