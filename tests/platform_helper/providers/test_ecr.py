@@ -127,6 +127,8 @@ image_id_pages = {
             {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
             {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
             {"imageDigest": "sha256:136", "imageTag": "tag-1.2.3"},
+            {"imageDigest": "sha256:000", "imageTag": "tag-no-associated-commit"},
+            {"imageDigest": "sha256:001", "imageTag": "branch-no-associated-commit"},
             {"imageDigest": "sha256:777", "imageTag": "branch-across-pages"},
         ],
     },
@@ -168,7 +170,8 @@ def test_get_commit_tag_for_reference(test_name, reference, expected_tag, expect
         )
 
 
-def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning():
+@pytest.mark.parametrize("reference", ["branch-no-associated-commit", "tag-no-associated-commit"])
+def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(reference):
     session_mock = Mock()
     client_mock = Mock()
     session_mock.client.return_value = client_mock
@@ -177,7 +180,6 @@ def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(
 
     ecr_provider = ECRProvider(session_mock, mock_io)
 
-    reference = "branch-across-pages"
     actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
     assert actual == reference
