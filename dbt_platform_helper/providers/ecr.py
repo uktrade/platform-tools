@@ -8,7 +8,6 @@ from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 NOT_A_UNIQUE_TAG_INFO = 'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{commit_tag}" instead.'
@@ -84,50 +83,6 @@ class ECRProvider:
                 raise AWSException(
                     f"Unexpected error for repo '{repository}' and image reference '{image_ref}': {e}"
                 )
-
-    def get_image_details(
-        self, application: Application, codebase: str, image_ref: str
-    ) -> list[dict]:
-        """Check if image exists in AWS ECR, and return a list of dictionaries
-        containing image metadata."""
-
-        repository = f"{application.name}/{codebase}"
-
-        try:
-            image_info = self._get_client().describe_images(
-                repositoryName=repository,
-                imageIds=[{"imageTag": image_ref}],
-            )
-
-            self._check_image_details_exists(image_info, image_ref)
-
-            return image_info.get("imageDetails")
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Code"] == "ImageNotFoundException":
-                raise ImageNotFoundException(image_ref)
-            if e.response["Error"]["Code"] == "RepositoryNotFoundException":
-                raise RepositoryNotFoundException(repository)
-
-    def find_commit_tag(self, image_details: list[dict], image_ref: str) -> str:
-        """Loop through imageTags list to query for an image tag starting with
-        'commit-', and return that value if found."""
-
-        if image_ref.startswith("commit-"):
-            return image_ref
-
-        if image_details:
-            for image in image_details:
-                image_tags = image.get("imageTags", {})
-                for tag in image_tags:
-                    if tag.startswith("commit-"):
-                        self.click_io.info(
-                            f'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{tag}" instead.'
-                        )
-                        return tag
-        self.click_io.warn(
-            f'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
-        )
-        return image_ref
 
     @staticmethod
     def _check_image_details_exists(image_info: dict, image_ref: str):
