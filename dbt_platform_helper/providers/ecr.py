@@ -23,16 +23,25 @@ class ECRProvider:
 
     def get_commit_tag_for_reference(self, application_name: str, codebase: str, image_ref: str):
         repository = f"{application_name}/{codebase}"
-        params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
-        image_list = self._get_client().list_images(**params)
-
+        next_page_token = None
         tag_map = {}
         digest_map = defaultdict(dict)
 
-        for image in image_list["imageIds"]:
-            digest, tag = image["imageDigest"], image["imageTag"]
-            digest_map[digest][tag.split("-")[0]] = tag
-            tag_map[tag] = digest
+        while True:
+            params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
+            if next_page_token:
+                params["nextToken"] = next_page_token
+
+            image_list = self._get_client().list_images(**params)
+            next_page_token = image_list.get("nextToken")
+
+            for image in image_list["imageIds"]:
+                digest, tag = image["imageDigest"], image["imageTag"]
+                digest_map[digest][tag.split("-")[0]] = tag
+                tag_map[tag] = digest
+
+            if not next_page_token:
+                break
 
         if image_ref.startswith("commit-"):
             if image_ref in tag_map:

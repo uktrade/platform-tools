@@ -97,26 +97,43 @@ def two_pages_of_describe_repository_data():
     ]
 
 
-PAGE_1 = {
-    "imageIds": [
-        {"imageDigest": "sha256:123", "imageTag": "commit-86e54f"},
-        {"imageDigest": "sha256:124", "imageTag": "commit-56e34"},
-        {"imageDigest": "sha256:124", "imageTag": "tag-1.2.3"},
-        {"imageDigest": "sha256:125", "imageTag": "commit-23ee4f5"},
-        {"imageDigest": "sha256:126", "imageTag": "commit-09dc178af5"},
-    ],
-    "nextToken": "N8jylEwUlHaW6oTKiejfZD",
+image_id_pages = {
+    "page_1": {
+        "imageIds": [
+            {"imageDigest": "sha256:113", "imageTag": "commit-86e54f"},
+            {"imageDigest": "sha256:114", "imageTag": "commit-56e34"},
+            {"imageDigest": "sha256:114", "imageTag": "tag-1.2.3"},
+            {"imageDigest": "sha256:777", "imageTag": "commit-23ee4f5"},
+            {"imageDigest": "sha256:116", "imageTag": "commit-09dc178af5"},
+        ],
+        "nextToken": "page_2",
+    },
+    "page_2": {
+        "imageIds": [
+            {"imageDigest": "sha256:123", "imageTag": "commit-55e54f"},
+            {"imageDigest": "sha256:124", "imageTag": "commit-55e34"},
+            {"imageDigest": "sha256:777", "imageTag": "tag-across-pages"},
+            {"imageDigest": "sha256:125", "imageTag": "commit-55ee4f5"},
+            {"imageDigest": "sha256:126", "imageTag": "commit-55dc178af5"},
+        ],
+        "nextToken": "page_3",
+    },
+    "page_3": {
+        "imageIds": [
+            {"imageDigest": "sha256:134", "imageTag": "branch-fix-truncation-error"},
+            {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
+            {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
+            {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
+            {"imageDigest": "sha256:136", "imageTag": "tag-1.2.3"},
+            {"imageDigest": "sha256:777", "imageTag": "branch-across-pages"},
+        ],
+    },
 }
 
-LAST_PAGE = {
-    "imageIds": [
-        {"imageDigest": "sha256:134", "imageTag": "branch-fix-truncation-error"},
-        {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
-        {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
-        {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
-        {"imageDigest": "sha256:136", "imageTag": "tag-1.2.3"},
-    ],
-}
+
+def return_image_pages(**kwargs):
+    token = kwargs.get("nextToken", "page_1")
+    return image_id_pages[token]
 
 
 @pytest.mark.parametrize(
@@ -126,13 +143,16 @@ LAST_PAGE = {
         ("branch-fix-truncation-error", "commit-76e34"),
         ("tag-1.2.3", "commit-79dc178af5"),
         ("commit-73ee4f5123abc", "commit-73ee4f5"),
+        ("commit-23ee4f5", "commit-23ee4f5"),
+        ("branch-across-pages", "commit-23ee4f5"),
+        ("tag-across-pages", "commit-23ee4f5"),
     ],
 )
 def test_get_commit_tag_for_reference(reference, expected_tag):
     session_mock = Mock()
     client_mock = Mock()
     session_mock.client.return_value = client_mock
-    client_mock.list_images.return_value = LAST_PAGE
+    client_mock.list_images.side_effect = return_image_pages
     mock_io = Mock()
 
     ecr_provider = ECRProvider(session_mock, mock_io)
