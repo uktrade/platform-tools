@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import botocore
 from boto3 import Session
 
@@ -24,10 +26,20 @@ class ECRProvider:
         params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
         image_list = self._get_client().list_images(**params)
 
-        image_tags = [image["imageTag"] for image in image_list["imageIds"]]
+        tag_map = {}
+        digest_map = defaultdict(dict)
 
-        if image_ref.startswith("commit-") and image_ref in image_tags:
+        for image in image_list["imageIds"]:
+            digest, tag = image["imageDigest"], image["imageTag"]
+            digest_map[digest][tag.split("-")[0]] = tag
+            tag_map[tag] = digest
+
+        if image_ref.startswith("commit-") and image_ref in tag_map:
             return image_ref
+        else:
+            digest = tag_map.get(image_ref)
+            if digest in digest_map:
+                return digest_map[digest].get("commit")
 
     def get_image_details(
         self, application: Application, codebase: str, image_ref: str

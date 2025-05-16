@@ -122,7 +122,7 @@ LAST_PAGE = {
     "reference, expected_tag",
     [
         ("commit-73ee4f5", "commit-73ee4f5"),
-        # ("branch-fix-truncation-error", "commit-73e34"),
+        ("branch-fix-truncation-error", "commit-76e34"),
     ],
 )
 def test_get_commit_tag_for_reference(reference, expected_tag):
