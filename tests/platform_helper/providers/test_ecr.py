@@ -114,6 +114,7 @@ LAST_PAGE = {
         {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
         {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
         {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
+        {"imageDigest": "sha256:136", "imageTag": "tag-1.2.3"},
     ],
 }
 
@@ -123,6 +124,7 @@ LAST_PAGE = {
     [
         ("commit-73ee4f5", "commit-73ee4f5"),
         ("branch-fix-truncation-error", "commit-76e34"),
+        ("tag-1.2.3", "commit-79dc178af5"),
     ],
 )
 def test_get_commit_tag_for_reference(reference, expected_tag):
