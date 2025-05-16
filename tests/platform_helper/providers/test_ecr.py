@@ -13,6 +13,17 @@ from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.utils.application import Application
 
 
+class ECRProviderMocks:
+    def __init__(self):
+        self.session_mock = Mock()
+        self.client_mock = Mock()
+        self.session_mock.client.return_value = self.client_mock
+        self.mock_io = Mock()
+
+    def params(self):
+        return {"session": self.session_mock, "click_io": self.mock_io}
+
+
 def test_aws_get_ecr_repos_success(two_pages_of_describe_repository_data):
     mock_session = Mock()
     mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
@@ -153,43 +164,47 @@ def return_image_pages(**kwargs):
     ],
 )
 def test_get_commit_tag_for_reference(test_name, reference, expected_tag, expect_info_message):
-    session_mock = Mock()
-    client_mock = Mock()
-    session_mock.client.return_value = client_mock
-    client_mock.list_images.side_effect = return_image_pages
-    mock_io = Mock()
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.side_effect = return_image_pages
 
-    ecr_provider = ECRProvider(session_mock, mock_io)
+    ecr_provider = ECRProvider(**mocks.params())
 
     actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
     assert actual == expected_tag, f"'{test_name}' test case failed"
     if expect_info_message:
-        mock_io.info.assert_called_once_with(
+        mocks.mock_io.info.assert_called_once_with(
             NOT_A_UNIQUE_TAG_INFO.format(image_ref=reference, commit_tag=expected_tag)
         )
 
 
 @pytest.mark.parametrize("reference", ["branch-no-associated-commit", "tag-no-associated-commit"])
 def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(reference):
-    session_mock = Mock()
-    client_mock = Mock()
-    session_mock.client.return_value = client_mock
-    client_mock.list_images.return_value = image_id_pages["page_3"]
-    mock_io = Mock()
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
 
-    ecr_provider = ECRProvider(session_mock, mock_io)
+    ecr_provider = ECRProvider(**mocks.params())
 
     actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
     assert actual == reference
-    mock_io.warn.assert_called_once_with(
+    mocks.mock_io.warn.assert_called_once_with(
         NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=reference)
     )
 
 
 def test_get_commit_tag_for_reference_errors_when_no_images_match():
-    pass
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
+    ecr_provider = ECRProvider(**mocks.params())
+
+    with pytest.raises(ImageNotFoundException) as ex:
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-abc123")
+
+    actual_error = str(ex.value)
+    expected_error = 'An image labelled "commit-abc123" could not be found in your image repository. Try the `platform-helper codebase build` command first.'
+
+    assert actual_error == expected_error
 
 
 def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
