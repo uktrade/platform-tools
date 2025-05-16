@@ -34,8 +34,12 @@ class ECRProvider:
             digest_map[digest][tag.split("-")[0]] = tag
             tag_map[tag] = digest
 
-        if image_ref.startswith("commit-") and image_ref in tag_map:
-            return image_ref
+        if image_ref.startswith("commit-"):
+            if image_ref in tag_map:
+                return image_ref
+            else:
+                candidates = [tag for tag in tag_map.keys() if image_ref.startswith(tag)]
+                return candidates[0]
         else:
             digest = tag_map.get(image_ref)
             if digest in digest_map:
