@@ -17,7 +17,7 @@ from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggere
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
-from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment
@@ -220,17 +220,14 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     client.start_pipeline_execution.return_value = {
         "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
     }
-    image_details = [{"imageTags": ["tag-1.2.3", "branch-feature_one", "commit-abc123"]}]
-    mocks.ecr_provider.get_image_details.return_value = image_details
-    mocks.ecr_provider.find_commit_tag.return_value = "commit-abc123"
+    mocks.ecr_provider.get_commit_tag_for_reference.return_value = "commit-abc123"
 
     codebase = Codebase(**mocks.params())
     codebase.deploy("test-application", "development", "application", commit, tag, branch)
 
-    codebase.ecr_provider.get_image_details.assert_called_once_with(
-        mock_application, "application", expected_ref
+    codebase.ecr_provider.get_commit_tag_for_reference.assert_called_once_with(
+        mock_application.name, "application", expected_ref
     )
-    codebase.ecr_provider.find_commit_tag.assert_called_once_with(image_details, expected_ref)
 
     client.start_pipeline_execution.assert_called_with(
         name="test-application-application-manual-release",
@@ -260,42 +257,6 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
 
 
 @pytest.mark.parametrize(
-    "tag, branch, expected_find_commit_tag_param",
-    [
-        ("1.2.3", None, "tag-1.2.3"),
-        (None, "feature_one", "branch-feature_one"),
-    ],
-)
-def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag(
-    tag, branch, expected_find_commit_tag_param
-):
-    mocks = CodebaseMocks()
-    mock_image_details = MagicMock()
-    mocks.ecr_provider.get_image_details.return_value = mock_image_details
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
-
-    mocks.ecr_provider.find_commit_tag.return_value = "commit-abc123"
-    codebase = Codebase(**mocks.params())
-
-    # 'commit' is None as we're only interested in scenarios where 'commit' is not used
-    codebase.deploy("test-application", "development", "application", None, tag, branch)
-
-    mocks.ecr_provider.find_commit_tag.assert_called_once_with(
-        mock_image_details, expected_find_commit_tag_param
-    )
-
-    client.start_pipeline_execution.assert_called_once_with(
-        name="test-application-application-manual-release",
-        variables=[
-            {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "commit-abc123"},
-        ],
-    )
-
-
-@pytest.mark.parametrize(
     "tag, branch",
     [
         ("non-existent-tag", None),
@@ -304,7 +265,9 @@ def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag(
 )
 def test_codebase_deploy_propagates_repository_not_found_exception(tag, branch):
     mocks = CodebaseMocks()
-    mocks.ecr_provider.get_image_details.side_effect = RepositoryNotFoundException("application")
+    mocks.ecr_provider.get_commit_tag_for_reference.side_effect = RepositoryNotFoundException(
+        "application"
+    )
 
     with pytest.raises(RepositoryNotFoundException):
         codebase = Codebase(**mocks.params())
@@ -319,11 +282,11 @@ def test_codebase_deploy_propagates_repository_not_found_exception(tag, branch):
         (None, "nonexistent-branch"),
     ],
 )
-def test_codebase_deploy_propagates_image_not_found_exception(tag, branch):
+def test_codebase_deploy_propagates_aws_exception(tag, branch):
     mocks = CodebaseMocks()
-    mocks.ecr_provider.get_image_details.side_effect = ImageNotFoundException("ref")
+    mocks.ecr_provider.get_commit_tag_for_reference.side_effect = AWSException("error")
 
-    with pytest.raises(ImageNotFoundException):
+    with pytest.raises(AWSException):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", None, tag, branch)
 
@@ -343,7 +306,7 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(
     mocks.run_subprocess.return_value.stderr = ""
     mocks.io.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-    mocks.ecr_provider.find_commit_tag.return_value = "commit-ab1c23d"
+    mocks.ecr_provider.get_commit_tag_for_reference.return_value = "commit-ab1c23d"
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
