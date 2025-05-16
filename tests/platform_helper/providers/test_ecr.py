@@ -97,6 +97,48 @@ def two_pages_of_describe_repository_data():
     ]
 
 
+PAGE_1 = {
+    "imageIds": [
+        {"imageDigest": "sha256:123", "imageTag": "commit-86e54f"},
+        {"imageDigest": "sha256:124", "imageTag": "commit-56e34"},
+        {"imageDigest": "sha256:124", "imageTag": "tag-1.2.3"},
+        {"imageDigest": "sha256:125", "imageTag": "commit-23ee4f5"},
+        {"imageDigest": "sha256:126", "imageTag": "commit-09dc178af5"},
+    ],
+    "nextToken": "N8jylEwUlHaW6oTKiejfZD",
+}
+
+LAST_PAGE = {
+    "imageIds": [
+        {"imageDigest": "sha256:134", "imageTag": "branch-fix-truncation-error"},
+        {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
+        {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
+        {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
+    ],
+}
+
+
+@pytest.mark.parametrize(
+    "reference, expected_tag",
+    [
+        ("commit-73ee4f5", "commit-73ee4f5"),
+        # ("branch-fix-truncation-error", "commit-73e34"),
+    ],
+)
+def test_get_commit_tag_for_reference(reference, expected_tag):
+    session_mock = Mock()
+    client_mock = Mock()
+    session_mock.client.return_value = client_mock
+    client_mock.list_images.return_value = LAST_PAGE
+    mock_io = Mock()
+
+    ecr_provider = ECRProvider(session_mock, mock_io)
+
+    actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
+
+    assert actual == expected_tag
+
+
 def test_get_image_details_returns_details():
     session_mock = MagicMock()
     client_mock = MagicMock()

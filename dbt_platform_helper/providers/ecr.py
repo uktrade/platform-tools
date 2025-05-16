@@ -19,6 +19,16 @@ class ECRProvider:
             out.extend([repo["repositoryName"] for repo in page.get("repositories", {})])
         return out
 
+    def get_commit_tag_for_reference(self, application_name: str, codebase: str, image_ref: str):
+        repository = f"{application_name}/{codebase}"
+        params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
+        image_list = self._get_client().list_images(**params)
+
+        image_tags = [image["imageTag"] for image in image_list["imageIds"]]
+
+        if image_ref.startswith("commit-") and image_ref in image_tags:
+            return image_ref
+
     def get_image_details(
         self, application: Application, codebase: str, image_ref: str
     ) -> list[dict]:
