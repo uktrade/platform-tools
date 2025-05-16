@@ -5,7 +5,9 @@ from unittest.mock import Mock
 import botocore
 import pytest
 
+from dbt_platform_helper.providers.aws.exceptions import MULTIPLE_IMAGES_FOUND_TEMPLATE
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.ecr import NO_ASSOCIATED_COMMIT_TAG_WARNING
 from dbt_platform_helper.providers.ecr import NOT_A_UNIQUE_TAG_INFO
@@ -141,6 +143,9 @@ image_id_pages = {
             {"imageDigest": "sha256:000", "imageTag": "tag-no-associated-commit"},
             {"imageDigest": "sha256:001", "imageTag": "branch-no-associated-commit"},
             {"imageDigest": "sha256:777", "imageTag": "branch-across-pages"},
+            {"imageDigest": "sha256:887", "imageTag": "commit-deadbea"},
+            {"imageDigest": "sha256:888", "imageTag": "commit-deadb"},
+            {"imageDigest": "sha256:889", "imageTag": "commit-dea"},
         ],
     },
 }
@@ -193,7 +198,10 @@ def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(
     )
 
 
-def test_get_commit_tag_for_reference_errors_when_no_images_match():
+@pytest.mark.parametrize(
+    "reference", ["commit-abc123", "tag-no-such-tag", "branch-no-such-branch", "commit-"]
+)
+def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
     mocks = ECRProviderMocks()
     mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
     ecr_provider = ECRProvider(**mocks.params())
@@ -208,7 +216,19 @@ def test_get_commit_tag_for_reference_errors_when_no_images_match():
 
 
 def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
-    pass
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
+    ecr_provider = ECRProvider(**mocks.params())
+
+    with pytest.raises(MultipleImagesFoundException) as ex:
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-deadbea7")
+
+    actual_error = str(ex.value)
+    expected_error = MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
+        image_ref="commit-deadbea7", matching_images="commit-dea, commit-deadb, commit-deadbea"
+    )
+
+    assert actual_error == expected_error
 
 
 def test_get_commit_tag_for_reference_recasts_exceptions_as_platform_exceptions():

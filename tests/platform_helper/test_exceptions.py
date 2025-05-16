@@ -5,12 +5,14 @@ import pytest
 from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.providers.aws.exceptions import MULTIPLE_IMAGES_FOUND_TEMPLATE
 from dbt_platform_helper.providers.aws.exceptions import (
     CopilotCodebaseNotFoundException,
 )
 from dbt_platform_helper.providers.aws.exceptions import CreateTaskTimeoutException
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.secrets import AddonNotFoundException
@@ -79,6 +81,13 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
             ImageNotFoundException,
             {"image_ref": "does-not-exist"},
             """An image labelled "does-not-exist" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
+        ),
+        (
+            MultipleImagesFoundException,
+            {"image_ref": "commit-abc123", "matching_images": ["commit-abc12", "commit-ab"]},
+            MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
+                image_ref="commit-abc123", matching_images="commit-ab, commit-abc12"
+            ),
         ),
         (
             LogGroupNotFoundException,

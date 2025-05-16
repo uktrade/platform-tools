@@ -12,10 +12,25 @@ class CreateTaskTimeoutException(AWSException):
         )
 
 
+IMAGE_NOT_FOUND_TEMPLATE = """An image labelled "{image_ref}" could not be found in your image repository. Try the `platform-helper codebase build` command first."""
+
+
 class ImageNotFoundException(AWSException):
     def __init__(self, image_ref: str):
+        super().__init__(IMAGE_NOT_FOUND_TEMPLATE.format(image_ref=image_ref))
+
+
+MULTIPLE_IMAGES_FOUND_TEMPLATE = (
+    'Image reference "{image_ref}" matched the following images: {matching_images}'
+)
+
+
+class MultipleImagesFoundException(AWSException):
+    def __init__(self, image_ref: str, matching_images: list[str]):
         super().__init__(
-            f"""An image labelled "{image_ref}" could not be found in your image repository. Try the `platform-helper codebase build` command first."""
+            MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
+                image_ref=image_ref, matching_images=", ".join(sorted(matching_images))
+            )
         )
 
 

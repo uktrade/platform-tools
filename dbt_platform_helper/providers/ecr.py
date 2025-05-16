@@ -4,6 +4,7 @@ import botocore
 from boto3 import Session
 
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.application import Application
@@ -53,6 +54,8 @@ class ECRProvider:
                 candidates = [tag for tag in tag_map.keys() if image_ref.startswith(tag)]
                 if not candidates:
                     raise ImageNotFoundException(image_ref)
+                if len(candidates) > 1:
+                    raise MultipleImagesFoundException(image_ref, candidates)
                 return candidates[0]
         else:
             digest = tag_map.get(image_ref)
