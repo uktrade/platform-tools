@@ -210,10 +210,10 @@ def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
     ecr_provider = ECRProvider(**mocks.params())
 
     with pytest.raises(ImageNotFoundException) as ex:
-        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-abc123")
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
     actual_error = str(ex.value)
-    expected_error = IMAGE_NOT_FOUND_TEMPLATE.format(image_ref="commit-abc123")
+    expected_error = IMAGE_NOT_FOUND_TEMPLATE.format(image_ref=reference)
 
     assert actual_error == expected_error
 

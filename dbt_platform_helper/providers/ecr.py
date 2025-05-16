@@ -56,6 +56,9 @@ class ECRProvider:
                 return candidates[0]
         else:
             digest = tag_map.get(image_ref)
+            if not digest:
+                raise ImageNotFoundException(image_ref)
+
             commit_tag = digest_map.get(digest, dict()).get("commit")
 
             if commit_tag:
