@@ -172,8 +172,10 @@ class Codebase:
             image_ref = f"tag-{tag}"
         elif branch:
             image_ref = f"branch-{branch}"
-        image_details = self.ecr_provider.get_image_details(application, codebase, image_ref)
-        image_ref = self.ecr_provider.find_commit_tag(image_details, image_ref)
+
+        image_ref = self.ecr_provider.get_commit_tag_for_reference(
+            application.name, codebase, image_ref
+        )
 
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
