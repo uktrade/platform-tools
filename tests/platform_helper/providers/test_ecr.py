@@ -112,16 +112,16 @@ image_id_pages = {
         "imageIds": [
             {"imageDigest": "sha256:123", "imageTag": "commit-55e54f"},
             {"imageDigest": "sha256:124", "imageTag": "commit-55e34"},
+            {"imageDigest": "sha256:134", "imageTag": "branch-fix-truncation-error"},
             {"imageDigest": "sha256:777", "imageTag": "tag-across-pages"},
             {"imageDigest": "sha256:125", "imageTag": "commit-55ee4f5"},
+            {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
             {"imageDigest": "sha256:126", "imageTag": "commit-55dc178af5"},
         ],
         "nextToken": "page_3",
     },
     "page_3": {
         "imageIds": [
-            {"imageDigest": "sha256:134", "imageTag": "branch-fix-truncation-error"},
-            {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
             {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
             {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
             {"imageDigest": "sha256:136", "imageTag": "tag-1.2.3"},
@@ -137,18 +137,18 @@ def return_image_pages(**kwargs):
 
 
 @pytest.mark.parametrize(
-    "reference, expected_tag",
+    "test_name, reference, expected_tag",
     [
-        ("commit-73ee4f5", "commit-73ee4f5"),
-        ("branch-fix-truncation-error", "commit-76e34"),
-        ("tag-1.2.3", "commit-79dc178af5"),
-        ("commit-73ee4f5123abc", "commit-73ee4f5"),
-        ("commit-23ee4f5", "commit-23ee4f5"),
-        ("branch-across-pages", "commit-23ee4f5"),
-        ("tag-across-pages", "commit-23ee4f5"),
+        ("commit page 1", "commit-09dc178af5", "commit-09dc178af5"),
+        ("branch page 2", "branch-fix-truncation-error", "commit-76e34"),
+        ("tag page 3", "tag-1.2.3", "commit-79dc178af5"),
+        ("single match commit", "commit-73ee4f5123abc", "commit-73ee4f5"),
+        ("cross page commit", "commit-23ee4f5", "commit-23ee4f5"),
+        ("cross page branch", "branch-across-pages", "commit-23ee4f5"),
+        ("cross page tag", "tag-across-pages", "commit-23ee4f5"),
     ],
 )
-def test_get_commit_tag_for_reference(reference, expected_tag):
+def test_get_commit_tag_for_reference(test_name, reference, expected_tag):
     session_mock = Mock()
     client_mock = Mock()
     session_mock.client.return_value = client_mock
@@ -159,7 +159,7 @@ def test_get_commit_tag_for_reference(reference, expected_tag):
 
     actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
-    assert actual == expected_tag
+    assert actual == expected_tag, f"'{test_name}' test case failed"
 
 
 def test_get_image_details_returns_details():
