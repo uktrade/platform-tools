@@ -7,6 +7,7 @@ import pytest
 
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
+from dbt_platform_helper.providers.ecr import NO_ASSOCIATED_COMMIT_TAG_WARNING
 from dbt_platform_helper.providers.ecr import NOT_A_UNIQUE_TAG_INFO
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.utils.application import Application
@@ -168,6 +169,24 @@ def test_get_commit_tag_for_reference(test_name, reference, expected_tag, expect
 
 
 def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning():
+    session_mock = Mock()
+    client_mock = Mock()
+    session_mock.client.return_value = client_mock
+    client_mock.list_images.return_value = image_id_pages["page_3"]
+    mock_io = Mock()
+
+    ecr_provider = ECRProvider(session_mock, mock_io)
+
+    reference = "branch-across-pages"
+    actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
+
+    assert actual == reference
+    mock_io.warn.assert_called_once_with(
+        NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=reference)
+    )
+
+
+def test_get_commit_tag_for_reference_errors_when_no_images_match():
     pass
 
 

@@ -10,6 +10,7 @@ from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 NOT_A_UNIQUE_TAG_INFO = 'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{commit_tag}" instead.'
+NO_ASSOCIATED_COMMIT_TAG_WARNING = 'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
 
 
 class ECRProvider:
@@ -53,12 +54,16 @@ class ECRProvider:
                 return candidates[0]
         else:
             digest = tag_map.get(image_ref)
-            if digest in digest_map:
-                commit_tag = digest_map[digest].get("commit")
+            commit_tag = digest_map.get(digest, dict()).get("commit")
+
+            if commit_tag:
                 self.click_io.info(
                     NOT_A_UNIQUE_TAG_INFO.format(image_ref=image_ref, commit_tag=commit_tag)
                 )
                 return commit_tag
+            else:
+                self.click_io.warn(NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=image_ref))
+                return image_ref
 
     def get_image_details(
         self, application: Application, codebase: str, image_ref: str
