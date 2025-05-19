@@ -248,7 +248,7 @@ def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
         ),
     ],
 )
-def test_get_commit_tag_for_reference_recasts_exceptions_as_platform_exceptions(
+def test_get_commit_tag_for_reference_recasts_exceptions_as_more_specific_exceptions(
     boto_exception, expected_exception, expected_message
 ):
     mocks = ECRProviderMocks()
