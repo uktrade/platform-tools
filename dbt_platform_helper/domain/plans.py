@@ -1,7 +1,12 @@
+from pathlib import Path
+
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 
 
 class PlanManager:
+
+    PACKAGE_DIR = Path(__file__).resolve().parent.parent.parent
+
     def __init__(
         self,
         extensions=None,
@@ -20,7 +25,7 @@ class PlanManager:
     def load(self):
         result = {}
         for key, value in self.extensions.items():
-            result[key] = self._load_plan(key, f"{self.path}/{value}/plans.yml")
+            result[key] = self._load_plan(key, f"{self.PACKAGE_DIR}/{self.path}/{value}/plans.yml")
         return result
 
     def _load_plan(self, name, path):

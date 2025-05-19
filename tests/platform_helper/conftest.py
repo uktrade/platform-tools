@@ -43,9 +43,7 @@ def fakefs(fs):
     fs.add_real_directory(BASE_DIR / "dbt_platform_helper/templates", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/default-extensions.yml")
-    fs.add_real_directory(
-        BASE_DIR / "terraform", read_only=False, target_path="terraform", lazy_read=True
-    )
+    fs.add_real_directory(BASE_DIR / "terraform", read_only=False, lazy_read=True)
 
     # To avoid 'Could not find a suitable TLS CA certificate bundle...' error
     fs.add_real_file(Path(certifi.__file__).parent / "cacert.pem")
