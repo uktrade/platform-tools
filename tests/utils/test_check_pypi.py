@@ -1,4 +1,7 @@
+import json
 import sys
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
 
@@ -32,7 +35,25 @@ def test_get_current_version__fails_with_missing_version():
         get_current_version(UTILS_FIXTURES_DIR / "pyproject_no_version.toml")
 
 
-def test_get_releases__success():
+@patch("utils.check_pypi.urlopen", return_value=MagicMock())
+def test_get_releases__success(urlopen):
+    read_mock = MagicMock()
+    read_mock.read.return_value = json.dumps(
+        {
+            "releases": {
+                "6.2.0": [
+                    {},
+                ],
+                "6.1.0": [
+                    {},
+                ],
+                "6.0.0": [
+                    {},
+                ],
+            }
+        }
+    )
+    urlopen.return_value = read_mock
     releases = get_releases()
 
     assert "6.0.0" in releases
