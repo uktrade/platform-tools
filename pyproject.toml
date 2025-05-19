@@ -10,7 +10,8 @@ license = "MIT"
 readme = "dbt_platform_helper/README.md"
 packages = [
     { include = "dbt_platform_helper" },
-    { include = "platform_helper.py" }
+    { include = "platform_helper.py" },
+    { include = "terraform" },
 ]
 
 [tool.poetry.scripts]
