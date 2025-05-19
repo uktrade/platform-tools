@@ -11,7 +11,7 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 NOT_A_UNIQUE_TAG_INFO = 'INFO: The tag "{image_ref}" is not a unique, commit-specific tag. Deploying the corresponding commit tag "{commit_tag}" instead.'
-NO_ASSOCIATED_COMMIT_TAG_WARNING = 'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
+NO_ASSOCIATED_COMMIT_TAG_WARNING = 'WARNING: The AWS ECR image "{image_ref}" has no associated commit tag so deploying "{image_ref}". Note this could result in images with unintended or incompatible changes being deployed in new ECS Tasks for your service.'
 
 
 class ECRProvider:
