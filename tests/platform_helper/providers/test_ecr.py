@@ -113,7 +113,7 @@ def two_pages_of_describe_repository_data():
     ]
 
 
-image_id_pages = {
+IMAGE_ID_PAGES = {
     "page_1": {
         "imageIds": [
             {"imageDigest": "sha256:113", "imageTag": "commit-86e54f"},
@@ -154,7 +154,7 @@ image_id_pages = {
 
 def return_image_pages(**kwargs):
     token = kwargs.get("nextToken", "page_1")
-    return image_id_pages[token]
+    return IMAGE_ID_PAGES[token]
 
 
 @pytest.mark.parametrize(
@@ -187,7 +187,7 @@ def test_get_commit_tag_for_reference(test_name, reference, expected_tag, expect
 @pytest.mark.parametrize("reference", ["branch-no-associated-commit", "tag-no-associated-commit"])
 def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(reference):
     mocks = ECRProviderMocks()
-    mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
+    mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
 
     ecr_provider = ECRProvider(**mocks.params())
 
@@ -204,7 +204,7 @@ def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(
 )
 def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
     mocks = ECRProviderMocks()
-    mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
+    mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
     ecr_provider = ECRProvider(**mocks.params())
 
     with pytest.raises(ImageNotFoundException) as ex:
@@ -218,7 +218,7 @@ def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
 
 def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
     mocks = ECRProviderMocks()
-    mocks.client_mock.list_images.return_value = image_id_pages["page_3"]
+    mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
     ecr_provider = ECRProvider(**mocks.params())
 
     with pytest.raises(MultipleImagesFoundException) as ex:
