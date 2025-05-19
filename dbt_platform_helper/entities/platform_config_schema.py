@@ -9,6 +9,10 @@ from schema import Schema
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
+from dbt_platform_helper.domain.plans import PlanManager
+
+plan_manager = PlanManager()
+plan_manager.load()
 
 
 class PlatformConfigSchema:
@@ -248,17 +252,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __opensearch_schema() -> dict:
         # TODO: DBTP-1943: Move to OpenSearch provider?
-        _valid_opensearch_plans = Or(
-            "tiny",
-            "small",
-            "small-ha",
-            "medium",
-            "medium-ha",
-            "large",
-            "large-ha",
-            "x-large",
-            "x-large-ha",
-        )
+        _valid_opensearch_plans = Or(*plan_manager.get_plan_names("opensearch"))
 
         return {
             "type": "opensearch",
@@ -285,28 +279,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __postgres_schema() -> dict:
-        # TODO: DBTP-1943: Move to Postgres provider?
-        _valid_postgres_plans = Or(
-            "tiny",
-            "small",
-            "small-ha",
-            "small-high-io",
-            "medium",
-            "medium-ha",
-            "medium-high-io",
-            "large",
-            "large-ha",
-            "large-high-io",
-            "x-large",
-            "x-large-ha",
-            "x-large-high-io",
-            "2x-large",
-            "2x-large-ha",
-            "2x-large-high-io",
-            "4x-large",
-            "4x-large-ha",
-            "4x-large-high-io",
-        )
+        _valid_postgres_plans = Or(*plan_manager.get_plan_names("postgres"))
 
         # TODO: DBTP-1943: Move to Postgres provider?
         _valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
@@ -361,21 +334,7 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __redis_schema() -> dict:
-        # TODO: DBTP-1943: move to Redis provider?
-        _valid_redis_plans = Or(
-            "micro",
-            "micro-ha",
-            "tiny",
-            "tiny-ha",
-            "small",
-            "small-ha",
-            "medium",
-            "medium-ha",
-            "large",
-            "large-ha",
-            "x-large",
-            "x-large-ha",
-        )
+        _valid_redis_plans = Or(*plan_manager.get_plan_names("redis"))
 
         return {
             "type": "redis",
