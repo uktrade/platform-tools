@@ -144,9 +144,9 @@ IMAGE_ID_PAGES = {
             {"imageDigest": "sha256:000", "imageTag": "tag-no-associated-commit"},
             {"imageDigest": "sha256:001", "imageTag": "branch-no-associated-commit"},
             {"imageDigest": "sha256:777", "imageTag": "branch-across-pages"},
-            {"imageDigest": "sha256:887", "imageTag": "commit-deadbea"},
-            {"imageDigest": "sha256:888", "imageTag": "commit-deadb"},
-            {"imageDigest": "sha256:889", "imageTag": "commit-dea"},
+            {"imageDigest": "sha256:887", "imageTag": "commit-deadbea7"},
+            {"imageDigest": "sha256:888", "imageTag": "commit-deadbe"},
+            {"imageDigest": "sha256:889", "imageTag": "commit-dead"},
         ],
     },
 }
@@ -163,7 +163,18 @@ def return_image_pages(**kwargs):
         ("commit page 1", "commit-09dc178af5", "commit-09dc178af5", False),
         ("branch page 2", "branch-fix-truncation-error", "commit-76e34", True),
         ("tag page 3", "tag-1.2.3", "commit-79dc178af5", True),
-        ("single match commit", "commit-73ee4f5123abc", "commit-73ee4f5", False),
+        (
+            "single match commit match less specific commit",
+            "commit-73ee4f5123abc",
+            "commit-73ee4f5",
+            False,
+        ),
+        (
+            "single match commit match more specific commit",
+            "commit-55dc178",
+            "commit-55dc178af5",
+            False,
+        ),
         ("cross page commit", "commit-23ee4f5", "commit-23ee4f5", False),
         ("cross page branch", "branch-across-pages", "commit-23ee4f5", True),
         ("cross page tag", "tag-across-pages", "commit-23ee4f5", True),
@@ -217,27 +228,25 @@ def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
 
 
 @pytest.mark.parametrize(
-    "image_reference, expected_matches",
+    "reference, expected_matches",
     [
-        ("commit-deadbea7", "commit-dea, commit-deadb, commit-deadbea"),
-        ("commit-deadbe", "commit-dea, commit-deadb, commit-deadbea"),
-        ("commit-dead", "commit-dea, commit-deadb, commit-deadbea"),
-        ("commit-de", "commit-dea, commit-deadb, commit-deadbea"),
+        ("commit-deadbea7e", "commit-dead, commit-deadbe, commit-deadbea7"),
+        ("commit-deadbea", "commit-dead, commit-deadbe, commit-deadbea7"),
     ],
 )
 def test_get_commit_tag_for_reference_errors_when_multiple_images_match(
-    image_reference, expected_matches
+    reference, expected_matches
 ):
     mocks = ECRProviderMocks()
     mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
     ecr_provider = ECRProvider(**mocks.params())
 
     with pytest.raises(MultipleImagesFoundException) as ex:
-        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", image_reference)
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
     actual_error = str(ex.value)
     expected_error = MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
-        image_ref=image_reference, matching_images=expected_matches
+        image_ref=reference, matching_images=expected_matches
     )
 
     assert actual_error == expected_error

@@ -26,6 +26,9 @@ phases:
       - UPPERCASE_SERVICE=$(echo "${SERVICE}" | tr '[:lower:]' '[:upper:]')
       - UPPERCASE_TAG=$(echo "${IMAGE_TAG}" | tr '[:lower:]' '[:upper:]')
 
+      # Use IMAGE_TAG to find the actual commit-* tag for the image
+      # Build image_uri from that tag instead of IMAGE_TAG
+
       # Check if the specified image tag exists
       - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
       - |

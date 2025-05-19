@@ -167,6 +167,7 @@ class Codebase:
 
         image_ref = None
         if commit:
+            self._validate_sha_length(commit)
             image_ref = f"commit-{commit}"
         elif tag:
             image_ref = f"tag-{tag}"
@@ -285,6 +286,12 @@ class Codebase:
             )
             return get_build_url_from_pipeline_execution_id(execution_id, build_options["name"])
         return None
+
+    def _validate_sha_length(self, commit):
+        if len(commit) < 7:
+            self.io.abort_with_error(
+                "Your commit reference is too short. Commit sha hashes specified by '--commit' must be at least 7 characters long."
+            )
 
 
 class ApplicationDeploymentNotTriggered(PlatformException):

@@ -409,6 +409,30 @@ def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided():
     )
 
 
+@pytest.mark.parametrize("reference", ["1", "123456"])
+def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided(reference):
+    mocks = CodebaseMocks()
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as system_exit_info:
+        codebase.deploy(
+            app="test-app",
+            env="dev",
+            codebase="application",
+            commit=reference,
+            tag=None,
+            branch=None,
+        )
+
+    assert system_exit_info.type == SystemExit
+    assert system_exit_info.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Your commit reference is too short. Commit sha hashes specified by '--commit' must be at least 7 characters long."
+    )
+
+
 @pytest.mark.parametrize(
     "commit, tag, branch",
     [
