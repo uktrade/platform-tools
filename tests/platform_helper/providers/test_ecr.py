@@ -200,7 +200,7 @@ def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(
 
 
 @pytest.mark.parametrize(
-    "reference", ["commit-abc123", "tag-no-such-tag", "branch-no-such-branch", "commit-"]
+    "reference", ["commit-abc123", "tag-no-such-tag", "branch-no-such-branch", "commit-z"]
 )
 def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
     mocks = ECRProviderMocks()
@@ -216,17 +216,28 @@ def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
     assert actual_error == expected_error
 
 
-def test_get_commit_tag_for_reference_errors_when_multiple_images_match():
+@pytest.mark.parametrize(
+    "image_reference, expected_matches",
+    [
+        ("commit-deadbea7", "commit-dea, commit-deadb, commit-deadbea"),
+        ("commit-deadbe", "commit-dea, commit-deadb, commit-deadbea"),
+        ("commit-dead", "commit-dea, commit-deadb, commit-deadbea"),
+        ("commit-de", "commit-dea, commit-deadb, commit-deadbea"),
+    ],
+)
+def test_get_commit_tag_for_reference_errors_when_multiple_images_match(
+    image_reference, expected_matches
+):
     mocks = ECRProviderMocks()
     mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
     ecr_provider = ECRProvider(**mocks.params())
 
     with pytest.raises(MultipleImagesFoundException) as ex:
-        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-deadbea7")
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", image_reference)
 
     actual_error = str(ex.value)
     expected_error = MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
-        image_ref="commit-deadbea7", matching_images="commit-dea, commit-deadb, commit-deadbea"
+        image_ref=image_reference, matching_images=expected_matches
     )
 
     assert actual_error == expected_error

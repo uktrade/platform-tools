@@ -47,7 +47,11 @@ class ECRProvider:
             if image_ref in tag_map:
                 return image_ref
             else:
-                candidates = [tag for tag in tag_map.keys() if image_ref.startswith(tag)]
+                candidates = [
+                    tag
+                    for tag in tag_map.keys()
+                    if image_ref.startswith(tag) or tag.startswith(image_ref)
+                ]
                 if not candidates:
                     raise ImageNotFoundException(image_ref)
                 if len(candidates) > 1:
