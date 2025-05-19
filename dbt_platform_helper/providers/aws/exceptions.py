@@ -21,7 +21,7 @@ class ImageNotFoundException(AWSException):
 
 
 MULTIPLE_IMAGES_FOUND_TEMPLATE = (
-    'Image reference "{image_ref}" matched the following images: {matching_images}'
+    'Image reference "{image_ref}" is matched by the following images: {matching_images}'
 )
 
 
