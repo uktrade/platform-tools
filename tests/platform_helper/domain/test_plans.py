@@ -2,12 +2,12 @@ from pathlib import Path
 
 import yaml
 
-from dbt_platform_helper.domain.plans import PlanManager
+from dbt_platform_helper.domain.plans import PlanLoader
 from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 def test_loads_plans(fakefs):
-    manager = PlanManager()
+    manager = PlanLoader()
 
     result = manager.load()
 
@@ -19,7 +19,7 @@ def test_loads_plans(fakefs):
 
 
 def test_get_plan_names():
-    manager = PlanManager(extensions={"doesnt-matter": "doesnt-matter"})
+    manager = PlanLoader(extensions={"doesnt-matter": "doesnt-matter"})
     manager._cache = {
         "doesnt-matter": {
             "plan-1": {},

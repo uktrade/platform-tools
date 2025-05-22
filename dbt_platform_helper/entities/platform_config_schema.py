@@ -9,9 +9,9 @@ from schema import Schema
 from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
-from dbt_platform_helper.domain.plans import PlanManager
+from dbt_platform_helper.domain.plans import PlanLoader
 
-plan_manager = PlanManager()
+plan_manager = PlanLoader()
 plan_manager.load()
 
 

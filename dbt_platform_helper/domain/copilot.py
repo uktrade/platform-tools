@@ -10,7 +10,7 @@ import botocore.errorfactory
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
-from dbt_platform_helper.domain.plans import PlanManager
+from dbt_platform_helper.domain.plans import PlanLoader
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -46,7 +46,7 @@ class Copilot:
         kms_provider: KMSProvider,
         session,
         io: ClickIOProvider = ClickIOProvider(),
-        plan_manager: PlanManager = PlanManager(),
+        plan_manager: PlanLoader = PlanLoader(),
         yaml_file_provider: YamlFileProvider = YamlFileProvider,
     ):
         self.config_provider = config_provider
