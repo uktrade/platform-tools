@@ -170,7 +170,13 @@ def test_codebase_prepare_raises_not_in_codebase_exception(tmp_path):
         codebase.prepare()
 
 
-def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path):
+@patch(
+    "requests.get",
+    return_value=MagicMock(
+        content=b"builders:\n  - name: paketobuildpacks/builder-jammy-full\n    versions:\n      - version: 0.3.482\n      - version: 0.3.473\n      - version: 0.3.431     \n      - version: 0.3.414 \n      - version: 0.3.397\n      - version: 0.3.339\n      - version: 0.3.338\n      - version: 0.3.317\n      - version: 0.3.294\n      - version: 0.3.288\n  - name: paketobuildpacks/builder-jammy-base\n    versions:\n      - version: 0.4.409\n      - version: 0.4.398\n      - version: 0.4.378\n      - version: 0.4.279\n      - version: 0.4.278\n      - version: 0.4.258\n      - version: 0.4.240\n      - version: 0.4.239\n  - name: paketobuildpacks/builder\n    deprecated: true\n    versions:\n      - version: 0.2.443-full\n"
+    ),
+)
+def test_codebase_prepare_generates_an_executable_image_build_run_file(requests, tmp_path):
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
