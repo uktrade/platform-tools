@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.2.0](https://github.com/uktrade/platform-tools/compare/15.1.0...15.2.0) (2025-05-22)
+
+
+### Features
+
+* Add repository URL to Datadog service metadata (DBTP-1919) ([#869](https://github.com/uktrade/platform-tools/issues/869)) ([0064054](https://github.com/uktrade/platform-tools/commit/00640549a20fb1cbceee4568371815f7f41635fd))
+* Terraform conduit without copilot (DBTP-1927) ([#872](https://github.com/uktrade/platform-tools/issues/872)) ([d8173cb](https://github.com/uktrade/platform-tools/commit/d8173cb28a572055dffd8bacb8dc32dcfe37abed))
+
+
+### Bug Fixes
+
+* ECR repo tag mismatch (DBTP-2071) ([#875](https://github.com/uktrade/platform-tools/issues/875)) ([b0111de](https://github.com/uktrade/platform-tools/commit/b0111defa12cac07ae4862dca486283d09a562bf))
+
 ## [15.1.0](https://github.com/uktrade/platform-tools/compare/15.0.0...15.1.0) (2025-04-30)
 
 
