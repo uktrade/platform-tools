@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.2.1](https://github.com/uktrade/platform-tools/compare/15.2.0...15.2.1) (2025-05-27)
+
+
+### Bug Fixes
+
+* Add --force flag to copilot svc deploy (DBTP-2003) ([#877](https://github.com/uktrade/platform-tools/issues/877)) ([26d305c](https://github.com/uktrade/platform-tools/commit/26d305cc4690ef53394bae24abe36f066eb47db6))
+
 ## [15.2.0](https://github.com/uktrade/platform-tools/compare/15.1.0...15.2.0) (2025-05-22)
 
 
