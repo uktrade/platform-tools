@@ -94,7 +94,7 @@ phases:
           unset AWS_SECRET_ACCESS_KEY
           unset AWS_SESSION_TOKEN
         
-          copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}"
+          copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
         else
           # Build image URI
           task_family="${APPLICATION}-${ENVIRONMENT}-${SERVICE}"
