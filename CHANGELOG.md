@@ -1,5 +1,13 @@
 # Changelog
 
+## [15.2.1](https://github.com/uktrade/platform-tools/compare/15.2.0...15.2.1) (2025-05-28)
+
+
+### Bug Fixes
+
+* Add --force flag to copilot svc deploy (DBTP-2003) ([#877](https://github.com/uktrade/platform-tools/issues/877)) ([26d305c](https://github.com/uktrade/platform-tools/commit/26d305cc4690ef53394bae24abe36f066eb47db6))
+* Plans fail validation (DBTP-2061) ([#876](https://github.com/uktrade/platform-tools/issues/876)) ([cc6d066](https://github.com/uktrade/platform-tools/commit/cc6d066197975a9201efa0d2cfd572ec13475f44))
+
 ## [15.2.0](https://github.com/uktrade/platform-tools/compare/15.1.0...15.2.0) (2025-05-22)
 
 
