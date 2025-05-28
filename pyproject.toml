@@ -10,7 +10,10 @@ license = "MIT"
 readme = "dbt_platform_helper/README.md"
 packages = [
     { include = "dbt_platform_helper" },
-    { include = "platform_helper.py" }
+    { include = "platform_helper.py" },
+    { include = "terraform/elasticache-redis/plans.yml" },
+    { include = "terraform/opensearch/plans.yml" },
+    { include = "terraform/postgres/plans.yml" },
 ]
 
 [tool.poetry.scripts]

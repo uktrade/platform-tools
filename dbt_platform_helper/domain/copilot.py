@@ -10,6 +10,7 @@ import botocore.errorfactory
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.domain.copilot_environment import CopilotTemplating
+from dbt_platform_helper.domain.plans import PlanLoader
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -45,6 +46,7 @@ class Copilot:
         kms_provider: KMSProvider,
         session,
         io: ClickIOProvider = ClickIOProvider(),
+        plan_manager: PlanLoader = PlanLoader(),
         yaml_file_provider: YamlFileProvider = YamlFileProvider,
     ):
         self.config_provider = config_provider
@@ -53,6 +55,7 @@ class Copilot:
         self.copilot_templating = copilot_templating
         self.kms_provider = kms_provider
         self.io = io
+        self.plan_manager = plan_manager
         self.yaml_file_provider = yaml_file_provider
         self.session = session
 
@@ -169,7 +172,7 @@ class Copilot:
         def _normalise_keys(source: dict):
             return {k.replace("-", "_"): v for k, v in source.items()}
 
-        addon_plans = self.yaml_file_provider.load(self.PACKAGE_DIR / "addon-plans.yml")
+        addon_plans = self.plan_manager.load()
 
         # load and validate config
         config = self.yaml_file_provider.load(config_file)

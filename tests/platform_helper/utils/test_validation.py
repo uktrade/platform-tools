@@ -56,6 +56,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
         "no_param_addons.yml",
         "alb_addons.yml",
         "datadog_addons.yml",
+        "addon_plans.yml",
     ],
 )
 def test_validate_addons_success(addons_file):
@@ -246,6 +247,14 @@ def test_validate_addons_success(addons_file):
                 "my-alb-paths-default-cache-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-paths-default-request-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-paths-additional-should-be-a-list": r"Key 'additional' error.*False should be instance of 'list'",
+            },
+        ),
+        (
+            "invalid_addon_plans.yml",
+            {
+                "my-invalid-opensearch": r"environments.*plan.*did not validate 'invalid'",
+                "my-invalid-redis": r"environments.*plan.*did not validate 'invalid",
+                "my-invalid-rds-db": r"environments.*plan.*did not validate 'invalid",
             },
         ),
     ],
