@@ -23,6 +23,21 @@ phases:
     commands:
       - set -e
 
+      # Check if the specified image tag exists
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - |
+        if ! docker manifest inspect "${REPOSITORY_URL}:${IMAGE_TAG}" > /dev/null 2>&1; then
+          echo "Error: Image tag ${IMAGE_TAG} not found in repository ${REPOSITORY_URL}" | tee output.log
+          exit 1
+        fi
+
+      # Check environment exists in config
+      - |
+        if [ $(echo $ENV_CONFIG | jq 'has('\"${ENVIRONMENT}\"')') == "false" ]; then
+          echo "Error: Environment ${ENVIRONMENT} not listed in environment config" | tee output.log
+          exit 1
+        fi
+
       # Retrieve all tags from the image in ECR
       - |
         if [[ "$REPOSITORY_URL" == public.ecr.aws/* ]]; then
@@ -42,22 +57,7 @@ phases:
           COMMIT_TAG=${IMAGE_TAG}
         fi
 
-      # Check if the specified image tag exists
-      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
-      - |
-        if ! docker manifest inspect "${REPOSITORY_URL}:${COMMIT_TAG}" > /dev/null 2>&1; then
-          echo "Error: Image tag ${COMMIT_TAG} not found in repository ${REPOSITORY_URL}" | tee output.log
-          exit 1
-        fi
-
-      # Check environment exists in config
-      - |
-        if [ $(echo $ENV_CONFIG | jq 'has('\"${ENVIRONMENT}\"')') == "false" ]; then
-          echo "Error: Environment ${ENVIRONMENT} not listed in environment config" | tee output.log
-          exit 1
-        fi
-
-      - echo "Deploying ${COMMIT_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
+      - echo "Deploying commit ${COMMIT_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
 
       # Construct Slack message env vars
       - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${COMMIT_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
@@ -80,11 +80,9 @@ phases:
       - PIPELINE_EXECUTION_URL="https://${AWS_REGION}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${PIPELINE_NAME}/executions/${PIPELINE_EXECUTION_ID}"
       - BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
 
-      - UPPERCASE_SERVICE=$(echo "${SERVICE}" | tr '[:lower:]' '[:upper:]')
-      - UPPERCASE_TAG=$(echo "${COMMIT_TAG}" | tr '[:lower:]' '[:upper:]')
+      # Send deployment starting Slack notification
       - |
-        MESSAGE=":rocket: STARTED - Deployment of ${UPPERCASE_SERVICE} service - Tag: ${UPPERCASE_TAG} - <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution url>"
-
+        MESSAGE=":rocket: STARTED - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
 
       # Run Copilot package command and clean the manifest output
@@ -99,10 +97,12 @@ phases:
 
       # Get the current CloudFormation template and clean it for comparison
       - aws cloudformation get-template --stack-name "${APPLICATION}-${ENVIRONMENT}-${SERVICE}" --output json --query TemplateBody | jq -r . | yq .Metadata.Manifest | jq -r . | yq 'del(.image.location)' > current.yml
-  
+
+      # Compare deployed copilot manifest with incoming deployment
       - diff new.yml current.yml; DIFF_EXIT_CODE=$?
       - echo "DIFF EXIT CODE IS ${DIFF_EXIT_CODE}"
-      
+
+      # If there are differences in the copilot manifest use a copilot deployment
       - |
         if [[ $DIFF_EXIT_CODE -ne 0 ]]; then
           echo "Differences detected between deployed and committed service templates, running copilot svc deploy..."
@@ -110,8 +110,18 @@ phases:
           unset AWS_ACCESS_KEY_ID
           unset AWS_SECRET_ACCESS_KEY
           unset AWS_SESSION_TOKEN
+                
+          STATUS_EMOJI=":large_green_circle:"
+          STATUS_TEXT="COMPLETE"
         
           IMAGE_TAG=${COMMIT_TAG} copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
+
+          if [ $? -ne 0 ]; then
+            STATUS_EMOJI=":red_circle::warning:"
+            STATUS_TEXT="FAILED"
+          fi
+          MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
         else
           # Build image URI
           task_family="${APPLICATION}-${ENVIRONMENT}-${SERVICE}"
@@ -194,7 +204,7 @@ phases:
 
           # Send notification on successful deployment or exit with an error code
           if [ "${deploy_status}" == "SUCCESSFUL" ]; then
-            MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of ${UPPERCASE_TAG} to ${UPPERCASE_SERVICE} service - ${deploy_status} - <${PIPELINE_EXECUTION_URL}|Pipeline execution url>"
+            MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
             platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
           else
             echo "Error: Deployment status is ${deploy_status}" | tee output.log
@@ -205,9 +215,12 @@ phases:
   post_build:
     commands:
       - |
+        if [[ -z "${COMMIT_TAG}" ]]; then
+          COMMIT_TAG=${IMAGE_TAG}
+        fi
+      - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
-          MESSAGE=":red_circle::warning: Deployment of ${UPPERCASE_TAG} to ${UPPERCASE_SERVICE} service - FAILED $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
-          
+          MESSAGE=":red_circle::warning: FAILED - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
         fi
