@@ -23,17 +23,30 @@ phases:
     commands:
       - set -e
 
-      - UPPERCASE_SERVICE=$(echo "${SERVICE}" | tr '[:lower:]' '[:upper:]')
-      - UPPERCASE_TAG=$(echo "${IMAGE_TAG}" | tr '[:lower:]' '[:upper:]')
+      # Retrieve all tags from the image in ECR
+      - |
+        if [[ "$REPOSITORY_URL" == public.ecr.aws/* ]]; then
+          REPOSITORY_NAME=$(echo "$REPOSITORY_URL" | cut -d'/' -f3-)
+          ECR_TAGS=$(aws ecr-public describe-images --region us-east-1 --repository-name ${REPOSITORY_NAME} --image-ids imageTag=${IMAGE_TAG} --query 'imageDetails[0].imageTags')
+        else
+          REPOSITORY_NAME=$(echo "$REPOSITORY_URL" | cut -d'/' -f2-)
+          ECR_TAGS=$(aws ecr describe-images --repository-name ${REPOSITORY_NAME} --image-ids imageTag=${IMAGE_TAG} --query 'imageDetails[0].imageTags')
+        fi
 
-      # Use IMAGE_TAG to find the actual commit-* tag for the image
-      # Build image_uri from that tag instead of IMAGE_TAG
+      # Get commit-* tag
+      - COMMIT_TAG=$(echo ${ECR_TAGS} | jq -r '.[] | select(startswith("commit-"))')
+
+      # Fall back on IMAGE_TAG
+      - |
+        if [[ -z "${COMMIT_TAG}" ]]; then
+          COMMIT_TAG=${IMAGE_TAG}
+        fi
 
       # Check if the specified image tag exists
       - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
       - |
-        if ! docker manifest inspect "${REPOSITORY_URL}:${IMAGE_TAG}" > /dev/null 2>&1; then
-          echo "Error: Image tag ${IMAGE_TAG} not found in repository ${REPOSITORY_URL}" | tee output.log
+        if ! docker manifest inspect "${REPOSITORY_URL}:${COMMIT_TAG}" > /dev/null 2>&1; then
+          echo "Error: Image tag ${COMMIT_TAG} not found in repository ${REPOSITORY_URL}" | tee output.log
           exit 1
         fi
 
@@ -44,8 +57,10 @@ phases:
           exit 1
         fi
 
+      - echo "Deploying ${COMMIT_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
+
       # Construct Slack message env vars
-      - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${IMAGE_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
+      - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${COMMIT_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
       - |
         if [ "${SLACK_REF}" = "null" ] || [ -z "${SLACK_REF}" ]; then
           echo "Error: Image contains no timestamp label" | tee output.log
@@ -65,6 +80,8 @@ phases:
       - PIPELINE_EXECUTION_URL="https://${AWS_REGION}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${PIPELINE_NAME}/executions/${PIPELINE_EXECUTION_ID}"
       - BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
 
+      - UPPERCASE_SERVICE=$(echo "${SERVICE}" | tr '[:lower:]' '[:upper:]')
+      - UPPERCASE_TAG=$(echo "${COMMIT_TAG}" | tr '[:lower:]' '[:upper:]')
       - |
         MESSAGE=":rocket: STARTED - Deployment of ${UPPERCASE_SERVICE} service - Tag: ${UPPERCASE_TAG} - <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution url>"
 
@@ -94,12 +111,12 @@ phases:
           unset AWS_SECRET_ACCESS_KEY
           unset AWS_SESSION_TOKEN
         
-          copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
+          IMAGE_TAG=${COMMIT_TAG} copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
         else
           # Build image URI
           task_family="${APPLICATION}-${ENVIRONMENT}-${SERVICE}"
           cluster="${APPLICATION}-${ENVIRONMENT}"
-          image_uri="${REPOSITORY_URL}:${IMAGE_TAG}"
+          image_uri="${REPOSITORY_URL}:${COMMIT_TAG}"
         
           # Get service name
           service_name=$(aws ecs list-services --cluster "${cluster}" | jq -r '.serviceArns[] | select(test("'${cluster}'-'${SERVICE}'($|-Service.*)"))' | cut -d '/' -f3)
@@ -133,7 +150,6 @@ phases:
           fi
 
           # Start deployment
-          echo "Deploying ${image_uri} to ${service_name} in ${cluster} with task count ${count}"
           start=$( date +%s )
           deploy_status="IN_PROGRESS"
           aws ecs update-service --cluster "${cluster}" --service "${service_name}" --task-definition "${task_family}:${new_revision}" --desired-count ${count} > /dev/null 2>&1
