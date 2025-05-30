@@ -503,6 +503,24 @@ run "test_additional_ecr_repository_public" {
     condition     = one(data.aws_iam_policy_document.ecr_access_for_codebuild_images.statement[2].resources) == "arn:aws:ecr-public::${data.aws_caller_identity.current.account_id}:repository/*"
     error_message = "Unexpected resources"
   }
+  assert {
+    condition     = data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[1].actions == toset([
+      "ecr-public:DescribeImages"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[1].resources == toset(["arn:aws:ecr-public::${data.aws_caller_identity.current.account_id}:repository/*"])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition     = length(data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[1].resources) == 1
+    error_message = "Unexpected resources"
+  }
 }
 
 run "test_deploy_repository" {
