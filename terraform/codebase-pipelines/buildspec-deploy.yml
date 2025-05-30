@@ -48,19 +48,19 @@ phases:
           ECR_TAGS=$(aws ecr describe-images --repository-name ${REPOSITORY_NAME} --image-ids imageTag=${IMAGE_TAG} --query 'imageDetails[0].imageTags')
         fi
 
-      # Get commit-* tag
-      - COMMIT_TAG=$(echo ${ECR_TAGS} | jq -r '.[] | select(startswith("commit-"))')
+      # Set tag to deploy to commit-* tag from ECR image
+      - DEPLOY_TAG=$(echo ${ECR_TAGS} | jq -r '.[] | select(startswith("commit-"))')
 
       # Fall back on IMAGE_TAG
       - |
-        if [[ -z "${COMMIT_TAG}" ]]; then
-          COMMIT_TAG=${IMAGE_TAG}
+        if [[ -z "${DEPLOY_TAG}" ]]; then
+          DEPLOY_TAG=${IMAGE_TAG}
         fi
 
-      - echo "Deploying commit ${COMMIT_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
+      - echo "Deploying image with tag ${DEPLOY_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
 
       # Construct Slack message env vars
-      - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${COMMIT_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
+      - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${DEPLOY_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
       - |
         if [ "${SLACK_REF}" = "null" ] || [ -z "${SLACK_REF}" ]; then
           echo "Error: Image contains no timestamp label" | tee output.log
@@ -82,7 +82,7 @@ phases:
 
       # Send deployment starting Slack notification
       - |
-        MESSAGE=":rocket: STARTED - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+        MESSAGE=":rocket: STARTED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
 
       # Run Copilot package command and clean the manifest output
@@ -114,19 +114,19 @@ phases:
           STATUS_EMOJI=":large_green_circle:"
           STATUS_TEXT="COMPLETE"
         
-          IMAGE_TAG=${COMMIT_TAG} copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
+          IMAGE_TAG=${DEPLOY_TAG} copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
 
           if [ $? -ne 0 ]; then
             STATUS_EMOJI=":red_circle::warning:"
             STATUS_TEXT="FAILED"
           fi
-          MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+          MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
         else
           # Build image URI
           task_family="${APPLICATION}-${ENVIRONMENT}-${SERVICE}"
           cluster="${APPLICATION}-${ENVIRONMENT}"
-          image_uri="${REPOSITORY_URL}:${COMMIT_TAG}"
+          image_uri="${REPOSITORY_URL}:${DEPLOY_TAG}"
         
           # Get service name
           service_name=$(aws ecs list-services --cluster "${cluster}" | jq -r '.serviceArns[] | select(test("'${cluster}'-'${SERVICE}'($|-Service.*)"))' | cut -d '/' -f3)
@@ -204,7 +204,7 @@ phases:
 
           # Send notification on successful deployment or exit with an error code
           if [ "${deploy_status}" == "SUCCESSFUL" ]; then
-            MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+            MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
             platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
           else
             echo "Error: Deployment status is ${deploy_status}" | tee output.log
@@ -215,12 +215,12 @@ phases:
   post_build:
     commands:
       - |
-        if [[ -z "${COMMIT_TAG}" ]]; then
-          COMMIT_TAG=${IMAGE_TAG}
+        if [[ -z "${DEPLOY_TAG}" ]]; then
+          DEPLOY_TAG=${IMAGE_TAG}
         fi
       - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
-          MESSAGE=":red_circle::warning: FAILED - Deployment of tag \`${COMMIT_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
+          MESSAGE=":red_circle::warning: FAILED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
         fi
