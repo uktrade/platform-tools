@@ -1,7 +1,7 @@
 mock_provider "aws" {}
 
 override_data {
-  target = data.external.codestar_connections
+  target = module.database-copy-pipeline[0].data.external.codestar_connections
 
   values = {
     result = {
