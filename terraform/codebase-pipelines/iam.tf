@@ -217,6 +217,20 @@ data "aws_iam_policy_document" "ecr_access_for_codebase_pipeline" {
       local.additional_private_repo_arn
     ])
   }
+
+  dynamic "statement" {
+    for_each = toset(local.is_additional_repo_public ? [""] : [])
+    content {
+      effect = "Allow"
+      actions = [
+        "ecr-public:DescribeImages",
+      ]
+      resources = [
+        "arn:aws:ecr-public::${data.aws_caller_identity.current.account_id}:repository/*"
+      ]
+    }
+  }
+
   statement {
     effect = "Allow"
     actions = [
