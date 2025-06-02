@@ -5,8 +5,8 @@ override_data {
 
   values = {
     result = {
-       ConnectionArn = "ConnectionArn"
-      }
+      ConnectionArn = "ConnectionArn"
+    }
   }
 }
 override_data {
