@@ -1,8 +1,6 @@
-data "aws_iam_account_alias" "current" {}
-
 data "external" "codestar_connections" {
   program = ["bash", "-c", <<-EOT
-    aws codeconnections list-connections --provider-type GitHub --query "Connections[?ConnectionName=='${data.aws_iam_account_alias.current.account_alias}' && ConnectionStatus=='AVAILABLE'] | [0]" --output json
+    aws codeconnections list-connections --provider-type GitHub --query "Connections[?ConnectionName=='${var.application}' && ConnectionStatus=='AVAILABLE'] | [0]" --output json
   EOT
   ]
 }
