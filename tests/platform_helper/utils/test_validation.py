@@ -5,7 +5,7 @@ import pytest
 import yaml
 from schema import SchemaError
 
-from dbt_platform_helper.providers.platform_config_schema import PlatformConfigSchema
+from dbt_platform_helper.entities.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.utils.validation import validate_addons
 from tests.platform_helper.conftest import UTILS_FIXTURES_DIR
 
@@ -21,7 +21,7 @@ def load_addons(addons_file):
         (r"^\d+-\d+$", ["1-10"], ["20-21-23"]),
         (r"^\d+s$", ["10s"], ["10seconds"]),
         (
-            # Todo: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
+            # TODO: DBTP-1978: Make this actually validate a git branch name properly; https://git-scm.com/docs/git-check-ref-format
             r"^((?!\*).)*(\*)?$",
             ["test/valid/branch", "test/valid/branch*", "test/valid/branch-other"],
             ["test*invalid/branch", "test*invalid/branch*"],
@@ -56,6 +56,7 @@ def test_validate_string(regex_pattern, valid_strings, invalid_strings):
         "no_param_addons.yml",
         "alb_addons.yml",
         "datadog_addons.yml",
+        "addon_plans.yml",
     ],
 )
 def test_validate_addons_success(addons_file):
@@ -246,6 +247,14 @@ def test_validate_addons_success(addons_file):
                 "my-alb-paths-default-cache-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-paths-default-request-should-be-a-string": r"environments.*dev.*should be instance of 'str'",
                 "my-alb-paths-additional-should-be-a-list": r"Key 'additional' error.*False should be instance of 'list'",
+            },
+        ),
+        (
+            "invalid_addon_plans.yml",
+            {
+                "my-invalid-opensearch": r"environments.*plan.*did not validate 'invalid'",
+                "my-invalid-redis": r"environments.*plan.*did not validate 'invalid",
+                "my-invalid-rds-db": r"environments.*plan.*did not validate 'invalid",
             },
         ),
     ],

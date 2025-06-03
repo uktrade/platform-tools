@@ -28,7 +28,7 @@ class DatabaseCopy:
         database: str,
         auto_approve: bool = False,
         load_application: Callable[[str], Application] = load_application,
-        # TODO We inject VpcProvider as a callable here so that it can be instantiated within the method.  To be improved
+        # TODO: DBTP-1960: We inject VpcProvider as a callable here so that it can be instantiated within the method.  To be improved
         vpc_provider: Callable[[Session], VpcProvider] = VpcProvider,
         db_connection_string: Callable[
             [Session, str, str, str, Callable], str

@@ -86,7 +86,6 @@ class LoadBalancerProvider:
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
-
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
         page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
@@ -164,7 +163,6 @@ class LoadBalancerProvider:
         page_iterator = paginator.paginate(ListenerArn=listener_arn)
         for page in page_iterator:
             rules.extend(page["Rules"])
-
         return self.get_rules_tag_descriptions(rules)
 
     def get_rules_tag_descriptions(self, rules: list) -> list:

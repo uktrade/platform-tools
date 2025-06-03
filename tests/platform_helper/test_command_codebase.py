@@ -13,7 +13,6 @@ from dbt_platform_helper.commands.codebase import prepare as prepare_command
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
-from dbt_platform_helper.utils.git import CommitNotFoundException
 
 
 def mock_aws_client(get_aws_session_or_abort):
@@ -45,8 +44,7 @@ class TestCodebasePrepare:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
-    def test_aborts_when_not_in_a_codebase_repository(self, mock_click, mock_codebase_object):
+    def test_aborts_when_not_in_a_codebase_repository(self, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.prepare.side_effect = NotInCodeBaseRepositoryException
         os.environ["AWS_PROFILE"] = "foo"
@@ -85,9 +83,8 @@ class TestCodebaseBuild:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
     def test_codebase_build_does_not_trigger_build_without_an_application(
-        self, mock_click, mock_codebase_object
+        self, mock_codebase_object
     ):
 
         mock_codebase_object_instance = mock_codebase_object.return_value
@@ -104,43 +101,6 @@ class TestCodebaseBuild:
                 "--commit",
                 "ab1c23d",
             ],
-        )
-
-        assert result.exit_code == 1
-
-    @patch("dbt_platform_helper.commands.codebase.get_aws_session_or_abort")
-    @patch("dbt_platform_helper.commands.codebase.ParameterStore")
-    @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
-    def test_codebase_build_aborts_with_a_nonexistent_commit_hash(
-        self, mock_click, mock_codebase_object, mock_parameter_provider, mock_session
-    ):
-        mock_ssm_client = Mock()
-        mock_session.return_value.client.return_value = mock_ssm_client
-
-        mock_codebase_object_instance = mock_codebase_object.return_value
-        mock_codebase_object_instance.build.side_effect = CommitNotFoundException()
-        os.environ["AWS_PROFILE"] = "foo"
-
-        result = CliRunner().invoke(
-            build,
-            [
-                "--app",
-                "test-application",
-                "--codebase",
-                "application",
-                "--commit",
-                "nonexistent-commit-hash",
-            ],
-        )
-
-        mock_session.return_value.client.assert_called_once_with("ssm")
-        mock_parameter_provider.assert_called_with(mock_ssm_client)
-        mock_codebase_object.assert_called_once_with(mock_parameter_provider.return_value)
-        mock_codebase_object.return_value.build.assert_called_once()
-
-        mock_codebase_object_instance.build.assert_called_once_with(
-            "test-application", "application", "nonexistent-commit-hash"
         )
 
         assert result.exit_code == 1
@@ -266,8 +226,7 @@ class TestCodebaseList:
         assert result.exit_code == 0
 
     @patch("dbt_platform_helper.commands.codebase.Codebase")
-    @patch("click.secho")
-    def test_aborts_when_application_does_not_exist(self, mock_click, mock_codebase_object):
+    def test_aborts_when_application_does_not_exist(self, mock_codebase_object):
         mock_codebase_object_instance = mock_codebase_object.return_value
         mock_codebase_object_instance.list.side_effect = ApplicationNotFoundException
         os.environ["AWS_PROFILE"] = "foo"

@@ -3,14 +3,17 @@ line-length = 100
 
 [tool.poetry]
 name = "dbt-platform-helper"
-version = "13.4.1"
+version = "15.2.0"
 description = "Set of tools to help transfer applications/services from GOV.UK PaaS to DBT PaaS augmenting AWS Copilot."
 authors = ["Department for Business and Trade Platform Team <sre-team@digital.trade.gov.uk>"]
 license = "MIT"
 readme = "dbt_platform_helper/README.md"
 packages = [
     { include = "dbt_platform_helper" },
-    { include = "platform_helper.py" }
+    { include = "platform_helper.py" },
+    { include = "terraform/elasticache-redis/plans.yml" },
+    { include = "terraform/opensearch/plans.yml" },
+    { include = "terraform/postgres/plans.yml" },
 ]
 
 [tool.poetry.scripts]
@@ -20,7 +23,7 @@ platform-helper = "platform_helper:platform_helper"
 Jinja2 = "3.1.6"
 PyYAML = "6.0.1"
 yamllint = "^1.35.1"
-boto3 = "^1.28.24"
+boto3 = "^1.35.2"
 boto3-stubs = "^1.26.148"
 botocore = "^1.34.85"
 click = "^8.1.3"
@@ -29,7 +32,7 @@ mypy-boto3-codebuild = "^1.26.0.post1"
 python = ">3.9.0,<3.9.1 || >3.9.1,<4.0"
 schema = "0.7.5"
 cfn-flip = "1.3.0"
-aiohttp = "^3.8.4"
+aiohttp = "^3.11.16"
 certifi = ">=2023.7.22,<2025.0.0"
 cryptography = ">=44.0.1, <45"
 jinja2-simple-tags = "^0.5.0"
@@ -37,15 +40,16 @@ requests = "^2.31.0"
 prettytable = "^3.9.0"
 semver = "^3.0.2"
 tomlkit = "^0.12.2"
-checkov = "^3.1.67"
 slack-sdk = "^3.27.1"
 jsonschema = "~=4.17.0"
 cfn-lint = "^1.4.2"
+psycopg2-binary = "^2.9.9"
+checkov = "^3.2.405"
 
 [tool.poetry.group.dev.dependencies]
 moto = {extras = ["all"], version = "^5.0.28"}
 pyfakefs = "^5.2.2"
-pytest = "^7.3.1"
+pytest = "^8.3.5"
 pytest-env = "^0.8.1"
 tox = "^4.6.0"
 pre-commit = "^3.3.3"

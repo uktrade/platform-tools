@@ -32,7 +32,7 @@ class TestMaintenancePage:
         mock_maintenance_page_instance.deactivate.assert_called_with("test-env")
 
     @patch("dbt_platform_helper.commands.environment.MaintenancePage")
-    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.environment.click.secho")
     @patch("dbt_platform_helper.commands.environment.load_application")
     def test_online_failure(
         self, load_application, mock_click, mock_maintenance_page, mock_application
@@ -88,7 +88,7 @@ class TestMaintenancePage:
         )
 
     @patch("dbt_platform_helper.commands.environment.MaintenancePage")
-    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.environment.click.secho")
     @patch("dbt_platform_helper.commands.environment.load_application")
     def test_offline_failure(
         self, load_application, mock_click, mock_maintenance_page, mock_application
@@ -170,7 +170,7 @@ class TestGenerateCopilot:
 
     @patch("dbt_platform_helper.commands.environment.CopilotEnvironment")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
-    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.environment.click.secho")
     def test_generate_copilot_catches_platform_exception_and_exits(
         self, mock_click, mock_session, copilot_environment_mock
     ):
@@ -198,26 +198,8 @@ class TestGenerateTerraform:
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
     def test_generate_terraform_success(self, terraform_environment_mock):
-        """Test that given name and terraform-platform-modules-version, the
-        generate terraform command calls TerraformEnvironment generate with the
-        expected parameters."""
-
-        mock_terraform_environment_instance = terraform_environment_mock.return_value
-
-        result = CliRunner().invoke(
-            generate_terraform,
-            ["--name", "test", "--terraform-platform-modules-version", "123"],
-        )
-
-        assert result.exit_code == 0
-
-        mock_terraform_environment_instance.generate.assert_called_with("test", "123")
-
-    @mock_aws
-    @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
-    def test_generate_terraform_without_version_flag_success(self, terraform_environment_mock):
         """Test that given name, the generate terraform command calls
-        TerraformEnvironment generate with the expected parameters."""
+        TerraformEnvironment generate with the expected parameter."""
 
         mock_terraform_environment_instance = terraform_environment_mock.return_value
 
@@ -228,11 +210,11 @@ class TestGenerateTerraform:
 
         assert result.exit_code == 0
 
-        mock_terraform_environment_instance.generate.assert_called_with("test", None)
+        mock_terraform_environment_instance.generate.assert_called_with("test")
 
     @mock_aws
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
-    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.environment.click.secho")
     def test_generate_terraform_catches_platform_exception_and_exits(
         self, mock_click, terraform_environment_mock
     ):
@@ -244,15 +226,15 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--terraform-platform-modules-version", "123"],
+            ["--name", "test"],
         )
 
         assert result.exit_code == 1
         mock_click.assert_called_with("""Error: i've failed""", err=True, fg="red")
-        mock_terraform_environment_instance.generate.assert_called_with("test", "123")
+        mock_terraform_environment_instance.generate.assert_called_with("test")
 
     @patch("dbt_platform_helper.commands.environment.TerraformEnvironment")
-    @patch("click.secho")
+    @patch("dbt_platform_helper.commands.environment.click.secho")
     @patch("dbt_platform_helper.commands.environment.get_aws_session_or_abort")
     def test_generate_terraform_sso_token_expired(
         self, mock_session, mock_click, terraform_environment_mock
@@ -265,7 +247,7 @@ class TestGenerateTerraform:
 
         result = CliRunner().invoke(
             generate_terraform,
-            ["--name", "test", "--terraform-platform-modules-version", "123"],
+            ["--name", "test"],
         )
 
         assert result.exit_code == 1

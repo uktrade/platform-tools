@@ -5,12 +5,17 @@ import pytest
 from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggered
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.providers.aws.exceptions import IMAGE_NOT_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import MULTIPLE_IMAGES_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import REPOSITORY_NOT_FOUND_TEMPLATE
 from dbt_platform_helper.providers.aws.exceptions import (
     CopilotCodebaseNotFoundException,
 )
 from dbt_platform_helper.providers.aws.exceptions import CreateTaskTimeoutException
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
 from dbt_platform_helper.providers.aws.exceptions import LogGroupNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
+from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.secrets import AddonNotFoundException
@@ -18,6 +23,7 @@ from dbt_platform_helper.providers.secrets import AddonTypeMissingFromConfigExce
 from dbt_platform_helper.providers.secrets import InvalidAddonTypeException
 from dbt_platform_helper.providers.secrets import ParameterNotFoundException
 from dbt_platform_helper.providers.secrets import SecretNotFoundException
+from dbt_platform_helper.providers.version_status import UnsupportedVersionException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import ApplicationServiceNotFoundException
 
@@ -77,7 +83,19 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
         (
             ImageNotFoundException,
             {"image_ref": "does-not-exist"},
-            """An image labelled "does-not-exist" could not be found in your image repository. Try the `platform-helper codebase build` command first.""",
+            IMAGE_NOT_FOUND_TEMPLATE.format(image_ref="does-not-exist"),
+        ),
+        (
+            RepositoryNotFoundException,
+            {"repository": "does-not-exist"},
+            REPOSITORY_NOT_FOUND_TEMPLATE.format(repository="does-not-exist"),
+        ),
+        (
+            MultipleImagesFoundException,
+            {"image_ref": "commit-abc123", "matching_images": ["commit-abc12", "commit-ab"]},
+            MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
+                image_ref="commit-abc123", matching_images="commit-ab, commit-abc12"
+            ),
         ),
         (
             LogGroupNotFoundException,
@@ -108,6 +126,11 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
             ECSAgentNotRunningException,
             {},
             """ECS exec agent never reached "RUNNING" status""",
+        ),
+        (
+            UnsupportedVersionException,
+            {"version": "13.0.0"},
+            """Platform-helper version 13.0.0 is not compatible with platform-helper. Please install version platform-helper version 14 or later.""",
         ),
     ],
 )

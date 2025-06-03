@@ -1,12 +1,15 @@
+from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import boto3
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECS
-from dbt_platform_helper.providers.ecs import ECSAgentNotRunningException
 from dbt_platform_helper.providers.ecs import NoClusterException
+from dbt_platform_helper.providers.vpc import Vpc
+from dbt_platform_helper.utilities.decorators import RetryException
 from tests.platform_helper.conftest import mock_parameter_name
 from tests.platform_helper.conftest import mock_task_name
 
@@ -19,26 +22,95 @@ def test_get_cluster_arn(mocked_cluster, mock_application):
     env = "development"
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
-    cluster_arn = ecs_manager.get_cluster_arn()
+    cluster_arn = ecs_manager.get_cluster_arn_by_name("default")
 
     assert cluster_arn == mocked_cluster["cluster"]["clusterArn"]
 
 
 @mock_aws
-def test_get_cluster_arn_with_no_cluster_raises_error(mock_application):
+def test_get_cluster_arn_copilot(mocked_cluster, mock_application):
     ecs_client = mock_application.environments["development"].session.client("ecs")
     ssm_client = mock_application.environments["development"].session.client("ssm")
     application_name = mock_application.name
-    env = "does-not-exist"
-
+    env = "development"
     ecs_manager = ECS(ecs_client, ssm_client, application_name, env)
 
+    cluster_arn = ecs_manager.get_cluster_arn_by_copilot_tag()
+
+    assert cluster_arn == mocked_cluster["cluster"]["clusterArn"]
+
+
+def test_get_cluster_arn_copilot_with_no_cluster_raises_error():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+
+    ecs_client.list_clusters.return_value = {"clusterArns": []}
+
+    ecs_manager = ECS(ecs_client, ssm_client, application_name="my-app", env="development")
+
     with pytest.raises(NoClusterException):
-        ecs_manager.get_cluster_arn()
+        ecs_manager.get_cluster_arn_by_copilot_tag()
+
+    ecs_client.list_clusters.assert_called_once()
+
+
+def test_get_cluster_arn_with_no_cluster_raises_error():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+
+    ecs_client.describe_clusters.return_value = {"clusters": []}
+
+    ecs_manager = ECS(ecs_client, ssm_client, application_name="my-app", env="development")
+
+    with pytest.raises(NoClusterException):
+        ecs_manager.get_cluster_arn_by_name("does-not_exist")
+
+    ecs_client.describe_clusters.assert_called_once_with(clusters=["does-not_exist"])
+
+
+def test_get_cluster_arn_by_name_multiple_clusters_returns_error():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_clusters.return_value = {
+        "clusters": [
+            {"clusterArn": "arn:1"},
+            {"clusterArn": "arn:2"},
+        ]
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+
+    with pytest.raises(NoClusterException):
+        ecs.get_cluster_arn_by_name("some-cluster")
+
+    ecs_client.describe_clusters.assert_called_once_with(clusters=["some-cluster"])
+
+
+def test_get_cluster_arn_by_name_missing_arn_raises():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_clusters.return_value = {"clusters": [{}]}  # Without 'clusterArn' field
+
+    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+
+    with pytest.raises(NoClusterException):
+        ecs.get_cluster_arn_by_name("some-cluster")
+
+
+def test_get_cluster_arn_by_name_passes_correct_cluster():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_clusters.return_value = {"clusters": [{"clusterArn": "arn:cluster"}]}
+
+    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+    arn = ecs.get_cluster_arn_by_name("my-cluster")
+
+    assert arn == "arn:cluster"
+    ecs_client.describe_clusters.assert_called_once_with(clusters=["my-cluster"])
 
 
 @mock_aws
-def test_get_ecs_task_arns_with_running_task(
+def test_copilot_get_ecs_task_arns_with_running_task(
     mock_cluster_client_task, mocked_cluster, mock_application
 ):
     addon_type = "redis"
@@ -51,7 +123,9 @@ def test_get_ecs_task_arns_with_running_task(
         mock_application.name,
         "development",
     )
-    assert ecs_manager.get_ecs_task_arns(mocked_cluster_arn, mock_task_name(addon_type))
+    assert ecs_manager.get_ecs_task_arns(
+        mocked_cluster_arn, f"copilot-{mock_task_name(addon_type)}"
+    )
 
 
 @mock_aws
@@ -124,10 +198,9 @@ def test_ecs_exec_is_available(mock_cluster_client_task, mocked_cluster, mock_ap
     )
 
 
-@patch("time.sleep", return_value=None)
 @mock_aws
 def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
-    sleep, mock_cluster_client_task, mocked_cluster, mock_application
+    mock_cluster_client_task, mocked_cluster, mock_application
 ):
     mocked_ecs_client = mock_cluster_client_task("postgres", "PENDING")
     mocked_cluster_arn = mocked_cluster["cluster"]["clusterArn"]
@@ -137,10 +210,19 @@ def test_ecs_exec_is_available_with_exec_not_running_raises_exception(
         mock_application.name,
         "development",
     )
-    with pytest.raises(ECSAgentNotRunningException):
-        ecs_manager.ecs_exec_is_available(
-            mocked_cluster_arn, ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
-        )
+    with patch("time.sleep", return_value=None):
+        with pytest.raises(RetryException, match="ECS Agent Not running") as actual_exec:
+            ecs_manager.ecs_exec_is_available(
+                mocked_cluster_arn, ["arn:aws:ecs:eu-west-2:12345678:task/does-not-matter/1234qwer"]
+            )
+    assert "ecs_exec_is_available" in str(actual_exec.value)
+    assert "25 attempts" in str(actual_exec.value)
+    assert "ECS Agent Not running" in str(actual_exec.value)
+
+
+def test_ecs_exec_is_available_wrapped_by_wait_until():
+    ecs = ECS(MagicMock(), MagicMock(), "name", "development")
+    assert ecs.ecs_exec_is_available.__wrapped_by__ == "wait_until"
 
 
 @mock_aws
@@ -176,3 +258,74 @@ def test_get_or_create_task_name_appends_random_id(mock_application):
 
     assert task_name.rsplit("-", 1)[0] == mock_task_name("app-postgres").rsplit("-", 1)[0]
     assert random_id.isalnum() and random_id.islower() and len(random_id) == 12
+
+
+def test_start_ecs_task():
+    # Prepare
+    mock_ecs_client = MagicMock()
+    ecs = ECS(mock_ecs_client, MagicMock(), "myapp", "development")
+    mock_ecs_client.run_task.return_value = {
+        "tasks": [{"taskArn": "arn:aws:ecs:region::task/task-id"}]
+    }
+
+    vpc = Vpc("test-vpc", ["public-subnet"], ["private-subnet"], ["security-group"])
+
+    # Test
+    task_arn = ecs.start_ecs_task(
+        cluster_name="my-cluster",
+        container_name="test-container",
+        task_def_arn="test-task-def",
+        vpc_config=vpc,
+        env_vars=[{"name": "TEST_VAR", "value": "test-value"}],
+    )
+
+    # Assert
+    assert task_arn == "arn:aws:ecs:region::task/task-id"
+
+    mock_ecs_client.run_task.assert_called_once_with(
+        taskDefinition="test-task-def",
+        cluster="my-cluster",
+        capacityProviderStrategy=[{"capacityProvider": "FARGATE", "weight": 1, "base": 0}],
+        enableExecuteCommand=True,
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": ["public-subnet"],
+                "securityGroups": ["security-group"],
+                "assignPublicIp": "ENABLED",
+            }
+        },
+        overrides={
+            "containerOverrides": [
+                {
+                    "name": "test-container",
+                    "environment": [{"name": "TEST_VAR", "value": "test-value"}],
+                }
+            ]
+        },
+    )
+
+
+def test_exec_task_uses_retry_decorator():
+    ecs = ECS(MagicMock(), MagicMock(), "myapp", "development")
+
+    mock_suprocess = MagicMock(return_value=0)
+
+    ecs.exec_task("cluster-arn", "task-arn", mock_suprocess)
+
+    assert ecs.exec_task.__wrapped_by__ == "retry"
+    mock_suprocess.assert_called()
+
+
+def test_exec_task_raises_platform_exception():
+    ecs = ECS(MagicMock(), MagicMock(), "myapp", "development")
+
+    mock_suprocess = MagicMock(return_value=1)
+
+    with pytest.raises(
+        PlatformException,
+        match="Failed to exec into ECS task.",
+    ):
+        ecs.exec_task("cluster-arn", "task-arn", mock_suprocess)
+
+    assert ecs.exec_task.__wrapped_by__ == "retry"
+    mock_suprocess.assert_called()

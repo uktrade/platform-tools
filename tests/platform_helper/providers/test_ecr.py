@@ -1,14 +1,30 @@
 from datetime import datetime
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 
 import botocore
 import pytest
 
+from dbt_platform_helper.providers.aws.exceptions import IMAGE_NOT_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import MULTIPLE_IMAGES_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import REPOSITORY_NOT_FOUND_TEMPLATE
+from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import MultipleImagesFoundException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
+from dbt_platform_helper.providers.ecr import NO_ASSOCIATED_COMMIT_TAG_WARNING
+from dbt_platform_helper.providers.ecr import NOT_A_UNIQUE_TAG_INFO
 from dbt_platform_helper.providers.ecr import ECRProvider
-from dbt_platform_helper.utils.application import Application
+
+
+class ECRProviderMocks:
+    def __init__(self):
+        self.session_mock = Mock()
+        self.client_mock = Mock()
+        self.session_mock.client.return_value = self.client_mock
+        self.mock_io = Mock()
+
+    def params(self):
+        return {"session": self.session_mock, "click_io": self.mock_io}
 
 
 def test_aws_get_ecr_repos_success(two_pages_of_describe_repository_data):
@@ -97,150 +113,178 @@ def two_pages_of_describe_repository_data():
     ]
 
 
-def test_get_image_details_returns_details():
-    session_mock = MagicMock()
-    client_mock = MagicMock()
-    session_mock.client.return_value = client_mock
-    image_info = {"imageDetails": [{"imageTags": ["tag-4.2.0", "commit-ab1c23d", "latest"]}]}
-    client_mock.describe_images.return_value = image_info
-    ecr = ECRProvider(session_mock)
-
-    image_details_retrieved = ecr.get_image_details(
-        Application(name="test_application"), "test_codebase", "commit-ab1c23d"
-    )
-    assert image_details_retrieved == [{"imageTags": ["tag-4.2.0", "commit-ab1c23d", "latest"]}]
-    client_mock.describe_images.assert_called_once_with(
-        repositoryName="test_application/test_codebase", imageIds=[{"imageTag": "commit-ab1c23d"}]
-    )
-
-
-def test_get_image_details_raises_image_details_not_found_when_there_are_no_image_details():
-    session_mock = MagicMock()
-    client_mock = MagicMock()
-    session_mock.client.return_value = client_mock
-    image_info = {}
-    client_mock.describe_images.return_value = image_info
-    ecr = ECRProvider(session_mock)
-
-    with pytest.raises(ImageNotFoundException) as exception_info:
-        ecr.get_image_details(
-            Application(name="test_application"), "test_codebase", "commit-ab1c23d"
-        )
-
-    actual_error = str(exception_info.value)
-    expected_error = 'An image labelled "commit-ab1c23d" could not be found in your image repository. Try the `platform-helper codebase build` command first.'
-
-    assert actual_error == expected_error
-
-
-def test_get_image_details_raises_image_not_found():
-    session_mock = MagicMock()
-    client_mock = MagicMock()
-    session_mock.client.return_value = client_mock
-    client_mock.describe_images.side_effect = botocore.exceptions.ClientError(
-        {
-            "Error": {"Code": "ImageNotFoundException"},
-        },
-        operation_name="DescribeImages",
-    )
-
-    ecr = ECRProvider(session_mock)
-
-    with pytest.raises(ImageNotFoundException) as exception_info:
-        ecr.get_image_details(
-            Application(name="test_application"), "test_codebase", "commit-ab1c23d"
-        )
-
-    actual_error = str(exception_info.value)
-    expected_error = 'An image labelled "commit-ab1c23d" could not be found in your image repository. Try the `platform-helper codebase build` command first.'
-
-    assert actual_error == expected_error
+IMAGE_ID_PAGES = {
+    "page_1": {
+        "imageIds": [
+            {"imageDigest": "sha256:113", "imageTag": "commit-86e54f"},
+            {"imageDigest": "sha256:114", "imageTag": "commit-56e34"},
+            {"imageDigest": "sha256:114", "imageTag": "tag-1.2.3"},
+            {"imageDigest": "sha256:777", "imageTag": "commit-23ee4f5"},
+            {"imageDigest": "sha256:116", "imageTag": "commit-09dc178af5"},
+        ],
+        "nextToken": "page_2",
+    },
+    "page_2": {
+        "imageIds": [
+            {"imageDigest": "sha256:123", "imageTag": "commit-55e54f"},
+            {"imageDigest": "sha256:124", "imageTag": "commit-55e34"},
+            {"imageDigest": "sha256:134", "imageTag": "branch-fix-truncation-error"},
+            {"imageDigest": "sha256:777", "imageTag": "tag-across-pages"},
+            {"imageDigest": "sha256:125", "imageTag": "commit-55ee4f5"},
+            {"imageDigest": "sha256:134", "imageTag": "commit-76e34"},
+            {"imageDigest": "sha256:126", "imageTag": "commit-55dc178af5"},
+        ],
+        "nextToken": "page_3",
+    },
+    "page_3": {
+        "imageIds": [
+            {"imageDigest": "sha256:135", "imageTag": "commit-73ee4f5"},
+            {"imageDigest": "sha256:136", "imageTag": "commit-79dc178af5"},
+            {"imageDigest": "sha256:136", "imageTag": "tag-1.2.3"},
+            {"imageDigest": "sha256:000", "imageTag": "tag-no-associated-commit"},
+            {"imageDigest": "sha256:001", "imageTag": "branch-no-associated-commit"},
+            {"imageDigest": "sha256:777", "imageTag": "branch-across-pages"},
+            {"imageDigest": "sha256:887", "imageTag": "commit-deadbea7"},
+            {"imageDigest": "sha256:888", "imageTag": "commit-deadbe"},
+            {"imageDigest": "sha256:889", "imageTag": "commit-dead"},
+        ],
+    },
+}
 
 
-def test_get_image_details_raises_repository_not_found():
-    session_mock = MagicMock()
-    client_mock = MagicMock()
-    session_mock.client.return_value = client_mock
-    client_mock.describe_images.side_effect = botocore.exceptions.ClientError(
-        {
-            "Error": {"Code": "RepositoryNotFoundException"},
-        },
-        operation_name="DescribeImages",
-    )
-
-    ecr = ECRProvider(session_mock)
-
-    with pytest.raises(RepositoryNotFoundException) as exception_info:
-        ecr.get_image_details(
-            Application(name="test_application"), "test_codebase", "commit-ab1c23d"
-        )
-
-    actual_error = str(exception_info.value)
-    expected_error = 'The ECR repository "test_application/test_codebase" could not be found.'
-
-    assert actual_error == expected_error
-
-
-def test_find_commit_tag_returns_commit_tag_from_image_details():
-    ecr = ECRProvider(Mock(), Mock())
-    image_details = [{"imageTags": ["tag-1.2.3", "branch-main", "commit-abc123"]}]
-    actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
-
-    ecr.click_io.info.assert_called_once_with(
-        'INFO: The tag "tag-1.2.3" is not a unique, commit-specific tag. Deploying the corresponding commit tag "commit-abc123" instead.'
-    )
-    assert actual_tag == "commit-abc123"
+def return_image_pages(**kwargs):
+    token = kwargs.get("nextToken", "page_1")
+    return IMAGE_ID_PAGES[token]
 
 
 @pytest.mark.parametrize(
-    "image_details",
+    "test_name, reference, expected_tag, expect_info_message",
     [
-        None,
-        [],
-        [{}],
-        [{"imageDetails": None}],
-        [{"imageDetails": [{"imageTags": ["commit-987zxy"]}]}],
+        ("commit page 1", "commit-09dc178af5", "commit-09dc178af5", False),
+        ("branch page 2", "branch-fix-truncation-error", "commit-76e34", True),
+        ("tag page 3", "tag-1.2.3", "commit-79dc178af5", True),
+        (
+            "single match commit match less specific commit",
+            "commit-73ee4f5123abc",
+            "commit-73ee4f5",
+            False,
+        ),
+        (
+            "single match commit match more specific commit",
+            "commit-55dc178",
+            "commit-55dc178af5",
+            False,
+        ),
+        ("cross page commit", "commit-23ee4f5", "commit-23ee4f5", False),
+        ("cross page branch", "branch-across-pages", "commit-23ee4f5", True),
+        ("cross page tag", "tag-across-pages", "commit-23ee4f5", True),
     ],
 )
-def test_find_commit_tag_returns_commit_tag_from_a_commit_tag_ignoring_image_details(image_details):
-    ecr = ECRProvider(Mock(), Mock())
+def test_get_commit_tag_for_reference(test_name, reference, expected_tag, expect_info_message):
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.side_effect = return_image_pages
 
-    actual_tag = ecr.find_commit_tag(image_details, "commit-abc123")
+    ecr_provider = ECRProvider(**mocks.params())
 
-    ecr.click_io.info.assert_not_called()
-    ecr.click_io.warn.assert_not_called()
-    assert actual_tag == "commit-abc123"
+    actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
+
+    assert actual == expected_tag, f"'{test_name}' test case failed"
+    if expect_info_message:
+        mocks.mock_io.info.assert_called_once_with(
+            NOT_A_UNIQUE_TAG_INFO.format(image_ref=reference, commit_tag=expected_tag)
+        )
 
 
-def test_find_commit_tag_returns_the_original_ref_if_no_commit_tag():
-    ecr = ECRProvider(Mock(), Mock())
+@pytest.mark.parametrize("reference", ["branch-no-associated-commit", "tag-no-associated-commit"])
+def test_get_commit_tag_for_reference_falls_back_on_non_commit_tag_with_warning(reference):
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
 
-    image_details = [{"imageTags": ["tag-1.2.3", "branch-main"]}]
+    ecr_provider = ECRProvider(**mocks.params())
 
-    actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
+    actual = ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
-    ecr.click_io.warn.assert_called_once_with(
-        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
+    assert actual == reference
+    mocks.mock_io.warn.assert_called_once_with(
+        NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=reference)
     )
-    assert actual_tag == "tag-1.2.3"
 
 
 @pytest.mark.parametrize(
-    "image_details",
+    "reference", ["commit-abc123", "tag-no-such-tag", "branch-no-such-branch", "commit-z"]
+)
+def test_get_commit_tag_for_reference_errors_when_no_images_match(reference):
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
+    ecr_provider = ECRProvider(**mocks.params())
+
+    with pytest.raises(ImageNotFoundException) as ex:
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
+
+    actual_error = str(ex.value)
+    expected_error = IMAGE_NOT_FOUND_TEMPLATE.format(image_ref=reference)
+
+    assert actual_error == expected_error
+
+
+@pytest.mark.parametrize(
+    "reference, expected_matches",
     [
-        None,
-        [],
-        [{}],
-        [{"imageDetails": None}],
-        [{"imageDetails": []}],
+        ("commit-deadbea7e", "commit-dead, commit-deadbe, commit-deadbea7"),
+        ("commit-deadbea", "commit-dead, commit-deadbe, commit-deadbea7"),
     ],
 )
-def test_find_commit_tag_handles_malformed_image_details(image_details):
-    ecr = ECRProvider(Mock(), Mock())
+def test_get_commit_tag_for_reference_errors_when_multiple_images_match(
+    reference, expected_matches
+):
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.return_value = IMAGE_ID_PAGES["page_3"]
+    ecr_provider = ECRProvider(**mocks.params())
 
-    actual_tag = ecr.find_commit_tag(image_details, "tag-1.2.3")
+    with pytest.raises(MultipleImagesFoundException) as ex:
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", reference)
 
-    ecr.click_io.warn.assert_called_once_with(
-        'WARNING: The AWS ECR image "tag-1.2.3" has no associated commit tag so deploying "tag-1.2.3". Note this could result in images with unintended or incompatible changes being deployed if new ECS Tasks for your service.'
+    actual_error = str(ex.value)
+    expected_error = MULTIPLE_IMAGES_FOUND_TEMPLATE.format(
+        image_ref=reference, matching_images=expected_matches
     )
-    assert actual_tag == "tag-1.2.3"
+
+    assert actual_error == expected_error
+
+
+@pytest.mark.parametrize(
+    "boto_exception, expected_exception, expected_message",
+    [
+        (
+            "RepositoryNotFoundException",
+            RepositoryNotFoundException,
+            REPOSITORY_NOT_FOUND_TEMPLATE.format(repository="test_app/test_codebase"),
+        ),
+        (
+            "SomeOtherException",
+            AWSException,
+            "Unexpected error for repo 'test_app/test_codebase' and image reference 'commit-abc123': "
+            "An error occurred (SomeOtherException) when calling the ListImages operation: Unknown",
+        ),
+    ],
+)
+def test_get_commit_tag_for_reference_recasts_exceptions_as_more_specific_exceptions(
+    boto_exception, expected_exception, expected_message
+):
+    mocks = ECRProviderMocks()
+    mocks.client_mock.list_images.side_effect = botocore.exceptions.ClientError(
+        {
+            "Error": {"Code": boto_exception},
+        },
+        operation_name="ListImages",
+    )
+
+    ecr_provider = ECRProvider(**mocks.params())
+
+    with pytest.raises(expected_exception) as ex:
+        ecr_provider.get_commit_tag_for_reference("test_app", "test_codebase", "commit-abc123")
+
+    actual_error = str(ex.value)
+    expected_error = expected_message
+
+    assert actual_error == expected_error

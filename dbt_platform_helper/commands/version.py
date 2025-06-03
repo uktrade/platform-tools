@@ -21,17 +21,11 @@ def version():
 )
 def get_platform_helper_for_project(pipeline):
     """
-    Version precedence is in this order:
-        - if the --pipeline option is supplied, the version in 'platform-config.yml' in:
-            environment_pipelines:
-                <pipeline>:
-                    ...
-                    versions:
-                        platform-helper
-        - The version from default_versions/platform-helper in 'platform-config.yml'
-        - Fall back on the version in the deprecated '.platform-helper-version' file
+    Deprecated: Required in pipelines for projects running platform-helper < 14.0.0.
+
+    Version preferences removed, requires specifying platform-helper version in platform-config.yml
     """
     try:
-        PlatformHelperVersioning().get_required_version(pipeline)
+        PlatformHelperVersioning().get_required_version()
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

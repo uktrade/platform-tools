@@ -45,7 +45,7 @@ def test_start_conduit(mock_application, validate_version, mock_conduit_object, 
 @patch("dbt_platform_helper.commands.conduit.Conduit")
 @patch("dbt_platform_helper.commands.conduit.load_application")
 @patch("dbt_platform_helper.commands.conduit.PlatformHelperVersioning.check_if_needs_update")
-@patch("click.secho")
+@patch("dbt_platform_helper.commands.conduit.click.secho")
 def test_start_conduit_with_exception_raised_exit_1(
     mock_click,
     validate_version,

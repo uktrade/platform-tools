@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dbt_platform_helper.providers.semantic_version import SemanticVersion
+from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
 from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
 from dbt_platform_helper.providers.version import GithubLatestVersionProvider
@@ -118,7 +118,7 @@ class TestPyPiLatestVersionProvider:
     ),
 )
 class TestAWSCLIInstalledVersionProvider:
-    @patch("subprocess.run")
+    @patch("dbt_platform_helper.providers.version.subprocess.run")
     def test_get_semantic_version(self, mock_run, mock_run_stdout, expected):
         mock_run.return_value.stdout = mock_run_stdout
 
@@ -138,7 +138,7 @@ class TestCopilotVersioning:
             (b"command not found: copilot", None),
         ),
     )
-    @patch("subprocess.run")
+    @patch("dbt_platform_helper.providers.version.subprocess.run")
     def test_get_semantic_version(self, mock_run, mock_run_stdout, expected):
         mock_run.return_value.stdout = mock_run_stdout
 

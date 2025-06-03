@@ -17,11 +17,10 @@ from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggere
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
-from dbt_platform_helper.providers.aws.exceptions import ImageNotFoundException
+from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
 from dbt_platform_helper.utils.application import Environment
-from dbt_platform_helper.utils.git import CommitNotFoundException
 from tests.platform_helper.conftest import EXPECTED_FILES_DIR
 
 ecr_exceptions = boto3.client("ecr").exceptions
@@ -52,7 +51,6 @@ class CodebaseMocks:
             Mock(return_value="test-application-application-manual-release"),
         )
         self.run_subprocess = kwargs.get("run_subprocess", Mock())
-        self.check_if_commit_exists = kwargs.get("check_if_commit_exists", Mock())
 
     def params(self):
         return {
@@ -64,11 +62,10 @@ class CodebaseMocks:
             "get_manual_release_pipeline": self.get_manual_release_pipeline,
             "io": self.io,
             "run_subprocess": self.run_subprocess,
-            "check_if_commit_exists": self.check_if_commit_exists,
         }
 
 
-@patch("requests.get")
+@patch("dbt_platform_helper.domain.codebase.requests.get")
 def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_path):
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
@@ -160,15 +157,6 @@ def test_codebase_build_does_not_trigger_build_without_an_application():
         codebase.build("not-an-application", "application", "ab1c23d")
 
 
-def test_codebase_build_commit_not_found():
-    mocks = CodebaseMocks(check_if_commit_exists=Mock(side_effect=CommitNotFoundException()))
-
-    codebase = Codebase(**mocks.params())
-
-    with pytest.raises(CommitNotFoundException):
-        codebase.build("not-an-application", "application", "ab1c23d")
-
-
 def test_codebase_prepare_raises_not_in_codebase_exception(tmp_path):
     mocks = CodebaseMocks()
     mocks.load_application.side_effect = SystemExit(1)
@@ -182,7 +170,13 @@ def test_codebase_prepare_raises_not_in_codebase_exception(tmp_path):
         codebase.prepare()
 
 
-def test_codebase_prepare_generates_an_executable_image_build_run_file(tmp_path):
+@patch(
+    "requests.get",
+    return_value=MagicMock(
+        content=b"builders:\n  - name: paketobuildpacks/builder-jammy-full\n    versions:\n      - version: 0.3.482\n      - version: 0.3.473\n      - version: 0.3.431     \n      - version: 0.3.414 \n      - version: 0.3.397\n      - version: 0.3.339\n      - version: 0.3.338\n      - version: 0.3.317\n      - version: 0.3.294\n      - version: 0.3.288\n  - name: paketobuildpacks/builder-jammy-base\n    versions:\n      - version: 0.4.409\n      - version: 0.4.398\n      - version: 0.4.378\n      - version: 0.4.279\n      - version: 0.4.278\n      - version: 0.4.258\n      - version: 0.4.240\n      - version: 0.4.239\n  - name: paketobuildpacks/builder\n    deprecated: true\n    versions:\n      - version: 0.2.443-full\n"
+    ),
+)
+def test_codebase_prepare_generates_an_executable_image_build_run_file(requests, tmp_path):
     mocks = CodebaseMocks()
     codebase = Codebase(**mocks.params())
     os.chdir(tmp_path)
@@ -209,7 +203,13 @@ def test_codebase_build_does_not_trigger_deployment_without_confirmation():
     "commit, tag, branch, expected_ref, expected_corresponding_to",
     [
         ("abc123", None, None, "commit-abc123", ""),
-        ("abc1234c190419c3755de305581c2f9e4df9ece1", None, None, "commit-abc1234", ""),
+        (
+            "abc1234c190419c3755de305581c2f9e4df9ece1",
+            None,
+            None,
+            "commit-abc1234c190419c3755de305581c2f9e4df9ece1",
+            "",
+        ),
         (None, "1.2.3", None, "tag-1.2.3", "(corresponding to tag 1.2.3) "),
         (None, None, "feature_one", "branch-feature_one", "(corresponding to branch feature_one) "),
     ],
@@ -232,17 +232,14 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
     client.start_pipeline_execution.return_value = {
         "pipelineExecutionId": "0abc00a0a-1abc-1ab1-1234-1ab12a1a1abc"
     }
-    image_details = [{"imageTags": ["tag-1.2.3", "branch-feature_one", "commit-abc123"]}]
-    mocks.ecr_provider.get_image_details.return_value = image_details
-    mocks.ecr_provider.find_commit_tag.return_value = "commit-abc123"
+    mocks.ecr_provider.get_commit_tag_for_reference.return_value = "commit-abc123"
 
     codebase = Codebase(**mocks.params())
     codebase.deploy("test-application", "development", "application", commit, tag, branch)
 
-    codebase.ecr_provider.get_image_details.assert_called_once_with(
-        mock_application, "application", expected_ref
+    codebase.ecr_provider.get_commit_tag_for_reference.assert_called_once_with(
+        mock_application.name, "application", expected_ref
     )
-    codebase.ecr_provider.find_commit_tag.assert_called_once_with(image_details, expected_ref)
 
     client.start_pipeline_execution.assert_called_with(
         name="test-application-application-manual-release",
@@ -272,42 +269,6 @@ def test_codebase_deploy_successfully_triggers_a_pipeline_based_deploy(
 
 
 @pytest.mark.parametrize(
-    "tag, branch, expected_find_commit_tag_param",
-    [
-        ("1.2.3", None, "tag-1.2.3"),
-        (None, "feature_one", "branch-feature_one"),
-    ],
-)
-def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag(
-    tag, branch, expected_find_commit_tag_param
-):
-    mocks = CodebaseMocks()
-    mock_image_details = MagicMock()
-    mocks.ecr_provider.get_image_details.return_value = mock_image_details
-
-    client = mock_aws_client(mocks.get_aws_session_or_abort)
-    client.start_pipeline_execution.return_value = {"pipelineExecutionId": "fake-execution-id"}
-
-    mocks.ecr_provider.find_commit_tag.return_value = "commit-abc123"
-    codebase = Codebase(**mocks.params())
-
-    # 'commit' is None as we're only interested in scenarios where 'commit' is not used
-    codebase.deploy("test-application", "development", "application", None, tag, branch)
-
-    mocks.ecr_provider.find_commit_tag.assert_called_once_with(
-        mock_image_details, expected_find_commit_tag_param
-    )
-
-    client.start_pipeline_execution.assert_called_once_with(
-        name="test-application-application-manual-release",
-        variables=[
-            {"name": "ENVIRONMENT", "value": "development"},
-            {"name": "IMAGE_TAG", "value": "commit-abc123"},
-        ],
-    )
-
-
-@pytest.mark.parametrize(
     "tag, branch",
     [
         ("non-existent-tag", None),
@@ -316,7 +277,9 @@ def test_codebase_deploy_calls_find_commit_tag_when_ref_is_not_commit_tag(
 )
 def test_codebase_deploy_propagates_repository_not_found_exception(tag, branch):
     mocks = CodebaseMocks()
-    mocks.ecr_provider.get_image_details.side_effect = RepositoryNotFoundException("application")
+    mocks.ecr_provider.get_commit_tag_for_reference.side_effect = RepositoryNotFoundException(
+        "application"
+    )
 
     with pytest.raises(RepositoryNotFoundException):
         codebase = Codebase(**mocks.params())
@@ -331,11 +294,11 @@ def test_codebase_deploy_propagates_repository_not_found_exception(tag, branch):
         (None, "nonexistent-branch"),
     ],
 )
-def test_codebase_deploy_propagates_image_not_found_exception(tag, branch):
+def test_codebase_deploy_propagates_aws_exception(tag, branch):
     mocks = CodebaseMocks()
-    mocks.ecr_provider.get_image_details.side_effect = ImageNotFoundException("ref")
+    mocks.ecr_provider.get_commit_tag_for_reference.side_effect = AWSException("error")
 
-    with pytest.raises(ImageNotFoundException):
+    with pytest.raises(AWSException):
         codebase = Codebase(**mocks.params())
         codebase.deploy("test-application", "development", "application", None, tag, branch)
 
@@ -355,7 +318,7 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(
     mocks.run_subprocess.return_value.stderr = ""
     mocks.io.confirm.return_value = False
     client = mock_aws_client(mocks.get_aws_session_or_abort)
-    mocks.ecr_provider.find_commit_tag.return_value = "commit-ab1c23d"
+    mocks.ecr_provider.get_commit_tag_for_reference.return_value = "commit-ab1c23d"
 
     with pytest.raises(ApplicationDeploymentNotTriggered) as exc:
         codebase = Codebase(**mocks.params())
@@ -449,6 +412,30 @@ def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided():
 
     mocks.io.abort_with_error.assert_called_once_with(
         "To deploy, you must provide one of the options --commit, --tag or --branch."
+    )
+
+
+@pytest.mark.parametrize("reference", ["1", "123456"])
+def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided(reference):
+    mocks = CodebaseMocks()
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as system_exit_info:
+        codebase.deploy(
+            app="test-app",
+            env="dev",
+            codebase="application",
+            commit=reference,
+            tag=None,
+            branch=None,
+        )
+
+    assert system_exit_info.type == SystemExit
+    assert system_exit_info.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Your commit reference is too short. Commit sha hashes specified by '--commit' must be at least 7 characters long."
     )
 
 

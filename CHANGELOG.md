@@ -1,5 +1,96 @@
 # Changelog
 
+## [15.2.0](https://github.com/uktrade/platform-tools/compare/15.1.0...15.2.0) (2025-05-22)
+
+
+### Features
+
+* Add repository URL to Datadog service metadata (DBTP-1919) ([#869](https://github.com/uktrade/platform-tools/issues/869)) ([0064054](https://github.com/uktrade/platform-tools/commit/00640549a20fb1cbceee4568371815f7f41635fd))
+* Terraform conduit without copilot (DBTP-1927) ([#872](https://github.com/uktrade/platform-tools/issues/872)) ([d8173cb](https://github.com/uktrade/platform-tools/commit/d8173cb28a572055dffd8bacb8dc32dcfe37abed))
+
+
+### Bug Fixes
+
+* ECR repo tag mismatch (DBTP-2071) ([#875](https://github.com/uktrade/platform-tools/issues/875)) ([b0111de](https://github.com/uktrade/platform-tools/commit/b0111defa12cac07ae4862dca486283d09a562bf))
+
+## [15.1.0](https://github.com/uktrade/platform-tools/compare/15.0.0...15.1.0) (2025-04-30)
+
+
+### Features
+
+* Retrieve python-requests lambda layer & assign to lambda function (DBTP-1915) ([#862](https://github.com/uktrade/platform-tools/issues/862)) ([ca4d2cb](https://github.com/uktrade/platform-tools/commit/ca4d2cb703c505a02746dac70be7dc1cc44a3a8c))
+
+## [15.0.0](https://github.com/uktrade/platform-tools/compare/14.2.0...15.0.0) (2025-04-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* Sort list of subnets for Opensearch (DBTP-1994) ([#856](https://github.com/uktrade/platform-tools/issues/856))
+
+### Bug Fixes
+
+* Do not validate config in the version command (DBTP-2016) ([#867](https://github.com/uktrade/platform-tools/issues/867)) ([5ca2ce5](https://github.com/uktrade/platform-tools/commit/5ca2ce5431202f4d94f87c63181c04c327852f4d))
+* Sort list of subnets for Opensearch (DBTP-1994) ([#856](https://github.com/uktrade/platform-tools/issues/856)) ([019cefa](https://github.com/uktrade/platform-tools/commit/019cefab6d3ec172e9b012e0bb6708449e84e86b))
+
+
+### Features
+
+* Restrict trust policies for CodePipeline & CodeBuild IAM roles (DBTP-1945) ([#852](https://github.com/uktrade/platform-tools/issues/852)) ([d0e00bf](https://github.com/uktrade/platform-tools/commit/d0e00bfaa8680a3c2f5955a077c349b0db129486))
+
+## [14.2.0](https://github.com/uktrade/platform-tools/compare/14.1.1...14.2.0) (2025-04-23)
+
+
+### Features
+
+* Deprecate platform helper notify environment progress (DBTP-1221) ([#842](https://github.com/uktrade/platform-tools/issues/842)) ([167f235](https://github.com/uktrade/platform-tools/commit/167f23591f26c3bcb1f4fd8a3218140e8f17e744))
+
+
+### Bug Fixes
+
+* Add in moving major and minor version tags to the release (DBTP-1939) ([#861](https://github.com/uktrade/platform-tools/issues/861)) ([4e8f558](https://github.com/uktrade/platform-tools/commit/4e8f5586aa69aff5a013592516faab4b5f641141))
+* Add missing ECR policy (DBTP-1837) ([#857](https://github.com/uktrade/platform-tools/issues/857)) ([8add310](https://github.com/uktrade/platform-tools/commit/8add310b471417541f119ff3c2ae4cd37c626e5a))
+
+## [14.1.1](https://github.com/uktrade/platform-tools/compare/14.1.0...14.1.1) (2025-04-17)
+
+
+### Bug Fixes
+
+* Reinstate version command (DBTP-2006) ([#858](https://github.com/uktrade/platform-tools/issues/858)) ([eec2de7](https://github.com/uktrade/platform-tools/commit/eec2de700a994e509ea696a349c5ba7501cbb444))
+
+## [14.1.0](https://github.com/uktrade/platform-tools/compare/14.0.0...14.1.0) (2025-04-16)
+
+
+### Features
+
+* Python 3.13 support (off-ticket) ([#850](https://github.com/uktrade/platform-tools/issues/850)) ([1370c85](https://github.com/uktrade/platform-tools/commit/1370c85fe01ec7c48f86508ad24d7072fb9c2186))
+* Updates to software catalog service names (DBTP-1999) ([#855](https://github.com/uktrade/platform-tools/issues/855)) ([65d84a3](https://github.com/uktrade/platform-tools/commit/65d84a32159a3f0de0ced7716d47bfb7927806af))
+
+
+### Bug Fixes
+
+* Fix error parsing platform-helper version number (off-ticket) ([#854](https://github.com/uktrade/platform-tools/issues/854)) ([ba62201](https://github.com/uktrade/platform-tools/commit/ba622015c57ff29c1af0d2d6a5370278f7edaa9c))
+
+## [14.0.0](https://github.com/uktrade/platform-tools/compare/13.4.1...14.0.0) (2025-04-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* Force version 14.0.0 (DBTP-1842) ([#845](https://github.com/uktrade/platform-tools/issues/845))
+
+### Features
+
+* Add env var override to pipeline generate (DBTP-1842) ([#846](https://github.com/uktrade/platform-tools/issues/846)) ([e824764](https://github.com/uktrade/platform-tools/commit/e824764b90bab0ee1ef20fd42de151596e60d81a))
+* Add env var version override (DBTP-1578) ([#849](https://github.com/uktrade/platform-tools/issues/849)) ([480db28](https://github.com/uktrade/platform-tools/commit/480db280d69767b7c2ffac757e010aa38315698b))
+* Allow `codebase build` to be run outside the application repository (off-ticket) ([#809](https://github.com/uktrade/platform-tools/issues/809)) ([5ec3bdf](https://github.com/uktrade/platform-tools/commit/5ec3bdf7c8aced0fc45c2bb9e6db7f124fceca7e))
+* Force version 14.0.0 (DBTP-1842) ([#845](https://github.com/uktrade/platform-tools/issues/845)) ([4b5dc1e](https://github.com/uktrade/platform-tools/commit/4b5dc1ef96f1a80c67ef7cfd067ed220dbcc2be9))
+* Merge in terraform-platform-modules (DBTP-1842) ([#792](https://github.com/uktrade/platform-tools/issues/792)) ([32b1ce0](https://github.com/uktrade/platform-tools/commit/32b1ce098e0bc8d37e8cc41f8bd258c5b8714ea0))
+
+
+### Bug Fixes
+
+* Correct Redis subscription filter naming (DBTP-1920) ([#847](https://github.com/uktrade/platform-tools/issues/847)) ([e872be9](https://github.com/uktrade/platform-tools/commit/e872be9f967094be6fad5df902f024d39d1148df))
+* Removed unnecessary 'null' from empty values in platform-config. (DBTP-1952) ([#848](https://github.com/uktrade/platform-tools/issues/848)) ([c261a8e](https://github.com/uktrade/platform-tools/commit/c261a8e1b754c63842d496f504a0bcdc032f6167))
+
 ## [13.4.1](https://github.com/uktrade/platform-tools/compare/13.4.0...13.4.1) (2025-04-04)
 
 

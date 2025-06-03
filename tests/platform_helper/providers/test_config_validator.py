@@ -13,30 +13,14 @@ from dbt_platform_helper.providers.config_validator import ConfigValidatorError
         None,
         [{"from": "dev", "to": "test"}],
         [{"from": "test", "to": "dev"}],
-        [
-            {
-                "from": "prod",
-                "to": "test",
-                "from_account": "9999999999",
-                "to_account": "1122334455",
-            }
-        ],
-        [
-            {
-                "from": "dev",
-                "to": "test",
-                "from_account": "9999999999",
-                "to_account": "9999999999",
-            }
-        ],
+        [{"from": "prod", "to": "test"}],
+        [{"from": "dev", "to": "test"}],
         [{"from": "test", "to": "dev", "pipeline": {}}],
         [{"from": "test", "to": "dev", "pipeline": {"schedule": "0 0 * * WED"}}],
         [
             {
                 "from": "test",
                 "to": "dev",
-                "from_account": "9999999999",
-                "to_account": "1122334455",
                 "pipeline": {"schedule": "0 0 * * WED"},
             }
         ],
@@ -183,38 +167,6 @@ def test_validate_database_copy_multi_postgres_failures():
         f"Copying to a prod environment is not supported: database_copy 'to' cannot be 'prod' in extension 'our-other-postgres'."
         in console_message
     )
-
-
-def test_validate_database_copy_fails_if_cross_account_with_incorrect_account_ids():
-    config = {
-        "application": "test-app",
-        "environments": {
-            "dev": {"accounts": {"deploy": {"id": "1122334455"}}},
-            "prod": {"accounts": {"deploy": {"id": "9999999999"}}},
-        },
-        "extensions": {
-            "our-postgres": {
-                "type": "postgres",
-                "version": 7,
-                "database_copy": [
-                    {
-                        "from": "prod",
-                        "to": "dev",
-                        "from_account": "000000000",
-                        "to_account": "1111111111",
-                    }
-                ],
-            }
-        },
-    }
-
-    with pytest.raises(ConfigValidatorError) as exception:
-        ConfigValidator().validate_database_copy_section(config)
-
-    console_message = str(exception.value)
-
-    msg = f"Incorrect value for 'from_account' for environment 'prod'"
-    assert msg in console_message
 
 
 def test_validate_platform_config_fails_if_database_copy_to_and_from_are_the_same():

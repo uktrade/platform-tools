@@ -1,6 +1,10 @@
+import os
+
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
+
+DEBUG = os.environ.get("DEBUG", False)
 
 
 class ClickIOProvider:
@@ -8,7 +12,8 @@ class ClickIOProvider:
         click.secho(message, fg="magenta")
 
     def debug(self, message: str):
-        click.secho(message, fg="green")
+        if DEBUG == "True":
+            click.secho(message, fg="green")
 
     def error(self, message: str):
         click.secho(f"Error: {message}", fg="red")
@@ -29,7 +34,7 @@ class ClickIOProvider:
         click.secho(f"Error: {message}", err=True, fg="red")
         exit(1)
 
-    # TODO messages will be a ValidationMessages class rather than a free-rein dictionary
+    # TODO: DBTP-1979: messages will be a ValidationMessages class rather than a free-rein dictionary
     def process_messages(self, messages: dict):
         if not messages:
             return

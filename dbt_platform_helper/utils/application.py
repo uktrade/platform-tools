@@ -125,7 +125,7 @@ def load_application(app=None, default_session=None) -> Application:
 
 def get_application_name(abort=abort_with_error):
     if Path(PLATFORM_CONFIG_FILE).exists():
-        config = ConfigProvider()
+        config = ConfigProvider(installed_version_provider="N/A")
         try:
             app_config = config.load_unvalidated_config_file()
             return app_config["application"]

@@ -12,6 +12,7 @@
     - [platform-helper conduit](#platform-helper-conduit)
     - [platform-helper config](#platform-helper-config)
         - [platform-helper config validate](#platform-helper-config-validate)
+        - [platform-helper config migrate](#platform-helper-config-migrate)
         - [platform-helper config aws](#platform-helper-config-aws)
     - [platform-helper copilot](#platform-helper-copilot)
         - [platform-helper copilot make-addons](#platform-helper-copilot-make-addons)
@@ -28,6 +29,7 @@
         - [platform-helper secrets list](#platform-helper-secrets-list)
     - [platform-helper notify](#platform-helper-notify)
         - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
+        - [platform-helper notify post-message](#platform-helper-notify-post-message)
         - [platform-helper notify add-comment](#platform-helper-notify-add-comment)
     - [platform-helper database](#platform-helper-database)
         - [platform-helper database dump](#platform-helper-database-dump)
@@ -295,7 +297,7 @@ platform-helper conduit <addon_name>
 ## Usage
 
 ```
-platform-helper config (validate|aws) 
+platform-helper config (validate|migrate|aws) 
 ```
 
 ## Options
@@ -306,6 +308,7 @@ platform-helper config (validate|aws)
 ## Commands
 
 - [`aws` ↪](#platform-helper-config-aws)
+- [`migrate` ↪](#platform-helper-config-migrate)
 - [`validate` ↪](#platform-helper-config-validate)
 
 # platform-helper config validate
@@ -318,6 +321,23 @@ platform-helper config (validate|aws)
 
 ```
 platform-helper config validate 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper config migrate
+
+[↩ Parent](#platform-helper-config)
+
+    Update configuration to match current schema.
+
+## Usage
+
+```
+platform-helper config migrate 
 ```
 
 ## Options
@@ -488,7 +508,7 @@ platform-helper environment generate --name <name>
 ## Usage
 
 ```
-platform-helper environment generate-terraform --name <name> [--terraform-platform-modules-version <terraform_platform_modules_version>] 
+platform-helper environment generate-terraform --name <name> 
 ```
 
 ## Options
@@ -496,8 +516,6 @@ platform-helper environment generate-terraform --name <name> [--terraform-platfo
 - `--name
 -n <text>`
   - The name of the environment to generate a manifest for.
-- `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules. (Default version is '7').
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -550,27 +568,23 @@ platform-helper pipeline generate
     deployment pipelines.
 
     This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment-pipelines` configuration.
+    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
       The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
       The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
 
     This command does the following in relation to the codebase pipelines:
-    - Generates the copilot pipeline manifest.yml for copilot/pipelines/<codebase_pipeline_name>
+    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
+      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
+      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
 
 ## Usage
 
 ```
-platform-helper pipeline generate [--terraform-platform-modules-version <terraform_platform_modules_version>] 
-                                  [--deploy-branch <deploy_branch>] 
+platform-helper pipeline generate [--deploy-branch <deploy_branch>] 
 ```
 
 ## Options
 
-- `--terraform-platform-modules-version <text>`
-  - Override the default version of terraform-platform-modules with a specific version or branch. 
-Precedence of version used is version supplied via CLI, then the version found in 
-platform-config.yml/default_versions/terraform-platform-modules. 
-In absence of these inputs, defaults to version '7'.
 - `--deploy-branch <text>`
   - Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
@@ -655,7 +669,7 @@ platform-helper secrets list <application> <environment>
 ## Usage
 
 ```
-platform-helper notify (environment-progress|add-comment) 
+platform-helper notify (environment-progress|post-message|add-comment) 
 ```
 
 ## Options
@@ -667,6 +681,7 @@ platform-helper notify (environment-progress|add-comment)
 
 - [`add-comment` ↪](#platform-helper-notify-add-comment)
 - [`environment-progress` ↪](#platform-helper-notify-environment-progress)
+- [`post-message` ↪](#platform-helper-notify-post-message)
 
 # platform-helper notify environment-progress
 
@@ -683,6 +698,41 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
                                             [--repository <repository>] 
                                             [--commit-sha <commit_sha>] 
                                             [--slack-ref <slack_ref>] 
+```
+
+## Arguments
+
+- `slack-channel-id <text>`
+- `slack-token <text>`
+- `message <text>`
+
+## Options
+
+- `--build-arn <text>`
+
+- `--repository <text>`
+
+- `--commit-sha <text>`
+
+- `--slack-ref <text>`
+  - Slack message reference of the message to update
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper notify post-message
+
+[↩ Parent](#platform-helper-notify)
+
+    Send Slack notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.
+
+## Usage
+
+```
+platform-helper notify post-message <slack_channel_id> <slack_token> 
+                                    <message> 
+                                    [--build-arn <build_arn>] [--repository <repository>] 
+                                    [--commit-sha <commit_sha>] 
+                                    [--slack-ref <slack_ref>] 
 ```
 
 ## Arguments
