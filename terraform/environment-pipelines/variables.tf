@@ -2,12 +2,7 @@ variable "application" {
   type = string
 }
 
-variable "all_pipelines" {
-  type    = any
-  default = {}
-}
-
-variable "branch" {
+variable "deploy_repository_branch" {
   type    = string
   default = "main"
 }
@@ -23,22 +18,15 @@ variable "environments" {
   )
 }
 
-variable "environment_config" {
+variable "env_config" {
   type = any
 }
-
 
 variable "pipeline_name" {
   type = string
 }
 
-variable "pipeline_to_trigger" {
-  type    = string
-  default = null
-}
-
-
-variable "repository" {
+variable "deploy_repository" {
   type = string
 }
 

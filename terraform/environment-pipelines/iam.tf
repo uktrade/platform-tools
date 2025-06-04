@@ -98,8 +98,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       values = compact([
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-plan",
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-build",
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply",
-        local.triggers_another_pipeline ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-trigger" : null
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply"
       ])
     }
   }
@@ -121,20 +120,6 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       values = [
         "environment-pipeline-platform-helper-generate-*"
       ]
-    }
-  }
-
-  dynamic "statement" {
-    for_each = toset(local.triggers_another_pipeline ? [""] : [])
-    content {
-      effect = "Allow"
-
-      principals {
-        type        = "AWS"
-        identifiers = [local.triggered_pipeline_codebuild_role]
-      }
-
-      actions = ["sts:AssumeRole"]
     }
   }
 }
@@ -957,18 +942,6 @@ data "aws_iam_policy_document" "copilot_assume_role" {
       ]
     }
   }
-
-  dynamic "statement" {
-    for_each = toset(local.triggers_another_pipeline ? local.triggered_pipeline_environments : [])
-    content {
-      actions = [
-        "sts:AssumeRole"
-      ]
-      resources = [
-        "arn:aws:iam::${local.triggered_account_id}:role/${var.application}-${statement.value.name}-EnvManagerRole"
-      ]
-    }
-  }
 }
 
 data "aws_iam_policy_document" "cloudformation" {
@@ -1306,96 +1279,38 @@ resource "aws_iam_role_policy" "copilot_assume_role_for_environment_codebuild" {
   policy = data.aws_iam_policy_document.copilot_assume_role.json
 }
 
-########### TRIGGERED PIPELINE RESOURCES ##########
-
-#------PROD-TARGET-ACCOUNT------
-resource "aws_iam_role" "trigger_pipeline" {
-  for_each           = local.set_of_triggering_pipeline_names
-  name               = "${var.application}-${var.pipeline_name}-trigger-pipeline-from-${each.value}"
-  assume_role_policy = data.aws_iam_policy_document.assume_trigger_pipeline.json
-  tags               = local.tags
-}
-
-data "aws_iam_policy_document" "assume_trigger_pipeline" {
-  statement {
-    effect = "Allow"
-    principals {
-      type        = "AWS"
-      identifiers = local.triggering_pipeline_role_arns
-    }
-    actions = ["sts:AssumeRole"]
-  }
-}
-
-resource "aws_iam_role_policy" "trigger_pipeline" {
-  for_each = local.set_of_triggering_pipeline_names
-  name     = "${var.application}-${var.pipeline_name}-trigger-pipeline-from-${each.value}"
-  role     = aws_iam_role.trigger_pipeline[each.value].name
-  policy   = data.aws_iam_policy_document.trigger_pipeline[each.value].json
-}
-
-data "aws_iam_policy_document" "trigger_pipeline" {
-  for_each = local.set_of_triggering_pipeline_names
-  statement {
-    actions = [
-      "codepipeline:StartPipelineExecution",
-    ]
-    resources = [
-      aws_codepipeline.environment_pipeline.arn
-    ]
-  }
-}
-
-resource "aws_iam_role_policy" "assume_role_for_copilot_env_commands" {
-  for_each = toset(local.triggered_by_another_pipeline ? [""] : [])
-  name     = "${var.application}-${var.pipeline_name}-assume-role-for-copilot-env-commands"
-  role     = aws_iam_role.environment_pipeline_codebuild.name
-  policy   = data.aws_iam_policy_document.assume_role_for_copilot_env_commands_policy_document[""].json
-}
-
-data "aws_iam_policy_document" "assume_role_for_copilot_env_commands_policy_document" {
-  for_each = toset(local.triggered_by_another_pipeline ? [""] : [])
-  statement {
-    actions = [
-      "sts:AssumeRole"
-    ]
-    resources = local.triggering_pipeline_role_arns
-  }
-
-  statement {
-    actions = [
-      "kms:*",
-    ]
-    resources = [
-      "arn:aws:kms:${data.aws_region.current.name}:${local.triggering_account_id}:key/*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "s3:*",
-    ]
-    resources = [
-      "arn:aws:s3:::stackset-${var.application}-*-pipelinebuiltartifactbuc-*"
-    ]
-  }
-}
-
-#------NON-PROD-SOURCE-ACCOUNT------
-
-resource "aws_iam_role_policy" "assume_role_to_trigger_pipeline_policy" {
-  for_each = toset(local.triggers_another_pipeline ? [""] : [])
-  name     = "${var.application}-${var.pipeline_name}-assume-role-to-trigger-codepipeline-policy"
-  role     = aws_iam_role.environment_pipeline_codebuild.name
-  policy   = data.aws_iam_policy_document.assume_role_to_trigger_codepipeline_policy_document[""].json
-}
-
-data "aws_iam_policy_document" "assume_role_to_trigger_codepipeline_policy_document" {
-  for_each = toset(local.triggers_another_pipeline ? [""] : [])
-  statement {
-    actions = [
-      "sts:AssumeRole"
-    ]
-    resources = [local.triggered_pipeline_account_role]
-  }
-}
+#
+# resource "aws_iam_role_policy" "assume_role_for_copilot_env_commands" {
+#   for_each = toset(local.triggered_by_another_pipeline ? [""] : [])
+#   name     = "${var.application}-${var.pipeline_name}-assume-role-for-copilot-env-commands"
+#   role     = aws_iam_role.environment_pipeline_codebuild.name
+#   policy   = data.aws_iam_policy_document.assume_role_for_copilot_env_commands_policy_document[""].json
+# }
+#
+# data "aws_iam_policy_document" "assume_role_for_copilot_env_commands_policy_document" {
+#   for_each = toset(local.triggered_by_another_pipeline ? [""] : [])
+#   statement {
+#     actions = [
+#       "sts:AssumeRole"
+#     ]
+#     resources = local.triggering_pipeline_role_arns
+#   }
+#
+#   statement {
+#     actions = [
+#       "kms:*",
+#     ]
+#     resources = [
+#       "arn:aws:kms:${data.aws_region.current.name}:${local.triggering_account_id}:key/*"
+#     ]
+#   }
+#
+#   statement {
+#     actions = [
+#       "s3:*",
+#     ]
+#     resources = [
+#       "arn:aws:s3:::stackset-${var.application}-*-pipelinebuiltartifactbuc-*"
+#     ]
+#   }
+# }
