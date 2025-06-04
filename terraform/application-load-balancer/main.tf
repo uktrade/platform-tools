@@ -97,6 +97,7 @@ resource "aws_security_group" "alb-security-group" {
 
 resource "aws_lb_target_group" "http-target-group" {
   # checkov:skip=CKV_AWS_261:Health Check is Defined by copilot
+  # checkov:skip=CKV_AWS_378:HTTPS not used for default target group, Copilot created TGs used instead
   name        = "${var.application}-${var.environment}-http"
   port        = 80
   protocol    = "HTTP"

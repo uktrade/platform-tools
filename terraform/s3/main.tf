@@ -119,7 +119,6 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
   }
 }
 
-//here
 data "aws_iam_policy_document" "key-policy" {
   count = var.config.serve_static_content ? 0 : 1
   statement {
@@ -177,7 +176,6 @@ resource "aws_kms_key_policy" "key-policy" {
   policy = data.aws_iam_policy_document.key-policy[0].json
 }
 
-//here
 resource "aws_kms_key" "kms-key" {
   count = var.config.serve_static_content ? 0 : 1
 
@@ -194,7 +192,6 @@ resource "aws_kms_alias" "s3-bucket" {
   target_key_id = aws_kms_key.kms-key[0].id
 }
 
-// require server side encryption
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption-config" {
   count = var.config.serve_static_content ? 0 : 1
 
@@ -365,6 +362,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   # we want individual service teams to decide what objects each bucket contains
   # checkov:skip=CKV_AWS_310: Ensure CloudFront distributions should have origin failover configured
   # we don't enable origin failover for s3 buckets and it means maintaining another bucket
+  # checkov:skip=CKV_AWS_374: Global access required for static content via S3
 
   count = var.config.serve_static_content ? 1 : 0
 
@@ -404,30 +402,31 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   tags = local.tags
 }
 
-//here: referenced in the initial block
 resource "aws_kms_key" "s3-ssm-kms-key" {
   count = var.config.serve_static_content ? 1 : 0
-
   description         = "KMS Key for ${var.application}-${var.environment} S3 module SSM parameter encryption"
   enable_key_rotation = true
   tags                = local.tags
 }
 
-//here: new
+resource "aws_kms_key_policy" "s3-ssm-kms-key-policy" {
+  count  = var.config.serve_static_content ? 1 : 0
+  key_id = aws_kms_key.s3-ssm-kms-key[0].id
+  policy = data.aws_iam_policy_document.s3-ssm-kms-key-policy-document[0].json
+}
+
 data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
   version = "2012-10-17"
 
   statement {
     sid       = "Enable SSM Permissions"
     effect    = "Allow"
-    actions   = ["kms:GenerateDataKey*",
-                  "kms:Decrypt"]
+    actions   = ["kms:GenerateDataKey*", "kms:Decrypt"]
     resources = [aws_kms_key.s3-ssm-kms-key[0].arn]
     principals {
       type        = "Service"
       identifiers = ["ssm.amazonaws.com"]
     }
-
     condition {
       test     = "StringEquals"
       variable = "kms:EncryptionContext:aws:ssm:parameterName"
@@ -441,53 +440,12 @@ data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
     sid       = "AllowKeyAdminByRoot"
     effect    = "Allow"
     actions   = ["kms:*"]
-    resources = ["*"]
+    resources = [aws_kms_key.s3-ssm-kms-key[0].arn]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
   }
-}
-
-//here: new
-resource "aws_kms_key_policy" "s3-ssm-kms-key-policy" {
-  count = var.config.serve_static_content ? 1 : 0 //I guess this is only needed here or in the data block?
-  key_id = aws_kms_key.s3-ssm-kms-key[0].id
-  policy = data.aws_iam_policy_document.s3-ssm-kms-key-policy-document[0].json
-}
-
-
-//here: extract this inline permissions
-resource "aws_kms_key_policy" "s3-ssm-kms-key-policyBBB" {
-  count = var.config.serve_static_content ? 1 : 0
-  key_id = aws_kms_key.s3-ssm-kms-key[0].id
-  policy = jsonencode({
-    Statement = [
-      {
-        Action = [
-          "kms:GenerateDataKey*",
-          "kms:Decrypt"
-        ]
-        Effect = "Allow"
-        Principal = {
-          Service = "ssm.amazonaws.com"
-        }
-        Resource = aws_kms_key.s3-ssm-kms-key[0].arn
-        Condition = {
-          StringEquals = {
-            "kms:EncryptionContext:aws:ssm:parameterName" = "/copilot/${var.application}/${var.environment}/secrets/${local.ssm_param_name}"
-          }
-        }
-        Sid = "Enable SSM Permissions"
-      },
-      {
-        Sid    = "AllowKeyAdminByRoot",
-        Effect = "Allow",
-        Principal = {
-          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-        },
-        Action   = "kms:*",
-        Resource = "*"
-      }
-    ]
-    Version = "2012-10-17"
-  })
 }
 
 resource "aws_ssm_parameter" "cloudfront_alias" {

@@ -211,6 +211,7 @@ resource "aws_security_group_rule" "vpc-core-ingress-all" {
 }
 
 resource "aws_security_group_rule" "vpc-core-egress-all" {
+  # checkov:skip=CKV_AWS_382 Reason: Required for general internet access
   type              = "egress"
   description       = "Egress for all"
   from_port         = -1
