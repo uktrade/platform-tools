@@ -119,6 +119,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
   }
 }
 
+//here
 data "aws_iam_policy_document" "key-policy" {
   count = var.config.serve_static_content ? 0 : 1
   statement {
@@ -176,6 +177,7 @@ resource "aws_kms_key_policy" "key-policy" {
   policy = data.aws_iam_policy_document.key-policy[0].json
 }
 
+//here
 resource "aws_kms_key" "kms-key" {
   count = var.config.serve_static_content ? 0 : 1
 
@@ -402,6 +404,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   tags = local.tags
 }
 
+//here: referenced in the initial block
 resource "aws_kms_key" "s3-ssm-kms-key" {
   count = var.config.serve_static_content ? 1 : 0
 
@@ -410,9 +413,49 @@ resource "aws_kms_key" "s3-ssm-kms-key" {
   tags                = local.tags
 }
 
-resource "aws_kms_key_policy" "s3-ssm-kms-key-policy" {
-  count = var.config.serve_static_content ? 1 : 0
+//here: new
+data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
+  version = "2012-10-17"
 
+  statement {
+    sid       = "Enable SSM Permissions"
+    effect    = "Allow"
+    actions   = ["kms:GenerateDataKey*",
+                  "kms:Decrypt"]
+    resources = [aws_kms_key.s3-ssm-kms-key[0].arn]
+    principals {
+      type        = "Service"
+      identifiers = ["ssm.amazonaws.com"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "kms:EncryptionContext:aws:ssm:parameterName"
+      values = [
+        "/copilot/${var.application}/${var.environment}/secrets/${local.ssm_param_name}",
+      ]
+    }
+  }
+
+  statement {
+    sid       = "AllowKeyAdminByRoot"
+    effect    = "Allow"
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+}
+
+//here: new
+resource "aws_kms_key_policy" "s3-ssm-kms-key-policy" {
+  count = var.config.serve_static_content ? 1 : 0 //I guess this is only needed here or in the data block?
+  key_id = aws_kms_key.s3-ssm-kms-key[0].id
+  policy = data.aws_iam_policy_document.s3-ssm-kms-key-policy-document[0].json
+}
+
+
+//here: extract this inline permissions
+resource "aws_kms_key_policy" "s3-ssm-kms-key-policyBBB" {
+  count = var.config.serve_static_content ? 1 : 0
   key_id = aws_kms_key.s3-ssm-kms-key[0].id
   policy = jsonencode({
     Statement = [
