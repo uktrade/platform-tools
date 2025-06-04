@@ -436,6 +436,35 @@ data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
       ]
     }
   }
+
+  statement {
+    sid     = "AllowKeyAdminByRoot"
+    effect  = "Allow"
+    actions = ["kms:*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    resources = [aws_kms_key.s3-ssm-kms-key[0].arn]
+  }
+
+  statement {
+    sid     = "AllowKeyAdminBySSOAdministrator"
+    effect  = "Allow"
+    actions = ["kms:*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "StringLike"
+      variable = "aws:PrincipalArn"
+      values = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*"
+      ]
+    }
+    resources = [aws_kms_key.s3-ssm-kms-key[0].arn]
+  }
 }
 
 resource "aws_ssm_parameter" "cloudfront_alias" {
