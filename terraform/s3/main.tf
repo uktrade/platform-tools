@@ -403,7 +403,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 }
 
 resource "aws_kms_key" "s3-ssm-kms-key" {
-  count = var.config.serve_static_content ? 1 : 0
+  count               = var.config.serve_static_content ? 1 : 0
   description         = "KMS Key for ${var.application}-${var.environment} S3 module SSM parameter encryption"
   enable_key_rotation = true
   tags                = local.tags
@@ -416,7 +416,7 @@ resource "aws_kms_key_policy" "s3-ssm-kms-key-policy" {
 }
 
 data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
-  count  = var.config.serve_static_content ? 1 : 0
+  count   = var.config.serve_static_content ? 1 : 0
   version = "2012-10-17"
 
   statement {
