@@ -436,17 +436,6 @@ data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
       ]
     }
   }
-
-  statement {
-    sid       = "AllowKeyAdminByRoot"
-    effect    = "Allow"
-    actions   = ["kms:*"]
-    resources = [aws_kms_key.s3-ssm-kms-key[0].arn]
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
-    }
-  }
 }
 
 resource "aws_ssm_parameter" "cloudfront_alias" {
