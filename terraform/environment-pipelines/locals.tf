@@ -44,7 +44,6 @@ locals {
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" },
           { name : "NEEDS_APPROVAL", value : lookup(env, "requires_approval", false) ? "yes" : "no" },
-          { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
           { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
         ])
       }
@@ -79,7 +78,6 @@ locals {
           { name : "AWS_PROFILE_FOR_COPILOT", value : env.accounts.deploy.name },
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" },
-          { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
           { name : "CURRENT_CODEBUILD_ROLE", value : local.current_codebuild_role_arn }
         ])
       },

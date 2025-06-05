@@ -5,7 +5,7 @@ data "aws_codestarconnections_connection" "github_codestar_connection" {
 resource "aws_codepipeline" "environment_pipeline" {
   name          = "${var.application}-${var.pipeline_name}-environment-pipeline"
   role_arn      = aws_iam_role.environment_pipeline_codepipeline.arn
-  depends_on    = [aws_iam_role_policy.artifact_store_access_for_environment_codebuild]
+  depends_on    = [aws_iam_role_policy.artifact_store_access_for_environment_pipeline]
   pipeline_type = "V2"
 
   variable {
@@ -80,7 +80,6 @@ resource "aws_codepipeline" "environment_pipeline" {
           { name : "PIPELINE_NAME", value : var.pipeline_name },
           { name : "REPOSITORY", value : var.deploy_repository },
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-          { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
           { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
         ])
       }
