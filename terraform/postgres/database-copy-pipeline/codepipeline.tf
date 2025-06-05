@@ -1,6 +1,10 @@
+data "aws_ssm_parameter" "connection_name" {
+  name = "/codestarconnection/name"
+}
+
 data "external" "codestar_connections" {
   program = ["bash", "-c", <<-EOT
-    aws codeconnections list-connections --provider-type GitHub --query "Connections[?ConnectionName=='${var.application}' && ConnectionStatus=='AVAILABLE'] | [0]" --output json
+    aws codeconnections list-connections --provider-type GitHub --query "Connections[?ConnectionName=='${data.aws_ssm_parameter.connection_name.value}' && ConnectionStatus=='AVAILABLE'] | [0]" --output json
   EOT
   ]
 }
