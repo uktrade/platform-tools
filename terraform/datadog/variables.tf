@@ -13,7 +13,7 @@ variable "config" {
       contact_name        = string
       contact_email       = string
       documentation_url   = string
-      services_to_monitor = list(string)
+      services_to_monitor = map(list(string))
     }
   )
 }
@@ -21,5 +21,3 @@ variable "config" {
 variable "repos" {
   type = list(string)
 }
-
-
