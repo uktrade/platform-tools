@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "access_artifact_store" {
   statement {
     effect    = "Allow"
     actions   = ["codestar-connections:UseConnection"]
-    resources = [data.aws_codestarconnections_connection.github_codestar_connection.arn]
+    resources = [data.external.codestar_connections.result["ConnectionArn"]]
   }
 
   statement {

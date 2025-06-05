@@ -34,7 +34,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       output_artifacts = ["deploy_source"]
 
       configuration = {
-        ConnectionArn    = data.aws_codestarconnections_connection.github_codestar_connection.arn
+        ConnectionArn    = data.external.codestar_connections.result["ConnectionArn"]
         FullRepositoryId = var.deploy_repository != null ? var.deploy_repository : "uktrade/${var.application}-deploy"
         BranchName       = var.deploy_repository_branch
         DetectChanges    = false
@@ -137,7 +137,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       output_artifacts = ["deploy_source"]
 
       configuration = {
-        ConnectionArn    = data.aws_codestarconnections_connection.github_codestar_connection.arn
+        ConnectionArn    = data.external.codestar_connections.result["ConnectionArn"]
         FullRepositoryId = var.deploy_repository != null ? var.deploy_repository : "uktrade/${var.application}-deploy"
         BranchName       = var.deploy_repository_branch
         DetectChanges    = false

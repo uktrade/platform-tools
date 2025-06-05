@@ -1,5 +1,12 @@
-data "aws_codestarconnections_connection" "github_codestar_connection" {
-  name = var.application
+data "aws_ssm_parameter" "connection_name" {
+  name = "/codestarconnection/name"
+}
+
+data "external" "codestar_connections" {
+  program = ["bash", "-c", <<-EOT
+    aws codeconnections list-connections --provider-type GitHub --query "Connections[?ConnectionName=='${data.aws_ssm_parameter.connection_name.value}' && ConnectionStatus=='AVAILABLE'] | [0]" --output json
+  EOT
+  ]
 }
 
 resource "aws_codebuild_project" "codebase_image_build" {
@@ -36,7 +43,7 @@ resource "aws_codebuild_project" "codebase_image_build" {
 
     environment_variable {
       name  = "CODESTAR_CONNECTION_ARN"
-      value = data.aws_codestarconnections_connection.github_codestar_connection.arn
+      value = data.external.codestar_connections.result["ConnectionArn"]
     }
 
     environment_variable {

@@ -154,7 +154,7 @@ data "aws_iam_policy_document" "codestar_connection_access" {
       "codestar-connections:UseConnection"
     ]
     resources = [
-      data.aws_codestarconnections_connection.github_codestar_connection.arn
+      data.external.codestar_connections.result["ConnectionArn"]
     ]
   }
 }
