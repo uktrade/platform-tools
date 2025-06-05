@@ -363,7 +363,6 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   # we want individual service teams to decide what objects each bucket contains
   # checkov:skip=CKV_AWS_310: Ensure CloudFront distributions should have origin failover configured
   # we don't enable origin failover for s3 buckets and it means maintaining another bucket
-  # checkov:skip=CKV_AWS_374: Global access required for static content via S3
 
   count = var.config.serve_static_content ? 1 : 0
 
