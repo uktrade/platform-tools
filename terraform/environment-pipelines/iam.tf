@@ -22,7 +22,7 @@ data "aws_iam_policy_document" "assume_codepipeline_role" {
       test     = "StringEquals"
       variable = "aws:SourceArn"
       values = [
-        "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${var.application}-${var.pipeline_name}-environment-pipeline"
+        "arn:aws:codepipeline:${local.account_region}:${var.application}-${var.pipeline_name}-environment-pipeline"
       ]
     }
   }
@@ -82,7 +82,7 @@ data "aws_iam_policy_document" "codestar_connection_access" {
       "codestar-connections:PassConnection"
     ]
     resources = [
-      "arn:aws:codestar-connections:eu-west-2:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:codestar-connections:${local.account_region}:*"
     ]
   }
   statement {
@@ -115,11 +115,11 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
     condition {
       test     = "StringEquals"
       variable = "aws:SourceArn"
-      values = compact([
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-plan",
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-build",
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply"
-      ])
+      values = [
+        "arn:aws:codebuild:${local.account_region}:project/${var.application}-${var.pipeline_name}-environment-pipeline-plan",
+        "arn:aws:codebuild:${local.account_region}:project/${var.application}-${var.pipeline_name}-environment-pipeline-build",
+        "arn:aws:codebuild:${local.account_region}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply"
+      ]
     }
   }
 }
@@ -141,9 +141,8 @@ data "aws_iam_policy_document" "log_access" {
       "logs:TagLogGroup"
     ]
     resources = [
-      aws_cloudwatch_log_group.environment_pipeline_codebuild.arn,
-      "${aws_cloudwatch_log_group.environment_pipeline_codebuild.arn}:*",
-      "arn:aws:logs:${local.account_region}:log-group:*"
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.pipeline_name}-environment-terraform/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.pipeline_name}-environment-terraform/log-group:*"
     ]
   }
 }
@@ -154,7 +153,7 @@ resource "aws_iam_role_policy" "artifact_store_access_for_environment_codebuild"
   policy = data.aws_iam_policy_document.access_artifact_store.json
 }
 
-resource "aws_iam_role_policy" "ssm_read_access_for_environment_codebuild" {
+resource "aws_iam_role_policy" "ssm_access_for_environment_codebuild" {
   name   = "ssm-access"
   role   = aws_iam_role.environment_pipeline_codebuild.name
   policy = data.aws_iam_policy_document.ssm_access.json
@@ -162,12 +161,54 @@ resource "aws_iam_role_policy" "ssm_read_access_for_environment_codebuild" {
 
 data "aws_iam_policy_document" "ssm_access" {
   statement {
+    effect = "Allow"
     actions = [
       "ssm:GetParameter",
       "ssm:GetParameters"
     ]
     resources = [
       "arn:aws:ssm:${local.account_region}:parameter/codebuild/slack_*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "codepipeline_access_for_environment_codebuild" {
+  name   = "codepipeline-access"
+  role   = aws_iam_role.environment_pipeline_codebuild.name
+  policy = data.aws_iam_policy_document.codepipeline_access.json
+}
+
+data "aws_iam_policy_document" "codepipeline_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "codepipeline:GetPipelineState",
+      "codepipeline:GetPipelineExecution",
+      "codepipeline:ListPipelineExecutions",
+      "codepipeline:StopPipelineExecution",
+      "codepipeline:UpdatePipeline"
+    ]
+    resources = [
+      "arn:aws:codepipeline:${local.account_region}:${var.application}-${var.pipeline_name}-environment-pipeline"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "environment_deploy_role_access_for_environment_codebuild" {
+  name   = "environment-deploy-role-access"
+  role   = aws_iam_role.environment_pipeline_codebuild.name
+  policy = data.aws_iam_policy_document.environment_deploy_role_access.json
+}
+
+data "aws_iam_policy_document" "environment_deploy_role_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole"
+    ]
+    resources = [
+      for env in local.environment_config :
+      "arn:aws:iam::${env.accounts.deploy.id}:role/${var.application}-${env.name}-environment-pipeline-deploy"
     ]
   }
 }

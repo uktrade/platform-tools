@@ -5,7 +5,7 @@ data "aws_codestarconnections_connection" "github_codestar_connection" {
 resource "aws_codepipeline" "environment_pipeline" {
   name          = "${var.application}-${var.pipeline_name}-environment-pipeline"
   role_arn      = aws_iam_role.environment_pipeline_codepipeline.arn
-  depends_on    = [aws_iam_role_policy.artifact_store_access_for_environment_pipeline]
+  depends_on    = [aws_iam_role_policy.artifact_store_access_for_environment_codebuild]
   pipeline_type = "V2"
 
   variable {
@@ -24,7 +24,7 @@ resource "aws_codepipeline" "environment_pipeline" {
     }
   }
 
-  #  TODO - THIS MIGHT NO LONGER BE NECESSARY
+  #  TODO - THIS MIGHT NO LONGER BE NECESSARY https://github.com/hashicorp/terraform-provider-aws/issues/39347
   trigger {
     provider_type = "CodeStarSourceConnection"
     git_configuration {

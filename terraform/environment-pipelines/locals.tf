@@ -9,19 +9,12 @@ locals {
 
   base_env_config = { for name, config in var.env_config : name => merge(lookup(var.env_config, "*", {}), config) if name != "*" }
 
-  extracted_account_names_and_ids = toset(flatten([
-    for env, env_config in local.base_env_config : [
-      for account_type, account_details in env_config.accounts : {
-        "name" = account_details.name,
-        "id"   = account_details.id
-      }
-    ]
-  ]))
-
-  account_map = { for account in local.extracted_account_names_and_ids : account["name"] => account["id"] }
-
   # Convert the env config into a list and add env name and vpc / requires_approval from the environments config.
   environment_config = [for name, env in var.environments : merge(lookup(local.base_env_config, name, {}), env, { "name" = name })]
+
+  deploy_account_ids = distinct(flatten([
+    for env in local.environment_config : [for name, account in env.accounts : account.id if name == "deploy"]
+  ]))
 
   current_codebuild_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.pipeline_name}-environment-pipeline-codebuild"
 
