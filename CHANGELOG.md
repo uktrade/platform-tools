@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.2.2](https://github.com/uktrade/platform-tools/compare/15.2.1...15.2.2) (2025-06-05)
+
+
+### Bug Fixes
+
+* Overly permissive kms key policy (DBTP-1341) ([#881](https://github.com/uktrade/platform-tools/issues/881)) ([c4f3f73](https://github.com/uktrade/platform-tools/commit/c4f3f732dcb169505394de900b493d2c646be3b9))
+
 ## [15.2.1](https://github.com/uktrade/platform-tools/compare/15.2.0...15.2.1) (2025-06-02)
 
 
