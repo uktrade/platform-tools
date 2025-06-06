@@ -352,17 +352,7 @@ data "aws_cloudfront_cache_policy" "example" {
 }
 
 resource "aws_cloudfront_distribution" "s3_distribution" {
-  # checkov:skip=CKV2_AWS_32: Ensure CloudFront distribution has a response headers policy attached
-  # not required now
-  # checkov:skip=CKV2_AWS_47: Ensure AWS CloudFront attached WAFv2 WebACL is configured with AMR for Log4j Vulnerability
-  # checkov:skip=CKV_AWS_68: CloudFront Distribution should have WAF enabled
-  # No WAF rules for S3 endpoints set up by Cyber yet
-  # checkov:skip=CKV_AWS_86: Ensure CloudFront distribution has Access Logging enabled
-  # we don't enable access logging for s3 buckets and it means maintaining another bucket for logs
-  # checkov:skip=CKV_AWS_305: Ensure CloudFront distribution has a default root object configured
-  # we want individual service teams to decide what objects each bucket contains
-  # checkov:skip=CKV_AWS_310: Ensure CloudFront distributions should have origin failover configured
-  # we don't enable origin failover for s3 buckets and it means maintaining another bucket
+
 
   count = var.config.serve_static_content ? 1 : 0
 
