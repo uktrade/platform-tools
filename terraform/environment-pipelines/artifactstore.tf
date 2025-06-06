@@ -15,6 +15,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle_rule" {
     id     = "delete-after-7-days"
     status = "Enabled"
 
+    filter {}
+
     abort_incomplete_multipart_upload {
       days_after_initiation = 1
     }
@@ -47,6 +49,29 @@ data "aws_iam_policy_document" "artifact_store_bucket_policy" {
       ]
     }
 
+    resources = [
+      aws_s3_bucket.artifact_store.arn,
+      "${aws_s3_bucket.artifact_store.arn}/*",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = [for env in local.environment_config : "arn:aws:iam::${env.accounts.deploy.id}:root"]
+    }
+    condition {
+      test = "ArnLike"
+      values = [
+        for env in local.environment_config :
+        "arn:aws:iam::${env.accounts.deploy.id}:role/${var.application}-${env.name}-environment-pipeline-deploy"
+      ]
+      variable = "aws:PrincipalArn"
+    }
+    actions = [
+      "s3:*"
+    ]
     resources = [
       aws_s3_bucket.artifact_store.arn,
       "${aws_s3_bucket.artifact_store.arn}/*",

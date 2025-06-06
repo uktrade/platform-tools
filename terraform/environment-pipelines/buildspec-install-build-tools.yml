@@ -60,17 +60,12 @@ phases:
       - export "PATH=$(pwd)/bin:$PATH"
       - export PYTHONPATH=$(pwd)
       - platform-helper --version
-      - | 
-          if [ "${SLACK_THREAD_ID}" == "NONE" ]
-          then
-            export SLACK_REF=$(platform-helper notify environment-progress "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" \
-            "*Pipeline ${PIPELINE_NAME}* is deploying ${APPLICATION} environments" \
-            --build-arn "${CODEBUILD_BUILD_ARN}" \
-            --repository "${REPOSITORY}" \
-            --commit-sha "${CODEBUILD_RESOLVED_SOURCE_VERSION: -7}")
-          else
-            export SLACK_REF="${SLACK_THREAD_ID}"
-          fi
+      - |
+          export SLACK_REF=$(platform-helper notify environment-progress "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" \
+              "*Pipeline ${PIPELINE_NAME}* is deploying ${APPLICATION} environments" \
+              --build-arn "${CODEBUILD_BUILD_ARN}" \
+              --repository "${REPOSITORY}" \
+              --commit-sha "${CODEBUILD_RESOLVED_SOURCE_VERSION: -7}")
       - echo "Build SLACK_REF is - ${SLACK_REF}"
       - cd bin
       - curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
