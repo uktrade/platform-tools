@@ -536,3 +536,37 @@ class TestLoadBalancerProviderPagination:
             "describe_listener_certificates"
         )
         mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_host_header_conditions_given_multiple_pages(self):
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "abc123",
+                        "Conditions": [
+                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "abc456"}],
+                    },
+                ],
+            },
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "def123",
+                        "Conditions": [
+                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "def456"}],
+                    },
+                ],
+            },
+        ]
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_host_header_conditions("abc123", "abc456")
+
+        assert result == [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
+        mock_session.client().get_paginator.assert_called_once_with("describe_rules")
+        mock_session.client().get_paginator().paginate.assert_called_once()
