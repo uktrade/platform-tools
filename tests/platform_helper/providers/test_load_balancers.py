@@ -484,7 +484,7 @@ def test_normalise_to_cidr(ip, expected_cidr):
 
 
 class TestLoadBalancerProviderPagination:
-    def test_find_target_group_pagination(self):
+    def test_find_target_group_given_multiple_pages(self):
         mock_session = Mock()
         mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
             {
@@ -518,4 +518,21 @@ class TestLoadBalancerProviderPagination:
 
         assert result == "abc123"
         mock_session.client().get_paginator.assert_called_once_with("get_resources")
+        mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_https_certificate_for_listener_given_multiple_pages(self):
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
+            {"Certificates": [{"CertificateArn": "abc123", "IsDefault": False}]},
+            {"Certificates": [{"CertificateArn": "def123", "IsDefault": False}]},
+            {"Certificates": [{"CertificateArn": "ghi123", "IsDefault": True}]},
+        ]
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_https_certificate_for_listener("mocked", "my-env")
+
+        assert "ghi123" in result
+        mock_session.client().get_paginator.assert_called_once_with(
+            "describe_listener_certificates"
+        )
         mock_session.client().get_paginator().paginate.assert_called_once()
