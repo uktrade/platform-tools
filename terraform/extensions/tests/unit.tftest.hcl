@@ -214,13 +214,6 @@ EOT
   }
 }
 
-override_data {
-  target = data.aws_iam_policy_document.cloudformation_access
-  values = {
-    json = "{\"Sid\": \"CloudFormationAccess\"}"
-  }
-}
-
 run "aws_ssm_parameter_unit_test" {
   command = plan
 
@@ -567,7 +560,7 @@ run "redis_plan_medium_ha_service_test" {
   }
 }
 
-
+# Codebase pipeline
 override_data {
   target = data.aws_iam_policy_document.assume_codebase_pipeline
   values = {
@@ -593,6 +586,13 @@ override_data {
   target = data.aws_iam_policy_document.ecs_deploy_access
   values = {
     json = "{\"Sid\": \"ECSDeployAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.cloudformation_access
+  values = {
+    json = "{\"Sid\": \"CloudFormationAccess\"}"
   }
 }
 
@@ -896,4 +896,244 @@ run "codebase_deploy_iam_test" {
     ])
     error_message = "Unexpected resources"
   }
+}
+
+# Environment pipeline
+override_data {
+  target = data.aws_iam_policy_document.assume_environment_pipeline
+  values = {
+    json = "{\"Sid\": \"AssumeEnvironmentPipeline\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.terraform_state_access
+  values = {
+    json = "{\"Sid\": \"TerraformStateAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.vpc_access
+  values = {
+    json = "{\"Sid\": \"VPCAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.alb_cdn_cert_access
+  values = {
+    json = "{\"Sid\": \"ALBAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.ssm_access
+  values = {
+    json = "{\"Sid\": \"SSMAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.logs_access
+  values = {
+    json = "{\"Sid\": \"LogsAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.kms_key_access
+  values = {
+    json = "{\"Sid\": \"KMSAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.redis_access
+  values = {
+    json = "{\"Sid\": \"RedisAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.postgres_access
+  values = {
+    json = "{\"Sid\": \"PostgresAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.s3_access
+  values = {
+    json = "{\"Sid\": \"S3Access\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.ecs_access
+  values = {
+    json = "{\"Sid\": \"ECSAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.opensearch_access
+  values = {
+    json = "{\"Sid\": \"OpensearchAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.copilot_access
+  values = {
+    json = "{\"Sid\": \"CopilotAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.iam_access
+  values = {
+    json = "{\"Sid\": \"IamAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.codepipeline_access
+  values = {
+    json = "{\"Sid\": \"CodepipelineAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_ssm_parameter.central_log_group_parameter
+  values = {
+    value = "{\"prod\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_prod\", \"dev\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_dev\"}"
+  }
+}
+
+run "environment_deploy_iam_role_test" {
+  command = plan
+
+  variables {
+    expected_tags = {
+      application         = var.args.application
+      environment         = var.environment
+      managed-by          = "DBT Platform - Terraform"
+      copilot-application = var.args.application
+      copilot-environment = var.environment
+    }
+  }
+
+  assert {
+    condition     = aws_iam_role.environment_pipeline_deploy.name == "test-application-test-env-environment-pipeline-deploy"
+    error_message = "Should be: 'test-application-test-env-environment-pipeline-deploy'"
+  }
+  assert {
+    condition     = aws_iam_role.environment_pipeline_deploy.assume_role_policy == "{\"Sid\": \"AssumeEnvironmentPipeline\"}"
+    error_message = "Should be: {\"Sid\": \"AssumeEnvironmentPipeline\"}"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.assume_environment_pipeline.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.assume_environment_pipeline.statement[0].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.assume_environment_pipeline.statement[0].principals).type == "AWS"
+    error_message = "Should be: AWS"
+  }
+  assert {
+    condition     = contains(one(data.aws_iam_policy_document.assume_environment_pipeline.statement[0].principals).identifiers, "arn:aws:iam::000123456789:root")
+    error_message = "Should contain: arn:aws:iam::000123456789:root"
+  }
+  assert {
+    condition     = [for el in data.aws_iam_policy_document.assume_environment_pipeline.statement[0].condition : el.test][0] == "ArnLike"
+    error_message = "Should be: ArnLike"
+  }
+  assert {
+    condition     = [for el in data.aws_iam_policy_document.assume_environment_pipeline.statement[0].condition : el.variable][0] == "aws:PrincipalArn"
+    error_message = "Should be: aws:PrincipalArn"
+  }
+  assert {
+    condition = flatten([for el in data.aws_iam_policy_document.assume_environment_pipeline.statement[0].condition : el.values][0]) == [
+      "arn:aws:iam::000123456789:role/test-application-*-environment-*"
+    ]
+    error_message = "Unexpected condition values"
+  }
+  assert {
+    condition     = jsonencode(aws_iam_role.codebase_pipeline_deploy.tags) == jsonencode(var.expected_tags)
+    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+  }
+}
+
+run "environment_deploy_iam_terraform_state_test" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_vpc_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_alb_cdn_cert_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_ssm_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_logs_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_kms_key_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_redis_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_postgres_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_s3_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_ecs_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_opensearch_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_copilot_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_iam_access" {
+  command = plan
+
+}
+
+run "environment_deploy_iam_codepipeline_access" {
+  command = plan
+
 }

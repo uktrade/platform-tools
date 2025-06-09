@@ -578,7 +578,7 @@ run "test_iam_documents" {
       "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/my-app-my-pipeline-environment-pipeline-build",
       "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/my-app-my-pipeline-environment-pipeline-apply"
     ]
-    error_message = "Policy condition incorrect ${jsonencode(flatten([for el in data.aws_iam_policy_document.assume_codebuild_role.statement[0].condition : el.values]))}"
+    error_message = "Policy condition incorrect"
   }
 
   # Log access

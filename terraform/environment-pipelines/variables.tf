@@ -11,7 +11,6 @@ variable "environments" {
   type = map(
     object(
       {
-        vpc               = optional(string)
         requires_approval = optional(bool)
       }
     )
