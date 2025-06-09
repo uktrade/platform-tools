@@ -69,8 +69,7 @@ class LoadBalancerProvider:
 
         return target_group_arn
 
-    def get_https_certificate_for_application(self, app: str, env: str) -> str:
-        listener_arn = self.get_https_listener_for_application(app, env)
+    def get_https_certificate_for_listener(self, listener_arn: str, env: str):
         certificates = []
         paginator = self.evlb_client.get_paginator("describe_listener_certificates")
         page_iterator = paginator.paginate(ListenerArn=listener_arn)
@@ -83,6 +82,10 @@ class LoadBalancerProvider:
             raise CertificateNotFoundException(env)
 
         return certificate_arn
+
+    def get_https_certificate_for_application(self, app: str, env: str) -> str:
+        listener_arn = self.get_https_listener_for_application(app, env)
+        return self.get_https_certificate_for_listener(listener_arn, env)
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
