@@ -52,6 +52,7 @@ class ECRProvider:
                     for tag in tag_map.keys()
                     if image_ref.startswith(tag) or tag.startswith(image_ref)
                 ]
+                # TODO do not error but returtn None when no image found
                 if not candidates:
                     raise ImageNotFoundException(image_ref)
                 if len(candidates) > 1:
@@ -59,6 +60,7 @@ class ECRProvider:
                 return candidates[0]
         else:
             digest = tag_map.get(image_ref)
+            # TODO do not error but returtn None when no image found
             if not digest:
                 raise ImageNotFoundException(image_ref)
 
@@ -70,6 +72,7 @@ class ECRProvider:
                 )
                 return commit_tag
             else:
+                # TODO be aware of
                 self.click_io.warn(NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=image_ref))
                 return image_ref
 

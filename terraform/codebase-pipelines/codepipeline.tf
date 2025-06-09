@@ -1,3 +1,5 @@
+# Pipeline trigger via merge to branch or by tag
+
 resource "aws_codepipeline" "codebase_pipeline" {
   for_each       = local.pipeline_map
   name           = "${var.application}-${var.codebase}-${each.value.name}-codebase"
@@ -41,6 +43,11 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
     }
   }
+
+  # TODO - for trigger a build before deploy if needed
+  # stage {
+  #   name = "TriggerBuildJob"
+  # }
 
   dynamic "stage" {
     for_each = each.value.environments
@@ -96,6 +103,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
   tags = local.tags
 }
 
+# Pipeline trigger via platform-tools
 
 resource "aws_codepipeline" "manual_release_pipeline" {
   name           = "${var.application}-${var.codebase}-manual-release"
@@ -144,6 +152,11 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       }
     }
   }
+
+  # TODO - for trigger a build before deploy if needed
+  # stage {
+  #   name = "TriggerBuildJob"
+  # }
 
   stage {
     name = "Deploy"

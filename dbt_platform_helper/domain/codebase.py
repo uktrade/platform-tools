@@ -160,6 +160,22 @@ class Codebase:
         branch: str = None,
     ):
         """Trigger a CodePipeline pipeline based deployment."""
+        """
+        Do I build?
+
+        - if build flag = yes
+        - if no image = yes
+        - if image and no build flag = no
+        - if image and build flag = yes
+        """
+        # if build == true
+        #   trigger build
+
+        # for commit (calculate commit id for tag & branch) check if image exists
+        # if image exists
+        #   go to deployment
+        # else if no image
+        #   trigger build
 
         self._validate_reference_flags(commit, tag, branch)
 
@@ -174,9 +190,12 @@ class Codebase:
         elif branch:
             image_ref = f"branch-{branch}"
 
+        # TODO if build flag skip this step
+        # TODO if the image is not found we should automatically build it
         image_ref = self.ecr_provider.get_commit_tag_for_reference(
             application.name, codebase, image_ref
         )
+        # TODO if above function returns None then build = True
 
         codepipeline_client = session.client("codepipeline")
         pipeline_name = self.get_manual_release_pipeline(codepipeline_client, app, codebase)
@@ -193,6 +212,7 @@ class Codebase:
             "variables": [
                 {"name": "ENVIRONMENT", "value": env},
                 {"name": "IMAGE_TAG", "value": image_ref},
+                # TODO add new var for commit Id to build {"name": "BUILD", "value": "<commit_id>" }
             ],
         }
 
