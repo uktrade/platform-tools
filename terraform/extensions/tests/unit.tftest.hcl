@@ -970,13 +970,6 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.ecs_access
-  values = {
-    json = "{\"Sid\": \"ECSAccess\"}"
-  }
-}
-
-override_data {
   target = data.aws_iam_policy_document.opensearch_access
   values = {
     json = "{\"Sid\": \"OpensearchAccess\"}"
@@ -994,13 +987,6 @@ override_data {
   target = data.aws_iam_policy_document.iam_access
   values = {
     json = "{\"Sid\": \"IamAccess\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.codepipeline_access
-  values = {
-    json = "{\"Sid\": \"CodepipelineAccess\"}"
   }
 }
 
@@ -1113,11 +1099,6 @@ run "environment_deploy_iam_s3_access" {
 
 }
 
-run "environment_deploy_iam_ecs_access" {
-  command = plan
-
-}
-
 run "environment_deploy_iam_opensearch_access" {
   command = plan
 
@@ -1129,11 +1110,6 @@ run "environment_deploy_iam_copilot_access" {
 }
 
 run "environment_deploy_iam_iam_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_codepipeline_access" {
   command = plan
 
 }
