@@ -481,3 +481,41 @@ def test_when_no_load_balancer_exists(mock_application):
 )
 def test_normalise_to_cidr(ip, expected_cidr):
     assert normalise_to_cidr(ip) == expected_cidr
+
+
+class TestLoadBalancerProviderPagination:
+    def test_find_target_group_pagination(self):
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
+            {
+                "ResourceTagMappingList": [
+                    {
+                        "ResourceARN": "abc123",
+                        "Tags": [
+                            {"Key": "copilot-application", "Value": "my-app"},
+                            {"Key": "copilot-environment", "Value": "my-env"},
+                            {"Key": "copilot-service", "Value": "my-svc"},
+                        ],
+                    }
+                ]
+            },
+            {
+                "ResourceTagMappingList": [
+                    {
+                        "ResourceARN": "ghi123",
+                        "Tags": [
+                            {"Key": "copilot-application", "Value": "my-app2"},
+                            {"Key": "copilot-environment", "Value": "my-env2"},
+                            {"Key": "copilot-service", "Value": "my-svc2"},
+                        ],
+                    }
+                ]
+            },
+        ]
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.find_target_group("my-app", "my-env", "my-svc")
+
+        assert result == "abc123"
+        mock_session.client().get_paginator.assert_called_once_with("get_resources")
+        mock_session.client().get_paginator().paginate.assert_called_once()
