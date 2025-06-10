@@ -392,6 +392,13 @@ data "aws_iam_policy_document" "iam_access" {
     ]
     resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-lambda-role"]
   }
+
+  statement {
+    actions = [
+      "iam:GetPolicy"
+    ]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}/codebuild/*"]
+  }
 }
 
 # ALB and CDN

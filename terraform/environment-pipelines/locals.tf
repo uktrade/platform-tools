@@ -38,6 +38,7 @@ locals {
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" },
           { name : "NEEDS_APPROVAL", value : lookup(env, "requires_approval", false) ? "yes" : "no" },
           { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
+          { name : "ACCOUNT_ID", value : env.accounts.deploy.id }
         ])
       }
       namespace : "${env.name}-plan"
