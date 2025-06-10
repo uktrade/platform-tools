@@ -570,3 +570,46 @@ class TestLoadBalancerProviderPagination:
         assert result == [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
         mock_session.client().get_paginator.assert_called_once_with("describe_rules")
         mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_listener_rules_by_listener_arn_given_multiple_pages(self):
+
+        listener_rules = [
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "abc123",
+                        "Priority": "500",
+                        "Conditions": [
+                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "abc456"}],
+                        "IsDefault": False,
+                    },
+                ],
+            },
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "def123",
+                        "Priority": "500",
+                        "Conditions": [
+                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "def456"}],
+                        "IsDefault": False,
+                    },
+                ],
+            },
+        ]
+
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
+            listener_rules
+        )
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_listener_rules_by_listener_arn("abc123")
+
+        assert result == [listener_rules[0]["Rules"][0], listener_rules[1]["Rules"][0]]
+        mock_session.client().get_paginator.assert_called_once_with("describe_rules")
+        mock_session.client().get_paginator().paginate.assert_called_once()

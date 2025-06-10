@@ -161,12 +161,18 @@ class LoadBalancerProvider:
         return conditions
 
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
+        rules = self.get_listener_rules_by_listener_arn(listener_arn)
+
+        return self.get_rules_tag_descriptions(rules)
+
+    def get_listener_rules_by_listener_arn(self, listener_arn: str) -> list:
         rules = []
         paginator = self.evlb_client.get_paginator("describe_rules")
         page_iterator = paginator.paginate(ListenerArn=listener_arn)
         for page in page_iterator:
             rules.extend(page["Rules"])
-        return self.get_rules_tag_descriptions(rules)
+
+        return rules
 
     def get_rules_tag_descriptions(self, rules: list) -> list:
         tag_descriptions = []
