@@ -87,7 +87,7 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         return self.get_https_certificate_for_listener(listener_arn, env)
 
-    def describe_listeners_for_load_balancer(self, load_balancer_arn):
+    def get_listeners_for_load_balancer(self, load_balancer_arn):
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
         page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
@@ -98,7 +98,7 @@ class LoadBalancerProvider:
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
-        listeners = self.describe_listeners_for_load_balancer(load_balancer_arn)
+        listeners = self.get_listeners_for_load_balancer(load_balancer_arn)
 
         listener_arn = None
 
@@ -112,7 +112,7 @@ class LoadBalancerProvider:
 
         return listener_arn
 
-    def describe_load_balancers(self):
+    def get_load_balancers(self):
         load_balancers = []
         paginator = self.evlb_client.get_paginator("describe_load_balancers")
         page_iterator = paginator.paginate()
@@ -122,7 +122,7 @@ class LoadBalancerProvider:
         return load_balancers
 
     def get_load_balancer_for_application(self, app: str, env: str) -> str:
-        load_balancers = self.describe_load_balancers()
+        load_balancers = self.get_load_balancers()
         tag_descriptions = []
         for i in range(0, len(load_balancers), 20):
             chunk = load_balancers[i : i + 20]
