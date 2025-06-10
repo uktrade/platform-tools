@@ -126,6 +126,12 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
   }
 }
 
+resource "aws_iam_role_policy" "codestar_connection_access_for_environment_codebuild" {
+  name   = "codestar-connection-access"
+  role   = aws_iam_role.environment_pipeline_codebuild.name
+  policy = data.aws_iam_policy_document.codestar_connection_access.json
+}
+
 resource "aws_iam_role_policy" "log_access_for_environment_codebuild" {
   name   = "log-access"
   role   = aws_iam_role.environment_pipeline_codebuild.name

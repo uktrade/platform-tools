@@ -395,7 +395,8 @@ data "aws_iam_policy_document" "iam_access" {
 
   statement {
     actions = [
-      "iam:GetPolicy"
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion"
     ]
     resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}/codebuild/*"]
   }

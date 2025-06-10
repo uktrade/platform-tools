@@ -430,6 +430,14 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_codebuild.name == "codestar-connection-access"
+    error_message = "Should be: 'codestar-connection-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
+  assert {
     condition     = aws_iam_role_policy.log_access_for_environment_codebuild.name == "log-access"
     error_message = "Should be: 'log-access'"
   }
