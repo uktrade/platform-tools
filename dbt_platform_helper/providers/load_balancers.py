@@ -87,13 +87,18 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         return self.get_https_certificate_for_listener(listener_arn, env)
 
-    def get_https_listener_for_application(self, app: str, env: str) -> str:
-        load_balancer_arn = self.get_load_balancer_for_application(app, env)
+    def describe_listeners_for_load_balancer(self, load_balancer_arn):
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
         page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
         for page in page_iterator:
             listeners.extend(page["Listeners"])
+
+        return listeners
+
+    def get_https_listener_for_application(self, app: str, env: str) -> str:
+        load_balancer_arn = self.get_load_balancer_for_application(app, env)
+        listeners = self.describe_listeners_for_load_balancer(load_balancer_arn)
 
         listener_arn = None
 

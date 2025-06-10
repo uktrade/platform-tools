@@ -648,3 +648,36 @@ class TestLoadBalancerProviderPagination:
         ]
         mock_session.client().get_paginator.assert_called_once_with("describe_load_balancers")
         mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_describe_listeners_for_load_balancer_given_multiple_pages(self):
+        listeners = [
+            {
+                "Listeners": [
+                    {
+                        "ListenerArn": "abc123",
+                    },
+                ],
+            },
+            {
+                "Listeners": [
+                    {
+                        "ListenerArn": "def123",
+                    },
+                ],
+            },
+        ]
+
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
+            listeners
+        )
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.describe_listeners_for_load_balancer("abc123")
+
+        assert result == [
+            listeners[0]["Listeners"][0],
+            listeners[1]["Listeners"][0],
+        ]
+        mock_session.client().get_paginator.assert_called_once_with("describe_listeners")
+        mock_session.client().get_paginator().paginate.assert_called_once()
