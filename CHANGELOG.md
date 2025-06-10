@@ -1,5 +1,21 @@
 # Changelog
 
+## [15.2.2](https://github.com/uktrade/platform-tools/compare/15.2.1...15.2.2) (2025-06-05)
+
+
+### Bug Fixes
+
+* Overly permissive kms key policy (DBTP-1341) ([#881](https://github.com/uktrade/platform-tools/issues/881)) ([c4f3f73](https://github.com/uktrade/platform-tools/commit/c4f3f732dcb169505394de900b493d2c646be3b9))
+
+## [15.2.1](https://github.com/uktrade/platform-tools/compare/15.2.0...15.2.1) (2025-06-02)
+
+
+### Bug Fixes
+
+* Add --force flag to copilot svc deploy (DBTP-2003) ([#877](https://github.com/uktrade/platform-tools/issues/877)) ([26d305c](https://github.com/uktrade/platform-tools/commit/26d305cc4690ef53394bae24abe36f066eb47db6))
+* Deploy specific commit tag (DBTP-1824) ([#879](https://github.com/uktrade/platform-tools/issues/879)) ([a1930ca](https://github.com/uktrade/platform-tools/commit/a1930ca5883a25a06dd303e5921975767c52591f))
+* Plans fail validation (DBTP-2061) ([#876](https://github.com/uktrade/platform-tools/issues/876)) ([cc6d066](https://github.com/uktrade/platform-tools/commit/cc6d066197975a9201efa0d2cfd572ec13475f44))
+
 ## [15.2.0](https://github.com/uktrade/platform-tools/compare/15.1.0...15.2.0) (2025-05-22)
 
 
