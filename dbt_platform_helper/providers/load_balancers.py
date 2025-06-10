@@ -107,13 +107,17 @@ class LoadBalancerProvider:
 
         return listener_arn
 
-    def get_load_balancer_for_application(self, app: str, env: str) -> str:
+    def describe_load_balancers(self):
         load_balancers = []
         paginator = self.evlb_client.get_paginator("describe_load_balancers")
         page_iterator = paginator.paginate()
         for page in page_iterator:
             load_balancers.extend(lb["LoadBalancerArn"] for lb in page["LoadBalancers"])
 
+        return load_balancers
+
+    def get_load_balancer_for_application(self, app: str, env: str) -> str:
+        load_balancers = self.describe_load_balancers()
         tag_descriptions = []
         for i in range(0, len(load_balancers), 20):
             chunk = load_balancers[i : i + 20]

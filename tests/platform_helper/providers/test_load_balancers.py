@@ -613,3 +613,38 @@ class TestLoadBalancerProviderPagination:
         assert result == [listener_rules[0]["Rules"][0], listener_rules[1]["Rules"][0]]
         mock_session.client().get_paginator.assert_called_once_with("describe_rules")
         mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_describe_load_balancers_given_multiple_pages(self):
+        load_balancers = [
+            {
+                "LoadBalancers": [
+                    {
+                        "LoadBalancerArn": "abc123",
+                        "LoadBalancerName": "test-load-balancer1",
+                    },
+                ],
+            },
+            {
+                "LoadBalancers": [
+                    {
+                        "LoadBalancerArn": "def123",
+                        "LoadBalancerName": "test-load-balancer2",
+                    },
+                ],
+            },
+        ]
+
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
+            load_balancers
+        )
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.describe_load_balancers()
+
+        assert result == [
+            load_balancers[0]["LoadBalancers"][0]["LoadBalancerArn"],
+            load_balancers[1]["LoadBalancers"][0]["LoadBalancerArn"],
+        ]
+        mock_session.client().get_paginator.assert_called_once_with("describe_load_balancers")
+        mock_session.client().get_paginator().paginate.assert_called_once()
