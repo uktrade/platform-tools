@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.2.3](https://github.com/uktrade/platform-tools/compare/15.2.2...15.2.3) (2025-06-11)
+
+
+### Bug Fixes
+
+* Retrieve only available codestar connections (DBTP-2000) ([#880](https://github.com/uktrade/platform-tools/issues/880)) ([ef94137](https://github.com/uktrade/platform-tools/commit/ef94137772d728e9806b4746d0a62f4db233842c))
+
 ## [15.2.2](https://github.com/uktrade/platform-tools/compare/15.2.1...15.2.2) (2025-06-05)
 
 
