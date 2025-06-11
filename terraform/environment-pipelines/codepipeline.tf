@@ -1,5 +1,12 @@
-data "aws_codestarconnections_connection" "github_codestar_connection" {
-  name = var.application
+data "aws_ssm_parameter" "connection_name" {
+  name = "/codestarconnection/name"
+}
+
+data "external" "codestar_connections" {
+  program = ["bash", "-c", <<-EOT
+    aws codeconnections list-connections --provider-type GitHub --query "Connections[?ConnectionName=='${data.aws_ssm_parameter.connection_name.value}' && ConnectionStatus=='AVAILABLE'] | [0]" --output json
+  EOT
+  ]
 }
 
 resource "aws_codepipeline" "environment_pipeline" {
@@ -56,7 +63,7 @@ resource "aws_codepipeline" "environment_pipeline" {
       output_artifacts = ["project_deployment_source"]
 
       configuration = {
-        ConnectionArn    = data.aws_codestarconnections_connection.github_codestar_connection.arn
+        ConnectionArn    = data.external.codestar_connections.result["ConnectionArn"]
         FullRepositoryId = var.repository
         BranchName       = var.branch
         DetectChanges    = var.trigger_on_push

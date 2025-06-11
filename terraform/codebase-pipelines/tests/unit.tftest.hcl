@@ -1,6 +1,15 @@
 mock_provider "aws" {}
 
 override_data {
+  target = data.external.codestar_connections
+
+  values = {
+    result = {
+      ConnectionArn = "ConnectionArn"
+    }
+  }
+}
+override_data {
   target = data.aws_iam_policy_document.assume_codebuild_role
   values = {
     json = "{\"Sid\": \"AssumeCodebuildRole\"}"
