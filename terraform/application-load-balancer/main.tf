@@ -34,6 +34,7 @@ data "aws_security_group" "vpc_base_sg" {
 resource "aws_lb" "this" {
   # checkov:skip=CKV2_AWS_20: Redirects for HTTP requests into HTTPS happens on the CDN
   # checkov:skip=CKV2_AWS_28: WAF is outside of platform-tools/terraform
+  # checkov:skip=CKV2_AWS_76: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   name               = "${var.application}-${var.environment}"
   load_balancer_type = "application"
   subnets            = tolist(data.aws_subnets.public-subnets.ids)
@@ -201,7 +202,6 @@ resource "random_password" "origin-secret" {
 resource "aws_wafv2_web_acl" "waf-acl" {
   # checkov:skip=CKV2_AWS_31: Ensure WAF2 has a Logging Configuration to be done new ticket
   # checkov:skip=CKV_AWS_192: AWSManagedRulesKnownBadInputsRuleSet handles on the CDN
-  # checkov:skip=CKV2_AWS_76: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   for_each    = toset(local.cdn_enabled ? [""] : [])
   name        = "${var.application}-${var.environment}-ACL"
   description = "CloudFront Origin Verify"
