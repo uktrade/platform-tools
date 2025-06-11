@@ -55,6 +55,7 @@ resource "aws_lb" "this" {
 
 resource "aws_lb_listener" "alb-listener" {
   # checkov:skip=CKV_AWS_2:Checkov Looking for Hard Coded HTTPS but we use a variable.
+  # checkov:skip=CKV2_AWS_74: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   # checkov:skip=CKV_AWS_103:Checkov Looking for Hard Coded TLS1.2 but we use a variable.
   depends_on = [aws_acm_certificate_validation.cert_validate]
 
@@ -200,6 +201,7 @@ resource "random_password" "origin-secret" {
 resource "aws_wafv2_web_acl" "waf-acl" {
   # checkov:skip=CKV2_AWS_31: Ensure WAF2 has a Logging Configuration to be done new ticket
   # checkov:skip=CKV_AWS_192: AWSManagedRulesKnownBadInputsRuleSet handles on the CDN
+  # checkov:skip=CKV2_AWS_76: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   for_each    = toset(local.cdn_enabled ? [""] : [])
   name        = "${var.application}-${var.environment}-ACL"
   description = "CloudFront Origin Verify"
