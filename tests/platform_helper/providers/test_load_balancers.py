@@ -481,3 +481,209 @@ def test_when_no_load_balancer_exists(mock_application):
 )
 def test_normalise_to_cidr(ip, expected_cidr):
     assert normalise_to_cidr(ip) == expected_cidr
+
+
+class TestLoadBalancerProviderPagination:
+    def test_find_target_group_given_multiple_pages(self):
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
+            {
+                "ResourceTagMappingList": [
+                    {
+                        "ResourceARN": "abc123",
+                        "Tags": [
+                            {"Key": "copilot-application", "Value": "my-app"},
+                            {"Key": "copilot-environment", "Value": "my-env"},
+                            {"Key": "copilot-service", "Value": "my-svc"},
+                        ],
+                    }
+                ]
+            },
+            {
+                "ResourceTagMappingList": [
+                    {
+                        "ResourceARN": "ghi123",
+                        "Tags": [
+                            {"Key": "copilot-application", "Value": "my-app2"},
+                            {"Key": "copilot-environment", "Value": "my-env2"},
+                            {"Key": "copilot-service", "Value": "my-svc2"},
+                        ],
+                    }
+                ]
+            },
+        ]
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.find_target_group("my-app", "my-env", "my-svc")
+
+        assert result == "abc123"
+        mock_session.client().get_paginator.assert_called_once_with("get_resources")
+        mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_https_certificate_for_listener_given_multiple_pages(self):
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
+            {"Certificates": [{"CertificateArn": "abc123", "IsDefault": False}]},
+            {"Certificates": [{"CertificateArn": "def123", "IsDefault": False}]},
+            {"Certificates": [{"CertificateArn": "ghi123", "IsDefault": True}]},
+        ]
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_https_certificate_for_listener("mocked", "my-env")
+
+        assert "ghi123" == result
+        mock_session.client().get_paginator.assert_called_once_with(
+            "describe_listener_certificates"
+        )
+        mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_host_header_conditions_given_multiple_pages(self):
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "abc123",
+                        "Conditions": [
+                            {
+                                "Field": "host-header",
+                                "HostHeaderConfig": {"Values": ["/test-path1"]},
+                            }
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "abc456"}],
+                    },
+                ],
+            },
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "def123",
+                        "Conditions": [
+                            {
+                                "Field": "host-header",
+                                "HostHeaderConfig": {"Values": ["/test-path2"]},
+                            }
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "def456"}],
+                    },
+                ],
+            },
+        ]
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_host_header_conditions("abc123", "abc456")
+
+        assert result == [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path1"]}}]
+        mock_session.client().get_paginator.assert_called_once_with("describe_rules")
+        mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_listener_rules_by_listener_arn_given_multiple_pages(self):
+
+        listener_rules = [
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "abc123",
+                        "Priority": "500",
+                        "Conditions": [
+                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "abc456"}],
+                        "IsDefault": False,
+                    },
+                ],
+            },
+            {
+                "Rules": [
+                    {
+                        "RuleArn": "def123",
+                        "Priority": "500",
+                        "Conditions": [
+                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                        ],
+                        "Actions": [{"Type": "forward", "TargetGroupArn": "def456"}],
+                        "IsDefault": False,
+                    },
+                ],
+            },
+        ]
+
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
+            listener_rules
+        )
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_listener_rules_by_listener_arn("abc123")
+
+        assert result == [listener_rules[0]["Rules"][0], listener_rules[1]["Rules"][0]]
+        mock_session.client().get_paginator.assert_called_once_with("describe_rules")
+        mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_load_balancers_given_multiple_pages(self):
+        load_balancers = [
+            {
+                "LoadBalancers": [
+                    {
+                        "LoadBalancerArn": "abc123",
+                        "LoadBalancerName": "test-load-balancer1",
+                    },
+                ],
+            },
+            {
+                "LoadBalancers": [
+                    {
+                        "LoadBalancerArn": "def123",
+                        "LoadBalancerName": "test-load-balancer2",
+                    },
+                ],
+            },
+        ]
+
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
+            load_balancers
+        )
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_load_balancers()
+
+        assert result == [
+            load_balancers[0]["LoadBalancers"][0]["LoadBalancerArn"],
+            load_balancers[1]["LoadBalancers"][0]["LoadBalancerArn"],
+        ]
+        mock_session.client().get_paginator.assert_called_once_with("describe_load_balancers")
+        mock_session.client().get_paginator().paginate.assert_called_once()
+
+    def test_get_listeners_for_load_balancer_given_multiple_pages(self):
+        listeners = [
+            {
+                "Listeners": [
+                    {
+                        "ListenerArn": "abc123",
+                    },
+                ],
+            },
+            {
+                "Listeners": [
+                    {
+                        "ListenerArn": "def123",
+                    },
+                ],
+            },
+        ]
+
+        mock_session = Mock()
+        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = (
+            listeners
+        )
+
+        alb_provider = LoadBalancerProvider(mock_session, Mock())
+        result = alb_provider.get_listeners_for_load_balancer("abc123")
+
+        assert result == [
+            listeners[0]["Listeners"][0],
+            listeners[1]["Listeners"][0],
+        ]
+        mock_session.client().get_paginator.assert_called_once_with("describe_listeners")
+        mock_session.client().get_paginator().paginate.assert_called_once()

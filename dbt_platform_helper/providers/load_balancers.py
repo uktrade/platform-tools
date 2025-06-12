@@ -28,7 +28,8 @@ class LoadBalancerProvider:
     def find_target_group(self, app: str, env: str, svc: str) -> str:
         target_group_arn = None
 
-        response = self.rg_tagging_client.get_resources(
+        paginator = self.rg_tagging_client.get_paginator("get_resources")
+        page_iterator = paginator.paginate(
             TagFilters=[
                 {
                     "Key": "copilot-application",
@@ -48,19 +49,18 @@ class LoadBalancerProvider:
             ResourceTypeFilters=[
                 "elasticloadbalancing:targetgroup",
             ],
-        )  # TODO: DBTP-1942: should be paginated
-        for resource in response["ResourceTagMappingList"]:
-            tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
+        )
 
-            if (
-                "copilot-service" in tags
-                and tags["copilot-service"] == svc
-                and "copilot-environment" in tags
-                and tags["copilot-environment"] == env
-                and "copilot-application" in tags
-                and tags["copilot-application"] == app
-            ):
-                target_group_arn = resource["ResourceARN"]
+        for page in page_iterator:
+            for resource in page["ResourceTagMappingList"]:
+                tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
+
+                if (
+                    tags.get("copilot-service") == svc
+                    and tags.get("copilot-environment") == env
+                    and tags.get("copilot-application") == app
+                ):
+                    target_group_arn = resource["ResourceARN"]
 
         if not target_group_arn:
             self.io.error(
@@ -69,11 +69,12 @@ class LoadBalancerProvider:
 
         return target_group_arn
 
-    def get_https_certificate_for_application(self, app: str, env: str) -> str:
-        listener_arn = self.get_https_listener_for_application(app, env)
-        certificates = self.evlb_client.describe_listener_certificates(ListenerArn=listener_arn)[
-            "Certificates"
-        ]  # TODO: DBTP-1942: should be paginated
+    def get_https_certificate_for_listener(self, listener_arn: str, env: str):
+        certificates = []
+        paginator = self.evlb_client.get_paginator("describe_listener_certificates")
+        page_iterator = paginator.paginate(ListenerArn=listener_arn)
+        for page in page_iterator:
+            certificates.extend(page["Certificates"])
 
         try:
             certificate_arn = next(c["CertificateArn"] for c in certificates if c["IsDefault"])
@@ -82,12 +83,22 @@ class LoadBalancerProvider:
 
         return certificate_arn
 
+    def get_https_certificate_for_application(self, app: str, env: str) -> str:
+        listener_arn = self.get_https_listener_for_application(app, env)
+        return self.get_https_certificate_for_listener(listener_arn, env)
+
+    def get_listeners_for_load_balancer(self, load_balancer_arn):
+        listeners = []
+        paginator = self.evlb_client.get_paginator("describe_listeners")
+        page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
+        for page in page_iterator:
+            listeners.extend(page["Listeners"])
+
+        return listeners
+
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
-
-        listeners = self.evlb_client.describe_listeners(LoadBalancerArn=load_balancer_arn)[
-            "Listeners"
-        ]  # TODO: DBTP-1942: should be paginated
+        listeners = self.get_listeners_for_load_balancer(load_balancer_arn)
 
         listener_arn = None
 
@@ -101,16 +112,23 @@ class LoadBalancerProvider:
 
         return listener_arn
 
-    def get_load_balancer_for_application(self, app: str, env: str) -> str:
-        describe_response = self.evlb_client.describe_load_balancers()
-        load_balancers = [lb["LoadBalancerArn"] for lb in describe_response["LoadBalancers"]]
+    def get_load_balancers(self):
+        load_balancers = []
+        paginator = self.evlb_client.get_paginator("describe_load_balancers")
+        page_iterator = paginator.paginate()
+        for page in page_iterator:
+            load_balancers.extend(lb["LoadBalancerArn"] for lb in page["LoadBalancers"])
 
+        return load_balancers
+
+    def get_load_balancer_for_application(self, app: str, env: str) -> str:
+        load_balancers = self.get_load_balancers()
         tag_descriptions = []
         for i in range(0, len(load_balancers), 20):
             chunk = load_balancers[i : i + 20]
             tag_descriptions.extend(
                 self.evlb_client.describe_tags(ResourceArns=chunk)["TagDescriptions"]
-            )
+            )  # describe_tags cannot be paginated - 04/04/2025
 
         for lb in tag_descriptions:
             tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
@@ -121,9 +139,11 @@ class LoadBalancerProvider:
         raise LoadBalancerNotFoundException(app, env)
 
     def get_host_header_conditions(self, listener_arn: str, target_group_arn: str) -> list:
-        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
-            "Rules"
-        ]  # TODO: DBTP-1942: should be paginated
+        rules = []
+        paginator = self.evlb_client.get_paginator("describe_rules")
+        page_iterator = paginator.paginate(ListenerArn=listener_arn)
+        for page in page_iterator:
+            rules.extend(page["Rules"])
 
         conditions = []
 
@@ -150,10 +170,18 @@ class LoadBalancerProvider:
         return conditions
 
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
-        rules = self.evlb_client.describe_rules(ListenerArn=listener_arn)[
-            "Rules"
-        ]  # TODO: DBTP-1942: should be paginated
+        rules = self.get_listener_rules_by_listener_arn(listener_arn)
+
         return self.get_rules_tag_descriptions(rules)
+
+    def get_listener_rules_by_listener_arn(self, listener_arn: str) -> list:
+        rules = []
+        paginator = self.evlb_client.get_paginator("describe_rules")
+        page_iterator = paginator.paginate(ListenerArn=listener_arn)
+        for page in page_iterator:
+            rules.extend(page["Rules"])
+
+        return rules
 
     def get_rules_tag_descriptions(self, rules: list) -> list:
         tag_descriptions = []
@@ -164,7 +192,7 @@ class LoadBalancerProvider:
             resource_arns = [r["RuleArn"] for r in chunk]
             response = self.evlb_client.describe_tags(
                 ResourceArns=resource_arns
-            )  # TODO should be paginated
+            )  # describe_tags cannot be paginated - 04/04/2025
             tag_descriptions.extend(response["TagDescriptions"])
 
         return tag_descriptions
