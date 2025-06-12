@@ -10,7 +10,7 @@ from dbt_platform_helper.commands.ecr_housekeeping import (
 )
 from dbt_platform_helper.domain.ecr_housekeeping import ECRHousekeeping
 from dbt_platform_helper.domain.ecr_housekeeping import ImageProvider
-from dbt_platform_helper.domain.ecr_housekeeping import InUseImageProvider
+from dbt_platform_helper.providers.in_use_image_provider import InUseImageProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 
 
