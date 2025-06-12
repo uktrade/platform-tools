@@ -10,21 +10,21 @@ from dbt_platform_helper.commands.ecr_housekeeping import (
 )
 from dbt_platform_helper.domain.ecr_housekeeping import ECRHousekeeping
 from dbt_platform_helper.domain.ecr_housekeeping import ImageProvider
-from dbt_platform_helper.providers.in_use_image_provider import InUseImageProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.live_image_provider import LiveImageProvider
 
 
 class TestECRHousekeeping:
     @patch("dbt_platform_helper.commands.ecr_housekeeping.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.ecr_housekeeping.ClickIOProvider")
-    @patch("dbt_platform_helper.commands.ecr_housekeeping.InUseImageProvider")
+    @patch("dbt_platform_helper.commands.ecr_housekeeping.LiveImageProvider")
     @patch("dbt_platform_helper.commands.ecr_housekeeping.ImageProvider")
     @patch("dbt_platform_helper.commands.ecr_housekeeping.ECRHousekeeping")
     def test_success_when_calling_tag_stale_images_for_deletion(
         self,
         mock_domain,
         mock_provider,
-        mock_in_use_image_provider,
+        mock_live_image_provider,
         mock_io,
         mock_session,
     ):
@@ -36,8 +36,8 @@ class TestECRHousekeeping:
         mock_domain.return_value = mock_domain_instance
         mock_provider_instance = create_autospec(ImageProvider, spec_set=True)
         mock_provider.return_value = mock_provider_instance
-        mock_in_use_image_provider_instance = create_autospec(InUseImageProvider, spec_set=True)
-        mock_in_use_image_provider.return_value = mock_in_use_image_provider_instance
+        mock_live_image_provider_instance = create_autospec(LiveImageProvider, spec_set=True)
+        mock_live_image_provider.return_value = mock_live_image_provider_instance
         mock_domain_instance.tag_stale_images_for_deletion.return_value = (
             "Tagged x/y images for deletion"
         )
@@ -48,7 +48,7 @@ class TestECRHousekeeping:
 
         mock_provider.assert_called_once_with(mock_session_instance)
         mock_domain.assert_called_once_with(
-            mock_provider_instance, mock_in_use_image_provider_instance
+            mock_provider_instance, mock_live_image_provider_instance
         )
 
         mock_domain_instance.tag_stale_images_for_deletion.assert_called_once()

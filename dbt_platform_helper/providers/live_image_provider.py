@@ -2,7 +2,7 @@ from datetime import datetime
 from datetime import timezone
 
 
-class InUseImageProvider:
+class LiveImageProvider:
     MINIMUM_REVISION_AGE_DAYS = 7
     TODAY = datetime.now(timezone.utc)
 
