@@ -1,0 +1,30 @@
+import click
+
+from dbt_platform_helper.domain.ecr_housekeeping import ECRHousekeeping
+from dbt_platform_helper.domain.ecr_housekeeping import ImageProvider
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.utils.click import ClickDocOptGroup
+
+
+@click.group(cls=ClickDocOptGroup, help="Housekeeping tasks for ECR image cleanup.")
+def ecr_housekeeping():
+    PlatformHelperVersioning().check_if_needs_update()
+
+
+@ecr_housekeeping.command(
+    help="Adds a pending-deletion image tag to any stale unused images in the ECR repository",
+)
+def tag_stale_images_for_deletion():
+    try:
+        print("HELLO")
+        io = ClickIOProvider()
+        image_provider = ImageProvider()
+        print("CALLED", image_provider)
+        result = ECRHousekeeping(image_provider).tag_stale_images_for_deletion()
+
+        io.info(result)
+
+    except PlatformException as err:
+        io.abort_with_error(str(err))

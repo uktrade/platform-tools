@@ -37,6 +37,8 @@
         - [platform-helper database copy](#platform-helper-database-copy)
     - [platform-helper version](#platform-helper-version)
         - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
+    - [platform-helper ecr-housekeeping](#platform-helper-ecr-housekeeping)
+        - [platform-helper ecr-housekeeping tag-stale-images-for-deletion](#platform-helper-ecr-housekeeping-tag-stale-images-for-deletion)
 
 # platform-helper
 
@@ -61,6 +63,7 @@ platform-helper <command> [--version]
 - [`config` ↪](#platform-helper-config)
 - [`copilot` ↪](#platform-helper-copilot)
 - [`database` ↪](#platform-helper-database)
+- [`ecr-housekeeping` ↪](#platform-helper-ecr-housekeeping)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`notify` ↪](#platform-helper-notify)
@@ -945,5 +948,43 @@ platform-helper version get-platform-helper-for-project [--pipeline <pipeline>]
 
 - `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper ecr-housekeeping
+
+[↩ Parent](#platform-helper)
+
+    Housekeeping tasks for ECR image cleanup.
+
+## Usage
+
+```
+platform-helper ecr-housekeeping tag-stale-images-for-deletion 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`tag-stale-images-for-deletion` ↪](#platform-helper-ecr-housekeeping-tag-stale-images-for-deletion)
+
+# platform-helper ecr-housekeeping tag-stale-images-for-deletion
+
+[↩ Parent](#platform-helper-ecr-housekeeping)
+
+    Adds a pending-deletion image tag to any stale unused images in the ECR repository
+
+## Usage
+
+```
+platform-helper ecr-housekeeping tag-stale-images-for-deletion 
+```
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
