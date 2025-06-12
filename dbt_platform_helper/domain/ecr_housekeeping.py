@@ -1,6 +1,6 @@
 class ImageProvider:
-    def __init__(self):
-        pass
+    def __init__(self, session):
+        self.session = session
 
 
 class ECRHousekeeping:
