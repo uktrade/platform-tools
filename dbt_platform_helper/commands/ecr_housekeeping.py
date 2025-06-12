@@ -1,9 +1,9 @@
 import click
 
 from dbt_platform_helper.domain.ecr_housekeeping import ECRHousekeeping
-from dbt_platform_helper.domain.ecr_housekeeping import ImageProvider
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.ecr_image_provider import ECRImageProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.live_image_provider import LiveImageProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -22,7 +22,7 @@ def tag_stale_images_for_deletion():
     try:
         io = ClickIOProvider()
         session = get_aws_session_or_abort()
-        image_provider = ImageProvider(session)
+        image_provider = ECRImageProvider(session)
         live_image_provider = LiveImageProvider(session)
         result = ECRHousekeeping(
             image_provider, live_image_provider

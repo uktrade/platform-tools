@@ -9,7 +9,7 @@ from dbt_platform_helper.commands.ecr_housekeeping import (
     tag_stale_images_for_deletion as tag_stale_images_for_deletion_command,
 )
 from dbt_platform_helper.domain.ecr_housekeeping import ECRHousekeeping
-from dbt_platform_helper.domain.ecr_housekeeping import ImageProvider
+from dbt_platform_helper.providers.ecr_image_provider import ECRImageProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.live_image_provider import LiveImageProvider
 
@@ -18,7 +18,7 @@ class TestECRHousekeeping:
     @patch("dbt_platform_helper.commands.ecr_housekeeping.get_aws_session_or_abort")
     @patch("dbt_platform_helper.commands.ecr_housekeeping.ClickIOProvider")
     @patch("dbt_platform_helper.commands.ecr_housekeeping.LiveImageProvider")
-    @patch("dbt_platform_helper.commands.ecr_housekeeping.ImageProvider")
+    @patch("dbt_platform_helper.commands.ecr_housekeeping.ECRImageProvider")
     @patch("dbt_platform_helper.commands.ecr_housekeeping.ECRHousekeeping")
     def test_success_when_calling_tag_stale_images_for_deletion(
         self,
@@ -34,7 +34,7 @@ class TestECRHousekeeping:
         mock_session.return_value = mock_session_instance
         mock_domain_instance = create_autospec(ECRHousekeeping, spec_set=True)
         mock_domain.return_value = mock_domain_instance
-        mock_provider_instance = create_autospec(ImageProvider, spec_set=True)
+        mock_provider_instance = create_autospec(ECRImageProvider, spec_set=True)
         mock_provider.return_value = mock_provider_instance
         mock_live_image_provider_instance = create_autospec(LiveImageProvider, spec_set=True)
         mock_live_image_provider.return_value = mock_live_image_provider_instance

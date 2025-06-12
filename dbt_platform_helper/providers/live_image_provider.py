@@ -10,7 +10,7 @@ class LiveImageProvider:
         self.session = session
         self.ecs_client = session.client("ecs")
 
-    def get_in_use_images(self) -> list:
+    def get_live_images(self) -> list:
         """
         Iterate over each task definition family in the account and build a list
         of all containers defined within any supported task definition revision.
