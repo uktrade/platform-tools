@@ -531,7 +531,7 @@ class TestLoadBalancerProviderPagination:
         alb_provider = LoadBalancerProvider(mock_session, Mock())
         result = alb_provider.get_https_certificate_for_listener("mocked", "my-env")
 
-        assert "ghi123" in result
+        assert "ghi123" == result
         mock_session.client().get_paginator.assert_called_once_with(
             "describe_listener_certificates"
         )
