@@ -545,7 +545,10 @@ class TestLoadBalancerProviderPagination:
                     {
                         "RuleArn": "abc123",
                         "Conditions": [
-                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                            {
+                                "Field": "host-header",
+                                "HostHeaderConfig": {"Values": ["/test-path1"]},
+                            }
                         ],
                         "Actions": [{"Type": "forward", "TargetGroupArn": "abc456"}],
                     },
@@ -556,7 +559,10 @@ class TestLoadBalancerProviderPagination:
                     {
                         "RuleArn": "def123",
                         "Conditions": [
-                            {"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}
+                            {
+                                "Field": "host-header",
+                                "HostHeaderConfig": {"Values": ["/test-path2"]},
+                            }
                         ],
                         "Actions": [{"Type": "forward", "TargetGroupArn": "def456"}],
                     },
@@ -567,7 +573,7 @@ class TestLoadBalancerProviderPagination:
         alb_provider = LoadBalancerProvider(mock_session, Mock())
         result = alb_provider.get_host_header_conditions("abc123", "abc456")
 
-        assert result == [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}]
+        assert result == [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path1"]}}]
         mock_session.client().get_paginator.assert_called_once_with("describe_rules")
         mock_session.client().get_paginator().paginate.assert_called_once()
 
