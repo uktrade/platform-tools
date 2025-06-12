@@ -1,6 +1,10 @@
 class ImageProvider:
     def __init__(self, session):
         self.session = session
+        self.private_ecr_client = session.client("ecr")
+        self.public_ecr_client = session.client("ecr-public", region_name="us-east-1")
+        self.sts_client = session.client("sts")
+        self.ecs_client = session.client("ecs")
 
 
 class ECRHousekeeping:
