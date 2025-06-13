@@ -3,6 +3,7 @@ version: 0.2
 env:
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
+    CONNECTION_NAME : /codestarconnection/name
   variables:
     TERRAFORM_VERSION: 1.8.1
   exported-variables:
@@ -40,7 +41,7 @@ phases:
           else
             echo "Installing platform-helper from branch/commit ${REQUIRED_VERSION}"
             echo -e "\nGet CodeStar connection details"
-            codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
+            codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionName=='${CONNECTION_NAME}' &&  ConnectionStatus == 'AVAILABLE']")
             aws_account=$(echo "$codestar_connections" | jq -r ".[0].OwnerAccountId")
             codestar_arn=$(echo "$codestar_connections" | jq -r ".[0].ConnectionArn")
             codestar_connection_id=$(echo "${codestar_arn##*/}")
