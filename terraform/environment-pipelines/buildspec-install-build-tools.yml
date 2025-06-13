@@ -61,7 +61,7 @@ phases:
       - export PYTHONPATH=$(pwd)
       - platform-helper --version
       - |
-          export SLACK_REF=$(platform-helper notify environment-progress "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" \
+          export SLACK_REF=$(platform-helper notify post-message "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" \
               "*Pipeline ${PIPELINE_NAME}* is deploying ${APPLICATION} environments" \
               --build-arn "${CODEBUILD_BUILD_ARN}" \
               --repository "${REPOSITORY}" \

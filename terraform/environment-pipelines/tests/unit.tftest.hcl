@@ -56,6 +56,13 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.copilot_access
+  values = {
+    json = "{\"Sid\": \"CopilotAccess\"}"
+  }
+}
+
 variables {
   application       = "my-app"
   deploy_repository = "my-repository"
@@ -469,6 +476,14 @@ run "test_iam" {
     condition     = aws_iam_role_policy.environment_deploy_role_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
+  assert {
+    condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.name == "copilot-access"
+    error_message = "Should be: 'copilot-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
 }
 
 run "test_iam_documents" {
@@ -665,6 +680,141 @@ run "test_iam_documents" {
     condition = data.aws_iam_policy_document.environment_deploy_role_access.statement[0].resources == toset([
       "arn:aws:iam::000123456789:role/my-app-dev-environment-pipeline-deploy",
       "arn:aws:iam::123456789000:role/my-app-prod-environment-pipeline-deploy"
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  # Copilot access
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[0].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[0].resources == toset([
+      "arn:aws:iam::000123456789:role/my-app-dev-EnvManagerRole",
+      "arn:aws:iam::123456789000:role/my-app-prod-EnvManagerRole"
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[1].actions == toset([
+      "ssm:PutParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+      "ssm:DeleteParameter",
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[1].resources == toset([
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/my-app/*/secrets/*",
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app",
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app/*"
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[2].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[2].actions) == "iam:PassRole"
+    error_message = "Should be: iam:PassRole"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[2].resources == toset([
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-adminrole"
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[3].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[3].actions == toset([
+      "kms:GenerateDataKey",
+      "kms:Decrypt"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[3].resources == toset([
+      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[4].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[4].actions) == "s3:*"
+    error_message = "Should be: s3:*"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[4].resources == toset([
+      "arn:aws:s3:::stackset-my-app-*-pipelinebuiltartifactbuc-*"
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[5].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[5].actions == toset([
+      "cloudformation:GetTemplate",
+      "cloudformation:GetTemplateSummary",
+      "cloudformation:DescribeStackSet",
+      "cloudformation:UpdateStackSet",
+      "cloudformation:DescribeStackSetOperation",
+      "cloudformation:ListStackInstances",
+      "cloudformation:DescribeStacks",
+      "cloudformation:DescribeChangeSet",
+      "cloudformation:CreateChangeSet",
+      "cloudformation:ExecuteChangeSet",
+      "cloudformation:DescribeStackEvents",
+      "cloudformation:DeleteStack"
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[5].resources == toset([
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/my-app-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/StackSet-my-app-infrastructure-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stackset/my-app-infrastructure:*",
+    ])
+    error_message = "Unexpected resources"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.copilot_access.statement[6].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[6].actions) == "cloudformation:ListExports"
+    error_message = "Should be: cloudformation:ListExports"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.copilot_access.statement[6].resources == toset([
+      "*"
     ])
     error_message = "Unexpected resources"
   }
@@ -890,11 +1040,6 @@ run "test_stages" {
     var.value if try(var.name, "") == "AWS_PROFILE_FOR_COPILOT"]) == "sandbox"
     error_message = "AWS_PROFILE_FOR_COPILOT environment variable incorrect"
   }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if try(var.name, "") == "CURRENT_CODEBUILD_ROLE"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "CURRENT_CODEBUILD_ROLE environment variable incorrect"
-  }
 
   # Stage: prod Plan
   assert {
@@ -1056,11 +1201,6 @@ run "test_stages" {
     condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
     var.value if try(var.name, "") == "AWS_PROFILE_FOR_COPILOT"]) == "prod"
     error_message = "AWS_PROFILE_FOR_COPILOT environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if try(var.name, "") == "CURRENT_CODEBUILD_ROLE"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "CURRENT_CODEBUILD_ROLE environment variable incorrect"
   }
 }
 

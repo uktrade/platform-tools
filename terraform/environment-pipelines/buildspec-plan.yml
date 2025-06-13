@@ -36,7 +36,7 @@ phases:
         fi
 
       # Assume environment specific role
-      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-environment-pipeline-deploy" --role-session-name "${ENVIRONMENT}-environment-pipeline-deploy")
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-environment-pipeline-deploy" --role-session-name "${ENVIRONMENT}-environment-pipeline-plan")
       - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
       - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
       - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)

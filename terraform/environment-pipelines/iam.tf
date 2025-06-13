@@ -220,3 +220,102 @@ data "aws_iam_policy_document" "environment_deploy_role_access" {
     ]
   }
 }
+
+resource "aws_iam_role_policy" "copilot_access_for_environment_codebuild" {
+  name   = "copilot-access"
+  role   = aws_iam_role.environment_pipeline_codebuild.name
+  policy = data.aws_iam_policy_document.copilot_access.json
+}
+
+data "aws_iam_policy_document" "copilot_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole"
+    ]
+    resources = [
+      for env in local.environment_config :
+      "arn:aws:iam::${env.accounts.deploy.id}:role/${var.application}-${env.name}-EnvManagerRole"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:PutParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+      "ssm:DeleteParameter",
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource"
+    ]
+    resources = [
+      "arn:aws:ssm:${local.account_region}:parameter/copilot/${var.application}/*/secrets/*",
+      "arn:aws:ssm:${local.account_region}:parameter/copilot/applications/${var.application}",
+      "arn:aws:ssm:${local.account_region}:parameter/copilot/applications/${var.application}/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:PassRole"
+    ]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-adminrole"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "kms:GenerateDataKey",
+      "kms:Decrypt"
+    ]
+    resources = [
+      "arn:aws:kms:${local.account_region}:key/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:*",
+    ]
+    resources = [
+      "arn:aws:s3:::stackset-${var.application}-*-pipelinebuiltartifactbuc-*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudformation:GetTemplate",
+      "cloudformation:GetTemplateSummary",
+      "cloudformation:DescribeStackSet",
+      "cloudformation:UpdateStackSet",
+      "cloudformation:DescribeStackSetOperation",
+      "cloudformation:ListStackInstances",
+      "cloudformation:DescribeStacks",
+      "cloudformation:DescribeChangeSet",
+      "cloudformation:CreateChangeSet",
+      "cloudformation:ExecuteChangeSet",
+      "cloudformation:DescribeStackEvents",
+      "cloudformation:DeleteStack"
+    ]
+    resources = [
+      "arn:aws:cloudformation:${local.account_region}:stack/${var.application}-*",
+      "arn:aws:cloudformation:${local.account_region}:stack/StackSet-${var.application}-infrastructure-*",
+      "arn:aws:cloudformation:${local.account_region}:stackset/${var.application}-infrastructure:*",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "cloudformation:ListExports"
+    ]
+    resources = ["*"]
+  }
+}

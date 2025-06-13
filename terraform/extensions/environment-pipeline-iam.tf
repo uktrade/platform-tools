@@ -14,7 +14,7 @@ data "aws_iam_policy_document" "assume_environment_pipeline" {
     condition {
       test = "ArnLike"
       values = [
-        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-environment-*"
+        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-environment-pipeline-codebuild"
       ]
       variable = "aws:PrincipalArn"
     }
@@ -299,53 +299,6 @@ data "aws_iam_policy_document" "kms_key_access" {
     resources = [
       "arn:aws:kms:${local.account_region}:alias/${var.args.application}-*"
     ]
-  }
-}
-
-# Copilot
-resource "aws_iam_role_policy" "copilot_access" {
-  name   = "copilot-access"
-  role   = aws_iam_role.environment_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.copilot_access.json
-}
-
-data "aws_iam_policy_document" "copilot_access" {
-  statement {
-    actions = [
-      "sts:AssumeRole"
-    ]
-    resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-EnvManagerRole"
-    ]
-  }
-
-  statement {
-    actions = [
-      "cloudformation:GetTemplate",
-      "cloudformation:GetTemplateSummary",
-      "cloudformation:DescribeStackSet",
-      "cloudformation:UpdateStackSet",
-      "cloudformation:DescribeStackSetOperation",
-      "cloudformation:ListStackInstances",
-      "cloudformation:DescribeStacks",
-      "cloudformation:DescribeChangeSet",
-      "cloudformation:CreateChangeSet",
-      "cloudformation:ExecuteChangeSet",
-      "cloudformation:DescribeStackEvents",
-      "cloudformation:DeleteStack"
-    ]
-    resources = [
-      "arn:aws:cloudformation:${local.account_region}:stack/${var.args.application}-*",
-      "arn:aws:cloudformation:${local.account_region}:stack/StackSet-${var.args.application}-infrastructure-*",
-      "arn:aws:cloudformation:${local.account_region}:stackset/${var.args.application}-infrastructure:*",
-    ]
-  }
-
-  statement {
-    actions = [
-      "cloudformation:ListExports"
-    ]
-    resources = ["*"]
   }
 }
 

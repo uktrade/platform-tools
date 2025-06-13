@@ -16,8 +16,6 @@ locals {
     for env in local.environment_config : [for name, account in env.accounts : account.id if name == "deploy"]
   ]))
 
-  current_codebuild_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.pipeline_name}-environment-pipeline-codebuild"
-
   all_stages = flatten([for env in local.environment_config : [
     # The first element of the inner list for an env is the Plan stage.
     {
@@ -68,11 +66,12 @@ locals {
         ProjectName : "${var.application}-${var.pipeline_name}-environment-pipeline-apply"
         PrimarySource : "${env.name}_terraform_plan"
         EnvironmentVariables : jsonencode([
+          { name : "APPLICATION", value : var.application },
           { name : "ENVIRONMENT", value : env.name },
           { name : "AWS_PROFILE_FOR_COPILOT", value : env.accounts.deploy.name },
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_REF", value : "#{slack.SLACK_REF}" },
-          { name : "CURRENT_CODEBUILD_ROLE", value : local.current_codebuild_role_arn }
+          { name : "ACCOUNT_ID", value : env.accounts.deploy.id }
         ])
       },
       namespace : null
