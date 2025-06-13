@@ -47,7 +47,8 @@ data "aws_iam_policy_document" "access_artifact_store" {
     actions = [
       "codeconnections:UseConnection",
       "codestar-connections:UseConnection",
-      "codeconnections:ListTagsForResource"
+      "codeconnections:ListTagsForResource",
+      "codeconnections:ListConnections",
     ]
     resources = [data.external.codestar_connections.result["ConnectionArn"]]
   }
