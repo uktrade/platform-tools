@@ -41,7 +41,7 @@ phases:
           else
             echo "Installing platform-helper from branch/commit ${REQUIRED_VERSION}"
             echo -e "\nGet CodeStar connection details"
-            codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionName=='${CONNECTION_NAME}' &&  ConnectionStatus == 'AVAILABLE']")
+            codestar_connections=$(aws codeconnections list-connections --provider-type GitHub --query "Connections[? ConnectionName=='${CONNECTION_NAME}' &&  ConnectionStatus == 'AVAILABLE']")
             aws_account=$(echo "$codestar_connections" | jq -r ".[0].OwnerAccountId")
             codestar_arn=$(echo "$codestar_connections" | jq -r ".[0].ConnectionArn")
             codestar_connection_id=$(echo "${codestar_arn##*/}")
