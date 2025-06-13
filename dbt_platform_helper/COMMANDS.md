@@ -39,6 +39,7 @@
         - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
     - [platform-helper ecr-housekeeping](#platform-helper-ecr-housekeeping)
         - [platform-helper ecr-housekeeping tag-stale-images-for-deletion](#platform-helper-ecr-housekeeping-tag-stale-images-for-deletion)
+        - [platform-helper ecr-housekeeping list-live-images](#platform-helper-ecr-housekeeping-list-live-images)
 
 # platform-helper
 
@@ -960,7 +961,7 @@ platform-helper version get-platform-helper-for-project [--pipeline <pipeline>]
 ## Usage
 
 ```
-platform-helper ecr-housekeeping tag-stale-images-for-deletion 
+platform-helper ecr-housekeeping (tag-stale-images-for-deletion|list-live-images) 
 ```
 
 ## Options
@@ -970,6 +971,7 @@ platform-helper ecr-housekeeping tag-stale-images-for-deletion
 
 ## Commands
 
+- [`list-live-images` ↪](#platform-helper-ecr-housekeeping-list-live-images)
 - [`tag-stale-images-for-deletion` ↪](#platform-helper-ecr-housekeeping-tag-stale-images-for-deletion)
 
 # platform-helper ecr-housekeeping tag-stale-images-for-deletion
@@ -982,6 +984,23 @@ platform-helper ecr-housekeeping tag-stale-images-for-deletion
 
 ```
 platform-helper ecr-housekeeping tag-stale-images-for-deletion 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper ecr-housekeeping list-live-images
+
+[↩ Parent](#platform-helper-ecr-housekeeping)
+
+    Lists in-use images from current EC2 tasks
+
+## Usage
+
+```
+platform-helper ecr-housekeeping list-live-images 
 ```
 
 ## Options

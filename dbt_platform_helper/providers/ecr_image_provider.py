@@ -13,13 +13,13 @@ class ECRImageProvider:
         self.private_ecr_client = session.client("ecr")
         self.public_ecr_client = session.client("ecr-public", region_name="us-east-1")
 
-    def get_expired_images(self):
-        return self._get_expired_images(self.private_ecr_client) + self._get_expired_images(
+    def get_old_images(self):
+        return self._get_old_images(self.private_ecr_client) + self._get_old_images(
             self.public_ecr_client
         )
 
-    def _get_expired_images(self, ecr_client):
-        expired_images = []
+    def _get_old_images(self, ecr_client):
+        old_images = []
         today = datetime.now(timezone.utc)
 
         for repository in self._get_ecr_repos(ecr_client):
@@ -31,9 +31,9 @@ class ECRImageProvider:
                 image_push_days = (today - image["push_date"].astimezone(timezone.utc)).days
 
                 if image_push_days > ECRImageProvider.EXPIRATION_DAYS:
-                    expired_images.append(image["image_digest"])
+                    old_images.append(image["image_digest"])
 
-        return expired_images
+        return old_images
 
     def _get_ecr_repos(self, ecr_client) -> list:
         repositories = []
@@ -61,13 +61,13 @@ class ECRImageProvider:
 
         return images
 
-    def _is_private_repository_image(image):
+    def _is_private_repository_image(self, image):
         return "public" in image and "uktrade" in image
 
     def get_image_shas(self, image):
         if self._is_private_repository_image(image):
             try:
-                response = self.ecr_public_client.describe_images(
+                response = self.public_ecr_client.describe_images(
                     repositoryName="/".join(image.split("/")[2:]).split(":")[0],
                     imageIds=[{"imageTag": image.split(":")[1]}],
                 )
@@ -79,7 +79,7 @@ class ECRImageProvider:
                     return
         else:
             try:
-                response = self.ecr_private_client.batch_get_image(
+                response = self.private_ecr_client.batch_get_image(
                     repositoryName=image.split("/", 1)[1].split(":")[0],
                     imageIds=[{"imageTag": image.split(":")[1]}],
                 )

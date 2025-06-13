@@ -21,7 +21,7 @@ def ecr_housekeeping():
 def tag_stale_images_for_deletion():
     try:
         io = ClickIOProvider()
-        session = get_aws_session_or_abort()
+        session = get_aws_session_or_abort()  # Need to get all relevant sessions
         image_provider = ECRImageProvider(session)
         live_image_provider = LiveImageProvider(session)
         result = ECRHousekeeping(
@@ -29,6 +29,39 @@ def tag_stale_images_for_deletion():
         ).tag_stale_images_for_deletion()
 
         io.info(result)
+
+    except PlatformException as err:
+        io.abort_with_error(str(err))
+
+
+# @ecr_housekeeping.command(
+#     help="Adds a pending-deletion image tag to any stale unused images in the ECR repository",
+# )
+# def list_tagged_for_deletion():
+#     try:
+#         io = ClickIOProvider()
+#         session = get_aws_session_or_abort()
+#         result = ECRImageProvider(session).list_tagged_for_deletion()
+#         for image in result:
+#             io.info(f"{image["sha"]}, {image["pushed_at"]}")
+
+#     except PlatformException as err:
+#         io.abort_with_error(str(err))
+
+
+@ecr_housekeeping.command(
+    help="Lists in-use images from current EC2 tasks",
+)
+def list_live_images():
+    try:
+        io = ClickIOProvider()
+        session = get_aws_session_or_abort()
+        result = LiveImageProvider(session).get_live_images()
+
+        io.info(f"Found {len(result)} images that are live in ECS tasks definitions:\n")
+
+        for image in result:
+            io.info(image)
 
     except PlatformException as err:
         io.abort_with_error(str(err))

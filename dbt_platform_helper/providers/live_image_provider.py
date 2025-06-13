@@ -20,7 +20,7 @@ class LiveImageProvider:
 
         supported_images = []
 
-        for family in self._get_active_task_definition_families(self.ecs_client):
+        for family in self._get_active_task_definition_families():
 
             supported_images.extend(
                 self._get_supported_images_for_family(task_definition_family=family)
