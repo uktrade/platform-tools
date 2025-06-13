@@ -12,44 +12,34 @@ phases:
   build:
     commands:
       - set -e
+      - echo -e "\nWorking on environment ${ENVIRONMENT}"
+
+      # Add comment to existing slack thread
       - echo -e "\nTerraform Apply Phase"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting terraform apply phase for the ${ENVIRONMENT} environment."
-      - echo -e "\nWorking on environment ${ENVIRONMENT}"
+
+      # Assume environment specific role
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-environment-pipeline-deploy" --role-session-name "${ENVIRONMENT}-environment-pipeline-apply")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Terraform apply
       - cd "terraform/environments/${ENVIRONMENT}"
       - terraform apply plan.tfplan
+
+      # Regenerate environment manifests
       - echo -e "\nGenerating manifests and deploying AWS Copilot environment resources"
       - cd "${CODEBUILD_SRC_DIR}"
-      - |
-        codebuild_assumed_role=$(aws sts assume-role --role-arn "${CURRENT_CODEBUILD_ROLE}" --role-session-name "environment-pipeline-platform-helper-generate-$(date +%s)")
-        AWS_ACCESS_KEY_ID=$(echo $codebuild_assumed_role | jq -r .Credentials.AccessKeyId)
-        AWS_SECRET_ACCESS_KEY=$(echo $codebuild_assumed_role | jq -r .Credentials.SecretAccessKey)
-        AWS_SESSION_TOKEN=$(echo $codebuild_assumed_role | jq -r .Credentials.SessionToken)
-        export PROFILE_NAME="${AWS_PROFILE_FOR_COPILOT}"
-        aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}" --profile "${PROFILE_NAME}"
-        aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}" --profile "${PROFILE_NAME}"
-        aws configure set aws_session_token "${AWS_SESSION_TOKEN}" --profile "${PROFILE_NAME}"
-        aws configure set region "eu-west-2" --profile "${PROFILE_NAME}"
-        aws configure set output "json" --profile "${PROFILE_NAME}"
-        export AWS_PROFILE="${PROFILE_NAME}"
       - platform-helper environment generate --name "${ENVIRONMENT}"
-      - |
-        if [[ "${AWS_PROFILE_FOR_COPILOT}" == *"prod"* ]]
-        then
-          echo -e "\nAssuming role to deploy AWS Copilot environment resources in prod account"
-          triggering_account_assumed_role=$(aws sts assume-role --role-arn "${TRIGGERING_ACCOUNT_CODEBUILD_ROLE}" --role-session-name "environment-pipeline-copilot-env-deploy-$(date +%s)")    
-          AWS_ACCESS_KEY_ID=$(echo $triggering_account_assumed_role | jq -r .Credentials.AccessKeyId)
-          AWS_SECRET_ACCESS_KEY=$(echo $triggering_account_assumed_role | jq -r .Credentials.SecretAccessKey)
-          AWS_SESSION_TOKEN=$(echo $triggering_account_assumed_role | jq -r .Credentials.SessionToken)
-          export PROFILE_NAME="${TRIGGERING_ACCOUNT_AWS_PROFILE}"
-          aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}" --profile "${PROFILE_NAME}"
-          aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}" --profile "${PROFILE_NAME}"
-          aws configure set aws_session_token "${AWS_SESSION_TOKEN}" --profile "${PROFILE_NAME}"
-          aws configure set region "eu-west-2" --profile "${PROFILE_NAME}"
-          aws configure set output "json" --profile "${PROFILE_NAME}"
-          export AWS_PROFILE="${PROFILE_NAME}"
-        fi
+
+      # Copilot env deploy
+      - unset AWS_ACCESS_KEY_ID
+      - unset AWS_SECRET_ACCESS_KEY
+      - unset AWS_SESSION_TOKEN
       - copilot env init --name "${ENVIRONMENT}" --profile "${AWS_PROFILE_FOR_COPILOT}" --default-config
       - copilot env deploy --name "${ENVIRONMENT}"
+
   post_build:
     commands:
       - |
