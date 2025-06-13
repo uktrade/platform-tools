@@ -10,6 +10,9 @@ from dbt_platform_helper.commands.conduit import conduit as conduit_commands
 from dbt_platform_helper.commands.config import config as config_commands
 from dbt_platform_helper.commands.copilot import copilot as copilot_commands
 from dbt_platform_helper.commands.database import database as database_commands
+from dbt_platform_helper.commands.ecr_housekeeping import (
+    ecr_housekeeping as ecr_housekeeping_version_commands,
+)
 from dbt_platform_helper.commands.environment import environment as environment_commands
 from dbt_platform_helper.commands.generate import generate as generate_commands
 from dbt_platform_helper.commands.notify import notify as notify_commands
@@ -40,6 +43,7 @@ platform_helper.add_command(secrets_commands)
 platform_helper.add_command(notify_commands)
 platform_helper.add_command(database_commands)
 platform_helper.add_command(version_commands)
+platform_helper.add_command(ecr_housekeeping_version_commands)
 
 if __name__ == "__main__":
     platform_helper(auto_envvar_prefix="DBT_PLATFORM")
