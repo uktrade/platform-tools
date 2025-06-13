@@ -8,6 +8,32 @@ resource "aws_iam_role" "codebase_image_build" {
   tags               = local.tags
 }
 
+
+data "aws_iam_policy_document" "cache_invalidation" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["codebuild.amazonaws.com"]
+    }
+
+    actions = [
+      "cloudfront:CreateInvalidation",
+      "cloudfront:CreateBatchInvalidation",
+    ]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values = [
+        "arn:aws:cloudfront::*:cache-policy/*"
+      ]
+    }
+  }
+}
+
+
 data "aws_iam_policy_document" "assume_codebuild_role" {
   statement {
     effect = "Allow"
@@ -291,10 +317,17 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 }
 
+
 resource "aws_iam_role" "codebase_deploy" {
   name               = "${var.application}-${var.codebase}-codebase-deploy"
   assume_role_policy = data.aws_iam_policy_document.assume_codebuild_role.json
   tags               = local.tags
+}
+
+resource "aws_iam_role_policy" "cache_invalidation" {
+  name   = "cache-invalidation"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.cache_invalidation.json
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
