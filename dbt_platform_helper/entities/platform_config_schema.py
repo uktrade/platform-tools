@@ -152,7 +152,17 @@ class PlatformConfigSchema:
                                 {
                                     "name": str,
                                     Optional("requires_approval"): bool,
-                                }
+                                    Optional("invalidate_cache"): Or(
+                                        {
+                                            "before": list,
+                                            "paths": list,
+                                        },
+                                        {
+                                            "after": list,
+                                            "paths": list,
+                                        },
+                                    ),
+                                },
                             ],
                         },
                         {
