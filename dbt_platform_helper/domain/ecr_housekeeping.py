@@ -29,7 +29,7 @@ class ECRHousekeeping:
         ]
 
         for_deletion = [image for image in old_images if image not in in_use_image_shas]
-        self.io.info(f"Tagging {len(for_deletion)} images for deletion")
+        self.io.confirm(f"Tag {len(for_deletion)} images for deletion?")
 
         return "Tagged x/y images for deletion"
 
