@@ -7,9 +7,7 @@ class ECRHousekeeping:
         self.live_image_providers = live_image_providers
         self.io = io or ClickIOProvider()
 
-    def tag_stale_images_for_deletion(
-        self,
-    ):
+    def _get_all_unique_live_images(self):
         live_images = []
 
         for provider in self.live_image_providers:
@@ -17,21 +15,38 @@ class ECRHousekeeping:
             self.io.info(f"{len(images)} live images in {provider.session.profile_name}")
             live_images += images
 
-        unique_live_images = list(set(live_images))
+        return list(set(live_images))
 
-        self.io.info(f"Found {len(unique_live_images)} unique live images")
+    def tag_stale_images_for_deletion(
+        self,
+    ):
+        unique_live_images = self._get_all_unique_live_images()
+
+        self.io.info(f"{len(unique_live_images)} unique live images")
 
         old_images = self.image_provider.get_old_images()
-        self.io.info(f"Found {len(old_images)} old images")
+
+        self.io.info(
+            f"{len(old_images)} images older than {self.image_provider.EXPIRATION_DAYS} days"
+        )
 
         in_use_image_shas = [
             self.image_provider.get_image_shas(image) for image in unique_live_images
         ]
 
         for_deletion = [image for image in old_images if image not in in_use_image_shas]
-        self.io.confirm(f"Tag {len(for_deletion)} images for deletion?")
 
-        return "Tagged x/y images for deletion"
+        if not self.image_provider.all_images_present_in_repositories(in_use_image_shas):
+            self.io.abort_with_error(
+                "Live image not found in the scanned ECR repositories. Ensure you are logged in with the correct (non-prod) profile for the account where the repositories are located"
+            )
+
+        self.io.info(f"\n{len(for_deletion)} images identified for deletion")
+
+        if self.io.confirm(f"\nTag {len(for_deletion)} images for deletion?"):
+            return self.io.info("Tagged x/y images for deletion")
+        else:
+            return self.io.info("\nSkipping tagging images for deletion.  Complete.")
 
     def _get_in_use_image_shas(self):
 
