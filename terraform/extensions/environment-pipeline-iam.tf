@@ -262,6 +262,13 @@ data "aws_iam_policy_document" "logs_access" {
       "arn:aws:logs:${local.account_region}:log-group:/conduit/*"
     ]
   }
+
+  statement {
+    actions = [
+      "cloudformation:ListExports"
+    ]
+    resources = ["*"]
+  }
 }
 
 # KMS

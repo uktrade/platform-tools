@@ -310,12 +310,4 @@ data "aws_iam_policy_document" "copilot_access" {
       "arn:aws:cloudformation:${local.account_region}:stackset/${var.application}-infrastructure:*",
     ]
   }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "cloudformation:ListExports"
-    ]
-    resources = ["*"]
-  }
 }

@@ -803,21 +803,6 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected resources"
   }
-
-  assert {
-    condition     = data.aws_iam_policy_document.copilot_access.statement[6].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.copilot_access.statement[6].actions) == "cloudformation:ListExports"
-    error_message = "Should be: cloudformation:ListExports"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.copilot_access.statement[6].resources == toset([
-      "*"
-    ])
-    error_message = "Unexpected resources"
-  }
 }
 
 run "test_artifact_store" {

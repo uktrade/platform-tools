@@ -1104,11 +1104,6 @@ run "environment_deploy_iam_opensearch_access" {
 
 }
 
-run "environment_deploy_iam_copilot_access" {
-  command = plan
-
-}
-
 run "environment_deploy_iam_iam_access" {
   command = plan
 
