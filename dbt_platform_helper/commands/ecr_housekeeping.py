@@ -18,14 +18,16 @@ def ecr_housekeeping():
 @ecr_housekeeping.command(
     help="Adds a pending-deletion image tag to any stale unused images in the ECR repository",
 )
-def tag_stale_images_for_deletion():
+@click.argument("prod_profile", type=str, required=True)
+def tag_stale_images_for_deletion(prod_profile: str):
     try:
         io = ClickIOProvider()
         session = get_aws_session_or_abort()  # Need to get all relevant sessions
+        prod_session = get_aws_session_or_abort(prod_profile)  # Need to get all relevant sessions
         image_provider = ECRImageProvider(session)
-        live_image_provider = LiveImageProvider(session)
+        live_image_providers = [LiveImageProvider(session), LiveImageProvider(prod_session)]
         result = ECRHousekeeping(
-            image_provider, live_image_provider
+            image_provider, live_image_providers
         ).tag_stale_images_for_deletion()
 
         io.info(result)

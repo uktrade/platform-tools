@@ -983,8 +983,12 @@ platform-helper ecr-housekeeping (tag-stale-images-for-deletion|list-live-images
 ## Usage
 
 ```
-platform-helper ecr-housekeeping tag-stale-images-for-deletion 
+platform-helper ecr-housekeeping tag-stale-images-for-deletion <prod_profile> 
 ```
+
+## Arguments
+
+- `prod_profile <text>`
 
 ## Options
 

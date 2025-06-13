@@ -42,13 +42,14 @@ class TestECRHousekeeping:
             "Tagged x/y images for deletion"
         )
 
-        result = CliRunner().invoke(tag_stale_images_for_deletion_command)
-
+        result = CliRunner().invoke(tag_stale_images_for_deletion_command, ["platform-prod"])
+        print(result.stdout)
         assert result.exit_code == 0
 
         mock_provider.assert_called_once_with(mock_session_instance)
         mock_domain.assert_called_once_with(
-            mock_provider_instance, mock_live_image_provider_instance
+            mock_provider_instance,
+            [mock_live_image_provider_instance, mock_live_image_provider_instance],
         )
 
         mock_domain_instance.tag_stale_images_for_deletion.assert_called_once()
