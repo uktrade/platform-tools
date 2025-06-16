@@ -3,7 +3,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-system" {
   provider = datadog.ddog
   for_each = var.config.services_to_monitor
   entity   = <<EOF
-apiVersion: v3
+${local.api}
 kind: system
 metadata:
   name: ${var.application}-${var.environment}-${each.key}
@@ -17,7 +17,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-service-front" {
   provider = datadog.ddog
   for_each = var.config.services_to_monitor
   entity   = <<EOF
-apiVersion: v3
+${local.api}
 kind: service
 metadata:
   name: ${var.application}-${var.environment}-${each.key}
@@ -31,10 +31,7 @@ spec:
     - python
   componentOf: 
     - system:${var.application}-${var.environment}-${each.key}
-datadog:
-  pipelines:
-    fingerprints:
-      - SheHsDihoccN
+${local.fingerprint}
 EOF
 }
 
@@ -43,7 +40,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-service-back" {
   provider = datadog.ddog
   for_each = local.services_to_monitor_map
   entity   = <<EOF
-apiVersion: v3
+${local.api}
 kind: service
 metadata:
   name: ${var.application}-${var.environment}-${each.key}
@@ -59,10 +56,7 @@ spec:
     - system:${var.application}-${var.environment}-${each.value.front_service}
   dependsOn:
     - service:${var.application}-${var.environment}-${each.value.front_service}
-datadog:
-  pipelines:
-    fingerprints:
-      - SheHsDihoccN
+${local.fingerprint}
 EOF
 }
 

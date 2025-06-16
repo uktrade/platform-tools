@@ -1,12 +1,20 @@
 locals {
-  # Sections to add useful metadata to the services and system
+
+# Local variables used to construct the metadata entity in datadog_software_catalog resource
+
+  ## Datadog API / schema version to use for metadata
+  api = <<EOF
+apiVersion: v3
+EOF
+
+  ## Sections to add useful metadata to the services and system
   doc = <<EOF
     - name: Documentation
       type: doc
       url: ${var.config.documentation_url}
 EOF
 
-  # Create repo metadata section(s)
+  ## Create repo metadata section(s)
   repos = var.repos == null ? "" : <<EOF
   %{for r in var.repos}
     - name: ${r}
@@ -15,7 +23,7 @@ EOF
   %{endfor}
 EOF
 
-  # Contact details
+  ## Contact details
   contacts = <<EOF
   contacts:
     - name: ${var.config.contact_name}
@@ -23,15 +31,23 @@ EOF
       contact: ${var.config.contact_email}
 EOF
 
-  # Team name, which corresponds to the team name handle in Datadog
+  ## Team name, which corresponds to the team name handle in Datadog
   team = <<EOF
   owner: ${var.config.team_name}
 EOF
 
-  # Create list of database types which can then be labelled as 'database' in the metadata
-  db_list = ["postgres"]
+  ## Pipeline fingerprint
+  fingerprint = <<EOF
+datadog:
+  pipelines:
+    fingerprints:
+      - SheHsDihoccN
+EOF
 
-  # Map of 'services_to_monitor' to make it easier to iterate over when creating the datadog_software_catalog resources
+  ## Create list of database types which can then be labelled as 'database' in the metadata
+  db_list = ["postgres"]
+  
+# Map of 'services_to_monitor' to make it easier to iterate over when creating the datadog_software_catalog resources
   services_to_monitor_map = merge([
     for front_service, back_services in var.config.services_to_monitor : {
       for back_service in back_services :
