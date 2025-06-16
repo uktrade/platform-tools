@@ -19,8 +19,8 @@ variables {
 run "datadog_system_entity_test_application" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-system["test-web"].entity).metadata.name == "${var.application}-${var.environment}-test-web"
-    error_message = "Should be: metadata.name = ${var.application}-${var.environment}"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-system["test-web"].entity).metadata.name == "${var.application}-test-web"
+    error_message = "Should be: metadata.name = ${var.application}"
   }
 }
 
@@ -35,8 +35,8 @@ run "datadog_system_entity_test_owner" {
 run "datadog_service_entity_test_name" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service-front["test-api"].entity).metadata.name == "${var.application}-${var.environment}-test-api"
-    error_message = "Should be: metadata.displayName = ${var.application}-${var.environment}-test-api"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service-front["test-api"].entity).metadata.name == "${var.application}-test-api"
+    error_message = "Should be: metadata.displayName = ${var.application}-test-api"
   }
 }
 
