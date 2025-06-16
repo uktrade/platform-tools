@@ -323,8 +323,6 @@ data "aws_iam_policy_document" "iam_access" {
     ]
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.args.application}-*-conduitEcsTask",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-CFNExecutionRole",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-EnvManagerRole",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-S3MigrationRole",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-*-exec",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-*-task",

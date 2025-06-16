@@ -731,12 +731,14 @@ run "test_iam_documents" {
     error_message = "Should be: Allow"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.copilot_access.statement[2].actions) == "iam:PassRole"
-    error_message = "Should be: iam:PassRole"
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[2].actions) == "iam:*"
+    error_message = "Should be: iam:*"
   }
   assert {
     condition = data.aws_iam_policy_document.copilot_access.statement[2].resources == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-adminrole"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-adminrole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-*-CFNExecutionRole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-*-EnvManagerRole",
     ])
     error_message = "Unexpected resources"
   }

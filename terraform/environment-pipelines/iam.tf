@@ -260,10 +260,12 @@ data "aws_iam_policy_document" "copilot_access" {
   statement {
     effect = "Allow"
     actions = [
-      "iam:PassRole"
+      "iam:*"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-adminrole"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-adminrole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-CFNExecutionRole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-EnvManagerRole",
     ]
   }
 
