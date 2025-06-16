@@ -1,0 +1,22 @@
+version: 0.2
+
+env:
+  variables:
+    DEPLOY_TIMEOUT: 1800
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  install:
+    commands:
+
+  build:
+    commands:
+      # Need to find out how many distributions should be touched
+      - set -e
+      - export CONFIG_JSON='{"api.kate.demodjango.uktrade.digital": {"paths": ["a/*", "b/*"]}, "web.kate.demodjango.uktrade.digital": {}'
+      - export PATHS="/secondary-service/"      
+
+  post_build:
+    commands:
+      - echo "DONE"
