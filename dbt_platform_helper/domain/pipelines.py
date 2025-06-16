@@ -1,4 +1,3 @@
-import os
 from collections.abc import Callable
 from os import makedirs
 from pathlib import Path
@@ -11,6 +10,9 @@ from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -28,6 +30,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
+        environment_variable_provider: EnvironmentVariableProvider = None,
         platform_helper_version_override: str = None,
     ):
         self.config_provider = config_provider
@@ -37,8 +40,14 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        self.environment_variable_provider = (
+            environment_variable_provider or EnvironmentVariableProvider()
+        )
+        self.platform_helper_version_override = (
+            platform_helper_version_override
+            or self.environment_variable_provider.get_optional_value(
+                PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+            )
         )
 
     def generate(

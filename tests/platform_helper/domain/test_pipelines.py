@@ -231,7 +231,7 @@ def assert_terraform(app_name, aws_account, expected_version, expected_branch):
     assert f'profile                  = "{aws_account}"' in content
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
     assert (
-        f'"git::https://github.com/uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"'
+        f'"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"'
         in content
     )
     assert f'application         = "{app_name}"' in content

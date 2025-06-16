@@ -78,7 +78,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     module = json_content["module"]["codebase-pipelines"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14"
+        == f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14"
     )
     assert module["for_each"] == "${local.all_codebases}"
     assert module["application"] == "${local.application}"
@@ -241,7 +241,7 @@ def test_generate_environment_config_creates_file(
     module = json_content["module"]["extensions"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
+        == f"git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
     )
     assert module["args"] == "${local.args}"
     assert module["environment"] == env
