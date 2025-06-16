@@ -60,17 +60,17 @@ data "aws_iam_policy_document" "terraform_state_access" {
     ]
   }
 
-  # statement {
-  #   actions = [
-  #     "dynamodb:DescribeTable",
-  #     "dynamodb:GetItem",
-  #     "dynamodb:PutItem",
-  #     "dynamodb:DeleteItem"
-  #   ]
-  #   resources = [
-  #     "arn:aws:dynamodb:${local.account_region}:table/terraform-platform-lockdb-${local.deploy_account_name}"
-  #   ]
-  # }
+  statement {
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem"
+    ]
+    resources = [
+      "arn:aws:dynamodb:${local.account_region}:table/terraform-platform-lockdb-${local.deploy_account_name}"
+    ]
+  }
 }
 
 # VPC
