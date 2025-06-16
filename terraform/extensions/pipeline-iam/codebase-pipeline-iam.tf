@@ -2,9 +2,9 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 resource "aws_iam_role" "codebase_pipeline_deploy" {
-  name               = "${var.args.application}-${var.environment}-codebase-pipeline-deploy"
+  name               = "${var.application}-${var.environment}-codebase-pipeline-deploy"
   assume_role_policy = data.aws_iam_policy_document.assume_codebase_pipeline.json
-  tags               = local.tags
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "assume_codebase_pipeline" {
@@ -17,9 +17,9 @@ data "aws_iam_policy_document" "assume_codebase_pipeline" {
     condition {
       test = "ArnLike"
       values = [
-        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline",
-        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline-*",
-        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-*"
+        "arn:aws:iam::${local.pipeline_account_id}:role/${var.application}-*-codebase-pipeline",
+        "arn:aws:iam::${local.pipeline_account_id}:role/${var.application}-*-codebase-pipeline-*",
+        "arn:aws:iam::${local.pipeline_account_id}:role/${var.application}-*-codebase-*"
       ]
       variable = "aws:PrincipalArn"
     }
@@ -40,7 +40,7 @@ data "aws_iam_policy_document" "ecr_access" {
       "ecr:DescribeImages"
     ]
     resources = [
-      "arn:aws:ecr:${data.aws_region.current.name}:${local.pipeline_account_id}:repository/${var.args.application}/*"
+      "arn:aws:ecr:${data.aws_region.current.name}:${local.pipeline_account_id}:repository/${var.application}/*"
     ]
   }
 }
@@ -64,8 +64,8 @@ data "aws_iam_policy_document" "artifact_store_access" {
       "s3:PutObject",
     ]
     resources = [
-      "arn:aws:s3:::${var.args.application}-*-cb-arts/*",
-      "arn:aws:s3:::${var.args.application}-*-cb-arts"
+      "arn:aws:s3:::${var.application}-*-cb-arts/*",
+      "arn:aws:s3:::${var.application}-*-cb-arts"
     ]
   }
 
@@ -109,8 +109,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServices"
     ]
     resources = [
-      "arn:aws:ecs:${local.account_region}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${local.account_region}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${local.account_region}:cluster/${var.application}-${var.environment}",
+      "arn:aws:ecs:${local.account_region}:service/${var.application}-${var.environment}/*"
     ]
   }
 
@@ -121,8 +121,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:TagResource"
     ]
     resources = [
-      "arn:aws:ecs:${local.account_region}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${local.account_region}:task/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${local.account_region}:cluster/${var.application}-${var.environment}",
+      "arn:aws:ecs:${local.account_region}:task/${var.application}-${var.environment}/*"
     ]
   }
 
@@ -133,7 +133,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:TagResource"
     ]
     resources = [
-      "arn:aws:ecs:${local.account_region}:task-definition/${var.args.application}-${var.environment}-*:*"
+      "arn:aws:ecs:${local.account_region}:task-definition/${var.application}-${var.environment}-*:*"
     ]
   }
 
@@ -143,7 +143,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListTasks"
     ]
     resources = [
-      "arn:aws:ecs:${local.account_region}:container-instance/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${local.account_region}:container-instance/${var.application}-${var.environment}/*"
     ]
   }
 
@@ -175,7 +175,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServiceDeployments"
     ]
     resources = [
-      "arn:aws:ecs:${local.account_region}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${local.account_region}:service/${var.application}-${var.environment}/*"
     ]
   }
 }
@@ -193,7 +193,7 @@ data "aws_iam_policy_document" "cloudformation_access" {
       "cloudformation:GetTemplate"
     ]
     resources = [
-      "arn:aws:cloudformation:${local.account_region}:stack/${var.args.application}-${var.environment}-*"
+      "arn:aws:cloudformation:${local.account_region}:stack/${var.application}-${var.environment}-*"
     ]
   }
 }

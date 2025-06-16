@@ -128,3 +128,13 @@ module "datadog" {
   repos       = var.repos
   config      = each.value
 }
+
+module "pipeline_iam" {
+  source = "./pipeline-iam"
+
+  application = var.args.application
+  environment = var.environment
+  env_config= var.args.env_config
+  tags = local.tags
+}
+

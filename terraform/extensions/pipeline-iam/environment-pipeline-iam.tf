@@ -1,7 +1,7 @@
 resource "aws_iam_role" "environment_pipeline_deploy" {
-  name               = "${var.args.application}-${var.environment}-environment-pipeline-deploy"
+  name               = "${var.application}-${var.environment}-environment-pipeline-deploy"
   assume_role_policy = data.aws_iam_policy_document.assume_environment_pipeline.json
-  tags               = local.tags
+  tags               = var.tags
 }
 
 data "aws_iam_policy_document" "assume_environment_pipeline" {
@@ -14,7 +14,7 @@ data "aws_iam_policy_document" "assume_environment_pipeline" {
     condition {
       test = "ArnLike"
       values = [
-        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-environment-pipeline-codebuild"
+        "arn:aws:iam::${local.pipeline_account_id}:role/${var.application}-*-environment-pipeline-codebuild"
       ]
       variable = "aws:PrincipalArn"
     }
@@ -60,17 +60,17 @@ data "aws_iam_policy_document" "terraform_state_access" {
     ]
   }
 
-  statement {
-    actions = [
-      "dynamodb:DescribeTable",
-      "dynamodb:GetItem",
-      "dynamodb:PutItem",
-      "dynamodb:DeleteItem"
-    ]
-    resources = [
-      "arn:aws:dynamodb:${local.account_region}:table/terraform-platform-lockdb-${local.deploy_account_name}"
-    ]
-  }
+  # statement {
+  #   actions = [
+  #     "dynamodb:DescribeTable",
+  #     "dynamodb:GetItem",
+  #     "dynamodb:PutItem",
+  #     "dynamodb:DeleteItem"
+  #   ]
+  #   resources = [
+  #     "arn:aws:dynamodb:${local.account_region}:table/terraform-platform-lockdb-${local.deploy_account_name}"
+  #   ]
+  # }
 }
 
 # VPC
@@ -151,9 +151,9 @@ data "aws_iam_policy_document" "ssm_access" {
       "ssm:ListTagsForResource"
     ]
     resources = [
-      "arn:aws:ssm:${local.account_region}:parameter/copilot/${var.args.application}/*/secrets/*",
-      "arn:aws:ssm:${local.account_region}:parameter/copilot/applications/${var.args.application}",
-      "arn:aws:ssm:${local.account_region}:parameter/copilot/applications/${var.args.application}/*",
+      "arn:aws:ssm:${local.account_region}:parameter/copilot/${var.application}/*/secrets/*",
+      "arn:aws:ssm:${local.account_region}:parameter/copilot/applications/${var.application}",
+      "arn:aws:ssm:${local.account_region}:parameter/copilot/applications/${var.application}/*",
       "arn:aws:ssm:${local.account_region}:parameter/***"
     ]
   }
@@ -185,7 +185,7 @@ data "aws_iam_policy_document" "logs_access" {
       "cloudwatch:DeleteDashboards"
     ]
     resources = [
-      "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.args.application}-${var.environment}-compute"
+      "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.application}-${var.environment}-compute"
     ]
   }
 
@@ -200,7 +200,7 @@ data "aws_iam_policy_document" "logs_access" {
       "resource-groups:DeleteGroup"
     ]
     resources = [
-      "arn:aws:resource-groups:${local.account_region}:group/${var.args.application}-${var.environment}-application-insights-resources"
+      "arn:aws:resource-groups:${local.account_region}:group/${var.application}-${var.environment}-application-insights-resources"
     ]
   }
 
@@ -213,7 +213,7 @@ data "aws_iam_policy_document" "logs_access" {
       "applicationinsights:DeleteApplication"
     ]
     resources = [
-      "arn:aws:applicationinsights:${local.account_region}:application/resource-group/${var.args.application}-${var.environment}-application-insights-resources"
+      "arn:aws:applicationinsights:${local.account_region}:application/resource-group/${var.application}-${var.environment}-application-insights-resources"
     ]
   }
 
@@ -304,7 +304,7 @@ data "aws_iam_policy_document" "kms_key_access" {
       "kms:DeleteAlias"
     ]
     resources = [
-      "arn:aws:kms:${local.account_region}:alias/${var.args.application}-*"
+      "arn:aws:kms:${local.account_region}:alias/${var.application}-*"
     ]
   }
 }
@@ -322,14 +322,14 @@ data "aws_iam_policy_document" "iam_access" {
       "iam:*"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.args.application}-*-conduitEcsTask",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.application}-*-conduitEcsTask",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-S3MigrationRole",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-*-exec",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-*-task",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-exec",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-task",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-copy-pipeline-*",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-codebase-pipeline-deploy",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-conduit-task-role",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-conduit-exec-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-codebase-pipeline-deploy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-*-conduit-task-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-*-conduit-exec-role",
     ]
   }
 
@@ -348,7 +348,7 @@ data "aws_iam_policy_document" "iam_access" {
     actions = [
       "iam:UpdateAssumeRolePolicy"
     ]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-lambda-role"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-*-lambda-role"]
   }
 
   statement {
@@ -356,7 +356,7 @@ data "aws_iam_policy_document" "iam_access" {
       "iam:GetPolicy",
       "iam:GetPolicyVersion"
     ]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}/codebuild/*"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/*"]
   }
 }
 
@@ -368,8 +368,8 @@ resource "aws_iam_role_policy_attachment" "attach_alb_cdn_cert_policy" {
 
 resource "aws_iam_policy" "alb_cdn_cert_access" {
   name        = "alb-cdn-cert-access"
-  path        = "/${var.args.application}/codebuild/"
-  description = "Allow ${var.args.application} codebuild job to manage roles"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to manage roles"
   policy      = data.aws_iam_policy_document.alb_cdn_cert_access.json
 }
 
@@ -408,7 +408,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "elasticloadbalancing:DeleteTargetGroup"
     ]
     resources = [
-      "arn:aws:elasticloadbalancing:${local.account_region}:targetgroup/${var.args.application}-${var.environment}-http/*"
+      "arn:aws:elasticloadbalancing:${local.account_region}:targetgroup/${var.application}-${var.environment}-http/*"
     ]
   }
 
@@ -423,7 +423,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "elasticloadbalancing:SetWebACL"
     ]
     resources = [
-      "arn:aws:elasticloadbalancing:${local.account_region}:loadbalancer/app/${var.args.application}-${var.environment}/*"
+      "arn:aws:elasticloadbalancing:${local.account_region}:loadbalancer/app/${var.application}-${var.environment}/*"
     ]
   }
 
@@ -433,7 +433,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "elasticloadbalancing:ModifyListener"
     ]
     resources = [
-      "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.args.application}-${var.environment}/*"
+      "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${var.environment}/*"
     ]
   }
 
@@ -481,7 +481,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "lambda:AddPermission",
       "lambda:DeleteFunction"
     ]
-    resources = ["arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.args.application}-${var.environment}-origin-secret-rotate"]
+    resources = ["arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.application}-${var.environment}-origin-secret-rotate"]
   }
 
   statement {
@@ -538,7 +538,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "secretsmanager:PutSecretValue",
       "secretsmanager:RotateSecret"
     ]
-    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.args.application}-${var.environment}-origin-verify-header-secret-*"]
+    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.application}-${var.environment}-origin-verify-header-secret-*"]
   }
 
   statement {
@@ -546,7 +546,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
     actions = [
       "iam:TagRole"
     ]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-origin-secret-rotate-role"]
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-origin-secret-rotate-role"]
   }
 }
 
@@ -558,8 +558,8 @@ resource "aws_iam_role_policy_attachment" "attach_redis_policy" {
 
 resource "aws_iam_policy" "redis_access" {
   name        = "redis-access"
-  path        = "/${var.args.application}/codebuild/"
-  description = "Allow ${var.args.application} codebuild job to manage roles"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to manage roles"
   policy      = data.aws_iam_policy_document.redis_access.json
 }
 
@@ -624,8 +624,8 @@ resource "aws_iam_role_policy_attachment" "attach_postgres_policy" {
 
 resource "aws_iam_policy" "postgres_access" {
   name        = "postgres-access"
-  path        = "/${var.args.application}/codebuild/"
-  description = "Allow ${var.args.application} codebuild job to manage roles"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to manage roles"
   policy      = data.aws_iam_policy_document.postgres_access.json
 }
 
@@ -635,7 +635,7 @@ data "aws_iam_policy_document" "postgres_access" {
       "iam:PassRole"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-adminrole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-adminrole",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-copy-pipeline-*"
     ]
   }
@@ -645,7 +645,7 @@ data "aws_iam_policy_document" "postgres_access" {
       "iam:*"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-*",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
     ]
   }
@@ -662,7 +662,7 @@ data "aws_iam_policy_document" "postgres_access" {
       "lambda:DeleteFunction"
     ]
     resources = [
-      "arn:aws:lambda:${local.account_region}:function:${var.args.application}-${var.environment}-*"
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${var.environment}-*"
     ]
   }
 
@@ -688,7 +688,7 @@ data "aws_iam_policy_document" "postgres_access" {
       "rds:DeleteDBParameterGroup"
     ]
     resources = [
-      "arn:aws:rds:${local.account_region}:pg:${var.args.application}-${var.environment}-*"
+      "arn:aws:rds:${local.account_region}:pg:${var.application}-${var.environment}-*"
     ]
   }
 
@@ -702,7 +702,7 @@ data "aws_iam_policy_document" "postgres_access" {
       "rds:CreateDBInstance"
     ]
     resources = [
-      "arn:aws:rds:${local.account_region}:subgrp:${var.args.application}-${var.environment}-*"
+      "arn:aws:rds:${local.account_region}:subgrp:${var.application}-${var.environment}-*"
     ]
   }
 
@@ -722,7 +722,7 @@ data "aws_iam_policy_document" "postgres_access" {
       "rds:ModifyDBInstance"
     ]
     resources = [
-      "arn:aws:rds:${local.account_region}:db:${var.args.application}-${var.environment}-*"
+      "arn:aws:rds:${local.account_region}:db:${var.application}-${var.environment}-*"
     ]
   }
 
@@ -819,8 +819,8 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
 
 resource "aws_iam_policy" "s3_access" {
   name        = "s3-access"
-  path        = "/${var.args.application}/codebuild/"
-  description = "Allow ${var.args.application} codebuild job to manage roles"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to manage roles"
   policy      = data.aws_iam_policy_document.s3_access.json
 }
 
@@ -852,8 +852,8 @@ resource "aws_iam_role_policy_attachment" "attach_opensearch_policy" {
 
 resource "aws_iam_policy" "opensearch_access" {
   name        = "opensearch-access"
-  path        = "/${var.args.application}/codebuild/"
-  description = "Allow ${var.args.application} codebuild job to manage roles"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to manage roles"
   policy      = data.aws_iam_policy_document.opensearch_access.json
 }
 
@@ -882,5 +882,28 @@ data "aws_iam_policy_document" "opensearch_access" {
       "*"
     ]
     sid = "AllowOpensearchListVersions"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "attach_new_policy" {
+  role       = aws_iam_role.environment_pipeline_deploy.name
+  policy_arn = aws_iam_policy.new_access.arn
+}
+
+resource "aws_iam_policy" "new_access" {
+  name        = "new-access"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to manage roles"
+  policy      = data.aws_iam_policy_document.new_access.json
+}
+
+data "aws_iam_policy_document" "new_access" {
+  statement {
+    actions = [
+      "es:*"
+    ]
+    resources = [
+      "*"
+    ]
   }
 }
