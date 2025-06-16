@@ -132,6 +132,50 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
 }
 
 
+resource "aws_codebuild_project" "invalidate_cache" {
+  name           = "${var.application}-${var.codebase}-invalidate-cache"
+  description    = "Invalidate the CDN cache policy paths"
+  build_timeout  = 30
+  service_role   = aws_iam_role.codebase_deploy.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.artifact_store.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "PATHS"
+      value = jsonencode(local.base_env_config)
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebase_deploy.name
+      stream_name = aws_cloudwatch_log_stream.codebase_deploy.name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = file("${path.module}/buildspec-invalidate-cache.yml")
+  }
+
+  tags = local.tags
+}
+
+
 resource "aws_codebuild_project" "codebase_deploy" {
   name           = "${var.application}-${var.codebase}-codebase-deploy"
   description    = "Deploy specified image tag to specified environment"
