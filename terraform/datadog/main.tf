@@ -6,7 +6,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-system" {
 ${local.api}
 kind: system
 metadata:
-  name: ${var.application}-${var.environment}-${each.key}
+  name: ${var.application}-${each.key}
   links:
 ${local.doc}${local.repos}${local.contacts}${local.team}
 EOF
@@ -20,7 +20,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-service-front" {
 ${local.api}
 kind: service
 metadata:
-  name: ${var.application}-${var.environment}-${each.key}
+  name: ${var.application}-${each.key}
   links:
 ${local.doc}${local.repos}${local.contacts}${local.team}
 spec:
@@ -30,7 +30,7 @@ spec:
   languages:
     - python
   componentOf: 
-    - system:${var.application}-${var.environment}-${each.key}
+    - system:${var.application}-${each.key}
 ${local.fingerprint}
 EOF
 }
@@ -43,7 +43,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-service-back" {
 ${local.api}
 kind: service
 metadata:
-  name: ${var.application}-${var.environment}-${each.key}
+  name: ${var.application}-${each.key}
   links:
 ${local.doc}${local.repos}${local.contacts}${local.team}
 spec:
@@ -53,9 +53,9 @@ spec:
   languages:
     - python
   componentOf: 
-    - system:${var.application}-${var.environment}-${each.value.front_service}
+    - system:${var.application}-${each.value.front_service}
   dependsOn:
-    - service:${var.application}-${var.environment}-${each.value.front_service}
+    - service:${var.application}-${each.value.front_service}
 ${local.fingerprint}
 EOF
 }
