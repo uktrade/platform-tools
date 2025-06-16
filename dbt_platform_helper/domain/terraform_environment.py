@@ -57,7 +57,7 @@ class TerraformEnvironment:
         if self.platform_helper_version_override:
             platform_helper_version_for_template = self.platform_helper_version_override
 
-        env_module_path_override = self.environment_variable_provider.get_optional_value(
+        environment_terraform_module_path = self.environment_variable_provider.get_optional_value(
             ENVIRONMENT_TERRAFORM_MODULE_PATH_KEY
         )
 
@@ -65,5 +65,5 @@ class TerraformEnvironment:
             config,
             environment_name,
             platform_helper_version_for_template,
-            env_module_path_override,
+            environment_terraform_module_path,
         )
