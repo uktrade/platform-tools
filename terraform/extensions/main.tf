@@ -134,7 +134,7 @@ module "pipeline_iam" {
 
   application = var.args.application
   environment = var.environment
-  env_config= var.args.env_config
-  tags = local.tags
+  env_config  = var.args.env_config
+  tags        = local.tags
 }
 

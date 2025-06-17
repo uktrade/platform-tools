@@ -560,551 +560,128 @@ run "redis_plan_medium_ha_service_test" {
   }
 }
 
-# Codebase pipeline
 override_data {
-  target = data.aws_iam_policy_document.assume_codebase_pipeline
+  target = module.pipeline_iam.data.aws_iam_policy_document.assume_codebase_pipeline
   values = {
     json = "{\"Sid\": \"CodeBaseDeployAssume\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.ecr_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.ecr_access
   values = {
     json = "{\"Sid\": \"ECRAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.artifact_store_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.artifact_store_access
   values = {
     json = "{\"Sid\": \"ArtifactStoreAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.ecs_deploy_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.ecs_deploy_access
   values = {
     json = "{\"Sid\": \"ECSDeployAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.cloudformation_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.cloudformation_access
   values = {
     json = "{\"Sid\": \"CloudFormationAccess\"}"
   }
 }
 
-run "codebase_deploy_iam_test" {
-  command = plan
-
-  variables {
-    expected_tags = {
-      application         = var.args.application
-      environment         = var.environment
-      managed-by          = "DBT Platform - Terraform"
-      copilot-application = var.args.application
-      copilot-environment = var.environment
-    }
-  }
-
-  assert {
-    condition     = aws_iam_role.codebase_pipeline_deploy.name == "test-application-test-env-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
-  }
-  assert {
-    condition     = aws_iam_role.codebase_pipeline_deploy.assume_role_policy == "{\"Sid\": \"CodeBaseDeployAssume\"}"
-    error_message = "Should be: {\"Sid\": \"CodeBaseDeployAssume\"}"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].actions) == "sts:AssumeRole"
-    error_message = "Should be: sts:AssumeRole"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].principals).type == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
-    condition     = contains(one(data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].principals).identifiers, "arn:aws:iam::000123456789:root")
-    error_message = "Should contain: arn:aws:iam::000123456789:root"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].condition : el.test][0] == "ArnLike"
-    error_message = "Should be: ArnLike"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].condition : el.variable][0] == "aws:PrincipalArn"
-    error_message = "Should be: aws:PrincipalArn"
-  }
-  assert {
-    condition = flatten([for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].condition : el.values][0]) == [
-      "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline",
-      "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline-*",
-      "arn:aws:iam::000123456789:role/test-application-*-codebase-*"
-    ]
-    error_message = "Unexpected condition values"
-  }
-  assert {
-    condition     = jsonencode(aws_iam_role.codebase_pipeline_deploy.tags) == jsonencode(var.expected_tags)
-    error_message = "Should be: ${jsonencode(var.expected_tags)}"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ecr_access.name == "ecr-access"
-    error_message = "Should be: 'ecr-access'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ecr_access.role == "test-application-test-env-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ecr_access.policy == "{\"Sid\": \"ECRAccess\"}"
-    error_message = "Should be: {\"Sid\": \"ECRAccess\"}"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecr_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecr_access.statement[0].actions) == "ecr:DescribeImages"
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecr_access.statement[0].resources) == "arn:aws:ecr:${data.aws_region.current.name}:000123456789:repository/test-application/*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = aws_iam_role_policy.artifact_store_access.name == "artifact-store-access"
-    error_message = "Should be: 'artifact-store-access'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.artifact_store_access.role == "test-application-test-env-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.artifact_store_access.policy == "{\"Sid\": \"ArtifactStoreAccess\"}"
-    error_message = "Should be: {\"Sid\": \"ArtifactStoreAccess\"}"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.artifact_store_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.artifact_store_access.statement[0].actions == toset([
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:GetBucketVersioning",
-      "s3:PutObjectAcl",
-      "s3:PutObject",
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.artifact_store_access.statement[0].resources == toset(["arn:aws:s3:::test-application-*-cb-arts", "arn:aws:s3:::test-application-*-cb-arts/*"])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.artifact_store_access.statement[1].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.artifact_store_access.statement[1].actions == toset([
-      "codebuild:BatchGetBuilds",
-      "codebuild:StartBuild",
-      "codebuild:StopBuild"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.artifact_store_access.statement[1].resources) == "*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.artifact_store_access.statement[2].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.artifact_store_access.statement[2].actions == toset([
-      "kms:GenerateDataKey",
-      "kms:Decrypt"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.artifact_store_access.statement[2].resources) == "arn:aws:kms:${data.aws_region.current.name}:000123456789:key/*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ecs_deploy_access.name == "ecs-deploy-access"
-    error_message = "Should be: 'ecs-deploy-access'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ecs_deploy_access.role == "test-application-test-env-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ecs_deploy_access.policy == "{\"Sid\": \"ECSDeployAccess\"}"
-    error_message = "Should be: {\"Sid\": \"ECSDeployAccess\"}"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[0].actions == toset([
-      "ecs:UpdateService",
-      "ecs:DescribeServices",
-      "ecs:TagResource",
-      "ecs:ListServices"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[0].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[1].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[1].actions == toset([
-      "ecs:DescribeTasks",
-      "ecs:TagResource"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[1].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env/*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[2].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[2].actions == toset([
-      "ecs:RunTask",
-      "ecs:TagResource"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[2].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/test-application-test-env-*:*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[3].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].actions) == "ecs:ListTasks"
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env/*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[4].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[4].actions == toset([
-      "ecs:DescribeTaskDefinition",
-      "ecs:RegisterTaskDefinition"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[4].resources) == "*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[5].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[5].actions) == "iam:PassRole"
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[5].resources) == "*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.ecs_deploy_access.statement[5].condition : el.test][0] == "StringLike"
-    error_message = "Should be: StringLike"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.ecs_deploy_access.statement[5].condition : one(el.values)][0] == "ecs-tasks.amazonaws.com"
-    error_message = "Should be: ecs-tasks.amazonaws.com"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.ecs_deploy_access.statement[5].condition : el.variable][0] == "iam:PassedToService"
-    error_message = "Should be: iam:PassedToService"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.ecs_deploy_access.statement[6].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[6].actions == toset([
-      "ecs:ListServiceDeployments"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = aws_iam_role_policy.cloudformation_access.name == "cloudformation-access"
-    error_message = "Should be: 'cloudformation-access'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.cloudformation_access.role == "test-application-test-env-codebase-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-env-codebase-pipeline-deploy'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.cloudformation_access.policy == "{\"Sid\": \"CloudFormationAccess\"}"
-    error_message = "Should be: {\"Sid\": \"CloudFormationAccess\"}"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.cloudformation_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.cloudformation_access.statement[0].actions == toset([
-      "cloudformation:GetTemplate"
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.cloudformation_access.statement[0].resources == toset([
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/test-application-test-env-*"
-    ])
-    error_message = "Unexpected resources"
-  }
-}
-
-# Environment pipeline
 override_data {
-  target = data.aws_iam_policy_document.assume_environment_pipeline
+  target = module.pipeline_iam.data.aws_iam_policy_document.assume_environment_pipeline
   values = {
     json = "{\"Sid\": \"AssumeEnvironmentPipeline\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.terraform_state_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.terraform_state_access
   values = {
     json = "{\"Sid\": \"TerraformStateAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.vpc_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.vpc_access
   values = {
     json = "{\"Sid\": \"VPCAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.alb_cdn_cert_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.alb_cdn_cert_access
   values = {
     json = "{\"Sid\": \"ALBAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.ssm_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.ssm_access
   values = {
     json = "{\"Sid\": \"SSMAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.logs_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.logs_access
   values = {
     json = "{\"Sid\": \"LogsAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.kms_key_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.kms_key_access
   values = {
     json = "{\"Sid\": \"KMSAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.redis_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.redis_access
   values = {
     json = "{\"Sid\": \"RedisAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.postgres_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.postgres_access
   values = {
     json = "{\"Sid\": \"PostgresAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.s3_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.s3_access
   values = {
     json = "{\"Sid\": \"S3Access\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.opensearch_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.opensearch_access
   values = {
     json = "{\"Sid\": \"OpensearchAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.copilot_access
-  values = {
-    json = "{\"Sid\": \"CopilotAccess\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.iam_access
+  target = module.pipeline_iam.data.aws_iam_policy_document.iam_access
   values = {
     json = "{\"Sid\": \"IamAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_ssm_parameter.central_log_group_parameter
+  target = module.pipeline_iam.data.aws_ssm_parameter.central_log_group_parameter
   values = {
     value = "{\"prod\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_prod\", \"dev\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_dev\"}"
   }
-}
-
-run "environment_deploy_iam_role_test" {
-  command = plan
-
-  variables {
-    expected_tags = {
-      application         = var.args.application
-      environment         = var.environment
-      managed-by          = "DBT Platform - Terraform"
-      copilot-application = var.args.application
-      copilot-environment = var.environment
-    }
-  }
-
-  assert {
-    condition     = aws_iam_role.environment_pipeline_deploy.name == "test-application-test-env-environment-pipeline-deploy"
-    error_message = "Should be: 'test-application-test-env-environment-pipeline-deploy'"
-  }
-  assert {
-    condition     = aws_iam_role.environment_pipeline_deploy.assume_role_policy == "{\"Sid\": \"AssumeEnvironmentPipeline\"}"
-    error_message = "Should be: {\"Sid\": \"AssumeEnvironmentPipeline\"}"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.assume_environment_pipeline.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.assume_environment_pipeline.statement[0].actions) == "sts:AssumeRole"
-    error_message = "Should be: sts:AssumeRole"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.assume_environment_pipeline.statement[0].principals).type == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
-    condition     = contains(one(data.aws_iam_policy_document.assume_environment_pipeline.statement[0].principals).identifiers, "arn:aws:iam::000123456789:root")
-    error_message = "Should contain: arn:aws:iam::000123456789:root"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.assume_environment_pipeline.statement[0].condition : el.test][0] == "ArnLike"
-    error_message = "Should be: ArnLike"
-  }
-  assert {
-    condition     = [for el in data.aws_iam_policy_document.assume_environment_pipeline.statement[0].condition : el.variable][0] == "aws:PrincipalArn"
-    error_message = "Should be: aws:PrincipalArn"
-  }
-  assert {
-    condition = flatten([for el in data.aws_iam_policy_document.assume_environment_pipeline.statement[0].condition : el.values][0]) == [
-      "arn:aws:iam::000123456789:role/test-application-*-environment-*"
-    ]
-    error_message = "Unexpected condition values"
-  }
-  assert {
-    condition     = jsonencode(aws_iam_role.codebase_pipeline_deploy.tags) == jsonencode(var.expected_tags)
-    error_message = "Should be: ${jsonencode(var.expected_tags)}"
-  }
-}
-
-run "environment_deploy_iam_terraform_state_test" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_vpc_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_alb_cdn_cert_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_ssm_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_logs_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_kms_key_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_redis_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_postgres_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_s3_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_opensearch_access" {
-  command = plan
-
-}
-
-run "environment_deploy_iam_iam_access" {
-  command = plan
-
 }

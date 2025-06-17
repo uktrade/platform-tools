@@ -38,6 +38,7 @@ resource "aws_iam_role_policy" "terraform_state_access" {
 
 data "aws_iam_policy_document" "terraform_state_access" {
   statement {
+    effect = "Allow"
     actions = [
       "s3:ListBucket",
       "s3:GetObject",
@@ -50,6 +51,7 @@ data "aws_iam_policy_document" "terraform_state_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "kms:ListKeys",
       "kms:Decrypt",
@@ -61,6 +63,7 @@ data "aws_iam_policy_document" "terraform_state_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "dynamodb:DescribeTable",
       "dynamodb:GetItem",
@@ -82,6 +85,7 @@ resource "aws_iam_role_policy" "vpc_access" {
 
 data "aws_iam_policy_document" "vpc_access" {
   statement {
+    effect = "Allow"
     actions = [
       "ec2:DescribeVpcs",
       "ec2:DescribeSubnets",
@@ -94,6 +98,7 @@ data "aws_iam_policy_document" "vpc_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "ec2:DescribeVpcAttribute",
       "ec2:CreateSecurityGroup"
@@ -104,6 +109,7 @@ data "aws_iam_policy_document" "vpc_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "ec2:CreateSecurityGroup",
       "ec2:CreateTags",
@@ -132,6 +138,7 @@ resource "aws_iam_role_policy" "ssm_access" {
 
 data "aws_iam_policy_document" "ssm_access" {
   statement {
+    effect = "Allow"
     actions = [
       "ssm:DescribeParameters"
     ]
@@ -141,6 +148,7 @@ data "aws_iam_policy_document" "ssm_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "ssm:PutParameter",
       "ssm:GetParameter",
@@ -159,6 +167,7 @@ data "aws_iam_policy_document" "ssm_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "ssm:GetParameter",
       "ssm:GetParameters"
@@ -179,6 +188,7 @@ resource "aws_iam_role_policy" "logs_access" {
 
 data "aws_iam_policy_document" "logs_access" {
   statement {
+    effect = "Allow"
     actions = [
       "cloudwatch:GetDashboard",
       "cloudwatch:PutDashboard",
@@ -190,6 +200,7 @@ data "aws_iam_policy_document" "logs_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "resource-groups:GetGroup",
       "resource-groups:CreateGroup",
@@ -205,6 +216,7 @@ data "aws_iam_policy_document" "logs_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "applicationinsights:CreateApplication",
       "applicationinsights:TagResource",
@@ -218,6 +230,7 @@ data "aws_iam_policy_document" "logs_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "logs:DescribeResourcePolicies",
       "logs:PutResourcePolicy",
@@ -230,6 +243,7 @@ data "aws_iam_policy_document" "logs_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "logs:PutSubscriptionFilter"
     ]
@@ -240,6 +254,7 @@ data "aws_iam_policy_document" "logs_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "logs:PutRetentionPolicy",
       "logs:ListTagsLogGroup",
@@ -264,6 +279,7 @@ data "aws_iam_policy_document" "logs_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "cloudformation:ListExports"
     ]
@@ -280,6 +296,7 @@ resource "aws_iam_role_policy" "kms_key_access" {
 
 data "aws_iam_policy_document" "kms_key_access" {
   statement {
+    effect = "Allow"
     actions = [
       "kms:CreateKey",
       "kms:ListAliases"
@@ -290,6 +307,7 @@ data "aws_iam_policy_document" "kms_key_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "kms:*"
     ]
@@ -299,6 +317,7 @@ data "aws_iam_policy_document" "kms_key_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "kms:CreateAlias",
       "kms:DeleteAlias"
@@ -318,6 +337,7 @@ resource "aws_iam_role_policy" "iam_access" {
 
 data "aws_iam_policy_document" "iam_access" {
   statement {
+    effect = "Allow"
     actions = [
       "iam:*"
     ]
@@ -334,29 +354,35 @@ data "aws_iam_policy_document" "iam_access" {
   }
 
   statement {
-    sid = "AllowUpdatingSharedS3MigrationRoleTrustPolicy"
+    sid    = "AllowUpdatingPostgresLambdaRoleTrustPolicy"
+    effect = "Allow"
     actions = [
       "iam:UpdateAssumeRolePolicy"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-S3MigrationRole"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-*-lambda-role"
     ]
   }
 
   statement {
-    sid = "AllowUpdatingPostgresLambdaRoleTrustPolicy"
-    actions = [
-      "iam:UpdateAssumeRolePolicy"
-    ]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-*-lambda-role"]
-  }
-
-  statement {
+    effect = "Allow"
     actions = [
       "iam:GetPolicy",
       "iam:GetPolicyVersion"
     ]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/*"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:ListAccountAliases"
+    ]
+    resources = [
+      "*"
+    ]
   }
 }
 
@@ -375,13 +401,17 @@ resource "aws_iam_policy" "alb_cdn_cert_access" {
 
 data "aws_iam_policy_document" "alb_cdn_cert_access" {
   statement {
+    effect = "Allow"
     actions = [
       "sts:AssumeRole"
     ]
-    resources = ["arn:aws:iam::${local.dns_account_id}:role/environment-pipeline-assumed-role"]
+    resources = [
+      "arn:aws:iam::${local.dns_account_id}:role/environment-pipeline-assumed-role"
+    ]
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:DescribeTargetGroups",
       "elasticloadbalancing:DescribeTargetGroupAttributes",
@@ -401,6 +431,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:CreateTargetGroup",
       "elasticloadbalancing:AddTags",
@@ -413,6 +444,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:CreateLoadBalancer",
       "elasticloadbalancing:AddTags",
@@ -428,6 +460,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "elasticloadbalancing:AddTags",
       "elasticloadbalancing:ModifyListener"
@@ -438,6 +471,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "cloudfront:ListCachePolicies",
       "cloudfront:GetCachePolicy"
@@ -448,6 +482,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "acm:RequestCertificate",
       "acm:AddTagsToCertificate",
@@ -461,6 +496,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "acm:ListCertificates",
     ]
@@ -481,7 +517,9 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "lambda:AddPermission",
       "lambda:DeleteFunction"
     ]
-    resources = ["arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.application}-${var.environment}-origin-secret-rotate"]
+    resources = [
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${var.environment}-origin-secret-rotate"
+    ]
   }
 
   statement {
@@ -508,7 +546,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "wafv2:AssociateWebACL"
     ]
     resources = [
-      "arn:aws:wafv2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:regional/webacl/*/*"
+      "arn:aws:wafv2:${local.account_region}:regional/webacl/*/*"
     ]
   }
 
@@ -519,7 +557,7 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "wafv2:CreateWebACL"
     ]
     resources = [
-      "arn:aws:wafv2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:regional/managedruleset/*/*"
+      "arn:aws:wafv2:${local.account_region}:regional/managedruleset/*/*"
     ]
   }
 
@@ -538,7 +576,9 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
       "secretsmanager:PutSecretValue",
       "secretsmanager:RotateSecret"
     ]
-    resources = ["arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.application}-${var.environment}-origin-verify-header-secret-*"]
+    resources = [
+      "arn:aws:secretsmanager:${local.account_region}:secret:${var.application}-${var.environment}-origin-verify-header-secret-*"
+    ]
   }
 
   statement {
@@ -546,7 +586,9 @@ data "aws_iam_policy_document" "alb_cdn_cert_access" {
     actions = [
       "iam:TagRole"
     ]
-    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-origin-secret-rotate-role"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-origin-secret-rotate-role"
+    ]
   }
 }
 
@@ -565,6 +607,7 @@ resource "aws_iam_policy" "redis_access" {
 
 data "aws_iam_policy_document" "redis_access" {
   statement {
+    effect = "Allow"
     actions = [
       "elasticache:CreateCacheSubnetGroup",
       "elasticache:AddTagsToResource",
@@ -579,6 +622,7 @@ data "aws_iam_policy_document" "redis_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "elasticache:AddTagsToResource",
       "elasticache:CreateReplicationGroup",
@@ -596,6 +640,7 @@ data "aws_iam_policy_document" "redis_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "elasticache:DescribeCacheClusters"
     ]
@@ -631,6 +676,7 @@ resource "aws_iam_policy" "postgres_access" {
 
 data "aws_iam_policy_document" "postgres_access" {
   statement {
+    effect = "Allow"
     actions = [
       "iam:PassRole"
     ]
@@ -641,6 +687,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "iam:*"
     ]
@@ -651,6 +698,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "lambda:GetFunction",
       "lambda:InvokeFunction",
@@ -667,6 +715,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "lambda:GetLayerVersion"
     ]
@@ -676,6 +725,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "rds:CreateDBParameterGroup",
       "rds:AddTagsToResource",
@@ -693,6 +743,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "rds:CreateDBSubnetGroup",
       "rds:AddTagsToResource",
@@ -707,6 +758,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "rds:DescribeDBInstances"
     ]
@@ -716,6 +768,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "rds:CreateDBInstance",
       "rds:AddTagsToResource",
@@ -727,6 +780,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "secretsmanager:*",
       "kms:*"
@@ -738,7 +792,8 @@ data "aws_iam_policy_document" "postgres_access" {
 
   # Data copy
   statement {
-    sid = "AllowTaskDefinitionsRead"
+    sid    = "AllowTaskDefinitionsRead"
+    effect = "Allow"
     actions = [
       "ecs:ListTaskDefinitionFamilies",
       "ecs:ListTaskDefinitions",
@@ -748,7 +803,8 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
-    sid = "AllowRegister"
+    sid    = "AllowRegister"
+    effect = "Allow"
     actions = [
       "ecs:RegisterTaskDefinition",
     ]
@@ -759,7 +815,8 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
-    sid = "AllowDeregister"
+    sid    = "AllowDeregister"
+    effect = "Allow"
     actions = [
       "ecs:DeregisterTaskDefinition"
     ]
@@ -769,6 +826,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "codepipeline:CreatePipeline",
       "codepipeline:DeletePipeline",
@@ -784,6 +842,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "codebuild:CreateProject",
       "codebuild:BatchGetProjects",
@@ -796,6 +855,7 @@ data "aws_iam_policy_document" "postgres_access" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "scheduler:CreateSchedule",
       "scheduler:UpdateSchedule",
@@ -826,15 +886,7 @@ resource "aws_iam_policy" "s3_access" {
 
 data "aws_iam_policy_document" "s3_access" {
   statement {
-    actions = [
-      "iam:ListAccountAliases"
-    ]
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
+    effect = "Allow"
     actions = [
       "s3:*"
     ]
@@ -859,6 +911,7 @@ resource "aws_iam_policy" "opensearch_access" {
 
 data "aws_iam_policy_document" "opensearch_access" {
   statement {
+    effect = "Allow"
     actions = [
       "es:CreateElasticsearchDomain",
       "es:AddTags",
@@ -882,28 +935,5 @@ data "aws_iam_policy_document" "opensearch_access" {
       "*"
     ]
     sid = "AllowOpensearchListVersions"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "attach_new_policy" {
-  role       = aws_iam_role.environment_pipeline_deploy.name
-  policy_arn = aws_iam_policy.new_access.arn
-}
-
-resource "aws_iam_policy" "new_access" {
-  name        = "new-access"
-  path        = "/${var.application}/codebuild/"
-  description = "Allow ${var.application} codebuild job to manage roles"
-  policy      = data.aws_iam_policy_document.new_access.json
-}
-
-data "aws_iam_policy_document" "new_access" {
-  statement {
-    actions = [
-      "es:*"
-    ]
-    resources = [
-      "*"
-    ]
   }
 }

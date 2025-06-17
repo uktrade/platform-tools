@@ -414,6 +414,10 @@ run "test_iam" {
     condition     = aws_iam_role_policy.codestar_connection_access_for_environment_pipeline.role == "my-app-my-pipeline-environment-pipeline-codepipeline"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codepipeline'"
   }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_pipeline.policy == "{\"Sid\": \"CodestarConnectionAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CodestarConnectionAccess\"}"
+  }
 
   # IAM Role for the codebuild
   assert {
@@ -445,12 +449,20 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_codebuild.policy == "{\"Sid\": \"CodestarConnectionAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CodestarConnectionAccess\"}"
+  }
+  assert {
     condition     = aws_iam_role_policy.log_access_for_environment_codebuild.name == "log-access"
     error_message = "Should be: 'log-access'"
   }
   assert {
     condition     = aws_iam_role_policy.log_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.log_access_for_environment_codebuild.policy == "{\"Sid\": \"LogAccess\"}"
+    error_message = "Should be: {\"Sid\": \"LogAccess\"}"
   }
   assert {
     condition     = aws_iam_role_policy.ssm_access_for_environment_codebuild.name == "ssm-access"
@@ -461,12 +473,20 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   assert {
+    condition     = aws_iam_role_policy.ssm_access_for_environment_codebuild.policy == "{\"Sid\": \"SSMAccess\"}"
+    error_message = "Should be: {\"Sid\": \"SSMAccess\"}"
+  }
+  assert {
     condition     = aws_iam_role_policy.codepipeline_access_for_environment_codebuild.name == "codepipeline-access"
     error_message = "Should be: 'codepipeline-access'"
   }
   assert {
     condition     = aws_iam_role_policy.codepipeline_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codepipeline_access_for_environment_codebuild.policy == "{\"Sid\": \"CodepipelineAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CodepipelineAccess\"}"
   }
   assert {
     condition     = aws_iam_role_policy.environment_deploy_role_access_for_environment_codebuild.name == "environment-deploy-role-access"
@@ -477,12 +497,20 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   assert {
+    condition     = aws_iam_role_policy.environment_deploy_role_access_for_environment_codebuild.policy == "{\"Sid\": \"EnvDeployRoleAccess\"}"
+    error_message = "Should be: {\"Sid\": \"EnvDeployRoleAccess\"}"
+  }
+  assert {
     condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.name == "copilot-access"
     error_message = "Should be: 'copilot-access'"
   }
   assert {
     condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.policy == "{\"Sid\": \"CopilotAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CopilotAccess\"}"
   }
 }
 
@@ -700,7 +728,6 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected resources"
   }
-
   assert {
     condition     = data.aws_iam_policy_document.copilot_access.statement[1].effect == "Allow"
     error_message = "Should be: Allow"
@@ -725,7 +752,6 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected resources"
   }
-
   assert {
     condition     = data.aws_iam_policy_document.copilot_access.statement[2].effect == "Allow"
     error_message = "Should be: Allow"
@@ -742,7 +768,6 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected resources"
   }
-
   assert {
     condition     = data.aws_iam_policy_document.copilot_access.statement[3].effect == "Allow"
     error_message = "Should be: Allow"
@@ -760,7 +785,6 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected resources"
   }
-
   assert {
     condition     = data.aws_iam_policy_document.copilot_access.statement[4].effect == "Allow"
     error_message = "Should be: Allow"
@@ -775,7 +799,6 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected resources"
   }
-
   assert {
     condition     = data.aws_iam_policy_document.copilot_access.statement[5].effect == "Allow"
     error_message = "Should be: Allow"
