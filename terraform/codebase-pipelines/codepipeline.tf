@@ -92,7 +92,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
+        for_each = coalesce(stage.value.requires_approval, false) ? [1] : [] #TODO requires_cache_invalidation variable needs resolving
         content {
           name      = "InvalidateCache-${stage.value.name}"
           category         = "Build"
@@ -101,12 +101,12 @@ resource "aws_codepipeline" "codebase_pipeline" {
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = 3 # needs to be dynamic
+          run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
 
           configuration = {
             ProjectName = aws_codebuild_project.invalidate_cache.name
             EnvironmentVariables : jsonencode([
-              { name : "CONFIG_JSON", value : var.application }, # cache invalidation object
+              { name : "CONFIG_JSON", value : var.application }, #TODO pass in cache invalidation object
             ])
           }
         }
