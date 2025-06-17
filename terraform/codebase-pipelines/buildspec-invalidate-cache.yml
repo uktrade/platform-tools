@@ -15,7 +15,12 @@ phases:
       # Need to find out how many distributions should be touched
       - set -e
       - export CONFIG_JSON='{"api.kate.demodjango.uktrade.digital": {"paths": ["a/*", "b/*"]}, "web.kate.demodjango.uktrade.digital": {}'
-      - export PATHS="/secondary-service/"      
+
+      #- loop through domains:
+      #- for each domain get associated PATHS from CONFIG_JSON using jq
+      #- DOMAIN="api.kate.demodjango.uktrade.digital"
+      #- PATHS="a/* b/*"
+      - invalidate-cache.sh ${DOMAIN} ${PATHS}
 
   post_build:
     commands:
