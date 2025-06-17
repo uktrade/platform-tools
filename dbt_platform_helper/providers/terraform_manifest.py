@@ -41,7 +41,7 @@ class TerraformManifestProvider:
         platform_config: dict,
         env: str,
         platform_helper_version: str,
-        environment_terraform_module_path: str = None,
+        module_path_override: str = None,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(env, platform_config)
@@ -54,9 +54,7 @@ class TerraformManifestProvider:
         self._add_header(terraform)
         self._add_environment_locals(terraform, application_name)
         self._add_backend(terraform, platform_config, account, state_key_suffix)
-        self._add_extensions_module(
-            terraform, platform_helper_version, env, environment_terraform_module_path
-        )
+        self._add_extensions_module(terraform, platform_helper_version, env, module_path_override)
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
@@ -143,11 +141,10 @@ class TerraformManifestProvider:
     def _add_extensions_module(
         terraform: dict, platform_helper_version: str, env: str, module_path_override: str = None
     ):
-        if module_path_override and module_path_override.strip():
-            source = module_path_override
-        else:
-            source = f"git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
-
+        source = (
+            module_path_override
+            or f"git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
+        )
         terraform["module"] = {
             "extensions": {
                 "source": source,
