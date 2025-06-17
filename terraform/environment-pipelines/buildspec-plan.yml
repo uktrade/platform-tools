@@ -29,7 +29,7 @@ phases:
       - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
       # Run plan
       - cd terraform/environments/${ENVIRONMENT}
-      # Hack main.tf to point at local copy. TODO: Delete me!
+      # Hack main.tf to point at local copy. TODO: Replace me with the env var for changing the source before generating the terraform above!
       - 'sed -i ''s#source.*https://github.com/uktrade/platform-tools.git.*#source": "../../../platform-tools/terraform/extensions",#'' main.tf.json'
       - terraform init
       - terraform plan -out=plan.tfplan
