@@ -74,9 +74,7 @@ class TestGenerateTerraform:
         if use_environment_variable_platform_helper_version:
             mocks.mock_platform_helper_version_override = "test-branch"
 
-        mocks.mock_environment_variable_provider.get_optional_value.return_value = (
-            module_path_override
-        )
+        mocks.mock_environment_variable_provider.get.return_value = module_path_override
 
         terraform_environment = TerraformEnvironment(**mocks.params())
 

@@ -14,7 +14,7 @@ class ClickIOProvider:
         click.secho(message, fg="magenta")
 
     def debug(self, message: str):
-        debug_value = self.env_provider.get_optional_value("DEBUG")
+        debug_value = self.env_provider.get("DEBUG")
         if debug_value and debug_value.upper() == "TRUE":
             click.secho(message, fg="green")
 

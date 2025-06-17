@@ -19,29 +19,29 @@ class TestEnvironmentVariableProvider:
 
     def test_get_value_returns_value_when_set(self):
         os.environ[self.env_var] = " some-value "
-        assert self.provider.get_value(self.env_var) == "some-value"
+        assert self.provider.get_required(self.env_var) == "some-value"
 
     def test_get_value_raises_exception_when_not_set(self):
         with pytest.raises(PlatformException):
-            self.provider.get_value(self.env_var)
+            self.provider.get_required(self.env_var)
 
     def test_get_value_raises_exception_when_empty(self):
         os.environ[self.env_var] = ""
         with pytest.raises(PlatformException):
-            self.provider.get_value(self.env_var)
+            self.provider.get_required(self.env_var)
 
     def test_get_optional_value_returns_value_when_set(self):
         os.environ[self.env_var] = " optional-value "
-        assert self.provider.get_optional_value(self.env_var) == "optional-value"
+        assert self.provider.get(self.env_var) == "optional-value"
 
     def test_get_optional_value_returns_none_when_not_set(self):
-        assert self.provider.get_optional_value(self.env_var) is None
+        assert self.provider.get(self.env_var) is None
 
     def test_get_value_raises_exception_when_whitespace_only(self):
         os.environ[self.env_var] = "   "
         with pytest.raises(PlatformException):
-            self.provider.get_value(self.env_var)
+            self.provider.get_required(self.env_var)
 
     def test_get_optional_value_returns_none_when_whitespace_only(self):
         os.environ[self.env_var] = "   "
-        assert self.provider.get_optional_value(self.env_var) is None
+        assert self.provider.get(self.env_var) is None

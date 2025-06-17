@@ -33,9 +33,7 @@ class TerraformEnvironment:
         )
         self.platform_helper_version_override = (
             platform_helper_version_override
-            or self.environment_variable_provider.get_optional_value(
-                PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-            )
+            or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
 
     def generate(
@@ -57,7 +55,7 @@ class TerraformEnvironment:
         if self.platform_helper_version_override:
             platform_helper_version_for_template = self.platform_helper_version_override
 
-        module_path_override = self.environment_variable_provider.get_optional_value(
+        module_path_override = self.environment_variable_provider.get(
             ENVIRONMENT_TERRAFORM_MODULE_PATH_OVERRIDE_KEY
         )
 
