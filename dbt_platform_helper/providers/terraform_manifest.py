@@ -215,7 +215,7 @@ class TerraformManifestProvider:
 
     def _write_terraform_json(self, terraform: dict, env_dir: str):
         message = self.file_provider.mkfile(
-            str(Path(env_dir).absolute()),
+            str(Path(env_dir)),
             "main.tf.json",
             json.dumps(terraform, indent=2),
             True,

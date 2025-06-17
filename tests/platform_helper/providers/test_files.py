@@ -4,14 +4,14 @@ from dbt_platform_helper.providers.files import FileProvider
 
 
 @pytest.mark.parametrize(
-    "file_exists, overwrite, expected",
+    "file_exists, overwrite, expected_action",
     [
-        (False, False, "File test_file.txt created"),
-        (False, True, "File test_file.txt created"),
-        (True, True, "File test_file.txt overwritten"),
+        (False, False, "created"),
+        (False, True, "created"),
+        (True, True, "overwritten"),
     ],
 )
-def test_mkfile_creates_or_overrides_the_file(tmp_path, file_exists, overwrite, expected):
+def test_mkfile_creates_or_overrides_the_file(tmp_path, file_exists, overwrite, expected_action):
     filename = "test_file.txt"
     file_path = tmp_path / filename
     if file_exists:
@@ -23,7 +23,7 @@ def test_mkfile_creates_or_overrides_the_file(tmp_path, file_exists, overwrite, 
 
     assert file_path.exists()
     assert file_path.read_text() == contents
-    assert message == expected
+    assert message == f"File {file_path} {expected_action}"
 
 
 def test_mkfile_does_nothing_if_file_already_exists_but_override_is_false(tmp_path):
@@ -46,7 +46,7 @@ def test_mkfile_can_write_to_a_file_in_a_non_existent_directory(tmp_path):
 
     file_path = path / filename
     assert file_path.exists()
-    assert message == "File test_file.txt created"
+    assert message == f"File {file_path} created"
 
 
 def test_delete_file_deletes_the_file(tmp_path):

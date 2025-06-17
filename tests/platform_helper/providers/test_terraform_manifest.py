@@ -1,6 +1,5 @@
 import json
 from importlib.metadata import version
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -38,7 +37,7 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     mock_io.info.assert_called_with("File created")
 
-    assert base_path == str(Path("terraform/codebase-pipelines").absolute())
+    assert base_path == "terraform/codebase-pipelines"
     assert file_path == "main.tf.json"
     assert overwrite
 
@@ -194,7 +193,7 @@ def test_generate_environment_config_creates_file(
     assert messages[1] == "File created"
     mock_file_provider.delete_file.assert_called_with(f"terraform/environments/{env}", "main.tf")
 
-    assert base_path == str(Path(f"terraform/environments/{env}").absolute())
+    assert base_path == f"terraform/environments/{env}"
     assert file_path == "main.tf.json"
     assert overwrite
 
