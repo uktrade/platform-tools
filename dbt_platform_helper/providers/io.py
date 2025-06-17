@@ -9,13 +9,13 @@ from dbt_platform_helper.providers.environment_variable import (
 class ClickIOProvider:
     def __init__(self, env_var_provider=EnvironmentVariableProvider()):
         self.env_var_provider = env_var_provider
+        self.debug_flag = self.env_var_provider.get("DEBUG")
 
     def warn(self, message: str):
         click.secho(message, fg="magenta")
 
     def debug(self, message: str):
-        debug_value = self.env_var_provider.get("DEBUG")
-        if debug_value and debug_value.upper() == "TRUE":
+        if self.debug_flag and self.debug_flag.strip().upper() == "TRUE":
             click.secho(message, fg="green")
 
     def error(self, message: str):

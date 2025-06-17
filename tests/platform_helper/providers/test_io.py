@@ -24,6 +24,28 @@ class TestClickIOProvider:
         io.info("Info.")
         assert "Info." in str(capsys.readouterr())
 
+    @pytest.mark.parametrize(
+        "debug_value, debug_expected",
+        [
+            ("TRUE", True),
+            ("TrUe", True),
+            ("false", False),
+            ("", False),
+            ("   ", False),
+            (None, False),
+        ],
+    )
+    def test_debug_outputs_based_on_debug_flag(self, debug_value, debug_expected, capsys):
+        io = ClickIOProvider()
+        io.debug_flag = debug_value
+        io.debug("Debug Message!")
+
+        captured = capsys.readouterr()
+        if debug_expected:
+            assert "Debug Message!" in captured.out
+        else:
+            assert "Debug Message!" not in captured.out
+
     def test_input(self):
         mock_input = StringIO("web")
         with patch("sys.stdin", mock_input):
@@ -128,37 +150,3 @@ class TestClickIOProviderProcessMessages:
                 call("info_1\ninfo_2"),
             ]
         )
-
-    @patch("dbt_platform_helper.providers.io.click.secho")
-    def test_debug_prints_when_debug_env_true(self, mock_echo):
-        with patch(
-            "dbt_platform_helper.providers.environment_variable.os.environ", {"DEBUG": "tRuE"}
-        ):
-            io = ClickIOProvider()
-            io.debug("Debug Message!")
-            mock_echo.assert_called_once_with("Debug Message!", fg="green")
-
-    @patch("dbt_platform_helper.providers.io.click.secho")
-    def test_debug_does_not_print_when_debug_env_false(self, mock_echo):
-        with patch(
-            "dbt_platform_helper.providers.environment_variable.os.environ", {"DEBUG": "false"}
-        ):
-            io = ClickIOProvider()
-            io.debug("Debug Message!")
-            mock_echo.assert_not_called()
-
-    @patch("dbt_platform_helper.providers.io.click.secho")
-    def test_debug_does_not_print_when_debug_env_missing(self, mock_echo):
-        with patch("dbt_platform_helper.providers.environment_variable.os.environ", {}):
-            io = ClickIOProvider()
-            io.debug("Debug Message!")
-            mock_echo.assert_not_called()
-
-    @patch("dbt_platform_helper.providers.io.click.secho")
-    def test_debug_does_not_print_when_debug_env_empty(self, mock_echo):
-        with patch(
-            "dbt_platform_helper.providers.environment_variable.os.environ", {"DEBUG": "  "}
-        ):
-            io = ClickIOProvider()
-            io.debug("Debug Message!")
-            mock_echo.assert_not_called()
