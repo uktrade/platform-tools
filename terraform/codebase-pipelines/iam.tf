@@ -12,24 +12,12 @@ resource "aws_iam_role" "codebase_image_build" {
 data "aws_iam_policy_document" "cache_invalidation" {
   statement {
     effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["codebuild.amazonaws.com"]
-    }
-
     actions = [
       "cloudfront:CreateInvalidation",
-      "cloudfront:CreateBatchInvalidation",
     ]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values = [
-        "arn:aws:cloudfront::*:cache-policy/*"
-      ]
-    }
+    resources = [
+      "arn:aws:cloudfront::*:cache-policy/*"
+    ]
   }
 }
 
@@ -50,6 +38,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       variable = "aws:SourceArn"
       values = compact([
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-invalidate-cache",
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
       ])
     }
@@ -324,6 +313,7 @@ resource "aws_iam_role" "codebase_deploy" {
   tags               = local.tags
 }
 
+# TODO This should be dynamic - only created when necessary
 resource "aws_iam_role_policy" "cache_invalidation" {
   name   = "cache-invalidation"
   role   = aws_iam_role.codebase_deploy.name

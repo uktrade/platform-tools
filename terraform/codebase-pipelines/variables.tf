@@ -35,7 +35,7 @@ variable "pipelines" {
         {
           name              = string
           requires_approval = optional(bool)
-          invalidate_cache = any
+          invalidate_cache = optional(any)
         }
       ))
     }

@@ -42,31 +42,6 @@ resource "aws_codepipeline" "codebase_pipeline" {
     }
   }
 
-  # dynamic "stage" {
-  #   # for_each = local.cache_invalidation_stages_map[each.value.environments.name]
-  #   for_each = each.value.environments
-  #   content {
-  #     name = "Invalidate-cache-${each.environment_name}"
-  #     on_failure {
-  #       result = "ROLLBACK"
-  #     }
-
-  #     action {
-  #       name            = "InvalidateCache"
-  #       category        = "Build"
-  #       owner           = "AWS"
-  #       provider        = "CodeBuild"
-  #       version         = "1"
-  #       input_artifacts = ["install-test-tools-output"]
-  #       run_order       = 4
-  #       configuration = {
-  #         ProjectName = aws_codebuild_project.invalidate_cache[each.key].name
-  #         EnvironmentVariables : jsonencode{"PATHS":paths}
-  #       }
-  #     }
-  #   }
-  # }
-
   dynamic "stage" {
     for_each = each.value.environments
     content {
@@ -126,7 +101,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = action.value.order + 1
+          run_order        = 3 # needs to be dynamic
 
           configuration = {
             ProjectName = aws_codebuild_project.invalidate_cache.name
