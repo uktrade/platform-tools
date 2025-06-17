@@ -14,7 +14,7 @@ phases:
     commands:
       # Need to find out how many distributions should be touched
       - set -e
-      - CONFIG_JSON="TEST"
+      - CONFIG_JSON='"{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]}"'
       - invalidate-cache.sh ${CONFIG_JSON}
 
   post_build:
