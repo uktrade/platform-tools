@@ -42,6 +42,31 @@ resource "aws_codepipeline" "codebase_pipeline" {
     }
   }
 
+  # dynamic "stage" {
+  #   # for_each = local.cache_invalidation_stages_map[each.value.environments.name]
+  #   for_each = each.value.environments
+  #   content {
+  #     name = "Invalidate-cache-${each.environment_name}"
+  #     on_failure {
+  #       result = "ROLLBACK"
+  #     }
+
+  #     action {
+  #       name            = "InvalidateCache"
+  #       category        = "Build"
+  #       owner           = "AWS"
+  #       provider        = "CodeBuild"
+  #       version         = "1"
+  #       input_artifacts = ["install-test-tools-output"]
+  #       run_order       = 4
+  #       configuration = {
+  #         ProjectName = aws_codebuild_project.invalidate_cache[each.key].name
+  #         EnvironmentVariables : jsonencode{"PATHS":paths}
+  #       }
+  #     }
+  #   }
+  # }
+
   dynamic "stage" {
     for_each = each.value.environments
     content {
@@ -86,6 +111,27 @@ resource "aws_codepipeline" "codebase_pipeline" {
               { name : "REPOSITORY_URL", value : local.repository_url },
               { name : "SERVICE", value : action.value.name },
               { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+            ])
+          }
+        }
+      }
+
+      dynamic "action" {
+        for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
+        content {
+          name      = "Invalidate-Cache-${stage.value.name}"
+          category         = "Build"
+          owner            = "AWS"
+          provider         = "CodeBuild"
+          input_artifacts  = ["deploy_source"]
+          output_artifacts = []
+          version          = "1"
+          run_order        = action.value.order + 1
+
+          configuration = {
+            ProjectName = aws_codebuild_project.invalidate_cache.name
+            EnvironmentVariables : jsonencode([
+              { name : "CONFIG_JSON", value : var.application }, # cache invalidation object
             ])
           }
         }
