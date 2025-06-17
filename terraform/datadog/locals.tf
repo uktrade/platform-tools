@@ -48,9 +48,19 @@ EOF
   db_list = ["postgres"]
   
 # Map of 'services_to_monitor' to make it easier to iterate over when creating the datadog_software_catalog resources
+  # use the coalesce function to provide a fallback value to use if backend service is null from platform-config.yml
+  # i.e. this example where celery-worker is specified without backend services
+  # services_to_monitor:
+  #   web:
+  #   - redis
+  #   ...
+  #   celery-worker:
+  #   api:
+  #   - nginx
+  #   ....
   services_to_monitor_map = merge([
     for front_service, back_services in var.config.services_to_monitor : {
-      for back_service in back_services :
+      for back_service in coalesce(back_services, []) : 
         "${front_service}-${back_service}" => {
           "back_service"   = back_service
           "front_service" = front_service
