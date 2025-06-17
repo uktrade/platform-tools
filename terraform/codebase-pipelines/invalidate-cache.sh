@@ -2,6 +2,12 @@
 # PATHS will be passed in as an argument
 # PATHS="/frontend/* /admin/*"
 
+CONFIG=${1}
+
+CONFIG='"{\"foo\":1, \"bar\":2, \"baz\":3}"'
+
+DOMAINS=$(echo $CONFIG | jq -r 'fromjson | keys[]')
+
 DISTRIBUTION=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain ${1} '.[] | select(.Aliases.Items[0] == $domain) | .Id')
 
 echo -e "\nInvalidating the cache for paths ${2}\n"
