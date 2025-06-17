@@ -1,5 +1,7 @@
-from dbt_platform_helper.constants import ENVIRONMENT_TERRAFORM_MODULE_PATH_OVERRIDE_KEY
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+from dbt_platform_helper.constants import (
+    TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.environment_variable import (
     EnvironmentVariableProvider,
@@ -55,13 +57,13 @@ class TerraformEnvironment:
         if self.platform_helper_version_override:
             platform_helper_version_for_template = self.platform_helper_version_override
 
-        module_path_override = self.environment_variable_provider.get(
-            ENVIRONMENT_TERRAFORM_MODULE_PATH_OVERRIDE_KEY
+        module_source_override = self.environment_variable_provider.get(
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         )
 
         self.manifest_provider.generate_environment_config(
             config,
             environment_name,
             platform_helper_version_for_template,
-            module_path_override,
+            module_source_override,
         )

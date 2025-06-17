@@ -7,14 +7,14 @@ from dbt_platform_helper.providers.environment_variable import (
 
 
 class ClickIOProvider:
-    def __init__(self, env_provider=None):
-        self.env_provider = env_provider or EnvironmentVariableProvider()
+    def __init__(self, env_var_provider=EnvironmentVariableProvider()):
+        self.env_var_provider = env_var_provider
 
     def warn(self, message: str):
         click.secho(message, fg="magenta")
 
     def debug(self, message: str):
-        debug_value = self.env_provider.get("DEBUG")
+        debug_value = self.env_var_provider.get("DEBUG")
         if debug_value and debug_value.upper() == "TRUE":
             click.secho(message, fg="green")
 

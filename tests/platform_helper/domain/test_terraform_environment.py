@@ -59,14 +59,14 @@ class TestGenerateTerraform:
             terraform_environment.generate("not-an-environment")
 
     @pytest.mark.parametrize(
-        "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_path_override",
+        "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source_override",
         [(False, "14.0.0", None), (True, "test-branch", "../local/path/")],
     )
     def test_generate_success(
         self,
         use_environment_variable_platform_helper_version,
         expected_platform_helper_version,
-        module_path_override,
+        module_source_override,
     ):
         mocks = GenerateTerraformMocks()
         environment_name = "test"
@@ -74,7 +74,7 @@ class TestGenerateTerraform:
         if use_environment_variable_platform_helper_version:
             mocks.mock_platform_helper_version_override = "test-branch"
 
-        mocks.mock_environment_variable_provider.get.return_value = module_path_override
+        mocks.mock_environment_variable_provider.get.return_value = module_source_override
 
         terraform_environment = TerraformEnvironment(**mocks.params())
 
@@ -84,5 +84,5 @@ class TestGenerateTerraform:
             VALID_ENRICHED_CONFIG,
             environment_name,
             expected_platform_helper_version,
-            module_path_override,
+            module_source_override,
         )

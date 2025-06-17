@@ -9,39 +9,34 @@ from dbt_platform_helper.providers.environment_variable import (
 
 
 class TestEnvironmentVariableProvider:
-    def setup_method(self):
-        self.provider = EnvironmentVariableProvider()
-        self.env_var = "TEST_ENV_VAR"
 
-    # Unset self.env_var after each test. Avoid KeyError by setting None as default when self.env_var is not set.
+    env_var = "TEST_ENV_VAR"
+
+    # Unset self.env_var after each test
     def teardown_method(self):
-        os.environ.pop(self.env_var, None)
+        del os.environ[self.env_var]
 
-    def test_get_value_returns_value_when_set(self):
-        os.environ[self.env_var] = " some-value "
-        assert self.provider.get_required(self.env_var) == "some-value"
+    @pytest.mark.parametrize(
+        "value, expected_value",
+        [
+            (" some-value ", "some-value"),
+            ("optional-value", "optional-value"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "method", [EnvironmentVariableProvider.get, EnvironmentVariableProvider.get_required]
+    )
+    def test_valid_values_return_stripped_values(self, method, value, expected_value):
+        os.environ[self.env_var] = value
+        assert method(self.env_var) == expected_value
 
-    def test_get_value_raises_exception_when_not_set(self):
+    @pytest.mark.parametrize("value", ["", "   ", " \n "])
+    def test_get_required_raises_exception_on_invalid_values(self, value):
+        os.environ[self.env_var] = value
         with pytest.raises(PlatformException):
-            self.provider.get_required(self.env_var)
+            EnvironmentVariableProvider.get_required(self.env_var)
 
-    def test_get_value_raises_exception_when_empty(self):
-        os.environ[self.env_var] = ""
-        with pytest.raises(PlatformException):
-            self.provider.get_required(self.env_var)
-
-    def test_get_optional_value_returns_value_when_set(self):
-        os.environ[self.env_var] = " optional-value "
-        assert self.provider.get(self.env_var) == "optional-value"
-
-    def test_get_optional_value_returns_none_when_not_set(self):
-        assert self.provider.get(self.env_var) is None
-
-    def test_get_value_raises_exception_when_whitespace_only(self):
-        os.environ[self.env_var] = "   "
-        with pytest.raises(PlatformException):
-            self.provider.get_required(self.env_var)
-
-    def test_get_optional_value_returns_none_when_whitespace_only(self):
-        os.environ[self.env_var] = "   "
-        assert self.provider.get(self.env_var) is None
+    @pytest.mark.parametrize("value", ["", "   "])
+    def test_get_returns_none_on_invalid_values(self, value):
+        os.environ[self.env_var] = value
+        assert EnvironmentVariableProvider.get(self.env_var) is None
