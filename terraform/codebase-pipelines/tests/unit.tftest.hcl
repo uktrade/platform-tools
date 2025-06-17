@@ -93,6 +93,13 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline
+  values = {
+    json = "{\"Sid\": \"AllowUseCodestarConnection\"}"
+  }
+}
+
 variables {
   env_config = {
     "*" = {
@@ -155,7 +162,7 @@ variables {
     copilot-pipeline    = "my-codebase"
     copilot-application = "my-app"
   }
-
+  platform_tools_version = "1.2.3"
   slack_channel = "/fake/slack/channel"
 }
 
@@ -735,6 +742,21 @@ run "test_iam" {
   assert {
     condition     = aws_iam_role_policy.deploy_ssm_access.role == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
+  }
+
+  assert {
+    condition     = aws_iam_role_policy.codestar_access_for_codebase_pipeline.name == "codestar-access"
+    error_message = "Should be: 'codestar-access'"
+  }
+
+  assert {
+    condition     = aws_iam_role_policy.codestar_access_for_codebase_pipeline.role == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
+  }
+
+  assert {
+    condition     = aws_iam_role_policy.codestar_access_for_codebase_pipeline.policy == "{\"Sid\": \"AllowUseCodestarConnection\"}"
+    error_message = "Should be: '{\"Sid\": \"AllowUseCodestarConnection\"}'"
   }
 
   # CodePipeline
