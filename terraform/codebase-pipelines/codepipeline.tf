@@ -94,7 +94,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       dynamic "action" {
         for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
         content {
-          name      = "Invalidate-Cache-${stage.value.name}"
+          name      = "InvalidateCache-${stage.value.name}"
           category         = "Build"
           owner            = "AWS"
           provider         = "CodeBuild"
