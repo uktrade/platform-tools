@@ -35,11 +35,7 @@ variable "pipelines" {
         {
           name              = string
           requires_approval = optional(bool)
-          invalidate_cache = optional(object({
-            before = optional(list(string))
-            after = optional(list(string))
-            paths = string
-          }))
+          invalidate_cache = any
         }
       ))
     }
