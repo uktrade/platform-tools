@@ -163,7 +163,7 @@ variables {
     copilot-application = "my-app"
   }
   platform_tools_version = "1.2.3"
-  slack_channel = "/fake/slack/channel"
+  slack_channel          = "/fake/slack/channel"
 }
 
 run "test_ecr" {
@@ -1144,29 +1144,29 @@ run "test_codebuild_deploy" {
   }
 
   assert {
-    condition = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
     error_message = "Should be: ENV_CONFIG"
   }
   assert {
-    condition = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
     error_message = "Incorrect value"
   }
 
   assert {
-    condition = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].name == "CODESTAR_CONNECTION_ARN"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].name == "CODESTAR_CONNECTION_ARN"
     error_message = "Should be: PLATFORM_HELPER_VERSION"
   }
   assert {
-    condition = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].value == "ConnectionArn"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].value == "ConnectionArn"
     error_message = "Should be: ConnectionArn"
   }
 
   assert {
-    condition = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].name == "PLATFORM_HELPER_VERSION"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].name == "PLATFORM_HELPER_VERSION"
     error_message = "Should be: PLATFORM_HELPER_VERSION"
   }
   assert {
-    condition = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].value == "1.2.3"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].value == "1.2.3"
     error_message = "Should be: 1.2.3"
   }
 
