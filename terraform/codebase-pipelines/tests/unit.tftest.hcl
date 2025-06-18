@@ -101,6 +101,10 @@ variables {
           name = "sandbox"
           id   = "000123456789"
         }
+        dns = {
+          name = "dev"
+          id   = "111123456789"
+        }
       }
     },
     "dev"     = null,
