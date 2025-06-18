@@ -8,15 +8,46 @@ resource "aws_iam_role" "codebase_image_build" {
   tags               = local.tags
 }
 
+data "aws_iam_policy_document" "dns_account_assume_role" {
+  # for_each = toset(local.cdn_enabled ? [""] : [])
+  statement {
+    actions = [
+      "sts:AssumeRole"
+    ]
+    resources = ["arn:aws:iam::${var.env_config.accounts.dns.id}:role/environment-pipeline-assumed-role"]
+  }
+}
+
+# Assume DNS account role
+resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
+  # for_each = toset(local.cdn_enabled ? [""] : [])
+  name   = "${var.application}-${var.pipeline_name}-dns-account-assume-role-for-codebase-deploy"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.dns_account_assume_role.json
+}
+
 
 data "aws_iam_policy_document" "cache_invalidation" {
+  # for_each = toset(local.cdn_enabled ? [""] : [])
   statement {
+    sid    = "AllowAssumedRoleToDNSAccount"
     effect = "Allow"
+
+    principals {
+      type = "AWS"
+      identifiers = [
+        "arn:aws:iam::${var.dns_account_id}:role/environment-pipeline-assumed-role"
+      ]
+    }
+
+    resources = [
+      "arn:aws:cloudfront::*:cache-policy/*",
+      "*", #TODO narrow this down for cloudfront distributions
+    ]
+    
     actions = [
       "cloudfront:CreateInvalidation",
-    ]
-    resources = [
-      "arn:aws:cloudfront::*:cache-policy/*"
+      "cloudfront:ListDistributions"
     ]
   }
 }
@@ -305,6 +336,16 @@ data "aws_iam_policy_document" "access_artifact_store" {
     ]
   }
 }
+
+resource "aws_secretsmanager_secret_policy" "secret_policy" {
+  for_each   = toset(local.cdn_enabled ? [""] : [])
+  secret_arn = aws_secretsmanager_secret.origin-verify-secret[""].arn
+  policy     = data.aws_iam_policy_document.secret_manager_policy[""].json
+}
+
+
+
+
 
 
 resource "aws_iam_role" "codebase_deploy" {
