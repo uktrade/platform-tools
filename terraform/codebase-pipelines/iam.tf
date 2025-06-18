@@ -337,17 +337,6 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 }
 
-resource "aws_secretsmanager_secret_policy" "secret_policy" {
-  for_each   = toset(local.cdn_enabled ? [""] : [])
-  secret_arn = aws_secretsmanager_secret.origin-verify-secret[""].arn
-  policy     = data.aws_iam_policy_document.secret_manager_policy[""].json
-}
-
-
-
-
-
-
 resource "aws_iam_role" "codebase_deploy" {
   name               = "${var.application}-${var.codebase}-codebase-deploy"
   assume_role_policy = data.aws_iam_policy_document.assume_codebuild_role.json
