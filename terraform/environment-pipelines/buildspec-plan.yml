@@ -35,17 +35,32 @@ phases:
           export PLATFORM_HELPER_VERSION_OVERRIDE=""
         fi
 
+      # Assume pipeline manager role
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::891377058512:role/demodjango-environment-pipeline-manager-role" --role-session-name "${ENVIRONMENT}-environment-pipeline-plan")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Generate and initialise Terraform
+      - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
+      - cd terraform/environments/${ENVIRONMENT}
+      - terraform init
+
+      # Terraform apply environment role changes
+      - terraform apply -auto-approve -target=module.extensions.module.pipeline_iam
+
       # Assume environment specific role
+      - unset AWS_ACCESS_KEY_ID
+      - unset AWS_SECRET_ACCESS_KEY
+      - unset AWS_SESSION_TOKEN
       - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-environment-pipeline-deploy" --role-session-name "${ENVIRONMENT}-environment-pipeline-plan")
       - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
       - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
       - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
       # Terraform plan
-      - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
-      - cd terraform/environments/${ENVIRONMENT}
-      - terraform init
       - terraform plan -out=plan.tfplan
+
   post_build:
     commands:
       - export BUILD_ID="$CODEBUILD_BUILD_ID"
