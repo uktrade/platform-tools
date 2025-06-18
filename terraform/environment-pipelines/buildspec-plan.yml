@@ -14,6 +14,9 @@ phases:
   build:
     commands:
       - set -e
+      - echo "Working on environment ${ENVIRONMENT}"
+
+      # Cancel pending approvals to prevent stale plans being approved
       - echo "Cancelling any pending approvals for ${APPLICATION}-${ENVIRONMENT}-environment-pipeline"
       - PIPELINE_STATE=$(aws codepipeline get-pipeline-state --name "${APPLICATION}-${PIPELINE_NAME}-environment-pipeline")
       - PIPELINE_APPROVAL_EXECID=$(echo $PIPELINE_STATE | jq  --arg stage "Approve-${ENVIRONMENT}" -r '.stageStates[] | select(.stageName == $stage and .latestExecution.status == "InProgress") | .latestExecution.pipelineExecutionId')
@@ -21,17 +24,43 @@ phases:
         if [ -n "${PIPELINE_APPROVAL_EXECID}" ]; then
           aws codepipeline stop-pipeline-execution --pipeline-name "${APPLICATION}-${PIPELINE_NAME}-environment-pipeline" --pipeline-execution-id $PIPELINE_APPROVAL_EXECID --abandon --reason "Abandoning previous pipeline execution pending approval to run terraform plan" 
         fi
+
+      # Send Slack notification
       - echo "Terraform Plan Phase"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting terraform plan phase for the ${ENVIRONMENT} environment."
-      - echo "Working on environment ${ENVIRONMENT}"
+
+      # Override platform helper version if provided
       - |
         if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
           export PLATFORM_HELPER_VERSION_OVERRIDE=""
         fi
+
+      # Assume pipeline manager role
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::891377058512:role/demodjango-environment-pipeline-manager-role" --role-session-name "${ENVIRONMENT}-environment-pipeline-plan")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Generate and initialise Terraform
       - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
       - cd terraform/environments/${ENVIRONMENT}
       - terraform init
+
+      # Terraform apply environment role changes
+      - terraform apply -auto-approve -target=module.extensions.module.pipeline_iam
+
+      # Assume environment specific role
+      - unset AWS_ACCESS_KEY_ID
+      - unset AWS_SECRET_ACCESS_KEY
+      - unset AWS_SESSION_TOKEN
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-environment-pipeline-deploy" --role-session-name "${ENVIRONMENT}-environment-pipeline-plan")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Terraform plan
       - terraform plan -out=plan.tfplan
+
   post_build:
     commands:
       - export BUILD_ID="$CODEBUILD_BUILD_ID"

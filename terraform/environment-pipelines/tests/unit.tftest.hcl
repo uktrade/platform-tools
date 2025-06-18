@@ -25,163 +25,23 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.ec2_read_access
+  target = data.aws_iam_policy_document.ssm_access
   values = {
-    json = "{\"Sid\": \"EC2ReadAccess\"}"
+    json = "{\"Sid\": \"SSMAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.state_bucket_access
+  target = data.aws_iam_policy_document.log_access
   values = {
-    json = "{\"Sid\": \"StateBucketAccess\"}"
+    json = "{\"Sid\": \"LogAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.state_kms_key_access
+  target = data.aws_iam_policy_document.environment_deploy_role_access
   values = {
-    json = "{\"Sid\": \"StateKMSKeyAccess\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.state_dynamo_db_access
-  values = {
-    json = "{\"Sid\": \"StateDynamoDBAccess\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.ssm_read_access
-  values = {
-    json = "{\"Sid\": \"SSMReadAccess\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.dns_account_assume_role
-  values = {
-    json = "{\"Sid\": \"DNSAccountAssumeRole\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.load_balancer
-  values = {
-    json = "{\"Sid\": \"LoadBalancer\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.certificate
-  values = {
-    json = "{\"Sid\": \"Certificate\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.security_group
-  values = {
-    json = "{\"Sid\": \"SecurityGroup\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.ssm_parameter
-  values = {
-    json = "{\"Sid\": \"SSMParameter\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.cloudwatch
-  values = {
-    json = "{\"Sid\": \"Cloudwatch\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.logs
-  values = {
-    json = "{\"Sid\": \"Logs\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.kms_key
-  values = {
-    json = "{\"Sid\": \"KMSKey\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.redis
-  values = {
-    json = "{\"Sid\": \"Redis\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.postgres
-  values = {
-    json = "{\"Sid\": \"Postgres\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.s3
-  values = {
-    json = "{\"Sid\": \"S3\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.ecs
-  values = {
-    json = "{\"Sid\": \"ECS\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.opensearch
-  values = {
-    json = "{\"Sid\": \"OpenSearch\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.cloudformation
-  values = {
-    json = "{\"Sid\": \"CloudFormation\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.copilot_assume_role
-  values = {
-    json = "{\"Sid\": \"Copilot\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.iam
-  values = {
-    json = "{\"Sid\": \"IAM\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.trigger_pipeline
-  values = {
-    json = "{\"Sid\": \"TriggerCodePipeline\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.assume_role_to_trigger_codepipeline_policy_document
-  values = {
-    json = "{\"Sid\": \"AssumeRoleToTriggerCodePipeline\"}"
+    json = "{\"Sid\": \"EnvDeployRoleAccess\"}"
   }
 }
 
@@ -193,74 +53,44 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.codepipeline
+  target = data.aws_iam_policy_document.codestar_connection_access
   values = {
-    json = "{\"Sid\": \"codepipeline\"}"
+    json = "{\"Sid\": \"CodestarConnectionAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.assume_trigger_pipeline
+  target = data.aws_iam_policy_document.codepipeline_access
   values = {
-    json = "{\"Sid\": \"AssumeTriggerPolicy\"}"
+    json = "{\"Sid\": \"CodepipelineAccess\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.assume_role_for_copilot_env_commands_policy_document
+  target = data.aws_iam_policy_document.copilot_access
   values = {
-    json = "{\"Sid\": \"AssumeRoleCopilotCommands\"}"
-  }
-}
-
-override_data {
-  target = data.aws_ssm_parameter.log-destination-arn
-  values = {
-    value = "{\"prod\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_prod\", \"dev\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_dev\"}"
-  }
-}
-
-override_data {
-  target = data.aws_iam_policy_document.origin_secret_rotate_access
-  values = {
-    json = "{\"Sid\": \"OriginSecretRotateAccess\"}"
+    json = "{\"Sid\": \"CopilotAccess\"}"
   }
 }
 
 variables {
-  application   = "my-app"
-  repository    = "my-repository"
-  pipeline_name = "my-pipeline"
+  application       = "my-app"
+  deploy_repository = "my-repository"
+  pipeline_name     = "my-pipeline"
+  environments = {
+    "dev" : null
+    "prod" = {
+      requires_approval = true
+    }
+  }
+
   expected_tags = {
     application         = "my-app"
     copilot-application = "my-app"
     managed-by          = "DBT Platform - Terraform"
   }
 
-  all_pipelines = {
-    my-pipeline = {
-      account             = "sandbox"
-      branch              = ""
-      slack_channel       = ""
-      trigger_on_push     = true
-      pipeline_to_trigger = "triggered-pipeline"
-      environments = {
-        dev = ""
-      }
-    }
-
-    triggered-pipeline = {
-      account         = "prod"
-      branch          = ""
-      slack_channel   = ""
-      trigger_on_push = false
-      environments = {
-        prod = ""
-      }
-    }
-  }
-
-  environment_config = {
+  env_config = {
     "*" = {
       accounts = {
         deploy = {
@@ -272,7 +102,6 @@ variables {
           id   = "000987654321"
         }
       }
-      requires_approval : false
       vpc : "platform-sandbox-dev"
     },
     "dev" = null,
@@ -287,14 +116,8 @@ variables {
           id   = "987654321000"
         }
       }
-      requires_approval = true
       vpc : "platform-sandbox-prod"
     }
-  }
-
-  environments = {
-    "dev" : null
-    "prod" : null
   }
 }
 
@@ -307,8 +130,8 @@ run "test_code_pipeline" {
   }
   # aws_codepipeline.environment_pipeline.role_arn cannot be tested on a plan
   assert {
-    condition     = aws_codepipeline.environment_pipeline.variable[0].name == "SLACK_THREAD_ID"
-    error_message = "Should be: 'SLACK_THREAD_ID'"
+    condition     = aws_codepipeline.environment_pipeline.variable[0].name == "PLATFORM_HELPER_VERSION_OVERRIDE"
+    error_message = "Should be: 'PLATFORM_HELPER_VERSION_OVERRIDE'"
   }
 
   assert {
@@ -317,8 +140,8 @@ run "test_code_pipeline" {
   }
 
   assert {
-    condition     = aws_codepipeline.environment_pipeline.variable[0].description == "This can be set by a triggering pipeline to continue an existing message thread"
-    error_message = "Should be: 'This can be set by a triggering pipeline to continue an existing message thread'"
+    condition     = aws_codepipeline.environment_pipeline.variable[0].description == "Override the platform-helper default version specified in platform-config"
+    error_message = "Should be: 'Override the platform-helper default version specified in platform-config'"
   }
 
   assert {
@@ -455,8 +278,8 @@ run "test_pipeline_trigger_branch" {
   command = plan
 
   variables {
-    branch          = "my-branch"
-    trigger_on_push = true
+    deploy_repository_branch = "my-branch"
+    trigger_on_push          = true
   }
 
   assert {
@@ -585,6 +408,26 @@ run "test_iam" {
     condition     = jsonencode(aws_iam_role.environment_pipeline_codepipeline.tags) == jsonencode(var.expected_tags)
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
+  assert {
+    condition     = aws_iam_role_policy.artifact_store_access_for_environment_pipeline.name == "artifact-store-access"
+    error_message = "Should be: 'artifact-store-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.artifact_store_access_for_environment_pipeline.role == "my-app-my-pipeline-environment-pipeline-codepipeline"
+    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codepipeline'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_pipeline.name == "codestar-connection-access"
+    error_message = "Should be: 'codestar-connection-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_pipeline.role == "my-app-my-pipeline-environment-pipeline-codepipeline"
+    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codepipeline'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_pipeline.policy == "{\"Sid\": \"CodestarConnectionAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CodestarConnectionAccess\"}"
+  }
 
   # IAM Role for the codebuild
   assert {
@@ -595,676 +438,478 @@ run "test_iam" {
     condition     = aws_iam_role.environment_pipeline_codebuild.assume_role_policy == "{\"Sid\": \"AssumeCodebuildRole\"}"
     error_message = "Should be: {\"Sid\": \"AssumeCodebuildRole\"}"
   }
-
-  # Todo: We should be testing the contents of data.aws_iam_policy_document.iam
-
-  # Can't test managed_policy_arns of the environment_pipeline_codebuild role at plan time.
   assert {
     condition     = jsonencode(aws_iam_role.environment_pipeline_codebuild.tags) == jsonencode(var.expected_tags)
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
-
-  # Policy links
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_environment_codepipeline.name == "my-app-my-pipeline-artifact-store-access-for-environment-codepipeline"
-    error_message = "Should be: 'my-app-artifact-store-access-for-environment-codepipeline'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_environment_codepipeline.role == "my-app-my-pipeline-environment-pipeline-codepipeline"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codepipeline'"
-  }
-  # aws_iam_role_policy.artifact_store_access_for_environment_codepipeline.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_environment_codebuild.name == "my-app-my-pipeline-artifact-store-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-artifact-store-access-for-environment-codebuild'"
+    condition     = aws_iam_role_policy.artifact_store_access_for_environment_codebuild.name == "artifact-store-access"
+    error_message = "Should be: 'artifact-store-access'"
   }
   assert {
     condition     = aws_iam_role_policy.artifact_store_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
-  # aws_iam_role_policy.artifact_store_access_for_environment_codebuild.policy cannot be tested on a plan
   assert {
-    condition     = aws_iam_role_policy.log_access_for_environment_codebuild.name == "my-app-my-pipeline-log-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-log-access-for-environment-codebuild'"
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_codebuild.name == "codestar-connection-access"
+    error_message = "Should be: 'codestar-connection-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codestar_connection_access_for_environment_codebuild.policy == "{\"Sid\": \"CodestarConnectionAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CodestarConnectionAccess\"}"
+  }
+  assert {
+    condition     = aws_iam_role_policy.log_access_for_environment_codebuild.name == "log-access"
+    error_message = "Should be: 'log-access'"
   }
   assert {
     condition     = aws_iam_role_policy.log_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
-  # aws_iam_role_policy.log_access_for_environment_codebuild.policy cannot be tested on a plan
   assert {
-    condition     = aws_iam_role_policy.state_bucket_access_for_environment_codebuild.name == "my-app-my-pipeline-state-bucket-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-state-bucket-access-for-environment-codebuild'"
+    condition     = aws_iam_role_policy.log_access_for_environment_codebuild.policy == "{\"Sid\": \"LogAccess\"}"
+    error_message = "Should be: {\"Sid\": \"LogAccess\"}"
   }
   assert {
-    condition     = aws_iam_role_policy.state_bucket_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    condition     = aws_iam_role_policy.ssm_access_for_environment_codebuild.name == "ssm-access"
+    error_message = "Should be: 'ssm-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.ssm_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
-  # aws_iam_role_policy.state_bucket_access_for_environment_codebuild.policy cannot be tested on a plan
   assert {
-    condition     = aws_iam_role_policy.state_kms_key_access_for_environment_codebuild.name == "my-app-my-pipeline-state-kms-key-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-state-kms-key-access-for-environment-codebuild'"
+    condition     = aws_iam_role_policy.ssm_access_for_environment_codebuild.policy == "{\"Sid\": \"SSMAccess\"}"
+    error_message = "Should be: {\"Sid\": \"SSMAccess\"}"
   }
   assert {
-    condition     = aws_iam_role_policy.state_kms_key_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    condition     = aws_iam_role_policy.codepipeline_access_for_environment_codebuild.name == "codepipeline-access"
+    error_message = "Should be: 'codepipeline-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.codepipeline_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
-  # aws_iam_role_policy.state_kms_key_access_for_environment_codebuild.policy cannot be tested on a plan
   assert {
-    condition     = aws_iam_role_policy.state_dynamo_db_access_for_environment_codebuild.name == "my-app-my-pipeline-state-dynamo-db-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-state-dynamo-db-access-for-environment-codebuild'"
+    condition     = aws_iam_role_policy.codepipeline_access_for_environment_codebuild.policy == "{\"Sid\": \"CodepipelineAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CodepipelineAccess\"}"
   }
   assert {
-    condition     = aws_iam_role_policy.state_dynamo_db_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    condition     = aws_iam_role_policy.environment_deploy_role_access_for_environment_codebuild.name == "environment-deploy-role-access"
+    error_message = "Should be: 'environment-deploy-role-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.environment_deploy_role_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
-  # aws_iam_role_policy.state_dynamo_db_access_for_environment_codebuild.policy cannot be tested on a plan
   assert {
-    condition     = aws_iam_role_policy.ec2_read_access_for_environment_codebuild.name == "my-app-my-pipeline-ec2-read-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-ec2-read-access-for-environment-codebuild'"
+    condition     = aws_iam_role_policy.environment_deploy_role_access_for_environment_codebuild.policy == "{\"Sid\": \"EnvDeployRoleAccess\"}"
+    error_message = "Should be: {\"Sid\": \"EnvDeployRoleAccess\"}"
   }
   assert {
-    condition     = aws_iam_role_policy.ec2_read_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.name == "copilot-access"
+    error_message = "Should be: 'copilot-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
-  # aws_iam_role_policy.ec2_read_access_for_environment_codebuild.policy cannot be tested on a plan
   assert {
-    condition     = aws_iam_role_policy.ssm_read_access_for_environment_codebuild.name == "my-app-my-pipeline-ssm-read-access-for-environment-codebuild"
-    error_message = "Should be: 'my-app-ssm-read-access-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ssm_read_access_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.ssm_read_access_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.dns_account_assume_role_for_environment_codebuild.name == "my-app-my-pipeline-dns-account-assume-role-for-environment-codebuild"
-    error_message = "Should be: 'my-app-dns-account-assume-role-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.dns_account_assume_role_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.dns_account_assume_role_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_policy.load_balancer.name == "my-app-my-pipeline-pipeline-load-balancer-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.load_balancer.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.load_balancer.description == "Allow my-app codebuild job to access load-balancer resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.load_balancer.policy == "{\"Sid\": \"LoadBalancer\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_role_policy.certificate_for_environment_codebuild.name == "my-app-my-pipeline-certificate-for-environment-codebuild"
-    error_message = "Should be: 'my-app-certificate-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.certificate_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.certificate_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.security_group_for_environment_codebuild.name == "my-app-my-pipeline-security-group-for-environment-codebuild"
-    error_message = "Should be: 'my-app-security-group-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.security_group_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.security_group_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.ssm_parameter_for_environment_codebuild.name == "my-app-my-pipeline-ssm-parameter-for-environment-codebuild"
-    error_message = "Should be: 'my-app-ssm-parameter-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.ssm_parameter_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.ssm_parameter_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.cloudwatch_for_environment_codebuild.name == "my-app-my-pipeline-cloudwatch-for-environment-codebuild"
-    error_message = "Should be: 'my-app-cloudwatch-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.cloudwatch_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.cloudwatch_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.logs_for_environment_codebuild.name == "my-app-my-pipeline-logs-for-environment-codebuild"
-    error_message = "Should be: 'my-app-logs-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.logs_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.logs_for_environment_codebuild.policy cannot be tested on a plan
-
-  assert {
-    condition     = aws_iam_role_policy.kms_key_for_environment_codebuild.name == "my-app-my-pipeline-kms-key-for-environment-codebuild"
-    error_message = "Should be: 'my-app-kms-key-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.kms_key_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.kms_key_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_policy.redis.name == "my-app-my-pipeline-pipeline-redis-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.redis.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.redis.description == "Allow my-app codebuild job to access redis resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.redis.policy == "{\"Sid\": \"Redis\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_policy.postgres.name == "my-app-my-pipeline-pipeline-postgres-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.postgres.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.postgres.description == "Allow my-app codebuild job to access postgres resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.postgres.policy == "{\"Sid\": \"Postgres\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.name == "my-app-my-pipeline-pipeline-s3-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.description == "Allow my-app codebuild job to access s3 resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.policy == "{\"Sid\": \"S3\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.name == "my-app-my-pipeline-pipeline-opensearch-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.description == "Allow my-app codebuild job to access opensearch resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.policy == "{\"Sid\": \"OpenSearch\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_policy.cloudformation.name == "my-app-my-pipeline-pipeline-cloudformation-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.cloudformation.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.cloudformation.description == "Allow my-app codebuild job to access cloudformation resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.cloudformation.policy == "{\"Sid\": \"CloudFormation\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_role_policy.copilot_assume_role_for_environment_codebuild.name == "my-app-my-pipeline-copilot-assume-role-for-environment-codebuild"
-    error_message = "Should be: 'my-app-copilot-assume-role-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.copilot_assume_role_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.copilot_assume_role_for_environment_codebuild.policy cannot be tested on a plan
-
-  assert {
-    condition     = aws_iam_policy.iam.name == "my-app-my-pipeline-pipeline-iam"
-    error_message = "Should be: my-app-my-pipeline-pipeline-iam"
-  }
-
-  # IAM Policy not currently computed by mock due to https://github.com/hashicorp/terraform-provider-aws/issues/36700. Using override
-  assert {
-    condition     = aws_iam_policy.iam.policy == "{\"Sid\": \"IAM\"}"
-    error_message = "Unexpected policy"
-  }
-
-  assert {
-    condition     = aws_iam_policy.codepipeline.policy == "{\"Sid\": \"codepipeline\"}"
-    error_message = "Unexpected policy"
-  }
-
-  # ECS policy
-  assert {
-    condition     = aws_iam_policy.ecs.name == "my-app-my-pipeline-pipeline-ecs-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.ecs.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.ecs.description == "Allow my-app codebuild job to access ecs resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.ecs.policy == "{\"Sid\": \"ECS\"}"
-    error_message = "Unexpected policy"
+    condition     = aws_iam_role_policy.copilot_access_for_environment_codebuild.policy == "{\"Sid\": \"CopilotAccess\"}"
+    error_message = "Should be: {\"Sid\": \"CopilotAccess\"}"
   }
 }
 
-run "test_triggering_pipelines" {
+run "test_iam_documents" {
   command = plan
 
-  variables {
-    pipeline_to_trigger = "triggered-pipeline"
-  }
-
-  assert {
-    condition     = aws_codebuild_project.trigger_other_environment_pipeline[""].name == "my-app-my-pipeline-environment-pipeline-trigger"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-trigger"
-  }
-
-  assert {
-    condition     = aws_codebuild_project.trigger_other_environment_pipeline[""].description == "Triggers a target pipeline"
-    error_message = "Should be: 'Triggers a target pipeline'"
-  }
-
-  assert {
-    condition     = aws_codebuild_project.trigger_other_environment_pipeline[""].build_timeout == 5
-    error_message = "Should be: 5"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].artifacts).type == "CODEPIPELINE"
-    error_message = "Should be: 'CODEPIPELINE'"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].cache).type == "S3"
-    error_message = "Should be: 'S3'"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].cache).location == "my-app-my-pipeline-environment-pipeline-artifact-store"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-artifact-store'"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].environment).compute_type == "BUILD_GENERAL1_SMALL"
-    error_message = "Should be: 'BUILD_GENERAL1_SMALL'"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].environment).image == "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
-    error_message = "Should be: 'aws/codebuild/amazonlinux2-x86_64-standard:5.0'"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].environment).type == "LINUX_CONTAINER"
-    error_message = "Should be: 'LINUX_CONTAINER'"
-  }
-
-  assert {
-    condition     = one(aws_codebuild_project.trigger_other_environment_pipeline[""].environment).image_pull_credentials_type == "CODEBUILD"
-    error_message = "Should be: 'CODEBUILD'"
-  }
-
+  # Assume CodePipeline role
   assert {
-    condition     = aws_codebuild_project.trigger_other_environment_pipeline[""].logs_config[0].cloudwatch_logs[0].group_name == "codebuild/my-app-my-pipeline-environment-terraform/log-group"
-    error_message = "Should be: 'codebuild/my-app-my-pipeline-environment-terraform/log-group'"
+    condition     = data.aws_iam_policy_document.assume_codepipeline_role.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
   assert {
-    condition     = aws_codebuild_project.trigger_other_environment_pipeline[""].logs_config[0].cloudwatch_logs[0].stream_name == "codebuild/my-app-my-pipeline-environment-terraform/log-stream"
-    error_message = "Should be: 'codebuild/my-app-my-pipeline-environment-terraform/log-group'"
+    condition     = one(data.aws_iam_policy_document.assume_codepipeline_role.statement[0].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
   }
-
-  assert {
-    condition     = aws_iam_role_policy.assume_role_to_trigger_pipeline_policy[""].name == "my-app-my-pipeline-assume-role-to-trigger-codepipeline-policy"
-    error_message = "Should be: 'my-app-my-pipeline-assume-role-to-trigger-codepipeline-policy"
-  }
-
-  assert {
-    condition     = aws_iam_role_policy.assume_role_to_trigger_pipeline_policy[""].role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild"
-  }
-
-  assert {
-    condition     = aws_iam_role_policy.assume_role_to_trigger_pipeline_policy[""].policy == "{\"Sid\": \"AssumeRoleToTriggerCodePipeline\"}"
-    error_message = "Should be: 'AssumeRoleToTriggerCodePipeline'"
-  }
-
   assert {
-    condition     = jsonencode(aws_codebuild_project.trigger_other_environment_pipeline[""].tags) == jsonencode(var.expected_tags)
-    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+    condition     = one(data.aws_iam_policy_document.assume_codepipeline_role.statement[0].principals).type == "Service"
+    error_message = "Should be: Service"
   }
-
   assert {
-    condition     = local.triggers_another_pipeline
-    error_message = ""
+    condition     = contains(one(data.aws_iam_policy_document.assume_codepipeline_role.statement[0].principals).identifiers, "codepipeline.amazonaws.com")
+    error_message = "Should contain: codepipeline.amazonaws.com"
   }
 
+  # Artifact store access
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].name == "Trigger-Pipeline"
-    error_message = "Should be: Trigger-Pipeline"
+    condition     = data.aws_iam_policy_document.access_artifact_store.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].name == "Trigger"
-    error_message = "Action name incorrect"
+    condition = data.aws_iam_policy_document.access_artifact_store.statement[0].actions == toset([
+      "s3:GetObject",
+      "s3:GetObjectVersion",
+      "s3:GetBucketVersioning",
+      "s3:PutObjectAcl",
+      "s3:PutObject",
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].category == "Build"
-    error_message = "Action category incorrect"
+    condition     = data.aws_iam_policy_document.access_artifact_store.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].owner == "AWS"
-    error_message = "Action owner incorrect"
+    condition = data.aws_iam_policy_document.access_artifact_store.statement[1].actions == toset([
+      "kms:GenerateDataKey",
+      "kms:Decrypt"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].provider == "CodeBuild"
-    error_message = "Action provider incorrect"
+    condition     = data.aws_iam_policy_document.access_artifact_store.statement[2].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].version == "1"
-    error_message = "Action version incorrect"
+    condition = data.aws_iam_policy_document.access_artifact_store.statement[2].actions == toset([
+      "codebuild:BatchGetBuilds",
+      "codebuild:StartBuild",
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = length(aws_codepipeline.environment_pipeline.stage[7].action[0].input_artifacts) == 1
-    error_message = "Input artifacts incorrect"
+    condition     = one(data.aws_iam_policy_document.access_artifact_store.statement[2].resources) == "*"
+    error_message = "Unexpected resources"
   }
 
+  # Codestar connection access
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].input_artifacts[0] == "build_output"
-    error_message = "Input artifacts incorrect"
+    condition     = data.aws_iam_policy_document.codestar_connection_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERED_ACCOUNT_ROLE_ARN"]) == "arn:aws:iam::123456789000:role/my-app-triggered-pipeline-trigger-pipeline-from-my-pipeline"
-    error_message = "TRIGGERED_ACCOUNT_ROLE_ARN environment variable incorrect"
+    condition = data.aws_iam_policy_document.codestar_connection_access.statement[0].actions == toset([
+      "codestar-connections:UseConnection",
+      "codestar-connections:ListConnections",
+      "codestar-connections:ListTagsForResource",
+      "codestar-connections:PassConnection",
+      "codestarconnections:UseConnection",
+      "codeconnections:ListTagsForResource"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERED_PIPELINE_NAME"]) == "my-app-triggered-pipeline-environment-pipeline"
-    error_message = "TRIGGERED_PIPELINE_NAME environment variable incorrect"
+    condition = flatten(data.aws_iam_policy_document.codestar_connection_access.statement[0].resources) == [
+      "arn:aws:codestar-connections:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+    ]
+    error_message = "Unexpected resources "
   }
 
+  # Assume CodeBuild role
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERED_PIPELINE_AWS_PROFILE"]) == "prod"
-    error_message = "TRIGGERED_PIPELINE_AWS_PROFILE environment variable incorrect"
+    condition     = data.aws_iam_policy_document.assume_codebuild_role.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "SLACK_THREAD_ID"]) == "#{variables.SLACK_THREAD_ID}"
-    error_message = "SLACK_THREAD_ID environment variable incorrect"
+    condition     = one(data.aws_iam_policy_document.assume_codebuild_role.statement[0].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.type if var.name == "SLACK_CHANNEL_ID"]) == "PARAMETER_STORE"
-    error_message = "SLACK_CHANNEL_ID environment variable incorrect"
+    condition     = one(data.aws_iam_policy_document.assume_codebuild_role.statement[0].principals).type == "Service"
+    error_message = "Should be: Service"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "SLACK_CHANNEL_ID"]) == "/codebuild/slack_pipeline_notifications_channel"
-    error_message = "SLACK_CHANNEL_ID environment variable incorrect"
+    condition     = contains(one(data.aws_iam_policy_document.assume_codebuild_role.statement[0].principals).identifiers, "codebuild.amazonaws.com")
+    error_message = "Should contain: codebuild.amazonaws.com"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "SLACK_REF"]) == "#{slack.SLACK_REF}"
-    error_message = "SLACK_REF environment variable incorrect"
+    condition     = one([for el in data.aws_iam_policy_document.assume_codebuild_role.statement[0].condition : el.test]) == "StringEquals"
+    error_message = "Policy condition incorrect"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.ProjectName == "my-app-my-pipeline-environment-pipeline-trigger"
-    error_message = "Configuration ProjectName incorrect"
+    condition     = [for el in data.aws_iam_policy_document.assume_codebuild_role.statement[0].condition : el.variable][0] == "aws:SourceArn"
+    error_message = "Policy condition incorrect"
   }
-
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].configuration.PrimarySource == "build_output"
-    error_message = "Configuration PrimarySource incorrect"
+    condition = flatten([for el in data.aws_iam_policy_document.assume_codebuild_role.statement[0].condition : el.values]) == [
+      "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/my-app-my-pipeline-environment-pipeline-plan",
+      "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/my-app-my-pipeline-environment-pipeline-build",
+      "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/my-app-my-pipeline-environment-pipeline-apply"
+    ]
+    error_message = "Policy condition incorrect"
   }
 
+  # Log access
   assert {
-    condition     = aws_codepipeline.environment_pipeline.stage[7].action[0].namespace == null
-    error_message = "Namespace incorrect"
+    condition     = data.aws_iam_policy_document.log_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = local.triggered_pipeline_account_role == "arn:aws:iam::123456789000:role/my-app-triggered-pipeline-trigger-pipeline-from-my-pipeline"
-    error_message = "Triggered pipeline account role is incorrect"
+    condition = data.aws_iam_policy_document.log_access.statement[0].actions == toset([
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:TagLogGroup"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = local.triggered_pipeline_codebuild_role == "arn:aws:iam::123456789000:role/my-app-triggered-pipeline-environment-pipeline-codebuild"
-    error_message = ""
+    condition = data.aws_iam_policy_document.log_access.statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-pipeline-environment-terraform/log-group",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-pipeline-environment-terraform/log-group:*"
+    ])
+    error_message = "Unexpected resources"
   }
 
+  # SSM access
   assert {
-    condition     = local.triggered_pipeline_environments[0].name == "prod"
-    error_message = ""
-  }
-}
-
-run "test_triggered_pipelines" {
-  command = plan
-
-  variables {
-    pipeline_name = "triggered-pipeline"
+    condition     = data.aws_iam_policy_document.ssm_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = local.triggers_another_pipeline == false
-    error_message = ""
+    condition = data.aws_iam_policy_document.ssm_access.statement[0].actions == toset([
+      "ssm:GetParameter",
+      "ssm:GetParameters"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = local.triggered_by_another_pipeline == true
-    error_message = ""
+    condition = data.aws_iam_policy_document.ssm_access.statement[0].resources == toset([
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/codebuild/slack_*"
+    ])
+    error_message = "Unexpected resources"
   }
 
+  # Codepipeline access
   assert {
-    condition     = local.triggering_pipeline_account_name == "sandbox"
-    error_message = ""
+    condition     = data.aws_iam_policy_document.codepipeline_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = local.triggering_account_id == "000123456789"
-    error_message = ""
+    condition = data.aws_iam_policy_document.codepipeline_access.statement[0].actions == toset([
+      "codepipeline:GetPipelineState",
+      "codepipeline:GetPipelineExecution",
+      "codepipeline:ListPipelineExecutions",
+      "codepipeline:StopPipelineExecution",
+      "codepipeline:UpdatePipeline"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = local.triggering_pipeline_codebuild_role == "arn:aws:iam::000123456789:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = ""
+    condition = data.aws_iam_policy_document.codepipeline_access.statement[0].resources == toset([
+      "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${var.application}-${var.pipeline_name}-environment-pipeline"
+    ])
+    error_message = "Unexpected resources"
   }
 
+  # Deploy role access
   assert {
-    condition     = aws_iam_role.trigger_pipeline["my-pipeline"].name == "my-app-triggered-pipeline-trigger-pipeline-from-my-pipeline"
-    error_message = ""
+    condition     = data.aws_iam_policy_document.environment_deploy_role_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = aws_iam_role.trigger_pipeline["my-pipeline"].assume_role_policy == "{\"Sid\": \"AssumeTriggerPolicy\"}"
-    error_message = ""
+    condition     = one(data.aws_iam_policy_document.environment_deploy_role_access.statement[0].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
   }
-
   assert {
-    condition     = jsonencode(aws_iam_role.trigger_pipeline["my-pipeline"].tags) == jsonencode(var.expected_tags)
-    error_message = ""
+    condition = data.aws_iam_policy_document.environment_deploy_role_access.statement[0].resources == toset([
+      "arn:aws:iam::000123456789:role/my-app-dev-environment-pipeline-deploy",
+      "arn:aws:iam::123456789000:role/my-app-prod-environment-pipeline-deploy"
+    ])
+    error_message = "Unexpected resources"
   }
 
+  # Copilot access
   assert {
-    condition     = aws_iam_role_policy.trigger_pipeline["my-pipeline"].name == "my-app-triggered-pipeline-trigger-pipeline-from-my-pipeline"
-    error_message = ""
+    condition     = data.aws_iam_policy_document.copilot_access.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = aws_iam_role_policy.trigger_pipeline["my-pipeline"].role == "my-app-triggered-pipeline-trigger-pipeline-from-my-pipeline"
-    error_message = ""
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[0].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
   }
-
-  # aws_iam_role_policy.trigger_pipeline["my-pipeline"].policy cannot be tested on a plan
-
   assert {
-    condition     = local.list_of_triggering_pipelines[0].name == "my-pipeline"
-    error_message = "List of triggering pipelines should include my-pipeline"
+    condition = data.aws_iam_policy_document.copilot_access.statement[0].resources == toset([
+      "arn:aws:iam::000123456789:role/my-app-dev-EnvManagerRole",
+      "arn:aws:iam::123456789000:role/my-app-prod-EnvManagerRole"
+    ])
+    error_message = "Unexpected resources"
   }
-
   assert {
-    condition     = contains(local.set_of_triggering_pipeline_names, "my-pipeline")
-    error_message = "The set of triggering pipeline names should contain my-pipeline"
+    condition     = data.aws_iam_policy_document.copilot_access.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = local.triggering_pipeline_role_arns == ["arn:aws:iam::000123456789:role/my-app-my-pipeline-environment-pipeline-codebuild"]
-    error_message = "ARN for triggering role is incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[1].actions == toset([
+      "ssm:PutParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+      "ssm:DeleteParameter",
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition     = aws_iam_role_policy.assume_role_for_copilot_env_commands[""].name == "my-app-triggered-pipeline-assume-role-for-copilot-env-commands"
-    error_message = "Should be: 'my-app-triggered-pipeline-assume-role-for-copilot-env-commands"
+    condition = data.aws_iam_policy_document.copilot_access.statement[1].resources == toset([
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/my-app/*/secrets/*",
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app",
+      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/my-app/*"
+    ])
+    error_message = "Unexpected resources"
   }
-
   assert {
-    condition     = aws_iam_role_policy.assume_role_for_copilot_env_commands[""].role == "my-app-triggered-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-triggered-pipeline-environment-pipeline-codebuild"
+    condition     = data.aws_iam_policy_document.copilot_access.statement[2].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition     = aws_iam_role_policy.assume_role_for_copilot_env_commands[""].policy == "{\"Sid\": \"AssumeRoleCopilotCommands\"}"
-    error_message = "Should be: 'AssumeRoleCopilotCommands'"
+    condition = data.aws_iam_policy_document.copilot_access.statement[2].actions == toset([
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+      "iam:PassRole"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "ENVIRONMENT"]) == "dev"
-    error_message = "ENVIRONMENT environment variable incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[2].resources == toset([
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-adminrole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-*-CFNExecutionRole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-*-EnvManagerRole",
+    ])
+    error_message = "Unexpected resources"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "AWS_PROFILE_FOR_COPILOT"]) == "sandbox"
-    error_message = "AWS_PROFILE_FOR_COPILOT environment variable incorrect"
+    condition     = data.aws_iam_policy_document.copilot_access.statement[3].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "CURRENT_CODEBUILD_ROLE"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-triggered-pipeline-environment-pipeline-codebuild"
-    error_message = "CURRENT_CODEBUILD_ROLE environment variable incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[3].actions == toset([
+      "kms:GenerateDataKey",
+      "kms:Decrypt"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERING_ACCOUNT_CODEBUILD_ROLE"]) == "arn:aws:iam::000123456789:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "TRIGGERING_ACCOUNT_CODEBUILD_ROLE environment variable incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[3].resources == toset([
+      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
+    ])
+    error_message = "Unexpected resources"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERING_ACCOUNT_AWS_PROFILE"]) == "sandbox"
-    error_message = "TRIGGERING_ACCOUNT_AWS_PROFILE environment variable incorrect"
+    condition     = data.aws_iam_policy_document.copilot_access.statement[4].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "ENVIRONMENT"]) == "prod"
-    error_message = "ENVIRONMENT environment variable incorrect"
+    condition     = one(data.aws_iam_policy_document.copilot_access.statement[4].actions) == "s3:*"
+    error_message = "Should be: s3:*"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "AWS_PROFILE_FOR_COPILOT"]) == "prod"
-    error_message = "AWS_PROFILE_FOR_COPILOT environment variable incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[4].resources == toset([
+      "arn:aws:s3:::stackset-my-app-*-pipelinebuiltartifactbuc-*"
+    ])
+    error_message = "Unexpected resources"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "CURRENT_CODEBUILD_ROLE"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-triggered-pipeline-environment-pipeline-codebuild"
-    error_message = "CURRENT_CODEBUILD_ROLE environment variable incorrect"
+    condition     = data.aws_iam_policy_document.copilot_access.statement[5].effect == "Allow"
+    error_message = "Should be: Allow"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERING_ACCOUNT_CODEBUILD_ROLE"]) == "arn:aws:iam::000123456789:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "TRIGGERING_ACCOUNT_CODEBUILD_ROLE environment variable incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[5].actions == toset([
+      "cloudformation:GetTemplate",
+      "cloudformation:GetTemplateSummary",
+      "cloudformation:DescribeStackSet",
+      "cloudformation:UpdateStackSet",
+      "cloudformation:DescribeStackSetOperation",
+      "cloudformation:ListStackInstances",
+      "cloudformation:DescribeStacks",
+      "cloudformation:DescribeChangeSet",
+      "cloudformation:CreateChangeSet",
+      "cloudformation:ExecuteChangeSet",
+      "cloudformation:DescribeStackEvents",
+      "cloudformation:DeleteStack"
+    ])
+    error_message = "Unexpected actions"
   }
-
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "TRIGGERING_ACCOUNT_AWS_PROFILE"]) == "sandbox"
-    error_message = "TRIGGERING_ACCOUNT_AWS_PROFILE environment variable incorrect"
+    condition = data.aws_iam_policy_document.copilot_access.statement[5].resources == toset([
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/my-app-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/StackSet-my-app-infrastructure-*",
+      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stackset/my-app-infrastructure:*",
+    ])
+    error_message = "Unexpected resources"
   }
 }
 
 run "test_artifact_store" {
   command = plan
 
-  # artifact-store S3 bucket.
   assert {
     condition     = aws_s3_bucket.artifact_store.bucket == "my-app-my-pipeline-environment-pipeline-artifact-store"
     error_message = "Should be: my-app-my-pipeline-environment-pipeline-artifact-store"
   }
-
   assert {
     condition     = aws_kms_alias.artifact_store_kms_alias.name == "alias/my-app-my-pipeline-environment-pipeline-artifact-store-key"
     error_message = "Should be: alias/my-app-my-pipeline-environment-pipeline-artifact-store-key"
   }
-
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].condition : true if el.variable == "aws:SecureTransport"][0] == true
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].condition : el.variable][0] == "aws:SecureTransport"
     error_message = "Should be: aws:SecureTransport"
   }
-
   assert {
     condition     = data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].effect == "Deny"
     error_message = "Should be: Deny"
   }
-
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].actions : true if el == "s3:*"][0] == true
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].actions : el][0] == "s3:*"
     error_message = "Should be: s3:*"
   }
-
+  assert {
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].principals : el.type][0] == "AWS"
+    error_message = "Should be: AWS"
+  }
+  assert {
+    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
+    error_message = "Bucket policy principals incorrect"
+  }
+  assert {
+    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.test]) == "ArnLike"
+    error_message = "Bucket policy condition incorrect"
+  }
+  assert {
+    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.variable]) == "aws:PrincipalArn"
+    error_message = "Bucket policy condition incorrect"
+  }
+  assert {
+    condition = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.values]) == [
+      "arn:aws:iam::000123456789:role/my-app-dev-environment-pipeline-deploy",
+      "arn:aws:iam::123456789000:role/my-app-prod-environment-pipeline-deploy"
+    ]
+    error_message = "Bucket policy condition incorrect"
+  }
+  assert {
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].actions : el][0] == "s3:*"
+    error_message = "Should be: s3:*"
+  }
 }
 
 run "test_stages" {
@@ -1353,12 +998,6 @@ run "test_stages" {
 
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "SLACK_THREAD_ID"]) == "#{variables.SLACK_THREAD_ID}"
-    error_message = "SLACK_THREAD_ID environment variable incorrect"
-  }
-
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[2].action[0].configuration.EnvironmentVariables) :
     var.type if var.name == "SLACK_CHANNEL_ID"]) == "PARAMETER_STORE"
     error_message = "SLACK_CHANNEL_ID environment variable incorrect"
   }
@@ -1440,11 +1079,6 @@ run "test_stages" {
     condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
     var.value if try(var.name, "") == "AWS_PROFILE_FOR_COPILOT"]) == "sandbox"
     error_message = "AWS_PROFILE_FOR_COPILOT environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[3].action[0].configuration.EnvironmentVariables) :
-    var.value if try(var.name, "") == "CURRENT_CODEBUILD_ROLE"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "CURRENT_CODEBUILD_ROLE environment variable incorrect"
   }
 
   # Stage: prod Plan
@@ -1607,11 +1241,6 @@ run "test_stages" {
     condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
     var.value if try(var.name, "") == "AWS_PROFILE_FOR_COPILOT"]) == "prod"
     error_message = "AWS_PROFILE_FOR_COPILOT environment variable incorrect"
-  }
-  assert {
-    condition = one([for var in jsondecode(aws_codepipeline.environment_pipeline.stage[6].action[0].configuration.EnvironmentVariables) :
-    var.value if try(var.name, "") == "CURRENT_CODEBUILD_ROLE"]) == "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "CURRENT_CODEBUILD_ROLE environment variable incorrect"
   }
 }
 
