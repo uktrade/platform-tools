@@ -9,10 +9,10 @@ from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.constants import (
-    TERRAFORM_CODEBASE_PIPELINE_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.constants import (
-    TERRAFORM_ENV_PIPELINE_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+    TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
@@ -101,7 +101,7 @@ class Pipelines:
 
         env_pipeline_module_source = (
             self.environment_variable_provider.get(
-                TERRAFORM_ENV_PIPELINE_MODULE_SOURCE_OVERRIDE_ENV_VAR
+                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
             )
             or f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={platform_helper_version_for_template}"
         )
@@ -137,7 +137,7 @@ class Pipelines:
             }
 
             codebase_pipeline_module_source_override = self.environment_variable_provider.get(
-                TERRAFORM_CODEBASE_PIPELINE_MODULE_SOURCE_OVERRIDE_ENV_VAR
+                TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
             )
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
