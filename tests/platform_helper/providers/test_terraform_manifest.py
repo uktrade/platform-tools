@@ -27,9 +27,9 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        platform_helper_version="14",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
+        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -77,7 +77,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     module = json_content["module"]["codebase-pipelines"]
     assert (
         module["source"]
-        == f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14"
+        == f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0"
     )
     assert module["for_each"] == "${local.all_codebases}"
     assert module["application"] == "${local.application}"
@@ -122,9 +122,9 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
 
     template_provider.generate_codebase_pipeline_config(
         config,
-        platform_helper_version="14",
         ecr_imports={"application": "test_project/application"},
         deploy_repository="uktrade/my-app-deploy",
+        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -147,9 +147,9 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        platform_helper_version="14",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
+        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
     )
 
     mock_file_provider.mkfile.assert_called_once()

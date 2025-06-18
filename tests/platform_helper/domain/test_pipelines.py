@@ -163,16 +163,18 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
 
 
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source_override",
+    "use_environment_variable_platform_helper_version, module_source",
     [
-        (False, "14.0.0", None),
-        (True, "test-branch", "../local/path/"),
+        (
+            False,
+            "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+        ),
+        (True, "../local/path/"),
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected_platform_helper_version(
     use_environment_variable_platform_helper_version,
-    expected_platform_helper_version,
-    module_source_override,
+    module_source,
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
@@ -186,7 +188,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
     if use_environment_variable_platform_helper_version:
         mocks.mock_platform_helper_version_override = "test-branch"
 
-    mocks.mock_environment_variable_provider.get.return_value = module_source_override
+    mocks.mock_environment_variable_provider.get.return_value = module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -195,23 +197,21 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        expected_platform_helper_version,
         {},
         "uktrade/my-app-deploy",
-        module_source_override,
+        module_source,
     )
 
 
 @pytest.mark.parametrize(
-    "platform_helper_version_override, module_source_override",
+    "module_source",
     [
-        ("14.0.0", None),
-        ("test-branch", "../local/path/"),
+        "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+        "../local/path/",
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
-    platform_helper_version_override,
-    module_source_override,
+    module_source,
     codebase_pipeline_config_for_2_pipelines_and_1_run_group,
     fakefs,
 ):
@@ -222,8 +222,6 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     )
     mocks = PipelineMocks(app_name)
 
-    mocks.mock_platform_helper_version_override = platform_helper_version_override
-
     mocks.mock_ecr_provider.get_ecr_repo_names.return_value = [
         "my-app/test_codebase",
         "some-other-repo",
@@ -231,7 +229,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
         "yet-another-repo",
     ]
 
-    mocks.mock_environment_variable_provider.get.return_value = module_source_override
+    mocks.mock_environment_variable_provider.get.return_value = module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -240,10 +238,9 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     mock_t_m_p = mocks.mock_terraform_manifest_provider
     mock_t_m_p.generate_codebase_pipeline_config.assert_called_once_with(
         codebase_pipeline_config_for_2_pipelines_and_1_run_group,
-        platform_helper_version_override,
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
         "uktrade/my-app-deploy",
-        module_source_override,
+        module_source,
     )
 
 
