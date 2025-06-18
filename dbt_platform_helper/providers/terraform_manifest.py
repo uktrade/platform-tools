@@ -23,6 +23,7 @@ class TerraformManifestProvider:
         platform_helper_version: str,
         ecr_imports: dict[str, str],
         deploy_repository: str,
+        module_source_override: str = None,
     ):
         default_account = self._get_account_for_env("*", platform_config)
         state_key_suffix = f"{platform_config['application']}-codebase-pipelines"
@@ -32,7 +33,9 @@ class TerraformManifestProvider:
         self._add_codebase_pipeline_locals(terraform)
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account, state_key_suffix)
-        self._add_codebase_pipeline_module(terraform, platform_helper_version, deploy_repository)
+        self._add_codebase_pipeline_module(
+            terraform, platform_helper_version, deploy_repository, module_source_override
+        )
         self._add_imports(terraform, ecr_imports)
         self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
@@ -116,9 +119,15 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_codebase_pipeline_module(
-        terraform: dict, platform_helper_version: str, deploy_repository: str
+        terraform: dict,
+        platform_helper_version: str,
+        deploy_repository: str,
+        module_source_override: str,
     ):
-        source = f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref={platform_helper_version}"
+        source = (
+            module_source_override
+            or f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref={platform_helper_version}"
+        )
         terraform["module"] = {
             "codebase-pipelines": {
                 "source": source,
