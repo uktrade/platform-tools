@@ -107,6 +107,9 @@ resource "aws_codepipeline" "codebase_pipeline" {
             ProjectName = aws_codebuild_project.invalidate_cache.name
             EnvironmentVariables : jsonencode([
               { name : "CONFIG_JSON", value : var.application }, #TODO pass in cache invalidation object
+              { name : "APPLICATION", value : var.application },
+              { name : "ENVIRONMENT", value : stage.value.name },
+              { name : "ENV_CONFIG", value : var.env_config },
             ])
           }
         }
