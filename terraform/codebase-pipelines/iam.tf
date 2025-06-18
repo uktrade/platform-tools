@@ -14,42 +14,19 @@ data "aws_iam_policy_document" "dns_account_assume_role" {
     actions = [
       "sts:AssumeRole"
     ]
-    resources = ["arn:aws:iam::${var.env_config.accounts.dns.id}:role/environment-pipeline-assumed-role"]
+    resources = [
+      for id in local.dns_account_ids :
+        "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"
+    ]
   }
 }
 
 # Assume DNS account role
 resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
   # for_each = toset(local.cdn_enabled ? [""] : [])
-  name   = "${var.application}-${var.pipeline_name}-dns-account-assume-role-for-codebase-deploy"
+  name   = "${var.application}-${var.codebase}-dns-account-assume-role-for-codebase-deploy"
   role   = aws_iam_role.codebase_deploy.name
   policy = data.aws_iam_policy_document.dns_account_assume_role.json
-}
-
-
-data "aws_iam_policy_document" "cache_invalidation" {
-  # for_each = toset(local.cdn_enabled ? [""] : [])
-  statement {
-    sid    = "AllowAssumedRoleToDNSAccount"
-    effect = "Allow"
-
-    principals {
-      type = "AWS"
-      identifiers = [
-        "arn:aws:iam::${var.dns_account_id}:role/environment-pipeline-assumed-role"
-      ]
-    }
-
-    resources = [
-      "arn:aws:cloudfront::*:cache-policy/*",
-      "*", #TODO narrow this down for cloudfront distributions
-    ]
-    
-    actions = [
-      "cloudfront:CreateInvalidation",
-      "cloudfront:ListDistributions"
-    ]
-  }
 }
 
 
@@ -344,11 +321,11 @@ resource "aws_iam_role" "codebase_deploy" {
 }
 
 # TODO This should be dynamic - only created when necessary
-resource "aws_iam_role_policy" "cache_invalidation" {
-  name   = "cache-invalidation"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.cache_invalidation.json
-}
+# resource "aws_iam_role_policy" "cache_invalidation" {
+#   name   = "cache-invalidation"
+#   role   = aws_iam_role.codebase_deploy.name
+#   policy = data.aws_iam_policy_document.cache_invalidation.json
+# }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
   name   = "artifact-store-access"

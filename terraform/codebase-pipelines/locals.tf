@@ -22,11 +22,14 @@ locals {
 
   base_env_config = {
     for name, config in var.env_config : name => {
-      account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {})
+      account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
+      dns_account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "dns", {}), "id", {})
     } if name != "*"
   }
 
   deploy_account_ids = distinct([for env in local.base_env_config : env.account])
+  
+  dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
@@ -35,6 +38,18 @@ locals {
       ]
     })
   }
+
+  cache_invalidation_before_stages = {
+    "test-environment": {"before": ["stage-1", "stage-2"]}
+  }
+
+  # For each codebase pipeline, for each rungroup within the list in the before key of the invalidate_cache, add this action
+
+  # invalidate_cache:
+  #         before:
+  #           - rungroup_1
+  #         paths:
+  #           - /*
 
   services = sort(flatten([
     for run_group in var.services : [for service in flatten(values(run_group)) : service]
