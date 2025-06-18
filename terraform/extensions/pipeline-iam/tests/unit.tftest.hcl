@@ -953,7 +953,22 @@ run "environment_deploy_iam_iam_access" {
   }
   assert {
     condition = data.aws_iam_policy_document.iam_access.statement[0].actions == toset([
-      "iam:*"
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole"
     ])
     error_message = "Unexpected actions"
   }
@@ -1429,7 +1444,19 @@ run "environment_deploy_iam_postgres_access" {
   }
   assert {
     condition = data.aws_iam_policy_document.postgres_access.statement[1].actions == toset([
-      "iam:*"
+      "iam:CreateRole",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRole",
+      "iam:AttachRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:PassRole",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:DetachRolePolicy"
     ])
     error_message = "Unexpected actions"
   }

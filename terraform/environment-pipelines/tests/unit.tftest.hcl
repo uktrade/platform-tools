@@ -571,6 +571,21 @@ run "test_iam_documents" {
     ])
     error_message = "Unexpected actions"
   }
+  assert {
+    condition     = data.aws_iam_policy_document.access_artifact_store.statement[2].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.access_artifact_store.statement[2].actions == toset([
+      "codebuild:BatchGetBuilds",
+      "codebuild:StartBuild",
+    ])
+    error_message = "Unexpected actions"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.access_artifact_store.statement[2].resources) == "*"
+    error_message = "Unexpected resources"
+  }
 
   # Codestar connection access
   assert {
@@ -582,7 +597,9 @@ run "test_iam_documents" {
       "codestar-connections:UseConnection",
       "codestar-connections:ListConnections",
       "codestar-connections:ListTagsForResource",
-      "codestar-connections:PassConnection"
+      "codestar-connections:PassConnection",
+      "codestarconnections:UseConnection",
+      "codeconnections:ListTagsForResource"
     ])
     error_message = "Unexpected actions"
   }
@@ -591,21 +608,6 @@ run "test_iam_documents" {
       "arn:aws:codestar-connections:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
     ]
     error_message = "Unexpected resources "
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.codestar_connection_access.statement[1].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.codestar_connection_access.statement[1].actions == toset([
-      "codebuild:BatchGetBuilds",
-      "codebuild:StartBuild",
-    ])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition     = one(data.aws_iam_policy_document.codestar_connection_access.statement[1].resources) == "*"
-    error_message = "Unexpected resources"
   }
 
   # Assume CodeBuild role
@@ -767,8 +769,26 @@ run "test_iam_documents" {
     error_message = "Should be: Allow"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.copilot_access.statement[2].actions) == "iam:*"
-    error_message = "Should be: iam:*"
+    condition = data.aws_iam_policy_document.copilot_access.statement[2].actions == toset([
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+      "iam:PassRole"
+    ])
+    error_message = "Unexpected actions"
   }
   assert {
     condition = data.aws_iam_policy_document.copilot_access.statement[2].resources == toset([

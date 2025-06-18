@@ -64,6 +64,15 @@ data "aws_iam_policy_document" "access_artifact_store" {
       aws_kms_key.artifact_store_kms_key.arn
     ]
   }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "codebuild:BatchGetBuilds",
+      "codebuild:StartBuild",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "codestar_connection_access_for_environment_pipeline" {
@@ -86,14 +95,6 @@ data "aws_iam_policy_document" "codestar_connection_access" {
     resources = [
       "arn:aws:codestar-connections:${local.account_region}:*"
     ]
-  }
-  statement {
-    effect = "Allow"
-    actions = [
-      "codebuild:BatchGetBuilds",
-      "codebuild:StartBuild",
-    ]
-    resources = ["*"]
   }
 }
 
@@ -260,7 +261,23 @@ data "aws_iam_policy_document" "copilot_access" {
   statement {
     effect = "Allow"
     actions = [
-      "iam:*"
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+      "iam:PassRole",
     ]
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-adminrole",
