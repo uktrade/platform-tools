@@ -207,32 +207,13 @@ class PlatformConfigSchema:
 
         return {
             str: {
-                Optional("account"): str,
                 Optional("branch", default="main"): PlatformConfigSchema.__valid_branch_name(),
-                Optional("pipeline_to_trigger"): str,
-                Optional("versions"): _valid_environment_pipeline_specific_version_overrides,
                 "slack_channel": str,
                 "trigger_on_push": bool,
                 "environments": {
                     str: Or(
                         None,
-                        {
-                            Optional("accounts"): {
-                                "deploy": {
-                                    "name": str,
-                                    "id": str,
-                                },
-                                "dns": {
-                                    "name": str,
-                                    "id": str,
-                                },
-                            },
-                            Optional("requires_approval"): bool,
-                            Optional(
-                                "versions"
-                            ): _valid_environment_pipeline_specific_version_overrides,
-                            Optional("vpc"): str,
-                        },
+                        {Optional("requires_approval"): bool},
                     )
                 },
             }

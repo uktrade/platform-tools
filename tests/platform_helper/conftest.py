@@ -532,10 +532,8 @@ extensions:
 
 environment_pipelines:
   main:
-    account: non-prod-acc
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: true
-    pipeline_to_trigger: "prod-main"
     environments:
       dev:
       staging:
@@ -543,28 +541,8 @@ environment_pipelines:
     branch: my-feature-branch
     slack_channel: "/codebuild/notification_channel"
     trigger_on_push: false
-    versions:
-        platform-helper: main
     environments:
       test:
-        requires_approval: true
-        vpc: testing_vpc
-        accounts:
-          deploy:
-            name: "prod-acc"
-            id: "9999999999"
-          dns:
-            name: "prod-dns-acc"
-            id: "7777777777"
-  prod-main:
-    account: prod-acc
-    branch: main
-    slack_channel: "/codebuild/slack_oauth_channel"
-    trigger_on_push: false
-    versions:
-        platform-helper: 9.0.9
-    environments:
-      prod:
         requires_approval: true
 
 codebase_pipelines:

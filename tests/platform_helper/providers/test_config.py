@@ -289,30 +289,6 @@ Please upgrade your platform-config.yml by running 'platform-helper config migra
         )
 
     @pytest.mark.parametrize(
-        "account, envs",
-        [
-            ("non-prod-acc", ["dev", "staging"]),
-            ("prod-acc", ["prod"]),
-        ],
-    )
-    def test_load_and_validate_with_valid_environment_pipeline_accounts(
-        self, platform_env_config, account, envs
-    ):
-        platform_env_config["environment_pipelines"] = {
-            "main": {
-                "account": account,
-                "slack_channel": "/codebuild/notification_channel",
-                "trigger_on_push": True,
-                "environments": {env: {} for env in envs},
-            }
-        }
-
-        config_provider_mocks = ConfigProviderMocks(platform_env_config)
-        config_provider = ConfigProvider(**config_provider_mocks.params())
-        # Should not error if config is sound.
-        config_provider.load_and_validate_platform_config()
-
-    @pytest.mark.parametrize(
         "yaml_file",
         [
             "pipeline/platform-config.yml",
@@ -586,26 +562,6 @@ class TestVersionValidations:
             config_provider.load_and_validate_platform_config()
 
         assert "Missing key: 'platform-helper'" in capsys.readouterr().err
-
-    @pytest.mark.parametrize(
-        "invalid_key",
-        (
-            "",
-            "invalid-key",
-            "terraform-platform-modules",  # terraform-platform-modules is not valid in the pipeline overrides.
-        ),
-    )
-    def test_validation_fails_if_invalid_pipeline_version_override_keys_present(
-        self, invalid_key, valid_platform_config, capsys
-    ):
-        valid_platform_config["environment_pipelines"]["test"]["versions"][invalid_key] = "1.2.3"
-
-        config_provider = ConfigProvider(**ConfigProviderMocks(valid_platform_config).params())
-
-        with pytest.raises(SystemExit):
-            config_provider.load_and_validate_platform_config()
-
-        assert f"Wrong key '{invalid_key}'" in capsys.readouterr().err
 
 
 class TestApplyEnvironmentDefaults:
