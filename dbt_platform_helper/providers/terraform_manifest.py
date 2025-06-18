@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
+from shutil import rmtree
 
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
@@ -57,6 +58,24 @@ class TerraformManifestProvider:
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
+
+    def generate_environment_pipeline_config(
+        self,
+        platform_config: dict,
+        platform_helper_version: str,
+        deploy_repository: str,
+    ):
+        default_account = self._get_account_for_env("*", platform_config)
+        state_key_suffix = f"{platform_config['application']}-pipelines"
+
+        terraform = {}
+        self._add_header(terraform)
+        self._add_environment_pipeline_locals(terraform)
+        self._add_provider(terraform, default_account)
+        self._add_backend(terraform, platform_config, default_account, state_key_suffix)
+        self._add_environment_pipeline_module(terraform, platform_helper_version, deploy_repository)
+        self._remove_separate_pipeline_config(platform_config)
+        self._write_terraform_json(terraform, "terraform/environment-pipelines")
 
     @staticmethod
     def _get_account_for_env(env, platform_config):
@@ -220,3 +239,44 @@ class TerraformManifestProvider:
         message = self.file_provider.delete_file(env_dir, "main.tf")
         if message:
             self.io.info(f"Manifest has moved to main.tf.json. {message}")
+
+    @staticmethod
+    def _add_environment_pipeline_locals(terraform: dict):
+        terraform["locals"] = {
+            "platform_config": '${yamldecode(file("../../platform-config.yml"))}',
+            "application": '${local.platform_config["application"]}',
+            "all_pipelines": '${local.platform_config["environment_pipelines"]}',
+            "environment_config": '${local.platform_config["environments"]}',
+        }
+
+    @staticmethod
+    def _add_environment_pipeline_module(
+        terraform: dict, platform_helper_version: str, deploy_repository: str
+    ):
+        source = f"git::https://github.com/uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={platform_helper_version}"
+        terraform["module"] = {
+            "environment-pipelines": {
+                "source": source,
+                "for_each": "${local.all_pipelines}",
+                "application": "${local.application}",
+                "pipeline_name": "${each.key}",
+                "deploy_repository": f"{deploy_repository}",
+                "deploy_repository_branch": "${each.value.branch}",
+                "environments": "${each.value.environments}",
+                "slack_channel": "${each.value.slack_channel}",
+                "trigger_on_push": "${each.value.trigger_on_push}",
+                "env_config": "${local.environment_config}",
+            }
+        }
+
+    def _remove_separate_pipeline_config(self, platform_config):
+        accounts = {
+            env["accounts"]["deploy"]["name"]
+            for env in platform_config["environments"].values()
+            if isinstance(env, dict) and "accounts" in env and "deploy" in env["accounts"]
+        }
+        for account in accounts:
+            pipelines_dir = Path(f"terraform/environment-pipelines/{account}")
+            if pipelines_dir.exists():
+                self.io.info(f"{account} environment pipeline manifest moved to main.tf.json")
+                rmtree(pipelines_dir)

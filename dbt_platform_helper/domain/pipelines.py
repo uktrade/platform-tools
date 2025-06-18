@@ -1,21 +1,17 @@
 import os
 from collections.abc import Callable
-from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
-from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
-from dbt_platform_helper.utils.template import setup_templates
 
 
 class Pipelines:
@@ -87,21 +83,11 @@ class Pipelines:
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
         if has_environment_pipelines:
-            environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
-            accounts = {
-                config.get("account")
-                for config in environment_pipelines.values()
-                if "account" in config
-            }
-
-            for account in accounts:
-                self._generate_terraform_environment_pipeline_manifest(
-                    platform_config["application"],
-                    deploy_repository,
-                    account,
-                    platform_helper_version_for_template,
-                    deploy_branch,
-                )
+            self.terraform_manifest_provider.generate_environment_pipeline_config(
+                platform_config,
+                platform_helper_version_for_template,
+                deploy_repository,
+            )
 
         if has_codebase_pipelines:
             codebase_pipelines = platform_config[CODEBASE_PIPELINES_KEY]
@@ -127,32 +113,3 @@ class Pipelines:
         if pipelines_dir.exists():
             self.io.info("Deleting copilot/pipelines directory.")
             rmtree(pipelines_dir)
-
-    def _generate_terraform_environment_pipeline_manifest(
-        self,
-        application: str,
-        deploy_repository: str,
-        aws_account: str,
-        platform_helper_version: str,
-        deploy_branch: str,
-    ):
-        env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
-
-        contents = env_pipeline_template.render(
-            {
-                "application": application,
-                "deploy_repository": deploy_repository,
-                "aws_account": aws_account,
-                "platform_helper_version": platform_helper_version,
-                "deploy_branch": deploy_branch,
-                "terraform_version": SUPPORTED_TERRAFORM_VERSION,
-                "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
-            }
-        )
-
-        dir_path = f"terraform/environment-pipelines/{aws_account}"
-        makedirs(dir_path, exist_ok=True)
-
-        self.io.info(
-            self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
-        )

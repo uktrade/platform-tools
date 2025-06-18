@@ -738,51 +738,18 @@ environment_pipelines:
 
 
 @pytest.fixture()
-def platform_config_for_env_pipelines():
-    return yaml.safe_load(
-        f"""
-schema_version: {PLATFORM_CONFIG_SCHEMA_VERSION}
-default_versions: 
-  platform-helper: 14.0.0
-application: test-app
-deploy_repository: uktrade/test-app-weird-name-deploy
-
-environments:
-  dev:
-    accounts:
-      deploy:
-        name: "platform-sandbox-test"
-        id: "1111111111"
-      dns:
-        name: "platform-sandbox-test"
-        id: "2222222222"
-  prod:
-    accounts:
-      deploy:
-        name: "platform-prod-test"
-        id: "3333333333"
-      dns:
-        name: "platform-prod-test"
-        id: "4444444444"
-    requires_approval: true
-
-environment_pipelines:
-   main:
-       account: platform-sandbox-test
-       branch: main
-       slack_channel: "/codebuild/test-slack-channel"
-       trigger_on_push: false
-       environments:
-         dev:
-   prod-main:
-       account: platform-prod-test
-       branch: main
-       slack_channel: "/codebuild/test-slack-channel"
-       trigger_on_push: false
-       environments:
-         prod:
-    """
-    )
+def platform_config_for_env_pipelines(platform_env_config):
+    return {
+        **platform_env_config,
+        "environment_pipelines": {
+            "main": {
+                "branch": "main",
+                "slack_channel": "/codebuild/test-slack-channel",
+                "trigger_on_push": True,
+                "environments": {"dev": {}},
+            }
+        },
+    }
 
 
 @pytest.fixture
