@@ -152,16 +152,9 @@ class PlatformConfigSchema:
                                 {
                                     "name": str,
                                     Optional("requires_approval"): bool,
-                                    Optional("invalidate_cache"): Or(
-                                        {
-                                            "before": list,
-                                            "paths": list,
-                                        },
-                                        {
-                                            "after": list,
-                                            "paths": list,
-                                        },
-                                    ),
+                                    Optional("cache_invalidation"): {
+                                        "domains": PlatformConfigSchema.__cache_invalidation_domains_schema(),
+                                    },
                                 },
                             ],
                         },
@@ -179,6 +172,10 @@ class PlatformConfigSchema:
                 ],
             },
         }
+
+    @staticmethod
+    def __cache_invalidation_domains_schema() -> dict:
+        {str: {"paths": [str]}}
 
     @staticmethod
     def __default_versions_schema() -> dict:
