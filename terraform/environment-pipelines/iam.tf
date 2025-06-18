@@ -73,15 +73,15 @@ resource "aws_iam_role_policy" "codestar_connection_access_for_environment_pipel
 }
 
 data "aws_iam_policy_document" "codestar_connection_access" {
-  # checkov:skip=CKV_AWS_111:Permissions required to change ACLs on uploaded artifacts
-  # checkov:skip=CKV_AWS_356:Permissions required to upload artifacts
   statement {
     effect = "Allow"
     actions = [
       "codestar-connections:UseConnection",
       "codestar-connections:ListConnections",
       "codestar-connections:ListTagsForResource",
-      "codestar-connections:PassConnection"
+      "codestar-connections:PassConnection",
+      "codestarconnections:UseConnection",
+      "codeconnections:ListTagsForResource"
     ]
     resources = [
       "arn:aws:codestar-connections:${local.account_region}:*"

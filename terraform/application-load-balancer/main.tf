@@ -34,6 +34,7 @@ data "aws_security_group" "vpc_base_sg" {
 resource "aws_lb" "this" {
   # checkov:skip=CKV2_AWS_20: Redirects for HTTP requests into HTTPS happens on the CDN
   # checkov:skip=CKV2_AWS_28: WAF is outside of platform-tools/terraform
+  # checkov:skip=CKV2_AWS_76: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   name               = "${var.application}-${var.environment}"
   load_balancer_type = "application"
   subnets            = tolist(data.aws_subnets.public-subnets.ids)
@@ -55,6 +56,7 @@ resource "aws_lb" "this" {
 
 resource "aws_lb_listener" "alb-listener" {
   # checkov:skip=CKV_AWS_2:Checkov Looking for Hard Coded HTTPS but we use a variable.
+  # checkov:skip=CKV2_AWS_74: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   # checkov:skip=CKV_AWS_103:Checkov Looking for Hard Coded TLS1.2 but we use a variable.
   depends_on = [aws_acm_certificate_validation.cert_validate]
 
