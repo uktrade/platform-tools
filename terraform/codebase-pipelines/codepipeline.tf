@@ -109,6 +109,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
               { name : "CONFIG_JSON", value : var.application }, #TODO pass in cache invalidation object
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
+              { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
               # { name : "ENV_CONFIG", value : var.env_config },
             ])
           }
