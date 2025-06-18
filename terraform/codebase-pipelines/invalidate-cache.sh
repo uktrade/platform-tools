@@ -10,4 +10,7 @@ for i in ${DOMAINS}; do
     DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain ${i} '.[] | select(.Aliases.Items[0] == $domain) | .Id')
     PATHS=$(echo $CONFIG | jq -r --arg domain ${i} 'fromjson | .[$domain] | join(" ")')
     echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
+    aws cloudfront create-invalidation \
+    --distribution-id $DISTRIBUTION_ID \
+    --paths $PATHS
 done
