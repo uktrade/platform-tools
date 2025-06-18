@@ -10,6 +10,10 @@ variable "repository" {
   type = string
 }
 
+variable "platform_tools_version" {
+  type = string
+}
+
 variable "deploy_repository" {
   type    = string
   default = null
