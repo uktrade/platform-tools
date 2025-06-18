@@ -174,6 +174,32 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     name = "Deploy"
 
     dynamic "action" {
+      for_each = coalesce(stage.value.requires_approval, false) ? [1] : [] #TODO requires_cache_invalidation variable needs resolving
+      content {
+        name      = "InvalidateCache-${stage.value.name}"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = []
+        version          = "1"
+        run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
+
+        configuration = {
+          ProjectName = aws_codebuild_project.invalidate_cache.name
+          EnvironmentVariables : jsonencode([
+            { name : "CONFIG_JSON", value : var.application }, #TODO pass in cache invalidation object
+            { name : "APPLICATION", value : var.application },
+            { name : "ENVIRONMENT", value : stage.value.name },
+            { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
+            # { name : "ENV_CONFIG", value : var.env_config },
+          ])
+        }
+      }
+    }
+    
+    
+    dynamic "action" {
       for_each = local.service_order_list
       content {
         name             = action.value.name
