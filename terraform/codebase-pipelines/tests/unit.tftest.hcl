@@ -115,6 +115,10 @@ variables {
           name = "prod"
           id   = "123456789000"
         }
+        dns = {
+          name = "live"
+          id   = "222223456789"
+        }
       }
     }
   }
@@ -177,6 +181,15 @@ variables {
   }
 
   slack_channel = "/fake/slack/channel"
+}
+
+run "test_locals" {
+  command = plan
+
+  assert {
+    condition     = local.pipeline_branches == "foo"
+    error_message = "Should be:"
+  }
 }
 
 run "test_ecr" {
