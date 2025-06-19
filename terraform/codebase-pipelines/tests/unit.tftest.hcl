@@ -133,6 +133,22 @@ variables {
       ]
     }
   ]
+  cache_invalidation = {
+    domains = {
+      "service-1.env-1.my-app.uktrade.digital": {
+        paths = ["/a/*", "/b/*"]
+        environments = ["env-1"]
+      },
+      "service-2.env-1.my-app.uktrade.digital": {
+        paths = ["/a/*", "/b/*"]
+        environments = ["env-1"]
+      },
+       "service-2.env-2.my-app.uktrade.digital": {
+        paths = ["/a/*", "/b/*"]
+        environments = ["env-2"]
+      }
+    }
+  }
   pipelines = [
     {
       name   = "main",
