@@ -190,14 +190,15 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         version          = "1"
         run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
 
-      configuration = {
-        ProjectName = aws_codebuild_project.invalidate_cache.name #TODO Note - Could use a different project/buildspec initially to avoid breaking the working one?
-        EnvironmentVariables : jsonencode([
-          { name : "CONFIG_JSON", value : var.application }, #TODO pass in a cache_invalidation_environment_map object - buildpsec needs to resolve whether to do any validations
-          { name : "APPLICATION", value : var.application },
-          { name : "ENVIRONMENT", value : stage.value.name },
-          { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
-        ])
+        configuration = {
+          ProjectName = aws_codebuild_project.invalidate_cache.name #TODO Note - Could use a different project/buildspec initially to avoid breaking the working one?
+          EnvironmentVariables : jsonencode([
+            { name : "CONFIG_JSON", value : var.application }, #TODO pass in a cache_invalidation_environment_map object - buildpsec needs to resolve whether to do any validations
+            { name : "APPLICATION", value : var.application },
+            { name : "ENVIRONMENT", value : stage.value.name },
+            { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
+          ])
+        }
       }
     }
     
