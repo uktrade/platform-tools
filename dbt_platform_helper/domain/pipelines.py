@@ -145,6 +145,7 @@ class Pipelines:
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
+                platform_helper_version_for_template,
                 ecrs_that_need_importing,
                 deploy_repository,
                 codebase_pipeline_module_source,

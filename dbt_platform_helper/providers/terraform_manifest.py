@@ -20,6 +20,7 @@ class TerraformManifestProvider:
     def generate_codebase_pipeline_config(
         self,
         platform_config: dict,
+        platform_helper_version: str,
         ecr_imports: dict[str, str],
         deploy_repository: str,
         module_source: str,
@@ -32,7 +33,9 @@ class TerraformManifestProvider:
         self._add_codebase_pipeline_locals(terraform)
         self._add_provider(terraform, default_account)
         self._add_backend(terraform, platform_config, default_account, state_key_suffix)
-        self._add_codebase_pipeline_module(terraform, deploy_repository, module_source)
+        self._add_codebase_pipeline_module(
+            terraform, platform_helper_version, deploy_repository, module_source
+        )
         self._add_imports(terraform, ecr_imports)
         self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
@@ -41,7 +44,7 @@ class TerraformManifestProvider:
         platform_config: dict,
         env: str,
         platform_helper_version: str,
-        module_source: str = None,
+        module_source_override: str = None,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(env, platform_config)
@@ -54,7 +57,7 @@ class TerraformManifestProvider:
         self._add_header(terraform)
         self._add_environment_locals(terraform, application_name)
         self._add_backend(terraform, platform_config, account, state_key_suffix)
-        self._add_extensions_module(terraform, platform_helper_version, env, module_source)
+        self._add_extensions_module(terraform, platform_helper_version, env, module_source_override)
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
@@ -117,6 +120,7 @@ class TerraformManifestProvider:
     @staticmethod
     def _add_codebase_pipeline_module(
         terraform: dict,
+        platform_helper_version: str,
         deploy_repository: str,
         module_source: str,
     ):
@@ -136,6 +140,7 @@ class TerraformManifestProvider:
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
                 "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
                 "env_config": "${local.environments}",
+                "platform_tools_version": f"{platform_helper_version}",
             }
         }
 
