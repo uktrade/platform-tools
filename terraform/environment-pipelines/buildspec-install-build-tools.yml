@@ -44,7 +44,7 @@ phases:
       - git config --global credential.helper '!aws codecommit credential-helper $@'
       - git config --global credential.UseHttpPath true
       # TODO: Remove "-temp-fork" once tested.
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools-temp-fork.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools-temp-fork-2.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
       ## Install platform-helper
       - cd platform-tools
       - pip install poetry
