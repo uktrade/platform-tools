@@ -20,8 +20,6 @@ phases:
       ## regctl for listing images
       - curl -s -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/local/bin/regctl
       - chmod +x /usr/local/bin/regctl
-      ## yq for yaml processing
-      - pip install yq --quiet
 
       # Install Platform Helper
       ## Clone platform-tools
@@ -42,6 +40,8 @@ phases:
       - echo -e "\nUpdating paths"
       - echo -e "\nActivating virtual environment"
       - source venv/bin/activate
+      ## yq for yaml processing
+      - pip install yq --quiet
       ## Build platform-helper
       - echo -e "\n\n### Build and install platform-helper cloned from ${PLATFORM_HELPER_VERSION}\n"
       - echo -e "Installing dependencies"
