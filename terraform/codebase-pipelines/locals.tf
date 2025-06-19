@@ -31,25 +31,19 @@ locals {
   
   dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 
+  environments_requiring_cache_invalidation = ["kate"]
+
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
-        for name, env in val.environments : merge(env, lookup(local.base_env_config, env.name, {}))
-      ]
+        for name, env in val.environments : merge(env, merge(lookup(local.base_env_config, env.name, {}), {})) # Merge cache_invalidation_config for each environment here?
+      ],
     })
   }
+  # TODO
+  # output pipeline_map to see what shape it is and how we might adapt it to hold caching information
+  # What we need:
 
-  cache_invalidation_before_stages = {
-    "test-environment": {"before": ["stage-1", "stage-2"]}
-  }
-
-  # For each codebase pipeline, for each rungroup within the list in the before key of the invalidate_cache, add this action
-
-  # invalidate_cache:
-  #         before:
-  #           - rungroup_1
-  #         paths:
-  #           - /*
 
   services = sort(flatten([
     for run_group in var.services : [for service in flatten(values(run_group)) : service]
