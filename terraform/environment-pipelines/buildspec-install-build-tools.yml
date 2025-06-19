@@ -31,36 +31,32 @@ phases:
       - COMMIT_TYPE=$(python -c "import re, sys; print('tag' if re.match(r'\\d+\\.\\d+\\.\\d+', '${REQUIRED_VERSION}') else 'commit')")
       - echo "Installing build tools"
       - mkdir ./build-tools
-      - |
-          if [ "${COMMIT_TYPE}" == "tag" ]
-          then
-            echo "Installing platform-helper from release ${REQUIRED_VERSION}"
-            cd ./build-tools
-            pip install --target . --quiet dbt-platform-helper==${REQUIRED_VERSION}
-          else
-            echo "Installing platform-helper from branch/commit ${REQUIRED_VERSION}"
-            echo -e "\nGet CodeStar connection details"
-            codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
-            aws_account=$(echo "$codestar_connections" | jq -r ".[0].OwnerAccountId")
-            codestar_arn=$(echo "$codestar_connections" | jq -r ".[0].ConnectionArn")
-            codestar_connection_id=$(echo "${codestar_arn##*/}")
-            export GIT_CLONE_BASE_URL="https://codestar-connections.eu-west-2.amazonaws.com/git-http/$aws_account/eu-west-2/$codestar_connection_id/uktrade"
-            git config --global credential.helper '!aws codecommit credential-helper $@'
-            git config --global credential.UseHttpPath true
-            git clone -b "${REQUIRED_VERSION}" "${GIT_CLONE_BASE_URL}/platform-tools.git"
-            cd platform-tools
-            pip install poetry
-            poetry build --no-interaction --format sdist --no-ansi | tee build-log.txt
-            ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
-            echo "Art: $ARTIFACT"
-            cd "${CODEBUILD_SRC_DIR}/build-tools"
-            pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
-          fi
+
+      # Install platform-helper
+      - echo "Installing platform-helper from reference ${REQUIRED_VERSION}"
+      ## Clone platform-tools:
+      - echo -e "\nGet CodeStar connection details"
+      - codestar_connections=$(aws codestar-connections list-connections --provider-type GitHub --query "Connections[? ConnectionStatus == 'AVAILABLE']")
+      - aws_account=$(echo "$codestar_connections" | jq -r ".[0].OwnerAccountId")
+      - codestar_arn=$(echo "$codestar_connections" | jq -r ".[0].ConnectionArn")
+      - codestar_connection_id=$(echo "${codestar_arn##*/}")
+      - export GIT_CLONE_BASE_URL="https://codestar-connections.eu-west-2.amazonaws.com/git-http/$aws_account/eu-west-2/$codestar_connection_id/uktrade"
+      - git config --global credential.helper '!aws codecommit credential-helper $@'
+      - git config --global credential.UseHttpPath true
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
+      ## Install platform-helper
+      - cd platform-tools
+      - pip install poetry
+      - poetry build --no-interaction --format sdist --no-ansi | tee build-log.txt
+      - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
+      - 'echo "Art: $ARTIFACT"'
+      - cd "${CODEBUILD_SRC_DIR}/build-tools"
+      - pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
       - VERSION_OUTPUT=""
       - export "PATH=$(pwd)/bin:$PATH"
       - export PYTHONPATH=$(pwd)
       - platform-helper --version
-      - | 
+      - |
           if [ "${SLACK_THREAD_ID}" == "NONE" ]
           then
             export SLACK_REF=$(platform-helper notify environment-progress "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" \

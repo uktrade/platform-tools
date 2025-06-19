@@ -114,16 +114,16 @@ def test_codebase_prepare_generates_the_expected_files(mocked_requests_get, tmp_
                 "File .copilot/config.yml created",
             ),
             call(
-                "File phases/build.sh created",
+                "File .copilot/phases/build.sh created",
             ),
             call(
-                "File phases/install.sh created",
+                "File .copilot/phases/install.sh created",
             ),
             call(
-                "File phases/post_build.sh created",
+                "File .copilot/phases/post_build.sh created",
             ),
             call(
-                "File phases/pre_build.sh created",
+                "File .copilot/phases/pre_build.sh created",
             ),
         ]
     )

@@ -24,6 +24,28 @@ class TestClickIOProvider:
         io.info("Info.")
         assert "Info." in str(capsys.readouterr())
 
+    @pytest.mark.parametrize(
+        "debug_value, debug_expected",
+        [
+            ("TRUE", True),
+            ("TrUe", True),
+            ("false", False),
+            ("", False),
+            ("   ", False),
+            (None, False),
+        ],
+    )
+    def test_debug_outputs_based_on_debug_flag(self, debug_value, debug_expected, capsys):
+        io = ClickIOProvider()
+        io.debug_flag = debug_value
+        io.debug("Debug Message!")
+
+        captured = capsys.readouterr()
+        if debug_expected:
+            assert "Debug Message!" in captured.out
+        else:
+            assert "Debug Message!" not in captured.out
+
     def test_input(self):
         mock_input = StringIO("web")
         with patch("sys.stdin", mock_input):

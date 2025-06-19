@@ -93,6 +93,13 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline
+  values = {
+    json = "{\"Sid\": \"AllowUseCodestarConnection\"}"
+  }
+}
+
 variables {
   env_config = {
     "*" = {
@@ -155,8 +162,8 @@ variables {
     copilot-pipeline    = "my-codebase"
     copilot-application = "my-app"
   }
-
-  slack_channel = "/fake/slack/channel"
+  platform_tools_version = "1.2.3"
+  slack_channel          = "/fake/slack/channel"
 }
 
 run "test_ecr" {
@@ -737,6 +744,21 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
   }
 
+  assert {
+    condition     = aws_iam_role_policy.codestar_access_for_codebase_pipeline.name == "codestar-access"
+    error_message = "Should be: 'codestar-access'"
+  }
+
+  assert {
+    condition     = aws_iam_role_policy.codestar_access_for_codebase_pipeline.role == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
+  }
+
+  assert {
+    condition     = aws_iam_role_policy.codestar_access_for_codebase_pipeline.policy == "{\"Sid\": \"AllowUseCodestarConnection\"}"
+    error_message = "Should be: '{\"Sid\": \"AllowUseCodestarConnection\"}'"
+  }
+
   # CodePipeline
   assert {
     condition     = aws_iam_role.codebase_deploy_pipeline.name == "my-app-my-codebase-codebase-pipeline"
@@ -1120,14 +1142,34 @@ run "test_codebuild_deploy" {
     condition     = one(aws_codebuild_project.codebase_deploy.environment).image_pull_credentials_type == "CODEBUILD"
     error_message = "Should be: 'CODEBUILD'"
   }
+
   assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].name == "ENV_CONFIG"
-    error_message = "Should be: 'ENV_CONFIG'"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
+    error_message = "Should be: ENV_CONFIG"
   }
   assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
     error_message = "Incorrect value"
   }
+
+  assert {
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].name == "CODESTAR_CONNECTION_ARN"
+    error_message = "Should be: PLATFORM_HELPER_VERSION"
+  }
+  assert {
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].value == "ConnectionArn"
+    error_message = "Should be: ConnectionArn"
+  }
+
+  assert {
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].name == "PLATFORM_HELPER_VERSION"
+    error_message = "Should be: PLATFORM_HELPER_VERSION"
+  }
+  assert {
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].value == "1.2.3"
+    error_message = "Should be: 1.2.3"
+  }
+
   assert {
     condition = aws_codebuild_project.codebase_deploy.logs_config[0].cloudwatch_logs[
       0
