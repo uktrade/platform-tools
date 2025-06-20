@@ -28,7 +28,7 @@ variable "additional_ecr_repository" {
 variable "cache_invalidation" {
   type = object({
     domains = map(object({
-      paths = list(string)
+      paths       = list(string)
       environment = string
     }))
   })

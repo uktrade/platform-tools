@@ -139,16 +139,16 @@ variables {
   ]
   cache_invalidation = {
     domains = {
-      "service-1.env-1.my-app.uktrade.digital": {
-        paths = ["a", "b"]
+      "service-1.env-1.my-app.uktrade.digital" : {
+        paths       = ["a", "b"]
         environment = "env-1"
       },
-      "service-2.env-1.my-app.uktrade.digital": {
-        paths = ["c", "d"]
+      "service-2.env-1.my-app.uktrade.digital" : {
+        paths       = ["c", "d"]
         environment = "env-1"
       },
-       "service-2.env-2.my-app.uktrade.digital": {
-        paths = ["e", "f"]
+      "service-2.env-2.my-app.uktrade.digital" : {
+        paths       = ["e", "f"]
         environment = "env-2"
       }
     }
@@ -215,27 +215,27 @@ run "test_locals" {
     error_message = "Should be:"
   }
   assert {
-    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"],"a")
+    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"], "a")
     error_message = "Should be:"
   }
   assert {
-    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"],"b")
+    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"], "b")
     error_message = "Should be:"
   }
   assert {
-    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"],"c")
+    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"], "c")
     error_message = "Should be:"
   }
   assert {
-    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"],"d")
+    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"], "d")
     error_message = "Should be:"
   }
   assert {
-    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"],"e")
+    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"], "e")
     error_message = "Should be:"
   }
   assert {
-    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"],"f")
+    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"], "f")
     error_message = "Should be:"
   }
   assert {
@@ -733,7 +733,7 @@ run "test_iam" {
     error_message = "First statement effect should be: Allow"
   }
   assert {
-    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources == toset(
+    condition = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources == toset(
       [
         "arn:aws:iam::111123456789:role/environment-pipeline-assumed-role",
         "arn:aws:iam::222223456789:role/environment-pipeline-assumed-role"
@@ -749,7 +749,7 @@ run "test_iam" {
     condition     = strcontains(jsonencode(data.aws_iam_policy_document.dns_account_assume_role[""]), "sts:AssumeRole") == true
     error_message = "Statement should not contain kms:Decrypt"
   }
-  
+
   # CodeBuild image build
   assert {
     condition     = aws_iam_role.codebase_image_build[""].name == "my-app-my-codebase-codebase-image-build"

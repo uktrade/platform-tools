@@ -11,7 +11,7 @@ resource "aws_iam_role" "codebase_image_build" {
 data "aws_iam_policy_document" "dns_account_assume_role" {
   for_each = toset(local.cache_invalidation_enabled ? [""] : [])
   statement {
-    sid = "AllowDNSAccountAccess"
+    sid    = "AllowDNSAccountAccess"
     effect = "Allow"
     actions = [
       "sts:AssumeRole",

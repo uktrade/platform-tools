@@ -28,19 +28,21 @@ locals {
   }
 
   deploy_account_ids = distinct([for env in local.base_env_config : env.account])
-  
-  dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
+
+  dns_account_ids           = distinct([for env in local.base_env_config : env.dns_account])
   dns_account_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"]
 
   environments_requiring_cache_invalidation = distinct([for d in var.cache_invalidation.domains : d.environment])
+
   cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
+
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
         for name, env in val.environments : merge(env, merge(
           lookup(local.base_env_config, env.name, {}),
           {
-            requires_cache_invalidation: contains(local.environments_requiring_cache_invalidation, env.name)
+            requires_cache_invalidation : contains(local.environments_requiring_cache_invalidation, env.name)
           }
         ))
       ],
@@ -52,17 +54,6 @@ locals {
       for domain, data in var.cache_invalidation.domains : domain => data.paths if data.environment == env
     }
   })
-
-  # "dev":
-  #   {"www.domain.com": ["a","b"],
-  #   "www.domain2.com": ["a", "b"]}
-  # "prod":
-
-
-  # TODO
-  # output pipeline_map to see what shape it is and how we might adapt it to hold caching information
-  # What we need:
-
 
   services = sort(flatten([
     for run_group in var.services : [for service in flatten(values(run_group)) : service]

@@ -94,7 +94,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       dynamic "action" {
         for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
         content {
-          name      = "InvalidateCache-${stage.value.name}"
+          name             = "InvalidateCache-${stage.value.name}"
           category         = "Build"
           owner            = "AWS"
           provider         = "CodeBuild"
@@ -106,7 +106,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           configuration = {
             ProjectName = aws_codebuild_project.invalidate_cache.name
             EnvironmentVariables : jsonencode([
-              { name : "CONFIG_JSON", value : local.cache_invalidation_map }, 
+              { name : "CONFIG_JSON", value : local.cache_invalidation_map },
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
               { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
@@ -172,7 +172,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
   stage {
     name = "Deploy"
-    
+
     dynamic "action" {
       for_each = local.service_order_list
       content {
@@ -205,7 +205,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     dynamic "action" {
       for_each = toset(local.cache_invalidation_enabled ? [""] : [])
       content {
-        name      = "InvalidateCache"
+        name             = "InvalidateCache"
         category         = "Build"
         owner            = "AWS"
         provider         = "CodeBuild"
