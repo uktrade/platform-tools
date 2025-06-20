@@ -9,8 +9,7 @@ resource "aws_iam_role" "codebase_image_build" {
 }
 
 data "aws_iam_policy_document" "dns_account_assume_role" {
-  # TODO only create if cache invalidation is needed
-  for_each  = toset(length(local.dns_account_ids) > 0 ? [""] : [])
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
   statement {
     sid = "AllowDNSAccountAccess"
     effect = "Allow"
@@ -23,8 +22,7 @@ data "aws_iam_policy_document" "dns_account_assume_role" {
 
 # Assume DNS account role
 resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
-  # TODO only create if cache invalidation is needed
-  for_each  = toset(length(local.dns_account_ids) > 0 ? [""] : [])
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
 
   name   = "${var.application}-${var.codebase}-dns-account-assume-role"
   role   = aws_iam_role.codebase_deploy.name
