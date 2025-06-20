@@ -144,11 +144,11 @@ variables {
         environment = "env-1"
       },
       "service-2.env-1.my-app.uktrade.digital": {
-        paths = ["/a/*", "/b/*"]
+        paths = ["c", "d"]
         environment = "env-1"
       },
        "service-2.env-2.my-app.uktrade.digital": {
-        paths = ["/a/*", "/b/*"]
+        paths = ["e", "f"]
         environment = "env-2"
       }
     }
@@ -215,10 +215,29 @@ run "test_locals" {
     error_message = "Should be:"
   }
   assert {
-    condition     = local.cache_invalidation_map.env-1.service-1.env-1.my-app.uktrade.digital.paths == "a"
+    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"],"a")
     error_message = "Should be:"
   }
-
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"],"b")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"],"c")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"],"d")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"],"e")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"],"f")
+    error_message = "Should be:"
+  }
   # "service-1.env-1.my-app.uktrade.digital": {
       #   paths = ["/a/*", "/b/*"]
       #   environment = "env-1"
