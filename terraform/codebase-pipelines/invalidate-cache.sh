@@ -1,6 +1,10 @@
 #!/bin/bash
 CONFIG=${1}
 
+ENV_CONFIG='"{\"dev\": {\"account\":\"1234\",\"dns_account\":\"4567\"}, \"prod\": {\"account\":\"0987\",\"dns_account\":\"4444\"}}"'
+CONFIG_JSON='"{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]}"'
+DNS_ACCOUNT_ID=$(echo $ENV_CONFIG | jq -r --arg env ${ENVIRONMENT} 'fromjson | .[$env].dns_account')
+
 CONFIG='"{\"kate\":{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]},
 \"david\":{\"web.david.demodjango.uktrade.digital\":[\"/hola/*\", \"/adios/*\"], \"api.david.demodjango.uktrade.digital\":[\"/hola/*\", \"/adios/*\"]}}"'
 

@@ -220,7 +220,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
             { name : "CONFIG_JSON", value : local.cache_invalidation_map },
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "ENV_CONFIG", value : local.base_env_config }, #TODO - DNS account ID is per environment, so we need to pass in all the environment config so that it can be figured out at runtime
+            { name : "ENV_CONFIG", value : local.base_env_config },
             { name : "REPOSITORY_URL", value : local.repository_url },
           ])
         }

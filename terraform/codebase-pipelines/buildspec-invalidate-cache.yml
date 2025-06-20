@@ -14,8 +14,8 @@ phases:
     commands:
       - |
         set -e
-        CONFIG_JSON='"{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]}"'
-        
+        DNS_ACCOUNT_ID=$(echo $ENV_CONFIG | jq -r --arg env ${ENVIRONMENT} 'fromjson | .[$env].dns_account')
+
         echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
         assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/environment-pipeline-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
         export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
@@ -23,13 +23,13 @@ phases:
         export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
       
         # Invalidate caches
-        ENV_CONFIG=$(echo $CONFIG_JSON | jq -r --arg env ${ENVIRONMENT} 'fromjson | .[$env]')
-        DOMAINS=$(echo $ENV_CONFIG | jq -r 'fromjson | keys[]')
+        ENV_CACHE_INVALIDATION_CONFIG=$(echo $CONFIG_JSON | jq -r --arg env ${ENVIRONMENT} 'fromjson | .[$env]')
+        DOMAINS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r 'fromjson | keys[]')
 
         for i in ${DOMAINS}; do
           echo "Getting distribution ID for domain ${i}"
           DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
-          PATHS=$(echo $ENV_CONFIG | jq -r --arg domain ${i} 'fromjson | .[$domain] | join(" ")')
+          PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain ${i} 'fromjson | .[$domain] | join(" ")')
           echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
         done
       #TODO check for any alias=domain, instead of just the first item
