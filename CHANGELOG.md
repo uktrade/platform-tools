@@ -1,5 +1,17 @@
 # Changelog
 
+## [15.3.0](https://github.com/uktrade/platform-tools/compare/15.2.2...15.3.0) (2025-06-19)
+
+
+### Features
+
+* Platform-helper internal repo changes (DBTP-2100) ([#889](https://github.com/uktrade/platform-tools/issues/889)) ([9faad52](https://github.com/uktrade/platform-tools/commit/9faad5250a6fe3c67330359c05a1b9c51a071fc0))
+
+
+### Bug Fixes
+
+* Retrieve only available codestar connections (DBTP-2000) ([#880](https://github.com/uktrade/platform-tools/issues/880)) ([ef94137](https://github.com/uktrade/platform-tools/commit/ef94137772d728e9806b4746d0a62f4db233842c))
+
 ## [15.2.2](https://github.com/uktrade/platform-tools/compare/15.2.1...15.2.2) (2025-06-05)
 
 
