@@ -33,7 +33,7 @@ locals {
   dns_account_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"]
 
   environments_requiring_cache_invalidation = distinct([for d in var.cache_invalidation.domains : d.environment])
-
+  cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [

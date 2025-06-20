@@ -238,11 +238,10 @@ run "test_locals" {
     condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"],"f")
     error_message = "Should be:"
   }
-  # "service-1.env-1.my-app.uktrade.digital": {
-      #   paths = ["/a/*", "/b/*"]
-      #   environment = "env-1"
-      # }
-
+  assert {
+    condition     = local.cache_invalidation_enabled == true
+    error_message = "Should be:"
+  }
 }
 
 run "test_ecr" {
