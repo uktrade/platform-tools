@@ -400,7 +400,7 @@ class PlatformConfigSchema:
                     "contact_name": str,
                     "contact_email": str,
                     "documentation_url": str,
-                    "services_to_monitor": dict[str, list[str]],
+                    "services_to_monitor": {str: [str]},
                 }
             },
         }
