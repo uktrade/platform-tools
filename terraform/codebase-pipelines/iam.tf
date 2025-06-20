@@ -22,13 +22,14 @@ data "aws_iam_policy_document" "dns_account_assume_role" {
 }
 
 # Assume DNS account role
-# resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
-#   for_each  = toset(length(local.dns_account_ids) > 0 ? [""] : [])
-#   # for_each = toset(local.cdn_enabled ? [""] : [])
-#   name   = "${var.application}-${var.codebase}-dns-account-assume-role-for-codebase-deploy"
-#   role   = aws_iam_role.codebase_deploy.name
-#   policy = data.aws_iam_policy_document.dns_account_assume_role[""].json
-# }
+resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
+  # TODO only create if cache invalidation is needed
+  for_each  = toset(length(local.dns_account_ids) > 0 ? [""] : [])
+
+  name   = "${var.application}-${var.codebase}-dns-account-assume-role"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = jsonencode(data.aws_iam_policy_document.dns_account_assume_role[each.key])
+}
 
 
 data "aws_iam_policy_document" "assume_codebuild_role" {

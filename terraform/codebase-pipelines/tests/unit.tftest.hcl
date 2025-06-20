@@ -718,6 +718,10 @@ run "test_iam" {
     condition     = data.aws_iam_policy_document.dns_account_assume_role[""].json != null
     error_message = "Should be: "
   }
+  assert {
+    condition     = strcontains(jsonencode(data.aws_iam_policy_document.dns_account_assume_role[""]), "sts:AssumeRole") == true
+    error_message = "Statement should not contain kms:Decrypt"
+  }
   
   # CodeBuild image build
   assert {
