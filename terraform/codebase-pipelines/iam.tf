@@ -320,7 +320,6 @@ resource "aws_iam_role" "codebase_deploy" {
   tags               = local.tags
 }
 
-
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
   name   = "artifact-store-access"
   role   = aws_iam_role.codebase_deploy.name
