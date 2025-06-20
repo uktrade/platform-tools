@@ -25,6 +25,16 @@ variable "additional_ecr_repository" {
   default = null
 }
 
+variable "cache_invalidation" {
+  type = object({
+    domains = map(object({
+      paths = list(string)
+      environment = string
+    }))
+  })
+}
+
+
 variable "pipelines" {
   type = list(object(
     {
@@ -35,7 +45,6 @@ variable "pipelines" {
         {
           name              = string
           requires_approval = optional(bool)
-          cache_invalidation = optional(any)
         }
       ))
     }

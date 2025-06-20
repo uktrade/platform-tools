@@ -32,15 +32,33 @@ locals {
   dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
   dns_account_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"]
 
-  environments_requiring_cache_invalidation = ["kate"]
+  environments_requiring_cache_invalidation = distinct([for d in var.cache_invalidation.domains : d.environment])
 
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
-        for name, env in val.environments : merge(env, merge(lookup(local.base_env_config, env.name, {}), {})) # Merge cache_invalidation_config for each environment here?
+        for name, env in val.environments : merge(env, merge(
+          lookup(local.base_env_config, env.name, {}),
+          {
+            requires_cache_invalidation: contains(local.environments_requiring_cache_invalidation, env.name)
+          }
+        ))
       ],
     })
   }
+
+  cache_invalidation_map = tomap({
+    for env in local.environments_requiring_cache_invalidation : env => {
+      for domain, data in var.cache_invalidation.domains : domain => data.paths if data.environment == env
+    }
+  })
+
+  # "dev":
+  #   {"www.domain.com": ["a","b"],
+  #   "www.domain2.com": ["a", "b"]}
+  # "prod":
+
+
   # TODO
   # output pipeline_map to see what shape it is and how we might adapt it to hold caching information
   # What we need:

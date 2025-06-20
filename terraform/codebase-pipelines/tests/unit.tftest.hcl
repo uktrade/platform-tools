@@ -140,16 +140,16 @@ variables {
   cache_invalidation = {
     domains = {
       "service-1.env-1.my-app.uktrade.digital": {
-        paths = ["/a/*", "/b/*"]
-        environments = ["env-1"]
+        paths = ["a", "b"]
+        environment = "env-1"
       },
       "service-2.env-1.my-app.uktrade.digital": {
         paths = ["/a/*", "/b/*"]
-        environments = ["env-1"]
+        environment = "env-1"
       },
        "service-2.env-2.my-app.uktrade.digital": {
         paths = ["/a/*", "/b/*"]
-        environments = ["env-2"]
+        environment = "env-2"
       }
     }
   }
@@ -214,6 +214,15 @@ run "test_locals" {
     condition     = local.dns_account_ids[1] == "222223456789"
     error_message = "Should be:"
   }
+  assert {
+    condition     = local.cache_invalidation_map.env-1.service-1.env-1.my-app.uktrade.digital.paths == "a"
+    error_message = "Should be:"
+  }
+
+  # "service-1.env-1.my-app.uktrade.digital": {
+      #   paths = ["/a/*", "/b/*"]
+      #   environment = "env-1"
+      # }
 
 }
 
