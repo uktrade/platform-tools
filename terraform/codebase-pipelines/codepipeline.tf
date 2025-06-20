@@ -92,10 +92,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
-        # TODO instead of requires_approval, we need requires_cache_invalidation here.
-        # stage.value is one of the environments in pipeline_map
-        # -> need to resolve a value within pipeline map that is true only if that environment is listed in caching config, or if we are defaulting to all environments
+        for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
         content {
           name      = "InvalidateCache-${stage.value.name}"
           category         = "Build"
@@ -104,12 +101,12 @@ resource "aws_codepipeline" "codebase_pipeline" {
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
+          run_order        = length(local.service_order_list) + 2
 
           configuration = {
             ProjectName = aws_codebuild_project.invalidate_cache.name
             EnvironmentVariables : jsonencode([
-              { name : "CONFIG_JSON", value : var.application }, #TODO pass in cache invalidation object for specific environment
+              { name : "CONFIG_JSON", value : local.cache_invalidation_map }, 
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
               { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
@@ -215,12 +212,12 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         input_artifacts  = ["deploy_source"]
         output_artifacts = []
         version          = "1"
-        run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
+        run_order        = length(local.service_order_list) + 2
 
         configuration = {
-          ProjectName = aws_codebuild_project.invalidate_cache.name #TODO Note - Could use a different project/buildspec initially to avoid breaking the working one?
+          ProjectName = aws_codebuild_project.invalidate_cache.name
           EnvironmentVariables : jsonencode([
-            { name : "CONFIG_JSON", value : local.cache_invalidation_map }, #TODO pass in a cache_invalidation_environment_map object - buildpsec needs to resolve whether to do any validations
+            { name : "CONFIG_JSON", value : local.cache_invalidation_map },
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "ENV_CONFIG", value : local.base_env_config }, #TODO - DNS account ID is per environment, so we need to pass in all the environment config so that it can be figured out at runtime

@@ -23,33 +23,16 @@ phases:
         export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
       
         # Invalidate caches
-        DOMAINS=$(echo $CONFIG_JSON | jq -r 'fromjson | keys[]')
+        ENV_CONFIG=$(echo $CONFIG_JSON | jq -r --arg env ${ENVIRONMENT} 'fromjson | .[$env]')
+        DOMAINS=$(echo $ENV_CONFIG | jq -r 'fromjson | keys[]')
+
         for i in ${DOMAINS}; do
           echo "Getting distribution ID for domain ${i}"
           DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
-          PATHS=$(echo $CONFIG_JSON | jq -r --arg domain ${i} 'fromjson | .[$domain] | join(" ")')
+          PATHS=$(echo $ENV_CONFIG | jq -r --arg domain ${i} 'fromjson | .[$domain] | join(" ")')
           echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
         done
       #TODO check for any alias=domain, instead of just the first item
   post_build:
     commands:
       - echo "DONE"
-
-build:
-    commands:
-    - |
-      # Need to find out how many distributions should be touched
-      set -e
-      echo "Running invalidation"
-      CONFIG_JSON='"{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]}"'
-      echo "CONFIG_JSON: $CONFIG_JSON"
-      DOMAINS=$(echo $CONFIG_JSON | jq -r 'fromjson | keys[]')
-      echo "DOMAINS: $DOMAINS"
-      for i in ${DOMAINS}; do
-        echo "Getting distribution ID for domain ${i}"
-        echo $AWS_PROFILE
-        aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id'
-        DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
-        PATHS=$(echo $CONFIG | jq -r --arg domain "$i" 'fromjson | .[$domain] | join(" ")')
-        echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
-      done

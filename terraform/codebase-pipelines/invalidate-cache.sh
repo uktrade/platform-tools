@@ -1,9 +1,11 @@
 #!/bin/bash
 CONFIG=${1}
 
-CONFIG='"{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]}"'
+CONFIG='"{\"kate\":{\"web.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"], \"api.kate.demodjango.uktrade.digital\":[\"/hello/*\", \"/goodbye/*\"]},
+\"david\":{\"web.david.demodjango.uktrade.digital\":[\"/hola/*\", \"/adios/*\"], \"api.david.demodjango.uktrade.digital\":[\"/hola/*\", \"/adios/*\"]}}"'
 
-DOMAINS=$(echo $CONFIG | jq -r 'fromjson | keys[]')
+ENV_CONFIG=$(echo $CONFIG | jq -r --arg env ${ENVIRONMENT} 'fromjson | .[$env]')
+DOMAINS=$(echo $ENV_CONFIG | jq -r 'fromjson | keys[]')
 
 for i in ${DOMAINS}; do
     echo "Getting distribution ID for domain ${i}"
