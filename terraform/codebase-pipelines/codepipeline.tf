@@ -113,7 +113,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
               { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
-              # { name : "ENV_CONFIG", value : var.env_config },
+              { name : "ENV_CONFIG", value : local.base_env_config },
             ])
           }
         }
@@ -175,32 +175,6 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
   stage {
     name = "Deploy"
-
-    dynamic "action" {
-      for_each = true ? [1] : [] 
-      #TODO replace requires_approval with requires_cache_invalidation
-      #TODO requires_cache_invalidation is true here if *ANY* environment requires it - e.g. if the cache_invalidation config block appears at all
-      content {
-        name      = "InvalidateCache"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
-
-        configuration = {
-          ProjectName = aws_codebuild_project.invalidate_cache.name #TODO Note - Could use a different project/buildspec initially to avoid breaking the working one?
-          EnvironmentVariables : jsonencode([
-            { name : "CONFIG_JSON", value : "foo" }, #TODO pass in a cache_invalidation_environment_map object - buildpsec needs to resolve whether to do any validations
-            { name : "APPLICATION", value : var.application },
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            # { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account }, #TODO - DNS account ID is per environment, so we need to pass in all the environment config so that it can be figured out at runtime
-          ])
-        }
-      }
-    }
     
     dynamic "action" {
       for_each = local.service_order_list
@@ -226,6 +200,33 @@ resource "aws_codepipeline" "manual_release_pipeline" {
             { name : "REPOSITORY_URL", value : local.repository_url },
             { name : "SERVICE", value : action.value.name },
             { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+          ])
+        }
+      }
+    }
+
+    dynamic "action" {
+      for_each = true ? [1] : [] 
+      #TODO replace requires_approval with requires_cache_invalidation
+      #TODO requires_cache_invalidation is true here if *ANY* environment requires it - e.g. if the cache_invalidation config block appears at all
+      content {
+        name      = "InvalidateCache"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = []
+        version          = "1"
+        run_order        = length(local.service_order_list) + 2 #TODO should depend on if there was a requires action or not?
+
+        configuration = {
+          ProjectName = aws_codebuild_project.invalidate_cache.name #TODO Note - Could use a different project/buildspec initially to avoid breaking the working one?
+          EnvironmentVariables : jsonencode([
+            { name : "CONFIG_JSON", value : "foo" }, #TODO pass in a cache_invalidation_environment_map object - buildpsec needs to resolve whether to do any validations
+            { name : "APPLICATION", value : var.application },
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+            { name : "ENV_CONFIG", value : local.base_env_config }, #TODO - DNS account ID is per environment, so we need to pass in all the environment config so that it can be figured out at runtime
+            { name : "REPOSITORY_URL", value : local.repository_url },
           ])
         }
       }

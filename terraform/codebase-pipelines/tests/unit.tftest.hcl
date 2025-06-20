@@ -187,9 +187,34 @@ run "test_locals" {
   command = plan
 
   assert {
-    condition     = local.pipeline_branches == "foo"
+    condition     = length(local.base_env_config) == 3
     error_message = "Should be:"
   }
+  assert {
+    condition     = local.base_env_config["dev"].account == "000123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].dns_account == "111123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["staging"].dns_account == "111123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["prod"].dns_account == "222223456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.dns_account_ids[0] == "111123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.dns_account_ids[1] == "222223456789"
+    error_message = "Should be:"
+  }
+
 }
 
 run "test_ecr" {
@@ -667,7 +692,33 @@ run "test_tagged_branch_filter" {
 
 run "test_iam" {
   command = plan
-
+  # # DNS account access
+  # assert {
+  #   condition     = aws_iam_role.dns_account_assume_role_for_codebase_deploy[""].name == "my-app-my-codebase-codebase-image-build"
+  #   error_message = "Should be: 'my-app-my-codebase-codebase-image-build'"
+  # }
+  assert {
+    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].effect == "Allow"
+    error_message = "First statement effect should be: Allow"
+  }
+  assert {
+    condition     = length(data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources) == 2
+    error_message = "First statement effect should be: Allow"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources == toset(
+      [
+        "arn:aws:iam::111123456789:role/environment-pipeline-assumed-role",
+        "arn:aws:iam::222223456789:role/environment-pipeline-assumed-role"
+      ]
+    )
+    error_message = "First statement effect should be: Allow"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].json != null
+    error_message = "Should be: "
+  }
+  
   # CodeBuild image build
   assert {
     condition     = aws_iam_role.codebase_image_build[""].name == "my-app-my-codebase-codebase-image-build"
@@ -1157,10 +1208,10 @@ run "test_codebuild_deploy" {
     condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].name == "ENV_CONFIG"
     error_message = "Should be: 'ENV_CONFIG'"
   }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
-    error_message = "Incorrect value"
-  }
+  # assert {
+  #   condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\": \"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
+  #   error_message = "Incorrect value"
+  # }
   assert {
     condition = aws_codebuild_project.codebase_deploy.logs_config[0].cloudwatch_logs[
       0

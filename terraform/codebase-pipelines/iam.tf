@@ -9,25 +9,26 @@ resource "aws_iam_role" "codebase_image_build" {
 }
 
 data "aws_iam_policy_document" "dns_account_assume_role" {
-  # for_each = toset(local.cdn_enabled ? [""] : [])
+  # TODO only create if cache invalidation is needed
+  for_each  = toset(length(local.dns_account_ids) > 0 ? [""] : [])
   statement {
+    sid = "AllowDNSAccountAccess"
+    effect = "Allow"
     actions = [
-      "sts:AssumeRole"
+      "sts:AssumeRole",
     ]
-    resources = [
-      for id in local.dns_account_ids :
-        "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"
-    ]
+    resources = local.dns_account_assumed_roles
   }
 }
 
 # Assume DNS account role
-resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
-  # for_each = toset(local.cdn_enabled ? [""] : [])
-  name   = "${var.application}-${var.codebase}-dns-account-assume-role-for-codebase-deploy"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.dns_account_assume_role.json
-}
+# resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
+#   for_each  = toset(length(local.dns_account_ids) > 0 ? [""] : [])
+#   # for_each = toset(local.cdn_enabled ? [""] : [])
+#   name   = "${var.application}-${var.codebase}-dns-account-assume-role-for-codebase-deploy"
+#   role   = aws_iam_role.codebase_deploy.name
+#   policy = data.aws_iam_policy_document.dns_account_assume_role[""].json
+# }
 
 
 data "aws_iam_policy_document" "assume_codebuild_role" {
