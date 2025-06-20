@@ -24,7 +24,8 @@ EOF
 EOF
 
   ## Contact details
-  contacts = <<EOF
+  ## Both name and email are required for this block, so don't add if either are missing from platform-config.yml
+  contacts = var.config.contact_name == null || var.config.contact_email == null ? "" : <<EOF
   contacts:
     - name: ${var.config.contact_name}
       type: email
