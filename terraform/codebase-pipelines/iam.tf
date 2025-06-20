@@ -320,12 +320,6 @@ resource "aws_iam_role" "codebase_deploy" {
   tags               = local.tags
 }
 
-# TODO This should be dynamic - only created when necessary
-# resource "aws_iam_role_policy" "cache_invalidation" {
-#   name   = "cache-invalidation"
-#   role   = aws_iam_role.codebase_deploy.name
-#   policy = data.aws_iam_policy_document.cache_invalidation.json
-# }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
   name   = "artifact-store-access"
