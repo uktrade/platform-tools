@@ -6,7 +6,6 @@ override_data {
   values = {
     result = {
       ConnectionArn = "ConnectionArn"
-#      ConnectionArn = "arn:aws:codeconnections:eu-west-2:999988887777:connection/12345678-abcd-ef09-8765-4321abcdef12"
     }
   }
 }
@@ -312,13 +311,6 @@ variables {
     "prod" : null
   }
 }
-
-#run "test_locals" {
-#  assert {
-#    condition     = local.git_codestar_url == "https://codestar-connections.eu-west-2.amazonaws.com/git-http/XXX/eu-west-2/12345678-abcd-ef09-8765-4321abcdef12/uktrade"
-#    error_message = "Should be: "
-#  }
-#}
 
 run "test_code_pipeline" {
   command = plan

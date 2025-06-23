@@ -37,6 +37,11 @@ resource "aws_codebuild_project" "codebase_image_build" {
     }
 
     environment_variable {
+      name  = "AWS_ACCOUNT_ID"
+      value = data.aws_region.current.name
+    }
+
+    environment_variable {
       name  = "ECR_REPOSITORY"
       value = local.ecr_name
     }

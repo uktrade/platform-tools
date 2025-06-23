@@ -38,6 +38,8 @@ phases:
       - echo -e "\nGet CodeStar connection details"
       - git config --global credential.helper '!aws codecommit credential-helper $@'
       - git config --global credential.UseHttpPath true
+      - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
+      - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
       ## Install platform-helper
       - cd platform-tools
