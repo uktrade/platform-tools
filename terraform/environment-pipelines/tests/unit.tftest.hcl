@@ -6,6 +6,7 @@ override_data {
   values = {
     result = {
       ConnectionArn = "ConnectionArn"
+#      ConnectionArn = "arn:aws:codeconnections:eu-west-2:999988887777:connection/12345678-abcd-ef09-8765-4321abcdef12"
     }
   }
 }
@@ -227,6 +228,20 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_region.current["name"]
+  values = {
+    value = "eu-west-2"
+  }
+}
+
+override_data {
+  target = data.aws_caller_identity.current["account_id"]
+  values = {
+    value = "999988887777"
+  }
+}
+
 variables {
   application   = "my-app"
   repository    = "my-repository"
@@ -297,6 +312,13 @@ variables {
     "prod" : null
   }
 }
+
+#run "test_locals" {
+#  assert {
+#    condition     = local.git_codestar_url == "https://codestar-connections.eu-west-2.amazonaws.com/git-http/XXX/eu-west-2/12345678-abcd-ef09-8765-4321abcdef12/uktrade"
+#    error_message = "Should be: "
+#  }
+#}
 
 run "test_code_pipeline" {
   command = plan
