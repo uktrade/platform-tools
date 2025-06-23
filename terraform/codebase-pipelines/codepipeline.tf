@@ -63,6 +63,31 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
+        for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
+        content {
+          name             = "InvalidateCache-${stage.value.name}"
+          category         = "Build"
+          owner            = "AWS"
+          provider         = "CodeBuild"
+          input_artifacts  = ["deploy_source"]
+          output_artifacts = []
+          version          = "1"
+          run_order        = 1
+
+          configuration = {
+            ProjectName = aws_codebuild_project.invalidate_cache.name
+            EnvironmentVariables : jsonencode([
+              { name : "CONFIG_JSON", value : jsonencode(local.cache_invalidation_map) },
+              { name : "APPLICATION", value : var.application },
+              { name : "ENVIRONMENT", value : stage.value.name },
+              { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
+              { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
+            ])
+          }
+        }
+      }
+
+      dynamic "action" {
         for_each = local.service_order_list
         content {
           name             = action.value.name
@@ -72,7 +97,8 @@ resource "aws_codepipeline" "codebase_pipeline" {
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = action.value.order + 1
+          # run_order        = action.value.order + 1
+          run_order        = action.value.order + 2
 
           configuration = {
             ProjectName = aws_codebuild_project.codebase_deploy.name
@@ -91,30 +117,30 @@ resource "aws_codepipeline" "codebase_pipeline" {
         }
       }
 
-      dynamic "action" {
-        for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
-        content {
-          name             = "InvalidateCache-${stage.value.name}"
-          category         = "Build"
-          owner            = "AWS"
-          provider         = "CodeBuild"
-          input_artifacts  = ["deploy_source"]
-          output_artifacts = []
-          version          = "1"
-          run_order        = length(local.service_order_list) + 2
+      # dynamic "action" {
+      #   for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
+      #   content {
+      #     name             = "InvalidateCache-${stage.value.name}"
+      #     category         = "Build"
+      #     owner            = "AWS"
+      #     provider         = "CodeBuild"
+      #     input_artifacts  = ["deploy_source"]
+      #     output_artifacts = []
+      #     version          = "1"
+      #     run_order        = length(local.service_order_list) + 2
 
-          configuration = {
-            ProjectName = aws_codebuild_project.invalidate_cache.name
-            EnvironmentVariables : jsonencode([
-              { name : "CONFIG_JSON", value : local.cache_invalidation_map },
-              { name : "APPLICATION", value : var.application },
-              { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
-              { name : "ENV_CONFIG", value : local.base_env_config },
-            ])
-          }
-        }
-      }
+      #     configuration = {
+      #       ProjectName = aws_codebuild_project.invalidate_cache.name
+      #       EnvironmentVariables : jsonencode([
+      #         { name : "CONFIG_JSON", value : "'${jsonencode(local.cache_invalidation_map)}'" },
+      #         { name : "APPLICATION", value : var.application },
+      #         { name : "ENVIRONMENT", value : stage.value.name },
+      #         { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
+      #         { name : "ENV_CONFIG", value : "'${jsonencode(local.base_env_config)}'" },
+      #       ])
+      #     }
+      #   }
+      # }
     }
   }
 
@@ -217,10 +243,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         configuration = {
           ProjectName = aws_codebuild_project.invalidate_cache.name
           EnvironmentVariables : jsonencode([
-            { name : "CONFIG_JSON", value : local.cache_invalidation_map },
+            { name : "CONFIG_JSON", value : "'${jsonencode(local.cache_invalidation_map)}'" },
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "ENV_CONFIG", value : local.base_env_config },
+            { name : "ENV_CONFIG", value : "'${jsonencode(local.base_env_config)}'" },
             { name : "REPOSITORY_URL", value : local.repository_url },
           ])
         }
