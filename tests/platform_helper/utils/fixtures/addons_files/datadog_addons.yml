@@ -15,3 +15,4 @@ demodjango-datadog:
         - nginx
         api:
         - nginx
+        celery-worker:
