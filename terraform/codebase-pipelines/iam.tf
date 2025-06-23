@@ -26,7 +26,7 @@ resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
 
   name   = "${var.application}-${var.codebase}-dns-account-assume-role"
   role   = aws_iam_role.codebase_deploy.name
-  policy = jsonencode(data.aws_iam_policy_document.dns_account_assume_role[each.key])
+  policy = data.aws_iam_policy_document.dns_account_assume_role[each.key].json
 }
 
 
