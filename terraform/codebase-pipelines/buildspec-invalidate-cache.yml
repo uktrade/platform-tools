@@ -14,7 +14,6 @@ phases:
     commands:
       - export DNS_ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env ${ENVIRONMENT} '.[$env].dns_account')
       - |
-        #!/bin/bash
         set -e
 
         echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
@@ -31,7 +30,16 @@ phases:
           echo "Getting distribution ID for domain ${i}"
           DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
           PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain ${i} '.[$domain] | join(" ")')
+          
+          if [ -z ${DISTRIBUTION_ID} ]: then
+            echo "ERROR: No distribution ID found for domain ${i} in account ${DNS_ACCOUNT_ID}.  Please check cache_invalidation configuration.  Exiting."
+            exit 1
+          fi
+          
           echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
+          aws cloudfront create-invalidation \
+          --distribution-id $DISTRIBUTION_ID \
+          --paths $PATHS
         done
       #TODO check for any alias=domain, instead of just the first item
   post_build:
