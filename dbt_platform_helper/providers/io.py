@@ -1,18 +1,21 @@
-import os
-
 import click
 
 from dbt_platform_helper.platform_exception import PlatformException
-
-DEBUG = os.environ.get("DEBUG", False)
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 
 
 class ClickIOProvider:
+    def __init__(self, env_var_provider=EnvironmentVariableProvider()):
+        self.env_var_provider = env_var_provider
+        self.debug_flag = self.env_var_provider.get("DEBUG")
+
     def warn(self, message: str):
         click.secho(message, fg="magenta")
 
     def debug(self, message: str):
-        if DEBUG == "True":
+        if self.debug_flag and self.debug_flag.strip().upper() == "TRUE":
             click.secho(message, fg="green")
 
     def error(self, message: str):

@@ -1,4 +1,3 @@
-import os
 from collections.abc import Callable
 from os import makedirs
 from pathlib import Path
@@ -9,8 +8,17 @@ from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+from dbt_platform_helper.constants import (
+    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.constants import (
+    TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -28,6 +36,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
+        environment_variable_provider: EnvironmentVariableProvider = None,
         platform_helper_version_override: str = None,
     ):
         self.config_provider = config_provider
@@ -37,8 +46,12 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.platform_helper_version_override = platform_helper_version_override or os.environ.get(
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        self.environment_variable_provider = (
+            environment_variable_provider or EnvironmentVariableProvider()
+        )
+        self.platform_helper_version_override = (
+            platform_helper_version_override
+            or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
 
     def generate(
@@ -86,6 +99,13 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
+        env_pipeline_module_source = (
+            self.environment_variable_provider.get(
+                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={platform_helper_version_for_template}"
+        )
+
         if has_environment_pipelines:
             environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
             accounts = {
@@ -99,7 +119,7 @@ class Pipelines:
                     platform_config["application"],
                     deploy_repository,
                     account,
-                    platform_helper_version_for_template,
+                    env_pipeline_module_source,
                     deploy_branch,
                 )
 
@@ -116,11 +136,19 @@ class Pipelines:
                 if repo in ecrs_already_provisioned
             }
 
+            codebase_pipeline_module_source = (
+                self.environment_variable_provider.get(
+                    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+                )
+                or f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref={platform_helper_version_for_template}"
+            )
+
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
                 platform_helper_version_for_template,
                 ecrs_that_need_importing,
                 deploy_repository,
+                codebase_pipeline_module_source,
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
@@ -133,7 +161,7 @@ class Pipelines:
         application: str,
         deploy_repository: str,
         aws_account: str,
-        platform_helper_version: str,
+        module_source: str,
         deploy_branch: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
@@ -143,7 +171,7 @@ class Pipelines:
                 "application": application,
                 "deploy_repository": deploy_repository,
                 "aws_account": aws_account,
-                "platform_helper_version": platform_helper_version,
+                "module_source": module_source,
                 "deploy_branch": deploy_branch,
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,

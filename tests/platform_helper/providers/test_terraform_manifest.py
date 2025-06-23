@@ -1,6 +1,5 @@
 import json
 from importlib.metadata import version
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -28,9 +27,10 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        platform_helper_version="14",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
+        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+        platform_helper_version="14.0.0",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -38,7 +38,7 @@ def test_generate_codebase_pipeline_config_creates_file(
 
     mock_io.info.assert_called_with("File created")
 
-    assert base_path == str(Path("terraform/codebase-pipelines").absolute())
+    assert base_path == "terraform/codebase-pipelines"
     assert file_path == "main.tf.json"
     assert overwrite
 
@@ -78,7 +78,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     module = json_content["module"]["codebase-pipelines"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14"
+        == f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0"
     )
     assert module["for_each"] == "${local.all_codebases}"
     assert module["application"] == "${local.application}"
@@ -101,6 +101,7 @@ def test_generate_codebase_pipeline_config_creates_file(
         == '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}'
     )
     assert module["env_config"] == "${local.environments}"
+    assert module["platform_tools_version"] == "14.0.0"
 
 
 @freeze_time("2025-01-16 13:00:00")
@@ -123,9 +124,10 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
 
     template_provider.generate_codebase_pipeline_config(
         config,
-        platform_helper_version="14",
         ecr_imports={"application": "test_project/application"},
         deploy_repository="uktrade/my-app-deploy",
+        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
+        platform_helper_version="X.X.X",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -148,9 +150,10 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
 
     template_provider.generate_codebase_pipeline_config(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
-        platform_helper_version="14",
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
+        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
+        platform_helper_version="X.X.X",
     )
 
     mock_file_provider.mkfile.assert_called_once()
@@ -194,7 +197,7 @@ def test_generate_environment_config_creates_file(
     assert messages[1] == "File created"
     mock_file_provider.delete_file.assert_called_with(f"terraform/environments/{env}", "main.tf")
 
-    assert base_path == str(Path(f"terraform/environments/{env}").absolute())
+    assert base_path == f"terraform/environments/{env}"
     assert file_path == "main.tf.json"
     assert overwrite
 
@@ -241,7 +244,7 @@ def test_generate_environment_config_creates_file(
     module = json_content["module"]["extensions"]
     assert (
         module["source"]
-        == f"git::https://github.com/uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
+        == f"git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
     )
     assert module["args"] == "${local.args}"
     assert module["environment"] == env

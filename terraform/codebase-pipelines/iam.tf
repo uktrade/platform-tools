@@ -430,3 +430,26 @@ data "aws_iam_policy_document" "env_manager_access" {
     ]
   }
 }
+
+resource "aws_iam_role_policy" "codestar_access_for_codebase_pipeline" {
+  name   = "codestar-access"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline.json
+}
+
+data "aws_iam_policy_document" "codestar_access_for_codebase_pipeline" {
+  statement {
+    sid       = "AllowUseCodestarConnection"
+    effect    = "Allow"
+    actions   = ["codestar-connections:UseConnection"]
+    resources = [data.external.codestar_connections.result["ConnectionArn"]]
+  }
+  statement {
+    # Don't think this is needed
+    sid       = "AllowListCodestarConnections"
+    effect    = "Allow"
+    actions   = ["codestar-connections:ListConnections"]
+    resources = ["arn:aws:codestar-connections:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"]
+  }
+}
+

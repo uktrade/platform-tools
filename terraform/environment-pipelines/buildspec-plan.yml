@@ -14,6 +14,7 @@ phases:
   build:
     commands:
       - set -e
+      # Cancel pending approvals
       - echo "Cancelling any pending approvals for ${APPLICATION}-${ENVIRONMENT}-environment-pipeline"
       - PIPELINE_STATE=$(aws codepipeline get-pipeline-state --name "${APPLICATION}-${PIPELINE_NAME}-environment-pipeline")
       - PIPELINE_APPROVAL_EXECID=$(echo $PIPELINE_STATE | jq  --arg stage "Approve-${ENVIRONMENT}" -r '.stageStates[] | select(.stageName == $stage and .latestExecution.status == "InProgress") | .latestExecution.pipelineExecutionId')
@@ -24,11 +25,10 @@ phases:
       - echo "Terraform Plan Phase"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting terraform plan phase for the ${ENVIRONMENT} environment."
       - echo "Working on environment ${ENVIRONMENT}"
-      - |
-        if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
-          export PLATFORM_HELPER_VERSION_OVERRIDE=""
-        fi
-      - platform-helper environment generate-terraform --name "${ENVIRONMENT}"
+      # Generate environment manifest
+      - local_extensions_path=../../../platform-tools/terraform/extensions
+      - TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE=${local_extensions_path} platform-helper environment generate-terraform --name "${ENVIRONMENT}"
+      # Run plan
       - cd terraform/environments/${ENVIRONMENT}
       - terraform init
       - terraform plan -out=plan.tfplan

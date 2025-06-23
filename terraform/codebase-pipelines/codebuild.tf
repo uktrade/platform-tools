@@ -202,6 +202,16 @@ resource "aws_codebuild_project" "codebase_deploy" {
       name  = "ENV_CONFIG"
       value = jsonencode(local.base_env_config)
     }
+
+    environment_variable {
+      name  = "CODESTAR_CONNECTION_ARN"
+      value = data.external.codestar_connections.result["ConnectionArn"]
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
   }
 
   logs_config {

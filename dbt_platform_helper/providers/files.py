@@ -17,7 +17,7 @@ class FileProvider:
         file_path.write_text(contents)
 
         action = "overwritten" if file_exists and overwrite else "created"
-        return f"File {file_name} {action}"
+        return f"File {file_path} {action}"
 
     @staticmethod
     def delete_file(base_path: str, file_name: str):
