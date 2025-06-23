@@ -143,8 +143,4 @@ locals {
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
-
-#  codestar_connection = split("/", data.external.codestar_connections.result["ConnectionArn"])[1]
-#  git_codestar_url = "https://codestar-connections.${data.aws_region.current.name}.amazonaws.com/git-http/${data.aws_caller_identity.current.account_id}/${data.aws_region.current.name}/${local.codestar_connection}/uktrade"
-
 }
