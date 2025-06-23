@@ -8,7 +8,7 @@ resource "aws_cloudwatch_event_rule" "ecr_image_publish" {
     detail-type : ["ECR Image Action"],
     detail : {
       action-type : ["PUSH"],
-      image-tag : [var.requires_image_build ? coalesce(each.value.tag, false) ? "tag-latest" : "branch-${each.value.branch}" : "latest"],
+      image-tag : [var.requires_image_build ? coalesce(each.value.tag, false) ? "tag-latest" : "branch-${replace(each.value.branch, "/", "-")}" : "latest"],
       repository-name : [local.ecr_name],
       result : ["SUCCESS"],
     }

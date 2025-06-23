@@ -8,7 +8,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
 
   variable {
     name          = "IMAGE_TAG"
-    default_value = var.requires_image_build ? coalesce(each.value.tag, false) ? "tag-latest" : "branch-${each.value.branch}" : "latest"
+    default_value = var.requires_image_build ? coalesce(each.value.tag, false) ? "tag-latest" : "branch-${replace(each.value.branch, "/", "-")}" : "latest"
     description   = "Tagged image in ECR to deploy"
   }
 
