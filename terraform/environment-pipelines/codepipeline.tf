@@ -94,6 +94,7 @@ resource "aws_codepipeline" "environment_pipeline" {
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
           { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
+          { name : "GIT_CLONE_BASE_URL", value : local.git_codestar_url },
         ])
       }
     }
