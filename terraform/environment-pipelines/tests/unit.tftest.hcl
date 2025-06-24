@@ -227,20 +227,6 @@ override_data {
   }
 }
 
-override_data {
-  target = data.aws_region.current["name"]
-  values = {
-    value = "eu-west-2"
-  }
-}
-
-override_data {
-  target = data.aws_caller_identity.current["account_id"]
-  values = {
-    value = "999988887777"
-  }
-}
-
 variables {
   application   = "my-app"
   repository    = "my-repository"
