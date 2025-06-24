@@ -44,7 +44,7 @@ phases:
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
-      - ./platform-tools/terraform/scripts/setup_venv.sh
+      - source platform-tools/terraform/scripts/setup_venv.sh
       ## Install platform helper
       - ./platform-tools/terraform/scripts/install_platform_helper.sh
       - |
