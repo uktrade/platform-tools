@@ -40,13 +40,21 @@ phases:
       - git config --global credential.UseHttpPath true
       - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
       - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
-      - echo -e "\nCloning platform-tools and checking out reference ${REQUIRED_VERSION}"
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
-      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
-      ## Setup venv
-      - source terraform/scripts/setup_venv.sh
-      ## Install platform helper
-      - ./terraform/scripts/install_platform_helper.sh
+      ## Build platform-helper
+      - echo -e "\n\n### Build and install platform-helper cloned from ${PLATFORM_HELPER_VERSION}\n"
+      - echo -e "Installing dependencies"
+      - pip install poetry
+      - poetry install
+      - echo -e "\nBuild platform-helper\n"
+      - poetry build --no-interaction --format sdist --no-ansi --local-version ${PLATFORM_HELPER_VERSION}
+      - echo -e "\nInstall platform-helper\n"
+      - most_recent_built_wheel_package=$(ls -t1 dist | grep ".whl" | head -1)
+      - pip install "dist/${most_recent_built_wheel_package}"
+      - echo -e "\nCheck which platform-helper\n"
+      - which platform-helper
+      - echo -e "\nCheck platform-helper --version\n"
+      - platform-helper --version
       - |
           if [ "${SLACK_THREAD_ID}" == "NONE" ]
           then
