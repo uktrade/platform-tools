@@ -7,6 +7,9 @@ on:
 
 jobs:
   trigger:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
 
     steps:
