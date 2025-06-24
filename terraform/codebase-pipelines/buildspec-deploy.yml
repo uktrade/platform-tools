@@ -33,11 +33,11 @@ phases:
       - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
-      - source platform-tools/terraform/scripts/setup_venv.sh
+      - source terraform/scripts/setup_venv.sh
       ## yq for yaml processing
       - pip install yq --quiet
       ## Install platform helper
-      - ./platform-tools/terraform/scripts/install_platform_helper.sh
+      - ./terraform/scripts/install_platform_helper.sh
 
   build:
     commands:
