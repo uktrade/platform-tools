@@ -669,8 +669,8 @@ data "aws_iam_policy_document" "postgres" {
         "lambda:GetLayerVersion"
       ]
       resources = [
-        "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:1",
-        "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
+        "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
+        "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
       ]
     }
   }
