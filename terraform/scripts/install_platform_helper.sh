@@ -1,5 +1,4 @@
 ## Build platform-helper
-cd platform-tools/ || exit 1
 echo -e "\n\n### Build and install platform-helper cloned from ${PLATFORM_HELPER_VERSION}\n"
 echo -e "Installing dependencies"
 pip install poetry
