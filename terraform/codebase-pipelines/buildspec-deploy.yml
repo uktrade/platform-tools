@@ -30,31 +30,14 @@ phases:
       - git config --global credential.UseHttpPath true
       - git config --global advice.detachedHead false
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
-      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
-      ## Set up python venv
-      - echo -e "Set up venv"
-      - rm -rf venv
-      - python -m venv --copies venv
-      - echo -e "\nUpdating paths"
-      - echo -e "\nActivating virtual environment"
-      - source venv/bin/activate
+      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
+      ## Setup venv
+      - ./platform-tools/terraform/scripts/setup_venv.sh
       ## yq for yaml processing
       - pip install yq --quiet
-      ## Build platform-helper
-      - echo -e "\n\n### Build and install platform-helper cloned from ${PLATFORM_HELPER_VERSION}\n"
-      - echo -e "Installing dependencies"
-      - pip install poetry
-      - poetry install
-      - echo -e "\nBuild platform-helper\n"
-      - poetry build --no-interaction --format sdist --no-ansi --local-version ${PLATFORM_HELPER_VERSION}
-      - echo -e "\nInstall platform-helper\n"
-      - most_recent_built_wheel_package=$(ls -t1 dist | grep ".whl" | head -1)
-      - pip install "dist/${most_recent_built_wheel_package}"
-      - echo -e "\nCheck which platform-helper\n"
-      - which platform-helper
-      - echo -e "\nCheck platform-helper --version\n"
-      - platform-helper --version
+      ## Install platform helper
+      - ./platform-tools/terraform/scripts/install_platform_helper.sh
 
   build:
     commands:
