@@ -32,7 +32,8 @@ locals {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
         for name, env in val.environments : merge(env, lookup(local.base_env_config, env.name, {}))
-      ]
+      ],
+      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
     })
   }
 
