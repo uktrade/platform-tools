@@ -7,9 +7,12 @@ demodjango-datadog:
       contact_email: david.smith@digital.trade.gov.uk
       documentation_url: https://github.com/uktrade/demodjango/blob/main/README.md
       services_to_monitor:
-        - api
-        - web
+        web:
         - redis
         - postgres
         - elasticsearch
         - aws.s3
+        - nginx
+        api:
+        - nginx
+        celery-worker:

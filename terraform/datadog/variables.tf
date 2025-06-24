@@ -10,10 +10,10 @@ variable "config" {
   type = object(
     {
       team_name           = string
-      contact_name        = string
-      contact_email       = string
+      contact_name        = optional(string)
+      contact_email       = optional(string)
       documentation_url   = string
-      services_to_monitor = list(string)
+      services_to_monitor = map(list(string))
     }
   )
 }
@@ -21,5 +21,3 @@ variable "config" {
 variable "repos" {
   type = list(string)
 }
-
-
