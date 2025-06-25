@@ -61,7 +61,7 @@ data "aws_iam_policy_document" "access_artifact_store" {
       "codeconnections:ListConnections",          # New name for new connections
       "codestar-connections:ListTagsForResource", # Old name for old connections
       "codeconnections:ListTagsForResource",      # New name for new connections
-      "codestar-connections:PassConnection",       # New name for new connections
+      "codestar-connections:PassConnection",      # New name for new connections
       "codeconnections:PassConnection"            # Old name for old connections
     ]
     resources = ["arn:aws:codestar-connections:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
