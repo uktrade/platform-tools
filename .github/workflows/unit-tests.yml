@@ -5,6 +5,8 @@ on: [push]
 jobs:
   tests:
     name: Test platform-helper against Python ${{ matrix.python-version }}
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     strategy:
@@ -50,6 +52,8 @@ jobs:
 
   terraform_python_tests:
     name: Test terraform python code against Python ${{ matrix.python-version }}
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
 
     strategy:
