@@ -41,20 +41,17 @@ phases:
       - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
       - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
-      ## Build platform-helper
+      ## Install platform-helper
       - cd platform-tools
-      - echo -e "\n\n### Build and install platform-helper cloned from ${REQUIRED_VERSION}\n"
-      - echo -e "Installing dependencies"
       - pip install poetry
-      - poetry install
-      - echo -e "\nBuild platform-helper\n"
-      - poetry build --no-interaction --format sdist --no-ansi --local-version ${REQUIRED_VERSION}
-      - echo -e "\nInstall platform-helper\n"
-      - most_recent_built_package=$(ls -t1 dist | head -1)
-      - pip install "dist/${most_recent_built_package}"
-      - echo -e "\nCheck which platform-helper\n"
-      - which platform-helper
-      - echo -e "\nCheck platform-helper --version\n"
+      - poetry build --no-interaction --format sdist --no-ansi | tee build-log.txt
+      - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
+      - 'echo "Art: $ARTIFACT"'
+      - cd "${CODEBUILD_SRC_DIR}/build-tools"
+      - pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
+      - VERSION_OUTPUT=""
+      - export "PATH=$(pwd)/bin:$PATH"
+      - export PYTHONPATH=$(pwd)
       - platform-helper --version
       - |
           if [ "${SLACK_THREAD_ID}" == "NONE" ]
