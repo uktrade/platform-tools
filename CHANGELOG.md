@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.4.1](https://github.com/uktrade/platform-tools/compare/15.4.0...15.4.1) (2025-06-25)
+
+
+### Bug Fixes
+
+* Fix perms and workflows (off-ticket) ([#898](https://github.com/uktrade/platform-tools/issues/898)) ([2c561f2](https://github.com/uktrade/platform-tools/commit/2c561f26084290db23e049482af6ad97a8ea5980))
+
 ## [15.4.0](https://github.com/uktrade/platform-tools/compare/15.3.0...15.4.0) (2025-06-25)
 
 
