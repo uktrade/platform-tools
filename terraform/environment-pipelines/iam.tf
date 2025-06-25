@@ -64,7 +64,10 @@ data "aws_iam_policy_document" "access_artifact_store" {
       "codestar-connections:PassConnection",      # New name for new connections
       "codeconnections:PassConnection"            # Old name for old connections
     ]
-    resources = ["arn:aws:codestar-connections:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
+    resources = [
+      "arn:aws:codestar-connections:eu-west-2:${data.aws_caller_identity.current.account_id}:*",
+      "arn:aws:codeconnections:eu-west-2:${data.aws_caller_identity.current.account_id}:*"
+    ]
   }
 
   statement {
