@@ -20,19 +20,3 @@ jobs:
           config-file: release-config.json
           manifest-file: release-manifest.json
       - uses: actions/checkout@v4
-      - name: tag major and minor versions
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
-        run: |
-          set -e
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git tag --delete ${{ steps.release.outputs.major }} || true
-          git tag --delete ${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git push origin :${{ steps.release.outputs.major }} || true
-          git push origin :${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} || true
-          git tag --annotate ${{ steps.release.outputs.major }} --message "Release v${{ steps.release.outputs.major }}"
-          git tag --annotate ${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }} --message "Release v${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}"
-          git push origin ${{ steps.release.outputs.major }}
-          git push origin ${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}
