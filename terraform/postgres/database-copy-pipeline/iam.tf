@@ -48,8 +48,8 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 
   statement {
-    effect    = "Allow"
-    actions   = [
+    effect = "Allow"
+    actions = [
       "codestar-connections:UseConnection",
       "codeconnections:UseConnection"
     ]
@@ -57,7 +57,7 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 
   statement {
-    effect  = "Allow"
+    effect = "Allow"
     actions = [
       "codestar-connections:ListConnections",
       "codeconnections:ListConnections"

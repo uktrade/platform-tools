@@ -62,6 +62,13 @@ repos:
       - id: terraform-fmt
         name: Terraform fmt
         description: Format the terraform code
-        entry: bash -c 'if [ ! terraform fmt -recursive -check terraform ]; then terraform fmt -recursive terraform; exit 1; fi'
+        entry: | 
+          bash -c 'terraform fmt --recursive --check terraform &> /dev/null
+          if [ $? -eq 0 ]
+          then
+            echo "Terraform formatting OK"
+          else
+            terraform fmt --recursive terraform; exit 1
+          fi'
         language: system
         stages: ["commit", "push"]
