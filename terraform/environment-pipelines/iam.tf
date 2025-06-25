@@ -42,6 +42,7 @@ data "aws_iam_policy_document" "access_artifact_store" {
     ]
   }
 
+  # All three of these slightly differently named permissions exist in AWS and we need these.
   statement {
     effect = "Allow"
     actions = [
