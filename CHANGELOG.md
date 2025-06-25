@@ -1,5 +1,19 @@
 # Changelog
 
+## [15.4.0](https://github.com/uktrade/platform-tools/compare/15.3.0...15.4.0) (2025-06-25)
+
+
+### Features
+
+* Update Datadog terraform module with handling of multiple services in platform-config (DBTP-2109) ([#890](https://github.com/uktrade/platform-tools/issues/890)) ([23c2ddd](https://github.com/uktrade/platform-tools/commit/23c2ddd13489ca766ef2dd64a6f9943498bd13e9))
+
+
+### Bug Fixes
+
+* Add permission to WAF Origin verification secret rotation lambda (off-ticket) ([#896](https://github.com/uktrade/platform-tools/issues/896)) ([041e790](https://github.com/uktrade/platform-tools/commit/041e7908cd29f20c070d3b7abcb9bc6fd92dd0ba))
+* Private repos fix codestar connection in buildspec (DBTP-2100) ([#893](https://github.com/uktrade/platform-tools/issues/893)) ([9e058bc](https://github.com/uktrade/platform-tools/commit/9e058bc7a8c2f990bf45b36920fd15b4b5015016))
+* Watching ECR pushes where branch name contains a / (DBTP-2124) ([#892](https://github.com/uktrade/platform-tools/issues/892)) ([31f1dac](https://github.com/uktrade/platform-tools/commit/31f1dacc5dce0d9036c2d5cc74a1af5feea1bc1d))
+
 ## [15.3.0](https://github.com/uktrade/platform-tools/compare/15.2.2...15.3.0) (2025-06-19)
 
 
