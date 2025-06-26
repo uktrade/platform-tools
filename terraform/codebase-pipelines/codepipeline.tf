@@ -80,7 +80,6 @@ resource "aws_codepipeline" "codebase_pipeline" {
               { name : "CONFIG_JSON", value : jsonencode(local.cache_invalidation_map) },
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "DNS_ACCOUNT_ID", value : local.base_env_config[stage.value.name].dns_account },
               { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
             ])
           }
@@ -243,10 +242,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         configuration = {
           ProjectName = aws_codebuild_project.invalidate_cache.name
           EnvironmentVariables : jsonencode([
-            { name : "CONFIG_JSON", value : "'${jsonencode(local.cache_invalidation_map)}'" },
+            { name : "CONFIG_JSON", value : jsonencode(local.cache_invalidation_map) },
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "ENV_CONFIG", value : "'${jsonencode(local.base_env_config)}'" },
+            { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
             { name : "REPOSITORY_URL", value : local.repository_url },
           ])
         }

@@ -31,6 +31,9 @@ locals {
 
   dns_account_ids           = distinct([for env in local.base_env_config : env.dns_account])
   dns_account_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"]
+  
+  
+  cache_invalidation_assumed_roles = [for id in local.deploy_account_ids : "arn:aws:iam::${id}:role/${var.application}-*-origin-secret-rotate-role"]
 
   environments_requiring_cache_invalidation = distinct([for d in try(values(var.cache_invalidation.domains),[]) : d.environment])
 
@@ -39,7 +42,6 @@ locals {
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
-<<<<<<< DBTP-2105-custom-buildspecs
         for name, env in val.environments : merge(env, merge(
           lookup(local.base_env_config, env.name, {}),
           {
@@ -47,11 +49,7 @@ locals {
           }
         ))
       ],
-=======
-        for name, env in val.environments : merge(env, lookup(local.base_env_config, env.name, {}))
-      ],
       image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
->>>>>>> main
     })
   }
 

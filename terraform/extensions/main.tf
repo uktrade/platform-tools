@@ -128,3 +128,11 @@ module "datadog" {
   repos       = var.repos
   config      = each.value
 }
+
+module "cache_invalidation" {
+  source = "../cache-invalidation"
+  application = var.args.application
+  environment = var.environment
+  deploy_account_id = local.pipeline_account_id
+  dns_account_id = local.dns_account_id
+}
