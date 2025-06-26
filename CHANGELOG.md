@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.4.2](https://github.com/uktrade/platform-tools/compare/15.4.1...15.4.2) (2025-06-26)
+
+
+### Bug Fixes
+
+* Fix codestar in database copy (off-ticket) ([#900](https://github.com/uktrade/platform-tools/issues/900)) ([eb4655d](https://github.com/uktrade/platform-tools/commit/eb4655dd7a46b439c74a5a7935a3d6c0831a953d))
+
 ## [15.4.1](https://github.com/uktrade/platform-tools/compare/15.4.0...15.4.1) (2025-06-25)
 
 
