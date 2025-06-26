@@ -48,15 +48,24 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 
   statement {
-    effect    = "Allow"
-    actions   = ["codestar-connections:UseConnection"]
+    effect = "Allow"
+    actions = [
+      "codestar-connections:UseConnection",
+      "codeconnections:UseConnection"
+    ]
     resources = [data.external.codestar_connections.result["ConnectionArn"]]
   }
 
   statement {
-    effect    = "Allow"
-    actions   = ["codestar-connections:ListConnections"]
-    resources = ["arn:aws:codestar-connections:${local.region_account}:*"]
+    effect = "Allow"
+    actions = [
+      "codestar-connections:ListConnections",
+      "codeconnections:ListConnections"
+    ]
+    resources = [
+      "arn:aws:codestar-connections:${local.region_account}:*",
+      "arn:aws:codeconnections:${local.region_account}:*"
+    ]
   }
 
   statement {
