@@ -407,7 +407,7 @@ class PlatformConfigSchema:
                     "contact_name": str,
                     "contact_email": str,
                     "documentation_url": str,
-                    "services_to_monitor": list,
+                    "services_to_monitor": dict,
                 }
             },
         }

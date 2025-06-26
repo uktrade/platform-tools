@@ -2017,6 +2017,29 @@ run "test_event_bridge" {
   }
 }
 
+run "test_eventbridge_where_branch_contains_forward_slash" {
+  command = plan
+
+  variables {
+    pipelines = [
+      {
+        name   = "main",
+        branch = "release/test",
+        environments = [
+          { name = "dev" }
+        ]
+      }
+    ]
+  }
+
+  # Dev
+  assert {
+    condition     = jsondecode(aws_cloudwatch_event_rule.ecr_image_publish[0].event_pattern)["detail"]["image-tag"] == ["branch-release-test"]
+    error_message = "Should be: branch-release-test"
+  }
+
+}
+
 run "test_pipeline_single_run_group" {
   command = plan
 

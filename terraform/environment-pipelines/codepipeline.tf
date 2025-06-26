@@ -89,11 +89,14 @@ resource "aws_codepipeline" "environment_pipeline" {
         PrimarySource = "project_deployment_source"
         EnvironmentVariables : jsonencode([
           { name : "APPLICATION", value : var.application },
+          { name : "AWS_REGION", value : data.aws_region.current.name },
+          { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
           { name : "PIPELINE_NAME", value : var.pipeline_name },
           { name : "REPOSITORY", value : var.repository },
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
           { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
+          { name : "CODESTAR_CONNECTION_ARN", value : data.external.codestar_connections.result["ConnectionArn"] },
         ])
       }
     }

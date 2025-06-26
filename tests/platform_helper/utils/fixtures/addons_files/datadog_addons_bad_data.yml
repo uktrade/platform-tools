@@ -30,4 +30,8 @@ my-datadog-bad-services-to-monitor:
   type: datadog
   environments:
     default:
-      services_to_monitor: "string"
+      services_to_monitor: 
+       - this
+       - is
+       - a 
+       - list 

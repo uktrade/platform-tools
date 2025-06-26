@@ -39,6 +39,7 @@ locals {
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
+<<<<<<< DBTP-2105-custom-buildspecs
         for name, env in val.environments : merge(env, merge(
           lookup(local.base_env_config, env.name, {}),
           {
@@ -46,6 +47,11 @@ locals {
           }
         ))
       ],
+=======
+        for name, env in val.environments : merge(env, lookup(local.base_env_config, env.name, {}))
+      ],
+      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
+>>>>>>> main
     })
   }
 
