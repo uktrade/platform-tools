@@ -8,6 +8,28 @@ resource "aws_iam_role" "codebase_image_build" {
   tags               = local.tags
 }
 
+data "aws_iam_policy_document" "dns_account_assume_role" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  statement {
+    sid    = "AllowDNSAccountAccess"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    resources = local.cache_invalidation_assumed_roles
+  }
+}
+
+# Assume DNS account role
+resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+
+  name   = "${var.application}-${var.codebase}-dns-account-assume-role"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.dns_account_assume_role[each.key].json
+}
+
+
 data "aws_iam_policy_document" "assume_codebuild_role" {
   statement {
     effect = "Allow"
@@ -24,6 +46,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       variable = "aws:SourceArn"
       values = compact([
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-invalidate-cache",
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
       ])
     }
