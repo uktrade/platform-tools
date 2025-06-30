@@ -31,4 +31,5 @@ class TestCopilotHelperCli:
             "notify",
             "database",
             "version",
+            "ecr-housekeeping",
         ]
