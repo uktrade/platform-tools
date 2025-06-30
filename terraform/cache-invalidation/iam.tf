@@ -31,11 +31,6 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
 
     actions = ["sts:AssumeRole"]
 
-    # condition {
-    #   test     = "ArnLike"
-    #   variable = "aws:SourceArn"
-    #   values   = ["arn:aws:sts::${var.deploy_account_id}:assumed-role/${var.application}-${var.environment}-codebase-deploy"]
-    # }
   }
 }
 
