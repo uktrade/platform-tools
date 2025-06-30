@@ -108,6 +108,10 @@ variables {
           name = "sandbox"
           id   = "000123456789"
         }
+        dns = {
+          name = "dev"
+          id   = "111123456789"
+        }
       }
     },
     "dev"     = null,
@@ -117,6 +121,10 @@ variables {
         deploy = {
           name = "prod"
           id   = "123456789000"
+        }
+        dns = {
+          name = "live"
+          id   = "222223456789"
         }
       }
     }
@@ -136,6 +144,22 @@ variables {
       ]
     }
   ]
+  cache_invalidation = {
+    domains = {
+      "service-1.env-1.my-app.uktrade.digital" : {
+        paths       = ["a", "b"]
+        environment = "env-1"
+      },
+      "service-2.env-1.my-app.uktrade.digital" : {
+        paths       = ["c", "d"]
+        environment = "env-1"
+      },
+      "service-2.env-2.my-app.uktrade.digital" : {
+        paths       = ["e", "f"]
+        environment = "env-2"
+      }
+    }
+  }
   pipelines = [
     {
       name   = "main",
@@ -164,6 +188,67 @@ variables {
   }
   platform_tools_version = "1.2.3"
   slack_channel          = "/fake/slack/channel"
+}
+
+run "test_locals" {
+  command = plan
+
+  assert {
+    condition     = length(local.base_env_config) == 3
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].account == "000123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].dns_account == "111123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["staging"].dns_account == "111123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.base_env_config["prod"].dns_account == "222223456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.dns_account_ids[0] == "111123456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.dns_account_ids[1] == "222223456789"
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"], "a")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-1.env-1.my-app.uktrade.digital"], "b")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"], "c")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-1["service-2.env-1.my-app.uktrade.digital"], "d")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"], "e")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.env-2["service-2.env-2.my-app.uktrade.digital"], "f")
+    error_message = "Should be:"
+  }
+  assert {
+    condition     = local.cache_invalidation_enabled == true
+    error_message = "Should be:"
+  }
 }
 
 run "test_ecr" {
@@ -641,6 +726,36 @@ run "test_tagged_branch_filter" {
 
 run "test_iam" {
   command = plan
+  # # DNS account access
+  # assert {
+  #   condition     = aws_iam_role.dns_account_assume_role_for_codebase_deploy[""].name == "my-app-my-codebase-codebase-image-build"
+  #   error_message = "Should be: 'my-app-my-codebase-codebase-image-build'"
+  # }
+  assert {
+    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].effect == "Allow"
+    error_message = "First statement effect should be: Allow"
+  }
+  assert {
+    condition     = length(data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources) == 2
+    error_message = "First statement effect should be: Allow"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources == toset(
+      [
+        "arn:aws:iam::111123456789:role/environment-pipeline-assumed-role",
+        "arn:aws:iam::222223456789:role/environment-pipeline-assumed-role"
+      ]
+    )
+    error_message = "First statement effect should be: Allow"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].json != null
+    error_message = "Should be: "
+  }
+  assert {
+    condition     = strcontains(jsonencode(data.aws_iam_policy_document.dns_account_assume_role[""]), "sts:AssumeRole") == true
+    error_message = "Statement should not contain kms:Decrypt"
+  }
 
   # CodeBuild image build
   assert {
@@ -1147,6 +1262,10 @@ run "test_codebuild_deploy" {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
     error_message = "Should be: ENV_CONFIG"
   }
+  # assert {
+  #   condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\": \"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
+  #   error_message = "Incorrect value"
+  # }
   assert {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
     error_message = "Incorrect value"
@@ -1169,7 +1288,6 @@ run "test_codebuild_deploy" {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].value == "1.2.3"
     error_message = "Should be: 1.2.3"
   }
-
   assert {
     condition = aws_codebuild_project.codebase_deploy.logs_config[0].cloudwatch_logs[
       0
