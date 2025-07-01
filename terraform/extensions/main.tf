@@ -130,6 +130,7 @@ resource "aws_ssm_parameter" "addons" {
 }
 
 resource "aws_ssm_parameter" "environment_data" {
+  # checkov:skip=CKV2_AWS_34: This AWS SSM Parameter doesn't need to be encrypted
   name = "/platform/applications/${var.args.application}/environments/${var.environment}"
   tier = "Intelligent-Tiering"
   type = "String"

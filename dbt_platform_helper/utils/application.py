@@ -59,13 +59,13 @@ class Application:
         return str(self) == str(other)
 
 
-def load_application(app=None, default_session=None) -> Application:
+def load_application(app=None, default_session=None, env=None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = default_session if default_session else get_aws_session_or_abort()
 
     ssm_client = current_session.client("ssm")
 
-    # Try using the new /platform SSM parameter if present, otherwise fall back on the old /copilot parameters
+    # Use the new /platform SSM parameter if present, otherwise fall back on the old /copilot parameter
     platform_env_path = f"/platform/applications/{application.name}/environments"
     platform_secrets = get_ssm_secrets(app, None, current_session, platform_env_path)
 
@@ -81,7 +81,9 @@ def load_application(app=None, default_session=None) -> Application:
                 app, None, current_session, f"/copilot/applications/{application.name}/environments"
             )
         except ssm_client.exceptions.ParameterNotFound:
-            raise ApplicationNotFoundException(application.name)
+            raise ApplicationNotFoundException(
+                application_name=application.name, environment_name=env
+            )
 
     sts_client = current_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
@@ -149,9 +151,12 @@ class ApplicationException(PlatformException):
 
 
 class ApplicationNotFoundException(ApplicationException):
-    def __init__(self, application_name: str):
+    def __init__(self, application_name: str, environment_name: str):
         super().__init__(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}". 
+Please ensure that the environment variable "AWS_PROFILE" is set correctly. If the issue persists, verify that one of the following AWS SSM parameters exists:
+ - /platform/applications/{application_name}/environments/{environment_name}
+ - /copilot/applications/{application_name}"""
         )
 
 
