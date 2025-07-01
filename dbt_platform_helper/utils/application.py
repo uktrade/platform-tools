@@ -65,16 +65,25 @@ def load_application(app=None, default_session=None) -> Application:
 
     ssm_client = current_session.client("ssm")
 
+    # Look for new /platform SSM parameters, otherwise fall back to /copilot parameters
     try:
         ssm_client.get_parameter(
-            Name=f"/copilot/applications/{application.name}",
+            Name=f"/platform/applications/{application.name}",
             WithDecryption=False,
         )
+        parameter_root_path = "platform"
     except ssm_client.exceptions.ParameterNotFound:
-        raise ApplicationNotFoundException(application.name)
+        try:
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}",
+                WithDecryption=False,
+            )
+            parameter_root_path = "copilot"
+        except ssm_client.exceptions.ParameterNotFound:
+            raise ApplicationNotFoundException(application.name)
 
-    path = f"/copilot/applications/{application.name}/environments"
-    secrets = get_ssm_secrets(app, None, current_session, path)
+    env_path = f"/{parameter_root_path}/applications/{application.name}/environments"
+    secrets = get_ssm_secrets(app, None, current_session, env_path)
 
     sts_client = current_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
@@ -89,7 +98,7 @@ def load_application(app=None, default_session=None) -> Application:
          - /copilot/applications/test/environments/my_env will match.
          - /copilot/applications/test/environments/my_env/addons will not match.
         """
-        environment_key_regex = r"^/copilot/applications/{}/environments/[^/]*$".format(
+        environment_key_regex = r"^/(copilot|platform)/applications/{}/environments/[^/]*$".format(
             application.name
         )
         return bool(re.match(environment_key_regex, name))
