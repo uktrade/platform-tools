@@ -128,3 +128,28 @@ module "datadog" {
   repos       = var.repos
   config      = each.value
 }
+
+resource "aws_ssm_parameter" "application_data" {
+  name = "/platform/applications/${var.args.application}"
+  tier = "Intelligent-Tiering"
+  type = "String"
+  value = jsonencode({
+    "name" : var.args.application,
+    "accountID" : local.deploy_account_id
+  })
+  tags = local.tags
+}
+
+resource "aws_ssm_parameter" "environment_data" {
+  name = "/platform/applications/${var.args.application}/environments/${var.environment}"
+  tier = "Intelligent-Tiering"
+  type = "String"
+  value = jsonencode({
+    "name" : var.environment,
+    "app" : var.args.application,
+    "accountID" : local.deploy_account_id
+    "region" : "eu-west-2",
+
+  })
+  tags = local.tags
+}
