@@ -105,16 +105,6 @@ module "monitoring" {
   config = each.value
 }
 
-resource "aws_ssm_parameter" "addons" {
-  # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
-  # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
-  name  = "/copilot/applications/${var.args.application}/environments/${var.environment}/addons"
-  tier  = "Intelligent-Tiering"
-  type  = "String"
-  value = jsonencode(local.extensions_for_environment)
-  tags  = local.tags
-}
-
 module "datadog" {
   source = "../datadog"
 
@@ -129,15 +119,14 @@ module "datadog" {
   config      = each.value
 }
 
-resource "aws_ssm_parameter" "application_data" {
-  name = "/platform/applications/${var.args.application}"
-  tier = "Intelligent-Tiering"
-  type = "String"
-  value = jsonencode({
-    "name" : var.args.application,
-    "accountID" : local.deploy_account_id
-  })
-  tags = local.tags
+resource "aws_ssm_parameter" "addons" {
+  # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
+  # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
+  name  = "/copilot/applications/${var.args.application}/environments/${var.environment}/addons"
+  tier  = "Intelligent-Tiering"
+  type  = "String"
+  value = jsonencode(local.extensions_for_environment)
+  tags  = local.tags
 }
 
 resource "aws_ssm_parameter" "environment_data" {

@@ -65,25 +65,23 @@ def load_application(app=None, default_session=None) -> Application:
 
     ssm_client = current_session.client("ssm")
 
-    # Look for new /platform SSM parameters, otherwise fall back to /copilot parameters
-    try:
-        ssm_client.get_parameter(
-            Name=f"/platform/applications/{application.name}",
-            WithDecryption=False,
-        )
-        parameter_root_path = "platform"
-    except ssm_client.exceptions.ParameterNotFound:
+    # Try using the new /platform SSM parameter if present, otherwise fall back on the old /copilot parameters
+    platform_env_path = f"/platform/applications/{application.name}/environments"
+    platform_secrets = get_ssm_secrets(app, None, current_session, platform_env_path)
+
+    if platform_secrets:
+        secrets = platform_secrets
+    else:
         try:
             ssm_client.get_parameter(
                 Name=f"/copilot/applications/{application.name}",
                 WithDecryption=False,
             )
-            parameter_root_path = "copilot"
+            secrets = get_ssm_secrets(
+                app, None, current_session, f"/copilot/applications/{application.name}/environments"
+            )
         except ssm_client.exceptions.ParameterNotFound:
             raise ApplicationNotFoundException(application.name)
-
-    env_path = f"/{parameter_root_path}/applications/{application.name}/environments"
-    secrets = get_ssm_secrets(app, None, current_session, env_path)
 
     sts_client = current_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
