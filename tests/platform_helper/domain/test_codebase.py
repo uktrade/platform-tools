@@ -348,7 +348,9 @@ def test_codebase_deploy_does_not_trigger_pipeline_build_without_confirmation(
 )
 def test_codebase_deploy_does_not_trigger_build_without_an_application(commit, tag, branch):
     mocks = CodebaseMocks()
-    mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
+    mocks.load_application.side_effect = ApplicationNotFoundException(
+        application_name="not-an-application", environment_name="env"
+    )
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundException):
@@ -468,7 +470,9 @@ def test_codebase_deploy_raises_error_when_multiple_refs_are_provided(commit, ta
 
 def test_codebase_list_does_not_trigger_build_without_an_application():
     mocks = CodebaseMocks()
-    mocks.load_application.side_effect = ApplicationNotFoundException("not-an-application")
+    mocks.load_application.side_effect = ApplicationNotFoundException(
+        application_name="not-an-application", environment_name="env"
+    )
     codebase = Codebase(**mocks.params())
 
     with pytest.raises(ApplicationNotFoundException):
