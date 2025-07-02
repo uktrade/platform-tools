@@ -103,11 +103,26 @@ def load_application(app=None, default_session=None, env=None) -> Application:
         )
         return bool(re.match(environment_key_regex, name))
 
-    environments = {
+    environments_data = []
+
+    for name, value in secrets:
+        try:
+            data = json.loads(value)
+        except json.JSONDecodeError:
+            continue
+
+        if "allEnvironments" in data:
+            # New /platform SSM parameter with data about all environments.
+            environments_data = data["allEnvironments"]
+            break  # Only need one.
+        elif is_environment_key(name):
+            # Legacy /copilot SSM parameter. An individual SSM param is present per environment.
+            environments_data.append(data)
+
+    application.environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
-        for env in [json.loads(s[1]) for s in secrets if is_environment_key(s[0])]
+        for env in environments_data
     }
-    application.environments = environments
 
     response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/components",

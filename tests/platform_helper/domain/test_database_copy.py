@@ -288,7 +288,7 @@ def test_database_dump_handles_env_name_errors(is_dump):
 
     assert exc.value.code == 1
     mocks.io.abort_with_error.assert_called_once_with(
-        "No such environment 'bad-env'. Available environments are: test-env, test-env-2"
+        "No such environment 'bad-env'. Available environments are: test-env, test-env-2. Please check that the Terraform infrastructure for your environment is up to date."
     )
 
 
