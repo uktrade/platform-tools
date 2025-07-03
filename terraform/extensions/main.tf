@@ -105,6 +105,16 @@ module "monitoring" {
   config = each.value
 }
 
+module "ecs_cluster" {
+  source = "../ecs-cluster"
+
+  count = local.create_ecs_cluster
+
+  application = var.args.application
+  environment = var.environment
+  vpc_name    = local.vpc_name
+}
+
 resource "aws_ssm_parameter" "addons" {
   # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
   # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
