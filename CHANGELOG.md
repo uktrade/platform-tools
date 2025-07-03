@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.4.3](https://github.com/uktrade/platform-tools/compare/15.4.2...15.4.3) (2025-07-03)
+
+
+### Bug Fixes
+
+* Update data copy clear script to remove functions, view and sequences (DBTP-2150) ([#903](https://github.com/uktrade/platform-tools/issues/903)) ([578ef39](https://github.com/uktrade/platform-tools/commit/578ef39233dfeea4b14ac990611f8c30e520001e))
+
 ## [15.4.2](https://github.com/uktrade/platform-tools/compare/15.4.1...15.4.2) (2025-06-26)
 
 
