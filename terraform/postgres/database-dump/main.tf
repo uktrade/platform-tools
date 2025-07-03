@@ -152,6 +152,7 @@ data "aws_iam_policy_document" "pipeline_access" {
     ]
     resources = [
       "arn:aws:ssm:${local.region_account}:parameter/copilot/*",
+      "arn:aws:ssm:${local.region_account}:parameter/platform/applications/*"
     ]
   }
 
