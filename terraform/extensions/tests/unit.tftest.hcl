@@ -1,6 +1,7 @@
 variables {
   args = {
-    application = "test-application",
+    application             = "test-application",
+    service_deployment_mode = "doesnt-matter",
     services = {
       "test-s3" : {
         "type" : "s3",
@@ -332,7 +333,8 @@ run "opensearch_plan_small_service_test" {
 run "opensearch_plan_medium_ha_service_test" {
   variables {
     args = {
-      application = "test-application",
+      application             = "test-application",
+      service_deployment_mode = "doesnt-matter",
       services = {
         "test-opensearch" : {
           "type" : "opensearch",
@@ -420,7 +422,8 @@ run "redis_plan_medium_service_test" {
 
   variables {
     args = {
-      application = "test-application",
+      application             = "test-application",
+      service_deployment_mode = "doesnt-matter",
       services = {
         "test-redis" : {
           "type" : "redis",
@@ -496,7 +499,8 @@ run "redis_plan_medium_ha_service_test" {
 
   variables {
     args = {
-      application = "test-application",
+      application             = "test-application",
+      service_deployment_mode = "doesnt-matter",
       services = {
         "test-redis" : {
           "type" : "redis",

@@ -94,4 +94,6 @@ locals {
   vpc_name            = var.args.env_config[var.environment]["vpc"]
   dns_account_id      = var.args.env_config[var.environment]["accounts"]["dns"]["id"]
   pipeline_account_id = var.args.env_config["*"]["accounts"]["deploy"]["id"]
+
+  non_copilot_service_deployment_mode = var.args.service_deployment_mode == "dual-copilot-traffic" || var.args.service_deployment_mode == "dual-platform-traffic" || var.args.service_deployment_mode == "platform" ? 1 : 0
 }
