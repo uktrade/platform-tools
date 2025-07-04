@@ -15,7 +15,6 @@ variable "repos" {
   default = null # Default to null in case the repository isn't provided in platform-config.yml
 }
 
-variable "service-deployment-mode" {
-  type    = string
-  default = "dual-copilot-traffic" #TODO - Remove this line once platform-helper changes are in place
+variable "service_deployment_mode" {
+  type = string
 }
