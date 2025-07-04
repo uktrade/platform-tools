@@ -1,8 +1,9 @@
 variable "args" {
   type = object({
-    application = string,
-    services    = any,
-    env_config  = any
+    application             = string,
+    services                = any,
+    env_config              = any
+    service_deployment_mode = string
   })
 }
 
@@ -13,8 +14,4 @@ variable "environment" {
 variable "repos" {
   type    = list(string)
   default = null # Default to null in case the repository isn't provided in platform-config.yml
-}
-
-variable "service_deployment_mode" {
-  type = string
 }
