@@ -17,5 +17,5 @@ variable "repos" {
 
 variable "service-deployment-mode" {
   type    = string
-  default = "platform" #TODO - Remove this line once platform-helper changes are in place
+  default = "dual-copilot-traffic" #TODO - Remove this line once platform-helper changes are in place
 }
