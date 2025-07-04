@@ -54,7 +54,7 @@ run "test_create_ecs_cluster" {
   }
 
   assert {
-    condition     = aws_ecs_cluster.cluster.tags.managed-by == "DBT Platform - Terraform"
+    condition     = aws_ecs_cluster.cluster.tags.managed-by == "DBT Platform - Environment Terraform"
     error_message = "managed-by tag was not as expected"
   }
 
