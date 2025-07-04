@@ -183,7 +183,8 @@ data "aws_iam_policy_document" "ssm_access" {
     resources = [
       "arn:aws:ssm:${local.region_account}:parameter/copilot/${var.application}/*/secrets/*",
       "arn:aws:ssm:${local.region_account}:parameter/copilot/applications/${var.application}",
-      "arn:aws:ssm:${local.region_account}:parameter/copilot/applications/${var.application}/*"
+      "arn:aws:ssm:${local.region_account}:parameter/copilot/applications/${var.application}/*",
+      "arn:aws:ssm:${local.region_account}:parameter/platform/applications/${var.application}/environments/*",
     ]
   }
 }

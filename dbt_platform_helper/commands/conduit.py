@@ -27,7 +27,7 @@ def conduit(addon_name: str, app: str, env: str, access: str):
     """Opens a shell for a given addon_name create a conduit connection to
     interact with postgres, opensearch or redis."""
     PlatformHelperVersioning().check_if_needs_update()
-    application = load_application(app)
+    application = load_application(app=app, env=env)
 
     try:
         secrets_provider: Secrets = Secrets(

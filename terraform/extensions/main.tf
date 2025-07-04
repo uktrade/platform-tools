@@ -105,16 +105,6 @@ module "monitoring" {
   config = each.value
 }
 
-resource "aws_ssm_parameter" "addons" {
-  # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
-  # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
-  name  = "/copilot/applications/${var.args.application}/environments/${var.environment}/addons"
-  tier  = "Intelligent-Tiering"
-  type  = "String"
-  value = jsonencode(local.extensions_for_environment)
-  tags  = local.tags
-}
-
 module "datadog" {
   source = "../datadog"
 
@@ -127,4 +117,35 @@ module "datadog" {
   environment = var.environment
   repos       = var.repos
   config      = each.value
+}
+
+resource "aws_ssm_parameter" "addons" {
+  # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
+  # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
+  name  = "/copilot/applications/${var.args.application}/environments/${var.environment}/addons"
+  tier  = "Intelligent-Tiering"
+  type  = "String"
+  value = jsonencode(local.extensions_for_environment)
+  tags  = local.tags
+}
+
+resource "aws_ssm_parameter" "environment_data" {
+  # checkov:skip=CKV2_AWS_34: This AWS SSM Parameter doesn't need to be encrypted
+  name = "/platform/applications/${var.args.application}/environments/${var.environment}"
+  tier = "Intelligent-Tiering"
+  type = "String"
+  value = jsonencode({
+    "name" : var.environment,
+    "app" : var.args.application,
+    "accountID" : local.deploy_account_id
+    "region" : "eu-west-2",
+    allEnvironments = [
+      for env_name, env_config in var.args.env_config : {
+        name      = env_name
+        accountID = env_config["accounts"]["deploy"]["id"]
+        region    = "eu-west-2"
+      } if env_name != "*"
+    ]
+  })
+  tags = local.tags
 }

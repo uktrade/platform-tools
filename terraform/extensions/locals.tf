@@ -93,5 +93,6 @@ locals {
 
   vpc_name            = var.args.env_config[var.environment]["vpc"]
   dns_account_id      = var.args.env_config[var.environment]["accounts"]["dns"]["id"]
+  deploy_account_id   = var.args.env_config[var.environment]["accounts"]["deploy"]["id"]
   pipeline_account_id = var.args.env_config["*"]["accounts"]["deploy"]["id"]
 }
