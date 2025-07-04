@@ -108,7 +108,7 @@ module "monitoring" {
 module "ecs_cluster" {
   source = "../ecs-cluster"
 
-  count = local.create_ecs_cluster
+  count = local.non_copilot_service_deployment_mode
 
   application = var.args.application
   environment = var.environment
