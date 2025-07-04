@@ -9,12 +9,6 @@ resource "aws_ecs_cluster" "cluster" {
     value = "enabled"
   }
 
-  configuration {
-    execute_command_configuration {
-      logging = "DEFAULT"
-    }
-  }
-
   tags = local.tags
 }
 
@@ -36,6 +30,8 @@ data "aws_vpc" "vpc" {
 }
 
 resource "aws_security_group" "environment_security_group" {
+  # checkov:skip=CKV_AWS_382: Required for general internet access
+  # checkov:skip=CKV2_AWS_5: TODO - This will be used by service Terraform in the future
   name        = "${var.application}-${var.environment}-environment"
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
