@@ -64,28 +64,6 @@ def load_application(app=None, default_session=None, env=None) -> Application:
     current_session = default_session if default_session else get_aws_session_or_abort()
 
     ssm_client = current_session.client("ssm")
-
-    # Use the new /platform SSM parameter if present, otherwise fall back on the old /copilot parameter
-    platform_env_path = f"/platform/applications/{application.name}/environments"
-    platform_secrets = get_ssm_secrets(app, None, current_session, platform_env_path)
-
-    if platform_secrets:
-        secrets = platform_secrets
-    else:
-        try:
-            # Check that the Copilot application exists
-            ssm_client.get_parameter(
-                Name=f"/copilot/applications/{application.name}",
-                WithDecryption=False,
-            )
-            secrets = get_ssm_secrets(
-                app, None, current_session, f"/copilot/applications/{application.name}/environments"
-            )
-        except ssm_client.exceptions.ParameterNotFound:
-            raise ApplicationNotFoundException(
-                application_name=application.name, environment_name=env
-            )
-
     sts_client = current_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
     sessions = {account_id: current_session}
@@ -106,19 +84,46 @@ def load_application(app=None, default_session=None, env=None) -> Application:
 
     environments_data = []
 
-    for name, value in secrets:
-        try:
-            data = json.loads(value)
-        except json.JSONDecodeError:
-            continue
+    # Try to load the new /platform SSM parameter if present
+    platform_env_path = f"/platform/applications/{application.name}/environments"
+    secrets = get_ssm_secrets(app, None, current_session, platform_env_path)
 
-        if "allEnvironments" in data:
-            # New /platform SSM parameter with data about all environments.
-            environments_data = data["allEnvironments"]
-            break  # Only need one.
-        elif is_environment_key(name):
-            # Legacy /copilot SSM parameter. An individual SSM param is present per environment.
-            environments_data.append(data)
+    if secrets:
+        for name, value in secrets:
+            try:
+                data = json.loads(value)
+            except json.JSONDecodeError:
+                continue
+
+            # New /platform SSM parameter contains data about all environments
+            if "allEnvironments" in data:
+                environments_data = data["allEnvironments"]
+                break  # Only need one
+    else:
+        try:
+            # Check that the Copilot application exists
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}",
+                WithDecryption=False,
+            )
+            secrets = get_ssm_secrets(
+                app, None, current_session, f"/copilot/applications/{application.name}/environments"
+            )
+
+            for name, value in secrets:
+                try:
+                    data = json.loads(value)
+                except json.JSONDecodeError:
+                    continue
+
+                if is_environment_key(name):
+                    # Legacy /copilot SSM parameter. An individual SSM param is present per environment - looping through all of them is needed to extract necessary data about each env.
+                    environments_data.append(data)
+
+        except ssm_client.exceptions.ParameterNotFound:
+            raise ApplicationNotFoundException(
+                application_name=application.name, environment_name=env
+            )
 
     application.environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
