@@ -3,10 +3,9 @@ locals {
   environments = local.config["environments"]
   env_config   = { for name, config in local.environments : name => merge(lookup(local.environments, "*", {}), config) }
   args = {
-    application             = "my-application"
-    services                = local.config["extensions"]
-    env_config              = local.env_config
-    service_deployment_mode = "copilot"
+    application = "my-application"
+    services    = local.config["extensions"]
+    env_config  = local.env_config
   }
 }
 
