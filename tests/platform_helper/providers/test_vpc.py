@@ -19,6 +19,8 @@ def set_up_test_platform_vpc(
     private_subnet_cidr: str,
     public_subnet_cidr: str,
     name: str,
+    copilot_security_group: bool = True,
+    platform_security_group: bool = False,
 ):
     vpc_id = client.create_vpc(CidrBlock=cidr)["Vpc"]["VpcId"]
     public_subnet_id = client.create_subnet(CidrBlock=public_subnet_cidr, VpcId=vpc_id)["Subnet"][
@@ -27,12 +29,6 @@ def set_up_test_platform_vpc(
     private_subnet_id = client.create_subnet(CidrBlock=private_subnet_cidr, VpcId=vpc_id)["Subnet"][
         "SubnetId"
     ]
-    sg_id = client.create_security_group(
-        GroupName="test_vpc_sg",
-        Description=f"SG for {name}",
-        VpcId=vpc_id,
-    )["GroupId"]
-
     client.create_tags(Resources=[vpc_id], Tags=[{"Key": "Name", "Value": name}])
     client.create_tags(
         Resources=[public_subnet_id],
@@ -42,49 +38,109 @@ def set_up_test_platform_vpc(
         Resources=[private_subnet_id],
         Tags=[{"Key": "vpc-id", "Value": name}, {"Key": "subnet_type", "Value": "private"}],
     )
-    client.create_tags(
-        Resources=[sg_id], Tags=[{"Key": "Name", "Value": f"copilot-{app_name}-{env_name}-env"}]
-    )
+
+    security_group_ids = []
+    if copilot_security_group:
+        copilot_sg_id = client.create_security_group(
+            GroupName="test_copilot_vpc_sg",
+            Description=f"Copilot SG for {name}",
+            VpcId=vpc_id,
+        )["GroupId"]
+
+        client.create_tags(
+            Resources=[copilot_sg_id],
+            Tags=[{"Key": "Name", "Value": f"copilot-{app_name}-{env_name}-env"}],
+        )
+        security_group_ids.append(copilot_sg_id)
+
+    if platform_security_group:
+        platform_sg_id = client.create_security_group(
+            GroupName="test_platform_vpc_sg",
+            Description=f"Platform SG for {name}",
+            VpcId=vpc_id,
+        )["GroupId"]
+
+        client.create_tags(
+            Resources=[platform_sg_id],
+            Tags=[{"Key": "Name", "Value": f"platform-{app_name}-{env_name}-env-sg"}],
+        )
+        security_group_ids.append(platform_sg_id)
 
     return Vpc(
         vpc_id,
         [public_subnet_id],
         [private_subnet_id],
-        [sg_id],
+        security_group_ids,
     )
 
 
 class TestGetVpcBotoIntegration:
     @mock_aws
-    def test_get_vpc_successfully_selects_the_right_vpc(self):
+    @pytest.mark.parametrize(
+        "copilot_sg, platform_sg, expected_sg_name",
+        [
+            (True, False, "test_copilot_vpc_sg"),
+            (True, True, "test_platform_vpc_sg"),
+            (False, True, "test_platform_vpc_sg"),
+        ],
+    )
+    def test_get_vpc_successfully_selects_the_right_vpc(
+        self, copilot_sg, platform_sg, expected_sg_name
+    ):
         client = boto3.client("ec2")
+
+        app = "test-app"
+        env = "test-env"
         expected_vpc_1 = set_up_test_platform_vpc(
             client,
-            "test-app",
-            "test-env",
+            app,
+            env,
             "10.0.0.0/16",
             private_subnet_cidr="10.0.2.0/24",
             public_subnet_cidr="10.0.1.0/24",
             name="test-vpc",
+            copilot_security_group=copilot_sg,
+            platform_security_group=platform_sg,
         )
         expected_vpc_2 = set_up_test_platform_vpc(
             client,
-            "test-app",
-            "test-env",
+            app,
+            env,
             "172.16.0.0/16",
             private_subnet_cidr="172.16.2.0/24",
             public_subnet_cidr="172.16.1.0/24",
             name="test-vpc-2",
+            copilot_security_group=copilot_sg,
+            platform_security_group=platform_sg,
         )
 
         mock_session = Mock()
         mock_session.client.return_value = client
 
-        result_1 = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc")
-        assert result_1 == expected_vpc_1
+        result_1 = VpcProvider(mock_session).get_vpc(app, env, "test-vpc")
+        assert result_1.public_subnets == expected_vpc_1.public_subnets
+        assert result_1.private_subnets == expected_vpc_1.private_subnets
+        assert len(result_1.security_groups) == 1
 
-        result_2 = VpcProvider(mock_session).get_vpc("test-app", "test-env", "test-vpc-2")
-        assert result_2 == expected_vpc_2
+        vpc1_filter = {"Name": "vpc-id", "Values": [expected_vpc_1.id]}
+        tag_filter = {"Name": "group-name", "Values": [expected_sg_name]}
+        exp_security_group = client.describe_security_groups(Filters=[vpc1_filter, tag_filter]).get(
+            "SecurityGroups"
+        )[0]
+
+        assert exp_security_group["SecurityGroupArn"].endswith(result_1.security_groups[0])
+
+        result_2 = VpcProvider(mock_session).get_vpc(app, env, "test-vpc-2")
+        assert result_2.public_subnets == expected_vpc_2.public_subnets
+        assert result_2.private_subnets == expected_vpc_2.private_subnets
+        assert len(result_2.security_groups) == 1
+
+        vpc2_filter = {"Name": "vpc-id", "Values": [expected_vpc_2.id]}
+        exp_security_group_2 = client.describe_security_groups(
+            Filters=[vpc2_filter, tag_filter]
+        ).get("SecurityGroups")[0]
+
+        assert exp_security_group_2["SecurityGroupArn"].endswith(result_2.security_groups[0])
 
     @mock_aws
     def test_get_vpc_failure_no_matching_vpc_name(self):

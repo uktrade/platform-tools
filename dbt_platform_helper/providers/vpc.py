@@ -78,11 +78,19 @@ class VpcProvider:
 
     def _get_security_groups(self, app: str, env: str, vpc_id: str) -> list:
         vpc_filter = {"Name": "vpc-id", "Values": [vpc_id]}
-        # TODO Handle terraformed environment SG https://uktrade.atlassian.net/browse/DBTP-2074
-        tag_filter = {"Name": f"tag:Name", "Values": [f"copilot-{app}-{env}-env"]}
+        platform_sg_name = f"platform-{app}-{env}-env-sg"
+        tag_filter = {"Name": f"tag:Name", "Values": [f"copilot-{app}-{env}-env", platform_sg_name]}
+
         response = self.ec2_client.describe_security_groups(Filters=[vpc_filter, tag_filter])
 
-        return [sg.get("GroupId") for sg in response.get("SecurityGroups")]
+        matching_sec_groups = response.get("SecurityGroups")
+        platform_security_groups = [
+            sg.get("GroupId")
+            for sg in matching_sec_groups
+            if {"Key": "Name", "Value": platform_sg_name} in sg.get("Tags", [])
+        ]
+
+        return platform_security_groups
 
     def get_vpc(self, app: str, env: str, vpc_name: str) -> Vpc:
 
