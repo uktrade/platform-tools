@@ -157,10 +157,8 @@ class ApplicationTest(TestCase):
             }
         }
 
-        # First call --> /platform path --> simulate fallback by returning empty
-        # Second call --> /copilot path --> return mock secrets
         get_ssm_secrets.side_effect = [
-            [],  # Triggers fallback
+            [],  # Simulate fallback with empty value for /platform SSM parameter
             [
                 (
                     "/copilot/applications/test/environments/one",
@@ -211,10 +209,8 @@ class ApplicationTest(TestCase):
 
         client.get_caller_identity.return_value = {"Account": "abc_123"}
 
-        # First call --> /platform path --> simulate fallback
-        # Second call --> /copilot path --> return environment param
         get_ssm_secrets.side_effect = [
-            [],  # Triggers fallback
+            [],  # Simulate fallback with empty value for /platform SSM parameter
             [
                 (
                     "/copilot/applications/another-test/environments/my_env",
