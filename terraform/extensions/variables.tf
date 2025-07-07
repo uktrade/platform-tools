@@ -1,9 +1,8 @@
 variable "args" {
   type = object({
-    application             = string,
-    services                = any,
-    env_config              = any
-    service_deployment_mode = string
+    application = string,
+    services    = any,
+    env_config  = any
   })
 }
 

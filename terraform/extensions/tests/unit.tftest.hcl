@@ -1,7 +1,6 @@
 variables {
   args = {
-    application             = "test-application",
-    service_deployment_mode = "doesnt-matter",
+    application = "test-application",
     services = {
       "test-s3" : {
         "type" : "s3",
@@ -60,6 +59,7 @@ variables {
           }
         }
         vpc : "test-vpc"
+        service-deployment-mode : "doesn't matter"
       }
     }
   }
@@ -333,8 +333,7 @@ run "opensearch_plan_small_service_test" {
 run "opensearch_plan_medium_ha_service_test" {
   variables {
     args = {
-      application             = "test-application",
-      service_deployment_mode = "doesnt-matter",
+      application = "test-application",
       services = {
         "test-opensearch" : {
           "type" : "opensearch",
@@ -373,6 +372,7 @@ run "opensearch_plan_medium_ha_service_test" {
             }
           }
           vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
         }
       }
     }
@@ -422,8 +422,7 @@ run "redis_plan_medium_service_test" {
 
   variables {
     args = {
-      application             = "test-application",
-      service_deployment_mode = "doesnt-matter",
+      application = "test-application",
       services = {
         "test-redis" : {
           "type" : "redis",
@@ -462,6 +461,7 @@ run "redis_plan_medium_service_test" {
             }
           }
           vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
         }
       }
     }
@@ -499,8 +499,7 @@ run "redis_plan_medium_ha_service_test" {
 
   variables {
     args = {
-      application             = "test-application",
-      service_deployment_mode = "doesnt-matter",
+      application = "test-application",
       services = {
         "test-redis" : {
           "type" : "redis",
@@ -539,6 +538,7 @@ run "redis_plan_medium_ha_service_test" {
             }
           }
           vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
         }
       }
     }
