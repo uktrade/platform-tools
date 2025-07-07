@@ -491,8 +491,12 @@ class TestDataMigrationValidation:
             config_provider._validate_platform_config()
 
         assert "'copilot' does not match 'something we dont want'" in str(exc.value)
-        assert "'dual-copilot-traffic' does not match 'something we dont want'" in str(exc.value)
-        assert "'dual-platform-traffic' does not match 'something we dont want'" in str(exc.value)
+        assert "'dual-deploy-copilot-traffic' does not match 'something we dont want'" in str(
+            exc.value
+        )
+        assert "'dual-deploy-platform-traffic' does not match 'something we dont want'" in str(
+            exc.value
+        )
         assert "'platform' does not match 'something we dont want'" in str(exc.value)
 
 

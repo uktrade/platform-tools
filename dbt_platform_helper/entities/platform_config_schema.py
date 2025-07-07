@@ -196,7 +196,10 @@ class PlatformConfigSchema:
                     Optional("requires_approval"): bool,
                     Optional("vpc"): str,
                     Optional("service-deployment-mode"): Or(
-                        "copilot", "dual-copilot-traffic", "dual-platform-traffic", "platform"
+                        "copilot",
+                        "dual-deploy-copilot-traffic",
+                        "dual-deploy-platform-traffic",
+                        "platform",
                     ),
                 },
             )

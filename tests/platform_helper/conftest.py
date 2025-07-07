@@ -419,9 +419,9 @@ environments:
     requires_approval: false
     vpc: non-prod-vpc
   dev: 
-    service-deployment-mode: dual-copilot-traffic
+    service-deployment-mode: dual-deploy-copilot-traffic
   test:
-    service-deployment-mode: dual-platform-traffic
+    service-deployment-mode: dual-deploy-platform-traffic
   staging:
     service-deployment-mode: platform
   hotfix:
