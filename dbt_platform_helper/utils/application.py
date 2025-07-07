@@ -73,6 +73,7 @@ def load_application(app=None, default_session=None, env=None) -> Application:
         secrets = platform_secrets
     else:
         try:
+            # Check that the Copilot application exists
             ssm_client.get_parameter(
                 Name=f"/copilot/applications/{application.name}",
                 WithDecryption=False,
