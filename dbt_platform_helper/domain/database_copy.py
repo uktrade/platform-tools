@@ -68,7 +68,7 @@ class DatabaseCopy:
         environment = environments.get(env)
         if not environment:
             self.io.abort_with_error(
-                f"No such environment '{env}'. Available environments are: {', '.join(environments.keys())}. Please check that the Terraform infrastructure for your environment is up to date."
+                f"Environment '{env}' cannot be found in your account configuration in parameter store. Available environments are: {', '.join(environments.keys())}. Please check that the Terraform infrastructure for your environment is up to date."
             )
 
         env_session = environment.session
