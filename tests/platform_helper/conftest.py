@@ -408,6 +408,7 @@ default_versions:
     platform-helper: 10.2.0
 environments:
   "*":
+    service-deployment-mode: copilot
     accounts:
       deploy:
         name: "non-prod-acc"
@@ -417,9 +418,12 @@ environments:
         id: "6677889900"
     requires_approval: false
     vpc: non-prod-vpc
-  dev:
+  dev: 
+    service-deployment-mode: dual-copilot-traffic
   test:
+    service-deployment-mode: dual-platform-traffic
   staging:
+    service-deployment-mode: platform
   hotfix:
     accounts:
       deploy:

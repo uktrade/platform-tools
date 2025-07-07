@@ -195,6 +195,9 @@ class PlatformConfigSchema:
                     # TODO: DBTP-1943: requires_approval is no longer relevant since we don't have AWS Copilot manage environment pipelines
                     Optional("requires_approval"): bool,
                     Optional("vpc"): str,
+                    Optional("service-deployment-mode"): Or(
+                        "copilot", "dual-copilot-traffic", "dual-platform-traffic", "platform"
+                    ),
                 },
             )
         }
