@@ -91,9 +91,19 @@ class VpcProvider:
         )
 
         if platform_security_groups:
+            print(
+                f"using {platform_security_groups}"
+            )  # TODO remove this once decopilotiing has been completed
             return platform_security_groups
 
-        return self._get_matching_security_groups(filtered_security_groups, copilot_sg_name)
+        copilot_security_groups = self._get_matching_security_groups(
+            filtered_security_groups, copilot_sg_name
+        )
+
+        print(
+            f"using {copilot_security_groups}"
+        )  # TODO remove this once decopilotiing has been completed
+        return copilot_security_groups
 
     def _get_matching_security_groups(
         self, filtered_security_groups: list[dict], security_group_name: str
