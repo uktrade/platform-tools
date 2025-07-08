@@ -117,29 +117,27 @@ class TestGetVpcBotoIntegration:
         mock_session = Mock()
         mock_session.client.return_value = client
 
-        result_1 = VpcProvider(mock_session).get_vpc(app, env, "test-vpc")
-        assert result_1.public_subnets == expected_vpc_1.public_subnets
-        assert result_1.private_subnets == expected_vpc_1.private_subnets
-        assert len(result_1.security_groups) == 1
-
         vpc1_filter = {"Name": "vpc-id", "Values": [expected_vpc_1.id]}
         tag_filter = {"Name": "group-name", "Values": [expected_sg_name]}
         exp_security_group = client.describe_security_groups(Filters=[vpc1_filter, tag_filter]).get(
             "SecurityGroups"
         )[0]
 
+        vpc2_filter = {"Name": "vpc-id", "Values": [expected_vpc_2.id]}
+        exp_security_group_2 = client.describe_security_groups(
+            Filters=[vpc2_filter, tag_filter]
+        ).get("SecurityGroups")[0]
+
+        result_1 = VpcProvider(mock_session).get_vpc(app, env, "test-vpc")
+        assert result_1.public_subnets == expected_vpc_1.public_subnets
+        assert result_1.private_subnets == expected_vpc_1.private_subnets
+        assert len(result_1.security_groups) == 1
         assert exp_security_group["SecurityGroupArn"].endswith(result_1.security_groups[0])
 
         result_2 = VpcProvider(mock_session).get_vpc(app, env, "test-vpc-2")
         assert result_2.public_subnets == expected_vpc_2.public_subnets
         assert result_2.private_subnets == expected_vpc_2.private_subnets
         assert len(result_2.security_groups) == 1
-
-        vpc2_filter = {"Name": "vpc-id", "Values": [expected_vpc_2.id]}
-        exp_security_group_2 = client.describe_security_groups(
-            Filters=[vpc2_filter, tag_filter]
-        ).get("SecurityGroups")[0]
-
         assert exp_security_group_2["SecurityGroupArn"].endswith(result_2.security_groups[0])
 
     @mock_aws
@@ -223,7 +221,7 @@ class TestGetVpcBotoIntegration:
 
 class TestGetVpcGivenMockedResponses:
     @mock_aws
-    def test_get_vpc_sucess_given_mocked_responses(self):
+    def test_get_vpc_success_given_mocked_responses(self):
         mock_session, mock_client, _ = mock_vpc_info_session()
 
         vpc_provider = VpcProvider(mock_session)
