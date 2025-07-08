@@ -59,6 +59,11 @@ run "test_create_ecs_cluster" {
   }
 
   assert {
+    condition     = aws_ecs_cluster.cluster.tags.Name == "platform-my_app-my_env-env-sg"
+    error_message = "Name tag was not as expected"
+  }
+
+  assert {
     condition     = aws_ecs_cluster_capacity_providers.capacity.cluster_name == "my_app-my_env-cluster"
     error_message = "Cluster name for capacity provider should be: 'my_app-my_env-cluster'"
   }
