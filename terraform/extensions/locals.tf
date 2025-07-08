@@ -95,4 +95,7 @@ locals {
   dns_account_id      = var.args.env_config[var.environment]["accounts"]["dns"]["id"]
   deploy_account_id   = var.args.env_config[var.environment]["accounts"]["deploy"]["id"]
   pipeline_account_id = var.args.env_config["*"]["accounts"]["deploy"]["id"]
+
+  service_deployment_mode             = var.args.env_config[var.environment]["service-deployment-mode"]
+  non_copilot_service_deployment_mode = local.service_deployment_mode == "dual-deploy-copilot-traffic" || local.service_deployment_mode == "dual-deploy-platform-traffic" || local.service_deployment_mode == "platform" ? 1 : 0
 }
