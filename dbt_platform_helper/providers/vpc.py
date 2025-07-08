@@ -79,7 +79,8 @@ class VpcProvider:
     def _get_security_groups(self, app: str, env: str, vpc_id: str) -> list:
         vpc_filter = {"Name": "vpc-id", "Values": [vpc_id]}
         platform_sg_name = f"platform-{app}-{env}-env-sg"
-        tag_filter = {"Name": f"tag:Name", "Values": [f"copilot-{app}-{env}-env", platform_sg_name]}
+        copilot_sg_name = f"copilot-{app}-{env}-env"
+        tag_filter = {"Name": f"tag:Name", "Values": [copilot_sg_name, platform_sg_name]}
 
         response = self.ec2_client.describe_security_groups(Filters=[vpc_filter, tag_filter])
 
@@ -90,7 +91,14 @@ class VpcProvider:
             if {"Key": "Name", "Value": platform_sg_name} in sg.get("Tags", [])
         ]
 
-        return platform_security_groups
+        if platform_security_groups:
+            return platform_security_groups
+
+        return [
+            sg.get("GroupId")
+            for sg in matching_sec_groups
+            if {"Key": "Name", "Value": copilot_sg_name} in sg.get("Tags", [])
+        ]
 
     def get_vpc(self, app: str, env: str, vpc_name: str) -> Vpc:
 

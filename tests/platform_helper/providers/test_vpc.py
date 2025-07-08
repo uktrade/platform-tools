@@ -241,7 +241,10 @@ class TestGetVpcGivenMockedResponses:
         mock_client.describe_security_groups.assert_called_once_with(
             Filters=[
                 {"Name": "vpc-id", "Values": ["vpc-123456"]},
-                {"Name": "tag:Name", "Values": ["copilot-my_app-my_env-env"]},
+                {
+                    "Name": "tag:Name",
+                    "Values": ["copilot-my_app-my_env-env", "platform-my_app-my_env-env-sg"],
+                },
             ]
         )
 
