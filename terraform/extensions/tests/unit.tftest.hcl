@@ -59,6 +59,7 @@ variables {
           }
         }
         vpc : "test-vpc"
+        service-deployment-mode : "doesn't matter"
       }
     }
   }
@@ -371,6 +372,7 @@ run "opensearch_plan_medium_ha_service_test" {
             }
           }
           vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
         }
       }
     }
@@ -459,6 +461,7 @@ run "redis_plan_medium_service_test" {
             }
           }
           vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
         }
       }
     }
@@ -535,6 +538,7 @@ run "redis_plan_medium_ha_service_test" {
             }
           }
           vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
         }
       }
     }
