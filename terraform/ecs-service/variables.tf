@@ -38,10 +38,11 @@ variable "service_config" {
       location = string
     })
 
-    cpu    = number
-    memory = number
-    count  = number
-    exec   = optional(bool)
+    cpu        = number
+    memory     = number
+    count      = number
+    exec       = optional(bool)
+    entrypoint = optional(string)
 
     network = optional(object({
       connect = optional(bool)
@@ -59,16 +60,36 @@ variable "service_config" {
 
     environments = optional(map(object({
       http = optional(object({
-        alb   = string
+        alb   = optional(string)
         alias = optional(string)
       }))
       sidecars = optional(map(object({
         variables = optional(map(any))
       })))
+      variables = optional(map(any))
+      secrets   = optional(map(string))
+      image = optional(object({
+        port     = optional(number)
+        location = optional(string)
+      }))
+      cpu        = optional(number)
+      memory     = optional(number)
+      count      = optional(number)
+      exec       = optional(bool)
+      entrypoint = optional(string)
+      network = optional(object({
+        connect = optional(bool)
+        vpc = optional(object({
+          placement = optional(string)
+        }))
+      }))
+
+      storage = optional(object({
+        readonly_fs = optional(string)
+      }))
     })))
   })
 }
-
 
 variable "vpc_name" {
   type    = string
