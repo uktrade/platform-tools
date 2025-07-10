@@ -1,5 +1,20 @@
 # Changelog
 
+## [15.5.0](https://github.com/uktrade/platform-tools/compare/15.4.2...15.5.0) (2025-07-08)
+
+
+### Features
+
+* Create Terraform ECS cluster (DBTP-2153) ([#905](https://github.com/uktrade/platform-tools/issues/905)) ([4e29864](https://github.com/uktrade/platform-tools/commit/4e298642628d6f92f84a1e59d60f62903649dbc7))
+* Update platform schema to include service deployment mode (DBTP-2152) ([#906](https://github.com/uktrade/platform-tools/issues/906)) ([c7b3cf9](https://github.com/uktrade/platform-tools/commit/c7b3cf9436e8b5edadbdaf59e064ae79b5e57242))
+
+
+### Bug Fixes
+
+* Add default value for service-deployment-mode (DBTP-2153) ([#907](https://github.com/uktrade/platform-tools/issues/907)) ([8f8a360](https://github.com/uktrade/platform-tools/commit/8f8a360baea0805f2a582b247c586d9143590fb3))
+* Conduit missing SSM parameters bug (DBTP-2112) ([#902](https://github.com/uktrade/platform-tools/issues/902)) ([74bb3d1](https://github.com/uktrade/platform-tools/commit/74bb3d12426b6c0860f152b609fdf78d5da01e32))
+* Update data copy clear script to remove functions, view and sequences (DBTP-2150) ([#903](https://github.com/uktrade/platform-tools/issues/903)) ([578ef39](https://github.com/uktrade/platform-tools/commit/578ef39233dfeea4b14ac990611f8c30e520001e))
+
 ## [15.4.2](https://github.com/uktrade/platform-tools/compare/15.4.1...15.4.2) (2025-06-26)
 
 
