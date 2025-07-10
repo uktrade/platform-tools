@@ -82,11 +82,6 @@ variable "service_config" {
         secrets   = optional(map(string))
       })))
 
-      image = object({
-        port     = optional(number)
-        location = optional(string)
-      })
-
       image = optional(object({
         port     = optional(number)
         location = optional(string)
