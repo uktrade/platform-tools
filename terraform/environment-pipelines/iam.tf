@@ -957,6 +957,24 @@ resource "aws_iam_policy" "origin_secret_rotate_access" {
   policy      = data.aws_iam_policy_document.origin_secret_rotate_access.json
 }
 
+data "aws_iam_policy_document" "ecs-cluster" {
+  statement {
+    actions = [
+      "ecs:CreateCluster"
+    ]
+    resources = [
+      "arn:aws:ecs:${local.account_region}:cluster/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "ecs-cluster" {
+  name        = "${var.application}-${var.pipeline_name}-ecs-cluster"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to access ecs resources"
+  policy      = data.aws_iam_policy_document.ecs-cluster.json
+}
+
 # Policies for AWS Copilot
 data "aws_iam_policy_document" "copilot_assume_role" {
   dynamic "statement" {
@@ -1317,6 +1335,12 @@ resource "aws_iam_role_policy" "copilot_assume_role_for_environment_codebuild" {
   name   = "${var.application}-${var.pipeline_name}-copilot-assume-role-for-environment-codebuild"
   role   = aws_iam_role.environment_pipeline_codebuild.name
   policy = data.aws_iam_policy_document.copilot_assume_role.json
+}
+
+resource "aws_iam_role_policy" "ecs_cluster_role_policy" {
+  name   = "${var.application}-${var.pipeline_name}-ecs-cluster"
+  role   = aws_iam_role.environment_pipeline_codebuild.name
+  policy = data.aws_iam_policy_document.ecs-cluster.json
 }
 
 ########### TRIGGERED PIPELINE RESOURCES ##########
