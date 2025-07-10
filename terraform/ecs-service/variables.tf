@@ -59,24 +59,45 @@ variable "service_config" {
     secrets   = optional(map(string))
 
     environments = optional(map(object({
-      http = optional(object({
-        alb   = optional(string)
-        alias = optional(string)
-      }))
+
+      http = object({
+        path             = optional(string)
+        target_container = optional(string)
+        healthcheck = optional(object({
+          path                = optional(string)
+          port                = optional(number)
+          success_codes       = optional(string)
+          healthy_threshold   = optional(number)
+          unhealthy_threshold = optional(number)
+          interval            = optional(string)
+          timeout             = optional(string)
+          grace_period        = optional(string)
+        }))
+      })
+
       sidecars = optional(map(object({
-        variables = optional(map(any))
+        port      = optional(number)
+        image     = optional(string)
+        variables = optional(map(string))
+        secrets   = optional(map(string))
       })))
-      variables = optional(map(any))
-      secrets   = optional(map(string))
+
+      image = object({
+        port     = optional(number)
+        location = optional(string)
+      })
+
       image = optional(object({
         port     = optional(number)
         location = optional(string)
       }))
+
       cpu        = optional(number)
       memory     = optional(number)
       count      = optional(number)
       exec       = optional(bool)
       entrypoint = optional(string)
+
       network = optional(object({
         connect = optional(bool)
         vpc = optional(object({
@@ -87,6 +108,9 @@ variable "service_config" {
       storage = optional(object({
         readonly_fs = optional(string)
       }))
+
+      variables = optional(map(any))
+      secrets   = optional(map(string))
     })))
   })
 }
