@@ -56,7 +56,7 @@ BEGIN
                pg_get_function_identity_arguments(p.oid) as args
         FROM pg_proc p
         JOIN pg_namespace n ON p.pronamespace = n.oid
-        WHERE n.nspname NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+        WHERE n.nspname = 'public'
         AND NOT EXISTS (
             SELECT 1 FROM pg_depend d
             JOIN pg_extension e ON d.refobjid = e.oid
