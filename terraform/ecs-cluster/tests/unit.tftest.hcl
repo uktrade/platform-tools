@@ -67,4 +67,9 @@ run "test_create_ecs_cluster" {
     condition     = data.aws_security_group.https_security_group.name == "my_app-my_env-alb-https"
     error_message = "Security group name should be: 'my_app-my_env-alb-https'"
   }
+
+  assert {
+    condition     = aws_security_group.environment_security_group.tags.Name == "platform-my_app-my_env-env-sg"
+    error_message = "Name tag was not as expected"
+  }
 }

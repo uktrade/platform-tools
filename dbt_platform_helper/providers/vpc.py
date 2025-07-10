@@ -78,11 +78,42 @@ class VpcProvider:
 
     def _get_security_groups(self, app: str, env: str, vpc_id: str) -> list:
         vpc_filter = {"Name": "vpc-id", "Values": [vpc_id]}
-        # TODO Handle terraformed environment SG https://uktrade.atlassian.net/browse/DBTP-2074
-        tag_filter = {"Name": f"tag:Name", "Values": [f"copilot-{app}-{env}-env"]}
-        response = self.ec2_client.describe_security_groups(Filters=[vpc_filter, tag_filter])
+        platform_sg_name = f"platform-{app}-{env}-env-sg"
+        copilot_sg_name = f"copilot-{app}-{env}-env"
+        tag_filter = {"Name": f"tag:Name", "Values": [copilot_sg_name, platform_sg_name]}
 
-        return [sg.get("GroupId") for sg in response.get("SecurityGroups")]
+        filtered_security_groups = self.ec2_client.describe_security_groups(
+            Filters=[vpc_filter, tag_filter]
+        )
+
+        platform_security_groups = self._get_matching_security_groups(
+            filtered_security_groups, platform_sg_name
+        )
+
+        if platform_security_groups:
+            print(
+                f"using {platform_security_groups}"
+            )  # TODO remove this once decopilotiing has been completed
+            return platform_security_groups
+
+        copilot_security_groups = self._get_matching_security_groups(
+            filtered_security_groups, copilot_sg_name
+        )
+
+        print(
+            f"using {copilot_security_groups}"
+        )  # TODO remove this once decopilotiing has been completed
+        return copilot_security_groups
+
+    def _get_matching_security_groups(
+        self, filtered_security_groups: list[dict], security_group_name: str
+    ):
+        matching_sec_groups = filtered_security_groups.get("SecurityGroups")
+        return [
+            sg.get("GroupId")
+            for sg in matching_sec_groups
+            if {"Key": "Name", "Value": security_group_name} in sg.get("Tags", [])
+        ]
 
     def get_vpc(self, app: str, env: str, vpc_name: str) -> Vpc:
 
