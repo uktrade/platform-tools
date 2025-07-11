@@ -73,7 +73,7 @@ resource "aws_security_group" "environment_security_group" {
   name        = "${var.application}-${var.environment}-environment"
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
-  tags        = local.tags
+  tags        = local.sg_env_tags
 
   ingress {
     description = "Allow from ALB"

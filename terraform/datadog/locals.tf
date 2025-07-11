@@ -37,6 +37,13 @@ EOF
   owner: ${var.config.team_name}
 EOF
 
+  ## Link to the standard dashboard 
+  dashboard = <<EOF
+    - name: DBT Application Overview v2
+      type: dashboard
+      url: https://dbt.datadoghq.eu/dashboard/nwy-xqe-yv3/dbt-application-overview-v2?fromUser=false&refresh_mode=sliding&tpl_var_copilot-application%5B0%5D=${var.application}
+EOF
+
   ## Pipeline fingerprint
   fingerprint = <<EOF
 datadog:
