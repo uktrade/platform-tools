@@ -6,6 +6,7 @@ resource "aws_ecs_task_definition" "this" {
   network_mode             = "awsvpc"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
+  tags                     = local.tags
 
   container_definitions = jsonencode(
     concat(
@@ -111,6 +112,7 @@ data "aws_service_discovery_dns_namespace" "private_dns_namespace" {
 
 resource "aws_service_discovery_service" "service_discovery_service" {
   name = var.service_config.name
+  tags = local.tags
 
   dns_config {
     namespace_id = data.aws_service_discovery_dns_namespace.private_dns_namespace.id
@@ -131,4 +133,52 @@ resource "aws_service_discovery_service" "service_discovery_service" {
   health_check_custom_config {
     failure_threshold = 1
   }
+}
+
+resource "aws_kms_key" "ecs_service_log_group_kms_key" {
+  description         = "KMS Key for ECS service '${local.service_name}' log encryption"
+  enable_key_rotation = true
+  tags                = local.tags
+}
+
+resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
+  key_id = aws_kms_key.ecs_service_log_group_kms_key.key_id
+  policy = jsonencode({
+    Id = "EcsServiceToCloudWatch"
+    Statement = [
+      {
+        "Sid" : "Allow Root User Permissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        },
+        "Action" : "kms:*",
+        "Resource" : "*"
+      },
+      {
+        "Sid" : "AllowCloudWatchLogsUsage"
+        "Effect" : "Allow",
+        "Principal" : {
+          "Service" : "logs.${data.aws_region.current.name}.amazonaws.com"
+        },
+        "Action" : [
+          "kms:Encrypt",
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        "Resource" : "*"
+      }
+    ]
+    Version = "2012-10-17"
+  })
+}
+
+resource "aws_cloudwatch_log_group" "ecs_service_logs" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 30 days instead of 1 year
+  name              = "platform/${local.service_name}/ecs-service-logs"
+  retention_in_days = 30
+  tags              = local.tags
+  kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
+
+  depends_on = [aws_kms_key.ecs_service_log_group_kms_key.arn]
 }

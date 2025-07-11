@@ -32,6 +32,7 @@ resource "aws_iam_policy" "secrets_policy" {
   name        = "${local.service_name}-secrets-policy"
   description = "Allow application to access secrets manager"
   policy      = data.aws_iam_policy_document.secrets_policy.json
+  tags        = local.tags
 }
 
 data "aws_iam_policy_document" "secrets_policy" {
@@ -141,9 +142,13 @@ resource "aws_iam_policy" "execute_command_policy" {
   name        = "${local.service_name}-execute-command-policy"
   description = ""
   policy      = data.aws_iam_policy_document.execute_command_policy.json
+  tags        = local.tags
 }
 
 data "aws_iam_policy_document" "execute_command_policy" {
+
+  # Needs 'resources = ["*"]' permission because the SSM agent running inside the conduit ECS task communicates with Amazon Message Gateway Service via ssmmessages actions.
+  # See https://docs.aws.amazon.com/service-authorization/latest/reference/list_amazonmessagegatewayservice.html#amazonmessagegatewayservice-resources-for-iam-policies
   statement {
     effect = "Allow"
     actions = [
@@ -166,7 +171,7 @@ data "aws_iam_policy_document" "execute_command_policy" {
       "logs:PutLogEvents"
     ]
     resources = [
-      "*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.service_logs.arn}"
     ]
   }
 
