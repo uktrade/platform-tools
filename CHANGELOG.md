@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.6.0](https://github.com/uktrade/platform-tools/compare/15.5.0...15.6.0) (2025-07-11)
+
+
+### Features
+
+* Add link to standard dashboard to each service (DBTP-2193) ([#912](https://github.com/uktrade/platform-tools/issues/912)) ([9215103](https://github.com/uktrade/platform-tools/commit/921510328b6cd4b4087e5a7feb395dac5fac47fa))
+* Conduit and data copy new sg (DBPT-2074) ([#908](https://github.com/uktrade/platform-tools/issues/908)) ([d9234ae](https://github.com/uktrade/platform-tools/commit/d9234ae6472314009981a97f1c252338321f1d0f))
+
+
+### Bug Fixes
+
+* Update db clear script (off-ticket) ([#910](https://github.com/uktrade/platform-tools/issues/910)) ([9d66a44](https://github.com/uktrade/platform-tools/commit/9d66a44023d2cbe3621f5023fee76529d2886e23))
+
 ## [15.5.0](https://github.com/uktrade/platform-tools/compare/15.4.2...15.5.0) (2025-07-08)
 
 
