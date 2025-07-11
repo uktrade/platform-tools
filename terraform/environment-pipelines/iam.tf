@@ -791,7 +791,7 @@ resource "aws_iam_policy" "s3" {
 data "aws_iam_policy_document" "ecs" {
   # New ECS cluster perms here:
   statement {
-    sid = "AllowTaskDefinitionsRead"
+    sid = "AllowECSClusterCreate"
     actions = [
       "ecs:CreateCluster",
     ]
