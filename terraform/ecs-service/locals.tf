@@ -6,4 +6,5 @@ locals {
   }
 
   service_name = var.service_config.name
+  vpc_name     = var.env_config[var.environment]["vpc"]
 }

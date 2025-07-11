@@ -6,9 +6,8 @@ variable "environment" {
   type = string
 }
 
-variable "vpc_name" {
-  type    = string
-  default = "platform-sandbox-dev" #TODO - Remove hardcoding
+variable "env_config" {
+  type = any
 }
 
 variable "service_config" {
