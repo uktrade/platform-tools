@@ -788,6 +788,26 @@ resource "aws_iam_policy" "s3" {
   policy      = data.aws_iam_policy_document.s3.json
 }
 
+data "aws_iam_policy_document" "platform-ecs" {
+  statement {
+    sid = "AllowTaskDefinitionsRead"
+    actions = [
+      "ecs:CreateCluster",
+    ]
+    resources = [
+      "arn:aws:ecs:${local.account_region}:cluster/",
+      "arn:aws:ecs:${local.account_region}:cluster/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "platform-ecs" {
+  name        = "${var.application}-${var.pipeline_name}-pipeline-platform-ecs-access"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to access ecs resources"
+  policy      = data.aws_iam_policy_document.platform-ecs.json
+}
+
 data "aws_iam_policy_document" "ecs" {
   statement {
     sid = "AllowTaskDefinitionsRead"
@@ -1212,6 +1232,11 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
 resource "aws_iam_role_policy_attachment" "attach_ecs_policy" {
   role       = aws_iam_role.environment_pipeline_codebuild.name
   policy_arn = aws_iam_policy.ecs.arn
+}
+
+resource "aws_iam_role_policy_attachment" "attach_platform_ecs_policy" {
+  role       = aws_iam_role.environment_pipeline_codebuild.name
+  policy_arn = aws_iam_policy.platform-ecs.arn
 }
 
 resource "aws_iam_role_policy_attachment" "attach_origin_secret_rotate_policy" {
