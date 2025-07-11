@@ -794,6 +794,7 @@ data "aws_iam_policy_document" "ecs" {
     sid = "AllowECSClusterCreate"
     actions = [
       "ecs:CreateCluster",
+      "ecs:TagResource"
     ]
     resources = [
       "arn:aws:ecs:${local.account_region}:cluster/",
