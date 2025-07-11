@@ -184,7 +184,7 @@ resource "aws_cloudwatch_log_group" "conduit-logs" {
   tags              = local.tags
   kms_key_id        = aws_kms_key.conduit-log-group-kms-key.arn
 
-  depends_on = [aws_kms_key.conduit-log-group-kms-key.arn]
+  depends_on = [aws_kms_key.conduit-log-group-kms-key]
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "conduit-logs-filter" {

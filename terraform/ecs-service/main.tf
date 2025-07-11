@@ -180,5 +180,5 @@ resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
 
-  depends_on = [aws_kms_key.ecs_service_log_group_kms_key.arn]
+  depends_on = [aws_kms_key.ecs_service_log_group_kms_key]
 }
