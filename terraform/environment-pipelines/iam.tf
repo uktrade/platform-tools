@@ -796,7 +796,8 @@ data "aws_iam_policy_document" "ecs" {
       "ecs:CreateCluster",
       "ecs:TagResource",
       "ecs:DescribeClusters",
-      "ecs:DeleteCluster"
+      "ecs:DeleteCluster",
+      "ecs:PutClusterCapacityProviders",
     ]
     resources = [
       "arn:aws:ecs:${local.account_region}:cluster/",
