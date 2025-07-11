@@ -68,3 +68,67 @@ resource "aws_ecs_task_definition" "this" {
     )
   )
 }
+
+data "aws_vpc" "vpc" {
+  filter {
+    name   = "tag:Name"
+    values = [var.vpc_name]
+  }
+}
+
+resource "random_string" "tg_suffix" {
+  length    = 6
+  min_lower = 6
+  special   = false
+  lower     = true
+}
+
+resource "aws_lb_target_group" "target_group" {
+  name                 = "${local.service_name}-tg-${random_string.tg_suffix.result}"
+  port                 = 443
+  protocol             = "HTTPS"
+  target_type          = "ip"
+  vpc_id               = data.aws_vpc.vpc.id
+  deregistration_delay = 60
+  tags                 = local.tags
+
+  health_check {
+    port                = try(var.service_config.http.healthcheck.port, 8080)
+    path                = try(var.service_config.http.healthcheck.path, "/")
+    protocol            = "HTTP"
+    matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
+    healthy_threshold   = try(var.service_config.http.healthcheck.healthy_threshold, 3)
+    unhealthy_threshold = try(var.service_config.http.healthcheck.unhealthy_threshold, 3)
+    interval            = tonumber(trim(try(var.service_config.http.healthcheck.interval, "35s"), "s"))
+    timeout             = tonumber(trim(try(var.service_config.http.healthcheck.timeout, "30s"), "s"))
+  }
+}
+
+data "aws_service_discovery_dns_namespace" "private_dns_namespace" {
+  name = "${var.environment}.${var.application}.services.local"
+  type = "DNS_PRIVATE"
+}
+
+resource "aws_service_discovery_service" "service_discovery_service" {
+  name = local.service_name
+
+  dns_config {
+    namespace_id = data.aws_service_discovery_dns_namespace.private_dns_namespace.id
+
+    dns_records {
+      ttl  = 10
+      type = "A"
+    }
+
+    dns_records {
+      ttl  = 10
+      type = "SRV"
+    }
+
+    routing_policy = "MULTIVALUE"
+  }
+
+  health_check_custom_config {
+    failure_threshold = 1
+  }
+}
