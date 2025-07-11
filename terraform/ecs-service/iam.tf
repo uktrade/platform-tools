@@ -1,12 +1,8 @@
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
-data "aws_ecs_cluster" "cluster" {
-  cluster_name = "${var.application}-${var.environment}-cluster"
-}
-
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${data.aws_ecs_cluster.cluster.cluster_name}-ecs-task-execution-role"
+  name               = "${local.service_name}-ecs-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
   tags               = local.tags
 }
@@ -33,7 +29,7 @@ resource "aws_iam_role_policy_attachment" "secrets_role_policy" {
 }
 
 resource "aws_iam_policy" "secrets_policy" {
-  name        = "${data.aws_ecs_cluster.cluster.cluster_name}-secrets-policy"
+  name        = "${local.service_name}-secrets-policy"
   description = "Allow application to access secrets manager"
   policy      = data.aws_iam_policy_document.secrets_policy.json
 }
@@ -45,15 +41,17 @@ data "aws_iam_policy_document" "secrets_policy" {
       "secretsmanager:GetSecretValue",
     ]
     resources = [
-      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:*"
+      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
     ]
     condition {
-      test     = "StringEquals"
+      test = "StringEquals"
+      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
       variable = "ssm:ResourceTag/copilot-environment"
       values   = [var.environment]
     }
     condition {
-      test     = "StringEquals"
+      test = "StringEquals"
+      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
       variable = "aws:ResourceTag/copilot-application"
       values   = [var.application]
     }
@@ -65,7 +63,8 @@ data "aws_iam_policy_document" "secrets_policy" {
       "kms:Decrypt"
     ]
     resources = [
-      "arn:aws:kms:eu-west-2:${data.aws_caller_identity.current.account_id}:key/*"
+      # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
+      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
   }
   statement {
@@ -74,9 +73,32 @@ data "aws_iam_policy_document" "secrets_policy" {
       "kms:Decrypt"
     ]
     resources = [
+      # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
       "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
     condition {
+      test = "StringEquals"
+      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
+      variable = "ssm:ResourceTag/copilot-environment"
+      values   = [var.environment]
+    }
+    condition {
+      test = "StringEquals"
+      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
+      variable = "aws:ResourceTag/copilot-application"
+      values   = [var.application]
+    }
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameters"
+    ]
+    resources = [
+      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
+    ]
+    condition {
       test     = "StringEquals"
       variable = "ssm:ResourceTag/copilot-environment"
       values   = [var.environment]
@@ -94,27 +116,7 @@ data "aws_iam_policy_document" "secrets_policy" {
       "ssm:GetParameters"
     ]
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/*"
-    ]
-    condition {
-      test     = "StringEquals"
-      variable = "ssm:ResourceTag/copilot-environment"
-      values   = [var.environment]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "aws:ResourceTag/copilot-application"
-      values   = [var.application]
-    }
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ssm:GetParameters"
-    ]
-    resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/*"
+      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
     ]
     condition {
       test     = "StringEquals"
@@ -124,9 +126,8 @@ data "aws_iam_policy_document" "secrets_policy" {
   }
 }
 
-
 resource "aws_iam_role" "ecs_task_role" {
-  name               = "${data.aws_ecs_cluster.cluster.cluster_name}-${local.service_name}-ecs-task-role"
+  name               = "${local.service_name}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role_policy.json
   tags               = local.tags
 }
@@ -137,7 +138,7 @@ resource "aws_iam_role_policy_attachment" "execute_command_policy" {
 }
 
 resource "aws_iam_policy" "execute_command_policy" {
-  name        = "${data.aws_ecs_cluster.cluster.cluster_name}-execute-command-policy"
+  name        = "${local.service_name}-execute-command-policy"
   description = ""
   policy      = data.aws_iam_policy_document.execute_command_policy.json
 }
@@ -201,7 +202,8 @@ data "aws_iam_policy_document" "execute_command_policy" {
     ]
   }
 }
-#
+
+# TODO as part of `platform-helper make-addons` replacement
 # resource "aws_iam_role_policy_attachment" "bucket_access_policy" {
 #   for_each   = local.bucket_access_services
 #   role       = aws_iam_role.ecs_task_role[each.key].name

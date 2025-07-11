@@ -1,5 +1,5 @@
 resource "aws_ecs_task_definition" "this" {
-  family                   = "${var.application}-${var.service_config.name}-${var.environment}-task-def"
+  family                   = "${local.service_name}-task-def"
   requires_compatibilities = ["FARGATE"]
   cpu                      = tostring(var.service_config.cpu)
   memory                   = tostring(var.service_config.memory)
@@ -84,7 +84,7 @@ resource "random_string" "tg_suffix" {
 }
 
 resource "aws_lb_target_group" "target_group" {
-  name                 = "${local.service_name}-tg-${random_string.tg_suffix.result}"
+  name                 = "${var.service_config.name}-tg-${random_string.tg_suffix.result}"
   port                 = 443
   protocol             = "HTTPS"
   target_type          = "ip"
@@ -97,8 +97,8 @@ resource "aws_lb_target_group" "target_group" {
     path                = try(var.service_config.http.healthcheck.path, "/")
     protocol            = "HTTP"
     matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
-    healthy_threshold   = try(var.service_config.http.healthcheck.healthy_threshold, 3)
-    unhealthy_threshold = try(var.service_config.http.healthcheck.unhealthy_threshold, 3)
+    healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
+    unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
     interval            = tonumber(trim(try(var.service_config.http.healthcheck.interval, "35s"), "s"))
     timeout             = tonumber(trim(try(var.service_config.http.healthcheck.timeout, "30s"), "s"))
   }
@@ -110,7 +110,7 @@ data "aws_service_discovery_dns_namespace" "private_dns_namespace" {
 }
 
 resource "aws_service_discovery_service" "service_discovery_service" {
-  name = local.service_name
+  name = var.service_config.name
 
   dns_config {
     namespace_id = data.aws_service_discovery_dns_namespace.private_dns_namespace.id

@@ -25,15 +25,8 @@ override_data {
 override_data {
   target = data.aws_service_discovery_dns_namespace.private_dns_namespace
   values = {
-    name = "my_env.my_app.services.local"
+    name = "dev.demodjango.services.local"
     type = "DNS_PRIVATE"
-  }
-}
-
-override_data {
-  target = data.aws_ecs_cluster.cluster
-  values = {
-    cluster_name = "my_app-my_env-cluster"
   }
 }
 
@@ -67,8 +60,8 @@ override_data {
             "Action": "secretsmanager:GetSecretValue",
             "Condition": {
                 "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "my_app",
-                    "ssm:ResourceTag/copilot-environment": "my_env"
+                    "aws:ResourceTag/copilot-application": "demodjango",
+                    "ssm:ResourceTag/copilot-environment": "dev"
                 }
             },
             "Effect": "Allow",
@@ -83,8 +76,8 @@ override_data {
             "Action": "kms:Decrypt",
             "Condition": {
                 "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "my_app",
-                    "ssm:ResourceTag/copilot-environment": "my_env"
+                    "aws:ResourceTag/copilot-application": "demodjango",
+                    "ssm:ResourceTag/copilot-environment": "dev"
                 }
             },
             "Effect": "Allow",
@@ -94,8 +87,8 @@ override_data {
             "Action": "ssm:GetParameters",
             "Condition": {
                 "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "my_app",
-                    "ssm:ResourceTag/copilot-environment": "my_env"
+                    "aws:ResourceTag/copilot-application": "demodjango",
+                    "ssm:ResourceTag/copilot-environment": "dev"
                 }
             },
             "Effect": "Allow",
@@ -166,75 +159,123 @@ EOT
   }
 }
 
-run "test_create_ecs_service" {
-  command = plan
+variables {
+  application = "demodjango"
+  environment = "dev"
 
-  variables {
-    application = "my_app"
-    environment = "my_env"
-    vpc_name    = "terraform-tests-vpc"
-    service_config = {
-      name = "web"
-      type = "Load Balanced Web Service"
-
-      http = {
-        path             = "/"
-        alias            = "web.my_env.my_app.uktrade.digital"
-        target_container = "nginx"
-        healthcheck = {
-          path                = "/"
-          port                = 8080
-          success_codes       = "200"
-          healthy_threshold   = 2
-          unhealthy_threshold = 2
-          interval            = "30s"
-          timeout             = "5s"
-          grace_period        = "10s"
+  env_config = {
+    "dev" = {
+      accounts = {
+        deploy = {
+          name = "sandbox"
+          id   = "000123456789"
+        }
+        dns = {
+          name = "dev"
+          id   = "123456"
         }
       }
-
-      sidecars = {
-        nginx = {
-          port  = 443
-          image = "public.ecr.aws/example/nginx:latest"
-        }
-      }
-
-      image = {
-        location = "public.ecr.aws/example/app:latest"
-        port     = 8080
-      }
-
-      cpu    = 256
-      memory = 512
-      count  = 1
-      exec   = true
-
-      network = {
-        connect = true
-        vpc = {
-          placement = "private"
-        }
-      }
-
-      storage = {
-        readonly_fs = false
-      }
-
-      variables = {
-        LOG_LEVEL = "DEBUG"
-        DEBUG     = false
-        PORT      = 8080
-      }
-
-      secrets = {
-        DJANGO_SECRET_KEY = "/copilot/my_app/my_env/secrets/DJANGO_SECRET_KEY"
-      }
+      vpc : "test-vpc"
+      service-deployment-mode : "doesn't matter"
     }
   }
 
-  assert {
+  service_config = {
+    name = "web"
+    type = "Load Balanced Web Service"
 
+    http = {
+      path             = "/"
+      alias            = "web.dev.demodjango.uktrade.digital"
+      target_container = "nginx"
+      healthcheck = {
+        path                = "/test"
+        port                = 8081
+        success_codes       = "200,302"
+        healthy_threshold   = 9
+        unhealthy_threshold = 9
+        interval            = "99s"
+        timeout             = "99s"
+        grace_period        = "99s"
+      }
+    }
+
+    sidecars = {
+      nginx = {
+        port  = 443
+        image = "public.ecr.aws/example/nginx:latest"
+      }
+    }
+
+    image = {
+      location = "public.ecr.aws/example/app:latest"
+      port     = 8080
+    }
+
+    cpu    = 256
+    memory = 512
+    count  = 1
+    exec   = true
+
+    network = {
+      connect = true
+      vpc = {
+        placement = "private"
+      }
+    }
+
+    storage = {
+      readonly_fs = false
+    }
+
+    variables = {
+      LOG_LEVEL = "DEBUG"
+      DEBUG     = false
+      PORT      = 8080
+    }
+
+    secrets = {
+      DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+    }
+  }
+}
+
+
+run "test_target_group_health_checks" {
+  command = plan
+
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].port == "8081"
+    error_message = "Should be '8081'"
   }
 
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].path == "/test"
+    error_message = "Should be '/test'"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].matcher == "200,302"
+    error_message = "Should be '200,302'"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].healthy_threshold == 9
+    error_message = "Should be '9'"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].unhealthy_threshold == 9
+    error_message = "Should be '9'"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].interval == 99
+    error_message = "Should be '99'"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.target_group.health_check[0].timeout == 99
+    error_message = "Should be '99'"
+  }
 }
