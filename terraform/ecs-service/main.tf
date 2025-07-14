@@ -36,7 +36,7 @@ resource "aws_ecs_task_definition" "this" {
           logConfiguration = {
             logDriver = "awslogs"
             options = {
-              awslogs-group         = "/copilot/${var.service_config.name}"
+              awslogs-group         = "/platform/${local.service_name}/ecs-service-logs"
               awslogs-region        = data.aws_region.current.name
               awslogs-stream-prefix = "ecs"
             }
@@ -175,7 +175,7 @@ resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
 
 resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   # checkov:skip=CKV_AWS_338:Retains logs for 30 days instead of 1 year
-  name              = "platform/${local.service_name}/ecs-service-logs"
+  name              = "/platform/${local.service_name}/ecs-service-logs"
   retention_in_days = 30
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
