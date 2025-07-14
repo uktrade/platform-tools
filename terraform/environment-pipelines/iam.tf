@@ -800,8 +800,8 @@ data "aws_iam_policy_document" "ecs" {
       "ecs:PutClusterCapacityProviders",
     ]
     resources = [
-      "arn:aws:ecs:${local.account_region}:cluster/",
-      "arn:aws:ecs:${local.account_region}:cluster/*"
+      for env in local.environment_config :
+      "arn:aws:ecs:${local.account_region}:cluster/${var.application}-${env.name}-cluster"
     ]
   }
 
