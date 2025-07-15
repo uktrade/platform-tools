@@ -158,7 +158,17 @@ def get_ssm_secrets(app, env, session=None, path=None):
     secrets = []
 
     while True:
-        response = client.get_parameters_by_path(**params)
+        try:
+            response = client.get_parameters_by_path(**params)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "AccessDeniedException":
+                click.secho(
+                    "Access denied on SSM, due to missing permissions. Please update your environment infrastructure.",
+                    fg="magenta",
+                )
+                break
+            else:
+                raise e
 
         for secret in response["Parameters"]:
             secrets.append((secret["Name"], secret["Value"]))
