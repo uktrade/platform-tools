@@ -245,37 +245,37 @@ run "test_target_group_health_checks" {
   command = plan
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].port == "8081"
+    condition     = aws_lb_target_group.target_group[0].health_check[0].port == "8081"
     error_message = "Should be '8081'"
   }
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].path == "/test"
+    condition     = aws_lb_target_group.target_group[0].health_check[0].path == "/test"
     error_message = "Should be '/test'"
   }
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].matcher == "200,302"
+    condition     = aws_lb_target_group.target_group[0].health_check[0].matcher == "200,302"
     error_message = "Should be '200,302'"
   }
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].healthy_threshold == 9
+    condition     = aws_lb_target_group.target_group[0].health_check[0].healthy_threshold == 9
     error_message = "Should be '9'"
   }
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].unhealthy_threshold == 9
+    condition     = aws_lb_target_group.target_group[0].health_check[0].unhealthy_threshold == 9
     error_message = "Should be '9'"
   }
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].interval == 99
+    condition     = aws_lb_target_group.target_group[0].health_check[0].interval == 99
     error_message = "Should be '99'"
   }
 
   assert {
-    condition     = aws_lb_target_group.target_group.health_check[0].timeout == 99
+    condition     = aws_lb_target_group.target_group[0].health_check[0].timeout == 99
     error_message = "Should be '99'"
   }
 }

@@ -71,6 +71,8 @@ resource "aws_ecs_task_definition" "this" {
 }
 
 data "aws_vpc" "vpc" {
+  count = local.web_service_required
+
   filter {
     name   = "tag:Name"
     values = [local.vpc_name]
@@ -78,6 +80,8 @@ data "aws_vpc" "vpc" {
 }
 
 resource "random_string" "tg_suffix" {
+  count = local.web_service_required
+
   length    = 6
   min_lower = 6
   special   = false
@@ -85,11 +89,13 @@ resource "random_string" "tg_suffix" {
 }
 
 resource "aws_lb_target_group" "target_group" {
-  name                 = "${var.service_config.name}-tg-${random_string.tg_suffix.result}"
+  count = local.web_service_required
+
+  name                 = "${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}"
   port                 = 443
   protocol             = "HTTPS"
   target_type          = "ip"
-  vpc_id               = data.aws_vpc.vpc.id
+  vpc_id               = data.aws_vpc.vpc[count.index].id
   deregistration_delay = 60
   tags                 = local.tags
 
@@ -106,16 +112,20 @@ resource "aws_lb_target_group" "target_group" {
 }
 
 data "aws_service_discovery_dns_namespace" "private_dns_namespace" {
+  count = local.web_service_required
+
   name = "${var.environment}.${var.application}.services.local"
   type = "DNS_PRIVATE"
 }
 
 resource "aws_service_discovery_service" "service_discovery_service" {
+  count = local.web_service_required
+
   name = var.service_config.name
   tags = local.tags
 
   dns_config {
-    namespace_id = data.aws_service_discovery_dns_namespace.private_dns_namespace.id
+    namespace_id = data.aws_service_discovery_dns_namespace.private_dns_namespace[count.index].id
 
     dns_records {
       ttl  = 10
