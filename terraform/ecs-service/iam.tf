@@ -191,19 +191,7 @@ data "aws_iam_policy_document" "execute_command_policy" {
       "sts:AssumeRole",
     ]
     resources = [
-      # TODO - Where does this arn come from, current added by platform-helper copilot make-addons?
       "arn:aws:iam::763451185160:role/AppConfigIpFilterRole"
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "sts:AssumeRole",
-    ]
-    resources = [
-      # TODO - Where does this arn come from, current added by platform-helper copilot make-addons?
-      "arn:aws:iam::480224066791:role/amp-prometheus-role"
     ]
   }
 }
