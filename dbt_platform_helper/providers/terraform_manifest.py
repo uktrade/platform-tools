@@ -17,6 +17,68 @@ class TerraformManifestProvider:
         self.file_provider = file_provider
         self.io = io
 
+    def generate_service_config(
+        self,
+        conifg_object,
+        environment,
+        image_tag,
+        platform_helper_version: str,
+        platform_config,
+        module_source_override: str = None,
+    ):
+
+        service_dir = f"terraform/services/{environment}/{conifg_object.name}"
+        platform_config = ConfigProvider.apply_environment_defaults(platform_config)
+        account = self._get_account_for_env(environment, platform_config)
+        state_key_suffix = f"{conifg_object.name}-{environment}"
+
+        terraform = {}
+        self._add_header(terraform)
+
+        self._add_service_locals(terraform, environment, image_tag)
+
+        self._add_provider(terraform, account)
+        self._add_backend(
+            terraform, platform_config, account, f"tfstate/services/{state_key_suffix}.tfstate"
+        )
+
+        self._add_service_module(terraform, platform_helper_version, module_source_override)
+
+        self._write_terraform_json(terraform, service_dir)
+
+    def _add_service_locals(self, terraform, environment, image_tag):
+        terraform["locals"] = {
+            "environment": environment,
+            "image_tag": image_tag,
+            "platform_config": '${yamldecode(file("../../../../platform-config.yml"))}',
+            "application": '${local.platform_config["application"]}',
+            "environments": '${local.platform_config["environments"]}',
+            "env_config": '${{for name, config in local.environments: name => merge(lookup(local.environments, "*", {}), config)}}',
+            "service_config": '${yamldecode(templatefile("./service-config.yml", {COPILOT_ENVIRONMENT_NAME = local.environment, IMAGE_TAG = local.image_tag}))}',
+            "raw_env_config": '${local.platform_config["environments"]}',
+            "combined_env_config": '${{for name, config in local.raw_env_config: name => merge(lookup(local.raw_env_config, "*", {}), config)}}',
+            "service_deployment_mode": '${lookup(local.combined_env_config[local.environment], "service-deployment-mode", "copilot")}',
+            "non_copilot_service_deployment_mode": '${local.service_deployment_mode == "dual-deploy-copilot-traffic" || local.service_deployment_mode == "dual-deploy-platform-traffic" || local.service_deployment_mode == "platform" ? 1 : 0}',
+        }
+
+    def _add_service_module(
+        self, terraform: dict, platform_helper_version: str, module_source_override: str = None
+    ):
+        source = (
+            module_source_override
+            or f"git::git@github.com:uktrade/platform-tools.git//terraform/ecs-service?depth=1&ref={platform_helper_version}"
+        )
+        terraform["module"] = {
+            "ecs-service": {
+                "source": source,
+                "count": "${local.non_copilot_service_deployment_mode}",
+                "application": "${local.application}",
+                "environment": "${local.environment}",
+                "service_config": "${local.service_config}",
+                "env_config": "${local.env_config}",
+            }
+        }
+
     def generate_codebase_pipeline_config(
         self,
         platform_config: dict,
@@ -32,7 +94,12 @@ class TerraformManifestProvider:
         self._add_header(terraform)
         self._add_codebase_pipeline_locals(terraform)
         self._add_provider(terraform, default_account)
-        self._add_backend(terraform, platform_config, default_account, state_key_suffix)
+        self._add_backend(
+            terraform,
+            platform_config,
+            default_account,
+            f"tfstate/application/{state_key_suffix}.tfstate",
+        )
         self._add_codebase_pipeline_module(
             terraform, platform_helper_version, deploy_repository, module_source
         )
@@ -56,7 +123,9 @@ class TerraformManifestProvider:
         terraform = {}
         self._add_header(terraform)
         self._add_environment_locals(terraform, application_name)
-        self._add_backend(terraform, platform_config, account, state_key_suffix)
+        self._add_backend(
+            terraform, platform_config, account, f"tfstate/application/{state_key_suffix}.tfstate"
+        )
         self._add_extensions_module(terraform, platform_helper_version, env, module_source_override)
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
@@ -99,13 +168,13 @@ class TerraformManifestProvider:
         terraform["provider"]["aws"]["shared_credentials_files"] = ["~/.aws/config"]
 
     @staticmethod
-    def _add_backend(terraform: dict, platform_config: dict, account: str, state_key_suffix: str):
+    def _add_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
         terraform["terraform"] = {
             "required_version": SUPPORTED_TERRAFORM_VERSION,
             "backend": {
                 "s3": {
                     "bucket": f"terraform-platform-state-{account}",
-                    "key": f"tfstate/application/{state_key_suffix}.tfstate",
+                    "key": state_key,
                     "region": "eu-west-2",
                     "encrypt": True,
                     "kms_key_id": f"alias/terraform-platform-state-s3-key-{account}",

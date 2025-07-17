@@ -25,6 +25,34 @@ PLEASE_UPGRADE_TO_V13_MESSAGE = """Please ensure that you have already upgraded 
 Then upgrade platform-helper to version {installed_platform_helper_version} and run 'platform-helper config migrate' to upgrade the configuration to the current schema version."""
 
 
+class ConfigLoader:
+    def __init__(self, file_provider=YamlFileProvider, io: ClickIOProvider = ClickIOProvider()):
+        self.io = io
+        self.file_provider = file_provider
+
+    def load_into_model(self, path, model):
+        try:
+            file_content = self.file_provider.load(path)
+            return model(**file_content)
+        except FileNotFoundException as e:
+            self.io.abort_with_error(
+                f"{e} Please check it exists and you are in the root directory of your deployment project."
+            )
+        except FileProviderException as e:
+            self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
+
+    def load(self, path):
+        try:
+            file_content = self.file_provider.load(path)
+            return file_content
+        except FileNotFoundException as e:
+            self.io.abort_with_error(
+                f"{e} Please check it exists and you are in the root directory of your deployment project."
+            )
+        except FileProviderException as e:
+            self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
+
+
 class ConfigProvider:
     def __init__(
         self,
