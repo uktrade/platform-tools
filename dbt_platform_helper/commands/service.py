@@ -57,8 +57,6 @@ def generate(name, environment):
             config_provider=config_provider,
         )
         service_manager.generate(["dragos"], ["web"])
-        # config_provider = ConfigProvider(ConfigValidator(session=session))
-        # Service(config_provider).generate(name)
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))
