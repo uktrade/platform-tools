@@ -29,27 +29,34 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_lb_listener.environment_alb_listener_http
+  values = {
+    arn = "arn:aws:elasticloadbalancing:eu-west-2:001122334455:loadbalancer/app/demodjango-dev/56a768d2354e5fe8"
+  }
+}
+
 run "test_create_ecs_cluster" {
   command = plan
 
   variables {
-    application = "my_app"
-    environment = "my_env"
+    application = "demodjango"
+    environment = "dev"
     vpc_name    = "terraform-tests-vpc"
   }
 
   assert {
-    condition     = aws_ecs_cluster.cluster.name == "my_app-my_env-cluster"
-    error_message = "Cluster name should be: 'my_app-my_env-cluster'"
+    condition     = aws_ecs_cluster.cluster.name == "demodjango-dev-cluster"
+    error_message = "Cluster name should be: 'demodjango-dev-cluster'"
   }
 
   assert {
-    condition     = aws_ecs_cluster.cluster.tags.application == "my_app"
+    condition     = aws_ecs_cluster.cluster.tags.application == "demodjango"
     error_message = "application tag was not as expected"
   }
 
   assert {
-    condition     = aws_ecs_cluster.cluster.tags.environment == "my_env"
+    condition     = aws_ecs_cluster.cluster.tags.environment == "dev"
     error_message = "environment tag was not as expected"
   }
 
@@ -59,17 +66,17 @@ run "test_create_ecs_cluster" {
   }
 
   assert {
-    condition     = aws_ecs_cluster_capacity_providers.capacity.cluster_name == "my_app-my_env-cluster"
-    error_message = "Cluster name for capacity provider should be: 'my_app-my_env-cluster'"
+    condition     = aws_ecs_cluster_capacity_providers.capacity.cluster_name == "demodjango-dev-cluster"
+    error_message = "Cluster name for capacity provider should be: 'demodjango-dev-cluster'"
   }
 
   assert {
-    condition     = data.aws_security_group.https_security_group.name == "my_app-my_env-alb-https"
-    error_message = "Security group name should be: 'my_app-my_env-alb-https'"
+    condition     = data.aws_security_group.https_security_group.name == "demodjango-dev-alb-https"
+    error_message = "Security group name should be: 'demodjango-dev-alb-https'"
   }
 
   assert {
-    condition     = aws_security_group.environment_security_group.tags.Name == "platform-my_app-my_env-env-sg"
+    condition     = aws_security_group.environment_security_group.tags.Name == "platform-demodjango-dev-env-sg"
     error_message = "Name tag was not as expected"
   }
 }
