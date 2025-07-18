@@ -19,7 +19,7 @@ class TerraformManifestProvider:
 
     def generate_service_config(
         self,
-        conifg_object,
+        config_object,
         environment,
         image_tag,
         platform_helper_version: str,
@@ -27,10 +27,10 @@ class TerraformManifestProvider:
         module_source_override: str = None,
     ):
 
-        service_dir = f"terraform/services/{environment}/{conifg_object.name}"
+        service_dir = f"terraform/services/{environment}/{config_object.name}"
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(environment, platform_config)
-        state_key_suffix = f"{conifg_object.name}-{environment}"
+        state_key_suffix = f"{config_object.name}-{environment}"
 
         terraform = {}
         self._add_header(terraform)

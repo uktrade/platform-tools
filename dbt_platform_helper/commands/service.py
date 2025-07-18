@@ -23,7 +23,7 @@ def service():
     "--name",
     "-n",
     required=False,
-    help="The name of the service to generate a manifest for.",
+    help="The name of the service to generate a manifest for. Multiple values accepted.",
     multiple=True,
     default=[],
 )
@@ -33,11 +33,12 @@ def service():
     required=False,
     multiple=True,
     default=[],
-    help="The name of the environments to generate service manifests for.",
+    help="The name of the environment to generate service manifests for. Multiple values accepted.",
 )
 def generate(name, environment):
-    """Gathers various IDs and ARNs from AWS and generates the AWS Copilot
-    environment manifest at copilot/environments/<environment>/manifest.yml."""
+    """Validates the service-config.yml format, applies the environment-specific
+    overrides, and generates a Terraform manifest at
+    /terraform/services/<environment>/<service>/main.tf.json."""
 
     click_io = ClickIOProvider()
     try:

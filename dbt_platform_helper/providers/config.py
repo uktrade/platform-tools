@@ -36,7 +36,7 @@ class ConfigLoader:
             return model(**file_content)
         except FileNotFoundException as e:
             self.io.abort_with_error(
-                f"{e} Please check it exists and you are in the root directory of your deployment project."
+                f"{e} Please check it exists and you are in the root directory of your -deploy repository."
             )
         except FileProviderException as e:
             self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
@@ -47,7 +47,7 @@ class ConfigLoader:
             return file_content
         except FileNotFoundException as e:
             self.io.abort_with_error(
-                f"{e} Please check it exists and you are in the root directory of your deployment project."
+                f"{e} Please check it exists and you are in the root directory of your -deploy repository."
             )
         except FileProviderException as e:
             self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
