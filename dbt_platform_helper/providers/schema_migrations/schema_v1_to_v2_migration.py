@@ -2,9 +2,8 @@ import os
 from copy import deepcopy
 from pathlib import Path
 
-import yaml
-
 from dbt_platform_helper.providers.files import FileProvider
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service"]
 
@@ -27,13 +26,19 @@ class SchemaV1ToV2Migration:
         for dirname, _, filenames in os.walk("copilot"):
             if "manifest.yml" in filenames and "environments" not in dirname:
                 with open(f"{dirname}/manifest.yml") as f:
-                    manifest_string = f.read()
-                    manifest = yaml.safe_load(manifest_string)
+                    copilot_manifest = yaml.safe_load(f.read())
 
-                    if manifest["type"] in SERVICE_TYPES:
-                        service_name = manifest["name"]
+                    if copilot_manifest["type"] in SERVICE_TYPES:
+                        service_name = copilot_manifest["name"]
                         service_path = service_directory / service_name
 
-                        FileProvider.mkfile(
-                            service_path, "service-config.yml", "test", overwrite=True
+                        del copilot_manifest["type"]
+
+                        ClickIOProvider().info(
+                            FileProvider.mkfile(
+                                service_path,
+                                "service-config.yml",
+                                yaml.safe_dump(copilot_manifest),
+                                overwrite=True,
+                            )
                         )
