@@ -8,14 +8,20 @@ from pydantic import Field
 
 
 class HealthCheck(BaseModel):
-    path: str = Field(description="""Path the healthcheck calls""")
-    port: int = Field(description="""Port the healthcheck calls""")
-    success_codes: str = Field(description="""The success codes the healthcheck looks for""")
-    healthy_threshold: int = Field(description="""The number of  """)
-    unhealthy_threshold: int = Field(description="""The number of """)
-    interval: str = Field(description="""The interval inbetween health check calls""")
-    timeout: str = Field(description="""The timeout for a healthcheck call""")
-    grace_period: str = Field(description="""The time""")
+    path: Optional[str] = Field(description="""Path the healthcheck calls""", default=None)
+    port: Optional[int] = Field(description="""Port the healthcheck calls""", default=None)
+    success_codes: Optional[str] = Field(
+        description="""The success codes the healthcheck looks for""", default=None
+    )
+    healthy_threshold: Optional[int] = Field(description="""The number of  """, default=None)
+    unhealthy_threshold: Optional[int] = Field(description="""The number of """, default=None)
+    interval: Optional[str] = Field(
+        description="""The interval inbetween health check calls""", default=None
+    )
+    timeout: Optional[str] = Field(
+        description="""The timeout for a healthcheck call""", default=None
+    )
+    grace_period: Optional[str] = Field(description="""The time""", default=None)
 
 
 class Http(BaseModel):
