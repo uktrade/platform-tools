@@ -31,6 +31,7 @@ def service():
     multiple=True,
     help="The name of the environment to generate service manifests for. Multiple values accepted.",
 )
+# TODO add image-tag option
 def generate(name, environment):
     """Validates the service-config.yml format, applies the environment-specific
     overrides, and generates a Terraform manifest at
