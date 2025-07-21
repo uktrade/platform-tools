@@ -28,8 +28,13 @@ def service():
     multiple=True,
     help="The name of the environment to generate service manifests for. Multiple values accepted.",
 )
-# TODO add image-tag option
-def generate(name, environment):
+@click.option(
+    "--image-tag",
+    "-i",
+    required=False,
+    help="The name of the service to generate a manifest for. Multiple values accepted.",  # TODO update description
+)
+def generate(name, environment, image_tag):
     """Validates the service-config.yml format, applies the environment-specific
     overrides, and generates a Terraform manifest at
     /terraform/services/<environment>/<service>/main.tf.json."""
@@ -40,7 +45,9 @@ def generate(name, environment):
 
     try:
         service_manager = ServiceManger()
-        service_manager.generate(environments=environments, services=services)
+        service_manager.generate(
+            environments=environments, services=services, flag_image_tag=image_tag
+        )
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))

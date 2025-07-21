@@ -57,7 +57,7 @@ class ServiceManger:
         )
         self.load_application = load_application
 
-    def generate(self, environments: list[str], services: list[str]):
+    def generate(self, environments: list[str], services: list[str], flag_image_tag: str = None):
 
         config = self.config_provider.get_enriched_config()
         application_name = config.get("application", {})
@@ -114,7 +114,9 @@ class ServiceManger:
         else:
             module_source_override = None
 
-        image_tag = self.environment_variable_provider.get(IMAGE_TAG_ENV_VAR, IMAGE_TAG_DEFAULT)
+        image_tag = flag_image_tag or self.environment_variable_provider.get(
+            IMAGE_TAG_ENV_VAR, IMAGE_TAG_DEFAULT
+        )
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

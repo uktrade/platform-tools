@@ -694,6 +694,7 @@ platform-helper service generate
 
 ```
 platform-helper service generate [--name <name>] [--environment <environment>] 
+                                 [--image-tag <image_tag>] 
 ```
 
 ## Options
@@ -704,6 +705,9 @@ platform-helper service generate [--name <name>] [--environment <environment>]
 - `--environment
 -e <text>`
   - The name of the environment to generate service manifests for. Multiple values accepted.
+- `--image-tag
+-i <text>`
+  - The name of the service to generate a manifest for. Multiple values accepted.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
