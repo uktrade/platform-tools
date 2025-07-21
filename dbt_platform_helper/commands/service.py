@@ -3,9 +3,6 @@ import click
 from dbt_platform_helper.domain.service import ServiceManger
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.config import ConfigLoader
-from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -42,11 +39,7 @@ def generate(name, environment):
     click_io = ClickIOProvider()
 
     try:
-        config_provider = ConfigProvider(ConfigValidator())
-        service_manager = ServiceManger(
-            loader=ConfigLoader(),
-            config_provider=config_provider,
-        )
+        service_manager = ServiceManger()
         service_manager.generate(environments=environments, services=services)
 
     except PlatformException as err:
