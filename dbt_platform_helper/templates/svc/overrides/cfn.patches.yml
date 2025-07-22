@@ -24,3 +24,8 @@
     Condition:
       StringEquals:
           'ssm:ResourceTag/copilot-application': '__all__'
+
+- op: add
+  path: /Resources/TaskDefinition/Properties/pidMode
+  value:
+    task
