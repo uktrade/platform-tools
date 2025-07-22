@@ -810,6 +810,7 @@ data "aws_iam_policy_document" "ecs" {
   statement {
     sid = "AllowCreateServiceDiscoveryNamespace"
     actions = [
+      "servicediscovery:GetNamespace",
       "servicediscovery:GetOperation",
       "servicediscovery:CreatePrivateDnsNamespace"
     ]
