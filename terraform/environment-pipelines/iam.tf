@@ -818,6 +818,16 @@ data "aws_iam_policy_document" "ecs" {
     ]
   }
 
+  statement {
+    sid = "CreateDnsForServiceDiscovery"
+    actions = [
+      "route53:CreateHostedZone"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
   # Old Copilot ECS cluster perms below:
   statement {
     sid = "AllowTaskDefinitionsRead"
