@@ -78,12 +78,11 @@ class ServiceManger:
             for dir in Path("services").iterdir():
                 if dir.is_dir():
                     config_path = dir / SERVICE_CONFIG_FILE
-                    try:
-                        self.file_provider.load(str(config_path))
+                    if config_path.exists():
                         services.append(dir.name)
-                    except Exception as e:
+                    else:
                         self.io.warn(
-                            f"Failed loading service name from {e}.\n"
+                            f"Failed loading service name from {dir.name}.\n"
                             "Please ensure that your '/services' directory follows the correct structure (i.e. /services/<service_name>/service-config.yml) and the 'service-config.yml' contents are correct."
                         )
 
