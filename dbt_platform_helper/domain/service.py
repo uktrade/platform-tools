@@ -61,7 +61,6 @@ class ServiceManger:
 
         config = self.config_provider.get_enriched_config()
         application_name = config.get("application", "")
-        available_environments = config.get("environments", {})
         application = self.load_application(app=application_name)
 
         if not environments:
@@ -69,23 +68,28 @@ class ServiceManger:
                 environments.append(environment)
         else:
             for environment in environments:
-                if environment not in available_environments:
+                if environment not in application.environments:
                     raise EnvironmentNotFoundException(
                         f"cannot generate terraform for environment {environment}.  It does not exist in your configuration"
                     )
 
         if not services:
-            for dir in Path("services").iterdir():
-                if dir.is_dir():
-                    config_path = dir / SERVICE_CONFIG_FILE
-                    if config_path.exists():
-                        services.append(dir.name)
-                    else:
-                        self.io.warn(
-                            f"Failed loading service name from {dir.name}.\n"
-                            "Please ensure that your '/services' directory follows the correct structure (i.e. /services/<service_name>/service-config.yml) and the 'service-config.yml' contents are correct."
-                        )
-
+            try:
+                for dir in Path("services").iterdir():
+                    print(dir)
+                    if dir.is_dir():
+                        config_path = dir / SERVICE_CONFIG_FILE
+                        print(config_path)
+                        print(config_path.exists())
+                        if config_path.exists():
+                            services.append(dir.name)
+                        else:
+                            self.io.warn(
+                                f"Failed loading service name from {dir.name}.\n"
+                                "Please ensure that your '/services' directory follows the correct structure (i.e. /services/<service_name>/service-config.yml) and the 'service-config.yml' contents are correct."
+                            )
+            except Exception as e:
+                self.io.abort_with_error(f"Failed extracting services with exception, {e}")
         service_models = []
         for service in services:
             service_models.append(
