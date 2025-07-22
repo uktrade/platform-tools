@@ -813,7 +813,8 @@ data "aws_iam_policy_document" "ecs" {
       "servicediscovery:GetNamespace",
       "servicediscovery:GetOperation",
       "servicediscovery:ListTagsForResource",
-      "servicediscovery:CreatePrivateDnsNamespace"
+      "servicediscovery:CreatePrivateDnsNamespace",
+      "servicediscovery:DeleteNamespace"
     ]
     resources = [
       "arn:aws:servicediscovery:${local.account_region}:*"

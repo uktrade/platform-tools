@@ -31,6 +31,7 @@ resource "aws_service_discovery_private_dns_namespace" "private_dns_namespace" {
   name        = "${var.environment}.${var.application}.services.local"
   description = "Private DNS namespace for services"
   vpc         = data.aws_vpc.vpc.id
+  tags        = local.tags
 }
 
 data "aws_security_group" "https_security_group" {
