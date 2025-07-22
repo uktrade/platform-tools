@@ -95,21 +95,19 @@ class ServiceManger:
                 )
             )
 
-        platform_helper_version_for_template: str = config.get("default_versions", {}).get(
-            "platform-helper"
+        platform_helper_version_for_template: str = (
+            self.platform_helper_version_override
+            or config.get("default_versions", {}).get("platform-helper")
         )
-        if self.platform_helper_version_override:
-            platform_helper_version_for_template = self.platform_helper_version_override
 
         source_type = self.environment_variable_provider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
-        module_source_override_var = self.environment_variable_provider.get(
-            TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        )
         if source_type == "LOCAL":
             module_source_override = ServiceConfig.local_terraform_source
         elif source_type == "OVERRIDE":
-            module_source_override = module_source_override_var
+            module_source_override = self.environment_variable_provider.get(
+                TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
         else:
             module_source_override = None
 
