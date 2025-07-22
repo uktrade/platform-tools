@@ -812,6 +812,7 @@ data "aws_iam_policy_document" "ecs" {
     actions = [
       "servicediscovery:GetNamespace",
       "servicediscovery:GetOperation",
+      "servicediscovery:ListTagsForResource",
       "servicediscovery:CreatePrivateDnsNamespace"
     ]
     resources = [
