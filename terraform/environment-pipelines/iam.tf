@@ -330,7 +330,8 @@ data "aws_iam_policy_document" "load_balancer" {
         "elasticloadbalancing:CreateRule"
       ]
       resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*"
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*",
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener-rule/app/${var.application}-${statement.value.name}/*"
       ]
     }
   }
@@ -809,6 +810,7 @@ data "aws_iam_policy_document" "ecs" {
   statement {
     sid = "AllowCreateServiceDiscoveryNamespace"
     actions = [
+      "servicediscovery:GetOperation",
       "servicediscovery:CreatePrivateDnsNamespace"
     ]
     resources = [
