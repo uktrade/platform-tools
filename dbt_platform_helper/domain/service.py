@@ -60,7 +60,7 @@ class ServiceManger:
     def generate(self, environments: list[str], services: list[str], flag_image_tag: str = None):
 
         config = self.config_provider.get_enriched_config()
-        application_name = config.get("application", {})
+        application_name = config.get("application", "")
         available_environments = config.get("environments", {})
         application = self.load_application(app=application_name)
 
