@@ -16,15 +16,9 @@ phases:
       - export ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env ${ENVIRONMENT} '.[$env].account')
       - |
         set -e
-      
-        echo -e "\nAssume role in ${ACCOUNT_ID} account"
-        assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-cache-invalidation" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
-        export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
-        export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
-        export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
         echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
-        assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/environment-pipeline-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
+        assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/cloudfront-invalidation-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
         export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
         export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
         export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
@@ -35,7 +29,7 @@ phases:
 
         for i in ${DOMAINS}; do
           echo "Getting distribution ID for domain ${i}"
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.[]? == $domain) | .Id')
           PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain ${i} '.[$domain] | join(" ")')
           
           if [ -z ${DISTRIBUTION_ID} ]; then
@@ -48,7 +42,7 @@ phases:
           --distribution-id $DISTRIBUTION_ID \
           --paths $PATHS
         done
-      #TODO check for any alias=domain, instead of just the first item
+
   post_build:
     commands:
       - echo "DONE"
