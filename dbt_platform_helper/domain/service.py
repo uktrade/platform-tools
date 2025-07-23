@@ -30,7 +30,7 @@ from dbt_platform_helper.utils.deep_merge import deep_merge
 # TODO add schema version too service config
 
 
-class ServiceManger:
+class ServiceManager:
     def __init__(
         self,
         config_provider=ConfigProvider(ConfigValidator()),

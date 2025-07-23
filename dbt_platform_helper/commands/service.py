@@ -1,6 +1,6 @@
 import click
 
-from dbt_platform_helper.domain.service import ServiceManger
+from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -32,7 +32,7 @@ def service():
     "--image-tag",
     "-i",
     required=False,
-    help="The name of the service to generate a manifest for. Multiple values accepted.",  # TODO update description
+    help="Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.",
 )
 def generate(name, environment, image_tag):
     """Validates the service-config.yml format, applies the environment-specific
@@ -44,7 +44,7 @@ def generate(name, environment, image_tag):
     click_io = ClickIOProvider()
 
     try:
-        service_manager = ServiceManger()
+        service_manager = ServiceManager()
         service_manager.generate(
             environments=environments, services=services, flag_image_tag=image_tag
         )

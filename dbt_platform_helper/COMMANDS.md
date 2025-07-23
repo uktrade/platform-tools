@@ -707,7 +707,7 @@ platform-helper service generate [--name <name>] [--environment <environment>]
   - The name of the environment to generate service manifests for. Multiple values accepted.
 - `--image-tag
 -i <text>`
-  - The name of the service to generate a manifest for. Multiple values accepted.
+  - Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

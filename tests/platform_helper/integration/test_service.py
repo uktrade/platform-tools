@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 from freezegun import freeze_time
 
-from dbt_platform_helper.domain.service import ServiceManger
+from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
@@ -62,7 +62,7 @@ def test_generate(
     )
 
     io = MagicMock()
-    service_manager = ServiceManger(
+    service_manager = ServiceManager(
         config_provider=mock_config_provider,
         io=io,
         load_application=load_application,
@@ -114,7 +114,7 @@ def test_generate_no_service_dir(
     )
 
     io = MagicMock()
-    service_manager = ServiceManger(
+    service_manager = ServiceManager(
         config_provider=mock_config_provider,
         io=io,
         load_application=load_application,
@@ -150,7 +150,7 @@ def test_generate_no_service_config(
     )
 
     io = MagicMock()
-    service_manager = ServiceManger(
+    service_manager = ServiceManager(
         config_provider=mock_config_provider,
         io=io,
         load_application=load_application,
