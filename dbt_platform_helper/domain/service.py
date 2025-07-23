@@ -76,11 +76,8 @@ class ServiceManger:
         if not services:
             try:
                 for dir in Path("services").iterdir():
-                    print(dir)
                     if dir.is_dir():
                         config_path = dir / SERVICE_CONFIG_FILE
-                        print(config_path)
-                        print(config_path.exists())
                         if config_path.exists():
                             services.append(dir.name)
                         else:
@@ -106,6 +103,7 @@ class ServiceManger:
 
         source_type = self.environment_variable_provider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
+        print(source_type)
         if source_type == "LOCAL":
             module_source_override = ServiceConfig.local_terraform_source
         elif source_type == "OVERRIDE":
@@ -114,6 +112,8 @@ class ServiceManger:
             )
         else:
             module_source_override = None
+
+        print(module_source_override)
 
         image_tag = flag_image_tag or self.environment_variable_provider.get(
             IMAGE_TAG_ENV_VAR, IMAGE_TAG_DEFAULT
