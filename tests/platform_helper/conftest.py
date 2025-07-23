@@ -424,7 +424,7 @@ environments:
     vpc: non-prod-vpc
   dev: 
     service-deployment-mode: dual-deploy-copilot-traffic
-  development: 
+  development:
     service-deployment-mode: dual-deploy-copilot-traffic
   test:
     service-deployment-mode: dual-deploy-platform-traffic
@@ -440,6 +440,16 @@ environments:
         id: "6677889900"
     vpc: hotfix-vpc
   prod:
+    accounts:
+      deploy:
+        name: "prod-acc"
+        id: "9999999999"
+      dns:
+        name: "prod-dns-acc"
+        id: "7777777777"
+    requires_approval: true
+    vpc: prod-vpc
+  production:
     accounts:
       deploy:
         name: "prod-acc"
@@ -898,6 +908,11 @@ def create_invalid_platform_config_file(fakefs):
         Path(PLATFORM_CONFIG_FILE),
         contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
     )
+
+
+@pytest.fixture
+def create_service_directory(fakefs):
+    fakefs.create_file(Path(f"{SERVICE_DIRECTORY}/fake-service/fake.example"))
 
 
 @pytest.fixture
