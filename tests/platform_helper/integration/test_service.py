@@ -56,7 +56,9 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
         ),
     ],
 )
-@patch("dbt_platform_helper.domain.service.version", return_value="14.0.0")
+@patch(
+    "dbt_platform_helper.domain.service.version", return_value="14.0.0"
+)  # Fakefs breaks the metadata to retrieve package version
 @patch("dbt_platform_helper.providers.terraform_manifest.version", return_value="14.0.0")
 @freeze_time("2025-01-16 13:00:00")
 def test_generate(
@@ -71,6 +73,8 @@ def test_generate(
 ):
 
     # Test setup
+    for var, value in env_vars.items():
+        os.environ[var] = value
     load_application = Mock()
     load_application.return_value = mock_application
     mock_installed_version_provider = create_autospec(spec=InstalledVersionProvider, spec_set=True)
@@ -86,8 +90,6 @@ def test_generate(
         io=io,
         load_application=load_application,
     )
-    for var, value in env_vars.items():
-        os.environ[var] = value
 
     # Test execution
     service_manager.generate(**input_args)
