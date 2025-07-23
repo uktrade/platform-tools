@@ -52,7 +52,8 @@ class SidecarOverride(BaseModel):
 
 
 class Image(BaseModel):
-    location: str = Field()
+    build: Optional[str] = Field(default=None)
+    location: Optional[str] = Field(default=None)
     port: int = Field()
 
 
@@ -92,7 +93,7 @@ class ServiceConfig(BaseModel):
     name: str = Field(description="""Name of the Service.""")
     type: str = Field(description="""The type of service""")
 
-    http: Http = Field()
+    http: Optional[Http] = Field(default=None)  # TODO http required if service type load balancer
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
 

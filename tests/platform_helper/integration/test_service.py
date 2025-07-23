@@ -224,6 +224,3 @@ def test_generate_no_environment(
         match="""cannot generate terraform for environment doesnt-exist.  It does not exist in your configuration""",
     ):
         service_manager.generate(environments=["doesnt-exist"], services=[])
-
-
-# TODO unit test different yaml for service config pydantic model
