@@ -24,6 +24,8 @@ from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "platform_helper" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "fixtures"
+INPUT_DATA_DIR = FIXTURES_DIR / "input_data"
+EXPECTED_DATA_DIR = FIXTURES_DIR / "expected_data"
 EXPECTED_FILES_DIR = BASE_DIR / "tests" / "platform_helper" / "expected_files"
 UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "utils" / "fixtures"
 DOCS_DIR = BASE_DIR / "tests" / "platform_helper" / "test-docs"

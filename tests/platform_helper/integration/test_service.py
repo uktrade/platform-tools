@@ -21,7 +21,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.version import InstalledVersionProvider
-from tests.platform_helper.conftest import EXPECTED_FILES_DIR
+from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 
 
 @pytest.mark.parametrize(
@@ -95,8 +95,12 @@ def test_generate(
     # Test Assertion
 
     for environment, file in expected_results.items():
-        actual_terraform = Path(f"terraform/services/{environment}/web/main.tf.json")
-        expected_terraform = EXPECTED_FILES_DIR / Path(f"terraform/services/{file}")
+        actual_terraform = Path(
+            f"terraform/services/{environment}/web/main.tf.json"
+        )  # Path the terraform is generated
+        expected_terraform = (
+            EXPECTED_DATA_DIR / "services" / "terraform" / f"{file}"
+        )  # Location of expected results
 
         assert actual_terraform.exists()
 
