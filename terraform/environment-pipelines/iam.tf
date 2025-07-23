@@ -326,10 +326,12 @@ data "aws_iam_policy_document" "load_balancer" {
     content {
       actions = [
         "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:ModifyListener"
+        "elasticloadbalancing:ModifyListener",
+        "elasticloadbalancing:CreateRule"
       ]
       resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*"
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*",
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener-rule/app/${var.application}-${statement.value.name}/*"
       ]
     }
   }
@@ -802,6 +804,31 @@ data "aws_iam_policy_document" "ecs" {
     resources = [
       for env in local.environment_config :
       "arn:aws:ecs:${local.account_region}:cluster/${var.application}-${env.name}-cluster"
+    ]
+  }
+
+  statement {
+    sid = "AllowCreateServiceDiscoveryNamespace"
+    actions = [
+      "servicediscovery:GetNamespace",
+      "servicediscovery:GetOperation",
+      "servicediscovery:TagResource",
+      "servicediscovery:ListTagsForResource",
+      "servicediscovery:CreatePrivateDnsNamespace",
+      "servicediscovery:DeleteNamespace"
+    ]
+    resources = [
+      "arn:aws:servicediscovery:${local.account_region}:*"
+    ]
+  }
+
+  statement {
+    sid = "CreateDnsForServiceDiscovery"
+    actions = [
+      "route53:CreateHostedZone"
+    ]
+    resources = [
+      "*"
     ]
   }
 
