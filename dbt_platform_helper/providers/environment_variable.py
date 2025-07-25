@@ -7,12 +7,12 @@ from dbt_platform_helper.platform_exception import PlatformException
 class EnvironmentVariableProvider:
 
     @staticmethod
-    def get(env_var: str) -> Optional[str]:
+    def get(env_var: str, default=None) -> Optional[str]:
         """Returns the stripped value or None if not set or empty."""
         value = os.environ.get(env_var)
         if value and value.strip():
             return value.strip()
-        return None
+        return default
 
     @staticmethod
     def get_required(env_var: str) -> str:

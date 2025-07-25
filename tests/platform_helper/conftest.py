@@ -15,12 +15,17 @@ from moto.ec2 import utils as ec2_utils
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
+from dbt_platform_helper.constants import SERVICE_CONFIG_FILE
+from dbt_platform_helper.constants import SERVICE_CONFIG_SCHEMA_VERSION
+from dbt_platform_helper.constants import SERVICE_DIRECTORY
 from dbt_platform_helper.providers.cache import Cache
 from dbt_platform_helper.utils.aws import AWS_SESSION_CACHE
 
 BASE_DIR = Path(__file__).parent.parent.parent
 TEST_APP_DIR = BASE_DIR / "tests" / "platform_helper" / "test-application-deploy"
 FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "fixtures"
+INPUT_DATA_DIR = FIXTURES_DIR / "input_data"
+EXPECTED_DATA_DIR = FIXTURES_DIR / "expected_data"
 EXPECTED_FILES_DIR = BASE_DIR / "tests" / "platform_helper" / "expected_files"
 UTILS_FIXTURES_DIR = BASE_DIR / "tests" / "platform_helper" / "utils" / "fixtures"
 DOCS_DIR = BASE_DIR / "tests" / "platform_helper" / "test-docs"
@@ -42,6 +47,7 @@ def fakefs(fs):
     """Mock file system fixture with the templates and schemas dirs retained."""
     fs.add_real_directory(BASE_DIR / "dbt_platform_helper/templates", lazy_read=True)
     fs.add_real_directory(FIXTURES_DIR, lazy_read=True)
+    fs.add_real_directory(EXPECTED_FILES_DIR, lazy_read=True)
     fs.add_real_file(BASE_DIR / "dbt_platform_helper/default-extensions.yml")
     fs.add_real_directory(BASE_DIR / "terraform", read_only=False, lazy_read=True)
 
@@ -420,6 +426,8 @@ environments:
     vpc: non-prod-vpc
   dev: 
     service-deployment-mode: dual-deploy-copilot-traffic
+  development:
+    service-deployment-mode: dual-deploy-copilot-traffic
   test:
     service-deployment-mode: dual-deploy-platform-traffic
   staging:
@@ -434,6 +442,16 @@ environments:
         id: "6677889900"
     vpc: hotfix-vpc
   prod:
+    accounts:
+      deploy:
+        name: "prod-acc"
+        id: "9999999999"
+      dns:
+        name: "prod-dns-acc"
+        id: "7777777777"
+    requires_approval: true
+    vpc: prod-vpc
+  production:
     accounts:
       deploy:
         name: "prod-acc"
@@ -592,6 +610,98 @@ codebase_pipelines:
         environments:
           - name: staging
             requires_approval: true
+"""
+    )
+
+
+@pytest.fixture()
+def valid_service_config():
+    return yaml.safe_load(
+        f"""
+schema_version: {SERVICE_CONFIG_SCHEMA_VERSION}
+
+name: web
+type: Load Balanced Web Service
+
+# Distribute traffic to your service.
+http:
+  # Requests to this path will be forwarded to your service.
+  alias: web.${"{ENVIRONMENT_NAME}"}.test-app.uktrade.digital
+  # To match all requests you can use the "/" path.
+  path: '/'
+  # You can specify a custom health check path. The default is "/".
+  # healthcheck: '/'
+  target_container: nginx
+  healthcheck:
+    path: '/'
+    port: 8080
+    success_codes: '200'
+    healthy_threshold: 3
+    unhealthy_threshold: 3
+    interval: 35s
+    timeout: 30s
+    grace_period: 30s
+
+sidecars:
+  sidecar:
+    port: 443
+    image: public.ecr.aws//sidecar:tlatest
+    variables:
+      SERVER: localhost:8000
+
+
+# Configuration for your containers and service.
+image:
+  location: public.ecr.aws/non-prod-acc/test-app/application:${"{IMAGE_TAG}"}
+  # Port exposed through your container to route traffic to it.
+  port: 8080
+
+cpu: 512 # Number of CPU units for the task.
+memory: 2048 # Amount of memory in MiB used by the task.
+count: 1 # Number of tasks that should be running in your service.
+exec: true # Enable running commands in your container.
+network:
+  connect: true # Enable Service Connect for intra-environment traffic between services.
+  vpc:
+    placement: 'private'
+
+storage:
+  readonly_fs: false
+
+variables:  
+  SECRET_KEY: testing-secret-key
+  PORT: 8080
+  DEBUG: False
+
+secrets:
+  DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+
+environments:
+  dev:
+    http:
+      alb: arn:aws:elasticloadbalancing:eu-west-2:1122334455:loadbalancer/app/test-app-dev/4c84af3e661d6ba0
+  hotfix:
+    http:
+      alb: arn:aws:elasticloadbalancing:eu-west-2:9999999999:loadbalancer/app/test-app-hotfix/937d6308baba5404
+  prod:
+    http:
+      alb: arn:aws:elasticloadbalancing:eu-west-2:9999999999:loadbalancer/app/test-app-prod/9df7e0985fc9a089
+      alias: web.test-app.prod.uktrade.digital
+    sidecars:
+      datadog-agent:
+        variables:
+          DD_APM_ENABLED: true
+  staging:
+    variables:
+      S3_CROSS_ENVIRONMENT_BUCKET_NAMES: test-app-hotfix-additional
+    http:
+      alb: arn:aws:elasticloadbalancing:eu-west-2:1122334455:loadbalancer/app/test-app-toolspr/e7d5af472c55e4d2
+    sidecars:
+      ipfilter:
+        image: public.ecr.aws/uktrade/ip-filter:tag-latest
+  test:
+    http:
+      alb: arn:aws:elasticloadbalancing:eu-west-2:1122334455:loadbalancer/app/test-app-hotfix/937d6308baba5404
 """
     )
 
@@ -799,6 +909,19 @@ def create_invalid_platform_config_file(fakefs):
     fakefs.create_file(
         Path(PLATFORM_CONFIG_FILE),
         contents=INVALID_PLATFORM_CONFIG_WITH_PLATFORM_VERSION_OVERRIDES,
+    )
+
+
+@pytest.fixture
+def create_service_directory(fakefs):
+    fakefs.create_file(Path(f"{SERVICE_DIRECTORY}/fake-service/fake.example"))
+
+
+@pytest.fixture
+def create_valid_service_config_file(fakefs, valid_service_config):
+    fakefs.create_file(
+        Path(f"{SERVICE_DIRECTORY}/web/{SERVICE_CONFIG_FILE}"),
+        contents=yaml.dump(valid_service_config),
     )
 
 

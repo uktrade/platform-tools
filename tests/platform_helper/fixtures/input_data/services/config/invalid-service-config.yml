@@ -1,0 +1,9 @@
+name: invalid
+
+cpu: 512 
+memory: 2048 
+count: 1 
+
+image:
+  location: public.ecr.aws/uktrade-invalid-account/invalid/application:${IMAGE_TAG}
+  port: 8080
