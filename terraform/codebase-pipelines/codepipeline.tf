@@ -97,7 +97,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           output_artifacts = []
           version          = "1"
           # run_order        = action.value.order + 1
-          run_order        = action.value.order + 2
+          run_order = action.value.order + 2
 
           configuration = {
             ProjectName = aws_codebuild_project.codebase_deploy.name

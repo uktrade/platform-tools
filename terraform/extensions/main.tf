@@ -130,11 +130,11 @@ module "datadog" {
 }
 
 module "cache_invalidation" {
-  source = "../cache-invalidation"
-  application = var.args.application
-  environment = var.environment
+  source            = "../cache-invalidation"
+  application       = var.args.application
+  environment       = var.environment
   deploy_account_id = local.pipeline_account_id
-  dns_account_id = local.dns_account_id
+  dns_account_id    = local.dns_account_id
 }
 
 resource "aws_ssm_parameter" "addons" {
