@@ -13,7 +13,8 @@ updates:
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
-    directory: "/terraform"
+    directories:
+      - "/terraform/*/"
     schedule:
       interval: "daily"
     commit-message:
