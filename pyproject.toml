@@ -21,7 +21,7 @@ platform-helper = "platform_helper:platform_helper"
 
 [tool.poetry.dependencies]
 Jinja2 = "3.1.6"
-PyYAML = "6.0.1"
+PyYAML = "6.0.2"
 yamllint = "^1.35.1"
 boto3 = "^1.35.2"
 boto3-stubs = "^1.26.148"
