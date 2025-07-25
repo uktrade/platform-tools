@@ -41,6 +41,17 @@ phases:
           eval "aws cloudfront create-invalidation \
           --distribution-id ${DISTRIBUTION_ID} \
           --paths ${PATHS}"
+
+          # Commented below is the script for monitoring the cache invalidations.  We can only add this if sre add the permission for get-invalidation
+          # cache_status="NotRun"
+          # invalidation_id=$(eval "aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths ${PATHS}" | jq -r ."Invalidation.Id")
+          # while [ $cache_status != "Completed" ]
+          # do
+          #     cache_status=$( aws cloudfront get-invalidation --id $invalidation_id --distribution-id $DISTRIBUTION_ID |jq -r ."Invalidation.Status")
+          #     echo "Current status is: $cache_status"
+          #     echo "Waiting..."
+          #     sleep 5
+          # done
         done
 
   post_build:
