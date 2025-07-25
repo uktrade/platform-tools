@@ -152,7 +152,7 @@ class PlatformConfigSchema:
                                 {
                                     "name": str,
                                     Optional("requires_approval"): bool,
-                                }
+                                },
                             ],
                         },
                         {
@@ -167,8 +167,15 @@ class PlatformConfigSchema:
                         },
                     ),
                 ],
+                Optional("cache_invalidation"): {
+                    "domains": PlatformConfigSchema.__cache_invalidation_domains_schema(),
+                },
             },
         }
+
+    @staticmethod
+    def __cache_invalidation_domains_schema() -> dict:
+        return {str: {"paths": [str], "environment": str}}
 
     @staticmethod
     def __default_versions_schema() -> dict:
