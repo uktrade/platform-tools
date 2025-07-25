@@ -29,7 +29,7 @@ phases:
 
         for i in ${DOMAINS}; do
           echo "Getting distribution ID for domain ${i}"
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.[]? == $domain) | .Id')
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
           PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain ${i} '.[$domain] | join(" ")')
           
           if [ -z ${DISTRIBUTION_ID} ]; then
