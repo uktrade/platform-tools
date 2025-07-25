@@ -4,7 +4,6 @@ from pathlib import Path
 
 import click
 from botocore.exceptions import ClientError
-from cloudfoundry_client.client import CloudFoundryClient
 
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.utils.application import get_application_name
@@ -17,25 +16,6 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 def secret_should_be_skipped(secret_name):
     return "AWS_" in secret_name
-
-
-def get_paas_env_vars(client: CloudFoundryClient, paas: str) -> dict:
-    org, space, app = paas.split("/")
-
-    env_vars = None
-
-    for paas_org in client.v2.organizations:
-        if paas_org["entity"]["name"] == org:
-            for paas_space in paas_org.spaces():
-                if paas_space["entity"]["name"] == space:
-                    for paas_app in paas_space.apps():
-                        if paas_app["entity"]["name"] == app:
-                            env_vars = paas_app["entity"]["environment_json"]
-
-    if not env_vars:
-        raise Exception(f"Application {paas} not found")
-
-    return dict(env_vars)
 
 
 @click.group(chain=True, cls=ClickDocOptGroup)
