@@ -10,6 +10,7 @@ environments:
         name: "dev"
         id: "000123456789"
     vpc: my-vpc
+    service-deployment-mode: 'copilot'
   my-environment:
 
 extensions:

@@ -48,15 +48,24 @@ data "aws_iam_policy_document" "access_artifact_store" {
   }
 
   statement {
-    effect    = "Allow"
-    actions   = ["codestar-connections:UseConnection"]
+    effect = "Allow"
+    actions = [
+      "codestar-connections:UseConnection",
+      "codeconnections:UseConnection"
+    ]
     resources = [data.external.codestar_connections.result["ConnectionArn"]]
   }
 
   statement {
-    effect    = "Allow"
-    actions   = ["codestar-connections:ListConnections"]
-    resources = ["arn:aws:codestar-connections:${local.region_account}:*"]
+    effect = "Allow"
+    actions = [
+      "codestar-connections:ListConnections",
+      "codeconnections:ListConnections"
+    ]
+    resources = [
+      "arn:aws:codestar-connections:${local.region_account}:*",
+      "arn:aws:codeconnections:${local.region_account}:*"
+    ]
   }
 
   statement {
@@ -174,7 +183,8 @@ data "aws_iam_policy_document" "ssm_access" {
     resources = [
       "arn:aws:ssm:${local.region_account}:parameter/copilot/${var.application}/*/secrets/*",
       "arn:aws:ssm:${local.region_account}:parameter/copilot/applications/${var.application}",
-      "arn:aws:ssm:${local.region_account}:parameter/copilot/applications/${var.application}/*"
+      "arn:aws:ssm:${local.region_account}:parameter/copilot/applications/${var.application}/*",
+      "arn:aws:ssm:${local.region_account}:parameter/platform/applications/${var.application}/environments/*",
     ]
   }
 }

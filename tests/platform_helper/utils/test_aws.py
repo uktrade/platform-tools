@@ -84,6 +84,24 @@ def test_get_ssm_secrets(mock_get_aws_session_or_abort):
     assert result == [("/copilot/test-application/development/secrets/TEST_SECRET", "test value")]
 
 
+@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
+def test_get_ssm_secrets_access_denied(mock_get_aws_session_or_abort):
+    client = mock_aws_client(mock_get_aws_session_or_abort)
+
+    error_response = {
+        "Error": {
+            "Code": "AccessDeniedException",
+            "Message": "User: arn is not authorized to perform: ssm:GetParmetersByPath on resource: arn because no identity-based policy allows the ssm:GetParmetersByPath action",
+        }
+    }
+
+    client.get_parameters_by_path.side_effect = ClientError(error_response, "GetParametersByPath")
+
+    result = get_ssm_secrets("test-application", "development")
+
+    assert result == []
+
+
 @pytest.mark.parametrize(
     "aws_profile, side_effect, expected_error_message",
     [

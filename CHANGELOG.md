@@ -1,5 +1,42 @@
 # Changelog
 
+## [15.6.0](https://github.com/uktrade/platform-tools/compare/15.5.0...15.6.0) (2025-07-15)
+
+
+### Features
+
+* Add link to standard dashboard to each service (DBTP-2193) ([#912](https://github.com/uktrade/platform-tools/issues/912)) ([9215103](https://github.com/uktrade/platform-tools/commit/921510328b6cd4b4087e5a7feb395dac5fac47fa))
+* Conduit and data copy new sg (DBPT-2074) ([#908](https://github.com/uktrade/platform-tools/issues/908)) ([d9234ae](https://github.com/uktrade/platform-tools/commit/d9234ae6472314009981a97f1c252338321f1d0f))
+
+
+### Bug Fixes
+
+* Add CreateCluster permission (off-ticket) ([#913](https://github.com/uktrade/platform-tools/issues/913)) ([52c705d](https://github.com/uktrade/platform-tools/commit/52c705d6137e270342fa381b4a1bccd7e80addc8))
+* Handle missing ssm permission when getting environment details (off-ticket) ([#914](https://github.com/uktrade/platform-tools/issues/914)) ([c503c7d](https://github.com/uktrade/platform-tools/commit/c503c7d58cda0c1e5ed2fa50c85861afba2f1325))
+* Update db clear script (off-ticket) ([#910](https://github.com/uktrade/platform-tools/issues/910)) ([9d66a44](https://github.com/uktrade/platform-tools/commit/9d66a44023d2cbe3621f5023fee76529d2886e23))
+
+## [15.5.0](https://github.com/uktrade/platform-tools/compare/15.4.2...15.5.0) (2025-07-08)
+
+
+### Features
+
+* Create Terraform ECS cluster (DBTP-2153) ([#905](https://github.com/uktrade/platform-tools/issues/905)) ([4e29864](https://github.com/uktrade/platform-tools/commit/4e298642628d6f92f84a1e59d60f62903649dbc7))
+* Update platform schema to include service deployment mode (DBTP-2152) ([#906](https://github.com/uktrade/platform-tools/issues/906)) ([c7b3cf9](https://github.com/uktrade/platform-tools/commit/c7b3cf9436e8b5edadbdaf59e064ae79b5e57242))
+
+
+### Bug Fixes
+
+* Add default value for service-deployment-mode (DBTP-2153) ([#907](https://github.com/uktrade/platform-tools/issues/907)) ([8f8a360](https://github.com/uktrade/platform-tools/commit/8f8a360baea0805f2a582b247c586d9143590fb3))
+* Conduit missing SSM parameters bug (DBTP-2112) ([#902](https://github.com/uktrade/platform-tools/issues/902)) ([74bb3d1](https://github.com/uktrade/platform-tools/commit/74bb3d12426b6c0860f152b609fdf78d5da01e32))
+* Update data copy clear script to remove functions, view and sequences (DBTP-2150) ([#903](https://github.com/uktrade/platform-tools/issues/903)) ([578ef39](https://github.com/uktrade/platform-tools/commit/578ef39233dfeea4b14ac990611f8c30e520001e))
+
+## [15.4.2](https://github.com/uktrade/platform-tools/compare/15.4.1...15.4.2) (2025-06-26)
+
+
+### Bug Fixes
+
+* Fix codestar in database copy (off-ticket) ([#900](https://github.com/uktrade/platform-tools/issues/900)) ([eb4655d](https://github.com/uktrade/platform-tools/commit/eb4655dd7a46b439c74a5a7935a3d6c0831a953d))
+
 ## [15.4.1](https://github.com/uktrade/platform-tools/compare/15.4.0...15.4.1) (2025-06-25)
 
 

@@ -93,5 +93,9 @@ locals {
 
   vpc_name            = var.args.env_config[var.environment]["vpc"]
   dns_account_id      = var.args.env_config[var.environment]["accounts"]["dns"]["id"]
+  deploy_account_id   = var.args.env_config[var.environment]["accounts"]["deploy"]["id"]
   pipeline_account_id = var.args.env_config["*"]["accounts"]["deploy"]["id"]
+
+  service_deployment_mode             = lookup(var.args.env_config[var.environment], "service-deployment-mode", "copilot") # Default to `copilot` deployment mode to avoid causing a breaking change for teams already on the platform
+  non_copilot_service_deployment_mode = local.service_deployment_mode == "dual-deploy-copilot-traffic" || local.service_deployment_mode == "dual-deploy-platform-traffic" || local.service_deployment_mode == "platform" ? 1 : 0
 }

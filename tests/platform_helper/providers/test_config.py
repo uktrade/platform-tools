@@ -475,6 +475,30 @@ class TestDataMigrationValidation:
 
         assert str(exc.value) == f"Missing key: 'schema_version'"
 
+    def test_validate_data_migration_fails_if_service_deployment_mode_not_supported(self):
+        config = {
+            "application": "test-app",
+            "schema_version": 1,
+            "default_versions": {"platform-helper": "14.0.0"},
+            "environments": {"dev": {"service-deployment-mode": "something we dont want"}},
+        }
+
+        config_provider_mocks = ConfigProviderMocks(config, use_mock_io=True)
+        config_provider = ConfigProvider(**config_provider_mocks.params())
+        config_provider.config = config
+
+        with pytest.raises(SchemaError) as exc:
+            config_provider._validate_platform_config()
+
+        assert "'copilot' does not match 'something we dont want'" in str(exc.value)
+        assert "'dual-deploy-copilot-traffic' does not match 'something we dont want'" in str(
+            exc.value
+        )
+        assert "'dual-deploy-platform-traffic' does not match 'something we dont want'" in str(
+            exc.value
+        )
+        assert "'platform' does not match 'something we dont want'" in str(exc.value)
+
 
 class TestGetEnrichedConfig:
     def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):

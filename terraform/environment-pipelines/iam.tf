@@ -64,7 +64,10 @@ data "aws_iam_policy_document" "access_artifact_store" {
       "codestar-connections:PassConnection",      # New name for new connections
       "codeconnections:PassConnection"            # Old name for old connections
     ]
-    resources = ["arn:aws:codestar-connections:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
+    resources = [
+      "arn:aws:codestar-connections:eu-west-2:${data.aws_caller_identity.current.account_id}:*",
+      "arn:aws:codeconnections:eu-west-2:${data.aws_caller_identity.current.account_id}:*"
+    ]
   }
 
   statement {
@@ -323,10 +326,12 @@ data "aws_iam_policy_document" "load_balancer" {
     content {
       actions = [
         "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:ModifyListener"
+        "elasticloadbalancing:ModifyListener",
+        "elasticloadbalancing:CreateRule"
       ]
       resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*"
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*",
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener-rule/app/${var.application}-${statement.value.name}/*"
       ]
     }
   }
@@ -786,6 +791,48 @@ resource "aws_iam_policy" "s3" {
 }
 
 data "aws_iam_policy_document" "ecs" {
+  # New ECS cluster perms here:
+  statement {
+    sid = "AllowECSClusterCreate"
+    actions = [
+      "ecs:CreateCluster",
+      "ecs:TagResource",
+      "ecs:DescribeClusters",
+      "ecs:DeleteCluster",
+      "ecs:PutClusterCapacityProviders",
+    ]
+    resources = [
+      for env in local.environment_config :
+      "arn:aws:ecs:${local.account_region}:cluster/${var.application}-${env.name}-cluster"
+    ]
+  }
+
+  statement {
+    sid = "AllowCreateServiceDiscoveryNamespace"
+    actions = [
+      "servicediscovery:GetNamespace",
+      "servicediscovery:GetOperation",
+      "servicediscovery:TagResource",
+      "servicediscovery:ListTagsForResource",
+      "servicediscovery:CreatePrivateDnsNamespace",
+      "servicediscovery:DeleteNamespace"
+    ]
+    resources = [
+      "arn:aws:servicediscovery:${local.account_region}:*"
+    ]
+  }
+
+  statement {
+    sid = "CreateDnsForServiceDiscovery"
+    actions = [
+      "route53:CreateHostedZone"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+  # Old Copilot ECS cluster perms below:
   statement {
     sid = "AllowTaskDefinitionsRead"
     actions = [

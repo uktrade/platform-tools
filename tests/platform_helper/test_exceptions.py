@@ -58,8 +58,11 @@ from dbt_platform_helper.utils.application import ApplicationServiceNotFoundExce
         ),
         (
             ApplicationNotFoundException,
-            {"application_name": "test-application"},
-            """The account "foo" does not contain the application "test-application"; ensure you have set the environment variable "AWS_PROFILE" correctly.""",
+            {"application_name": "test-application", "environment_name": "test-env"},
+            f"""The account "foo" does not contain the application "test-application". 
+Please ensure that the environment variable "AWS_PROFILE" is set correctly. If the issue persists, verify that one of the following AWS SSM parameters exists:
+ - /platform/applications/test-application/environments/test-env
+ - /copilot/applications/test-application""",
         ),
         (
             CopilotCodebaseNotFoundException,

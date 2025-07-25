@@ -59,23 +59,11 @@ class Application:
         return str(self) == str(other)
 
 
-def load_application(app=None, default_session=None) -> Application:
+def load_application(app=None, default_session=None, env=None) -> Application:
     application = Application(app if app else get_application_name())
     current_session = default_session if default_session else get_aws_session_or_abort()
 
     ssm_client = current_session.client("ssm")
-
-    try:
-        ssm_client.get_parameter(
-            Name=f"/copilot/applications/{application.name}",
-            WithDecryption=False,
-        )
-    except ssm_client.exceptions.ParameterNotFound:
-        raise ApplicationNotFoundException(application.name)
-
-    path = f"/copilot/applications/{application.name}/environments"
-    secrets = get_ssm_secrets(app, None, current_session, path)
-
     sts_client = current_session.client("sts")
     account_id = sts_client.get_caller_identity()["Account"]
     sessions = {account_id: current_session}
@@ -89,16 +77,58 @@ def load_application(app=None, default_session=None) -> Application:
          - /copilot/applications/test/environments/my_env will match.
          - /copilot/applications/test/environments/my_env/addons will not match.
         """
-        environment_key_regex = r"^/copilot/applications/{}/environments/[^/]*$".format(
+        environment_key_regex = r"^/(copilot|platform)/applications/{}/environments/[^/]*$".format(
             application.name
         )
         return bool(re.match(environment_key_regex, name))
 
-    environments = {
+    environments_data = []
+
+    # Try to load the new /platform SSM parameter if present
+    platform_env_path = f"/platform/applications/{application.name}/environments"
+    secrets = get_ssm_secrets(app, None, current_session, platform_env_path)
+
+    if secrets:
+        for name, value in secrets:
+            try:
+                data = json.loads(value)
+            except json.JSONDecodeError:
+                continue
+
+            # New /platform SSM parameter contains data about all environments
+            if "allEnvironments" in data:
+                environments_data = data["allEnvironments"]
+                break  # Only need one
+    else:
+        try:
+            # Check that the Copilot application exists
+            ssm_client.get_parameter(
+                Name=f"/copilot/applications/{application.name}",
+                WithDecryption=False,
+            )
+            secrets = get_ssm_secrets(
+                app, None, current_session, f"/copilot/applications/{application.name}/environments"
+            )
+
+            for name, value in secrets:
+                try:
+                    data = json.loads(value)
+                except json.JSONDecodeError:
+                    continue
+
+                if is_environment_key(name):
+                    # Legacy /copilot SSM parameter. An individual SSM param is present per environment - looping through all of them is needed to extract necessary data about each env.
+                    environments_data.append(data)
+
+        except ssm_client.exceptions.ParameterNotFound:
+            raise ApplicationNotFoundException(
+                application_name=application.name, environment_name=env
+            )
+
+    application.environments = {
         env["name"]: Environment(env["name"], env["accountID"], sessions)
-        for env in [json.loads(s[1]) for s in secrets if is_environment_key(s[0])]
+        for env in environments_data
     }
-    application.environments = environments
 
     response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/components",
@@ -142,9 +172,12 @@ class ApplicationException(PlatformException):
 
 
 class ApplicationNotFoundException(ApplicationException):
-    def __init__(self, application_name: str):
+    def __init__(self, application_name: str, environment_name: str):
         super().__init__(
-            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}"; ensure you have set the environment variable "AWS_PROFILE" correctly."""
+            f"""The account "{os.environ.get("AWS_PROFILE")}" does not contain the application "{application_name}". 
+Please ensure that the environment variable "AWS_PROFILE" is set correctly. If the issue persists, verify that one of the following AWS SSM parameters exists:
+ - /platform/applications/{application_name}/environments/{environment_name}
+ - /copilot/applications/{application_name}"""
         )
 
 
