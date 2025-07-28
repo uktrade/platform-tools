@@ -8,7 +8,7 @@ resource "aws_cloudwatch_event_rule" "ecr_image_publish" {
     detail-type : ["ECR Image Action"],
     detail : {
       action-type : ["PUSH"],
-      image-tag : [each.value.image_tag],
+      image-tag : strcontains(each.value.image_tag, "*") ? [{wildcard : each.value.image_tag}] : [each.value.image_tag],
       repository-name : [local.ecr_name],
       result : ["SUCCESS"],
     }
