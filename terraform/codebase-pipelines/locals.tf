@@ -41,16 +41,35 @@ locals {
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
-        for name, env in val.environments : merge(env, merge(
-          lookup(local.base_env_config, env.name, {}),
-          {
-            requires_cache_invalidation : contains(local.environments_requiring_cache_invalidation, env.name)
-          }
-        ))
+        for env in val.environments : merge(
+          env,
+          merge(
+            lookup(local.base_env_config, env.name, {}),
+            {
+              requires_cache_invalidation = contains(local.environments_requiring_cache_invalidation, env.name)
+            }
+          )
+        )
       ],
-      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
+      image_tag : var.requires_image_build ? (coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}") : "latest"
     })
   }
+
+
+
+  # pipeline_map = {
+  #   for id, val in var.pipelines : id => merge(val, {
+  #     environments : [
+  #       for name, env in val.environments : merge(env, merge(
+  #         lookup(local.base_env_config, env.name, {}),
+  #         {
+  #           requires_cache_invalidation : contains(local.environments_requiring_cache_invalidation, env.name)
+  #         }
+  #       ))
+  #     ],
+  #     image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
+  #   })
+  # }
 
   cache_invalidation_map = tomap({
     for env in local.environments_requiring_cache_invalidation : env => {
