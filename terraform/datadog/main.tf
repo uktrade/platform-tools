@@ -8,7 +8,7 @@ kind: system
 metadata:
   name: ${var.application}-${each.key}
   links:
-${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.additionalowners}${local.team}
 EOF
 }
 
@@ -22,7 +22,7 @@ kind: service
 metadata:
   name: ${var.application}-${each.key}
   links:
-${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.additionalowners}${local.team}
 spec:
   lifecycle: production
   tier: "1"
@@ -45,7 +45,7 @@ kind: service
 metadata:
   name: ${var.application}-${each.key}
   links:
-${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.additionalowners}${local.team}
 spec:
   lifecycle: production
   tier: "1"

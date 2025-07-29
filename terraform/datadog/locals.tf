@@ -32,6 +32,13 @@ EOF
       contact: ${var.config.contact_email}
 EOF
 
+  ## Set SRE to be the additionalOwners as a workaround to not being able to specify an on-call team that is different than the owner team
+  additionalowners = <<EOF
+  additionalOwners:
+    - name: sre
+      type: DBT On-Call Team
+EOF
+
   ## Team name, which corresponds to the team name handle in Datadog
   team = <<EOF
   owner: ${var.config.team_name}
