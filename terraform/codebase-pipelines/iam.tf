@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       variable = "aws:SourceArn"
       values = compact([
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-invalidate-cache",
+        local.cache_invalidation_enabled ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-invalidate-cache" : null,
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
       ])
     }
