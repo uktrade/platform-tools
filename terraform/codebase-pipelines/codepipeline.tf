@@ -220,7 +220,6 @@ resource "aws_codepipeline" "manual_release_pipeline" {
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
-            { name : "REPOSITORY_URL", value : local.repository_url },
           ])
         }
       }
