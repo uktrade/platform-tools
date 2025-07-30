@@ -1610,7 +1610,7 @@ run "test_main_pipeline" {
     var.type if var.name == "SLACK_CHANNEL_ID"]) == "PARAMETER_STORE"
     error_message = "SLACK_CHANNEL_ID environment variable type is incorrect"
   }
-  
+
   # local.service_order_list has order = index + 1
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 2
@@ -1656,7 +1656,7 @@ run "test_main_pipeline" {
     var.value if var.name == "SERVICE"]) == "service-2"
     error_message = "SERVICE environment variable incorrect"
   }
-  
+
   # local.service_order_list has order = index + 1
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 3
