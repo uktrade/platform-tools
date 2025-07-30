@@ -29,8 +29,7 @@ locals {
 
   deploy_account_ids = distinct([for env in local.base_env_config : env.account])
 
-  dns_account_ids           = distinct([for env in local.base_env_config : env.dns_account])
-  dns_account_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/environment-pipeline-assumed-role"]
+  dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 
   cache_invalidation_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/cloudfront-invalidation-assumed-role"]
 
