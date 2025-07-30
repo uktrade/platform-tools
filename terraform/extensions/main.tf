@@ -129,14 +129,6 @@ module "datadog" {
   config      = each.value
 }
 
-module "cache_invalidation" {
-  source            = "../cache-invalidation"
-  application       = var.args.application
-  environment       = var.environment
-  deploy_account_id = local.pipeline_account_id
-  dns_account_id    = local.dns_account_id
-}
-
 resource "aws_ssm_parameter" "addons" {
   # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
   # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
