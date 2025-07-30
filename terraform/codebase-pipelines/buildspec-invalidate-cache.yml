@@ -15,7 +15,12 @@ phases:
       - set -e
       - export DNS_ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env ${ENVIRONMENT} '.[$env].dns_account')
       - export ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env ${ENVIRONMENT} '.[$env].account')
-      - export ENV_CACHE_INVALIDATION_CONFIG=$(echo $CONFIG_JSON | jq -r --arg env ${ENVIRONMENT} '.[$env]')
+      - export ENV_CACHE_INVALIDATION_CONFIG=$(echo $CACHE_INVALIDATION_CONFIG | jq -r --arg env ${ENVIRONMENT} '.[$env]')
+      - |
+        if [ -z ${ENV_CACHE_INVALIDATION_CONFIG} ]; then
+          echo "No cache invalidation configured for environment ${ENVIRONMENT}.  Exiting."
+          exit 0
+        fi
       - export DOMAINS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r 'keys[]')
       - echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
       - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/cloudfront-invalidation-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")

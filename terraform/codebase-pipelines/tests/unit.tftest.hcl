@@ -316,7 +316,7 @@ run "test_cache_invalidation_actions_created" {
       for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
         for stage in pipeline.stage : [
           for action in stage.action :
-          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "CONFIG_JSON") &&
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "CACHE_INVALIDATION_CONFIG") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "APPLICATION") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENVIRONMENT") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENV_CONFIG")
