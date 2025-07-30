@@ -1,0 +1,140 @@
+version: 0.2
+
+env:
+  variables:
+    DEPLOY_TIMEOUT: 1800
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  install:
+    commands:
+      # Install cli tools
+      # Install Platform Helper
+      ## Clone platform-tools
+      - cd "${CODEBUILD_SRC_DIR}"
+      - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
+      - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
+      - git config --global credential.helper '!aws codecommit credential-helper $@'
+      - git config --global credential.UseHttpPath true
+      - git config --global advice.detachedHead false
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
+      - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
+      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
+      ## Setup venv
+      - source terraform/scripts/setup_venv.sh
+      ## yq for yaml processing
+      - pip install yq --quiet
+      ## Install platform helper
+      - ./terraform/scripts/install_platform_helper.sh
+
+  build:
+    commands:
+      - set -e
+
+      # Check if the specified image tag exists
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - |
+        if ! docker manifest inspect "${REPOSITORY_URL}:${IMAGE_TAG}" > /dev/null 2>&1; then
+          echo "Error: Image tag ${IMAGE_TAG} not found in repository ${REPOSITORY_URL}" | tee output.log
+          exit 1
+        fi
+
+      # Check environment exists in config
+      - |
+        if [ $(echo $ENV_CONFIG | jq 'has('\"${ENVIRONMENT}\"')') == "false" ]; then
+          echo "Error: Environment ${ENVIRONMENT} not listed in environment config" | tee output.log
+          exit 1
+        fi
+
+      # Retrieve all tags from the image in ECR
+      - |
+        if [[ "$REPOSITORY_URL" == public.ecr.aws/* ]]; then
+          REPOSITORY_NAME=$(echo "$REPOSITORY_URL" | cut -d'/' -f3-)
+          ECR_TAGS=$(aws ecr-public describe-images --region us-east-1 --repository-name ${REPOSITORY_NAME} --image-ids imageTag=${IMAGE_TAG} --query 'imageDetails[0].imageTags')
+        else
+          REPOSITORY_NAME=$(echo "$REPOSITORY_URL" | cut -d'/' -f2-)
+          ECR_TAGS=$(aws ecr describe-images --repository-name ${REPOSITORY_NAME} --image-ids imageTag=${IMAGE_TAG} --query 'imageDetails[0].imageTags')
+        fi
+
+      # Set tag to deploy to commit-* tag from ECR image
+      - DEPLOY_TAG=$(echo ${ECR_TAGS} | jq -r '.[] | select(startswith("commit-"))')
+
+      # Fall back on IMAGE_TAG
+      - |
+        if [[ -z "${DEPLOY_TAG}" ]]; then
+          DEPLOY_TAG=${IMAGE_TAG}
+        fi
+
+      - echo "Deploying image with tag ${DEPLOY_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
+
+      # Construct Slack message env vars
+      - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${DEPLOY_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
+      - |
+        if [ "${SLACK_REF}" = "null" ] || [ -z "${SLACK_REF}" ]; then
+          echo "Error: Image contains no timestamp label" | tee output.log
+          exit 1
+        fi
+
+      # Extract the pipeline name from CODEBUILD_INITIATOR default env var
+      - |
+        if [[ "${CODEBUILD_INITIATOR}" == codepipeline/* ]]; then 
+          PIPELINE_NAME=$(echo "${CODEBUILD_INITIATOR}" | cut -d'/' -f2) 
+        else 
+          echo "Error: Build not triggered by CodePipeline." | tee output.log
+          exit 1 
+        fi
+
+      # Construct the pipeline execution URL
+      - PIPELINE_EXECUTION_URL="https://${AWS_REGION}.console.aws.amazon.com/codesuite/codepipeline/pipelines/${PIPELINE_NAME}/executions/${PIPELINE_EXECUTION_ID}"
+      - BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
+
+      # Send deployment starting Slack notification
+      - |
+        MESSAGE=":rocket: STARTED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+      - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+
+      # Assume environment role
+      - account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account)
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Run Platform helper service generate 
+      - platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
+      - cd terraform/services/"${ENVIRONMENT}"/"${SERVICE}"
+      - terraform init 
+      - terraform apply -auto-approve
+
+      # Send Slack message on pipeline outcome
+      - |
+        if [ $? -eq 0 ]; then
+          STATUS_EMOJI=":large_green_circle:"
+          STATUS_TEXT="COMPLETE"
+        else
+          STATUS_EMOJI=":red_circle::warning:"
+          STATUS_TEXT="FAILED"
+        fi
+
+        # Send notification on successful deployment or exit with an error code
+        if [ "${deploy_status}" == "SUCCESSFUL" ]; then
+          MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+        else
+          echo "Error: Deployment status is ${deploy_status}" | tee output.log
+          exit 1
+        fi
+
+  post_build:
+    commands:
+      - |
+        if [[ -z "${DEPLOY_TAG}" ]]; then
+          DEPLOY_TAG=${IMAGE_TAG}
+        fi
+      - |
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+          BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
+          MESSAGE=":red_circle::warning: FAILED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+        fi
