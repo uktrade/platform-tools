@@ -33,15 +33,22 @@ phases:
           PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain "${i}" '.[$domain] | map(@sh) | join(" ")')
           
           if [ -z ${DISTRIBUTION_ID} ]; then
-            echo "ERROR: No distribution ID found for domain ${i} in account ${DNS_ACCOUNT_ID}.  Please check cache_invalidation configuration.  Exiting."
+            echo " ERROR: No distribution ID found for domain ${i} in account ${DNS_ACCOUNT_ID}.  Please check cache_invalidation configuration.  Exiting."
             exit 1
           fi
           
-          echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
+          echo -e "\n Running command: Invalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
           
           start=$( date +%s )
           cache_status="NotRun"
+          export DISTRIBUTION_ID="fooooo"
           invalidation_id=$(eval "aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths ${PATHS}" | jq -r ."Invalidation.Id")
+          
+          if [ -z ${invalidation_id} ]; then
+            echo " ERROR: Cache invalidation failed for distribution ${DISTRIBUTION_ID}.  Exiting."
+            exit 1
+          fi
+          
           while [ $cache_status != "Completed" ]
           do
               cache_status=$( aws cloudfront get-invalidation --id $invalidation_id --distribution-id $DISTRIBUTION_ID |jq -r ."Invalidation.Status")
