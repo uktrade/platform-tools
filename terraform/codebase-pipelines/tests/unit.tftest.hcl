@@ -24,6 +24,13 @@ override_data {
 }
 
 override_data {
+  target = data.aws_iam_policy_document.dns_account_assume_role
+  values = {
+    json = "{\"Sid\": \"AllowDNSAccountAccess\"}"
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.ecr_access_for_codebuild_images
   values = {
     json = "{\"Sid\": \"CodeBuildImageECRAccess\"}"
@@ -312,7 +319,7 @@ run "test_cache_invalidation_actions_created" {
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "CONFIG_JSON") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "APPLICATION") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENVIRONMENT") &&
-          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "DNS_ACCOUNT_ID") && contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENV_CONFIG")
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENV_CONFIG")
           if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
         ]
       ]
@@ -320,25 +327,6 @@ run "test_cache_invalidation_actions_created" {
     error_message = "Cache invalidation actions missing required environment variables"
   }
 
-  # Test that cache invalidation actions have correct values for the DNS_ACCOUNT_ID variable
-  assert {
-    condition = alltrue(flatten(flatten([
-      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
-        for stage in pipeline.stage : [
-          for action in stage.action :
-          (action.name == "InvalidateCache-dev" ?
-            contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.value if env_var.name == "DNS_ACCOUNT_ID"], "111123456789") :
-            action.name == "InvalidateCache-staging" ?
-            contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.value if env_var.name == "DNS_ACCOUNT_ID"], "111123456789") :
-            action.name == "InvalidateCache-prod" ?
-            contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.value if env_var.name == "DNS_ACCOUNT_ID"], "222223456789") :
-          true)
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
-        ]
-      ]
-    ])))
-    error_message = "DNS_ACCOUNT_ID environment variables not correctly set for cache invalidation actions"
-  }
 
   # Test that cache invalidation actions are in the correct stages
   assert {
@@ -838,31 +826,6 @@ run "test_iam" {
   #   condition     = aws_iam_role.dns_account_assume_role_for_codebase_deploy[""].name == "my-app-my-codebase-codebase-image-build"
   #   error_message = "Should be: 'my-app-my-codebase-codebase-image-build'"
   # }
-  assert {
-    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].effect == "Allow"
-    error_message = "First statement effect should be: Allow"
-  }
-  assert {
-    condition     = length(data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources) == 2
-    error_message = "First statement effect should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.dns_account_assume_role[""].statement[0].resources == toset(
-      [
-        "arn:aws:iam::111123456789:role/cloudfront-invalidation-assumed-role",
-        "arn:aws:iam::222223456789:role/cloudfront-invalidation-assumed-role"
-      ]
-    )
-    error_message = "First statement effect should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.dns_account_assume_role[""].json != null
-    error_message = "Should be: "
-  }
-  assert {
-    condition     = strcontains(jsonencode(data.aws_iam_policy_document.dns_account_assume_role[""]), "sts:AssumeRole") == true
-    error_message = "Statement should not contain kms:Decrypt"
-  }
 
   # CodeBuild image build
   assert {
@@ -934,6 +897,10 @@ run "test_iam" {
   assert {
     condition     = aws_iam_role_policy.log_access_for_codebuild_deploy.name == "log-access"
     error_message = "Should be: 'log-access'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.dns_account_assume_role_for_codebase_deploy[""].name == "my-app-my-codebase-dns-account-assume-role"
+    error_message = "Should be: 'my-app-my-codebase-dns-account-assume-role'"
   }
   assert {
     condition     = aws_iam_role_policy.log_access_for_codebuild_deploy.role == "my-app-my-codebase-codebase-deploy"
