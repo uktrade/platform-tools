@@ -95,6 +95,20 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
   log_group_name = aws_cloudwatch_log_group.codebase_image_build[""].name
 }
 
+resource "aws_cloudwatch_log_group" "invalidate_cache" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.cache_invalidation_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group"
+  retention_in_days = 90
+}
+
+resource "aws_cloudwatch_log_stream" "invalidate_cache" {
+  for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-stream"
+  log_group_name = aws_cloudwatch_log_group.invalidate_cache[""].name
+}
+
 resource "aws_codebuild_webhook" "codebuild_webhook" {
   for_each     = toset(var.requires_image_build ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
@@ -158,8 +172,8 @@ resource "aws_codebuild_project" "invalidate_cache" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_deploy.name
-      stream_name = aws_cloudwatch_log_stream.codebase_deploy.name
+      group_name  = aws_cloudwatch_log_group.invalidate_cache[each.key].name
+      stream_name = aws_cloudwatch_log_stream.invalidate_cache[each.key].name
     }
   }
 
