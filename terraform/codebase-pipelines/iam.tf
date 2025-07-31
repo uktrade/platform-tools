@@ -53,6 +53,8 @@ data "aws_iam_policy_document" "log_access" {
       "logs:TagLogGroup"
     ]
     resources = [
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group:*",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group:*",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group",
