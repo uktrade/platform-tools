@@ -821,12 +821,7 @@ run "test_tagged_branch_filter" {
 
 run "test_iam" {
   command = plan
-  # # DNS account access
-  # assert {
-  #   condition     = aws_iam_role.dns_account_assume_role_for_codebase_deploy[""].name == "my-app-my-codebase-codebase-image-build"
-  #   error_message = "Should be: 'my-app-my-codebase-codebase-image-build'"
-  # }
-
+  
   # CodeBuild image build
   assert {
     condition     = aws_iam_role.codebase_image_build[""].name == "my-app-my-codebase-codebase-image-build"
