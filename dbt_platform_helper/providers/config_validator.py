@@ -29,6 +29,7 @@ class ConfigValidator:
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
             self.validate_database_migration_input_sources,
+            self.validate_cache_invalidation_config
         ]
         self.io = io
         self.session = session
@@ -232,3 +233,17 @@ class ConfigValidator:
                     )
         if errors:
             raise ConfigValidatorError("\n".join(errors))
+
+    def validate_cache_invalidation_config(self, config: dict):
+        codebase_pipelines = config.get("codebase_pipelines", {})
+        if not codebase_pipelines:
+            return
+            
+        all_environments = [
+                env for env in config.get("environments", {}).keys() if not env == "*"
+        ]
+        all_envs_string = ", ".join(all_environments)
+    
+        for codebase in codebase_pipelines.keys():
+            if codebase_pipelines.get("cache_invalidation", {}):
+                
