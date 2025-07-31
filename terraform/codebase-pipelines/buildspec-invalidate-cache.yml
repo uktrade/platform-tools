@@ -20,7 +20,6 @@ phases:
         if [ -z ${ENV_CACHE_INVALIDATION_CONFIG} ]; then
           echo "INFO: No cache invalidation configured for environment ${ENVIRONMENT}."
         else
-          exit 1
           export DOMAINS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r 'keys[]')
           echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
           assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/cloudfront-invalidation-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
