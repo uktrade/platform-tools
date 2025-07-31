@@ -243,12 +243,11 @@ class ConfigValidator:
 
         all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
 
-        for codebase in codebase_pipelines.keys():
-            cache_invalidation_config = codebase_pipelines.get(codebase).get("cache_invalidation")
+        for codebase in codebase_pipelines.values():
+            cache_invalidation_config = codebase.get("cache_invalidation")
             if cache_invalidation_config:
-                domains = cache_invalidation_config.get("domains")
-                for domain in domains.keys():
-                    environment = domains.get(domain).get("environment")
+                for domain, config in cache_invalidation_config.get("domains").items():
+                    environment = config.get("environment")
                     if environment not in all_environments:
                         errors.append(
                             f"Error in cache invalidation configuration for the domain '{domain}'.  Environment '{environment}' is not defined for this application"
