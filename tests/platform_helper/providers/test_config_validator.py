@@ -395,16 +395,9 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
     assert expected_response in captured.out
     assert captured.err == ""
 
-@pytest.mark.parametrize(
-    "account, envs, exp_bad_envs",
-    [
-        ("account-does-not-exist", ["dev"], ["dev"]),
-        ("prod-acc", ["dev", "staging", "prod"], ["dev", "staging"]),
-        ("non-prod-acc", ["dev", "prod"], ["prod"]),
-    ],
-)
-def test_validate_platform_config_fails_if_cache_validation_environments_do_not_match_environment_config(
-    platform_env_config, account, envs, exp_bad_envs
+
+def test_validate_platform_config_fails_if_cache_invalidation_environments_do_not_match_environment_config(
+    platform_env_config,
 ):
     config = ConfigProvider.apply_environment_defaults(platform_env_config)
     config["codebase_pipelines"] = {
@@ -413,46 +406,25 @@ def test_validate_platform_config_fails_if_cache_validation_environments_do_not_
                 "domains": {
                     "web.dev.demodjango.uktrade.digital": {
                         "paths": ["/*", "/secondary-service/"],
-                        "environment": "dev"
+                        "environment": "dev",
                     },
                     "web.demodjango.prod.uktrade.digital": {
                         "paths": ["/secondary-service/"],
-                        "environment": "prod"
+                        "environment": "prod",
                     },
                     "web.demodjango.wrong.uktrade.digital": {
                         "paths": ["/secondary-service/"],
-                        "environment": "wrong"
-                    }
+                        "environment": "wrong",
+                    },
                 }
             },
-            "repository": "uktrade/demodjango",
-            "additional_ecr_repository": "demodjango/application",
-            "requires_image_build": False,
-            "services": [
-                {
-                    "run_group_1": ["web"]
-                }
-            ],
-            "pipelines": [
-                {
-                    "name": "dev",
-                    "branch": "main",
-                    "environments": [
-                        {"name": "dev"},
-                        {"name": "prod", "requires_approval": True}
-                    ]
-                }
-            ]
         }
     }
 
     with pytest.raises(ConfigValidatorError) as exception:
         ConfigValidator().validate_cache_invalidation_config(config)
 
-    console_message = str(exception.value)
-
-    assert "The following codebase pipeline cache invalidation config is misconfigured:" in console_message
     assert (
-        f"  Codebase: main - these environments are not in the '{account}' account: 'wrong'"
-        in console_message
+        str(exception.value)
+        == "Error in cache invalidation configuration for the domain 'web.demodjango.wrong.uktrade.digital'.  Environment 'wrong' is not defined for this application"
     )

@@ -29,7 +29,7 @@ class ConfigValidator:
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
             self.validate_database_migration_input_sources,
-            self.validate_cache_invalidation_config
+            self.validate_cache_invalidation_config,
         ]
         self.io = io
         self.session = session
@@ -238,12 +238,21 @@ class ConfigValidator:
         codebase_pipelines = config.get("codebase_pipelines", {})
         if not codebase_pipelines:
             return
-            
-        all_environments = [
-                env for env in config.get("environments", {}).keys() if not env == "*"
-        ]
-        all_envs_string = ", ".join(all_environments)
-    
+
+        errors = []
+
+        all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
+
         for codebase in codebase_pipelines.keys():
-            if codebase_pipelines.get("cache_invalidation", {}):
-                
+            cache_invalidation_config = codebase_pipelines.get(codebase).get("cache_invalidation")
+            if cache_invalidation_config:
+                domains = cache_invalidation_config.get("domains")
+                for domain in domains.keys():
+                    environment = domains.get(domain).get("environment")
+                    if environment not in all_environments:
+                        errors.append(
+                            f"Error in cache invalidation configuration for the domain '{domain}'.  Environment '{environment}' is not defined for this application"
+                        )
+
+        if errors:
+            raise ConfigValidatorError("\n".join(errors))
