@@ -202,61 +202,62 @@ run "test_locals" {
 
   assert {
     condition     = length(local.base_env_config) == 3
-    error_message = "Should be:"
+    error_message = "Expected local.base_env_config to contain exactly 3 environments (dev, staging, prod)"
   }
   assert {
     condition     = local.base_env_config["dev"].account == "000123456789"
-    error_message = "Should be:"
+    error_message = "Expected dev.account in base_env_config to be '000123456789'"
   }
   assert {
     condition     = local.base_env_config["dev"].dns_account == "111123456789"
-    error_message = "Should be:"
+    error_message = "Expected dev.dns_account in base_env_config to be '111123456789'"
   }
   assert {
     condition     = local.base_env_config["staging"].dns_account == "111123456789"
-    error_message = "Should be:"
+    error_message = "Expected staging.dns_account in base_env_config to be '111123456789'"
   }
   assert {
     condition     = local.base_env_config["prod"].dns_account == "222223456789"
-    error_message = "Should be:"
+    error_message = "Expected prod.dns_account in base_env_config to be '222223456789'"
   }
   assert {
     condition     = local.dns_account_ids[0] == "111123456789"
-    error_message = "Should be:"
+    error_message = "Expected first value in dns_account_ids to be '111123456789'"
   }
   assert {
     condition     = local.dns_account_ids[1] == "222223456789"
-    error_message = "Should be:"
+    error_message = "Expected second value in dns_account_ids to be '222223456789'"
   }
   assert {
     condition     = contains(local.cache_invalidation_map.dev["service-1.dev.my-app.uktrade.digital"], "a")
-    error_message = "Should be:"
+    error_message = "Expected cache invalidation path 'a' to be present for service-1.dev.my-app.uktrade.digital"
   }
   assert {
     condition     = contains(local.cache_invalidation_map.dev["service-1.dev.my-app.uktrade.digital"], "b")
-    error_message = "Should be:"
+    error_message = "Expected cache invalidation path 'b' to be present for service-1.dev.my-app.uktrade.digital"
   }
   assert {
     condition     = contains(local.cache_invalidation_map.staging["service-2.staging.my-app.uktrade.digital"], "c")
-    error_message = "Should be:"
+    error_message = "Expected cache invalidation path 'c' to be present for service-2.staging.my-app.uktrade.digital"
   }
   assert {
     condition     = contains(local.cache_invalidation_map.staging["service-2.staging.my-app.uktrade.digital"], "d")
-    error_message = "Should be:"
+    error_message = "Expected cache invalidation path 'd' to be present for service-2.staging.my-app.uktrade.digital"
   }
   assert {
     condition     = contains(local.cache_invalidation_map.prod["service-2.prod.my-app.uktrade.digital"], "e")
-    error_message = "Should be:"
+    error_message = "Expected cache invalidation path 'e' to be present for service-2.prod.my-app.uktrade.digital"
   }
   assert {
     condition     = contains(local.cache_invalidation_map.prod["service-2.prod.my-app.uktrade.digital"], "f")
-    error_message = "Should be:"
+    error_message = "Expected cache invalidation path 'f' to be present for service-2.prod.my-app.uktrade.digital"
   }
   assert {
     condition     = local.cache_invalidation_enabled == true
-    error_message = "Should be:"
+    error_message = "Expected cache_invalidation_enabled to be true"
   }
 }
+
 
 run "test_cache_invalidation_actions_created" {
   command = plan
@@ -1331,10 +1332,7 @@ run "test_codebuild_deploy" {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
     error_message = "Should be: ENV_CONFIG"
   }
-  # assert {
-  #   condition     = one(aws_codebuild_project.codebase_deploy.environment).environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\": \"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
-  #   error_message = "Incorrect value"
-  # }
+
   assert {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
     error_message = "Incorrect value"
