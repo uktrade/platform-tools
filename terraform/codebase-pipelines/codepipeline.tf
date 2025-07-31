@@ -197,19 +197,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
   }
 
   stage {
-    name = "Deploy Terraform"
-
-    dynamic "action" {
-      for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
-      content {
-        name      = "Approve-${stage.value.name}"
-        category  = "Approval"
-        owner     = "AWS"
-        provider  = "Manual"
-        version   = "1"
-        run_order = 1
-      }
-    }
+    name = "Deploy-Terraform"
 
     dynamic "action" {
       for_each = local.service_order_list
@@ -224,12 +212,12 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         run_order        = action.value.order + 1
 
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy.name
+          ProjectName = aws_codebuild_project.codebase_terraform_deploy.name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
             { name : "AWS_REGION", value : data.aws_region.current.name },
             { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
-            { name : "ENVIRONMENT", value : stage.value.name },
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
             { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
             { name : "REPOSITORY_URL", value : local.repository_url },
@@ -240,7 +228,6 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       }
     }
   }
-
 
   stage {
     name = "Deploy"

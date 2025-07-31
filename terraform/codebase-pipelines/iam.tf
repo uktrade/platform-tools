@@ -201,7 +201,7 @@ resource "aws_iam_role_policy" "codestar_connection_access_for_codebase_pipeline
 resource "aws_iam_role_policy" "iam_access_for_codebase_pipeline" {
   name   = "iam-permissions"
   role   = aws_iam_role.codebase_deploy_pipeline.name
-  policy = data.aws_iam_policy_document.ecs_access_for_codebase_pipeline.json
+  policy = data.aws_iam_policy_document.iam_access_for_codebase_pipeline.json
 }
 
 data "aws_iam_policy_document" "iam_access_for_codebase_pipeline" {
@@ -235,7 +235,7 @@ resource "aws_iam_role_policy" "ecs_access_for_codebase_pipeline" {
   policy = data.aws_iam_policy_document.ecs_access_for_codebase_pipeline.json
 }
 
-data "aws_iam_policy_document" " ecs_access_for_codebase_pipeline" {
+data "aws_iam_policy_document" "ecs_access_for_codebase_pipeline" {
   statement {
     effect = "Allow"
     actions = [
