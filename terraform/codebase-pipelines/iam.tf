@@ -8,28 +8,6 @@ resource "aws_iam_role" "codebase_image_build" {
   tags               = local.tags
 }
 
-data "aws_iam_policy_document" "dns_account_assume_role" {
-  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
-  statement {
-    sid    = "AllowDNSAccountAccess"
-    effect = "Allow"
-    actions = [
-      "sts:AssumeRole",
-    ]
-    resources = local.cache_invalidation_assumed_roles
-  }
-}
-
-# Assume DNS account role
-resource "aws_iam_role_policy" "dns_account_assume_role_for_codebase_deploy" {
-  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
-
-  name   = "${var.application}-${var.codebase}-dns-account-assume-role"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.dns_account_assume_role[each.key].json
-}
-
-
 data "aws_iam_policy_document" "assume_codebuild_role" {
   statement {
     effect = "Allow"
@@ -46,7 +24,6 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       variable = "aws:SourceArn"
       values = compact([
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
-        local.cache_invalidation_enabled ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-invalidate-cache" : null,
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
       ])
     }
@@ -453,3 +430,70 @@ data "aws_iam_policy_document" "codestar_access_for_codebase_pipeline" {
   }
 }
 
+data "aws_iam_policy_document" "dns_account_assume_role" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  statement {
+    sid    = "AllowDNSAccountAccess"
+    effect = "Allow"
+    actions = [
+      "sts:AssumeRole",
+    ]
+    resources = local.cache_invalidation_assumed_roles
+  }
+}
+
+data "aws_iam_policy_document" "assume_cache_invalidation_role" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["codebuild.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-invalidate-cache"]
+    }
+  }
+}
+
+resource "aws_iam_role" "invalidate_cache" {
+  for_each           = toset(local.cache_invalidation_enabled ? [""] : [])
+  name               = "${var.application}-${var.codebase}-invalidate-cache"
+  assume_role_policy = data.aws_iam_policy_document.assume_cache_invalidation_role[each.key].json
+  tags               = local.tags
+}
+
+resource "aws_iam_role_policy" "ssm_access_for_cache_invalidation" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  name     = "invalidate-cache-ssm-access"
+  role     = aws_iam_role.invalidate_cache[each.key].name
+  policy   = data.aws_iam_policy_document.deploy_ssm_access.json
+}
+
+resource "aws_iam_role_policy" "artifact_store_access_for_cache_invalidation" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  name     = "invalidate-cache-artifact-store-access"
+  role     = aws_iam_role.invalidate_cache[each.key].name
+  policy   = data.aws_iam_policy_document.access_artifact_store.json
+}
+
+resource "aws_iam_role_policy" "log_access_for_cache_invalidation" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  name     = "invalidate-cache-log-access"
+  role     = aws_iam_role.invalidate_cache[each.key].name
+  policy   = data.aws_iam_policy_document.log_access.json
+}
+
+resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+
+  name   = "${var.application}-${var.codebase}-dns-account-assume-role"
+  role   = aws_iam_role.invalidate_cache[each.key].name
+  policy = data.aws_iam_policy_document.dns_account_assume_role[each.key].json
+}

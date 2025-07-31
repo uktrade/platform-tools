@@ -104,7 +104,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           run_order        = length(local.service_order_list) + 2
 
           configuration = {
-            ProjectName = aws_codebuild_project.invalidate_cache.name
+            ProjectName = aws_codebuild_project.invalidate_cache[""].name
             EnvironmentVariables : jsonencode([
               { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
               { name : "APPLICATION", value : var.application },
@@ -214,7 +214,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         run_order        = length(local.service_order_list) + 2
 
         configuration = {
-          ProjectName = aws_codebuild_project.invalidate_cache.name
+          ProjectName = aws_codebuild_project.invalidate_cache[""].name
           EnvironmentVariables : jsonencode([
             { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
             { name : "APPLICATION", value : var.application },

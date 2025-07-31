@@ -822,7 +822,7 @@ run "test_tagged_branch_filter" {
 
 run "test_iam" {
   command = plan
-  
+
   # CodeBuild image build
   assert {
     condition     = aws_iam_role.codebase_image_build[""].name == "my-app-my-codebase-codebase-image-build"
