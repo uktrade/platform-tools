@@ -24,6 +24,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       variable = "aws:SourceArn"
       values = compact([
         "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
+        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-terraform-deploy",
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
       ])
     }
@@ -56,7 +57,9 @@ data "aws_iam_policy_document" "log_access" {
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group:*",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group:*"
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-terraform-deploy/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-terraform-deploy/log-group:*"
     ]
   }
 }

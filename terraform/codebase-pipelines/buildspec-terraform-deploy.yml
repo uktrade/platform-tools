@@ -10,6 +10,10 @@ phases:
   install:
     commands:
       # Install cli tools
+      ## regctl for listing images
+      - curl -s -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/local/bin/regctl
+      - chmod +x /usr/local/bin/regctl
+
       # Install Platform Helper
       ## Clone platform-tools
       - cd "${CODEBUILD_SRC_DIR}"
