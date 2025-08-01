@@ -201,69 +201,6 @@ resource "aws_iam_role_policy" "codestar_connection_access_for_codebase_pipeline
   policy = data.aws_iam_policy_document.codestar_connection_access.json
 }
 
-resource "aws_iam_role_policy" "iam_access_for_codebase_pipeline" {
-  name   = "iam-permissions"
-  role   = aws_iam_role.codebase_deploy_pipeline.name
-  policy = data.aws_iam_policy_document.iam_access_for_codebase_pipeline.json
-}
-
-data "aws_iam_policy_document" "iam_access_for_codebase_pipeline" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "iam:AttachRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:CreatePolicy",
-      "iam:DeletePolicy",
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:TagRole",
-      "iam:PutRolePolicy",
-      "iam:GetRole",
-      "iam:ListRolePolicies",
-      "iam:GetRolePolicy",
-      "iam:ListAttachedRolePolicies",
-      "iam:ListInstanceProfilesForRole",
-      "iam:DeleteRolePolicy",
-      "iam:UpdateAssumeRolePolicy",
-      "iam:TagRole"
-    ]
-    resources = ["*"] #TODO update to specific ecs resources
-  }
-}
-
-resource "aws_iam_role_policy" "ecs_access_for_codebase_pipeline" {
-  name   = "ecs-permissions"
-  role   = aws_iam_role.codebase_deploy_pipeline.name
-  policy = data.aws_iam_policy_document.ecs_access_for_codebase_pipeline.json
-}
-
-data "aws_iam_policy_document" "ecs_access_for_codebase_pipeline" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecs:RegisterTaskDefinition"
-    ]
-    resources = ["*"] #TODO update to specific ecs resources
-  }
-}
-
-resource "aws_iam_role_policy" "validate_platform_config_for_codebase_pipeline" {
-  name   = "platform-config-validation-permissions-for-codebase-pipeline"
-  role   = aws_iam_role.codebase_deploy_pipeline.name
-  policy = data.aws_iam_policy_document.validate_platform_config_for_codebase_pipeline.json
-}
-
-data "aws_iam_policy_document" "validate_platform_config_for_codebase_pipeline" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "elasticache:DescribeCacheEngineVersions"
-    ]
-    resources = ["*"] #TODO update to specific ecs resources
-  }
-}
-
 resource "aws_iam_role_policy" "ecr_access_for_codebase_pipeline" {
   name   = "ecr-access"
   role   = aws_iam_role.codebase_deploy_pipeline.name
@@ -361,6 +298,69 @@ resource "aws_iam_role" "codebase_deploy" {
   name               = "${var.application}-${var.codebase}-codebase-deploy"
   assume_role_policy = data.aws_iam_policy_document.assume_codebuild_role.json
   tags               = local.tags
+}
+
+resource "aws_iam_role_policy" "iam_access_for_codebase" {
+  name   = "iam-permissions"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.iam_access_for_codebase.json
+}
+
+data "aws_iam_policy_document" "iam_access_for_codebase" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_access_for_codebase" {
+  name   = "ecs-permissions"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.ecs_access_for_codebase.json
+}
+
+data "aws_iam_policy_document" "ecs_access_for_codebase" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecs:RegisterTaskDefinition"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
+}
+
+resource "aws_iam_role_policy" "validate_platform_config_for_codebase" {
+  name   = "platform-config-validation-permissions-for-codebase-pipeline"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.validate_platform_config_for_codebase.json
+}
+
+data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticache:DescribeCacheEngineVersions"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
