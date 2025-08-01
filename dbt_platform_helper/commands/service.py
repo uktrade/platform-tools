@@ -46,7 +46,7 @@ def generate(name, environment, image_tag):
     try:
         service_manager = ServiceManager()
         service_manager.generate(
-            environments=environments, services=services, flag_image_tag=image_tag
+            environments=environments, services=services, image_tag_flag=image_tag
         )
 
     except PlatformException as err:

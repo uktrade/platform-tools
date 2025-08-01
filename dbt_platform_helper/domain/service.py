@@ -2,7 +2,6 @@ from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
-from dbt_platform_helper.constants import IMAGE_TAG_DEFAULT
 from dbt_platform_helper.constants import IMAGE_TAG_ENV_VAR
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SERVICE_CONFIG_FILE
@@ -15,6 +14,7 @@ from dbt_platform_helper.domain.terraform_environment import (
     EnvironmentNotFoundException,
 )
 from dbt_platform_helper.entities.service import ServiceConfig
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigLoader
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
@@ -57,7 +57,7 @@ class ServiceManager:
         )
         self.load_application = load_application
 
-    def generate(self, environments: list[str], services: list[str], flag_image_tag: str = None):
+    def generate(self, environments: list[str], services: list[str], image_tag_flag: str = None):
 
         config = self.config_provider.get_enriched_config()
         application_name = config.get("application", "")
@@ -112,9 +112,11 @@ class ServiceManager:
         else:
             module_source_override = None
 
-        image_tag = flag_image_tag or self.environment_variable_provider.get(
-            IMAGE_TAG_ENV_VAR, IMAGE_TAG_DEFAULT
-        )
+        image_tag = image_tag_flag or self.environment_variable_provider.get(IMAGE_TAG_ENV_VAR)
+        if not image_tag:
+            raise PlatformException(
+                f"An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
+            )
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
