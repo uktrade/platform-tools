@@ -3,6 +3,7 @@ version: 0.2
 env:
   variables:
     DEPLOY_TIMEOUT: 1800
+    TERRAFORM_VERSION: 1.8.1
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
 
@@ -13,6 +14,13 @@ phases:
       ## regctl for listing images
       - curl -s -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/local/bin/regctl
       - chmod +x /usr/local/bin/regctl
+
+      ## Terraform
+      - curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+      - unzip terraform_install.zip
+      - chmod +x terraform
+      - mv terraform /usr/local/bin/terraform
+      - rm terraform_install.zip
 
       # Install Platform Helper
       ## Clone platform-tools

@@ -300,69 +300,6 @@ resource "aws_iam_role" "codebase_deploy" {
   tags               = local.tags
 }
 
-resource "aws_iam_role_policy" "iam_access_for_codebase" {
-  name   = "iam-permissions"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.iam_access_for_codebase.json
-}
-
-data "aws_iam_policy_document" "iam_access_for_codebase" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "iam:AttachRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:CreatePolicy",
-      "iam:DeletePolicy",
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:TagRole",
-      "iam:PutRolePolicy",
-      "iam:GetRole",
-      "iam:ListRolePolicies",
-      "iam:GetRolePolicy",
-      "iam:ListAttachedRolePolicies",
-      "iam:ListInstanceProfilesForRole",
-      "iam:DeleteRolePolicy",
-      "iam:UpdateAssumeRolePolicy",
-      "iam:TagRole"
-    ]
-    resources = ["*"] #TODO update to specific ecs resources
-  }
-}
-
-resource "aws_iam_role_policy" "ecs_access_for_codebase" {
-  name   = "ecs-permissions"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.ecs_access_for_codebase.json
-}
-
-data "aws_iam_policy_document" "ecs_access_for_codebase" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "ecs:RegisterTaskDefinition"
-    ]
-    resources = ["*"] #TODO update to specific ecs resources
-  }
-}
-
-resource "aws_iam_role_policy" "validate_platform_config_for_codebase" {
-  name   = "platform-config-validation-permissions-for-codebase-pipeline"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.validate_platform_config_for_codebase.json
-}
-
-data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
-  statement {
-    effect = "Allow"
-    actions = [
-      "elasticache:DescribeCacheEngineVersions"
-    ]
-    resources = ["*"] #TODO update to specific ecs resources
-  }
-}
-
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
   name   = "artifact-store-access"
   role   = aws_iam_role.codebase_deploy.name

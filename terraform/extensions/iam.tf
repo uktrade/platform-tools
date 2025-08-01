@@ -27,6 +27,85 @@ data "aws_iam_policy_document" "assume_codebase_pipeline" {
   }
 }
 
+resource "aws_iam_role_policy" "iam_access_for_codebase" {
+  name   = "iam-permissions"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.iam_access_for_codebase.json
+}
+
+data "aws_iam_policy_document" "iam_access_for_codebase" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
+}
+
+resource "aws_iam_role_policy" "ecs_access_for_codebase" {
+  name   = "ecs-permissions"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.ecs_access_for_codebase.json
+}
+
+data "aws_iam_policy_document" "ecs_access_for_codebase" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecs:RegisterTaskDefinition"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
+}
+
+resource "aws_iam_role_policy" "validate_platform_config_for_codebase" {
+  name   = "platform-config-validation-permissions-for-codebase-pipeline"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.validate_platform_config_for_codebase.json
+}
+
+data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticache:DescribeCacheEngineVersions",
+      "es:ListVersions",
+      "iam:ListAccountAliases"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
+
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
+      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
+      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
+      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***", #TODO - See if this can be scoped more tightly
+    ]
+  }
+}
+
 resource "aws_iam_role_policy" "ecr_access" {
   name   = "ecr-access"
   role   = aws_iam_role.codebase_pipeline_deploy.name
