@@ -22,7 +22,8 @@ phases:
       - git config --global credential.helper '!aws codecommit credential-helper $@'
       - git config --global credential.UseHttpPath true
       - git config --global advice.detachedHead false
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
+#      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "main" --depth 1 platform-tools #TODO Temporary change to pull unreleased changes
       - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
@@ -105,10 +106,11 @@ phases:
       - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
       - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
-      # Run Platform helper service generate 
+      # Run Platform helper service generate
+      - cd "${CODEBUILD_SRC_DIR}"
       - platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
-      - cd terraform/services/"${ENVIRONMENT}"/"${SERVICE}"
-      - terraform init 
+      - cd "${CODEBUILD_SRC_DIR}/terraform/services/${ENVIRONMENT}/${SERVICE}"
+      - terraform init
       - terraform apply -auto-approve
 
       # Send Slack message on pipeline outcome
