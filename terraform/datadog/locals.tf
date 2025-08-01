@@ -25,11 +25,15 @@ EOF
 
   ## Contact details
   ## Both name and email are required for this block, so don't add if either are missing from platform-config.yml
+  contact_name = split(",", var.config.contact_name) 
+  contact_email = split(",", var.config.contact_email) 
   contacts = var.config.contact_name == null || var.config.contact_email == null ? "" : <<EOF
   contacts:
-    - name: ${var.config.contact_name}
+  %{for k, v in local.contact_name}
+    - name: ${v}
       type: email
-      contact: ${var.config.contact_email}
+      contact: ${local.contact_email[k]}
+  %{endfor}
 EOF
 
   ## Set SRE to be the additionalOwners as a workaround to not being able to specify an on-call team that is different than the owner team
