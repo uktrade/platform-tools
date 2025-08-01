@@ -31,6 +31,13 @@ override_data {
 }
 
 override_data {
+  target = data.aws_iam_policy_document.assume_cache_invalidation_role
+  values = {
+    json = "{\"Sid\": \"AllowSpecificCodeBuildProjectAccess\"}"
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.ecr_access_for_codebuild_images
   values = {
     json = "{\"Sid\": \"CodeBuildImageECRAccess\"}"
@@ -895,7 +902,7 @@ run "test_iam" {
     error_message = "Should be: 'log-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.dns_account_assume_role_for_codebase_deploy[""].name == "my-app-my-codebase-dns-account-assume-role"
+    condition     = aws_iam_role_policy.dns_account_assume_role_for_cache_invalidation[""].name == "my-app-my-codebase-dns-account-assume-role"
     error_message = "Should be: 'my-app-my-codebase-dns-account-assume-role'"
   }
   assert {
@@ -1009,6 +1016,8 @@ run "test_iam_documents" {
   }
   assert {
     condition = data.aws_iam_policy_document.log_access.statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
