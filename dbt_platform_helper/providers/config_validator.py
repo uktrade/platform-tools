@@ -235,7 +235,7 @@ class ConfigValidator:
             raise ConfigValidatorError("\n".join(errors))
 
     def validate_cache_invalidation_config(self, config: dict):
-        codebase_pipelines = config.get("codebase_pipelines", {})
+        codebase_pipelines = config.get("codebase_pipelines")
         if not codebase_pipelines:
             return
 
