@@ -248,6 +248,22 @@ data "aws_iam_policy_document" "ecs_access_for_codebase_pipeline" {
   }
 }
 
+resource "aws_iam_role_policy" "validate_platform_config_for_codebase_pipeline" {
+  name   = "platform-config-validation-permissions-for-codebase-pipeline"
+  role   = aws_iam_role.codebase_deploy_pipeline.name
+  policy = data.aws_iam_policy_document.validate_platform_config_for_codebase_pipeline.json
+}
+
+data "aws_iam_policy_document" "validate_platform_config_for_codebase_pipeline" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticache:DescribeCacheEngineVersions"
+    ]
+    resources = ["*"] #TODO update to specific ecs resources
+  }
+}
+
 resource "aws_iam_role_policy" "ecr_access_for_codebase_pipeline" {
   name   = "ecr-access"
   role   = aws_iam_role.codebase_deploy_pipeline.name
