@@ -9,6 +9,17 @@ environments:
 
 codebase_pipelines:
   application:
+    cache_invalidation:
+      domains:
+        web.dev.test-app.some-domain:
+          paths:
+            - /*
+            - /something/
+          environment: dev
+        web.prod.test-app.some-domain:
+          paths:
+            - /*
+          environment: prod
     repository: organisation/repository
     slack_channel: CODEBASE_SLACK_CHANNEL_ID
     requires_image_build: true

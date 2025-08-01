@@ -95,6 +95,20 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
   log_group_name = aws_cloudwatch_log_group.codebase_image_build[""].name
 }
 
+resource "aws_cloudwatch_log_group" "invalidate_cache" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.cache_invalidation_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group"
+  retention_in_days = 90
+}
+
+resource "aws_cloudwatch_log_stream" "invalidate_cache" {
+  for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-stream"
+  log_group_name = aws_cloudwatch_log_group.invalidate_cache[""].name
+}
+
 resource "aws_codebuild_webhook" "codebuild_webhook" {
   for_each     = toset(var.requires_image_build ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
@@ -129,6 +143,46 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
       }
     }
   }
+}
+
+
+resource "aws_codebuild_project" "invalidate_cache" {
+  for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
+  name           = "${var.application}-${var.codebase}-invalidate-cache"
+  description    = "Invalidate the CDN cached paths"
+  build_timeout  = 10
+  service_role   = aws_iam_role.invalidate_cache[each.key].arn
+  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.artifact_store.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.invalidate_cache[each.key].name
+      stream_name = aws_cloudwatch_log_stream.invalidate_cache[each.key].name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = file("${path.module}/buildspec-invalidate-cache.yml")
+  }
+
+  tags = local.tags
 }
 
 

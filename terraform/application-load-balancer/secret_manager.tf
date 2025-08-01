@@ -22,7 +22,9 @@ data "aws_iam_policy_document" "secret_manager_policy" {
 
     actions = [
       "secretsmanager:GetSecretValue",
-    "secretsmanager:DescribeSecret"]
+      "secretsmanager:DescribeSecret"
+    ]
+
     resources = [aws_secretsmanager_secret.origin-verify-secret[""].arn]
   }
 }

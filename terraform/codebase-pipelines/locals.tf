@@ -22,20 +22,40 @@ locals {
 
   base_env_config = {
     for name, config in var.env_config : name => {
-      account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {})
+      account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
+      dns_account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "dns", {}), "id", {})
     } if name != "*"
   }
 
   deploy_account_ids = distinct([for env in local.base_env_config : env.account])
 
+  dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
+
+  cache_invalidation_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/cloudfront-invalidation-assumed-role"]
+
+  environments_requiring_cache_invalidation = distinct([for d in try(values(var.cache_invalidation.domains), []) : d.environment])
+
+  cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
+
   pipeline_map = {
     for id, val in var.pipelines : id => merge(val, {
       environments : [
-        for name, env in val.environments : merge(env, lookup(local.base_env_config, env.name, {}))
+        for name, env in val.environments : merge(env, merge(
+          lookup(local.base_env_config, env.name, {}),
+          {
+            requires_cache_invalidation : contains(local.environments_requiring_cache_invalidation, env.name)
+          }
+        ))
       ],
       image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
     })
   }
+
+  cache_invalidation_map = tomap({
+    for env in local.environments_requiring_cache_invalidation : env => {
+      for domain, data in var.cache_invalidation.domains : domain => data.paths if data.environment == env
+    }
+  })
 
   services = sort(flatten([
     for run_group in var.services : [for service in flatten(values(run_group)) : service]

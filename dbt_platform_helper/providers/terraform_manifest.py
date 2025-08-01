@@ -204,6 +204,7 @@ class TerraformManifestProvider:
                 "deploy_repository": f"{deploy_repository}",
                 "deploy_repository_branch": '${lookup(each.value, "deploy_repository_branch", "main")}',
                 "additional_ecr_repository": '${lookup(each.value, "additional_ecr_repository", null)}',
+                "cache_invalidation": '${lookup(each.value, "cache_invalidation", null)}',
                 "pipelines": '${lookup(each.value, "pipelines", [])}',
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',

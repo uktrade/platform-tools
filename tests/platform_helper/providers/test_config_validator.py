@@ -394,3 +394,37 @@ def test_validate_extension_supported_versions(config, expected_response, capsys
 
     assert expected_response in captured.out
     assert captured.err == ""
+
+
+def test_validate_platform_config_fails_if_cache_invalidation_environments_do_not_match_environment_config(
+    platform_env_config,
+):
+    config = ConfigProvider.apply_environment_defaults(platform_env_config)
+    config["codebase_pipelines"] = {
+        "main": {
+            "cache_invalidation": {
+                "domains": {
+                    "web.dev.demodjango.uktrade.digital": {
+                        "paths": ["/*", "/secondary-service/"],
+                        "environment": "dev",
+                    },
+                    "web.demodjango.prod.uktrade.digital": {
+                        "paths": ["/secondary-service/"],
+                        "environment": "prod",
+                    },
+                    "web.demodjango.wrong.uktrade.digital": {
+                        "paths": ["/secondary-service/"],
+                        "environment": "wrong",
+                    },
+                }
+            },
+        }
+    }
+
+    with pytest.raises(ConfigValidatorError) as exception:
+        ConfigValidator().validate_cache_invalidation_config(config)
+
+    assert (
+        str(exception.value)
+        == "Error in cache invalidation configuration for the domain 'web.demodjango.wrong.uktrade.digital'.  Environment 'wrong' is not defined for this application"
+    )
