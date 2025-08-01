@@ -12,9 +12,6 @@ import regex
 from freezegun import freeze_time
 
 from dbt_platform_helper.constants import IMAGE_TAG_ENV_VAR
-from dbt_platform_helper.constants import (
-    TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR,
-)
 from dbt_platform_helper.constants import TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
@@ -32,7 +29,6 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
             {"environments": ["development"], "services": []},
             {
                 TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-                TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR: "source_no_matter",
             },
             None,  # Image tag not given, hence why not relevant - should throw an exception before generating main.tf.json contents
             True,
