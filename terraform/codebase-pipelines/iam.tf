@@ -494,8 +494,7 @@ resource "aws_iam_role_policy" "log_access_for_cache_invalidation" {
 
 resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" {
   for_each = toset(local.cache_invalidation_enabled ? [""] : [])
-
-  name   = "${var.application}-${var.codebase}-dns-account-assume-role"
-  role   = aws_iam_role.invalidate_cache[each.key].name
-  policy = data.aws_iam_policy_document.dns_account_assume_role[each.key].json
+  name     = "${var.application}-${var.codebase}-dns-account-assume-role"
+  role     = aws_iam_role.invalidate_cache[each.key].name
+  policy   = data.aws_iam_policy_document.dns_account_assume_role[each.key].json
 }
