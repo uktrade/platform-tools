@@ -74,6 +74,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "ec2:DescribeVpcs"
     ]
@@ -83,6 +84,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   }
 
   statement {
+    effect = "Allow"
     actions = [
       "servicediscovery:ListNamespaces"
     ]
