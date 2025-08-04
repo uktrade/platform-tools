@@ -58,13 +58,13 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
   }
 }
 
-resource "aws_iam_role_policy" "ecs_access_for_codebase" {
+resource "aws_iam_role_policy" "ecs_service_access_for_codebase" {
   name   = "ecs-permissions"
   role   = aws_iam_role.codebase_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.ecs_access_for_codebase.json
+  policy = data.aws_iam_policy_document.ecs_service_access_for_codebase.json
 }
 
-data "aws_iam_policy_document" "ecs_access_for_codebase" {
+data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   statement {
     effect = "Allow"
     actions = [
@@ -72,6 +72,25 @@ data "aws_iam_policy_document" "ecs_access_for_codebase" {
     ]
     resources = ["*"] #TODO update to specific ecs resources
   }
+
+  statement {
+    actions = [
+      "ec2:DescribeVpcs"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "servicediscovery:ListNamespaces"
+    ]
+    resources = [
+      "arn:aws:servicediscovery:${data.aws_region.current.name}:${local.pipeline_account_id}:*"
+    ]
+  }
+
 }
 
 resource "aws_iam_role_policy" "validate_platform_config_for_codebase" {
