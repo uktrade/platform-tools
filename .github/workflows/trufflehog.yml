@@ -15,4 +15,4 @@ jobs:
         with:
           base: ""
           head: ${{ github.ref_name }}
-          extra_args: --no-verification --exclude-paths=.trufflehogignore
+          extra_args: --no-verification --exclude-paths=.trufflehogignore --only-verified
