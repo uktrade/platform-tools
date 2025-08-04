@@ -106,6 +106,73 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
   }
 }
 
+resource "aws_iam_role_policy" "state_kms_key_access_for_codebase_codebuild" {
+  name   = "${var.args.application}-state-kms-key-access-for-codebase-codebuild"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.state_kms_key_access.json
+}
+
+data "aws_kms_key" "state_kms_key" {
+  key_id = "alias/terraform-platform-state-s3-key-${local.deploy_account_name}"
+}
+
+data "aws_iam_policy_document" "state_kms_key_access" {
+  statement {
+    actions = [
+      "kms:ListKeys",
+      "kms:Decrypt",
+      "kms:GenerateDataKey"
+    ]
+    resources = [
+      data.aws_kms_key.state_kms_key.arn
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "state_bucket_access_for_codebase_codebuild" {
+  name   = "${var.args.application}-state-bucket-access-for-codebase-codebuild"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.state_bucket_access.json
+}
+
+data "aws_s3_bucket" "state_bucket" {
+  bucket = "terraform-platform-state-${local.deploy_account_name}"
+}
+
+data "aws_iam_policy_document" "state_bucket_access" {
+  statement {
+    actions = [
+      "s3:ListBucket",
+      "s3:GetObject",
+      "s3:PutObject"
+    ]
+    resources = [
+      data.aws_s3_bucket.state_bucket.arn,
+      "${data.aws_s3_bucket.state_bucket.arn}/*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "state_dynamo_db_access_for_environment_codebuild" {
+  name   = "${var.args.application}-state-dynamo-db-access-for-environment-codebuild"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.state_lock_dynamo_db_access.json
+}
+
+data "aws_iam_policy_document" "state_lock_dynamo_db_access" {
+  statement {
+    actions = [
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem"
+    ]
+    resources = [
+      "arn:aws:dynamodb:${data.aws_region.current.name}:${local.pipeline_account_id}:table/terraform-platform-lockdb-${local.deploy_account_name}"
+    ]
+  }
+}
+
 resource "aws_iam_role_policy" "ecr_access" {
   name   = "ecr-access"
   role   = aws_iam_role.codebase_pipeline_deploy.name
