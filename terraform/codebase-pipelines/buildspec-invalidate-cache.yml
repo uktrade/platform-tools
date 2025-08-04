@@ -13,11 +13,11 @@ phases:
   build:
     commands:
       - set -e
-      - export DNS_ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env ${ENVIRONMENT} '.[$env].dns_account')
-      - export ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env ${ENVIRONMENT} '.[$env].account')
-      - export ENV_CACHE_INVALIDATION_CONFIG=$(echo $CACHE_INVALIDATION_CONFIG | jq -r --arg env ${ENVIRONMENT} '.[$env] // empty')
+      - export DNS_ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env "${ENVIRONMENT}" '.[$env].dns_account')
+      - export ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env "${ENVIRONMENT}" '.[$env].account')
+      - export ENV_CACHE_INVALIDATION_CONFIG=$(echo $CACHE_INVALIDATION_CONFIG | jq -r --arg env "${ENVIRONMENT}" '.[$env] // empty')
       - |
-        if [ -z ${ENV_CACHE_INVALIDATION_CONFIG} ]; then
+        if [ -z "${ENV_CACHE_INVALIDATION_CONFIG}" ]; then
           echo "INFO: No cache invalidation configured for environment ${ENVIRONMENT}."
         else
           export DOMAINS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r 'keys[]')
