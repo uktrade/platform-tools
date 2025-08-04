@@ -41,15 +41,19 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:DetachRolePolicy",
       "iam:CreatePolicy",
       "iam:DeletePolicy",
+      "iam:TagPolicy",
       "iam:CreateRole",
       "iam:DeleteRole",
       "iam:TagRole",
       "iam:PutRolePolicy",
       "iam:GetRole",
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
       "iam:ListRolePolicies",
       "iam:GetRolePolicy",
       "iam:ListAttachedRolePolicies",
       "iam:ListInstanceProfilesForRole",
+      "iam:ListPolicyVersions",
       "iam:DeleteRolePolicy",
       "iam:UpdateAssumeRolePolicy",
       "iam:TagRole"
@@ -68,7 +72,8 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   statement {
     effect = "Allow"
     actions = [
-      "ecs:RegisterTaskDefinition"
+      "ecs:RegisterTaskDefinition",
+      "ecs:DeregisterTaskDefinition"
     ]
     resources = ["*"] #TODO update to specific ecs resources
   }
@@ -76,7 +81,65 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   statement {
     effect = "Allow"
     actions = [
-      "ec2:DescribeVpcs"
+      "ec2:DescribeVpcs",
+      "ec2:DescribeVpcAttribute"
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "servicediscovery:ListNamespaces",
+      "servicediscovery:GetNamespace",
+      "servicediscovery:ListTagsForResource",
+      "servicediscovery:ListSevices",
+      "servicediscovery:GetService",
+      "servicediscovery:CreateService",
+      "servicediscovery:UpdateService",
+      "servicediscovery:DeleteService",
+      "servicediscovery:TagResource"
+    ]
+    resources = [
+      "arn:aws:servicediscovery:${data.aws_region.current.name}:${local.pipeline_account_id}:*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:DeleteAlias",
+      "kms:CreateKey",
+      "kms:CreateAlias",
+      "kms:ListAliases",
+      "kms:TagResource",
+      "kms:PutKeyPolicy",
+      "kms:ScheduleKeyDeletion",
+      "kms:EnableKeyRotation",
+      "kms:UpdateAlias",
+      "kms:DescribeKey",
+      "kms:GetKeyPolicy",
+      "kms:GetKeyRotationStatus",
+      "kms:ListResourceTags"
+    ]
+    resources = [
+      "arn:aws:kms:${data.aws_region.current.name}:${local.pipeline_account_id}:key/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:ListAliases",
+      "kms:CreateAlias",
+      "kms:DeleteAlias",
+    ]
+    resources = [
+      "arn:aws:kms:${data.aws_region.current.name}:${local.pipeline_account_id}:alias/${var.args.application}-${var.environment}-*-ecs-service-logs-key"
+    ]
+  }
+
+  statement {
+    actions = [
+      "kms:ListAliases"
     ]
     resources = [
       "*"
@@ -84,12 +147,43 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   }
 
   statement {
-    effect = "Allow"
     actions = [
-      "servicediscovery:ListNamespaces"
+      "elasticloadbalancing:CreateTargetGroup",
+      "elasticloadbalancing:DeleteTargetGroup",
+      "elasticloadbalancing:ModifyTargetGroup",
+      "elasticloadbalancing:ModifyTargetGroupAttributes",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:RemoveTags",
+      "elasticloadbalancing:DescribeTargetGroups",
+      "elasticloadbalancing:DescribeTargetGroupAttributes",
+      "elasticloadbalancing:DescribeTags",
     ]
     resources = [
-      "arn:aws:servicediscovery:${data.aws_region.current.name}:${local.pipeline_account_id}:*"
+      "*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:DeleteLogGroup",
+      "logs:PutRetentionPolicy",
+      "logs:TagResource",
+      "logs:DescribeLogGroups",
+      "logs:ListTagsForResource",
+      "logs:ListTagsLogGroup"
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.name}:${local.pipeline_account_id}:log-group:/platform/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "logs:DescribeLogGroups"
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.name}:${local.pipeline_account_id}:log-group::log-stream:"
     ]
   }
 
