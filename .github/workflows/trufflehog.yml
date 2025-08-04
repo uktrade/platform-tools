@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: trufflesecurity/trufflehog@main@v3.90.2
+      - uses: trufflesecurity/trufflehog@v3.90.2
         with:
           base: ""
           head: ${{ github.ref_name }}
