@@ -22,13 +22,13 @@ resource "aws_ecs_task_definition" "this" {
           ] : []
           essential = true
           environment = [
-            for k, v in var.service_config.variables : {
+            for k, v in coalesce(var.service_config.variables, {}) : {
               name  = k
               value = tostring(v)
             }
           ]
           secrets = [
-            for k, v in var.service_config.secrets : {
+            for k, v in coalesce(var.service_config.secrets, {}) : {
               name      = k
               valueFrom = v
             }
@@ -106,8 +106,8 @@ resource "aws_lb_target_group" "target_group" {
     matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
     healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
     unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
-    interval            = tonumber(trim(try(var.service_config.http.healthcheck.interval, "35s"), "s"))
-    timeout             = tonumber(trim(try(var.service_config.http.healthcheck.timeout, "30s"), "s"))
+    interval            = tonumber(trim(coalesce(var.service_config.http.healthcheck.interval, "35s"), "s"))
+    timeout             = tonumber(trim(coalesce(var.service_config.http.healthcheck.timeout, "30s"), "s"))
   }
 }
 
