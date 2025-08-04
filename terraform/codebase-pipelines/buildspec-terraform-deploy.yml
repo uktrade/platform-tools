@@ -31,7 +31,7 @@ phases:
       - git config --global credential.UseHttpPath true
       - git config --global advice.detachedHead false
 #      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "main" --depth 1 platform-tools #TODO Temporary change to pull unreleased changes
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "DBTP-2160-service-terraform-pipeline" --depth 1 platform-tools #TODO Temporary change to pull unreleased changes
       - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
@@ -116,7 +116,8 @@ phases:
 
       # Run Platform helper service generate
       - cd "${CODEBUILD_SRC_DIR}"
-      - platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
+      - local_ecs_service_path=../../../../platform-tools/terraform/ecs-service
+      - TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
       - cd "${CODEBUILD_SRC_DIR}/terraform/services/${ENVIRONMENT}/${SERVICE}"
       - terraform init
       - terraform apply -auto-approve
