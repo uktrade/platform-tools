@@ -151,6 +151,12 @@ resource "aws_kms_key" "ecs_service_log_group_kms_key" {
   tags                = local.tags
 }
 
+resource "aws_kms_alias" "ecs_service_logs_kms_alias" {
+  depends_on    = [aws_kms_key.ecs_service_log_group_kms_key]
+  name          = "alias/${var.application}-${var.environment}-${var.service_config.name}-ecs-service-logs-key"
+  target_key_id = aws_kms_key.ecs_service_log_group_kms_key.id
+}
+
 resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
   key_id = aws_kms_key.ecs_service_log_group_kms_key.key_id
   policy = jsonencode({
