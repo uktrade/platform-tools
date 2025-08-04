@@ -125,9 +125,11 @@ phases:
       # Send Slack message on pipeline outcome
       - |
         if [ $? -eq 0 ]; then
+          deploy_status="SUCCESSFUL"
           STATUS_EMOJI=":large_green_circle:"
           STATUS_TEXT="COMPLETE"
         else
+          deploy_status="FAILED"
           STATUS_EMOJI=":red_circle::warning:"
           STATUS_TEXT="FAILED"
         fi
