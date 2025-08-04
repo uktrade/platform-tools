@@ -1086,6 +1086,7 @@ data "aws_iam_policy_document" "iam" {
         "iam:ListInstanceProfilesForRole",
         "iam:DeleteRolePolicy",
         "iam:UpdateAssumeRolePolicy",
+        "iam:TagRole",
       ]
       resources = [
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.application}-*-conduitEcsTask",
