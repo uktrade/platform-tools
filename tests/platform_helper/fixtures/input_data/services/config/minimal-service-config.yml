@@ -1,0 +1,10 @@
+name: minimal
+type: Load Balanced Web Service
+
+cpu: 512 
+memory: 2048 
+count: 1 
+
+image:
+  location: public.ecr.aws/uktrade-minimal-account/minimal/application:${IMAGE_TAG}
+  port: 8080
