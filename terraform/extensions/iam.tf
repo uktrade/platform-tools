@@ -176,7 +176,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "elasticloadbalancing:DescribeTags",
     ]
     resources = [
-      "*"
+      "arn:aws:elasticloadbalancing:${data.aws_region.current.name}:${local.pipeline_account_id}:targetgroup/*"
     ]
   }
 
