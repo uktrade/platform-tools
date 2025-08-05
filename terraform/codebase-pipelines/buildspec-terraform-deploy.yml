@@ -36,14 +36,46 @@ phases:
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
       - source terraform/scripts/setup_venv.sh
-      ## yq for yaml processing
-      - pip install yq --quiet
+      ## yq for yaml processing (The Go-based variant, not Python-based)
+      - curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
+      - chmod +x /usr/local/bin/yq
       ## Install platform helper
       - ./terraform/scripts/install_platform_helper.sh
 
   build:
     commands:
       - set -e
+
+      # Check service-deployment-mode and exit early if value doesn't correspond
+      - |
+        ENVIRONMENT="${ENVIRONMENT}"
+        PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
+        ALLOWED_MODES=("dual-deploy-copilot-traffic" "dual-deploy-platform-traffic" "platform")
+
+        DEPLOY_MODE=$(yq eval ".environments.\"$ENVIRONMENT\".service-deployment-mode" "$PLATFORM_CONFIG_PATH")
+
+        if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
+          DEPLOY_MODE=$(yq eval '.environments."*".service-deployment-mode' "$PLATFORM_CONFIG_PATH")
+          if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
+            echo "Property 'service-deployment-mode' not found in platform-config. No further action needed, exiting..."
+            exit 0
+          fi
+        fi
+
+        MATCHED=false
+        for mode in "${ALLOWED_MODES[@]}"; do
+          if [[ "$DEPLOY_MODE" == "$mode" ]]; then
+            MATCHED=true
+            break
+          fi
+        done
+
+        if [ "$MATCHED" == "false" ]; then
+          echo "Detected default service-deployment-mode. No further action needed, exiting..."
+          exit 0
+        fi
+
+        echo "Property service-deployment-mode '$DEPLOY_MODE' detected. Continuing pipeline..."
 
       # Check if the specified image tag exists
       - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
