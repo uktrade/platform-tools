@@ -398,19 +398,48 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __datadog_schema() -> dict:
-        return {
-            "type": "datadog",
-            Optional("environments"): {
-                Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    "team_name": str,
-                    "contact_name": str,
-                    "contact_email": str,
-                    "documentation_url": str,
-                    "services_to_monitor": dict,
-                }
-            },
-        }
-
+        return (
+            {
+                "type": "datadog",
+                Optional("environments"): {
+                    Optional(PlatformConfigSchema.__valid_environment_name()): {
+                        "team_name": str,
+                        Optional("contact_name"): str,
+                        Optional("contact_email"): str,
+                        Optional("contacts"): 
+                            {
+                                Optional("email"): [
+                                    {
+                                        "name": str,
+                                        "address": str,
+                                    }
+                                ],
+                                Optional("slack"): [
+                                    {
+                                        "name": str,
+                                        "address": str,
+                                    }
+                                ],
+                                Optional("link"): [
+                                    {
+                                        "name": str,
+                                        "address": str,
+                                    }
+                                ],
+                                Optional("teams"): [
+                                    {
+                                        "name": str,
+                                        "address": str,
+                                    }
+                                ],                                                                
+                            },
+                        "documentation_url": str,
+                        "services_to_monitor": dict,
+                    },
+                },
+            }
+        )
+        
     @staticmethod
     def __s3_bucket_schema() -> dict:
         def _valid_s3_bucket_arn(key):

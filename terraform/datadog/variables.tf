@@ -12,7 +12,8 @@ variable "config" {
       team_name           = string
       contact_name        = optional(string)
       contact_email       = optional(string)
-      documentation_url   = string
+      contacts            = optional(any)
+      documentation_url   = optional(string)
       services_to_monitor = map(list(string))
     }
   )
