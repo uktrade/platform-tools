@@ -80,16 +80,28 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "ecs:RegisterTaskDefinition",
       "ecs:DeregisterTaskDefinition"
     ]
-    resources = ["*"] #TODO update to specific ecs resources
+    resources = [
+      "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/*",
+      "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/"
+    ]
   }
 
   statement {
     effect = "Allow"
     actions = [
       "ec2:DescribeVpcs",
-      "ec2:DescribeVpcAttribute"
     ]
     resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeVpcAttribute"
+    ]
+    resources = [
+      "arn:aws:ec2:${data.aws_region.current.name}:${local.pipeline_account_id}:vpc/*"
+    ]
   }
 
   statement {
@@ -208,7 +220,7 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       "es:ListVersions",
       "iam:ListAccountAliases"
     ]
-    resources = ["*"] #TODO update to specific ecs resources
+    resources = ["*"]
   }
 
   statement {
