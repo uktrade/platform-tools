@@ -9,6 +9,7 @@ metadata:
   name: ${var.application}-${each.key}
   links:
 ${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.contacts_new}${local.additionalowners}${local.team}
+  description: ${var.config.description}
 EOF
 }
 
@@ -23,6 +24,7 @@ metadata:
   name: ${var.application}-${each.key}
   links:
 ${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.contacts_new}${local.additionalowners}${local.team}
+  description: ${var.config.description}
 spec:
   lifecycle: production
   tier: "1"
@@ -46,6 +48,7 @@ metadata:
   name: ${var.application}-${each.key}
   links:
 ${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.contacts_new}${local.additionalowners}${local.team}
+  description: ${var.config.description}
 spec:
   lifecycle: production
   tier: "1"
