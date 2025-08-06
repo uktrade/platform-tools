@@ -159,3 +159,4 @@ resource "aws_ssm_parameter" "environment_data" {
   })
   tags = local.tags
 }
+
