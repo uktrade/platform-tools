@@ -2415,14 +2415,14 @@ docs = ["sphinx (>=8,<9)", "sphinx-autobuild"]
 
 [[package]]
 name = "mypy-boto3-codebuild"
-version = "1.37.29"
-description = "Type annotations for boto3 CodeBuild 1.37.29 service generated with mypy-boto3-builder 8.10.1"
+version = "1.40.0"
+description = "Type annotations for boto3 CodeBuild 1.40.0 service generated with mypy-boto3-builder 8.11.0"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "mypy_boto3_codebuild-1.37.29-py3-none-any.whl", hash = "sha256:7a1f66ff82482a5e2b2fa544d09248b8cc3e7854d79193b8a77c33133919245f"},
-    {file = "mypy_boto3_codebuild-1.37.29.tar.gz", hash = "sha256:8943b8a711bdc097b1c309c3dca5227bd4de2cfd43e8cbb74633f5d736311e9e"},
+    {file = "mypy_boto3_codebuild-1.40.0-py3-none-any.whl", hash = "sha256:fceeafd3e6758f09115dd86a3f592fdf8865dac78e3724f0b53d6af8b145c96e"},
+    {file = "mypy_boto3_codebuild-1.40.0.tar.gz", hash = "sha256:1456f28250fb0aec29db446eb51057bbb5f4f7b58afa02df6f385613b0ab3f22"},
 ]
 
 [package.dependencies]

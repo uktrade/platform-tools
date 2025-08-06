@@ -28,6 +28,7 @@ class TestCopilotHelperCli:
             "generate",
             "pipeline",
             "secrets",
+            "service",
             "notify",
             "database",
             "version",
