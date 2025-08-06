@@ -1,0 +1,65 @@
+version: 0.2
+
+env:
+  variables:
+    DEPLOY_TIMEOUT: 1800
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  install:
+    commands:
+
+  build:
+    commands:
+      - set -e
+      - export DNS_ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env "${ENVIRONMENT}" '.[$env].dns_account')
+      - export ACCOUNT_ID=$(echo ${ENV_CONFIG} | jq -r --arg env "${ENVIRONMENT}" '.[$env].account')
+      - export ENV_CACHE_INVALIDATION_CONFIG=$(echo $CACHE_INVALIDATION_CONFIG | jq -r --arg env "${ENVIRONMENT}" '.[$env] // empty')
+      - |
+        if [ -z "${ENV_CACHE_INVALIDATION_CONFIG}" ]; then
+          echo "INFO: No cache invalidation configured for environment ${ENVIRONMENT}."
+        else
+          export DOMAINS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r 'keys[]')
+          echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
+          assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/cloudfront-invalidation-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
+          export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+          export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+          export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)        
+          for i in ${DOMAINS}; do
+            echo "Getting distribution ID for domain ${i}"
+            DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
+            PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain "${i}" '.[$domain] | map(@sh) | join(" ")')
+            
+            if [ -z ${DISTRIBUTION_ID} ]; then
+              echo "ERROR: No distribution ID found for domain ${i} in account ${DNS_ACCOUNT_ID}.  Please check cache_invalidation configuration.  Exiting."
+              exit 1
+            fi
+            
+            echo -e "\nInvalidating the cache in distibution id ${DISTRIBUTION_ID} for paths ${PATHS}\n"
+            
+            start=$( date +%s )
+            cache_status="NotRun"
+            invalidation_id=$(eval "aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths ${PATHS}" | jq -r ."Invalidation.Id")
+            
+            if [ -z ${invalidation_id} ]; then
+              echo "ERROR: Cache invalidation failed for distribution ${DISTRIBUTION_ID}.  Exiting."
+              exit 1
+            fi
+            
+            while [ $cache_status != "Completed" ]
+            do
+                cache_status=$( aws cloudfront get-invalidation --id $invalidation_id --distribution-id $DISTRIBUTION_ID |jq -r ."Invalidation.Status")
+                echo "Current status is: $cache_status"
+                echo "Waiting..."
+                sleep 5
+                now=$( date +%s )
+                elapsed=$(( now-start ))
+                echo "Cache invalidation status after ${elapsed} seconds: ${cache_status}"
+            done
+          done
+        fi
+
+  post_build:
+    commands:
+      - echo "DONE"
