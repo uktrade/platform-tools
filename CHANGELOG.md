@@ -1,5 +1,32 @@
 # Changelog
 
+## [15.7.0](https://github.com/uktrade/platform-tools/compare/15.6.0...15.7.0) (2025-08-04)
+
+
+### Features
+
+* Cache invalidations in the codebase pipelines (DBTP-2105) ([#891](https://github.com/uktrade/platform-tools/issues/891)) ([12be322](https://github.com/uktrade/platform-tools/commit/12be322a3b8b77a68edcfb9c150293cd1ec09c19))
+* Service generate command (DBTP-2155) ([#915](https://github.com/uktrade/platform-tools/issues/915)) ([ecf20d5](https://github.com/uktrade/platform-tools/commit/ecf20d57e3cd495290e5c8c348bbd095af43fe81))
+* Terraform resources for ECS service (DBTP-2154) ([#909](https://github.com/uktrade/platform-tools/issues/909)) ([e47fbdf](https://github.com/uktrade/platform-tools/commit/e47fbdfc44844aa7984bff8fc1445a602375efd9))
+
+
+### Bug Fixes
+
+* Give permission for DataDog process level resource monitoring (DBTP-2238) ([#918](https://github.com/uktrade/platform-tools/issues/918)) ([23b750a](https://github.com/uktrade/platform-tools/commit/23b750ab2d61b416726a9b9e10918982a3c1a437))
+
+
+### Dependencies
+
+* Bump aiohttp from 3.11.16 to 3.12.14 ([#923](https://github.com/uktrade/platform-tools/issues/923)) ([0e6717a](https://github.com/uktrade/platform-tools/commit/0e6717a9cdbde09f5fb81a64f15c7f19f1a870fc))
+* Bump cfn-lint from 1.33.2 to 1.38.0 ([#927](https://github.com/uktrade/platform-tools/issues/927)) ([c9e6b91](https://github.com/uktrade/platform-tools/commit/c9e6b919e8624b0b5f6a5e5ca347dc56bd5a4f34))
+* Bump checkov from 3.2.405 to 3.2.453 ([#926](https://github.com/uktrade/platform-tools/issues/926)) ([1c6b220](https://github.com/uktrade/platform-tools/commit/1c6b2206d5a636cccd433bc5f3b8532ceb86226b))
+* Bump protobuf from 4.25.5 to 4.25.8 ([#935](https://github.com/uktrade/platform-tools/issues/935)) ([4d985d3](https://github.com/uktrade/platform-tools/commit/4d985d37c54da5d79d7c952010625173f2fd1a6c))
+* Bump pycares from 4.6.0 to 4.9.0 ([#922](https://github.com/uktrade/platform-tools/issues/922)) ([cd38f84](https://github.com/uktrade/platform-tools/commit/cd38f846a0aa618eabf589c4c189682f81b84a0e))
+* Bump pyyaml from 6.0.1 to 6.0.2 ([#932](https://github.com/uktrade/platform-tools/issues/932)) ([bb285e1](https://github.com/uktrade/platform-tools/commit/bb285e18fbddb8516984152ea3cc70c9e7627860))
+* Bump requests from 2.32.3 to 2.32.4 ([#924](https://github.com/uktrade/platform-tools/issues/924)) ([2e3cafb](https://github.com/uktrade/platform-tools/commit/2e3cafbb8918820604e1be4c7becbd8566b6f935))
+* Bump semver from 3.0.2 to 3.0.4 ([#965](https://github.com/uktrade/platform-tools/issues/965)) ([de9c169](https://github.com/uktrade/platform-tools/commit/de9c169541a021f439fd48e0657f1ed23d578a61))
+* Bump tomlkit from 0.12.5 to 0.13.3 ([#928](https://github.com/uktrade/platform-tools/issues/928)) ([7326bbc](https://github.com/uktrade/platform-tools/commit/7326bbcbaef83c7ca0db71110b19097324cb3391))
+
 ## [15.6.0](https://github.com/uktrade/platform-tools/compare/15.5.0...15.6.0) (2025-07-15)
 
 

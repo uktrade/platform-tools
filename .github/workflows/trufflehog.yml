@@ -11,8 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: trufflesecurity/trufflehog@main
+      - uses: trufflesecurity/trufflehog@v3.90.2
         with:
           base: ""
           head: ${{ github.ref_name }}
-          extra_args: --no-verification --exclude-paths=.trufflehogignore
+          extra_args: --no-verification --exclude-paths=.trufflehogignore --only-verified

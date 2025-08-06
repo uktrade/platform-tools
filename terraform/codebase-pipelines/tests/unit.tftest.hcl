@@ -24,6 +24,20 @@ override_data {
 }
 
 override_data {
+  target = data.aws_iam_policy_document.dns_account_assume_role
+  values = {
+    json = "{\"Sid\": \"AllowDNSAccountAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.assume_cache_invalidation_role
+  values = {
+    json = "{\"Sid\": \"AllowSpecificCodeBuildProjectAccess\"}"
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.ecr_access_for_codebuild_images
   values = {
     json = "{\"Sid\": \"CodeBuildImageECRAccess\"}"
@@ -108,6 +122,10 @@ variables {
           name = "sandbox"
           id   = "000123456789"
         }
+        dns = {
+          name = "dev"
+          id   = "111123456789"
+        }
       }
     },
     "dev"     = null,
@@ -117,6 +135,10 @@ variables {
         deploy = {
           name = "prod"
           id   = "123456789000"
+        }
+        dns = {
+          name = "live"
+          id   = "222223456789"
         }
       }
     }
@@ -136,6 +158,22 @@ variables {
       ]
     }
   ]
+  cache_invalidation = {
+    domains = {
+      "service-1.dev.my-app.uktrade.digital" : {
+        paths       = ["a", "b"]
+        environment = "dev"
+      },
+      "service-2.staging.my-app.uktrade.digital" : {
+        paths       = ["c", "d"]
+        environment = "staging"
+      },
+      "service-2.prod.my-app.uktrade.digital" : {
+        paths       = ["e", "f"]
+        environment = "prod"
+      }
+    }
+  }
   pipelines = [
     {
       name   = "main",
@@ -164,6 +202,156 @@ variables {
   }
   platform_tools_version = "1.2.3"
   slack_channel          = "/fake/slack/channel"
+}
+
+run "test_locals" {
+  command = plan
+
+  assert {
+    condition     = length(local.base_env_config) == 3
+    error_message = "Expected local.base_env_config to contain exactly 3 environments (dev, staging, prod)"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].account == "000123456789"
+    error_message = "Expected dev.account in base_env_config to be '000123456789'"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].dns_account == "111123456789"
+    error_message = "Expected dev.dns_account in base_env_config to be '111123456789'"
+  }
+  assert {
+    condition     = local.base_env_config["staging"].dns_account == "111123456789"
+    error_message = "Expected staging.dns_account in base_env_config to be '111123456789'"
+  }
+  assert {
+    condition     = local.base_env_config["prod"].dns_account == "222223456789"
+    error_message = "Expected prod.dns_account in base_env_config to be '222223456789'"
+  }
+  assert {
+    condition     = local.dns_account_ids[0] == "111123456789"
+    error_message = "Expected first value in dns_account_ids to be '111123456789'"
+  }
+  assert {
+    condition     = local.dns_account_ids[1] == "222223456789"
+    error_message = "Expected second value in dns_account_ids to be '222223456789'"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.dev["service-1.dev.my-app.uktrade.digital"], "a")
+    error_message = "Expected cache invalidation path 'a' to be present for service-1.dev.my-app.uktrade.digital"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.dev["service-1.dev.my-app.uktrade.digital"], "b")
+    error_message = "Expected cache invalidation path 'b' to be present for service-1.dev.my-app.uktrade.digital"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.staging["service-2.staging.my-app.uktrade.digital"], "c")
+    error_message = "Expected cache invalidation path 'c' to be present for service-2.staging.my-app.uktrade.digital"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.staging["service-2.staging.my-app.uktrade.digital"], "d")
+    error_message = "Expected cache invalidation path 'd' to be present for service-2.staging.my-app.uktrade.digital"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.prod["service-2.prod.my-app.uktrade.digital"], "e")
+    error_message = "Expected cache invalidation path 'e' to be present for service-2.prod.my-app.uktrade.digital"
+  }
+  assert {
+    condition     = contains(local.cache_invalidation_map.prod["service-2.prod.my-app.uktrade.digital"], "f")
+    error_message = "Expected cache invalidation path 'f' to be present for service-2.prod.my-app.uktrade.digital"
+  }
+  assert {
+    condition     = local.cache_invalidation_enabled == true
+    error_message = "Expected cache_invalidation_enabled to be true"
+  }
+}
+
+
+run "test_cache_invalidation_actions_created" {
+  command = plan
+
+  assert {
+    condition = length(flatten(flatten([
+      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
+        for stage in pipeline.stage : [
+          for action in stage.action : action.name
+          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+
+        ]
+      ]
+    ]))) == 3
+    error_message = "Expected exactly 3 cache invalidation actions, but found a different number"
+  }
+
+  assert {
+    condition = contains(flatten(flatten([
+      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
+        for stage in pipeline.stage : [
+          for action in stage.action : action.name
+          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+        ]
+      ]
+    ])), "InvalidateCache-dev")
+    error_message = "InvalidateCache-dev action not found"
+  }
+
+  assert {
+    condition = contains(flatten(flatten([
+      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
+        for stage in pipeline.stage : [
+          for action in stage.action : action.name
+          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+        ]
+      ]
+    ])), "InvalidateCache-staging")
+    error_message = "InvalidateCache-staging action not found"
+  }
+
+  assert {
+    condition = contains(flatten(flatten([
+      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
+        for stage in pipeline.stage : [
+          for action in stage.action : action.name
+          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+        ]
+      ]
+    ])), "InvalidateCache-prod")
+    error_message = "InvalidateCache-prod action not found"
+  }
+
+  # Test that cache invalidation actions have correct environment variables
+  assert {
+    condition = alltrue(flatten(flatten([
+      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
+        for stage in pipeline.stage : [
+          for action in stage.action :
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "CACHE_INVALIDATION_CONFIG") &&
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "APPLICATION") &&
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENVIRONMENT") &&
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENV_CONFIG")
+          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+        ]
+      ]
+    ])))
+    error_message = "Cache invalidation actions missing required environment variables"
+  }
+
+
+  # Test that cache invalidation actions are in the correct stages
+  assert {
+    condition = alltrue(flatten([
+      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
+        for stage in pipeline.stage :
+        length([
+          for action in stage.action :
+          action
+          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+        ]) <= 1
+        if can(regexall("^Deploy-", stage.name)) && length(regexall("^Deploy-", stage.name)) > 0
+      ]
+    ]))
+    error_message = "Multiple cache invalidation actions found in a single deploy stage"
+  }
+
 }
 
 run "test_ecr" {
@@ -714,6 +902,10 @@ run "test_iam" {
     error_message = "Should be: 'log-access'"
   }
   assert {
+    condition     = aws_iam_role_policy.dns_account_assume_role_for_cache_invalidation[""].name == "my-app-my-codebase-dns-account-assume-role"
+    error_message = "Should be: 'my-app-my-codebase-dns-account-assume-role'"
+  }
+  assert {
     condition     = aws_iam_role_policy.log_access_for_codebuild_deploy.role == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
   }
@@ -824,6 +1016,8 @@ run "test_iam_documents" {
   }
   assert {
     condition = data.aws_iam_policy_document.log_access.statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
@@ -1149,8 +1343,9 @@ run "test_codebuild_deploy" {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
     error_message = "Should be: ENV_CONFIG"
   }
+
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\"},\"prod\":{\"account\":\"123456789000\"},\"staging\":{\"account\":\"000123456789\"}}"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
     error_message = "Incorrect value"
   }
 
@@ -1171,7 +1366,6 @@ run "test_codebuild_deploy" {
     condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].value == "1.2.3"
     error_message = "Should be: 1.2.3"
   }
-
   assert {
     condition = aws_codebuild_project.codebase_deploy.logs_config[0].cloudwatch_logs[
       0
@@ -1395,6 +1589,8 @@ run "test_main_pipeline" {
     var.type if var.name == "SLACK_CHANNEL_ID"]) == "PARAMETER_STORE"
     error_message = "SLACK_CHANNEL_ID environment variable type is incorrect"
   }
+
+  # local.service_order_list has order = index + 1
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 2
     error_message = "Run order incorrect"
@@ -1443,6 +1639,8 @@ run "test_main_pipeline" {
     var.value if var.name == "SERVICE"]) == "service-2"
     error_message = "SERVICE environment variable incorrect"
   }
+
+  # local.service_order_list has order = index + 1
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 3
     error_message = "Run order incorrect"

@@ -29,6 +29,7 @@ class ConfigValidator:
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
             self.validate_database_migration_input_sources,
+            self.validate_cache_invalidation_config,
         ]
         self.io = io
         self.session = session
@@ -230,5 +231,27 @@ class ConfigValidator:
                     errors.append(
                         f"'import_sources' property in '{extension_name}.environments.{env}.data_migration' is missing."
                     )
+        if errors:
+            raise ConfigValidatorError("\n".join(errors))
+
+    def validate_cache_invalidation_config(self, config: dict):
+        codebase_pipelines = config.get("codebase_pipelines")
+        if not codebase_pipelines:
+            return
+
+        errors = []
+
+        all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
+
+        for codebase in codebase_pipelines.values():
+            cache_invalidation_config = codebase.get("cache_invalidation")
+            if cache_invalidation_config:
+                for domain, config in cache_invalidation_config.get("domains").items():
+                    environment = config.get("environment")
+                    if environment not in all_environments:
+                        errors.append(
+                            f"Error in cache invalidation configuration for the domain '{domain}'.  Environment '{environment}' is not defined for this application"
+                        )
+
         if errors:
             raise ConfigValidatorError("\n".join(errors))
