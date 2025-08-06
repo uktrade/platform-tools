@@ -326,10 +326,12 @@ data "aws_iam_policy_document" "load_balancer" {
     content {
       actions = [
         "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:ModifyListener"
+        "elasticloadbalancing:ModifyListener",
+        "elasticloadbalancing:CreateRule"
       ]
       resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*"
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*",
+        "arn:aws:elasticloadbalancing:${local.account_region}:listener-rule/app/${var.application}-${statement.value.name}/*"
       ]
     }
   }
@@ -805,6 +807,31 @@ data "aws_iam_policy_document" "ecs" {
     ]
   }
 
+  statement {
+    sid = "AllowCreateServiceDiscoveryNamespace"
+    actions = [
+      "servicediscovery:GetNamespace",
+      "servicediscovery:GetOperation",
+      "servicediscovery:TagResource",
+      "servicediscovery:ListTagsForResource",
+      "servicediscovery:CreatePrivateDnsNamespace",
+      "servicediscovery:DeleteNamespace"
+    ]
+    resources = [
+      "arn:aws:servicediscovery:${local.account_region}:*"
+    ]
+  }
+
+  statement {
+    sid = "CreateDnsForServiceDiscovery"
+    actions = [
+      "route53:CreateHostedZone"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
   # Old Copilot ECS cluster perms below:
   statement {
     sid = "AllowTaskDefinitionsRead"
@@ -1059,7 +1086,7 @@ data "aws_iam_policy_document" "iam" {
         "iam:ListInstanceProfilesForRole",
         "iam:DeleteRolePolicy",
         "iam:UpdateAssumeRolePolicy",
-        "iam:TagRole"
+        "iam:TagRole",
       ]
       resources = [
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.application}-*-conduitEcsTask",
@@ -1072,6 +1099,7 @@ data "aws_iam_policy_document" "iam" {
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-codebase-pipeline-deploy",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*-conduit-task-role",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*-conduit-exec-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-invalidate-cache",
       ]
     }
   }
