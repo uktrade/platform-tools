@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from pathlib import Path
 
 import yaml
@@ -83,6 +84,32 @@ class YamlFileProvider:
             ]
         if duplicate_keys:
             raise DuplicateKeysException(",".join(duplicate_keys))
+
+    @staticmethod
+    def remove_empty_keys(config: (dict, OrderedDict)) -> (dict, OrderedDict):
+        cleaned = config.__class__()
+
+        for k, v in config.items():
+            if isinstance(v, (dict, OrderedDict)):
+                v = YamlFileProvider.remove_empty_keys(v)
+            if v not in ("", None, [], {}, ()):
+                cleaned[k] = v
+
+        return cleaned
+
+    @staticmethod
+    def find_and_replace(config, string: str, replacement: str):
+        if isinstance(config, (dict, OrderedDict)):
+            return {
+                k: YamlFileProvider.find_and_replace(v, string, replacement)
+                for k, v in config.items()
+            }
+        elif isinstance(config, list):
+            return [YamlFileProvider.find_and_replace(item, string, replacement) for item in config]
+        elif isinstance(config, str):
+            return config.replace(string, replacement)
+        else:
+            return replacement if config == string else config
 
 
 def account_number_representer(dumper, data):

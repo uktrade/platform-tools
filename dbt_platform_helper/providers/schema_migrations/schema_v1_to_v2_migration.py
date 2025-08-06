@@ -40,19 +40,19 @@ class SchemaV1ToV2Migration:
                             if "alb" in env_config["http"]:
                                 del env_config["http"]["alb"]
 
-                service_manifest = _find_and_replace(
+                service_manifest = YamlFileProvider.find_and_replace(
                     service_manifest,
                     "${COPILOT_APPLICATION_NAME}",
                     platform_config["application"],
                 )
 
-                service_manifest = _find_and_replace(
+                service_manifest = YamlFileProvider.find_and_replace(
                     service_manifest,
                     "${COPILOT_ENVIRONMENT_NAME}",
                     "${PLATFORM_ENVIRONMENT_NAME}",
                 )
 
-                service_manifest = _remove_empty_keys(service_manifest)
+                service_manifest = YamlFileProvider.remove_empty_keys(service_manifest)
 
                 service_path = service_directory / service_manifest["name"]
 
@@ -71,29 +71,3 @@ class SchemaV1ToV2Migration:
                 YamlFileProvider.write(
                     f"{service_path}/service-config.yml", dict(service_manifest), message
                 )
-
-
-def _remove_empty_keys(config):
-    if not isinstance(config, (dict, OrderedDict)):
-        return config
-
-    cleaned = config.__class__()
-
-    for k, v in config.items():
-        if isinstance(v, (dict, OrderedDict)):
-            v = _remove_empty_keys(v)
-        if v not in ("", None, [], {}, ()):
-            cleaned[k] = v
-
-    return cleaned
-
-
-def _find_and_replace(config, string, replacement):
-    if isinstance(config, (dict, OrderedDict)):
-        return {k: _find_and_replace(v, string, replacement) for k, v in config.items()}
-    elif isinstance(config, list):
-        return [_find_and_replace(item, string, replacement) for item in config]
-    elif isinstance(config, str):
-        return config.replace(string, replacement)
-    else:
-        return replacement if config == string else config
