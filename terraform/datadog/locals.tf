@@ -26,12 +26,11 @@ EOF
   ## Contact details
   ## Both name and email are required for this block, so don't add if either are missing from platform-config.yml
   ## This supports the 'old' way of setting email contact in platform-config.yml like this:
-        #contact_name: DBT Platform Engineers, Dave Glover
-        #contact_email: dbt-platform-engineers@digital.trade.gov.uk, david.glover@digital.trade.gov.uk
-  contact_name = var.config.contact_name != null ? split(",", var.config.contact_name) : null
+  #contact_name: DBT Platform Engineers, Dave Glover
+  #contact_email: dbt-platform-engineers@digital.trade.gov.uk, david.glover@digital.trade.gov.uk
+  contact_name  = var.config.contact_name != null ? split(",", var.config.contact_name) : null
   contact_email = var.config.contact_email != null ? split(",", var.config.contact_email) : null
-  contacts = var.config.contact_name == null || var.config.contact_email == null ? "" : <<EOF
-  contacts:
+  contacts      = var.config.contact_name == null || var.config.contact_email == null ? "" : <<EOF
   %{for k, v in local.contact_name}
     - name: ${v}
       type: email
@@ -40,52 +39,51 @@ EOF
 EOF
 
   ## This supports the 'new' way of setting contacts in platform-config.yml like this:
-        # contacts:
-        #   email:
-        #     - name: DBT Platform Engineers
-        #       address: dbt-platform-engineers@digital.trade.gov.uk
-        #     - name: Dave Glover
-        #       address: david.glover@digital.trade.gov.uk
-        #   slack:
-        #     - name: platform-squad-3
-        #       address: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
-        #   link:
-        #     - name: DBT Platform Team Intranet Page
-        #       address: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
+  # contacts:
+  #   email:
+  #     - name: DBT Platform Engineers
+  #       address: dbt-platform-engineers@digital.trade.gov.uk
+  #     - name: Dave Glover
+  #       address: david.glover@digital.trade.gov.uk
+  #   slack:
+  #     - name: platform-squad-3
+  #       address: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
+  #   link:
+  #     - name: DBT Platform Team Intranet Page
+  #       address: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
   contact_email_check = try(var.config.contacts.email, false)
   contact_slack_check = try(var.config.contacts.slack, false)
-  contact_link_check = try(var.config.contacts.link, false)
+  contact_link_check  = try(var.config.contacts.link, false)
   contact_teams_check = try(var.config.contacts.teams, false)
-  contacts_new = <<EOF
-  contacts:
-  %{ if local.contact_email_check != false }
+  contacts_new        = <<EOF
+  %{if local.contact_email_check != false}
     %{for k, v in var.config.contacts.email}
       - name: ${v.name}
         type: email
         contact: ${v.address}
     %{endfor}
-  %{ endif }
-  %{ if local.contact_slack_check != false }
+  %{endif}
+  %{if local.contact_slack_check != false}
     %{for k, v in var.config.contacts.slack}
       - name: ${v.name}
         type: slack
         contact: ${v.address}
     %{endfor}
-  %{ endif }
-  %{ if local.contact_link_check != false }
+  %{endif}
+  %{if local.contact_link_check != false}
     %{for k, v in var.config.contacts.link}
       - name: ${v.name}
         type: link
         contact: ${v.address}
     %{endfor}
-  %{ endif }
-  %{ if local.contact_teams_check != false }
+  %{endif}
+  %{if local.contact_teams_check != false}
     %{for k, v in var.config.contacts.teams}
       - name: ${v.name}
         type: microsoft-teams
         contact: ${v.address}
     %{endfor}
-  %{ endif }
+  %{endif}
 EOF
 
   ## Set SRE to be the additionalOwners as a workaround to not being able to specify an on-call team that is different than the owner team
