@@ -281,12 +281,13 @@ def task_stats(env, app, disk, storage, network):
         memory,
         dsk,
     ) in cpu_response["results"]:
+        cpu_value = f"{float(cpu['value']):.1f}" + "%"
         values = [
             f"{YELLOW}{taskdef['value'].split('-')[-1]}",
             f"{YELLOW}{task['value']}",
             f"{YELLOW}{task_def_revision['value']}",
             f"{YELLOW}{status['value']}",
-            f"{YELLOW}{'%.1f' % float(cpu['value']) + '%'}",
+            f"{YELLOW}{cpu_value}",
             f"{YELLOW}{memory['value'] + 'M'}",
         ]
 
