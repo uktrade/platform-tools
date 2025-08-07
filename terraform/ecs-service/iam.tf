@@ -24,18 +24,24 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "secrets_role_policy" {
+  count = var.service_config.secrets == null ? 0 : 1
+
   role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = aws_iam_policy.secrets_policy.arn
+  policy_arn = aws_iam_policy.secrets_policy[count.index].arn
 }
 
 resource "aws_iam_policy" "secrets_policy" {
+  count = var.service_config.secrets == null ? 0 : 1
+
   name        = "${local.service_name}-secrets-policy"
   description = "Allow application to access secrets manager"
-  policy      = data.aws_iam_policy_document.secrets_policy.json
+  policy      = data.aws_iam_policy_document.secrets_policy[count.index].json
   tags        = local.tags
 }
 
 data "aws_iam_policy_document" "secrets_policy" {
+  count = var.service_config.secrets == null ? 0 : 1
+
   statement {
     effect = "Allow"
     actions = [

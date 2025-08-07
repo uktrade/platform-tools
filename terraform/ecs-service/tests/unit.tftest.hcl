@@ -186,7 +186,6 @@ variables {
 
     http = {
       path             = "/"
-      alias            = "web.dev.demodjango.uktrade.digital"
       target_container = "nginx"
       healthcheck = {
         path                = "/test"

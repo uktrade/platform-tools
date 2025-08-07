@@ -17,7 +17,6 @@ variable "service_config" {
 
     http = object({
       path             = string
-      alias            = string
       target_container = string
       healthcheck = optional(object({
         path                = optional(string)
