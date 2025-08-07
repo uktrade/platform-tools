@@ -410,8 +410,8 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
                     "team_name": str,
-                    "contact_name": str,
-                    "contact_email": str,
+                    Optional("contact_name"): str,
+                    Optional("contact_email"): str,
                     "documentation_url": str,
                     "services_to_monitor": dict,
                 }
