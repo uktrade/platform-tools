@@ -438,9 +438,9 @@ class PlatformConfigSchema:
                             }
                         ],
                     },
-                    "documentation_url": str,
+                    Optional("documentation_url"): str,
                     "services_to_monitor": dict,
-                    "description": str,
+                    Optional("description"): str,
                 },
             },
         }
