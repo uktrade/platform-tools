@@ -55,13 +55,19 @@ class Pipelines:
         )
 
     def get_environment_pipeline_accounts(self, platform_config):
-        environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
-        accounts = {
-            (config.get("account"), "1234")
-            for config in environment_pipelines.values()
-            if "account" in config
-        }
+        environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
+        environment_config = platform_config["environments"]
 
+        accounts = []
+        for config in environment_pipelines_config.values():
+            account = config.get("account")
+
+            for env in environment_config.values():
+                if env.get("accounts", {}).get("deploy", {}).get("name", "") == account:
+                    deploy_account_id = env.get("accounts", {}).get("deploy", {}).get("id")
+                    continue
+
+            accounts.append((account, deploy_account_id))
         return accounts
 
     def generate(
