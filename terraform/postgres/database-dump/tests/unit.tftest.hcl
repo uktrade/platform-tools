@@ -423,8 +423,8 @@ run "pipeline_unit_test" {
     error_message = "Should contain: scheduler.amazonaws.com"
   }
   assert {
-    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[1].sid == "AllowPipelineAssumeRole-dev"
-    error_message = "Statement ID not found: AllowPipelineAssumeRole-dev"
+    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[1].sid == "AllowPipelineAssumeRoleDev"
+    error_message = "Statement ID not found: AllowPipelineAssumeRoleDev"
   }
   assert {
     condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[2].effect == "Allow"
@@ -443,8 +443,8 @@ run "pipeline_unit_test" {
     error_message = "Should contain: scheduler.amazonaws.com"
   }
   assert {
-    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[2].sid == "AllowPipelineAssumeRole-staging"
-    error_message = "Statement ID not found: AllowPipelineAssumeRole-staging"
+    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[2].sid == "AllowPipelineAssumeRoleStaging"
+    error_message = "Statement ID not found: AllowPipelineAssumeRoleStaging"
   }
   assert {
     condition     = aws_iam_role_policy.allow_pipeline_access[""].name == "AllowPipelineAccess"
