@@ -868,7 +868,7 @@ environments:
         name: "platform-sandbox-test"
         id: "1111111111"
       dns:
-        name: "platform-sandbox-test"
+        name: "platform-dns-test"
         id: "2222222222"
   prod:
     accounts:

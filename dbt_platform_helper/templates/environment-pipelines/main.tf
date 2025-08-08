@@ -12,6 +12,7 @@ provider "aws" {
   profile                  = "{{ aws_account }}"
   alias                    = "{{ aws_account }}"
   shared_credentials_files = ["~/.aws/config"]
+  allowed_account_ids      = ["{{ deploy_account_id }}"]
 }
 
 terraform {

@@ -122,6 +122,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         module_source_override,
+        "1111111111",
     )
     assert_terraform(
         app_name,
@@ -129,6 +130,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         module_source_override,
+        "3333333333",
     )
 
 
@@ -256,7 +258,12 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
 
 
 def assert_terraform(
-    app_name, aws_account, expected_version, expected_branch, module_source_override
+    app_name,
+    aws_account,
+    expected_version,
+    expected_branch,
+    module_source_override,
+    deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
     assert expected_files_dir.exists()
@@ -275,5 +282,10 @@ def assert_terraform(
             in content
         )
     assert f'application         = "{app_name}"' in content
-    expected_branch_value = expected_branch if expected_branch else "each.value.branch"
-    assert f"branch              = {expected_branch_value} in content"
+
+    if expected_branch:
+        assert f'branch              = "{expected_branch}"' in content
+    else:
+        assert f"branch              = each.value.branch" in content
+
+    assert f'allowed_account_ids      = ["{deploy_account_id}"]' in content
