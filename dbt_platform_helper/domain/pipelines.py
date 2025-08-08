@@ -169,7 +169,7 @@ class Pipelines:
         aws_account: str,
         module_source: str,
         deploy_branch: str,
-        aws_account_id: str = "",
+        aws_account_id: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -182,7 +182,7 @@ class Pipelines:
                 "deploy_branch": deploy_branch,
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
-                "deploy_account_id": "1234",
+                "deploy_account_id": aws_account_id,
             }
         )
 

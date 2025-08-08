@@ -122,6 +122,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         module_source_override,
+        "1111111111",
     )
     assert_terraform(
         app_name,
@@ -129,6 +130,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         module_source_override,
+        "3333333333",
     )
 
 
@@ -261,7 +263,7 @@ def assert_terraform(
     expected_version,
     expected_branch,
     module_source_override,
-    deploy_account_id="1234",
+    deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
     assert expected_files_dir.exists()
