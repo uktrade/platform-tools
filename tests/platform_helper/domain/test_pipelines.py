@@ -275,5 +275,8 @@ def assert_terraform(
             in content
         )
     assert f'application         = "{app_name}"' in content
-    expected_branch_value = expected_branch if expected_branch else "each.value.branch"
-    assert f"branch              = {expected_branch_value} in content"
+
+    if expected_branch:
+        assert f'branch              = "{expected_branch}"' in content
+    else:
+        assert f"branch              = each.value.branch" in content
