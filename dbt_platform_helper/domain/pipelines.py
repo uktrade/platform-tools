@@ -54,7 +54,7 @@ class Pipelines:
             or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
 
-    def get_environment_pipeline_accounts(self, platform_config):
+    def _map_environment_pipeline_accounts(self, platform_config):
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
         environment_config = platform_config["environments"]
 
@@ -123,7 +123,7 @@ class Pipelines:
         )
 
         if has_environment_pipelines:
-            accounts = self.get_environment_pipeline_accounts(platform_config)
+            accounts = self._map_environment_pipeline_accounts(platform_config)
 
             for account_name, account_id in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
