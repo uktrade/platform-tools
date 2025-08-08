@@ -57,7 +57,7 @@ class Pipelines:
     def get_environment_pipeline_accounts(self, platform_config):
         environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
         accounts = {
-            config.get("account")
+            (config.get("account"), "1234")
             for config in environment_pipelines.values()
             if "account" in config
         }
@@ -119,13 +119,14 @@ class Pipelines:
         if has_environment_pipelines:
             accounts = self.get_environment_pipeline_accounts(platform_config)
 
-            for account in accounts:
+            for account_name, account_id in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
                     platform_config["application"],
                     deploy_repository,
-                    account,
+                    account_name,
                     env_pipeline_module_source,
                     deploy_branch,
+                    account_id,
                 )
 
         if has_codebase_pipelines:
@@ -168,6 +169,7 @@ class Pipelines:
         aws_account: str,
         module_source: str,
         deploy_branch: str,
+        aws_account_id: str = "",
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
