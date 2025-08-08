@@ -7,8 +7,13 @@ ${local.api}
 kind: system
 metadata:
   name: ${var.application}-${each.key}
+${local.team}
+  description: ${var.config.description}
   links:
-${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.dashboard}
+  contacts:
+${local.contacts}${local.contacts_new}
+${local.additionalowners}
 EOF
 }
 
@@ -21,8 +26,13 @@ ${local.api}
 kind: service
 metadata:
   name: ${var.application}-${each.key}
+${local.team}
+  description: ${var.config.description}
   links:
-${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.dashboard}
+  contacts:
+${local.contacts}${local.contacts_new}
+${local.additionalowners}
 spec:
   lifecycle: production
   tier: "1"
@@ -44,8 +54,13 @@ ${local.api}
 kind: service
 metadata:
   name: ${var.application}-${each.key}
+${local.team}
+  description: ${var.config.description}
   links:
-${local.doc}${local.repos}${local.dashboard}${local.contacts}${local.team}
+${local.doc}${local.repos}${local.dashboard}
+  contacts:
+${local.contacts}${local.contacts_new}
+${local.additionalowners}
 spec:
   lifecycle: production
   tier: "1"

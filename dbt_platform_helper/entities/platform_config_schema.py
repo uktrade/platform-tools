@@ -410,11 +410,38 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
                     "team_name": str,
-                    "contact_name": str,
-                    "contact_email": str,
-                    "documentation_url": str,
+                    Optional("contact_name"): str,
+                    Optional("contact_email"): str,
+                    Optional("contacts"): {
+                        Optional("email"): [
+                            {
+                                "name": str,
+                                "address": str,
+                            }
+                        ],
+                        Optional("slack"): [
+                            {
+                                "name": str,
+                                "address": str,
+                            }
+                        ],
+                        Optional("link"): [
+                            {
+                                "name": str,
+                                "address": str,
+                            }
+                        ],
+                        Optional("teams"): [
+                            {
+                                "name": str,
+                                "address": str,
+                            }
+                        ],
+                    },
+                    Optional("documentation_url"): str,
                     "services_to_monitor": dict,
-                }
+                    Optional("description"): str,
+                },
             },
         }
 
