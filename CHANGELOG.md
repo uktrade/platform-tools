@@ -1,5 +1,24 @@
 # Changelog
 
+## [15.8.0](https://github.com/uktrade/platform-tools/compare/15.7.0...15.8.0) (2025-08-08)
+
+
+### Features
+
+* Constrain environment terraform to only apply in the relevant aws account ID (DBTP-2031) ([#977](https://github.com/uktrade/platform-tools/issues/977)) ([f29e37e](https://github.com/uktrade/platform-tools/commit/f29e37e04f695f18b5f59cc7aaf225962506ef56))
+
+
+### Bug Fixes
+
+* Allow multiple destination environments for a database copy pipeline (off-ticket) ([#971](https://github.com/uktrade/platform-tools/issues/971)) ([0ae916f](https://github.com/uktrade/platform-tools/commit/0ae916fa5a76b6154abb6978e80d721dd75fd3c3))
+
+
+### Dependencies
+
+* Bump checkov from 3.2.453 to 3.2.457 ([#964](https://github.com/uktrade/platform-tools/issues/964)) ([c5881d8](https://github.com/uktrade/platform-tools/commit/c5881d8b86144469b7ef025fdf296eefc9416e18))
+* Bump checkov from 3.2.457 to 3.2.458 ([#975](https://github.com/uktrade/platform-tools/issues/975)) ([0b64188](https://github.com/uktrade/platform-tools/commit/0b641886ad4babb163f71ee25c103ab301dfd427))
+* Bump mypy-boto3-codebuild from 1.37.29 to 1.40.0 ([#968](https://github.com/uktrade/platform-tools/issues/968)) ([8e7b2ad](https://github.com/uktrade/platform-tools/commit/8e7b2ada2e8bbb12d3bed8a9c24d8b954bdb4017))
+
 ## [15.7.0](https://github.com/uktrade/platform-tools/compare/15.6.0...15.7.0) (2025-08-04)
 
 
