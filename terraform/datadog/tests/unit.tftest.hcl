@@ -13,7 +13,7 @@ variables {
     contacts            = yamlencode({ "email" : [{ "name" : "d", "address" : "a" }] })
     documentation_url   = "test-docs",
     description         = "test application",
-    services_to_monitor = { "test-web" : ["postgres", "redis"], "test-api" = ["nginx", "ipfilter"] }
+    services_to_monitor = { "test-web" : ["postgres", "redis"], "test-api" : ["nginx", "ipfilter"] }
   }
 }
 
