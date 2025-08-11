@@ -172,13 +172,16 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_provider(terraform: dict, deploy_account: str, deploy_account_id: str = None):
-        terraform["provider"] = {"aws": {}}
-        terraform["provider"]["aws"]["region"] = "eu-west-2"
-        terraform["provider"]["aws"]["profile"] = deploy_account
-        terraform["provider"]["aws"]["alias"] = deploy_account
-        terraform["provider"]["aws"]["shared_credentials_files"] = ["~/.aws/config"]
+        deploy_account_provider = {"aws": {}}
+        deploy_account_provider["aws"]["region"] = "eu-west-2"
+        deploy_account_provider["aws"]["profile"] = deploy_account
+        deploy_account_provider["aws"]["alias"] = deploy_account
+        deploy_account_provider["aws"]["shared_credentials_files"] = ["~/.aws/config"]
+        terraform["provider"] = [deploy_account_provider]
         if deploy_account_id:
-            terraform["provider"]["aws"]["allowed_account_ids"] = [deploy_account_id]
+            deploy_account_id_provider = {"aws": {}}
+            deploy_account_id_provider["aws"]["allowed_account_ids"] = [deploy_account_id]
+            terraform["provider"].append(deploy_account_id_provider)
 
     @staticmethod
     def _add_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
