@@ -15,7 +15,7 @@ variable "service_config" {
     name = string
     type = string
 
-    http = object({
+    http = optional(object({
       path             = string
       target_container = string
       healthcheck = optional(object({
@@ -28,7 +28,7 @@ variable "service_config" {
         timeout             = optional(string)
         grace_period        = optional(string)
       }))
-    })
+    }))
 
     sidecars = optional(map(object({
       port      = optional(number)
