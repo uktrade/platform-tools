@@ -70,9 +70,9 @@ phases:
         if [ "$MATCHED" == "false" ]; then
           echo "Detected default service-deployment-mode. No further action needed, exiting..."
           export SKIP_BUILD="true"
+        else
+          echo "Property service-deployment-mode '$DEPLOY_MODE' detected. Continuing pipeline..."
         fi
-
-        echo "Property service-deployment-mode '$DEPLOY_MODE' detected. Continuing pipeline..."
 
 
   build:
