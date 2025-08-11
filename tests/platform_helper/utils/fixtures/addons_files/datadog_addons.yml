@@ -6,17 +6,18 @@ demodjango-datadog:
       contact_name: David Smith
       contact_email: david.smith@digital.trade.gov.uk
       contacts:
-        email:
-          - name: DBT Platform Engineers
-            address: dbt-platform-engineers@digital.trade.gov.uk
-          - name: David Smith
-            address: david.smith@digital.trade.gov.uk
-        slack:
-          - name: platform-squad-3
-            address: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
-        link:
-          - name: DBT Platform Team Intranet Page
-            address: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
+        - name: DBT Platform Engineers
+          type: email
+          contact: dbt-platform-engineers@digital.trade.gov.uk
+        - name: David Smith
+          type: email
+          contact: david.smith@digital.trade.gov.uk
+        - name: platform-squad-3
+          type: slack
+          contact: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
+        - name: DBT Platform Team Intranet Page
+          type: link
+          contact: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
       documentation_url: https://github.com/uktrade/demodjango/blob/main/README.md
       description: Description of the application
       services_to_monitor:

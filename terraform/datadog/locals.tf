@@ -38,50 +38,28 @@ EOF
   %{endfor}
 EOF
 
-  ## This supports the 'new' way of setting contacts in platform-config.yml like this:
+  ## This supports the 'new' way of setting contacts in platform-config.yml which replicates the Datadog schema
+  ## https://github.com/DataDog/schema/blob/b76ed2b7681cd7d681520aa8760e5b09c347865b/service-catalog/v3/metadata.schema.json
   # contacts:
-  #   email:
-  #     - name: DBT Platform Engineers
-  #       address: dbt-platform-engineers@digital.trade.gov.uk
-  #     - name: Dave Glover
-  #       address: david.glover@digital.trade.gov.uk
-  #   slack:
-  #     - name: platform-squad-3
-  #       address: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
-  #   link:
-  #     - name: DBT Platform Team Intranet Page
-  #       address: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
-  contact_email_check = try(var.config.contacts.email, false)
-  contact_slack_check = try(var.config.contacts.slack, false)
-  contact_link_check  = try(var.config.contacts.link, false)
-  contact_teams_check = try(var.config.contacts.teams, false)
-  contacts_new        = <<EOF
-  %{if local.contact_email_check != false}
-    %{for k, v in var.config.contacts.email}
+  #  - name: DBT Platform Engineers
+  #    type: email
+  #    contact: dbt-platform-engineers@digital.trade.gov.uk
+  #  - name: Dave Glover
+  #    type: email
+  #    contact: david.glover@digital.trade.gov.uk
+  #  - name: platform-squad-3
+  #    type: slack
+  #    contact: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
+  #  - name: DBT Platform Team Intranet Page
+  #    type: link
+  #    contact: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
+  contact_check = try(var.config.contacts, null)
+  contacts_new  = <<EOF
+  %{if local.contact_check != null}
+    %{for k, v in var.config.contacts}
       - name: ${v.name}
-        type: email
-        contact: ${v.address}
-    %{endfor}
-  %{endif}
-  %{if local.contact_slack_check != false}
-    %{for k, v in var.config.contacts.slack}
-      - name: ${v.name}
-        type: slack
-        contact: ${v.address}
-    %{endfor}
-  %{endif}
-  %{if local.contact_link_check != false}
-    %{for k, v in var.config.contacts.link}
-      - name: ${v.name}
-        type: link
-        contact: ${v.address}
-    %{endfor}
-  %{endif}
-  %{if local.contact_teams_check != false}
-    %{for k, v in var.config.contacts.teams}
-      - name: ${v.name}
-        type: microsoft-teams
-        contact: ${v.address}
+        type: ${v.type}
+        contact: ${v.contact}
     %{endfor}
   %{endif}
 EOF

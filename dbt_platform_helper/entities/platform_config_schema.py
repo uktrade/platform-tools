@@ -412,32 +412,13 @@ class PlatformConfigSchema:
                     "team_name": str,
                     Optional("contact_name"): str,
                     Optional("contact_email"): str,
-                    Optional("contacts"): {
-                        Optional("email"): [
-                            {
-                                "name": str,
-                                "address": str,
-                            }
-                        ],
-                        Optional("slack"): [
-                            {
-                                "name": str,
-                                "address": str,
-                            }
-                        ],
-                        Optional("link"): [
-                            {
-                                "name": str,
-                                "address": str,
-                            }
-                        ],
-                        Optional("teams"): [
-                            {
-                                "name": str,
-                                "address": str,
-                            }
-                        ],
-                    },
+                    Optional("contacts"): [
+                        {
+                            "name": str,
+                            "type": str,
+                            "contact": str,
+                        }
+                    ],
                     Optional("documentation_url"): str,
                     "services_to_monitor": dict,
                     Optional("description"): str,
