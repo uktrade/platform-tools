@@ -55,11 +55,11 @@ EOF
   #    contact: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
   contact_check = try(var.config.contacts, null)
   contacts_new  = <<EOF
-  %{if local.contact_check != null}
+  %{if local.contact_check != null && var.config.contact_name != null}
     %{for k, v in var.config.contacts}
-      - name: ${v.name}
-        type: ${v.type}
-        contact: ${v.contact}
+    - name: ${v.name}
+      type: ${v.type}
+      contact: ${v.contact}
     %{endfor}
   %{endif}
 EOF

@@ -10,7 +10,7 @@ variables {
     team_name           = "test-team",
     contact_name        = "test-contact-name",
     contact_email       = "test-contact-email",
-    contacts            = yamlencode({ "email" : [{ "name" : "d", "address" : "a" }] })
+    contacts            = [{name: "Joe", type: "email", contact: "joe.bloggs@digital.trade.gov.uk" }] 
     documentation_url   = "test-docs",
     description         = "test application",
     services_to_monitor = { "test-web" : ["postgres", "redis"], "test-api" : ["nginx", "ipfilter"] }
