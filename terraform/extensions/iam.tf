@@ -74,6 +74,8 @@ resource "aws_iam_role_policy" "ecs_service_access_for_codebase" {
 }
 
 data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
+  # checkov:skip=CKV_AWS_111:Permissions required for KMS key and target group creation
+  # checkov:skip=CKV_AWS_356:Permissions required for KMS key and target group creation
   statement {
     effect = "Allow"
     actions = [
