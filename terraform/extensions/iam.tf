@@ -125,9 +125,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   statement {
     actions = [
       "kms:DeleteAlias",
-      "kms:CreateKey",
       "kms:CreateAlias",
-      "kms:ListAliases",
       "kms:TagResource",
       "kms:PutKeyPolicy",
       "kms:ScheduleKeyDeletion",
@@ -145,7 +143,6 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
 
   statement {
     actions = [
-      "kms:ListAliases",
       "kms:CreateAlias",
       "kms:DeleteAlias",
     ]
@@ -156,7 +153,8 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
 
   statement {
     actions = [
-      "kms:ListAliases"
+      "kms:ListAliases",
+      "kms:CreateKey",
     ]
     resources = [
       "*"
@@ -176,7 +174,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "elasticloadbalancing:DescribeTags",
     ]
     resources = [
-      "arn:aws:elasticloadbalancing:${data.aws_region.current.name}:${local.pipeline_account_id}:targetgroup/*"
+      "*"
     ]
   }
 
