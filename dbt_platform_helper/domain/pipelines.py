@@ -54,20 +54,26 @@ class Pipelines:
             or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
 
-    def _map_environment_pipeline_accounts(self, platform_config):
+    def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
         environment_config = platform_config["environments"]
+
+        account_id_lookup = {
+            env["accounts"]["deploy"]["name"]: env["accounts"]["deploy"]["id"]
+            for env in environment_config.values()
+            if "accounts" in env and "deploy" in env["accounts"]
+        }
 
         accounts = []
         for config in environment_pipelines_config.values():
             account = config.get("account")
+            deploy_account_id = account_id_lookup.get(account)
 
-            for env in environment_config.values():
-                if env.get("accounts", {}).get("deploy", {}).get("name", "") == account:
-                    deploy_account_id = env.get("accounts", {}).get("deploy", {}).get("id")
-                    continue
+            if deploy_account_id is None:
+                raise ValueError(f"No deploy account ID found for account '{account}'")
 
             accounts.append((account, deploy_account_id))
+
         return accounts
 
     def generate(
