@@ -55,8 +55,7 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:ListInstanceProfilesForRole",
       "iam:ListPolicyVersions",
       "iam:DeleteRolePolicy",
-      "iam:UpdateAssumeRolePolicy",
-      "iam:TagRole"
+      "iam:UpdateAssumeRolePolicy"
     ]
     resources = [
       "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
@@ -79,12 +78,21 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   statement {
     effect = "Allow"
     actions = [
-      "ecs:RegisterTaskDefinition",
-      "ecs:DeregisterTaskDefinition"
+      "ecs:RegisterTaskDefinition"
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/*",
       "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/"
+    ]
+  }
+
+  statement {
+    sid = "AllowDeregister"
+    actions = [
+      "ecs:DeregisterTaskDefinition"
+    ]
+    resources = [
+      "*"
     ]
   }
 
@@ -234,7 +242,7 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
       "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
       "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***", #TODO - See if this can be scoped more tightly
+      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***"
     ]
   }
 }

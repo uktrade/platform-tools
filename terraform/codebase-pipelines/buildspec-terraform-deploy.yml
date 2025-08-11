@@ -30,8 +30,7 @@ phases:
       - git config --global credential.helper '!aws codecommit credential-helper $@'
       - git config --global credential.UseHttpPath true
       - git config --global advice.detachedHead false
-#      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "DBTP-2160-service-terraform-pipeline" --depth 1 platform-tools #TODO Temporary change to pull unreleased changes
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
       - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
@@ -145,8 +144,8 @@ phases:
 
           # Send deployment starting Slack notification
           
-          # MESSAGE=":rocket: STARTED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
-          # platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+          MESSAGE=":rocket: STARTED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
 
           # Assume environment role
           account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account)
@@ -165,24 +164,24 @@ phases:
 
           # Send Slack message on pipeline outcome
           
-          # if [ $? -eq 0 ]; then
-          #   deploy_status="SUCCESSFUL"
-          #   STATUS_EMOJI=":large_green_circle:"
-          #   STATUS_TEXT="COMPLETE"
-          # else
-          #   deploy_status="FAILED"
-          #   STATUS_EMOJI=":red_circle::warning:"
-          #   STATUS_TEXT="FAILED"
-          # fi
+           if [ $? -eq 0 ]; then
+             deploy_status="SUCCESSFUL"
+             STATUS_EMOJI=":large_green_circle:"
+             STATUS_TEXT="COMPLETE"
+           else
+             deploy_status="FAILED"
+             STATUS_EMOJI=":red_circle::warning:"
+             STATUS_TEXT="FAILED"
+           fi
 
           # Send notification on successful deployment or exit with an error code
-          # if [ "${deploy_status}" == "SUCCESSFUL" ]; then
-          #   MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
-          #   platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
-          # else
-          #   echo "Error: Deployment status is ${deploy_status}" | tee output.log
-          #   exit 1
-          # fi
+           if [ "${deploy_status}" == "SUCCESSFUL" ]; then
+             MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
+             platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+           else
+             echo "Error: Deployment status is ${deploy_status}" | tee output.log
+             exit 1
+           fi
         fi
 
   post_build:
@@ -192,8 +191,8 @@ phases:
           DEPLOY_TAG=${IMAGE_TAG}
         fi
       - |
-        # if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
-        #   BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
-        #   MESSAGE=":red_circle::warning: FAILED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
-        #   platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
-        # fi
+         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
+           MESSAGE=":red_circle::warning: FAILED - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
+           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+         fi
