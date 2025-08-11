@@ -116,6 +116,15 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 
     pipelines.generate(cli_demodjango_branch)
 
+    pipelines.io.info.call_args_list[
+        0
+    ] == f"File {Path('terraform/environment-pipelines/platform-sandbox-test/main.tf').relative_to('.')} created"
+    pipelines.io.info.call_args_list[
+        1
+    ] == f"File {Path('terraform/environment-pipelines/platform-prod-test/main.tf').relative_to('.')} created"
+
+    assert pipelines.io.info.call_count == 2
+
     assert_terraform(
         app_name,
         "platform-sandbox-test",
@@ -266,6 +275,7 @@ def assert_terraform(
     deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
+
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
 

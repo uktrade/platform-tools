@@ -61,20 +61,20 @@ class Pipelines:
         account_id_lookup = {
             env["accounts"]["deploy"]["name"]: env["accounts"]["deploy"]["id"]
             for env in environment_config.values()
-            if "accounts" in env and "deploy" in env["accounts"]
+            if env is not None and "accounts" in env and "deploy" in env["accounts"]
         }
 
-        accounts = []
+        accounts = set()
+
         for config in environment_pipelines_config.values():
             account = config.get("account")
             deploy_account_id = account_id_lookup.get(account)
-
             if deploy_account_id is None:
                 raise ValueError(f"No deploy account ID found for account '{account}'")
 
-            accounts.append((account, deploy_account_id))
+            accounts.add((account, deploy_account_id))
 
-        return accounts
+        return list(accounts)
 
     def generate(
         self,

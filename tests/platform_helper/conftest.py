@@ -862,7 +862,7 @@ application: test-app
 deploy_repository: uktrade/test-app-weird-name-deploy
 
 environments:
-  dev:
+  "*":
     accounts:
       deploy:
         name: "platform-sandbox-test"
@@ -870,6 +870,7 @@ environments:
       dns:
         name: "platform-dns-test"
         id: "2222222222"
+  dev:
   prod:
     accounts:
       deploy:
@@ -882,6 +883,13 @@ environments:
 
 environment_pipelines:
    main:
+       account: platform-sandbox-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         dev:
+   another-pipeline-in-same-account:
        account: platform-sandbox-test
        branch: main
        slack_channel: "/codebuild/test-slack-channel"
