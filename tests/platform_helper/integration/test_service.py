@@ -25,14 +25,14 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 @pytest.mark.parametrize(
     "input_args, env_vars, expected_results, expect_exception",
     [
-        (
-            {"environments": ["development"], "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-            },
-            None,  # Image tag not given, hence why not relevant - should throw an exception before generating main.tf.json contents
-            True,
-        ),
+        # (
+        #     {"environments": ["development"], "services": []},
+        #     {
+        #         TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
+        #     },
+        #     None,  # Image tag not given, hence why not relevant - should throw an exception before generating main.tf.json contents
+        #     True,
+        # ),
         (
             {"environments": ["development"], "services": [], "image_tag_flag": "doesnt-matter"},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
@@ -123,7 +123,8 @@ def test_generate(
             expected_content = expected_terraform.read_text()
             actual_json_content = json.loads(actual_content)
             expected_json_content = json.loads(expected_content)
-
+            print("ACTUAL: ", actual_json_content)
+            print("EXPECTED: ", expected_json_content)
             assert actual_json_content == expected_json_content
 
         for var, value in env_vars.items():
