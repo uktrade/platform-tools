@@ -46,7 +46,7 @@ data "aws_iam_policy_document" "assume_ecs_task_role" {
   dynamic "statement" {
     for_each = local.pipeline_tasks
     content {
-      sid    = "AllowPipelineAssumeRole"
+      sid    = "AllowPipelineAssumeRole${title(statement.value.to)}"
       effect = "Allow"
 
       principals {
