@@ -24,10 +24,29 @@ my-datadog-bad-contacts:
   type: datadog
   environments:
     default:
+      contacts:
+      - wrong
+
+my-datadog-bad-contacts-email:
+  type: datadog
+  environments:
+    default:
       contacts: 
-      - name: something
-        type: 12345
-        contact: []
+        email: 123
+
+my-datadog-bad-contacts-name:
+  type: datadog
+  environments:
+    default:
+      contacts: 
+        name: false
+
+my-datadog-bad-contacts-type:
+  type: datadog
+  environments:
+    default:
+      contacts: 
+        type: hello
 
 my-datadog-bad-documentation-url:
   type: datadog
