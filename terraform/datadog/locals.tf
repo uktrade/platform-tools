@@ -23,24 +23,17 @@ EOF
   %{endfor}
 EOF
 
-  ## Contact details
-  ## Both name and email are required for this block, so don't add if either are missing from platform-config.yml
-  ## This supports the 'old' way of setting email contact in platform-config.yml like this:
-  #contact_name: DBT Platform Engineers, Dave Glover
-  #contact_email: dbt-platform-engineers@digital.trade.gov.uk, david.glover@digital.trade.gov.uk
+  ## Contact details 
+  ## The 'old' way of setting email contact in platform-config.yml is like this:
+  #     contact_name: DBT Platform Engineers, Dave Glover
+  #     contact_email: dbt-platform-engineers@digital.trade.gov.uk, david.glover@digital.trade.gov.uk
+  ## Both name and email are required for this format, so check for them in platform-config.yml
   contact_name  = var.config.contact_name != null ? split(",", var.config.contact_name) : null
   contact_email = var.config.contact_email != null ? split(",", var.config.contact_email) : null
-  contacts      = var.config.contact_name == null || var.config.contact_email == null ? "" : <<EOF
-  %{for k, v in local.contact_name}
-    - name: ${v}
-      type: email
-      contact: ${local.contact_email[k]}
-  %{endfor}
-EOF
 
   ## This supports the 'new' way of setting contacts in platform-config.yml which replicates the Datadog schema
   ## https://github.com/DataDog/schema/blob/b76ed2b7681cd7d681520aa8760e5b09c347865b/service-catalog/v3/metadata.schema.json
-  # contacts:
+  #  contacts:
   #  - name: DBT Platform Engineers
   #    type: email
   #    contact: dbt-platform-engineers@digital.trade.gov.uk
@@ -54,13 +47,23 @@ EOF
   #    type: link
   #    contact: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
   contact_check = try(var.config.contacts, null)
-  contacts_new  = <<EOF
-  %{if local.contact_check != null && var.config.contact_name != null}
+  contacts      = <<EOF
+  %{if local.contact_check != null && var.config.contact_name == null}
+  contacts:
     %{for k, v in var.config.contacts}
     - name: ${v.name}
       type: ${v.type}
       contact: ${v.contact}
     %{endfor}
+  %{else}
+    %{if var.config.contact_name != null && var.config.contact_email != null}
+  contacts:
+      %{for k, v in local.contact_name}
+    - name: ${v}
+      type: email
+      contact: ${local.contact_email[k]}
+      %{endfor}  
+    %{endif}
   %{endif}
 EOF
 

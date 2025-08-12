@@ -11,8 +11,7 @@ ${local.team}
 ${local.description}
   links:
 ${local.doc}${local.repos}${local.dashboard}
-  contacts:
-${local.contacts}${local.contacts_new}
+${local.contacts}
 ${local.additionalowners}
 EOF
 }
@@ -30,8 +29,7 @@ ${local.team}
 ${local.description}
   links:
 ${local.doc}${local.repos}${local.dashboard}
-  contacts:
-${local.contacts}${local.contacts_new}
+${local.contacts}
 ${local.additionalowners}
 spec:
   lifecycle: production
@@ -58,8 +56,7 @@ ${local.team}
 ${local.description}
   links:
 ${local.doc}${local.repos}${local.dashboard}
-  contacts:
-${local.contacts}${local.contacts_new}
+${local.contacts}
 ${local.additionalowners}
 spec:
   lifecycle: production
