@@ -64,7 +64,7 @@ EOF
   %{endif}
 EOF
 
-  ## Set SRE to be the additionalOwners as a workaround to not being able to specify an on-call team that is different than the owner team
+  ## Set description to value passed from platform-config, otherwise default to "<application-name> application"
   description_check = var.config.description == null ? "${var.application} application" : var.config.description
   description       = <<EOF
   description: ${local.description_check}
