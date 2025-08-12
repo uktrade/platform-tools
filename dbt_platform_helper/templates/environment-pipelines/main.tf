@@ -10,7 +10,6 @@ locals {
 provider "aws" {
   region                   = "eu-west-2"
   profile                  = "{{ aws_account }}"
-  shared_credentials_files = ["~/.aws/config"]
   allowed_account_ids      = ["{{ deploy_account_id }}"]
 }
 
