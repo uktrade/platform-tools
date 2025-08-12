@@ -59,6 +59,7 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert aws_provider["profile"] == "non-prod-acc"
     assert aws_provider["shared_credentials_files"] == ["~/.aws/config"]
     assert aws_provider["allowed_account_ids"] == ["1122334455"]
+    assert not aws_provider.get("alias")
 
     terraform = json_content["terraform"]
     assert terraform["required_version"] == SUPPORTED_TERRAFORM_VERSION
