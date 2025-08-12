@@ -30,6 +30,7 @@ class TerraformManifestProvider:
         service_dir = f"terraform/services/{environment}/{config_object.name}"
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(environment, platform_config)
+        deploy_to_account_id = self._get_account_id_for_account(account, platform_config)
         state_key_suffix = f"{config_object.name}-{environment}"
 
         terraform = {}
@@ -37,7 +38,7 @@ class TerraformManifestProvider:
 
         self._add_service_locals(terraform, environment, image_tag)
 
-        self._add_provider(terraform, account)
+        self._add_provider(terraform, account, deploy_to_account_id)
         self._add_backend(
             terraform, platform_config, account, f"tfstate/services/{state_key_suffix}.tfstate"
         )
@@ -88,13 +89,13 @@ class TerraformManifestProvider:
         module_source: str,
     ):
         default_account = self._get_account_for_env("*", platform_config)
-        deploy_account_id = self._get_account_id_for_account(default_account, platform_config)
+        deploy_to_account_id = self._get_account_id_for_account(default_account, platform_config)
         state_key_suffix = f"{platform_config['application']}-codebase-pipelines"
 
         terraform = {}
         self._add_header(terraform)
         self._add_codebase_pipeline_locals(terraform)
-        self._add_provider(terraform, default_account, deploy_account_id)
+        self._add_provider(terraform, default_account, deploy_to_account_id)
         self._add_backend(
             terraform,
             platform_config,
@@ -171,17 +172,12 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_provider(terraform: dict, deploy_account: str, deploy_account_id: str = None):
-        deploy_account_provider = {"aws": {}}
-        deploy_account_provider["aws"]["region"] = "eu-west-2"
-        deploy_account_provider["aws"]["profile"] = deploy_account
-        deploy_account_provider["aws"]["alias"] = deploy_account
-        deploy_account_provider["aws"]["shared_credentials_files"] = ["~/.aws/config"]
-        terraform["provider"] = [deploy_account_provider]
-        if deploy_account_id:
-            deploy_account_id_provider = {"aws": {}}
-            deploy_account_id_provider["aws"]["allowed_account_ids"] = [deploy_account_id]
-            terraform["provider"].append(deploy_account_id_provider)
+    def _add_provider(terraform: dict, deploy_to_account: str, deploy_to_account_id: str = None):
+        terraform["provider"] = {"aws": {}}
+        terraform["provider"]["aws"]["region"] = "eu-west-2"
+        terraform["provider"]["aws"]["profile"] = deploy_to_account
+        terraform["provider"]["aws"]["shared_credentials_files"] = ["~/.aws/config"]
+        terraform["provider"]["aws"]["allowed_account_ids"] = [deploy_to_account_id]
 
     @staticmethod
     def _add_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
