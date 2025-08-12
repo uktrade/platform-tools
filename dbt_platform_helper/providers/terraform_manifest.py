@@ -176,7 +176,6 @@ class TerraformManifestProvider:
         terraform["provider"] = {"aws": {}}
         terraform["provider"]["aws"]["region"] = "eu-west-2"
         terraform["provider"]["aws"]["profile"] = deploy_to_account
-        terraform["provider"]["aws"]["shared_credentials_files"] = ["~/.aws/config"]
         terraform["provider"]["aws"]["allowed_account_ids"] = [deploy_to_account_id]
 
     @staticmethod
