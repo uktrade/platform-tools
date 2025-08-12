@@ -10,15 +10,9 @@ locals {
 provider "aws" {
   region                   = "eu-west-2"
   profile                  = "{{ aws_account }}"
-  alias                    = "{{ aws_account }}"
   shared_credentials_files = ["~/.aws/config"]
-}
-
-{% if deploy_account_id %}
-provider "aws" {
   allowed_account_ids      = ["{{ deploy_account_id }}"]
 }
-{% endif %}
 
 
 terraform {
