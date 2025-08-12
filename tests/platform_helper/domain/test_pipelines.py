@@ -117,14 +117,14 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 
     pipelines.generate(cli_demodjango_branch)
 
-    pipelines.io.info.call_args_list[
-        0
-    ] == f"File {Path('terraform/environment-pipelines/platform-sandbox-test/main.tf').relative_to('.')} created"
-    pipelines.io.info.call_args_list[
-        1
-    ] == f"File {Path('terraform/environment-pipelines/platform-prod-test/main.tf').relative_to('.')} created"
+    expected_messages = [
+        "File terraform/environment-pipelines/platform-sandbox-test/main.tf created",
+        "File terraform/environment-pipelines/platform-prod-test/main.tf created",
+    ]
 
-    assert pipelines.io.info.call_count == 2
+    called_messages = [call_obj.args[0] for call_obj in pipelines.io.info.call_args_list]
+
+    assert sorted(called_messages) == sorted(expected_messages)
 
     assert_terraform(
         app_name,
