@@ -8,7 +8,7 @@ kind: system
 metadata:
   name: ${var.application}-${each.key}
 ${local.team}
-  description: ${var.config.description}
+${local.description}
   links:
 ${local.doc}${local.repos}${local.dashboard}
   contacts:
@@ -27,7 +27,7 @@ kind: service
 metadata:
   name: ${var.application}-${each.key}
 ${local.team}
-  description: ${var.config.description}
+${local.description}
   links:
 ${local.doc}${local.repos}${local.dashboard}
   contacts:
@@ -55,7 +55,7 @@ kind: service
 metadata:
   name: ${var.application}-${each.key}
 ${local.team}
-  description: ${var.config.description}
+${local.description}
   links:
 ${local.doc}${local.repos}${local.dashboard}
   contacts:
