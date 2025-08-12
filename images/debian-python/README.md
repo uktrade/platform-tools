@@ -12,6 +12,8 @@ Add the Python version(s) to `Dockerfile.debian` and `tox.ini`.
 
 This is currently a manual process.
 
-Run `docker build -f Dockerfile.debian -t debian/python .` to build the image.
-
-For Platform developers, the `push` commands can be found in [AWS ECR](https://eu-west-2.console.aws.amazon.com/ecr/repositories).
+1. Log into the `platform-tools` AWS account, navigate to Elastic Container Registry and then the debain/python repository.
+1. From the View push commands page, authenticate your local Docker client with ECR.
+1. Populate the repository URL into the REGISTRY environment variable using `export REGISTRY='...'`
+   The URL will be in the form `123123123123.dkr.ecr.eu-west-2.amazonaws.com`
+1. Run `docker buildx build --platform linux/amd64,linux/arm64 --push -t $REGISTRY/debian/python:latest -f Dockerfile.debian .`
