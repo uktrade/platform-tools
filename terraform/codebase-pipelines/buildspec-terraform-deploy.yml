@@ -54,7 +54,7 @@ phases:
         if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
           DEPLOY_MODE=$(yq eval '.environments."*".service-deployment-mode' "$PLATFORM_CONFIG_PATH")
           if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
-            echo "Property 'service-deployment-mode' not found in platform-config. No further action needed, exiting..."
+            echo "Property 'service-deployment-mode' not found in platform-config. No further action required, skipping pipeline stage ..."
             export SKIP_BUILD="true"
           fi
         fi
@@ -68,10 +68,10 @@ phases:
         done
 
         if [ "$MATCHED" == "false" ]; then
-          echo "Detected default service-deployment-mode. No further action needed, exiting..."
+          echo "Detected default service-deployment-mode. No further action required, skipping pipeline stage ..."
           export SKIP_BUILD="true"
         else
-          echo "Property service-deployment-mode '$DEPLOY_MODE' detected. Continuing pipeline..."
+          echo "Property service-deployment-mode '$DEPLOY_MODE' detected. Resuming pipeline ..."
         fi
 
 
@@ -80,10 +80,9 @@ phases:
       - |
         set -e
 
-        # This can be removed when fully de-copiloted 
-        echo "Skip build:$SKIP_BUILD"
+        # Skip pipeline if true
         if [[ "$SKIP_BUILD" == "true" ]]; then 
-          echo "Skipping build"
+          echo "Skipping pipeline stage, no further action required."
         else 
           # Check if the specified image tag exists
           aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
@@ -118,12 +117,11 @@ phases:
           if [[ -z "${DEPLOY_TAG}" ]]; then
             DEPLOY_TAG=${IMAGE_TAG}
           fi
-
-          echo "Deploying image with tag ${DEPLOY_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
+          echo "Deploying image with tag '${DEPLOY_TAG}' to service '${SERVICE}' in environment '${ENVIRONMENT}'"
 
           # Construct Slack message env vars
+        
           SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${DEPLOY_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
-          
           if [ "${SLACK_REF}" = "null" ] || [ -z "${SLACK_REF}" ]; then
             echo "Error: Image contains no timestamp label" | tee output.log
             exit 1
@@ -148,13 +146,15 @@ phases:
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
 
           # Assume environment role
+        
           account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account)
           assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
           export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
           export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
           export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
-          # Run Platform helper service generate
+          # Generate service Terraform and apply it
+        
           cd "${CODEBUILD_SRC_DIR}"
           local_ecs_service_path=../../../../platform-tools/terraform/ecs-service
           TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
@@ -175,6 +175,7 @@ phases:
            fi
 
           # Send notification on successful deployment or exit with an error code
+        
            if [ "${deploy_status}" == "SUCCESSFUL" ]; then
              MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
              platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
