@@ -172,7 +172,7 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_provider(terraform: dict, deploy_to_account: str, deploy_to_account_id: str = None):
+    def _add_provider(terraform: dict, deploy_to_account: str, deploy_to_account_id: str):
         terraform["provider"] = {"aws": {}}
         terraform["provider"]["aws"]["region"] = "eu-west-2"
         terraform["provider"]["aws"]["profile"] = deploy_to_account
