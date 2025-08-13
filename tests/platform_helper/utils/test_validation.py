@@ -201,6 +201,11 @@ def test_validate_addons_success(addons_file):
                 "my-datadog-bad-contact-email": r"'environments'.*'default'.*contact_email.*should be instance of 'str'",
                 "my-datadog-bad-documentation-url": r"'environments'.*'default'.*documentation_url.*should be instance of 'str'",
                 "my-datadog-bad-services-to-monitor": r"'environments'.*'default'.*services_to_monitor.*should be instance of 'dict'",
+                "my-datadog-bad-description": r"'environments'.*'default'.*description.*should be instance of 'str'",
+                "my-datadog-bad-contacts": r"environments.*default.*contacts.* should be instance of 'dict'",
+                "my-datadog-bad-contacts-email": r"environments.*default.*contacts.*email.* should be instance of 'list'",
+                "my-datadog-bad-contacts-name": r"'environments'.*'default'.*'contacts'.*name.*should be instance of 'list'",
+                "my-datadog-bad-contacts-type": r"'environments'.*'default'.*'contacts'.*type.*should be instance of 'list'",
             },
         ),
         (

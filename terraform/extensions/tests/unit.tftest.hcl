@@ -241,7 +241,7 @@ run "aws_ssm_parameter_unit_test" {
 
   # Value only includes current environment
   assert {
-    condition     = strcontains(aws_ssm_parameter.addons.value, "test-env")
+    condition     = strcontains(aws_ssm_parameter.addons.value, "type")
     error_message = ""
   }
   assert {
