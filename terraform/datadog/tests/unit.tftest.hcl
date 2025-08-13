@@ -7,12 +7,13 @@ variables {
   environment = "test-env"
   repos       = ["test-repo1", "test-repo2"]
   config = {
-    team_name         = "test-team",
-    contact_name      = "test-contact-name",
-    contact_email     = "test-contact-email",
-    documentation_url = "test-docs",
-    #services_to_monitor = ["test-web", "test-postgres"] #, "test-redis", "test-elasticsearch"]
-    services_to_monitor = { "test-web" : ["postgres", "redis"], "test-api" = ["nginx", "ipfilter"] }
+    team_name           = "test-team",
+    contact_name        = "test-contact-name",
+    contact_email       = "test-contact-email",
+    contacts            = [{ name : "Joe", type : "email", contact : "joe.bloggs@digital.trade.gov.uk" }]
+    documentation_url   = "test-docs",
+    description         = "test application",
+    services_to_monitor = { "test-web" : ["postgres", "redis"], "test-api" : ["nginx", "ipfilter"] }
   }
 }
 
