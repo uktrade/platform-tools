@@ -45,8 +45,6 @@ locals {
     lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}) if name != "*"
   }
 
-  base_account_id = lookup(var.env_config, "*", {}).accounts.deploy.id
-
   data_dump_tasks = [for task in local.data_copy_tasks :
     merge(task, {
       from_account : lookup(local.base_env_config, task.from, null),
@@ -61,12 +59,6 @@ locals {
 
   pipeline_tasks = [for task in local.data_load_tasks :
   task if lookup(task, "pipeline", null) != null]
-
-  // Distinct list of environments with a dump or load operation in the prod AWS account
-  prod_account_environments = { for env in toset(concat(
-    [for task in local.data_dump_tasks : task.from if task.from_account != local.base_account_id],
-    [for task in local.data_load_tasks : task.to if task.to_account != local.base_account_id]
-  )) : env => lookup(local.base_env_config, env, null) }
 
   conduit_task_definitions = {
     admin = {
