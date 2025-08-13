@@ -198,10 +198,6 @@ class Pipelines:
             }
         )
 
-        print(
-            f"----- Generating manifest for account {aws_account} in account {aws_account_id} ----"
-        )
-
         dir_path = f"terraform/environment-pipelines/{aws_account}"
         makedirs(dir_path, exist_ok=True)
 
