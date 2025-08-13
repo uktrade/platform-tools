@@ -149,8 +149,9 @@ class LoadBalancerProvider:
 
         for rule in rules:
             for action in rule["Actions"]:
-                if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
-                    conditions = rule["Conditions"]
+                if "TargetGroupArn" in action:
+                    if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
+                        conditions = rule["Conditions"]
 
         if not conditions:
             raise ListenerRuleConditionsNotFoundException(listener_arn)
