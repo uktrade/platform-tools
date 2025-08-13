@@ -27,20 +27,3 @@ module "database-copy-pipeline" {
   database_name = var.name
   task          = local.pipeline_tasks[count.index]
 }
-
-resource "aws_ssm_parameter" "environment_config" {
-  # checkov:skip=CKV_AWS_337: Used by copilot doesn't need to be encrypted
-  # checkov:skip=CKV2_AWS_34: Used by copilot doesn't need to be encrypted
-  for_each    = local.prod_account_environments
-  name        = "/copilot/applications/${var.application}/environments/${each.key}"
-  description = "Configuration for the ${each.key} environment, used by platform-helper commands"
-  type        = "String"
-  value = jsonencode({
-    "app" : var.application,
-    "name" : each.key,
-    "region" : "eu-west-2",
-    "accountID" : each.value
-  })
-
-  tags = local.tags
-}
