@@ -20,6 +20,34 @@ my-datadog-bad-contact-email:
     default:
       contact_email: 123
 
+my-datadog-bad-contacts:
+  type: datadog
+  environments:
+    default:
+      contacts:
+      - wrong
+
+my-datadog-bad-contacts-email:
+  type: datadog
+  environments:
+    default:
+      contacts: 
+        email: 123
+
+my-datadog-bad-contacts-name:
+  type: datadog
+  environments:
+    default:
+      contacts: 
+        name: false
+
+my-datadog-bad-contacts-type:
+  type: datadog
+  environments:
+    default:
+      contacts: 
+        type: hello
+
 my-datadog-bad-documentation-url:
   type: datadog
   environments:
@@ -35,3 +63,9 @@ my-datadog-bad-services-to-monitor:
        - is
        - a 
        - list 
+
+my-datadog-bad-description:
+  type: datadog
+  environments:
+    default:
+      description: False
