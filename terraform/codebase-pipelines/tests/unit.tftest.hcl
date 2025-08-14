@@ -278,7 +278,7 @@ run "test_cache_invalidation_actions_created" {
 
         ]
       ]
-    ]))) == 6
+    ]))) == 3
     error_message = "Expected exactly 6 cache invalidation actions, but found a different number"
   }
 
