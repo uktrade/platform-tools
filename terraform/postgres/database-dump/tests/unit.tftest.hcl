@@ -2,12 +2,14 @@ variables {
   application   = "test-app"
   environment   = "test-env"
   database_name = "test-db"
-  tasks = [{
-    from : "staging"
-    from_account = "000123456789"
-    to : "dev"
-    to_account = "000123456789"
-  }]
+  tasks = [
+    {
+      from         = "staging"
+      from_account = "000123456789"
+      to           = "dev"
+      to_account   = "000123456789"
+    }
+  ]
 }
 
 mock_provider "aws" {}
@@ -344,12 +346,14 @@ run "cross_account_data_dump_unit_test" {
   command = plan
 
   variables {
-    tasks = [{
-      from : "dev"
-      from_account : "000123456789"
-      to : "hotfix"
-      to_account : "123456789000"
-    }]
+    tasks = [
+      {
+        from         = "dev"
+        from_account = "000123456789"
+        to           = "hotfix"
+        to_account   = "123456789000"
+      }
+    ]
   }
 
   assert {
@@ -379,19 +383,29 @@ run "pipeline_unit_test" {
   command = plan
 
   variables {
-    tasks = [{
-      from : "prod"
-      from_account : "123456789000"
-      to : "dev"
-      to_account : "000123456789"
-      pipeline : {}
-    }]
+    tasks = [
+      {
+        from         = "prod"
+        from_account = "123456789000"
+        to           = "dev"
+        to_account   = "000123456789"
+        pipeline     = {}
+      },
+      {
+        from         = "prod"
+        from_account = "123456789000"
+        to           = "staging"
+        to_account   = "000123456789"
+        pipeline     = {}
+      }
+    ]
   }
 
   assert {
-    condition     = length(local.pipeline_tasks) == 1
-    error_message = "There should be 1 pipeline task"
+    condition     = length(local.pipeline_tasks) == 2
+    error_message = "There should be 2 pipeline tasks"
   }
+
   assert {
     condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[1].effect == "Allow"
     error_message = "Should be: Allow"
@@ -407,6 +421,30 @@ run "pipeline_unit_test" {
   assert {
     condition     = contains(one(data.aws_iam_policy_document.assume_ecs_task_role.statement[1].principals).identifiers, "arn:aws:iam::000123456789:role/test-db-prod-to-dev-copy-pipeline-codebuild")
     error_message = "Should contain: scheduler.amazonaws.com"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[1].sid == "AllowPipelineAssumeRoleDev"
+    error_message = "Statement ID not found: AllowPipelineAssumeRoleDev"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[2].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.assume_ecs_task_role.statement[2].actions) == "sts:AssumeRole"
+    error_message = "Should be: sts:AssumeRole"
+  }
+  assert {
+    condition     = one(data.aws_iam_policy_document.assume_ecs_task_role.statement[2].principals).type == "AWS"
+    error_message = "Should be: AWS"
+  }
+  assert {
+    condition     = contains(one(data.aws_iam_policy_document.assume_ecs_task_role.statement[2].principals).identifiers, "arn:aws:iam::000123456789:role/test-db-prod-to-staging-copy-pipeline-codebuild")
+    error_message = "Should contain: scheduler.amazonaws.com"
+  }
+  assert {
+    condition     = data.aws_iam_policy_document.assume_ecs_task_role.statement[2].sid == "AllowPipelineAssumeRoleStaging"
+    error_message = "Statement ID not found: AllowPipelineAssumeRoleStaging"
   }
   assert {
     condition     = aws_iam_role_policy.allow_pipeline_access[""].name == "AllowPipelineAccess"

@@ -145,11 +145,14 @@ def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, mock_application
 @mock_aws
 def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_application, mocked_cluster):
     ecs_client = mock_application.environments["development"].session.client("ecs")
+    ec2_client = mock_application.environments["development"].session.client("ec2")
     cluster_arn = mocked_cluster["cluster"]["clusterArn"]
     task_name = "no-running-task"
-    ec2 = boto3.resource("ec2")
-    vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
-    subnet = ec2.create_subnet(VpcId=vpc.id, CidrBlock="10.0.0.0/18")
+    vpc = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
+    vpc_id = vpc["Vpc"]["VpcId"]
+    ec2_client.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={"Value": True})
+    subnet = ec2_client.create_subnet(VpcId=vpc_id, CidrBlock="10.0.0.0/18")
+    subnet_id = subnet["Subnet"]["SubnetId"]
     mocked_task_definition_arn = ecs_client.register_task_definition(
         family=f"other-task",
         requiresCompatibilities=["FARGATE"],
@@ -169,7 +172,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
         launchType="FARGATE",
         networkConfiguration={
             "awsvpcConfiguration": {
-                "subnets": [subnet.id],
+                "subnets": [subnet_id],
                 "securityGroups": ["something-sg"],
             }
         },

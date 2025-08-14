@@ -17,6 +17,11 @@ provider "aws" {
   }
 }
 
+# This provider configuration prevents deployment to the wrong aws account
+provider "aws" {
+  allowed_account_ids = [local.deploy_account_id]
+}
+
 provider "datadog" {
   alias   = "ddog"
   api_key = data.aws_ssm_parameter.datadog_api_key.value

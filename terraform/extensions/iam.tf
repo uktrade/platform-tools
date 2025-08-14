@@ -55,8 +55,7 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:ListInstanceProfilesForRole",
       "iam:ListPolicyVersions",
       "iam:DeleteRolePolicy",
-      "iam:UpdateAssumeRolePolicy",
-      "iam:TagRole"
+      "iam:UpdateAssumeRolePolicy"
     ]
     resources = [
       "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
@@ -74,15 +73,26 @@ resource "aws_iam_role_policy" "ecs_service_access_for_codebase" {
 }
 
 data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
+  # checkov:skip=CKV_AWS_111:Permissions required for KMS key and target group creation
+  # checkov:skip=CKV_AWS_356:Permissions required for KMS key and target group creation
   statement {
     effect = "Allow"
     actions = [
-      "ecs:RegisterTaskDefinition",
-      "ecs:DeregisterTaskDefinition"
+      "ecs:RegisterTaskDefinition"
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/*",
       "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/"
+    ]
+  }
+
+  statement {
+    sid = "AllowDeregister"
+    actions = [
+      "ecs:DeregisterTaskDefinition"
+    ]
+    resources = [
+      "*"
     ]
   }
 
