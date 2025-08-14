@@ -3,7 +3,7 @@ name: Create Release
 on:
   push:
     branches:
-      - add-release-template
+      - main
 
 permissions:
   contents: write
