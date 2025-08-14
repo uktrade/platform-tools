@@ -6,7 +6,8 @@
         "include-v-in-tag": false,
         "draft": false,
         "pull-request-header": ":robot: Next release",
-        "pull-request-footer": " "
+        "pull-request-footer": " ",
+        "release-notes-header": "### Summary\nTODO: Write summary here\n\n### Why should you upgrade?\n- TODO: Point 1\n- TODO: Point 2\n\n### How to upgrade\nFollow our [upgrade process](https://platform.readme.trade.gov.uk/reference/upgrading-platform-helper/).",
     }
   }
 }
