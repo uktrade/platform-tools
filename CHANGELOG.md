@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.9.0](https://github.com/uktrade/platform-tools/compare/15.8.0...15.9.0) (2025-08-14)
+
+
+### Features
+
+* Configure default providers for pipeline terraform to allow apply only with relevant profile and account_ids (DBPT-2031) ([#982](https://github.com/uktrade/platform-tools/issues/982)) ([bbc7f58](https://github.com/uktrade/platform-tools/commit/bbc7f58f3f97ec426e889f1976a584f0251b3945))
+
 ## [15.8.0](https://github.com/uktrade/platform-tools/compare/15.7.0...15.8.0) (2025-08-13)
 
 
