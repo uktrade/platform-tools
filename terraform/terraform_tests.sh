@@ -14,7 +14,7 @@ do
     echo -en "\n\033[1;36m${message}\033[0m"
     echo -e "\n\033[1;36m${underline}\033[0m"
     pushd "${module}"
-    terraform init
+    terraform init --upgrade
     terraform test
     popd
   fi
