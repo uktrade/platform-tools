@@ -4,6 +4,7 @@ from unittest.mock import Mock
 from unittest.mock import create_autospec
 from unittest.mock import patch
 
+import hcl2
 import pytest
 import yaml
 from freezegun.api import freeze_time
@@ -116,12 +117,22 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 
     pipelines.generate(cli_demodjango_branch)
 
+    expected_messages = [
+        "File terraform/environment-pipelines/platform-sandbox-test/main.tf created",
+        "File terraform/environment-pipelines/platform-prod-test/main.tf created",
+    ]
+
+    called_messages = [call_obj.args[0] for call_obj in pipelines.io.info.call_args_list]
+
+    assert sorted(called_messages) == sorted(expected_messages)
+
     assert_terraform(
         app_name,
         "platform-sandbox-test",
         expected_platform_helper_version,
         expected_demodjango_branch,
         module_source_override,
+        "1111111111",
     )
     assert_terraform(
         app_name,
@@ -129,6 +140,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         module_source_override,
+        "3333333333",
     )
 
 
@@ -256,7 +268,12 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
 
 
 def assert_terraform(
-    app_name, aws_account, expected_version, expected_branch, module_source_override
+    app_name,
+    aws_account,
+    expected_version,
+    expected_branch,
+    module_source_override,
+    deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
     assert expected_files_dir.exists()
@@ -267,13 +284,26 @@ def assert_terraform(
     assert f'profile                  = "{aws_account}"' in content
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
 
-    if module_source_override:
-        assert module_source_override in content
-    else:
-        assert (
-            f'"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"'
-            in content
-        )
-    assert f'application         = "{app_name}"' in content
-    expected_branch_value = expected_branch if expected_branch else "each.value.branch"
-    assert f"branch              = {expected_branch_value} in content"
+    with open(expected_files_dir, "r") as file:
+        parsed_terraform = hcl2.load(file)
+
+        environment_pipeline_module = parsed_terraform["module"][0]["environment-pipelines"]
+
+        if module_source_override:
+            assert environment_pipeline_module["source"] == module_source_override
+        else:
+            assert (
+                environment_pipeline_module["source"]
+                == f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"
+            )
+
+        assert environment_pipeline_module["application"] == app_name
+
+        if expected_branch:
+            assert environment_pipeline_module["branch"] == expected_branch
+        else:
+            assert environment_pipeline_module["branch"] == "${each.value.branch}"
+
+        assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"] == [deploy_account_id]
+
+        assert not parsed_terraform["provider"][0]["aws"].get("alias")
