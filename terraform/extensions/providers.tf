@@ -17,7 +17,7 @@ provider "aws" {
   }
 }
 
-# This provider configuration prevents deployment to the wrong aws account
+# The default provider configuration prevents deployment to the wrong aws account
 provider "aws" {
   allowed_account_ids = [local.deploy_account_id]
 }

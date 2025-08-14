@@ -17,10 +17,7 @@
     "aws": {
       "region": "eu-west-2",
       "profile": "non-prod-acc",
-      "alias": "non-prod-acc",
-      "shared_credentials_files": [
-        "~/.aws/config"
-      ]
+      "allowed_account_ids": ["1122334455"]
     }
   },
   "terraform": {

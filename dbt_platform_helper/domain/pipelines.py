@@ -54,6 +54,25 @@ class Pipelines:
             or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
 
+    def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
+        environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
+        environment_config = platform_config["environments"]
+
+        account_id_lookup = {
+            env["accounts"]["deploy"]["name"]: env["accounts"]["deploy"]["id"]
+            for env in environment_config.values()
+            if env is not None and "accounts" in env and "deploy" in env["accounts"]
+        }
+
+        accounts = set()
+
+        for config in environment_pipelines_config.values():
+            account = config.get("account")
+            deploy_account_id = account_id_lookup.get(account)
+            accounts.add((account, deploy_account_id))
+
+        return list(accounts)
+
     def generate(
         self,
         deploy_branch: str,
@@ -107,20 +126,16 @@ class Pipelines:
         )
 
         if has_environment_pipelines:
-            environment_pipelines = platform_config[ENVIRONMENT_PIPELINES_KEY]
-            accounts = {
-                config.get("account")
-                for config in environment_pipelines.values()
-                if "account" in config
-            }
+            accounts = self._map_environment_pipeline_accounts(platform_config)
 
-            for account in accounts:
+            for account_name, account_id in accounts:
                 self._generate_terraform_environment_pipeline_manifest(
                     platform_config["application"],
                     deploy_repository,
-                    account,
+                    account_name,
                     env_pipeline_module_source,
                     deploy_branch,
+                    account_id,
                 )
 
         if has_codebase_pipelines:
@@ -163,6 +178,7 @@ class Pipelines:
         aws_account: str,
         module_source: str,
         deploy_branch: str,
+        aws_account_id: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -175,6 +191,7 @@ class Pipelines:
                 "deploy_branch": deploy_branch,
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
+                "deploy_account_id": aws_account_id,
             }
         )
 
