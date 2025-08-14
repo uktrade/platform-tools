@@ -7,7 +7,7 @@
         "draft": false,
         "pull-request-header": ":robot: Next release",
         "pull-request-footer": " ",
-        "release-notes-header": "### Summary\nTODO: Write summary here\n\n### Why should you upgrade?\n- TODO: Point 1\n- TODO: Point 2\n\n### How to upgrade\nFollow our [upgrade process](https://platform.readme.trade.gov.uk/reference/upgrading-platform-helper/).",
+        "release-notes-header": "### Summary\n<!-- One or two sentences explaining what’s in this release (plain English, user-facing). -->\n\n> **Upgrade status:** <!-- Choose an option and delete the others. --> Optional | Recommended | Required\n> **Impacted areas:** <!-- List impacted areas. --> Platform-Helper | Codebase pipelines | Datadog | Environment Pipelines | Environment Terraform\n\n### Why should you upgrade?\n<!-- List benefits of upgrading, and what component they apply to. -->\n\n### How to upgrade\nPlease follow our [upgrade process](https://platform.readme.trade.gov.uk/reference/upgrading-platform-helper/).  \n<!-- Add any special upgrade steps below. -->"
     }
   }
 }
