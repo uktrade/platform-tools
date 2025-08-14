@@ -24,7 +24,7 @@
     }
   },
   "terraform": {
-    "required_version": "~> 1.8",
+    "required_version": "~> 1.11",
     "backend": {
       "s3": {
         "bucket": "terraform-platform-state-non-prod-acc",
