@@ -222,16 +222,32 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
     resources = ["*"]
   }
 
+  # statement {
+  #   actions = [
+  #     "ssm:GetParameter",
+  #     "ssm:GetParameters",
+  #     "ssm:GetParametersByPath"
+  #   ]
+  #   resources = [
+  #     "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
+  #     "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
+  #     "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
+  #     "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***", #TODO - See if this can be scoped more tightly
+  #   ]
+  # }
+
   statement {
     actions = [
       "ssm:GetParameter",
       "ssm:GetParameters",
       "ssm:GetParametersByPath"
     ]
+    condition {
+      test     = "StringLike"
+      variable = "ssm:ResourceTag/copilot-application"
+      values   = ["__all__"]
+    }
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
       "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***", #TODO - See if this can be scoped more tightly
     ]
   }
