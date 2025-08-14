@@ -54,7 +54,7 @@ class SidecarOverride(BaseModel):
 class Image(BaseModel):
     build: Optional[str] = Field(default=None)
     location: Optional[str] = Field(default=None)
-    port: int = Field()
+    port: Optional[int] = Field(default=None)
 
 
 class VPC(BaseModel):
