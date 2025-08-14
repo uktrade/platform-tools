@@ -253,7 +253,7 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       "ssm:GetParametersByPath"
     ]
     condition {
-      test     = "StringLike"
+      test     = "StringEquals"
       variable = "ssm:ResourceTag/copilot-application"
       values   = ["__all__"]
     }
