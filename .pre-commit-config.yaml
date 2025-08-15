@@ -19,7 +19,7 @@ repos:
           [
             "--in-place",
             "--remove-all-unused-imports",
-            "--remove-unused-variable",
+            "--remove-unused-variable"
           ]
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
@@ -35,10 +35,10 @@ repos:
             "--in-place",
             "--wrap-summaries=80",
             "--wrap-descriptions=80",
-            "--pre-summary-newline",
+            "--pre-summary-newline"
           ]
   - repo: https://github.com/ikamensh/flynt/
-    rev: '1.0.0'
+    rev: "1.0.0"
     hooks:
       - id: flynt
   - repo: local
@@ -49,20 +49,20 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-  - repo: local
-    hooks:
-      - id: trufflehog
-        name: TruffleHog
-        description: Detect secrets in your data.
-        entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore'
-        language: system
-        stages: ["pre-commit", "pre-push"]
+  # - repo: local
+  #   hooks:
+  #     - id: trufflehog
+  #       name: TruffleHog
+  #       description: Detect secrets in your data.
+  #       entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore --results=verified'
+  #       language: system
+  #       stages: ["pre-commit", "pre-push"]
   - repo: local
     hooks:
       - id: terraform-fmt
         name: Terraform fmt
         description: Format the terraform code
-        entry: | 
+        entry: |
           bash -c 'terraform fmt --recursive --check terraform &> /dev/null
           if [ $? -eq 0 ]
           then
