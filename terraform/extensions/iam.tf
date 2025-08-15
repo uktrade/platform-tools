@@ -255,7 +255,7 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
     condition {
       test     = "StringEquals"
       variable = "ssm:ResourceTag/copilot-application"
-      values   = ["__all__"]
+      values   = ["__all__", var.args.application]
     }
     resources = [
       "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***", #TODO - See if this can be scoped more tightly
