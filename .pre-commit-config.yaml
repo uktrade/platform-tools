@@ -49,14 +49,14 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-  # - repo: local
-  #   hooks:
-  #     - id: trufflehog
-  #       name: TruffleHog
-  #       description: Detect secrets in your data.
-  #       entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore --results=verified'
-  #       language: system
-  #       stages: ["pre-commit", "pre-push"]
+  - repo: local
+    hooks:
+      - id: trufflehog
+        name: TruffleHog
+        description: Detect secrets in your data.
+        entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore --results=verified'
+        language: system
+        stages: ["pre-commit", "pre-push"]
   - repo: local
     hooks:
       - id: terraform-fmt
