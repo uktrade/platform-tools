@@ -36,7 +36,7 @@ resource "aws_ecs_task_definition" "this" {
           logConfiguration = {
             logDriver = "awslogs"
             options = {
-              awslogs-group         = "/platform/${local.service_name}/ecs-service-logs"
+              awslogs-group         = "/platform/ecs/service/${local.service_name}"
               awslogs-region        = data.aws_region.current.name
               awslogs-stream-prefix = "ecs"
             }
@@ -191,10 +191,22 @@ resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
 
 resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   # checkov:skip=CKV_AWS_338:Retains logs for 30 days instead of 1 year
-  name              = "/platform/${local.service_name}/ecs-service-logs"
+  name              = "/platform/ecs/service/${local.service_name}"
   retention_in_days = 30
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
 
   depends_on = [aws_kms_key.ecs_service_log_group_kms_key]
+}
+
+data "aws_ssm_parameter" "log-destination-arn" {
+  name = "/copilot/tools/central_log_groups"
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "ecs_service_logs_filter" {
+  name            = "/platform/ecs/service/${local.service_name}"
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.ecs_service_logs.name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
 }

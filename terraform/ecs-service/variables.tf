@@ -10,6 +10,15 @@ variable "env_config" {
   type = any
 }
 
+variable "platform_extensions" {
+  type = any
+}
+
+variable "iam_policy_addons_json" {
+  type    = string
+  default = null
+}
+
 variable "service_config" {
   type = object({
     name = string
