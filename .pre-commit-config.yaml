@@ -54,7 +54,7 @@ repos:
       - id: trufflehog
         name: TruffleHog
         description: Detect secrets in your data.
-        entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore --results=verified'
+        entry: bash -c 'trufflehog filesystem . --no-update --no-verification --fail --exclude-paths=.trufflehogignore'
         language: system
         stages: ["pre-commit", "pre-push"]
   - repo: local
