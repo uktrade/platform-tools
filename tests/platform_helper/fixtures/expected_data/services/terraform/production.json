@@ -19,10 +19,7 @@
     "aws": {
       "region": "eu-west-2",
       "profile": "prod-acc",
-      "alias": "prod-acc",
-      "shared_credentials_files": [
-        "~/.aws/config"
-      ]
+      "allowed_account_ids": ["9999999999"]
     }
   },
   "terraform": {
