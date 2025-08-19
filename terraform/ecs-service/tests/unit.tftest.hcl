@@ -34,35 +34,35 @@ override_data {
 override_data {
   target = data.aws_iam_policy_document.assume_role
   values = {
-    json = "{\"Sid\": \"PlaceholderPolicy\"}"
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
 override_data {
   target = data.aws_iam_policy_document.secrets
   values = {
-    json = "{\"Sid\": \"PlaceholderPolicy\"}"
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
 override_data {
   target = data.aws_iam_policy_document.execute_command
   values = {
-    json = "{\"Sid\": \"PlaceholderPolicy\"}"
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
 override_data {
   target = data.aws_iam_policy_document.appconfig
   values = {
-    json = "{\"Sid\": \"PlaceholderPolicy\"}"
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
 override_data {
   target = data.aws_iam_policy_document.service_logs
   values = {
-    json = "{\"Sid\": \"PlaceholderPolicy\"}"
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
@@ -165,6 +165,7 @@ variables {
 }
 
 
+
 run "test_target_group_health_checks" {
   command = plan
 
@@ -201,6 +202,58 @@ run "test_target_group_health_checks" {
   assert {
     condition     = aws_lb_target_group.target_group[0].health_check[0].timeout == 99
     error_message = "Should be '99'"
+  }
+}
+
+
+
+run "with_custom_iam_policy_addons" {
+  command = plan
+
+  variables {
+    iam_policy_addons_json = <<EOT
+{
+    "Statement": [
+        {
+            "Action": [
+                "s3:ListAllMyBuckets"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ],
+    "Version": "2012-10-17"
+}
+EOT
+  }
+
+  assert {
+    condition     = length(aws_iam_policy.custom_addons_policy) == 1
+    error_message = "Expected 1 custom addon IAM policy."
+  }
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.custom_addons_policy_attachment) == 1
+    error_message = "Expected 1 custom addon IAM policy attachments."
+  }
+}
+
+
+
+run "without_custom_iam_policy_addons" {
+  command = plan
+
+  variables {
+    iam_policy_addons_json = null
+  }
+
+  assert {
+    condition     = length(aws_iam_policy.custom_addons_policy) == 0
+    error_message = "Not expecting any custom addon IAM policy to be created."
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.custom_addons_policy_attachment) == 0
+    error_message = "Not expecting any custom addon IAM policy attachment to be created."
   }
 }
 
