@@ -41,8 +41,8 @@ jobs:
     strategy:
       matrix:
         terraform-version:
-          - 1.8
-          - 1.9
+          - "1.11"
+          - "1.12"
         module: ${{ fromJSON(needs.find-modules-to-test.outputs.modules) }}
       fail-fast: false
 
