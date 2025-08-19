@@ -3,7 +3,7 @@ version: 0.2
 env:
   variables:
     DEPLOY_TIMEOUT: 1800
-    TERRAFORM_VERSION: 1.8.1
+    TERRAFORM_VERSION: 1.12.2
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
 
@@ -30,7 +30,8 @@ phases:
       - git config --global credential.helper '!aws codecommit credential-helper $@'
       - git config --global credential.UseHttpPath true
       - git config --global advice.detachedHead false
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
+#      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "DBTP-2160-service-terraform-pipeline" --depth 1 platform-tools #TODO
       - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
