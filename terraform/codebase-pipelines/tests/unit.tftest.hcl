@@ -212,8 +212,12 @@ run "test_locals" {
     error_message = "Expected local.base_env_config to contain exactly 3 environments (dev, staging, prod)"
   }
   assert {
-    condition     = local.base_env_config["dev"].account == "000123456789"
-    error_message = "Expected dev.account in base_env_config to be '000123456789'"
+    condition     = local.base_env_config["dev"].account_id == "000123456789"
+    error_message = "Expected dev.account_id in base_env_config to be '000123456789'"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].account_name == "sandbox"
+    error_message = "Expected dev.account_name in base_env_config to be 'sandbox'"
   }
   assert {
     condition     = local.base_env_config["dev"].dns_account == "111123456789"
@@ -1345,7 +1349,7 @@ run "test_codebuild_deploy" {
   }
 
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\"},\"prod\":{\"account_id\":\"123456789000\",\"account_name\":\"prod\",\"dns_account\":\"222223456789\"},\"staging\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\"}}"
     error_message = "Incorrect value"
   }
 
