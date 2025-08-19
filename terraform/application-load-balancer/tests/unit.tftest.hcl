@@ -109,8 +109,11 @@ run "aws_lb_unit_test" {
   }
 
   assert {
-    condition     = aws_lb.this.access_logs[0].bucket == "dbt-access-logs"
-    error_message = "Should be: dbt-access-logs"
+    condition = (
+      (var.environment == "prod" && aws_lb.this.access_logs[0].bucket == "copilot-service-production-812359060647") ||
+      (var.environment != "prod" && aws_lb.this.access_logs[0].bucket == "copilot-service-non-production-812359060647")
+    )
+    error_message = "ALB access_logs bucket must match environment (prod vs non-prod)"
   }
 
   assert {
