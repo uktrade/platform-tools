@@ -1,9 +1,13 @@
 locals {
-  tags = {
+  base_tags = {
     application = var.application
     environment = var.environment
     managed-by  = "DBT Platform - Service Terraform"
   }
+
+  schedule_tag = contains(["prod", "live"], lower(var.environment)) ? {} : { Schedule = "uk-office-hours" }
+
+  tags = merge(local.base_tags, local.schedule_tag)
 
   service_name         = "${var.application}-${var.environment}-${var.service_config.name}"
   vpc_name             = var.env_config[var.environment]["vpc"]

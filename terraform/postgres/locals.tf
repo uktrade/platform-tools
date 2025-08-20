@@ -4,13 +4,17 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  tags = {
+  base_tags = {
     application         = var.application
     environment         = var.environment
     managed-by          = "DBT Platform - Terraform"
     copilot-application = var.application
     copilot-environment = var.environment
   }
+
+  schedule_tag = contains(["prod", "live"], lower(var.environment)) ? {} : { Schedule = "uk-office-hours" }
+
+  tags = merge(local.base_tags, local.schedule_tag)
 
   name = "${var.application}-${var.environment}-${var.name}"
 
