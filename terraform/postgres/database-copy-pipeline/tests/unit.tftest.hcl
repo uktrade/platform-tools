@@ -674,7 +674,7 @@ run "test_iam" {
   }
   assert {
     condition = data.aws_iam_policy_document.ssm_access.statement[0].resources == toset([
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/codebuild/slack_*"
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/codebuild/slack_*"
     ])
     error_message = "Unexpected resources"
   }
@@ -688,7 +688,7 @@ run "test_iam" {
   }
   assert {
     condition = data.aws_iam_policy_document.ssm_access.statement[1].resources == toset([
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:*"
     ])
     error_message = "Unexpected resources"
   }
@@ -710,10 +710,10 @@ run "test_iam" {
   }
   assert {
     condition = data.aws_iam_policy_document.ssm_access.statement[2].resources == toset([
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/test-app/*/secrets/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/test-app",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/test-app/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/test-app/environments/*"
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/test-app/*/secrets/*",
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/test-app",
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/test-app/*",
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/test-app/environments/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -856,7 +856,7 @@ run "test_pipeline_schedule" {
   }
   assert {
     condition = data.aws_iam_policy_document.pipeline_access_for_database_pipeline_scheduler.statement[0].resources == toset([
-      "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:test-db-prod-to-dev-copy-pipeline"
+      "arn:aws:codepipeline:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:test-db-prod-to-dev-copy-pipeline"
     ])
     error_message = "Unexpected resources"
   }

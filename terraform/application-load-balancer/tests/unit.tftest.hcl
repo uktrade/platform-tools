@@ -746,13 +746,13 @@ run "waf_and_rotate_lambda" {
     error_message = "Ninth statement actions incorrect"
   }
 
-  # Requires executing run block with 'apply' to evaluate "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:security-group/${aws_security_group.alb-security-group["http"].id}
+  # Requires executing run block with 'apply' to evaluate "arn:aws:ec2:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:security-group/${aws_security_group.alb-security-group["http"].id}
   assert {
     condition = alltrue(
       [
         contains(
           data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[8].resources,
-          "arn:aws:ec2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+          "arn:aws:ec2:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:*"
         )
       ]
     )

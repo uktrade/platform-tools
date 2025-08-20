@@ -89,7 +89,7 @@ resource "aws_codepipeline" "environment_pipeline" {
         PrimarySource = "project_deployment_source"
         EnvironmentVariables : jsonencode([
           { name : "APPLICATION", value : var.application },
-          { name : "AWS_REGION", value : data.aws_region.current.name },
+          { name : "AWS_REGION", value : data.aws_region.current.id },
           { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
           { name : "PIPELINE_NAME", value : var.pipeline_name },
           { name : "REPOSITORY", value : var.repository },

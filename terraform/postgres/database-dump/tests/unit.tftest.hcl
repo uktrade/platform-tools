@@ -480,8 +480,8 @@ run "pipeline_unit_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.pipeline_access.statement[1].resources == toset([
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/copilot/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/*"
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/*",
+      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -495,7 +495,7 @@ run "pipeline_unit_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.pipeline_access.statement[2].resources == toset([
-      "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:rds*"
+      "arn:aws:secretsmanager:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:secret:rds*"
     ])
     error_message = "Unexpected resources"
   }
@@ -509,7 +509,7 @@ run "pipeline_unit_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.pipeline_access.statement[3].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/*-dump:*"
+      "arn:aws:ecs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:task-definition/*-dump:*"
     ])
     error_message = "Unexpected resources"
   }
@@ -523,7 +523,7 @@ run "pipeline_unit_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.pipeline_access.statement[4].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/*-dump"
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/*-dump"
     ])
     error_message = "Unexpected resources"
   }
@@ -551,7 +551,7 @@ run "pipeline_unit_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.pipeline_access.statement[6].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:"
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:"
     ])
     error_message = "Unexpected resources"
   }

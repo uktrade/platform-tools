@@ -620,18 +620,18 @@ run "test_additional_private_ecr_repository" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/repository-namespace/repository-name"
+    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/repository-namespace/repository-name"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/repository-namespace/repository-name"
+    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/repository-namespace/repository-name"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
     condition = data.aws_iam_policy_document.ecr_access_for_codebuild_images.statement[1].resources == toset([
-      "arn:aws:ecr:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase",
-      "arn:aws:ecr:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:repository/repository-namespace/repository-name"
+      "arn:aws:ecr:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase",
+      "arn:aws:ecr:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:repository/repository-namespace/repository-name"
     ])
     error_message = "Unexpected resources"
   }
@@ -641,8 +641,8 @@ run "test_additional_private_ecr_repository" {
   }
   assert {
     condition = data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[0].resources == toset([
-      "arn:aws:ecr:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase",
-      "arn:aws:ecr:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:repository/repository-namespace/repository-name"
+      "arn:aws:ecr:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase",
+      "arn:aws:ecr:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:repository/repository-namespace/repository-name"
     ])
     error_message = "Unexpected resources"
   }
@@ -1016,12 +1016,12 @@ run "test_iam_documents" {
   }
   assert {
     condition = data.aws_iam_policy_document.log_access.statement[0].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group:*"
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
+      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group:*"
     ])
     error_message = "Unexpected resources"
   }
@@ -1087,7 +1087,7 @@ run "test_iam_documents" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = data.aws_iam_policy_document.ecr_access_for_codebuild_images.statement[1].resources == toset(["arn:aws:ecr:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase"])
+    condition     = data.aws_iam_policy_document.ecr_access_for_codebuild_images.statement[1].resources == toset(["arn:aws:ecr:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase"])
     error_message = "Unexpected resources"
   }
   assert {
@@ -1199,7 +1199,7 @@ run "test_iam_documents" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[0].resources == toset(["arn:aws:ecr:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase"])
+    condition     = data.aws_iam_policy_document.ecr_access_for_codebase_pipeline.statement[0].resources == toset(["arn:aws:ecr:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:repository/my-app/my-codebase"])
     error_message = "Unexpected resources"
   }
   assert {
@@ -1220,7 +1220,7 @@ run "test_iam_documents" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.deploy_ssm_access.statement[0].resources) == "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/codebuild/slack_*"
+    condition     = one(data.aws_iam_policy_document.deploy_ssm_access.statement[0].resources) == "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/codebuild/slack_*"
     error_message = "Unexpected resources"
   }
 
@@ -1283,10 +1283,10 @@ run "test_iam_documents" {
   }
   assert {
     condition = data.aws_iam_policy_document.env_manager_access.statement[2].resources == toset([
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/my-app-*",
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/StackSet-my-app-infrastructure-*",
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stackset/my-app-infrastructure:*",
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/my-app-*"
+      "arn:aws:cloudformation:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:stack/my-app-*",
+      "arn:aws:cloudformation:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:stack/StackSet-my-app-infrastructure-*",
+      "arn:aws:cloudformation:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:stackset/my-app-infrastructure:*",
+      "arn:aws:cloudformation:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:stack/my-app-*"
     ])
     error_message = "Unexpected resources"
   }
@@ -1536,7 +1536,7 @@ run "test_main_pipeline" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "AWS_REGION"]) == "${data.aws_region.current.name}"
+    var.value if var.name == "AWS_REGION"]) == "${data.aws_region.current.id}"
     error_message = "AWS_REGION environment variable incorrect"
   }
   assert {
@@ -1561,7 +1561,7 @@ run "test_main_pipeline" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/my-app/my-codebase"
+    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/my-app/my-codebase"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
@@ -1908,7 +1908,7 @@ run "test_manual_release_pipeline" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "AWS_REGION"]) == "${data.aws_region.current.name}"
+    var.value if var.name == "AWS_REGION"]) == "${data.aws_region.current.id}"
     error_message = "AWS_REGION environment variable incorrect"
   }
   assert {
@@ -1933,7 +1933,7 @@ run "test_manual_release_pipeline" {
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
-    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/my-app/my-codebase"
+    var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com/my-app/my-codebase"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
@@ -2076,7 +2076,7 @@ run "test_event_bridge" {
     error_message = "Should be: codepipeline:StartPipelineExecution"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.event_bridge_pipeline_trigger.statement[0].resources) == "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:my-app-my-codebase-main-codebase"
+    condition     = one(data.aws_iam_policy_document.event_bridge_pipeline_trigger.statement[0].resources) == "arn:aws:codepipeline:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:my-app-my-codebase-main-codebase"
     error_message = "Unexpected resources"
   }
   assert {
