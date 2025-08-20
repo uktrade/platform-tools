@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5"
-    }
-  }
-}
-
 resource "aws_vpc" "main" {
   # checkov:skip=CKV2_AWS_11: As this VPC is used for E2E testing and torn down. No flow logging required
   # checkov:skip=CKV2_AWS_12: As this VPC is used for E2E testing and torn down. Not required 

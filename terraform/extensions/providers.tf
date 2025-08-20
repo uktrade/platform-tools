@@ -32,8 +32,7 @@ provider "datadog" {
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5"
+      source = "hashicorp/aws"
       configuration_aliases = [
         aws.domain,
         aws.domain-cdn
