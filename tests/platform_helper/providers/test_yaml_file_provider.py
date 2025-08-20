@@ -116,3 +116,45 @@ def test_writes_account_numbers_as_quoted_strings(fs):
     YamlFileProvider.write(test_path, test_content)
     with open(test_path, "r") as test_yaml_file:
         assert expected_test_cache_file.strip() == test_yaml_file.read().strip()
+
+
+def test_remove_empty_keys(fs):
+    test_path = "./test"
+    test_content = {
+        "test": {
+            "empty1": {},
+            "empty2": [],
+            "empty3": None,
+            "not_empty": "name",
+        }
+    }
+    expected_test_output_file = """test:
+  not_empty: name
+"""
+
+    test_content = YamlFileProvider.remove_empty_keys(test_content)
+    YamlFileProvider.write(test_path, test_content)
+    with open(test_path, "r") as test_yaml_file:
+        assert expected_test_output_file.strip() == test_yaml_file.read().strip()
+
+
+def test_find_and_replace(fs):
+    test_path = "./test"
+    test_content = {
+        "test": {
+            "value1": "REPLACE_ME",
+            "value2": "TEST_STRING_REPLACE_ME_TEST_STRING",
+            "value3": {"value4": "REPLACE_ME"},
+        }
+    }
+    expected_test_output_file = """test:
+  value1: REPLACED
+  value2: TEST_STRING_REPLACED_TEST_STRING
+  value3:
+    value4: REPLACED
+"""
+
+    test_content = YamlFileProvider.find_and_replace(test_content, "REPLACE_ME", "REPLACED")
+    YamlFileProvider.write(test_path, test_content)
+    with open(test_path, "r") as test_yaml_file:
+        assert expected_test_output_file.strip() == test_yaml_file.read().strip()

@@ -7,6 +7,7 @@ from unittest.mock import patch
 import boto3
 import botocore
 import certifi
+import hcl2
 import pytest
 import yaml
 from botocore.exceptions import ClientError
@@ -62,6 +63,9 @@ def fakefs(fs):
     fs.add_real_file(
         FIXTURES_DIR / "dummy_aws_config.ini", True, Path.home().joinpath(".aws/config")
     )
+
+    # To avoid 'No such file or directory in the fake filesystem: '.../hcl2/hcl2.lark' error
+    fs.add_real_file(Path(hcl2.__file__).parent / "hcl2.lark")
 
     return fs
 
@@ -862,14 +866,15 @@ application: test-app
 deploy_repository: uktrade/test-app-weird-name-deploy
 
 environments:
-  dev:
+  "*":
     accounts:
       deploy:
         name: "platform-sandbox-test"
         id: "1111111111"
       dns:
-        name: "platform-sandbox-test"
+        name: "platform-dns-test"
         id: "2222222222"
+  dev:
   prod:
     accounts:
       deploy:
@@ -882,6 +887,13 @@ environments:
 
 environment_pipelines:
    main:
+       account: platform-sandbox-test
+       branch: main
+       slack_channel: "/codebuild/test-slack-channel"
+       trigger_on_push: false
+       environments:
+         dev:
+   another-pipeline-in-same-account:
        account: platform-sandbox-test
        branch: main
        slack_channel: "/codebuild/test-slack-channel"
