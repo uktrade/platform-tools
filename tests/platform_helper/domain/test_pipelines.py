@@ -276,7 +276,6 @@ def assert_terraform(
     deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
-
     assert expected_files_dir.exists()
     content = expected_files_dir.read_text()
 
