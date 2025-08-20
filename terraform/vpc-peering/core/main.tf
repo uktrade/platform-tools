@@ -1,3 +1,12 @@
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5"
+    }
+  }
+}
+
 data "aws_route_tables" "peering-table" {
   vpc_id = var.vpc_id
 
