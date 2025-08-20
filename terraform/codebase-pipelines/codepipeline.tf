@@ -161,7 +161,6 @@ resource "aws_codepipeline" "codebase_pipeline" {
               { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
             ])
           }
         }
@@ -305,7 +304,6 @@ resource "aws_codepipeline" "manual_release_pipeline" {
             { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
           ])
         }
       }
