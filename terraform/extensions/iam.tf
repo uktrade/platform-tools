@@ -81,8 +81,8 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "ecs:RegisterTaskDefinition"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/*",
-      "arn:aws:ecs:${data.aws_region.current.name}:${local.pipeline_account_id}:task-definition/"
+      "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:task-definition/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:task-definition/"
     ]
   }
 
@@ -110,7 +110,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "ec2:DescribeVpcAttribute"
     ]
     resources = [
-      "arn:aws:ec2:${data.aws_region.current.name}:${local.pipeline_account_id}:vpc/*"
+      "arn:aws:ec2:${data.aws_region.current.region}:${local.pipeline_account_id}:vpc/*"
     ]
   }
 
@@ -128,7 +128,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "servicediscovery:TagResource"
     ]
     resources = [
-      "arn:aws:servicediscovery:${data.aws_region.current.name}:${local.pipeline_account_id}:*"
+      "arn:aws:servicediscovery:${data.aws_region.current.region}:${local.pipeline_account_id}:*"
     ]
   }
 
@@ -147,7 +147,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "kms:ListResourceTags"
     ]
     resources = [
-      "arn:aws:kms:${data.aws_region.current.name}:${local.pipeline_account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${local.pipeline_account_id}:key/*"
     ]
   }
 
@@ -157,7 +157,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "kms:DeleteAlias",
     ]
     resources = [
-      "arn:aws:kms:${data.aws_region.current.name}:${local.pipeline_account_id}:alias/${var.args.application}-${var.environment}-*-ecs-service-logs-key"
+      "arn:aws:kms:${data.aws_region.current.region}:${local.pipeline_account_id}:alias/${var.args.application}-${var.environment}-*-ecs-service-logs-key"
     ]
   }
 
@@ -200,7 +200,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "logs:AssociateKmsKey",
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${local.pipeline_account_id}:log-group:/platform/*"
+      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group:/platform/*"
     ]
   }
 
@@ -209,7 +209,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "logs:DescribeLogGroups"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${local.pipeline_account_id}:log-group::log-stream:"
+      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group::log-stream:"
     ]
   }
 
@@ -239,10 +239,25 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       "ssm:GetParametersByPath"
     ]
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
-      "arn:aws:ssm:${data.aws_region.current.name}:${local.pipeline_account_id}:parameter/***"
+      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
+      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
+      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
+      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/***"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/copilot-application"
+      values   = ["__all__", var.args.application]
+    }
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/***",
     ]
   }
 }
@@ -309,7 +324,7 @@ data "aws_iam_policy_document" "state_lock_dynamo_db_access" {
       "dynamodb:DeleteItem"
     ]
     resources = [
-      "arn:aws:dynamodb:${data.aws_region.current.name}:${local.pipeline_account_id}:table/terraform-platform-lockdb-${local.deploy_account_name}"
+      "arn:aws:dynamodb:${data.aws_region.current.region}:${local.pipeline_account_id}:table/terraform-platform-lockdb-${local.deploy_account_name}"
     ]
   }
 }
