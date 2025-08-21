@@ -23,7 +23,7 @@ resource "aws_ecs_task_definition" "conduit-opensearch" {
         logDriver = "awslogs",
         options = {
           awslogs-group         = aws_cloudwatch_log_group.conduit-logs.name
-          awslogs-region        = data.aws_region.current.name
+          awslogs-region        = data.aws_region.current.region
           mode                  = "non-blocking"
           awslogs-create-group  = "true"
           max-buffer-size       = "25m"
@@ -80,8 +80,8 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:*",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:log-stream:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:log-stream:*"
     ]
   }
 
@@ -121,8 +121,8 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:*",
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:log-stream:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/opensearch/${var.name}/${var.environment}/${var.name}:log-stream:*"
     ]
   }
 

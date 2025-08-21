@@ -16,7 +16,7 @@ data "aws_iam_policy_document" "assume_codepipeline_role" {
       test     = "StringEquals"
       variable = "aws:SourceArn"
       values = [
-        "arn:aws:codepipeline:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${var.application}-${var.pipeline_name}-environment-pipeline"
+        "arn:aws:codepipeline:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:${var.application}-${var.pipeline_name}-environment-pipeline"
       ]
     }
   }
@@ -108,10 +108,10 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       test     = "StringEquals"
       variable = "aws:SourceArn"
       values = compact([
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-plan",
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-build",
-        "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply",
-        local.triggers_another_pipeline ? "arn:aws:codebuild:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-trigger" : null
+        "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-plan",
+        "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-build",
+        "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-apply",
+        local.triggers_another_pipeline ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.pipeline_name}-environment-pipeline-trigger" : null
       ])
     }
   }
@@ -920,7 +920,7 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
       "lambda:DeleteFunction"
     ]
     resources = [
-      for env in local.environment_config : "arn:aws:lambda:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:function:${var.application}-${env.name}-origin-secret-rotate"
+      for env in local.environment_config : "arn:aws:lambda:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:function:${var.application}-${env.name}-origin-secret-rotate"
     ]
   }
 
@@ -948,7 +948,7 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
       "wafv2:AssociateWebACL"
     ]
     resources = [
-      "arn:aws:wafv2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:regional/webacl/*/*"
+      "arn:aws:wafv2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:regional/webacl/*/*"
     ]
   }
 
@@ -959,7 +959,7 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
       "wafv2:CreateWebACL"
     ]
     resources = [
-      "arn:aws:wafv2:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:regional/managedruleset/*/*"
+      "arn:aws:wafv2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:regional/managedruleset/*/*"
     ]
   }
 
@@ -979,7 +979,7 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
       "secretsmanager:RotateSecret"
     ]
     resources = [
-      for env in local.environment_config : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${var.application}-${env.name}-origin-verify-header-secret-*"
+      for env in local.environment_config : "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:${var.application}-${env.name}-origin-verify-header-secret-*"
     ]
   }
 
@@ -1425,7 +1425,7 @@ data "aws_iam_policy_document" "assume_role_for_copilot_env_commands_policy_docu
       "kms:*",
     ]
     resources = [
-      "arn:aws:kms:${data.aws_region.current.name}:${local.triggering_account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${local.triggering_account_id}:key/*"
     ]
   }
 

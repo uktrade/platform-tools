@@ -327,7 +327,7 @@ data "aws_iam_policy_document" "ecr_access" {
       "ecr:DescribeImages"
     ]
     resources = [
-      "arn:aws:ecr:${data.aws_region.current.name}:${local.pipeline_account_id}:repository/${var.args.application}/*"
+      "arn:aws:ecr:${data.aws_region.current.region}:${local.pipeline_account_id}:repository/${var.args.application}/*"
     ]
   }
 }
@@ -375,7 +375,7 @@ data "aws_iam_policy_document" "artifact_store_access" {
       "kms:Decrypt"
     ]
     resources = [
-      "arn:aws:kms:${data.aws_region.current.name}:${local.pipeline_account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${local.pipeline_account_id}:key/*"
     ]
   }
 }
@@ -396,8 +396,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServices"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
     ]
   }
 
@@ -408,8 +408,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:TagResource"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*"
     ]
   }
 
@@ -420,7 +420,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:TagResource"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/${var.args.application}-${var.environment}-*:*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task-definition/${var.args.application}-${var.environment}-*:*"
     ]
   }
 
@@ -430,7 +430,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListTasks"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*"
     ]
   }
 
@@ -462,7 +462,7 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServiceDeployments"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
     ]
   }
 }
@@ -480,7 +480,7 @@ data "aws_iam_policy_document" "cloudformation_access" {
       "cloudformation:GetTemplate"
     ]
     resources = [
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/${var.args.application}-${var.environment}-*"
+      "arn:aws:cloudformation:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stack/${var.args.application}-${var.environment}-*"
     ]
   }
 }
