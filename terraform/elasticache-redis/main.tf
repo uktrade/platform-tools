@@ -197,7 +197,7 @@ resource "aws_kms_key_policy" "redis-to-cloudwatch" {
       {
         "Effect" : "Allow",
         "Principal" : {
-          "Service" : "logs.${data.aws_region.current.name}.amazonaws.com"
+          "Service" : "logs.${data.aws_region.current.region}.amazonaws.com"
         },
         "Action" : "kms:*",
         "Resource" : "*"
