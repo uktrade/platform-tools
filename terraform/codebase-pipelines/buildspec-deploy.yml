@@ -109,7 +109,7 @@ phases:
       - copilot svc package --env "${ENVIRONMENT}" --name "${SERVICE}" | yq .Metadata.Manifest | jq -r . | yq 'del(.image.location)' > new.yml
 
       # Assume environment role
-      - account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account)
+      - account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_id)
       - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
       - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
       - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)

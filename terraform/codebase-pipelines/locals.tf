@@ -22,12 +22,13 @@ locals {
 
   base_env_config = {
     for name, config in var.env_config : name => {
-      account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
+      account_id : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
+      account_name : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "name", {}),
       dns_account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "dns", {}), "id", {})
     } if name != "*"
   }
 
-  deploy_account_ids = distinct([for env in local.base_env_config : env.account])
+  deploy_account_ids = distinct([for env in local.base_env_config : env.account_id])
 
   dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 

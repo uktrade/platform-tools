@@ -600,6 +600,48 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.iam_access_for_codebase
+  values = {
+    json = "{\"Sid\": \"IAMAccessForCodebase\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.ecs_service_access_for_codebase
+  values = {
+    json = "{\"Sid\": \"ECSServiceAccessForCodebase\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.validate_platform_config_for_codebase
+  values = {
+    json = "{\"Sid\": \"ValidatePlatformConfigFoCodebase\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.state_kms_key_access
+  values = {
+    json = "{\"Sid\": \"stateKMSKeyAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.state_bucket_access
+  values = {
+    json = "{\"Sid\": \"stateBucketAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.state_lock_dynamo_db_access
+  values = {
+    json = "{\"Sid\": \"StateLockDynamoDBAccess\"}"
+  }
+}
+
 run "codebase_deploy_iam_test" {
   command = plan
 

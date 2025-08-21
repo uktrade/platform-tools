@@ -8,3 +8,4 @@ slack_sdk
 venv
 .env
 .zip
+CHANGELOG.md

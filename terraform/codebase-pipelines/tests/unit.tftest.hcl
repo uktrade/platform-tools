@@ -212,8 +212,12 @@ run "test_locals" {
     error_message = "Expected local.base_env_config to contain exactly 3 environments (dev, staging, prod)"
   }
   assert {
-    condition     = local.base_env_config["dev"].account == "000123456789"
-    error_message = "Expected dev.account in base_env_config to be '000123456789'"
+    condition     = local.base_env_config["dev"].account_id == "000123456789"
+    error_message = "Expected dev.account_id in base_env_config to be '000123456789'"
+  }
+  assert {
+    condition     = local.base_env_config["dev"].account_name == "sandbox"
+    error_message = "Expected dev.account_name in base_env_config to be 'sandbox'"
   }
   assert {
     condition     = local.base_env_config["dev"].dns_account == "111123456789"
@@ -279,7 +283,7 @@ run "test_cache_invalidation_actions_created" {
         ]
       ]
     ]))) == 3
-    error_message = "Expected exactly 3 cache invalidation actions, but found a different number"
+    error_message = "Expected exactly 6 cache invalidation actions, but found a different number"
   }
 
   assert {
@@ -326,8 +330,7 @@ run "test_cache_invalidation_actions_created" {
           for action in stage.action :
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "CACHE_INVALIDATION_CONFIG") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "APPLICATION") &&
-          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENVIRONMENT") &&
-          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENV_CONFIG")
+          contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENVIRONMENT")
           if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
         ]
       ]
@@ -1021,7 +1024,9 @@ run "test_iam_documents" {
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-terraform-deploy/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-terraform-deploy/log-group:*"
     ])
     error_message = "Unexpected resources"
   }
@@ -1343,7 +1348,7 @@ run "test_codebuild_deploy" {
   }
 
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"},\"prod\":{\"account\":\"123456789000\",\"dns_account\":\"222223456789\"},\"staging\":{\"account\":\"000123456789\",\"dns_account\":\"111123456789\"}}"
+    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\"},\"prod\":{\"account_id\":\"123456789000\",\"account_name\":\"prod\",\"dns_account\":\"222223456789\"},\"staging\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\"}}"
     error_message = "Incorrect value"
   }
 
@@ -1444,8 +1449,8 @@ run "test_main_pipeline" {
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
-    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 2
-    error_message = "Should be: 2"
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 3
+    error_message = "Should be: 3"
   }
 
   # Source stage
@@ -1492,7 +1497,11 @@ run "test_main_pipeline" {
 
   # Deploy dev environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-Terraform-dev"
+    error_message = "Should be: Deploy-Terraform-dev"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
   assert {
@@ -1526,7 +1535,11 @@ run "test_main_pipeline" {
     error_message = "Should be: deploy_source"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-terraform-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-terraform-deploy"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
@@ -1612,7 +1625,11 @@ run "test_main_pipeline" {
     error_message = "Should be: deploy_source"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-terraform-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-terraform-deploy"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
@@ -1645,13 +1662,17 @@ run "test_tagged_pipeline" {
     error_message = "Should be: 'tag-latest'"
   }
   assert {
-    condition     = length(aws_codepipeline.codebase_pipeline[1].stage) == 3
-    error_message = "Should be: 3"
+    condition     = length(aws_codepipeline.codebase_pipeline[1].stage) == 5
+    error_message = "Should be: 5"
   }
 
   # Deploy staging environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].name == "Deploy-staging"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].name == "Deploy-Terraform-staging"
+    error_message = "Should be: Deploy-Terraform-staging"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].name == "Deploy-staging"
     error_message = "Should be: Deploy-staging"
   }
   assert {
@@ -1701,7 +1722,11 @@ run "test_tagged_pipeline" {
 
   # Deploy prod environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Deploy-prod"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Deploy-Terraform-prod"
+    error_message = "Should be: Deploy-Terraform-prod"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[4].name == "Deploy-prod"
     error_message = "Should be: Deploy-prod"
   }
 
@@ -1820,8 +1845,8 @@ run "test_manual_release_pipeline" {
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
-    condition     = length(aws_codepipeline.manual_release_pipeline.stage) == 2
-    error_message = "Should be: 2"
+    condition     = length(aws_codepipeline.manual_release_pipeline.stage) == 3
+    error_message = "Should be: 3"
   }
 
   # Source stage
@@ -1868,7 +1893,11 @@ run "test_manual_release_pipeline" {
 
   # Deploy stage
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].name == "Deploy"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].name == "Deploy-Terraform"
+    error_message = "Should be: Deploy-Terraform"
+  }
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[2].name == "Deploy"
     error_message = "Should be: Deploy"
   }
 
@@ -1898,7 +1927,11 @@ run "test_manual_release_pipeline" {
     error_message = "Should be: deploy_source"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-terraform-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-terraform-deploy"
+  }
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[2].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
@@ -1982,7 +2015,11 @@ run "test_manual_release_pipeline" {
     error_message = "Should be: deploy_source"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-terraform-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase=terraform-deploy"
+  }
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[2].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
@@ -2315,7 +2352,11 @@ run "test_pipeline_multiple_run_groups_multiple_environment_approval" {
 
   # Dev
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-Terraform-dev"
+    error_message = "Should be: Deploy-Terraform-dev"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[3].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
   assert {
@@ -2365,7 +2406,11 @@ run "test_pipeline_multiple_run_groups_multiple_environment_approval" {
 
   # Prod
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-prod"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-Terraform-prod"
+    error_message = "Should be: Deploy-Terraform-prod"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[4].name == "Deploy-prod"
     error_message = "Should be: Deploy-prod"
   }
 
