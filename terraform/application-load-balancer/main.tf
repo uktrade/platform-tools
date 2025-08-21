@@ -382,7 +382,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
     ]
 
     resources = [
-      "arn:aws:ec2:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:*",
+      "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:*",
     ]
     condition {
       test     = "ArnEquals"

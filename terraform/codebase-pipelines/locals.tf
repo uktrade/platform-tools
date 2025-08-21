@@ -5,10 +5,10 @@ locals {
     managed-by          = "DBT Platform - Terraform"
   }
 
-  account_region = "${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}"
+  account_region = "${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}"
 
   ecr_name                    = "${var.application}/${var.codebase}"
-  private_repo_url            = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.id}.amazonaws.com"
+  private_repo_url            = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com"
   is_additional_repo_public   = var.additional_ecr_repository != null ? strcontains(var.additional_ecr_repository, "public.ecr.aws") : false
   additional_ecr_url          = var.additional_ecr_repository != null ? local.is_additional_repo_public ? var.additional_ecr_repository : "${local.private_repo_url}/${var.additional_ecr_repository}" : null
   repository_url              = coalesce(local.additional_ecr_url, "${local.private_repo_url}/${local.ecr_name}")

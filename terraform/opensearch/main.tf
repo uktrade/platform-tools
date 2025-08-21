@@ -24,7 +24,7 @@ resource "aws_kms_key_policy" "opensearch_to_cloudwatch" {
       {
         "Effect" : "Allow",
         "Principal" : {
-          "Service" : "logs.${data.aws_region.current.id}.amazonaws.com"
+          "Service" : "logs.${data.aws_region.current.region}.amazonaws.com"
         },
         "Action" : "kms:*",
         "Resource" : "*"
@@ -200,7 +200,7 @@ resource "aws_opensearch_domain" "this" {
             "Action": "es:*",
             "Principal": "*",
             "Effect": "Allow",
-            "Resource": "arn:aws:es:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*"
+            "Resource": "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*"
         }
     ]
 }

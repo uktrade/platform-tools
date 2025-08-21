@@ -75,7 +75,7 @@ locals {
       output_artifacts : [],
       configuration : {
         CustomData : "Review Terraform Plan"
-        ExternalEntityLink : "https://${data.aws_region.current.id}.console.aws.amazon.com/codesuite/codebuild/${data.aws_caller_identity.current.account_id}/projects/${var.application}-${var.pipeline_name}-environment-pipeline-plan/build/#{${env.name}-plan.BUILD_ID}"
+        ExternalEntityLink : "https://${data.aws_region.current.region}.console.aws.amazon.com/codesuite/codebuild/${data.aws_caller_identity.current.account_id}/projects/${var.application}-${var.pipeline_name}-environment-pipeline-plan/build/#{${env.name}-plan.BUILD_ID}"
       },
       namespace : null
     }] : [],
@@ -139,7 +139,7 @@ locals {
   # Merge in the stage specific config from the stage_config.yml file:
   stages = [for stage in local.all_stages : merge(stage, local.stage_config[stage["type"]])]
 
-  account_region = "${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}"
+  account_region = "${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}"
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"

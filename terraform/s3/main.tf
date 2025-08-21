@@ -461,7 +461,7 @@ data "aws_iam_policy_document" "s3-ssm-kms-key-policy-document" {
       test     = "StringLike"
       variable = "aws:PrincipalArn"
       values = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/${data.aws_region.current.id}/AWSReservedSSO_AdministratorAccess_*"
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/${data.aws_region.current.region}/AWSReservedSSO_AdministratorAccess_*"
       ]
     }
     resources = [aws_kms_key.s3-ssm-kms-key[0].arn]

@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "pipeline_access_for_database_pipeline_scheduler"
       "codepipeline:StartPipelineExecution"
     ]
     resources = [
-      "arn:aws:codepipeline:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:${local.pipeline_name}"
+      "arn:aws:codepipeline:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:${local.pipeline_name}"
     ]
   }
 }

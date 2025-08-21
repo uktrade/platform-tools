@@ -21,7 +21,7 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
         logDriver = "awslogs"
         options = {
           awslogs-group         = aws_cloudwatch_log_group.conduit-logs.name
-          awslogs-region        = data.aws_region.current.id
+          awslogs-region        = data.aws_region.current.region
           mode                  = "non-blocking"
           awslogs-create-group  = "true"
           max-buffer-size       = "25m"
@@ -88,8 +88,8 @@ data "aws_iam_policy_document" "conduit_task_role_access" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:*",
-      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:log-stream:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:log-stream:*"
     ]
   }
 
@@ -129,8 +129,8 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:*",
-      "arn:aws:logs:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:log-stream:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/conduit/postgres/${var.name}/${var.environment}/${var.name}:log-stream:*"
     ]
   }
 
@@ -142,8 +142,8 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}",
-      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
     ]
   }
 
@@ -165,8 +165,8 @@ data "aws_iam_policy_document" "conduit_exec_policy" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}",
-      "arn:aws:ssm:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
     ]
   }
 }
@@ -212,7 +212,7 @@ resource "aws_kms_key_policy" "conduit-to-cloudwatch" {
       {
         "Effect" : "Allow",
         "Principal" : {
-          "Service" : "logs.${data.aws_region.current.id}.amazonaws.com"
+          "Service" : "logs.${data.aws_region.current.region}.amazonaws.com"
         },
         "Action" : "kms:*",
         "Resource" : "*"
