@@ -37,7 +37,7 @@ resource "aws_ecs_task_definition" "this" {
             logDriver = "awslogs"
             options = {
               awslogs-group         = "/platform/ecs/service/${local.service_name}"
-              awslogs-region        = data.aws_region.current.name
+              awslogs-region        = data.aws_region.current.region
               awslogs-stream-prefix = "ecs"
             }
           }
@@ -175,7 +175,7 @@ resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
         "Sid" : "AllowCloudWatchLogsUsage"
         "Effect" : "Allow",
         "Principal" : {
-          "Service" : "logs.${data.aws_region.current.name}.amazonaws.com"
+          "Service" : "logs.${data.aws_region.current.region}.amazonaws.com"
         },
         "Action" : [
           "kms:Encrypt",

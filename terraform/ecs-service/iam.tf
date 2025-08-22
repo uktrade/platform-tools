@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "secrets" {
       "secretsmanager:GetSecretValue",
     ]
     resources = [
-      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
+      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
     ]
     condition {
       test = "StringEquals"
@@ -71,7 +71,7 @@ data "aws_iam_policy_document" "secrets" {
     ]
     resources = [
       # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
-      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
   }
   statement {
@@ -81,7 +81,7 @@ data "aws_iam_policy_document" "secrets" {
     ]
     resources = [
       # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
-      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
     condition {
       test = "StringEquals"
@@ -103,7 +103,7 @@ data "aws_iam_policy_document" "secrets" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
+      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
     ]
     condition {
       test     = "StringEquals"
@@ -123,7 +123,7 @@ data "aws_iam_policy_document" "secrets" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
+      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
     ]
     condition {
       test     = "StringEquals"
@@ -201,7 +201,7 @@ data "aws_iam_policy_document" "service_logs" {
       "logs:PutLogEvents"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}"
     ]
   }
 }

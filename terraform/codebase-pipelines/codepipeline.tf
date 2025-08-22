@@ -78,7 +78,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
             ProjectName = aws_codebuild_project.codebase_terraform_deploy.name
             EnvironmentVariables : jsonencode([
               { name : "APPLICATION", value : var.application },
-              { name : "AWS_REGION", value : data.aws_region.current.name },
+              { name : "AWS_REGION", value : data.aws_region.current.region },
               { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
               { name : "ENVIRONMENT", value : stage.value.name },
               { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
@@ -91,29 +91,6 @@ resource "aws_codepipeline" "codebase_pipeline" {
         }
       }
 
-      dynamic "action" {
-        for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
-        content {
-          name             = "InvalidateCache-${stage.value.name}"
-          category         = "Build"
-          owner            = "AWS"
-          provider         = "CodeBuild"
-          input_artifacts  = ["deploy_source"]
-          output_artifacts = []
-          version          = "1"
-          run_order        = length(local.service_order_list) + 2
-
-          configuration = {
-            ProjectName = aws_codebuild_project.invalidate_cache[""].name
-            EnvironmentVariables : jsonencode([
-              { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
-              { name : "APPLICATION", value : var.application },
-              { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
-            ])
-          }
-        }
-      }
     }
   }
 
@@ -153,7 +130,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
             ProjectName = aws_codebuild_project.codebase_deploy.name
             EnvironmentVariables : jsonencode([
               { name : "APPLICATION", value : var.application },
-              { name : "AWS_REGION", value : data.aws_region.current.name },
+              { name : "AWS_REGION", value : data.aws_region.current.region },
               { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
               { name : "ENVIRONMENT", value : stage.value.name },
               { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
@@ -184,7 +161,6 @@ resource "aws_codepipeline" "codebase_pipeline" {
               { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
               { name : "APPLICATION", value : var.application },
               { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
             ])
           }
         }
@@ -263,7 +239,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
           ProjectName = aws_codebuild_project.codebase_terraform_deploy.name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
-            { name : "AWS_REGION", value : data.aws_region.current.name },
+            { name : "AWS_REGION", value : data.aws_region.current.region },
             { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
@@ -276,29 +252,6 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       }
     }
 
-    dynamic "action" {
-      for_each = toset(local.cache_invalidation_enabled ? [""] : [])
-      content {
-        name             = "InvalidateCache"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = length(local.service_order_list) + 2
-
-        configuration = {
-          ProjectName = aws_codebuild_project.invalidate_cache[""].name
-          EnvironmentVariables : jsonencode([
-            { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
-            { name : "APPLICATION", value : var.application },
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
-          ])
-        }
-      }
-    }
   }
 
   stage {
@@ -320,7 +273,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
           ProjectName = aws_codebuild_project.codebase_deploy.name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
-            { name : "AWS_REGION", value : data.aws_region.current.name },
+            { name : "AWS_REGION", value : data.aws_region.current.region },
             { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
@@ -351,7 +304,6 @@ resource "aws_codepipeline" "manual_release_pipeline" {
             { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
             { name : "APPLICATION", value : var.application },
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "ENV_CONFIG", value : jsonencode(local.base_env_config) },
           ])
         }
       }

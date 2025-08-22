@@ -5,10 +5,10 @@ locals {
     managed-by          = "DBT Platform - Terraform"
   }
 
-  account_region = "${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}"
+  account_region = "${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}"
 
   ecr_name                    = "${var.application}/${var.codebase}"
-  private_repo_url            = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com"
+  private_repo_url            = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com"
   is_additional_repo_public   = var.additional_ecr_repository != null ? strcontains(var.additional_ecr_repository, "public.ecr.aws") : false
   additional_ecr_url          = var.additional_ecr_repository != null ? local.is_additional_repo_public ? var.additional_ecr_repository : "${local.private_repo_url}/${var.additional_ecr_repository}" : null
   repository_url              = coalesce(local.additional_ecr_url, "${local.private_repo_url}/${local.ecr_name}")
@@ -22,12 +22,13 @@ locals {
 
   base_env_config = {
     for name, config in var.env_config : name => {
-      account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
+      account_id : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
+      account_name : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "name", {}),
       dns_account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "dns", {}), "id", {})
     } if name != "*"
   }
 
-  deploy_account_ids = distinct([for env in local.base_env_config : env.account])
+  deploy_account_ids = distinct([for env in local.base_env_config : env.account_id])
 
   dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 
