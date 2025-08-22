@@ -17,7 +17,7 @@ provider "aws" {
   }
 }
 
-# This provider configuration prevents deployment to the wrong aws account
+# The default provider configuration prevents deployment to the wrong aws account
 provider "aws" {
   allowed_account_ids = [local.deploy_account_id]
 }
@@ -30,11 +30,10 @@ provider "datadog" {
 }
 
 terraform {
-  required_version = "~> 1.7"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5"
+      version = "~> 6"
       configuration_aliases = [
         aws.domain,
         aws.domain-cdn

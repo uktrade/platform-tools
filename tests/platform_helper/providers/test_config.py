@@ -478,7 +478,7 @@ class TestDataMigrationValidation:
     def test_validate_data_migration_fails_if_service_deployment_mode_not_supported(self):
         config = {
             "application": "test-app",
-            "schema_version": 1,
+            "schema_version": 2,
             "default_versions": {"platform-helper": "14.0.0"},
             "environments": {"dev": {"service-deployment-mode": "something we dont want"}},
         }

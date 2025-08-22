@@ -8,12 +8,9 @@ locals {
   # So we don't hit a Parameter Store limit, filter environment config for extensions so it only includes the defaults (`"*"`) and the current environment
   extensions_for_environment = {
     for extension_name, extension_config in var.args.services :
-    extension_name => merge(extension_config, {
-      environments = {
-        for environment_name, environment_config in extension_config["environments"] :
-        environment_name => environment_config if contains(["*", var.environment], environment_name)
-      }
-    })
+    extension_name => {
+      type = extension_config.type
+    }
   }
 
   // Select environment for each service and expand config from "*"
@@ -93,6 +90,7 @@ locals {
 
   vpc_name            = var.args.env_config[var.environment]["vpc"]
   dns_account_id      = var.args.env_config[var.environment]["accounts"]["dns"]["id"]
+  deploy_account_name = var.args.env_config[var.environment]["accounts"]["deploy"]["name"]
   deploy_account_id   = var.args.env_config[var.environment]["accounts"]["deploy"]["id"]
   pipeline_account_id = var.args.env_config["*"]["accounts"]["deploy"]["id"]
 
