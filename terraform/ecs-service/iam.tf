@@ -343,7 +343,7 @@ locals {
             Sid      = "KMSDecryptAndGenerate"
             Effect   = "Allow"
             Action   = ["kms:Decrypt", "kms:GenerateDataKey"]
-            Resource = ["arn:aws:kms:${data.aws_region.current.name}:${rule.bucket_account}:key/*"]
+            Resource = ["arn:aws:kms:${data.aws_region.current.region}:${rule.bucket_account}:key/*"]
             Condition = {
               StringEquals = {
                 "aws:PrincipalTag/environment" = rule.access_env
