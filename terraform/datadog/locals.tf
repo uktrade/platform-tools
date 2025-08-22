@@ -32,7 +32,7 @@ EOF
   contact_email = var.config.contact_email != null ? split(",", var.config.contact_email) : null
 
   ## This supports the 'new' way of setting contacts in platform-config.yml which replicates the Datadog schema
-  ## https://github.com/DataDog/schema/blob/b76ed2b7681cd7d681520aa8760e5b09c347865b/service-catalog/v3/metadata.schema.json
+  ## https://github.com/DataDog/schema/blob/b76ed2b7681cd7d681520aa8760e5b09c347865b/service-catalog/v3/metadata.schema.json trufflehog:ignore
   #  contacts:
   #  - name: DBT Platform Engineers
   #    type: email

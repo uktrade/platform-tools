@@ -22,13 +22,13 @@ resource "aws_ecs_task_definition" "this" {
           ] : []
           essential = true
           environment = [
-            for k, v in var.service_config.variables : {
+            for k, v in coalesce(var.service_config.variables, {}) : {
               name  = k
               value = tostring(v)
             }
           ]
           secrets = [
-            for k, v in var.service_config.secrets : {
+            for k, v in coalesce(var.service_config.secrets, {}) : {
               name      = k
               valueFrom = v
             }
@@ -37,7 +37,7 @@ resource "aws_ecs_task_definition" "this" {
             logDriver = "awslogs"
             options = {
               awslogs-group         = "/platform/${local.service_name}/ecs-service-logs"
-              awslogs-region        = data.aws_region.current.name
+              awslogs-region        = data.aws_region.current.region
               awslogs-stream-prefix = "ecs"
             }
           }
@@ -106,8 +106,8 @@ resource "aws_lb_target_group" "target_group" {
     matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
     healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
     unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
-    interval            = tonumber(trim(try(var.service_config.http.healthcheck.interval, "35s"), "s"))
-    timeout             = tonumber(trim(try(var.service_config.http.healthcheck.timeout, "30s"), "s"))
+    interval            = tonumber(trim(coalesce(var.service_config.http.healthcheck.interval, "35s"), "s"))
+    timeout             = tonumber(trim(coalesce(var.service_config.http.healthcheck.timeout, "30s"), "s"))
   }
 }
 
@@ -151,6 +151,12 @@ resource "aws_kms_key" "ecs_service_log_group_kms_key" {
   tags                = local.tags
 }
 
+resource "aws_kms_alias" "ecs_service_logs_kms_alias" {
+  depends_on    = [aws_kms_key.ecs_service_log_group_kms_key]
+  name          = "alias/${var.application}-${var.environment}-${var.service_config.name}-ecs-service-logs-key"
+  target_key_id = aws_kms_key.ecs_service_log_group_kms_key.id
+}
+
 resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
   key_id = aws_kms_key.ecs_service_log_group_kms_key.key_id
   policy = jsonencode({
@@ -169,7 +175,7 @@ resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
         "Sid" : "AllowCloudWatchLogsUsage"
         "Effect" : "Allow",
         "Principal" : {
-          "Service" : "logs.${data.aws_region.current.name}.amazonaws.com"
+          "Service" : "logs.${data.aws_region.current.region}.amazonaws.com"
         },
         "Action" : [
           "kms:Encrypt",
