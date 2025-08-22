@@ -75,7 +75,7 @@ resource "aws_codepipeline" "database_copy_pipeline" {
           { name : "FROM_ENVIRONMENT", value : var.task.from },
           { name : "TO_ENVIRONMENT", value : var.task.to },
           { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
-          { name : "AWS_REGION", value : data.aws_region.current.name },
+          { name : "AWS_REGION", value : data.aws_region.current.region },
           { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
           { name : "CODESTAR_CONNECTION_ARN", value : data.external.codestar_connections.result["ConnectionArn"] },
         ])

@@ -1192,14 +1192,14 @@ files = [
 
 [[package]]
 name = "checkov"
-version = "3.2.458"
+version = "3.2.461"
 description = "Infrastructure as code static analysis"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "checkov-3.2.458-py3-none-any.whl", hash = "sha256:eb39391e5dd0e4e12b5325053a3f4837f61dc15769f308937ff797ceb9365451"},
-    {file = "checkov-3.2.458.tar.gz", hash = "sha256:7e77319d8f6d14836407656f29edfb3cf7b12a05663567419e01929f11e012c0"},
+    {file = "checkov-3.2.461-py3-none-any.whl", hash = "sha256:332a1c3328bb68982537c40444f35ce009b96b1bbfb3e772580d2f596c7bd86b"},
+    {file = "checkov-3.2.461.tar.gz", hash = "sha256:b0700acc48b174e82e14a3b4ba5b398efc0bf1ad4c074f6586f08e3550078403"},
 ]
 
 [package.dependencies]
@@ -4549,14 +4549,14 @@ files = [
 
 [[package]]
 name = "yamllint"
-version = "1.35.1"
+version = "1.37.1"
 description = "A linter for YAML files."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "yamllint-1.35.1-py3-none-any.whl", hash = "sha256:2e16e504bb129ff515b37823b472750b36b6de07963bd74b307341ef5ad8bdc3"},
-    {file = "yamllint-1.35.1.tar.gz", hash = "sha256:7a003809f88324fd2c877734f2d575ee7881dd9043360657cc8049c809eba6cd"},
+    {file = "yamllint-1.37.1-py3-none-any.whl", hash = "sha256:364f0d79e81409f591e323725e6a9f4504c8699ddf2d7263d8d2b539cd66a583"},
+    {file = "yamllint-1.37.1.tar.gz", hash = "sha256:81f7c0c5559becc8049470d86046b36e96113637bcbe4753ecef06977c00245d"},
 ]
 
 [package.dependencies]

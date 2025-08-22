@@ -24,25 +24,31 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "secrets_role_policy" {
+  count = var.service_config.secrets == null ? 0 : 1
+
   role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = aws_iam_policy.secrets_policy.arn
+  policy_arn = aws_iam_policy.secrets_policy[count.index].arn
 }
 
 resource "aws_iam_policy" "secrets_policy" {
+  count = var.service_config.secrets == null ? 0 : 1
+
   name        = "${local.service_name}-secrets-policy"
   description = "Allow application to access secrets manager"
-  policy      = data.aws_iam_policy_document.secrets_policy.json
+  policy      = data.aws_iam_policy_document.secrets_policy[count.index].json
   tags        = local.tags
 }
 
 data "aws_iam_policy_document" "secrets_policy" {
+  count = var.service_config.secrets == null ? 0 : 1
+
   statement {
     effect = "Allow"
     actions = [
       "secretsmanager:GetSecretValue",
     ]
     resources = [
-      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
+      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
     ]
     condition {
       test = "StringEquals"
@@ -65,7 +71,7 @@ data "aws_iam_policy_document" "secrets_policy" {
     ]
     resources = [
       # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
-      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
   }
   statement {
@@ -75,7 +81,7 @@ data "aws_iam_policy_document" "secrets_policy" {
     ]
     resources = [
       # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
-      "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
     condition {
       test = "StringEquals"
@@ -97,7 +103,7 @@ data "aws_iam_policy_document" "secrets_policy" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
+      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
     ]
     condition {
       test     = "StringEquals"
@@ -117,7 +123,7 @@ data "aws_iam_policy_document" "secrets_policy" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/*"
     ]
     condition {
       test     = "StringEquals"
@@ -171,7 +177,7 @@ data "aws_iam_policy_document" "execute_command_policy" {
       "logs:PutLogEvents"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}"
     ]
   }
 
