@@ -600,6 +600,48 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.iam_access_for_codebase
+  values = {
+    json = "{\"Sid\": \"IAMAccessForCodebase\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.ecs_service_access_for_codebase
+  values = {
+    json = "{\"Sid\": \"ECSServiceAccessForCodebase\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.validate_platform_config_for_codebase
+  values = {
+    json = "{\"Sid\": \"ValidatePlatformConfigFoCodebase\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.state_kms_key_access
+  values = {
+    json = "{\"Sid\": \"stateKMSKeyAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.state_bucket_access
+  values = {
+    json = "{\"Sid\": \"stateBucketAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.state_lock_dynamo_db_access
+  values = {
+    json = "{\"Sid\": \"StateLockDynamoDBAccess\"}"
+  }
+}
+
 run "codebase_deploy_iam_test" {
   command = plan
 
@@ -678,7 +720,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecr_access.statement[0].resources) == "arn:aws:ecr:${data.aws_region.current.name}:000123456789:repository/test-application/*"
+    condition     = one(data.aws_iam_policy_document.ecr_access.statement[0].resources) == "arn:aws:ecr:${data.aws_region.current.region}:000123456789:repository/test-application/*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -739,7 +781,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.artifact_store_access.statement[2].resources) == "arn:aws:kms:${data.aws_region.current.name}:000123456789:key/*"
+    condition     = one(data.aws_iam_policy_document.artifact_store_access.statement[2].resources) == "arn:aws:kms:${data.aws_region.current.region}:000123456789:key/*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -769,8 +811,8 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.ecs_deploy_access.statement[0].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -787,8 +829,8 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.ecs_deploy_access.statement[1].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
-      "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -804,7 +846,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[2].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:task-definition/test-application-test-env-*:*"
+    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[2].resources) == "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task-definition/test-application-test-env-*:*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -816,7 +858,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env/*"
+    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources) == "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env/*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -869,7 +911,7 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
+    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
     error_message = "Unexpected resources"
   }
   assert {
@@ -896,7 +938,7 @@ run "codebase_deploy_iam_test" {
   }
   assert {
     condition = data.aws_iam_policy_document.cloudformation_access.statement[0].resources == toset([
-      "arn:aws:cloudformation:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:stack/test-application-test-env-*"
+      "arn:aws:cloudformation:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stack/test-application-test-env-*"
     ])
     error_message = "Unexpected resources"
   }
