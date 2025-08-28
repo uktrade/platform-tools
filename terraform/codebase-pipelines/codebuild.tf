@@ -145,6 +145,60 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
   }
 }
 
+resource "aws_codebuild_project" "codebase_terraform_deploy" {
+  for_each       = toset(local.service_terraform_deployment_enabled ? [""] : [])
+  name           = "${var.application}-${var.codebase}-codebase-terraform-deploy"
+  description    = "Deploy specified image tag to specified environment"
+  build_timeout  = 30
+  service_role   = aws_iam_role.codebase_deploy.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.artifact_store.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "ENV_CONFIG"
+      value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "CODESTAR_CONNECTION_ARN"
+      value = data.external.codestar_connections.result["ConnectionArn"]
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebase_terraform_deploy[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_terraform_deploy[""].name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = file("${path.module}/buildspec-terraform-deploy.yml")
+  }
+
+  tags = local.tags
+}
+
 
 resource "aws_codebuild_project" "invalidate_cache" {
   for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
@@ -168,6 +222,11 @@ resource "aws_codebuild_project" "invalidate_cache" {
     image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "ENV_CONFIG"
+      value = jsonencode(local.base_env_config)
+    }
   }
 
   logs_config {
@@ -249,4 +308,18 @@ resource "aws_cloudwatch_log_group" "codebase_deploy" {
 resource "aws_cloudwatch_log_stream" "codebase_deploy" {
   name           = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_deploy.name
+}
+
+resource "aws_cloudwatch_log_group" "codebase_terraform_deploy" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.service_terraform_deployment_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-terraform-deploy/log-group"
+  retention_in_days = 90
+}
+
+resource "aws_cloudwatch_log_stream" "codebase_terraform_deploy" {
+  for_each       = toset(local.service_terraform_deployment_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-terraform-deploy/log-stream"
+  log_group_name = aws_cloudwatch_log_group.codebase_terraform_deploy[""].name
 }
