@@ -22,6 +22,10 @@
         - [platform-helper environment generate](#platform-helper-environment-generate)
         - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
     - [platform-helper generate](#platform-helper-generate)
+    - [platform-helper internal](#platform-helper-internal)
+        - [platform-helper internal service](#platform-helper-internal-service)
+            - [platform-helper internal service deploy](#platform-helper-internal-service-deploy)
+            - [platform-helper internal service delete](#platform-helper-internal-service-delete)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -65,6 +69,7 @@ platform-helper <command> [--version]
 - [`database` ↪](#platform-helper-database)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
+- [`internal` ↪](#platform-helper-internal)
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
@@ -539,6 +544,95 @@ platform-helper generate
 
 ## Options
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal
+
+[↩ Parent](#platform-helper)
+
+    Internal commands for use within pipelines or by Platform Team.
+
+## Usage
+
+```
+platform-helper internal service 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`service` ↪](#platform-helper-internal-service)
+
+# platform-helper internal service
+
+[↩ Parent](#platform-helper-internal)
+
+    Subgroup for 'internal service' commands.
+
+## Usage
+
+```
+platform-helper internal service (deploy|delete) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`delete` ↪](#platform-helper-internal-service-delete)
+- [`deploy` ↪](#platform-helper-internal-service-deploy)
+
+# platform-helper internal service deploy
+
+[↩ Parent](#platform-helper-internal-service)
+
+    Create or update an ECS service.
+
+## Usage
+
+```
+platform-helper internal service deploy --name <name> --environment <environment> 
+                                        [--image-tag <image_tag>] 
+```
+
+## Options
+
+- `--name <text>`
+  - The name of the ECS service to create or update.
+- `--environment <text>`
+  - The name of the environment to create or update an ECS service to.
+- `--image-tag
+-i <text>`
+  - Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal service delete
+
+[↩ Parent](#platform-helper-internal-service)
+
+    Delete an ECS service.
+
+## Usage
+
+```
+platform-helper internal service delete --name <name> --environment <environment> 
+```
+
+## Options
+
+- `--name <text>`
+  - The name of the ECS service to create or update
+- `--environment <text>`
+  - The name of the environment to create or update an ECS service to.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

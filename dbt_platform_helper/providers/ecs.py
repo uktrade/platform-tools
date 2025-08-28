@@ -2,6 +2,7 @@ import random
 import string
 import subprocess
 from typing import List
+from typing import Optional
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.platform_exception import ValidationException
@@ -172,3 +173,24 @@ class ECS:
         if task_arns:
             return task_arns
         return False
+
+    def get_task_definition_arn(
+        self, application: str, environment: str, service: str
+    ) -> Optional[str]:
+        paginator = self.ecs_client.get_paginator("list_task_definitions")
+        prefix = f"{application}-{environment}-{service}-task-def"
+
+        for page in paginator.paginate():
+            for arn in page["taskDefinitionArns"]:
+                if arn.split("/")[-1].startswith(prefix):
+                    return arn
+        return None
+
+    def get_ecs_service_arn(self, cluster_name: str, service_name: str) -> Optional[str]:
+        response = self.ecs_client.describe_services(
+            cluster=cluster_name, services=[service_name]  # Search for a single service
+        )
+        service = response.get("services", [])
+        if not service or service[0].get("status") == "INACTIVE":
+            return None
+        return service[0]["serviceArn"]
