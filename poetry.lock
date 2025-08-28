@@ -1905,14 +1905,14 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "jinja2-simple-tags"
-version = "0.5.0"
+version = "0.6.1"
 description = "Base classes for quick-and-easy template tag development"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "jinja2-simple-tags-0.5.0.tar.gz", hash = "sha256:59c27096e337ed735c761a3fbbac57bd44913beaaadafdf0dfd450bcd4f7724e"},
-    {file = "jinja2_simple_tags-0.5.0-py2.py3-none-any.whl", hash = "sha256:131cbc95eaed329be390509dcfd9d8d91231a66b27ef2259c76f1d19148cef95"},
+    {file = "jinja2-simple-tags-0.6.1.tar.gz", hash = "sha256:54abf83883dcd13f8fd2ea2c42feeea8418df3640907bd5251dec5e25a6af0e3"},
+    {file = "jinja2_simple_tags-0.6.1-py2.py3-none-any.whl", hash = "sha256:7b7cfa92f6813a1e0f0b61b9efcab60e6793674753e1f784ff270542e80ae20f"},
 ]
 
 [package.dependencies]
@@ -4707,4 +4707,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">3.9.1,<4.0"
-content-hash = "48f01bdbe3df15973a3a0ea2bb9ac6b6f9c15705fde91adc30b6e34536b68efd"
+content-hash = "49600e77f0eee55dd68fc9e9d45a56a3b84933a497ae99110fa9f01a7ab894ed"
