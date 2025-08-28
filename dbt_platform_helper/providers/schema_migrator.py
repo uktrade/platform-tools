@@ -8,9 +8,6 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrations.schema_v0_to_v1_migration import (
     SchemaV0ToV1Migration,
 )
-from dbt_platform_helper.providers.schema_migrations.schema_v1_to_v2_migration import (
-    SchemaV1ToV2Migration,
-)
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 
@@ -25,7 +22,7 @@ class SchemaMigrationProtocol(Protocol):
 
 
 # TODO: Possibly get this programmatically?
-ALL_MIGRATIONS = [SchemaV0ToV1Migration(), SchemaV1ToV2Migration()]
+ALL_MIGRATIONS = [SchemaV0ToV1Migration()]
 
 
 class Migrator:
