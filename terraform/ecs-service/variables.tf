@@ -19,7 +19,7 @@ variable "custom_iam_policy_json" {
   default = null
 
   validation {
-    condition     = var.custom_iam_policy_json == null || length(var.custom_iam_policy_json) <= 6144
+    condition     = var.custom_iam_policy_json == null ? true : length(var.custom_iam_policy_json) <= 6144
     error_message = "The length of the custom IAM policy exceeds the 6144 character limit for IAM managed policies."
   }
 }
