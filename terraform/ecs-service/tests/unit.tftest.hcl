@@ -207,11 +207,11 @@ run "test_target_group_health_checks" {
 
 
 
-run "with_custom_iam_policy_addons" {
+run "with_custom_iam_policy" {
   command = plan
 
   variables {
-    iam_policy_addons_json = <<EOT
+    custom_iam_policy_json = <<EOT
 {
     "Statement": [
         {
@@ -228,32 +228,32 @@ EOT
   }
 
   assert {
-    condition     = length(aws_iam_policy.custom_addons_policy) == 1
-    error_message = "Expected 1 custom addon IAM policy."
+    condition     = length(aws_iam_policy.custom_iam_policy) == 1
+    error_message = "Expected 1 custom IAM policy."
   }
   assert {
-    condition     = length(aws_iam_role_policy_attachment.custom_addons_policy_attachment) == 1
-    error_message = "Expected 1 custom addon IAM policy attachments."
+    condition     = length(aws_iam_role_policy_attachment.custom_iam_policy_attachment) == 1
+    error_message = "Expected 1 custom IAM policy attachments."
   }
 }
 
 
 
-run "without_custom_iam_policy_addons" {
+run "without_custom_iam_policy" {
   command = plan
 
   variables {
-    iam_policy_addons_json = null
+    custom_iam_policy_json = null
   }
 
   assert {
-    condition     = length(aws_iam_policy.custom_addons_policy) == 0
-    error_message = "Not expecting any custom addon IAM policy to be created."
+    condition     = length(aws_iam_policy.custom_iam_policy) == 0
+    error_message = "Not expecting any custom IAM policy to be created."
   }
 
   assert {
-    condition     = length(aws_iam_role_policy_attachment.custom_addons_policy_attachment) == 0
-    error_message = "Not expecting any custom addon IAM policy attachment to be created."
+    condition     = length(aws_iam_role_policy_attachment.custom_iam_policy_attachment) == 0
+    error_message = "Not expecting any custom IAM policy attachment to be created."
   }
 }
 

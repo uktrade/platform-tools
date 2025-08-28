@@ -13,7 +13,7 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${local.service_name}-ecs-task-execution-role"
+  name               = "${local.full_service_name}-ecs-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
   tags               = local.tags
 }
@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "secrets_role_policy_attachment" {
 resource "aws_iam_policy" "secrets_policy" {
   count = var.service_config.secrets == null ? 0 : 1
 
-  name        = "${local.service_name}-secrets-policy"
+  name        = "${local.full_service_name}-secrets-policy"
   description = "Allow application to access secrets manager"
   policy      = data.aws_iam_policy_document.secrets[count.index].json
   tags        = local.tags
@@ -134,7 +134,7 @@ data "aws_iam_policy_document" "secrets" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name               = "${local.service_name}-ecs-task-role"
+  name               = "${local.full_service_name}-ecs-task-role"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
   tags               = local.tags
 }
@@ -145,7 +145,7 @@ resource "aws_iam_role_policy_attachment" "execute_command_policy_attachment" {
 }
 
 resource "aws_iam_policy" "execute_command_policy" {
-  name        = "${local.service_name}-execute-command-policy"
+  name        = "${local.full_service_name}-execute-command-policy"
   description = "Allows SSM agent access to ECS service. Required by the platform-helper conduit command. "
   policy      = data.aws_iam_policy_document.execute_command.json
   tags        = local.tags
@@ -185,7 +185,7 @@ resource "aws_iam_role_policy_attachment" "service_logs_policy_attachment" {
 }
 
 resource "aws_iam_policy" "service_logs_policy" {
-  name        = "${local.service_name}-service-logs-policy"
+  name        = "${local.full_service_name}-service-logs-policy"
   description = "Allows ECS service access to Cloudwatch logs"
   policy      = data.aws_iam_policy_document.service_logs.json
   tags        = local.tags
@@ -212,7 +212,7 @@ resource "aws_iam_role_policy_attachment" "appconfig_policy_attachment" {
 }
 
 resource "aws_iam_policy" "appconfig_policy" {
-  name        = "${local.service_name}-appconfig-policy"
+  name        = "${local.full_service_name}-appconfig-policy"
   description = "Allows the ECS service to assume the AppConfig role from the tooling account. Required for ip-filter."
   policy      = data.aws_iam_policy_document.appconfig.json
   tags        = local.tags
@@ -230,18 +230,18 @@ data "aws_iam_policy_document" "appconfig" {
   }
 }
 
-resource "aws_iam_policy" "custom_addons_policy" {
-  count       = var.iam_policy_addons_json != null ? 1 : 0
-  name        = "${local.service_name}-custom-addons-policy"
-  description = "Optional policy for custom permissions (addons) needed by the ECS task role"
-  policy      = var.iam_policy_addons_json
+resource "aws_iam_policy" "custom_iam_policy" {
+  count       = var.custom_iam_policy_json != null ? 1 : 0
+  name        = "${local.full_service_name}-custom-iam-policy"
+  description = "Optional policy for custom permissions needed by the ECS task role of a service"
+  policy      = var.custom_iam_policy_json
   tags        = local.tags
 }
 
-resource "aws_iam_role_policy_attachment" "custom_addons_policy_attachment" {
-  count      = var.iam_policy_addons_json != null ? 1 : 0
+resource "aws_iam_role_policy_attachment" "custom_iam_policy_attachment" {
+  count      = var.custom_iam_policy_json != null ? 1 : 0
   role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.custom_addons_policy[0].arn
+  policy_arn = aws_iam_policy.custom_iam_policy[0].arn
 }
 
 ##############################
@@ -346,7 +346,7 @@ locals {
             Resource = ["arn:aws:kms:${data.aws_region.current.region}:${rule.bucket_account}:key/*"]
             Condition = {
               StringEquals = {
-                "aws:PrincipalTag/environment" = rule.access_env
+                "aws:PrincipalTag/environment" = rule.service_env
               }
             }
           }
@@ -362,7 +362,7 @@ locals {
             Resource = ["arn:aws:s3:::${rule.bucket_name}/*"]
             Condition = {
               StringEquals = {
-                "aws:PrincipalTag/environment" = rule.access_env
+                "aws:PrincipalTag/environment" = rule.service_env
               }
             }
           },
@@ -373,7 +373,7 @@ locals {
             Resource = ["arn:aws:s3:::${rule.bucket_name}"]
             Condition = {
               StringEquals = {
-                "aws:PrincipalTag/environment" = rule.access_env
+                "aws:PrincipalTag/environment" = rule.service_env
               }
             }
           }
