@@ -25,158 +25,83 @@ override_data {
 override_data {
   target = data.aws_service_discovery_dns_namespace.private_dns_namespace
   values = {
+    id   = "ns-test123"
     name = "dev.demodjango.services.local"
     type = "DNS_PRIVATE"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.assume_role_policy
+  target = data.aws_iam_policy_document.assume_role
   values = {
-    json = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "ecs-tasks.amazonaws.com"
-      }
-    }
-  ]
-}
-EOT
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.secrets_policy
+  target = data.aws_iam_policy_document.secrets
   values = {
-    json = <<EOT
-{
-    "Statement": [
-        {
-            "Action": "secretsmanager:GetSecretValue",
-            "Condition": {
-                "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "demodjango",
-                    "ssm:ResourceTag/copilot-environment": "dev"
-                }
-            },
-            "Effect": "Allow",
-            "Resource": "arn:aws:secretsmanager:eu-west-2:001122334455:secret:*"
-        },
-        {
-            "Action": "kms:Decrypt",
-            "Effect": "Allow",
-            "Resource": "arn:aws:kms:eu-west-2:001122334455:key/*"
-        },
-        {
-            "Action": "kms:Decrypt",
-            "Condition": {
-                "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "demodjango",
-                    "ssm:ResourceTag/copilot-environment": "dev"
-                }
-            },
-            "Effect": "Allow",
-            "Resource": "arn:aws:kms:eu-west-2:001122334455:key/*"
-        },
-        {
-            "Action": "ssm:GetParameters",
-            "Condition": {
-                "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "demodjango",
-                    "ssm:ResourceTag/copilot-environment": "dev"
-                }
-            },
-            "Effect": "Allow",
-            "Resource": "arn:aws:ssm:eu-west-2:001122334455:parameter/*"
-        },
-        {
-            "Action": "ssm:GetParameters",
-            "Condition": {
-                "StringEquals": {
-                    "aws:ResourceTag/copilot-application": "__all__"
-                }
-            },
-            "Effect": "Allow",
-            "Resource": "arn:aws:ssm:eu-west-2:001122334455:parameter/*"
-        }
-    ],
-    "Version": "2012-10-17"
-}
-EOT
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.execute_command_policy
+  target = data.aws_iam_policy_document.execute_command
   values = {
-    json = <<EOT
-{
-    "Statement": [
-        {
-            "Action": [
-                "ssmmessages:OpenDataChannel",
-                "ssmmessages:OpenControlChannel",
-                "ssmmessages:CreateDataChannel",
-                "ssmmessages:CreateControlChannel"
-            ],
-            "Effect": "Allow",
-            "Resource": "*"
-        },
-        {
-            "Action": [
-                "logs:PutLogEvents",
-                "logs:DescribeLogStreams",
-                "logs:DescribeLogGroups",
-                "logs:CreateLogStream"
-            ],
-            "Effect": "Allow",
-            "Resource": "*"
-        },
-        {
-            "Action": "iam:*",
-            "Effect": "Deny",
-            "Resource": "*"
-        },
-        {
-            "Action": "sts:AssumeRole",
-            "Effect": "Allow",
-            "Resource": "arn:aws:iam::1234567890:role/AppConfigIpFilterRole"
-        },
-        {
-            "Action": "sts:AssumeRole",
-            "Effect": "Allow",
-            "Resource": "arn:aws:iam::0987654321:role/amp-prometheus-role"
-        }
-    ],
-    "Version": "2012-10-17"
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
 }
-EOT
+
+override_data {
+  target = data.aws_iam_policy_document.appconfig
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.service_logs
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+
+override_data {
+  target = data.aws_ssm_parameter.log-destination-arn
+  values = {
+    value = "{\"dev\":\"arn:aws:logs:eu-west-2:001122334455:log-group:/central/dev\",\"prod\":\"arn:aws:logs:eu-west-2:001122334455:log-group:/central/prod\"}"
+  }
+}
+
+override_data {
+  target = data.aws_kms_alias.s3_key["demodjango-s3-bucket"]
+  values = {
+    name           = "alias/demodjango-dev-key"
+    target_key_arn = "arn:aws:kms:eu-west-2:001122334455:key/aaaa-bbbb-cccc"
   }
 }
 
 variables {
-  application = "demodjango"
-  environment = "dev"
+  application         = "demodjango"
+  environment         = "dev"
+  platform_extensions = {} # Empty placeholder to pass validate - declared further down in individual tests
 
   env_config = {
-    "dev" = {
+    dev = {
       accounts = {
-        deploy = {
-          name = "sandbox"
-          id   = "000123456789"
-        }
-        dns = {
-          name = "dev"
-          id   = "123456"
-        }
+        deploy = { name = "sandbox", id = "000123456789" }
+        dns    = { name = "dev", id = "123456" }
       }
-      vpc : "test-vpc"
-      service-deployment-mode : "doesn't matter"
+      vpc                     = "test-vpc"
+      service-deployment-mode = "doesn't matter"
+    }
+    hotfix = {
+      accounts = {
+        deploy = { name = "prod", id = "999888777666" }
+        dns    = { name = "dev", id = "123456" }
+      }
+      vpc = "test-vpc-hotfix"
     }
   }
 
@@ -240,6 +165,7 @@ variables {
 }
 
 
+
 run "test_target_group_health_checks" {
   command = plan
 
@@ -276,5 +202,185 @@ run "test_target_group_health_checks" {
   assert {
     condition     = aws_lb_target_group.target_group[0].health_check[0].timeout == 99
     error_message = "Should be '99'"
+  }
+}
+
+
+
+run "with_custom_iam_policy" {
+  command = plan
+
+  variables {
+    custom_iam_policy_json = <<EOT
+{
+    "Statement": [
+        {
+            "Action": [
+                "s3:ListAllMyBuckets"
+            ],
+            "Effect": "Allow",
+            "Resource": "*"
+        }
+    ],
+    "Version": "2012-10-17"
+}
+EOT
+  }
+
+  assert {
+    condition     = length(aws_iam_policy.custom_iam_policy) == 1
+    error_message = "Expected 1 custom IAM policy."
+  }
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.custom_iam_policy_attachment) == 1
+    error_message = "Expected 1 custom IAM policy attachments."
+  }
+}
+
+
+
+run "without_custom_iam_policy" {
+  command = plan
+
+  variables {
+    custom_iam_policy_json = null
+  }
+
+  assert {
+    condition     = length(aws_iam_policy.custom_iam_policy) == 0
+    error_message = "Not expecting any custom IAM policy to be created."
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.custom_iam_policy_attachment) == 0
+    error_message = "Not expecting any custom IAM policy attachment to be created."
+  }
+}
+
+
+
+run "same_account_s3_non-static" {
+  command = plan
+
+  variables {
+    platform_extensions = {
+      # Non-static (same-account, with KMS)
+      demodjango-s3-bucket = {
+        type     = "s3"
+        services = ["web"]
+        environments = {
+          "*" = { bucket_name = "demodjango-dev" } # non-static
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(keys(aws_iam_policy.s3_same_account_policy)) == 1
+    error_message = "Expected 1 same-account S3 policies."
+  }
+  assert {
+    condition     = length(keys(aws_iam_role_policy_attachment.s3_same_account_policy_attachment)) == 1
+    error_message = "Expected 1 same-account S3 policy attachments."
+  }
+}
+
+
+
+run "same_account_s3_static" {
+  command = plan
+
+  variables {
+    platform_extensions = {
+      # Static (same-account, no KMS key needed, DNS-domain-style bucket name, read-only)
+      demodjango-s3-bucket-static = {
+        type                 = "s3"
+        serve_static_content = true
+        services             = ["web"]
+        environments = {
+          "*" = {
+            bucket_name = "demodjango-dev-static"
+            readonly    = true
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(keys(aws_iam_policy.s3_same_account_policy)) == 1
+    error_message = "Expected 1 same-account S3 policies."
+  }
+  assert {
+    condition     = length(keys(aws_iam_role_policy_attachment.s3_same_account_policy_attachment)) == 1
+    error_message = "Expected 1 same-account S3 policy attachments."
+  }
+
+  # No KMS statement for static buckets
+  assert {
+    condition = (
+      length([
+        for i in jsondecode(values(aws_iam_policy.s3_same_account_policy)[0].policy).Statement :
+        i if i.Sid == "KMSDecryptAndGenerate"
+      ]) == 0
+    )
+    error_message = "Policy for a static bucket should not include a KMS statements."
+  }
+}
+
+
+
+run "cross_env_s3_policy" {
+  command = plan
+
+  variables {
+    platform_extensions = {
+      # Cross-env static bucket owned by hotfix (dev environment, web service access, read/write permissions)
+      demodjango-s3-bucket-static-cross-env = {
+        type                 = "s3"
+        serve_static_content = true
+        services             = ["web"]
+        environments = {
+          dev = {
+            bucket_name = "demodjango-dev-static"
+          }
+          hotfix = {
+            bucket_name = "demodjango-hotfix-static"
+            cross_environment_service_access = {
+              allow-dev-web-access = {
+                account           = "999888777666"
+                environment       = "dev"
+                service           = "web"
+                read              = true
+                write             = true
+                cyber_sign_off_by = "somebody@businessandtrade.gov.uk"
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  assert {
+    condition     = length(keys(aws_iam_policy.s3_cross_env_policy)) == 1
+    error_message = "Expected 1 cross-env S3 policy."
+  }
+
+  assert {
+    condition     = length(keys(aws_iam_role_policy_attachment.s3_cross_env_policy_attachment)) == 1
+    error_message = "Expected 1 cross-env S3 policy attachment."
+  }
+
+  # No KMS statement for static buckets
+  assert {
+    condition = (
+      length([
+        for i in jsondecode(values(aws_iam_policy.s3_cross_env_policy)[0].policy).Statement :
+        i if i.Sid == "KMSDecryptAndGenerate"
+      ]) == 0
+    )
+    error_message = "Policy for a static bucket should not include a KMS statements."
   }
 }

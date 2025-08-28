@@ -60,6 +60,8 @@ class TerraformManifestProvider:
             "combined_env_config": '${{for name, config in local.raw_env_config: name => merge(lookup(local.raw_env_config, "*", {}), config)}}',
             "service_deployment_mode": '${lookup(local.combined_env_config[local.environment], "service-deployment-mode", "copilot")}',
             "non_copilot_service_deployment_mode": '${local.service_deployment_mode == "dual-deploy-copilot-traffic" || local.service_deployment_mode == "dual-deploy-platform-traffic" || local.service_deployment_mode == "platform" ? 1 : 0}',
+            "custom_iam_policy_path": '${abspath(format("%s/../../../../services/%s/custom-iam-policy/%s.yml", path.module, local.service_config.name, local.environment))}',
+            "custom_iam_policy_json": "${fileexists(local.custom_iam_policy_path) ? jsonencode(yamldecode(file(local.custom_iam_policy_path))) : null}",
         }
 
     def _add_service_module(
@@ -77,6 +79,8 @@ class TerraformManifestProvider:
                 "environment": "${local.environment}",
                 "service_config": "${local.service_config}",
                 "env_config": "${local.env_config}",
+                "platform_extensions": '${local.platform_config["extensions"]}',
+                "custom_iam_policy_json": "${local.custom_iam_policy_json}",
             }
         }
 
