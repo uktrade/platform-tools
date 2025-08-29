@@ -27,13 +27,7 @@ def service():
     required=True,
     help="The name of the environment to create or update an ECS service to.",
 )
-@click.option(
-    "--image-tag",
-    "-i",
-    required=False,
-    help="Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.",
-)
-def deploy(name, environment, image_tag):
+def deploy(name, environment):
     """Create or update an ECS service."""
     click_io = ClickIOProvider()
 
@@ -48,9 +42,7 @@ def deploy(name, environment, image_tag):
         ecs_provider = ECS(ecs_client, ssm_client, application.name, environment)
 
         internal = Internal(ecs_provider=ecs_provider)
-        internal.deploy(
-            service=name, environment=environment, application=application.name, image_tag=image_tag
-        )
+        internal.deploy(service=name, environment=environment, application=application.name)
     except PlatformException as error:
         click_io.abort_with_error(str(error))
 

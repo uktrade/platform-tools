@@ -600,7 +600,6 @@ platform-helper internal service (deploy|delete)
 
 ```
 platform-helper internal service deploy --name <name> --environment <environment> 
-                                        [--image-tag <image_tag>] 
 ```
 
 ## Options
@@ -609,9 +608,6 @@ platform-helper internal service deploy --name <name> --environment <environment
   - The name of the ECS service to create or update.
 - `--environment <text>`
   - The name of the environment to create or update an ECS service to.
-- `--image-tag
--i <text>`
-  - Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -787,7 +783,7 @@ platform-helper service generate
 ## Usage
 
 ```
-platform-helper service generate [--name <name>] [--environment <environment>] 
+platform-helper service generate --environment <environment> [--name <name>] 
                                  [--image-tag <image_tag>] 
 ```
 

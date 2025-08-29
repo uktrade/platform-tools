@@ -98,18 +98,26 @@ class YamlFileProvider:
         return cleaned
 
     @staticmethod
-    def find_and_replace(config, string: str, replacement: str):
+    def find_and_replace(config, strings: list, replacements: list):
+        if len(strings) != len(replacements):
+            raise ValueError("'strings' and 'replacements' must be the same length.")
+        if not isinstance(strings, list) or not isinstance(replacements, list):
+            raise ValueError("'strings' and 'replacements' must both be lists.")
         if isinstance(config, (dict, OrderedDict)):
             return {
-                k: YamlFileProvider.find_and_replace(v, string, replacement)
+                k: YamlFileProvider.find_and_replace(v, strings, replacements)
                 for k, v in config.items()
             }
         elif isinstance(config, list):
-            return [YamlFileProvider.find_and_replace(item, string, replacement) for item in config]
+            return [
+                YamlFileProvider.find_and_replace(item, strings, replacements) for item in config
+            ]
         elif isinstance(config, str):
-            return config.replace(string, replacement)
+            for s, r in zip(strings, replacements):
+                config = config.replace(s, r)
+            return config
         else:
-            return replacement if config == string else config
+            return replacements if config == strings else config
 
 
 def account_number_representer(dumper, data):

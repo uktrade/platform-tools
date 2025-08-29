@@ -10,6 +10,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.constants import PLATFORM_HELPER_PACKAGE_NAME
 from dbt_platform_helper.entities.platform_config_schema import PlatformConfigSchema
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -30,16 +31,13 @@ class ConfigLoader:
         self.io = io
         self.file_provider = file_provider
 
-    def load_into_model(self, path, model):
+    def load_into_model(self, input, model):
         try:
-            file_content = self.file_provider.load(path)
-            return model(**file_content)
-        except FileNotFoundException as e:
+            return model(**input)
+        except PlatformException as e:
             self.io.abort_with_error(
-                f"{e} Please check it exists and you are in the root directory of your -deploy repository."
+                f"Could not load input provided into model '{type(model)} due to {e}."
             )
-        except FileProviderException as e:
-            self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
 
     def load(self, path):
         try:
