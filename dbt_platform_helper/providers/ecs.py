@@ -4,6 +4,7 @@ import subprocess
 from typing import List
 from typing import Optional
 
+from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.platform_exception import ValidationException
 from dbt_platform_helper.providers.vpc import Vpc
@@ -174,18 +175,6 @@ class ECS:
             return task_arns
         return False
 
-    def get_task_definition_arn(
-        self, application: str, environment: str, service: str
-    ) -> Optional[str]:
-        paginator = self.ecs_client.get_paginator("list_task_definitions")
-        prefix = f"{application}-{environment}-{service}-task-def"
-
-        for page in paginator.paginate():
-            for arn in page["taskDefinitionArns"]:
-                if arn.split("/")[-1].startswith(prefix):
-                    return arn
-        return None
-
     def get_ecs_service_arn(self, cluster_name: str, service_name: str) -> Optional[str]:
         response = self.ecs_client.describe_services(
             cluster=cluster_name, services=[service_name]  # Search for a single service
@@ -194,3 +183,108 @@ class ECS:
         if not service or service[0].get("status") == "INACTIVE":
             return None
         return service[0]["serviceArn"]
+
+    def register_task_definition(
+        self, service_model: ServiceConfig, environment: str, application: str
+    ):
+        container_definitions = []
+
+        # This is the same for main service and sidecars
+        default_config = {
+            "mountPoints": [{"sourceVolume": "temporary-fs", "containerPath": "/tmp"}],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": f"/platform/ecs/service/{application}/{environment}/{service_model.name}",
+                    "awslogs-region": "eu-west-2",
+                    "awslogs-stream-prefix": "terraform",
+                },
+            },
+        }
+
+        # Main service definition
+        service_definition = {
+            "name": service_model.name,
+            "image": service_model.image.location,
+            "essential": True,
+            "environment": [
+                {"name": key, "value": str(value)}
+                for key, value in (service_model.variables or {}).items()
+            ],
+            "secrets": [
+                {"name": key, "valueFrom": value}
+                for key, value in (service_model.secrets or {}).items()
+            ],
+        }
+
+        if service_model.storage:
+            service_definition["readonlyRootFilesystem"] = service_model.storage.readonly_fs
+
+        if service_model.type == "Load Balanced Web Service":
+            service_definition["portMappings"] = [
+                {"containerPort": service_model.image.port, "protocol": "tcp"}
+            ]
+
+        if service_model.type == "Backend Service":
+            service_definition["entryPoint"] = [
+                entrypoint for entrypoint in service_model.entrypoint
+            ]
+
+        container_definitions.append(service_definition | default_config)
+
+        # Add sidecars
+        for name, config in (service_model.sidecars or {}).items():
+            sidecar_definition = {
+                "name": name,
+                "image": config.image,
+                "essential": True if (config.essential is None) else config.essential,
+                "environment": [
+                    {"name": key, "value": str(value)}
+                    for key, value in (config.variables or {}).items()
+                ],
+                "secrets": [
+                    {"name": key, "valueFrom": value}
+                    for key, value in (config.secrets or {}).items()
+                ],
+                "portMappings": [
+                    {"containerPort": config.port, "hostPort": config.port, "protocol": "tcp"}
+                ],
+            }
+
+            # if name == "ipfilter":
+            #     sidecar_definition["environment"].append({"name": "COPILOT_ENVIRONMENT_NAME", "value": env})
+
+            if (
+                service_model.type == "Load Balanced Web Service"
+                and service_model.http.target_container == name
+            ):
+                sidecar_definition["portMappings"][0]["name"] = "target"
+
+            container_definitions.append(sidecar_definition | default_config)
+
+        # Register task definition
+        try:
+            task_definition_response = self.ecs_client.register_task_definition(
+                family=f"{application}-{environment}-{service_model.name}-task-def",
+                taskRoleArn=f"arn:aws:iam::563763463626:role/{application}-{environment}-{service_model.name}-ecs-task-role",  # TODO - Remove account id hardcoding
+                executionRoleArn=f"arn:aws:iam::563763463626:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",  # TODO - Remove account id hardcoding
+                networkMode="awsvpc",
+                containerDefinitions=container_definitions,
+                volumes=[{"name": "temporary-fs", "host": {}}],
+                placementConstraints=[],
+                requiresCompatibilities=["FARGATE"],
+                cpu=str(service_model.cpu),
+                memory=str(service_model.memory),
+                tags=[
+                    {"key": "application", "value": application},
+                    {"key": "environment", "value": environment},
+                    {"key": "service", "value": service_model.name},
+                    {"key": "Managed-by", "value": "Platform Helper"},
+                ],
+            )
+            return task_definition_response["taskDefinition"]["taskDefinitionArn"]
+        except PlatformException as err:
+            print(f"Error registering task definition: {err}")
+
+    def update_service(self):
+        pass

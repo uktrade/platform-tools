@@ -96,6 +96,7 @@ class ServiceConfig(BaseModel):
     http: Optional[Http] = Field(default=None)  # TODO http required if service type load balancer
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
+    entrypoint: list[str] = Field(default=None)
 
     cpu: int = Field()
     memory: int = Field()

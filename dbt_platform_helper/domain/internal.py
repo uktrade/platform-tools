@@ -3,6 +3,7 @@ from dbt_platform_helper.providers.config import ConfigLoader
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import load_application
 
 
@@ -10,36 +11,35 @@ class Internal:
 
     def __init__(
         self,
-        ecs_provider=ECS,
+        ecs_provider: ECS,
         load_application=load_application,
         config_provider=ConfigProvider(ConfigValidator()),
         loader: ConfigLoader = ConfigLoader(),
     ):
+        self.environment_variable_provider = None
         self.ecs_provider = ecs_provider
         self.load_application = load_application
         self.config_provider = config_provider
         self.loader = loader
 
-    def deploy(self, service: str, environment: str, application: str, image_tag: str = None):
+    def deploy(self, service: str, environment: str, application: str):
 
-        task_def = self.ecs_provider.get_task_definition_arn(
-            application=application, environment=environment, service=service
+        service_config = YamlFileProvider.load(
+            f"terraform/services/{environment}/{service}/service-config.yml"
         )
-        service_config = self.loader.load_into_model(
-            f"terraform/services/{environment}/{service}/service-config.yml",
-            ServiceConfig,
+
+        print(f"task def successfully created: {service_config}")
+
+        service_model = self.loader.load_into_model(service_config, ServiceConfig)
+
+        task_def_arn = self.ecs_provider.register_task_definition(
+            service_model, environment, application
         )
-        print(f"service config name: {service_config.name}")
-        if task_def:
-            # Register new revision
-            print(f"found task def {task_def}")
-        else:
-            # Create new task definition
-            print(f"found no task def")
+        print(task_def_arn)
 
         cluster_name = f"{application}-{environment}-cluster"
         ecs_service = self.ecs_provider.get_ecs_service_arn(
-            cluster_name=cluster_name, service_name=service
+            cluster_name=cluster_name, service_name=service_model.name
         )
         if ecs_service:
             # Update existing ecs service
