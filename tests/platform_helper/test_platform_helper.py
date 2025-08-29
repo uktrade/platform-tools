@@ -26,6 +26,7 @@ class TestCopilotHelperCli:
             "copilot",
             "environment",
             "generate",
+            "internal",
             "pipeline",
             "secrets",
             "service",

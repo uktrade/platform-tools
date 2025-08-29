@@ -1,73 +1,95 @@
-resource "aws_ecs_task_definition" "this" {
-  family                   = "${local.full_service_name}-task-def"
+resource "aws_ecs_task_definition" "default_nginx_task_def" {
+  family                   = "${local.full_service_name}-default-task-def"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = tostring(var.service_config.cpu)
-  memory                   = tostring(var.service_config.memory)
+  cpu                      = 256
+  memory                   = 512
   network_mode             = "awsvpc"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn #TODO - Create separate role?
+  task_role_arn            = aws_iam_role.ecs_task_role.arn           #TODO - Create separate role?
   tags                     = local.tags
 
-  container_definitions = jsonencode(
-    concat(
-      [
+  runtime_platform {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "nginx"
+      image     = "public.ecr.aws/nginx/nginx:alpine-slim"
+      essential = true
+      portMappings = [
         {
-          name  = var.service_config.name
-          image = var.service_config.image.location
-          portMappings = var.service_config.image.port != null ? [
-            {
-              containerPort = var.service_config.image.port
-              protocol      = "tcp"
-            }
-          ] : []
-          essential = true
-          environment = [
-            for k, v in coalesce(var.service_config.variables, {}) : {
-              name  = k
-              value = tostring(v)
-            }
-          ]
-          secrets = [
-            for k, v in coalesce(var.service_config.secrets, {}) : {
-              name      = k
-              valueFrom = v
-            }
-          ]
-          logConfiguration = {
-            logDriver = "awslogs"
-            options = {
-              awslogs-group         = "/platform/ecs/service/${var.application}/${var.environment}/${var.service_config.name}"
-              awslogs-region        = data.aws_region.current.region
-              awslogs-stream-prefix = "ecs"
-            }
-          }
-        }
-      ],
-      [
-        for sidecar_name, sidecar in var.service_config.sidecars : {
-          name  = sidecar_name
-          image = sidecar.image
-          portMappings = sidecar.port != null ? [{
-            containerPort = sidecar.port
-            protocol      = "tcp"
-          }] : []
-          environment = sidecar.variables != null ? [
-            for k, v in sidecar.variables : {
-              name  = k
-              value = tostring(v)
-            }
-          ] : []
-          secrets = sidecar.secrets != null ? [
-            for k, v in sidecar.secrets : {
-              name      = k
-              valueFrom = v
-            }
-          ] : []
-          essential = false
+          containerPort = 8080
+          hostPort      = 8080
         }
       ]
-    )
-  )
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
+          awslogs-region        = data.aws_region.current.region
+          mode                  = "non-blocking"
+          awslogs-create-group  = "true"
+          max-buffer-size       = "25m"
+          awslogs-stream-prefix = "platform/ecs"
+        }
+      }
+      runtimePlatform = {
+        cpuArchitecture       = "ARM64",
+        operatingSystemFamily = "LINUX"
+      }
+    }
+  ])
+}
+
+data "aws_ecs_cluster" "cluster" {
+  cluster_name = "${var.application}-${var.environment}-cluster"
+}
+
+data "aws_security_group" "env_security_group" {
+  name = "${var.application}-${var.environment}-environment"
+}
+
+data "aws_subnets" "private-subnets" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.vpc_name}-private-*"]
+  }
+}
+
+resource "aws_ecs_service" "service" {
+  name            = "${var.application}-${var.environment}-${var.service_config.name}"
+  cluster         = data.aws_ecs_cluster.cluster.id
+  launch_type     = "FARGATE"
+  task_definition = aws_ecs_task_definition.default_nginx_task_def.arn
+  desired_count   = 1
+
+  # TODO - Add back in once listener rule is created
+  # dynamic "load_balancer" {
+  #   for_each = local.web_service_required == 1 ? [""] : []
+  #   content {
+  #     target_group_arn = aws_lb_target_group.target_group[0].arn
+  #     container_name   = "nginx"
+  #     container_port   = 8080
+  #   }
+  # }
+
+  network_configuration {
+    subnets         = data.aws_subnets.private-subnets.ids
+    security_groups = [data.aws_security_group.env_security_group.id]
+  }
+
+  service_registries {
+    registry_arn   = aws_service_discovery_service.service_discovery_service[0].arn
+    container_name = "nginx"
+    container_port = 443
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition, desired_count, service_registries]
+  }
+
 }
 
 data "aws_vpc" "vpc" {

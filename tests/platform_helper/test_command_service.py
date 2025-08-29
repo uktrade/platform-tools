@@ -25,7 +25,7 @@ class TestGenerateTerraform:
         assert result.exit_code == 0
 
         mock_terraform_service_instance.generate.assert_called_with(
-            environments=["dev"], services=["web"], image_tag_flag="test123"
+            environment="dev", services=["web"], image_tag_flag="test123"
         )
 
     @mock_aws

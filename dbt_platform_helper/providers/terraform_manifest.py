@@ -21,7 +21,6 @@ class TerraformManifestProvider:
         self,
         config_object,
         environment,
-        image_tag,
         platform_helper_version: str,
         platform_config,
         module_source_override: str = None,
@@ -36,7 +35,7 @@ class TerraformManifestProvider:
         terraform = {}
         self._add_header(terraform)
 
-        self._add_service_locals(terraform, environment, image_tag)
+        self._add_service_locals(terraform, environment)
 
         self._add_provider(terraform, account, deploy_to_account_id)
         self._add_backend(
@@ -47,15 +46,14 @@ class TerraformManifestProvider:
 
         self._write_terraform_json(terraform, service_dir)
 
-    def _add_service_locals(self, terraform, environment, image_tag):
+    def _add_service_locals(self, terraform, environment):
         terraform["locals"] = {
             "environment": environment,
-            "image_tag": image_tag,
             "platform_config": '${yamldecode(file("../../../../platform-config.yml"))}',
             "application": '${local.platform_config["application"]}',
             "environments": '${local.platform_config["environments"]}',
             "env_config": '${{for name, config in local.environments: name => merge(lookup(local.environments, "*", {}), config)}}',
-            "service_config": '${yamldecode(templatefile("./service-config.yml", {PLATFORM_ENVIRONMENT_NAME = local.environment, IMAGE_TAG = local.image_tag}))}',
+            "service_config": '${yamldecode(file("./service-config.yml"))}',
             "raw_env_config": '${local.platform_config["environments"]}',
             "combined_env_config": '${{for name, config in local.raw_env_config: name => merge(lookup(local.raw_env_config, "*", {}), config)}}',
             "service_deployment_mode": '${lookup(local.combined_env_config[local.environment], "service-deployment-mode", "copilot")}',
