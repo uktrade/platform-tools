@@ -26,7 +26,7 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
     "input_args, env_vars, expected_results, expect_exception",
     [
         (
-            {"environments": ["development"], "services": []},
+            {"environment": "development", "services": []},
             {
                 TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
             },
@@ -34,28 +34,15 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
             True,
         ),
         (
-            {"environments": ["development"], "services": [], "image_tag_flag": "doesnt-matter"},
+            {"environment": "development", "services": [], "image_tag_flag": "doesnt-matter"},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
-            {"development": "image_tag_flag.json"},
+            {"development": "development.json"},
             False,
         ),
         (
-            {"environments": ["development"], "services": []},
+            {"environment": "development", "services": []},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL", IMAGE_TAG_ENV_VAR: "doesnt-matter"},
-            {"development": "image_tag_flag.json"},
-            False,
-        ),
-        (
-            {"environments": [], "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-                IMAGE_TAG_ENV_VAR: "some-fake-image",
-            },
-            {
-                "development": "development.json",
-                "staging": "staging.json",
-                "production": "production.json",
-            },
+            {"development": "development.json"},
             False,
         ),
     ],
@@ -170,7 +157,7 @@ def test_generate_no_service_dir(
             "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
         ),
     ):
-        service_manager.generate(environments=[], services=[])
+        service_manager.generate(environment="development", services=[])
 
     io.abort_with_error.assert_called_with(
         "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
@@ -212,7 +199,7 @@ def test_generate_no_service_config(
             "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
         ),
     ):
-        service_manager.generate(environments=[], services=[])
+        service_manager.generate(environment="development", services=[])
 
     io.warn.assert_has_calls(
         [
@@ -252,6 +239,6 @@ def test_generate_no_environment(
     )
     with pytest.raises(
         PlatformException,
-        match="""cannot generate terraform for environment doesnt-exist.  It does not exist in your configuration""",
+        match="""Cannot generate Terraform for environment 'doesnt-exist'. It does not exist in your configuration.""",
     ):
-        service_manager.generate(environments=["doesnt-exist"], services=[])
+        service_manager.generate(environment="doesnt-exist", services=[])
