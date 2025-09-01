@@ -2,6 +2,7 @@ locals {
   tags = {
     application = var.application
     environment = var.environment
+    service     = var.service_config.name
     managed-by  = "DBT Platform - Service Terraform"
   }
 
