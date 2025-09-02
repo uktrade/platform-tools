@@ -27,26 +27,18 @@ class Internal:
         service_config = YamlFileProvider.load(
             f"terraform/services/{environment}/{service}/service-config.yml"
         )
-
-        print(f"task def successfully created: {service_config}")
-
         service_model = self.loader.load_into_model(service_config, ServiceConfig)
 
         task_def_arn = self.ecs_provider.register_task_definition(
             service_model, environment, application
         )
-        print(task_def_arn)
+        print(f"Task definition successfully created: {task_def_arn}")
 
-        cluster_name = f"{application}-{environment}-cluster"
-        ecs_service = self.ecs_provider.get_ecs_service_arn(
-            cluster_name=cluster_name, service_name=service_model.name
+        service_arn = self.ecs_provider.update_service(
+            service_model, task_def_arn, environment, application
         )
-        if ecs_service:
-            # Update existing ecs service
-            print(f"found ecs service {ecs_service}")
-        else:
-            # Create new ecs service
-            print(f"found no ecs service")
+
+        print(f"Service successfully updated: {service_arn}")
 
     def delete(self, service: str, environment: str, application: str):
         pass

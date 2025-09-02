@@ -233,30 +233,33 @@ class ECS:
         container_definitions.append(service_definition | default_config)
 
         # Add sidecars
-        for name, config in (service_model.sidecars or {}).items():
+        for sidecar_name, sidecar_config in (service_model.sidecars or {}).items():
             sidecar_definition = {
-                "name": name,
-                "image": config.image,
-                "essential": True if (config.essential is None) else config.essential,
+                "name": sidecar_name,
+                "image": sidecar_config.image,
+                "essential": (
+                    True if (sidecar_config.essential is None) else sidecar_config.essential
+                ),
                 "environment": [
                     {"name": key, "value": str(value)}
-                    for key, value in (config.variables or {}).items()
+                    for key, value in (sidecar_config.variables or {}).items()
                 ],
                 "secrets": [
                     {"name": key, "valueFrom": value}
-                    for key, value in (config.secrets or {}).items()
+                    for key, value in (sidecar_config.secrets or {}).items()
                 ],
                 "portMappings": [
-                    {"containerPort": config.port, "hostPort": config.port, "protocol": "tcp"}
+                    {
+                        "containerPort": sidecar_config.port,
+                        "hostPort": sidecar_config.port,
+                        "protocol": "tcp",
+                    }
                 ],
             }
 
-            # if name == "ipfilter":
-            #     sidecar_definition["environment"].append({"name": "COPILOT_ENVIRONMENT_NAME", "value": env})
-
             if (
                 service_model.type == "Load Balanced Web Service"
-                and service_model.http.target_container == name
+                and service_model.http.target_container == sidecar_name
             ):
                 sidecar_definition["portMappings"][0]["name"] = "target"
 
@@ -286,5 +289,19 @@ class ECS:
         except PlatformException as err:
             print(f"Error registering task definition: {err}")
 
-    def update_service(self):
-        pass
+    def update_service(
+        self, service_model: ServiceConfig, task_def_arn: str, environment: str, application: str
+    ):
+        try:
+            service_response = self.ecs_client.update_service(
+                cluster=f"{application}-{environment}-cluster",
+                service=f"{application}-{environment}-{service_model.name}",
+                desiredCount=service_model.count,
+                taskDefinition=task_def_arn,
+                healthCheckGracePeriodSeconds=int(
+                    service_model.http.healthcheck.grace_period.replace("s", "")
+                ),
+            )
+            return service_response["service"]["serviceArn"]
+        except PlatformException as err:
+            print(f"Error updating ECS service: {err}")

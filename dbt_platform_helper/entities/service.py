@@ -21,7 +21,10 @@ class HealthCheck(BaseModel):
     timeout: Optional[str] = Field(
         description="""The timeout for a healthcheck call""", default=None
     )
-    grace_period: Optional[str] = Field(description="""The time""", default=None)
+    grace_period: Optional[str] = Field(
+        description="""The time the service ignores unhealthy ALB and container health checks""",
+        default=None,
+    )
 
 
 class Http(BaseModel):
