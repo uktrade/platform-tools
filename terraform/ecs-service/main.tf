@@ -1,5 +1,5 @@
-resource "aws_ecs_task_definition" "default_nginx_task_def" {
-  family                   = "${local.full_service_name}-default-task-def"
+resource "aws_ecs_task_definition" "default_task_def" {
+  family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
   requires_compatibilities = ["FARGATE"]
   cpu                      = 256
   memory                   = 512
@@ -29,15 +29,8 @@ resource "aws_ecs_task_definition" "default_nginx_task_def" {
         options = {
           awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
           awslogs-region        = data.aws_region.current.region
-          mode                  = "non-blocking"
-          awslogs-create-group  = "true"
-          max-buffer-size       = "25m"
           awslogs-stream-prefix = "platform/ecs"
         }
-      }
-      runtimePlatform = {
-        cpuArchitecture       = "ARM64",
-        operatingSystemFamily = "LINUX"
       }
     }
   ])
@@ -59,11 +52,14 @@ data "aws_subnets" "private-subnets" {
 }
 
 resource "aws_ecs_service" "service" {
-  name            = "${var.application}-${var.environment}-${var.service_config.name}"
-  cluster         = data.aws_ecs_cluster.cluster.id
-  launch_type     = "FARGATE"
-  task_definition = aws_ecs_task_definition.default_nginx_task_def.arn
-  desired_count   = 1
+  name                   = "${var.application}-${var.environment}-${var.service_config.name}"
+  cluster                = data.aws_ecs_cluster.cluster.id
+  launch_type            = "FARGATE"
+  enable_execute_command = try(var.service_config.exec, false)
+  task_definition        = aws_ecs_task_definition.default_task_def.arn
+  desired_count          = 1
+  propagate_tags         = "SERVICE"
+
 
   # TODO - Add back in once listener rule is created
   # dynamic "load_balancer" {
@@ -80,14 +76,44 @@ resource "aws_ecs_service" "service" {
     security_groups = [data.aws_security_group.env_security_group.id]
   }
 
-  service_registries {
-    registry_arn   = aws_service_discovery_service.service_discovery_service[0].arn
-    container_name = "nginx"
-    container_port = 443
+  # TODO - Potentially remove this once de-copiloting is complete, as Service Connect is also used. Verify that no team uses Service Discovery before any removal.
+  dynamic "service_registries" {
+    for_each = local.web_service_required == 1 ? [""] : []
+
+    content {
+      registry_arn = aws_service_discovery_service.service_discovery_service[0].arn
+      port         = 443
+    }
+  }
+
+  dynamic "service_connect_configuration" {
+    for_each = local.web_service_required == 1 ? [""] : []
+
+    content {
+      enabled   = true
+      namespace = data.aws_service_discovery_dns_namespace.private_dns_namespace[0].arn
+
+      service {
+        discovery_name = "web-sc"
+        port_name      = "target"
+        client_alias {
+          dns_name = "web"
+          port     = 443
+        }
+      }
+      log_configuration {
+        log_driver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
+          awslogs-region        = data.aws_region.current.region
+          awslogs-stream-prefix = "platform/ecs"
+        }
+      }
+    }
   }
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count, service_registries]
+    ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
   }
 
 }
