@@ -16,7 +16,7 @@ def internal():
 
 
 @internal.command()
-def migrate_manifests(name, environment):
+def migrate_manifests():
     """Migrate copilot manifests to service manifests."""
     click_io = ClickIOProvider()
 
