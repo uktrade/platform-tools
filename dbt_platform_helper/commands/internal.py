@@ -22,7 +22,8 @@ def migrate_manifests():
 
     try:
 
-        config = ConfigProvider(ConfigValidator()).get_enriched_config()
-        SchemaV1ToV2Migration.migrate(config)
+        config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
+        migrator = SchemaV1ToV2Migration()
+        migrator.migrate(platform_config=config)
     except PlatformException as error:
         click_io.abort_with_error(str(error))
