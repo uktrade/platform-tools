@@ -16,14 +16,8 @@ def internal():
 
 
 @internal.command()
-@click.option("--name", required=True, help="The name of the ECS service to create or update.")
-@click.option(
-    "--environment",
-    required=True,
-    help="The name of the environment to create or update an ECS service to.",
-)
 def migrate_manifests(name, environment):
-    """Create or update an ECS service."""
+    """Migrate copilot manifests to service manifests."""
     click_io = ClickIOProvider()
 
     try:
