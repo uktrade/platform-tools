@@ -43,7 +43,7 @@ class SchemaV1ToV2Migration:
                 service_manifest = YamlFileProvider.find_and_replace(
                     service_manifest,
                     "${COPILOT_APPLICATION_NAME}",
-                    "${PLATFORM_APPLICATION_NAME}",
+                    platform_config["application"],
                 )
 
                 service_manifest = YamlFileProvider.find_and_replace(
