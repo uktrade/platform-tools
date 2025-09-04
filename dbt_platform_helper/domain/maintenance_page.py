@@ -199,7 +199,13 @@ class MaintenancePage:
                         "AllowedIps",
                         next(rule_priority),
                         service_conditions,
-                        [{"Key": "service", "Value": svc.name}],
+                        [
+                            {"Key": "application", "Value": app},
+                            {"Key": "environment", "Value": env},
+                            {"Key": "reason", "Value": "MaintenancePage"},
+                            {"Key": "managed-by", "Value": "DBT Platform"},
+                            {"Key": "service", "Value": svc.name},
+                        ],
                     )
                     self.load_balancer.create_source_ip_rule(
                         listener_arn,
@@ -208,7 +214,13 @@ class MaintenancePage:
                         "AllowedSourceIps",
                         next(rule_priority),
                         service_conditions,
-                        [{"Key": "service", "Value": svc.name}],
+                        [
+                            {"Key": "application", "Value": app},
+                            {"Key": "environment", "Value": env},
+                            {"Key": "reason", "Value": "MaintenancePage"},
+                            {"Key": "managed-by", "Value": "DBT Platform"},
+                            {"Key": "service", "Value": svc.name},
+                        ],
                     )
 
                 self.load_balancer.create_header_rule(
@@ -219,7 +231,13 @@ class MaintenancePage:
                     "BypassIpFilter",
                     next(rule_priority),
                     service_conditions,
-                    [{"Key": "service", "Value": svc.name}],
+                    [
+                        {"Key": "application", "Value": app},
+                        {"Key": "environment", "Value": env},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": svc.name},
+                    ],
                 )
 
                 # add to accumilating list of conditions for maintenace page rule
@@ -267,8 +285,12 @@ class MaintenancePage:
                         }
                     ],
                     tags=[
+                        {"Key": "application", "Value": app},
+                        {"Key": "environment", "Value": env},
+                        {"Key": "reason", "Value": "MaintenancePage"},
                         {"Key": "name", "Value": "MaintenancePage"},
                         {"Key": "type", "Value": template},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
                     ],
                 )
         except Exception as e:
