@@ -5,18 +5,18 @@ from dummy_rule_manager import DummyRuleManager
 
 
 class LifecycleAction(Enum):
-    CREATE = 'create'
-    UPDATE = 'update'
-    DELETE = 'delete'
+    CREATE = "create"
+    UPDATE = "update"
+    DELETE = "delete"
 
 
 class Lifecycle:
     def __init__(self, lifecycle):
-        self.action = LifecycleAction(lifecycle['action'])
-        if lifecycle['prev_input'] is not None:
+        self.action = LifecycleAction(lifecycle["action"])
+        if lifecycle["prev_input"] is not None:
             self.previous = Parameters(
-                lifecycle['prev_input']['ServiceName'],
-                lifecycle['prev_input']['TargetGroup'],
+                lifecycle["prev_input"]["ServiceName"],
+                lifecycle["prev_input"]["TargetGroup"],
             )
 
 
@@ -30,12 +30,12 @@ class Parameters:
 
 def handler(event, context):
     organiser = DummyRuleManager(
-        application=os.environ['APPLICATION'],
-        environment=os.environ['ENVIRONMENT'],
-        listener_arn=os.environ['LISTENER_ARN'],
+        application=os.environ["APPLICATION"],
+        environment=os.environ["ENVIRONMENT"],
+        listener_arn=os.environ["LISTENER_ARN"],
     )
 
-    parameters = Parameters(event['ServiceName'], event['TargetGroup'], event['Lifecycle'])
+    parameters = Parameters(event["ServiceName"], event["TargetGroup"], event["Lifecycle"])
 
     match parameters.lifecycle.action:
         case LifecycleAction.CREATE:
@@ -45,7 +45,7 @@ def handler(event, context):
         case LifecycleAction.DELETE:
             organiser.delete_dummy_rule(parameters.lifecycle.previous.service_name)
         case _:
-            raise Exception('Unexpected lifecycle action')
+            raise Exception("Unexpected lifecycle action")
 
     return {
         "statusCode": 200,

@@ -54,8 +54,8 @@ locals {
   alb_details = try(
     regex(":listener\\/app\\/(?P<alb_name>[^\\/]+)\\/(?P<alb_id>[^\\/]+)\\/(?P<listener_id>[^\\/]+)$", aws_lb_listener.alb-listener["https"].arn),
     {
-      alb_name = null
-      alb_id = null
+      alb_name    = null
+      alb_id      = null
       listener_id = null
     }
   )

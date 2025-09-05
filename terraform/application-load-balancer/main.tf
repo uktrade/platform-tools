@@ -285,8 +285,8 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-assume" {
 data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
   # TODO: Come back and work out the right set of permissions
   statement {
-    effect = "Allow"
-    actions = ["elasticloadbalancing:CreateRule"]
+    effect    = "Allow"
+    actions   = ["elasticloadbalancing:CreateRule"]
     resources = [aws_lb_listener.alb-listener["https"].arn]
   }
   statement {
@@ -331,14 +331,14 @@ resource "aws_lambda_function" "listener-rule-organiser-function" {
   # checkov:skip=CKV_AWS_173:Encryption of environmental variables is not configured with KMS key
   # checkov:skip=CKV_AWS_117:Run Lambda inside VPC with security groups & private subnets not necessary
   # checkov:skip=CKV_AWS_50:XRAY tracing not used
-  depends_on    = [data.archive_file.listener-rule-organiser-code, aws_iam_role.listener-rule-organiser-role]
-  filename      = data.archive_file.listener-rule-organiser-code.output_path
-  function_name = "${var.application}-${var.environment}-listener-rule-organiser"
-  description   = "Listener Rule Organiser Lambda Function"
-  handler       = "handler.lambda_handler"
-  runtime       = "python3.13"
-  timeout       = 300
-  role          = aws_iam_role.listener-rule-organiser-role.arn
+  depends_on       = [data.archive_file.listener-rule-organiser-code, aws_iam_role.listener-rule-organiser-role]
+  filename         = data.archive_file.listener-rule-organiser-code.output_path
+  function_name    = "${var.application}-${var.environment}-listener-rule-organiser"
+  description      = "Listener Rule Organiser Lambda Function"
+  handler          = "handler.lambda_handler"
+  runtime          = "python3.13"
+  timeout          = 300
+  role             = aws_iam_role.listener-rule-organiser-role.arn
   source_code_hash = data.archive_file.listener-rule-organiser-code.output_base64sha256
 
   # To avoid race conditions, we only call one at a time
@@ -612,7 +612,7 @@ resource "aws_wafv2_web_acl_association" "waf-alb-association" {
 # These moved blocks are to prevent resources being recreated
 moved {
   from = data.archive_file.lambda
-  to = data.archive_file.origin-secret-rotate-code
+  to   = data.archive_file.origin-secret-rotate-code
 }
 
 moved {
