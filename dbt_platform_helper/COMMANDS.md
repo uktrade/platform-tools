@@ -22,6 +22,9 @@
         - [platform-helper environment generate](#platform-helper-environment-generate)
         - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
     - [platform-helper generate](#platform-helper-generate)
+    - [platform-helper internal](#platform-helper-internal)
+        - [platform-helper internal alb](#platform-helper-internal-alb)
+            - [platform-helper internal alb update](#platform-helper-internal-alb-update)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -65,6 +68,7 @@ platform-helper <command> [--version]
 - [`database` ↪](#platform-helper-database)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
+- [`internal` ↪](#platform-helper-internal)
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
@@ -538,6 +542,67 @@ platform-helper generate
 ```
 
 ## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal
+
+[↩ Parent](#platform-helper)
+
+    Commands for internal platform use.
+
+## Usage
+
+```
+platform-helper internal alb 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`alb` ↪](#platform-helper-internal-alb)
+
+# platform-helper internal alb
+
+[↩ Parent](#platform-helper-internal)
+
+    Load Balancer related commands.
+
+## Usage
+
+```
+platform-helper internal alb update 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`update` ↪](#platform-helper-internal-alb-update)
+
+# platform-helper internal alb update
+
+[↩ Parent](#platform-helper-internal-alb)
+
+    Udpate alb rules.
+
+## Usage
+
+```
+platform-helper internal alb update --env <environment> 
+```
+
+## Options
+
+- `--env <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
