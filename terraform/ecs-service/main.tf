@@ -51,6 +51,17 @@ data "aws_subnets" "private-subnets" {
   }
 }
 
+resource "aws_lambda_invocation" "dummy_listener_rule" {
+  for_each        = local.web_service_required == 1 ? [""] : []
+  function_name   = "${var.application}-${var.environment}-listener-rule-organiser"
+  lifecycle_scope = "CRUD"
+  terraform_key   = "Lifecycle"
+  input = jsonencode({
+    ServiceName = var.service_config.name
+    TargetGroup = aws_lb_target_group.target_group[0].arn
+  })
+}
+
 resource "aws_ecs_service" "service" {
   name                   = "${var.application}-${var.environment}-${var.service_config.name}"
   cluster                = data.aws_ecs_cluster.cluster.id
@@ -61,15 +72,14 @@ resource "aws_ecs_service" "service" {
   propagate_tags         = "SERVICE"
 
 
-  # TODO - Add back in once listener rule is created
-  # dynamic "load_balancer" {
-  #   for_each = local.web_service_required == 1 ? [""] : []
-  #   content {
-  #     target_group_arn = aws_lb_target_group.target_group[0].arn
-  #     container_name   = "nginx"
-  #     container_port   = 8080
-  #   }
-  # }
+  dynamic "load_balancer" {
+    for_each = local.web_service_required == 1 ? [""] : []
+    content {
+      target_group_arn = aws_lb_target_group.target_group[0].arn
+      container_name   = "nginx"
+      container_port   = 8080
+    }
+  }
 
   network_configuration {
     subnets         = data.aws_subnets.private-subnets.ids
@@ -116,6 +126,7 @@ resource "aws_ecs_service" "service" {
     ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
   }
 
+  depends_on = [aws_lambda_invocation.dummy_listener_rule]
 }
 
 data "aws_vpc" "vpc" {
