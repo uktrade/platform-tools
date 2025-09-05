@@ -2,6 +2,8 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
+data "aws_partition" "current" {}
+
 data "aws_ssm_parameter" "slack_token" {
   name = "/codebuild/slack_oauth_token"
 }
@@ -261,7 +263,99 @@ resource "aws_wafv2_web_acl" "waf-acl" {
 
 }
 
-# AWS Lambda Resources
+# AWS Lambda for listener rule insertion
+
+resource "aws_iam_role" "listener-rule-organiser-role" {
+  name               = "${var.application}-${var.environment}-listener-rule-organiser-role"
+  assume_role_policy = data.aws_iam_policy_document.listener-rule-organiser-role-assume.json
+  tags               = local.tags
+}
+
+data "aws_iam_policy_document" "listener-rule-organiser-role-assume" {
+  statement {
+    effect  = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
+  # TODO: Come back and work out the right set of permissions
+  statement {
+    effect = "Allow"
+    actions = ["elasticloadbalancing:CreateRule"]
+    resources = [aws_lb_listener.alb-listener["https"].arn]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:DescribeRules",
+    ]
+    resources = [
+      "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "listener-rule-organiser-role-policy" {
+  role   = aws_iam_role.listener-rule-organiser-role.id
+  name   = "ListenerRuleOragniser"
+  policy = data.aws_iam_policy_document.listener-rule-organiser-role-policy.json
+}
+
+# This file needs to exist, but it's not directly used in the Terraform so...
+# tflint-ignore: terraform_unused_declarations
+# This resource creates the Lambda function code zip file
+data "archive_file" "listener-rule-organiser-code" {
+  type        = "zip"
+  source_dir  = "${path.module}/lambda_function/listener_rule_organiser"
+  output_path = "${path.module}/listener_rule_organiser.zip" # This zip contains only your function code
+  excludes = [
+    "**/.DS_Store",
+    "**/.idea/*"
+  ]
+
+  depends_on = [
+    aws_iam_role.listener-rule-organiser-role
+  ]
+}
+
+resource "aws_lambda_function" "listener-rule-organiser-function" {
+  # Precedence in the Postgres Lambda to skip first 2 checks
+  # checkov:skip=CKV_AWS_272:Code signing is not currently in use
+  # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
+  # checkov:skip=CKV_AWS_173:Encryption of environmental variables is not configured with KMS key
+  # checkov:skip=CKV_AWS_117:Run Lambda inside VPC with security groups & private subnets not necessary
+  # checkov:skip=CKV_AWS_50:XRAY tracing not used
+  depends_on    = [data.archive_file.listener-rule-organiser-code, aws_iam_role.listener-rule-organiser-role]
+  filename      = data.archive_file.listener-rule-organiser-code.output_path
+  function_name = "${var.application}-${var.environment}-listener-rule-organiser"
+  description   = "Listener Rule Organiser Lambda Function"
+  handler       = "handler.lambda_handler"
+  runtime       = "python3.13"
+  timeout       = 300
+  role          = aws_iam_role.listener-rule-organiser-role.arn
+  source_code_hash = data.archive_file.listener-rule-organiser-code.output_base64sha256
+
+  # To avoid race conditions, we only call one at a time
+  reserved_concurrent_executions = 1
+
+  environment {
+    variables = {
+      APPLICATION  = var.application
+      ENVIRONMENT  = var.environment
+      LISTENER_ARN = try(aws_lb_listener.alb-listener[0].arn, "")
+    }
+  }
+
+  tags = local.tags
+}
+
+# AWS Lambda for Secret Rotation Resources
 
 # IAM Role for Lambda Execution
 resource "aws_iam_role" "origin-secret-rotate-execution-role" {
@@ -430,10 +524,10 @@ resource "aws_iam_role_policy" "origin_secret_rotate_policy" {
 # This file needs to exist, but it's not directly used in the Terraform so...
 # tflint-ignore: terraform_unused_declarations
 # This resource creates the Lambda function code zip file
-data "archive_file" "lambda" {
+data "archive_file" "origin-secret-rotate-code" {
   type        = "zip"
-  source_dir  = "${path.module}/lambda_function"
-  output_path = "${path.module}/lambda_function.zip" # This zip contains only your function code
+  source_dir  = "${path.module}/lambda_function/rotate_secret"
+  output_path = "${path.module}/rotate_secret.zip" # This zip contains only your function code
   excludes = [
     "**/.DS_Store",
     "**/.idea/*"
@@ -453,8 +547,8 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
   # checkov:skip=CKV_AWS_117:Run Lambda inside VPC with security groups & private subnets not necessary
   # checkov:skip=CKV_AWS_50:XRAY tracing not used
   for_each      = toset(local.cdn_enabled ? [""] : [])
-  depends_on    = [data.archive_file.lambda, aws_iam_role.origin-secret-rotate-execution-role]
-  filename      = data.archive_file.lambda.output_path
+  depends_on    = [data.archive_file.origin-secret-rotate-code, aws_iam_role.origin-secret-rotate-execution-role]
+  filename      = data.archive_file.origin-secret-rotate-code.output_path
   function_name = "${var.application}-${var.environment}-origin-secret-rotate"
   description   = "Secrets Manager Rotation Lambda Function"
   handler       = "rotate_secret_lambda.lambda_handler"
@@ -485,7 +579,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   layers           = [local.lambda_layer]
-  source_code_hash = data.archive_file.lambda.output_base64sha256
+  source_code_hash = data.archive_file.origin-secret-rotate-code.output_base64sha256
 
   vpc_config {
     security_group_ids = [aws_security_group.alb-security-group["http"].id, data.aws_security_group.vpc_base_sg.id]
@@ -516,6 +610,11 @@ resource "aws_wafv2_web_acl_association" "waf-alb-association" {
 
 
 # These moved blocks are to prevent resources being recreated
+moved {
+  from = data.archive_file.lambda
+  to = data.archive_file.origin-secret-rotate-code
+}
+
 moved {
   from = aws_wafv2_web_acl.waf-acl
   to   = aws_wafv2_web_acl.waf-acl[""]

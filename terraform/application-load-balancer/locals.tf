@@ -48,4 +48,15 @@ locals {
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
+
+  # calculate a few load balancer details
+  # alb_details = {alb_name = "name", alb_id = "id", listener_id = "id"}
+  alb_details = try(
+    regex(":listener\\/app\\/(?P<alb_name>[^\\/]+)\\/(?P<alb_id>[^\\/]+)\\/(?P<listener_id>[^\\/]+)$", aws_lb_listener.alb-listener["https"].arn),
+    {
+      alb_name = null
+      alb_id = null
+      listener_id = null
+    }
+  )
 }
