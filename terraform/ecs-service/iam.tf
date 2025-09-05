@@ -103,7 +103,7 @@ data "aws_iam_policy_document" "secrets" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${variable}"
+      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${trim(variable, "/")}"
     ]
     condition {
       test     = "StringEquals"
@@ -193,15 +193,20 @@ resource "aws_iam_policy" "service_logs_policy" {
 
 data "aws_iam_policy_document" "service_logs" {
   statement {
+    effect    = "Allow"
+    actions   = ["logs:DescribeLogGroups", "logs:DescribeLogStreams"]
+    resources = ["*"]
+  }
+
+  statement {
     effect = "Allow"
     actions = [
       "logs:CreateLogStream",
-      "logs:DescribeLogGroups",
-      "logs:DescribeLogStreams",
       "logs:PutLogEvents"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:${aws_cloudwatch_log_group.ecs_service_logs.name}:log-stream:*"
     ]
   }
 }

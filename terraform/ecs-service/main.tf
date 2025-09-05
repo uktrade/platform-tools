@@ -1,73 +1,132 @@
-resource "aws_ecs_task_definition" "this" {
-  family                   = "${local.full_service_name}-task-def"
+resource "aws_ecs_task_definition" "default_task_def" {
+  family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
   requires_compatibilities = ["FARGATE"]
-  cpu                      = tostring(var.service_config.cpu)
-  memory                   = tostring(var.service_config.memory)
+  cpu                      = 256
+  memory                   = 512
   network_mode             = "awsvpc"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn #TODO - Create separate role?
+  task_role_arn            = aws_iam_role.ecs_task_role.arn           #TODO - Create separate role?
   tags                     = local.tags
 
-  container_definitions = jsonencode(
-    concat(
-      [
+  runtime_platform {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "nginx"
+      image     = "public.ecr.aws/nginx/nginx:alpine-slim"
+      essential = true
+      portMappings = [
         {
-          name  = var.service_config.name
-          image = var.service_config.image.location
-          portMappings = var.service_config.image.port != null ? [
-            {
-              containerPort = var.service_config.image.port
-              protocol      = "tcp"
-            }
-          ] : []
-          essential = true
-          environment = [
-            for k, v in coalesce(var.service_config.variables, {}) : {
-              name  = k
-              value = tostring(v)
-            }
-          ]
-          secrets = [
-            for k, v in coalesce(var.service_config.secrets, {}) : {
-              name      = k
-              valueFrom = v
-            }
-          ]
-          logConfiguration = {
-            logDriver = "awslogs"
-            options = {
-              awslogs-group         = "/platform/ecs/service/${var.application}/${var.environment}/${var.service_config.name}"
-              awslogs-region        = data.aws_region.current.region
-              awslogs-stream-prefix = "ecs"
-            }
-          }
-        }
-      ],
-      [
-        for sidecar_name, sidecar in var.service_config.sidecars : {
-          name  = sidecar_name
-          image = sidecar.image
-          portMappings = sidecar.port != null ? [{
-            containerPort = sidecar.port
-            protocol      = "tcp"
-          }] : []
-          environment = sidecar.variables != null ? [
-            for k, v in sidecar.variables : {
-              name  = k
-              value = tostring(v)
-            }
-          ] : []
-          secrets = sidecar.secrets != null ? [
-            for k, v in sidecar.secrets : {
-              name      = k
-              valueFrom = v
-            }
-          ] : []
-          essential = false
+          containerPort = 8080
+          hostPort      = 8080
         }
       ]
-    )
-  )
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
+          awslogs-region        = data.aws_region.current.region
+          awslogs-stream-prefix = "platform/ecs"
+        }
+      }
+    }
+  ])
+}
+
+data "aws_ecs_cluster" "cluster" {
+  cluster_name = "${var.application}-${var.environment}-cluster"
+}
+
+data "aws_security_group" "env_security_group" {
+  name = "${var.application}-${var.environment}-environment"
+}
+
+data "aws_subnets" "private-subnets" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.vpc_name}-private-*"]
+  }
+}
+
+resource "aws_lambda_invocation" "dummy_listener_rule" {
+  for_each        = local.web_service_required == 1 ? [""] : []
+  function_name   = "${var.application}-${var.environment}-listener-rule-organiser"
+  lifecycle_scope = "CRUD"
+  terraform_key   = "Lifecycle"
+  input = jsonencode({
+    ServiceName = var.service_config.name
+    TargetGroup = aws_lb_target_group.target_group[0].arn
+  })
+}
+
+resource "aws_ecs_service" "service" {
+  name                   = "${var.application}-${var.environment}-${var.service_config.name}"
+  cluster                = data.aws_ecs_cluster.cluster.id
+  launch_type            = "FARGATE"
+  enable_execute_command = try(var.service_config.exec, false)
+  task_definition        = aws_ecs_task_definition.default_task_def.arn
+  desired_count          = 1
+  propagate_tags         = "SERVICE"
+
+
+  dynamic "load_balancer" {
+    for_each = local.web_service_required == 1 ? [""] : []
+    content {
+      target_group_arn = aws_lb_target_group.target_group[0].arn
+      container_name   = "nginx"
+      container_port   = 8080
+    }
+  }
+
+  network_configuration {
+    subnets         = data.aws_subnets.private-subnets.ids
+    security_groups = [data.aws_security_group.env_security_group.id]
+  }
+
+  # TODO - Potentially remove this once de-copiloting is complete, as Service Connect is also used. Verify that no team uses Service Discovery before any removal.
+  dynamic "service_registries" {
+    for_each = local.web_service_required == 1 ? [""] : []
+
+    content {
+      registry_arn = aws_service_discovery_service.service_discovery_service[0].arn
+      port         = 443
+    }
+  }
+
+  dynamic "service_connect_configuration" {
+    for_each = local.web_service_required == 1 ? [""] : []
+
+    content {
+      enabled   = true
+      namespace = data.aws_service_discovery_dns_namespace.private_dns_namespace[0].arn
+
+      service {
+        discovery_name = "web-sc"
+        port_name      = "target"
+        client_alias {
+          dns_name = "web"
+          port     = 443
+        }
+      }
+      log_configuration {
+        log_driver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
+          awslogs-region        = data.aws_region.current.region
+          awslogs-stream-prefix = "platform/ecs"
+        }
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
+  }
+
+  depends_on = [aws_lambda_invocation.dummy_listener_rule]
 }
 
 data "aws_vpc" "vpc" {

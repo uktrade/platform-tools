@@ -24,8 +24,7 @@ def service():
 @click.option(
     "--environment",
     "-e",
-    required=False,
-    multiple=True,
+    required=True,
     help="The name of the environment to generate service manifests for. Multiple values accepted.",
 )
 @click.option(
@@ -40,13 +39,12 @@ def generate(name, environment, image_tag):
     /terraform/services/<environment>/<service>/main.tf.json."""
 
     services = list(name)
-    environments = list(environment)
     click_io = ClickIOProvider()
 
     try:
         service_manager = ServiceManager()
         service_manager.generate(
-            environments=environments, services=services, image_tag_flag=image_tag
+            environment=environment, services=services, image_tag_flag=image_tag
         )
 
     except PlatformException as err:

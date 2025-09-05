@@ -154,7 +154,7 @@ def test_find_and_replace(fs):
     value4: REPLACED
 """
 
-    test_content = YamlFileProvider.find_and_replace(test_content, "REPLACE_ME", "REPLACED")
+    test_content = YamlFileProvider.find_and_replace(test_content, ["REPLACE_ME"], ["REPLACED"])
     YamlFileProvider.write(test_path, test_content)
     with open(test_path, "r") as test_yaml_file:
         assert expected_test_output_file.strip() == test_yaml_file.read().strip()
