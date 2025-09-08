@@ -325,10 +325,6 @@ data "archive_file" "listener-rule-organiser-code" {
     "**/.DS_Store",
     "**/.idea/*"
   ]
-
-  depends_on = [
-    aws_iam_role.listener-rule-organiser-role
-  ]
 }
 
 resource "aws_lambda_function" "listener-rule-organiser-function" {
