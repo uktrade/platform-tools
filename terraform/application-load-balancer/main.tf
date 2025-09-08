@@ -283,17 +283,24 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-assume" {
 }
 
 data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
-  # TODO: Come back and work out the right set of permissions
   statement {
     effect    = "Allow"
     actions   = ["elasticloadbalancing:CreateRule"]
     resources = [aws_lb_listener.alb-listener["https"].arn]
   }
   statement {
+    effect    = "Allow"
+    actions   = [
+      "elasticloadbalancing:DescribeTags",
+      "elasticloadbalancing:DescribeRules",
+    ]
+    resources = ["*"]
+  }
+  statement {
     effect = "Allow"
     actions = [
+      "elasticloadbalancing:DeleteRule",
       "elasticloadbalancing:AddTags",
-      "elasticloadbalancing:DescribeRules",
     ]
     resources = [
       "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
@@ -335,7 +342,7 @@ resource "aws_lambda_function" "listener-rule-organiser-function" {
   filename         = data.archive_file.listener-rule-organiser-code.output_path
   function_name    = "${var.application}-${var.environment}-listener-rule-organiser"
   description      = "Listener Rule Organiser Lambda Function"
-  handler          = "handler.lambda_handler"
+  handler          = "handler.handler"
   runtime          = "python3.13"
   timeout          = 300
   role             = aws_iam_role.listener-rule-organiser-role.arn
@@ -348,7 +355,7 @@ resource "aws_lambda_function" "listener-rule-organiser-function" {
     variables = {
       APPLICATION  = var.application
       ENVIRONMENT  = var.environment
-      LISTENER_ARN = try(aws_lb_listener.alb-listener[0].arn, "")
+      LISTENER_ARN = try(aws_lb_listener.alb-listener["https"].arn, "")
     }
   }
 
