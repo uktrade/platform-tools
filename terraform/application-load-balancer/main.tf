@@ -289,8 +289,8 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
     resources = [aws_lb_listener.alb-listener["https"].arn]
   }
   statement {
-    effect    = "Allow"
-    actions   = [
+    effect = "Allow"
+    actions = [
       "elasticloadbalancing:DescribeTags",
       "elasticloadbalancing:DescribeRules",
     ]

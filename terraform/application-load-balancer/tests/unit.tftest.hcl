@@ -984,12 +984,12 @@ run "dummy_listener_rule_manager" {
 
   # --- Test lambda function permissions ---
   assert {
-    condition = aws_iam_role.listener-rule-organiser-role.name == "${var.application}-${var.environment}-listener-rule-organiser-role"
+    condition     = aws_iam_role.listener-rule-organiser-role.name == "${var.application}-${var.environment}-listener-rule-organiser-role"
     error_message = "Invalid role name for aws_iam_role.listener-rule-organiser-role"
   }
 
   assert {
-    condition = aws_iam_role.listener-rule-organiser-role.assume_role_policy == "{\"Sid\": \"ListenerRuleLambdaAssumeRolePolicy\"}"
+    condition     = aws_iam_role.listener-rule-organiser-role.assume_role_policy == "{\"Sid\": \"ListenerRuleLambdaAssumeRolePolicy\"}"
     error_message = "Invalid assume role policy for aws_iam_role.listener-rule-organiser-role"
   }
 
@@ -1046,7 +1046,7 @@ run "dummy_listener_rule_manager" {
   }
 
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[1].actions == toset([
+    condition = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[1].actions == toset([
       "elasticloadbalancing:DescribeTags",
       "elasticloadbalancing:DescribeRules",
     ])
@@ -1065,7 +1065,7 @@ run "dummy_listener_rule_manager" {
   }
 
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[2].actions == toset([
+    condition = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[2].actions == toset([
       "elasticloadbalancing:DeleteRule",
       "elasticloadbalancing:AddTags",
     ])
