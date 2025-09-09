@@ -25,7 +25,6 @@
     - [platform-helper internal](#platform-helper-internal)
         - [platform-helper internal service](#platform-helper-internal-service)
             - [platform-helper internal service deploy](#platform-helper-internal-service-deploy)
-            - [platform-helper internal service delete](#platform-helper-internal-service-delete)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -577,7 +576,7 @@ platform-helper internal service
 ## Usage
 
 ```
-platform-helper internal service (deploy|delete) 
+platform-helper internal service deploy 
 ```
 
 ## Options
@@ -587,7 +586,6 @@ platform-helper internal service (deploy|delete)
 
 ## Commands
 
-- [`delete` ↪](#platform-helper-internal-service-delete)
 - [`deploy` ↪](#platform-helper-internal-service-deploy)
 
 # platform-helper internal service deploy
@@ -600,6 +598,7 @@ platform-helper internal service (deploy|delete)
 
 ```
 platform-helper internal service deploy --name <name> --environment <environment> 
+                                        [--image-tag-override <image_tag_override>] 
 ```
 
 ## Options
@@ -608,27 +607,8 @@ platform-helper internal service deploy --name <name> --environment <environment
   - The name of the ECS service to create or update.
 - `--environment <text>`
   - The name of the environment to create or update an ECS service to.
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper internal service delete
-
-[↩ Parent](#platform-helper-internal-service)
-
-    Delete an ECS service.
-
-## Usage
-
-```
-platform-helper internal service delete --name <name> --environment <environment> 
-```
-
-## Options
-
-- `--name <text>`
-  - The name of the ECS service to create or update
-- `--environment <text>`
-  - The name of the environment to create or update an ECS service to.
+- `--image-tag-override <text>`
+  - Override the Docker image to be deployed for this service. This flag takes precedence over the $IMAGE_TAG environment variable.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

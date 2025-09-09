@@ -27,7 +27,12 @@ def service():
     required=True,
     help="The name of the environment to create or update an ECS service to.",
 )
-def deploy(name, environment):
+@click.option(
+    "--image-tag-override",
+    required=False,
+    help="Override the Docker image to be deployed for this service. This flag takes precedence over the $IMAGE_TAG environment variable.",
+)
+def deploy(name, environment, image_tag_override):
     """Create or update an ECS service."""
     click_io = ClickIOProvider()
 
@@ -42,32 +47,11 @@ def deploy(name, environment):
         ecs_provider = ECS(ecs_client, ssm_client, application.name, environment)
 
         internal = Internal(ecs_provider=ecs_provider)
-        internal.deploy(service=name, environment=environment, application=application.name)
-    except PlatformException as error:
-        click_io.abort_with_error(str(error))
-
-
-@service.command()
-@click.option("--name", required=True, help="The name of the ECS service to create or update")
-@click.option(
-    "--environment",
-    required=True,
-    help="The name of the environment to create or update an ECS service to.",
-)
-def delete(name, environment):
-    """Delete an ECS service."""
-    click_io = ClickIOProvider()
-
-    try:
-        config = ConfigProvider(ConfigValidator()).get_enriched_config()
-        application_name = config.get("application", "")
-        application = load_application(app=application_name, env=environment)
-
-        ecs_client = application.environments[environment].session.client("ecs")
-        ssm_client = application.environments[environment].session.client("ssm")
-        ecs_provider = ECS(ecs_client, ssm_client, application.name, environment)
-
-        internal = Internal(ecs_provider=ecs_provider)
-        internal.delete(service=name, environment=environment, application=application.name)
+        internal.deploy(
+            service=name,
+            environment=environment,
+            application=application.name,
+            image_tag_override=image_tag_override,
+        )
     except PlatformException as error:
         click_io.abort_with_error(str(error))

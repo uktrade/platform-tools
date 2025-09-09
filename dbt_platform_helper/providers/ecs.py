@@ -1,8 +1,10 @@
 import random
 import string
 import subprocess
-from typing import List
+from typing import Any
 from typing import Optional
+
+from botocore.exceptions import ClientError
 
 from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
@@ -41,7 +43,7 @@ class ECS:
         container_name: str,
         task_def_arn: str,
         vpc_config: Vpc,
-        env_vars: List[dict] = None,
+        env_vars: list[dict] = None,
     ):
         container_override = {"name": container_name}
         if env_vars:
@@ -109,13 +111,31 @@ class ECS:
             random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
             return f"conduit-{self.application_name}-{self.env}-{addon_name}-{random_id}"
 
-    def get_ecs_task_arns(self, cluster_arn: str, task_def_family: str):
-        """Gets the ECS task ARNs for a given task name and cluster ARN."""
-        tasks = self.ecs_client.list_tasks(
-            cluster=cluster_arn,
-            desiredStatus="RUNNING",
-            family=task_def_family,
-        )
+    def get_ecs_task_arns(
+        self,
+        cluster: str,
+        max_results: int = 100,
+        desired_status: str = "RUNNING",
+        service_name: Optional[str] = None,
+        started_by: Optional[str] = None,
+        task_def_family: Optional[str] = None,
+    ) -> list[str]:
+        """Returns the ECS task ARNs based on the parameters provided."""
+
+        params = {
+            "cluster": cluster,
+            "maxResults": max_results,
+            "desiredStatus": desired_status,
+        }
+
+        if service_name:
+            params["serviceName"] = service_name
+        if started_by:
+            params["startedBy"] = started_by
+        if task_def_family:
+            params["family"] = task_def_family
+
+        tasks = self.ecs_client.list_tasks(**params)
 
         if not tasks["taskArns"]:
             return []
@@ -139,7 +159,7 @@ class ECS:
         exceptions_to_catch=(ECSException,),
         message_on_false="ECS Agent Not running",
     )
-    def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]) -> bool:
+    def ecs_exec_is_available(self, cluster_arn: str, task_arns: list[str]) -> bool:
         """
         Checks if the ExecuteCommandAgent is running on the specified ECS task.
 
@@ -170,107 +190,74 @@ class ECS:
         message_on_false="ECS task did not register in time",
     )
     def wait_for_task_to_register(self, cluster_arn: str, task_family: str) -> list[str]:
-        task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
+        task_arns = self.get_ecs_task_arns(cluster=cluster_arn, task_def_family=task_family)
         if task_arns:
             return task_arns
         return False
 
-    def get_ecs_service_arn(self, cluster_name: str, service_name: str) -> Optional[str]:
-        response = self.ecs_client.describe_services(
-            cluster=cluster_name, services=[service_name]  # Search for a single service
-        )
-        service = response.get("services", [])
-        if not service or service[0].get("status") == "INACTIVE":
-            return None
-        return service[0]["serviceArn"]
+    def get_service_rollout_state(
+        self, cluster_name: str, service_name: str
+    ) -> tuple[Optional[str], Optional[str]]:
+        """
+        Returns rolloutState & rolloutStateReason for the PRIMARY deployment of
+        an ECS service.
+
+        rolloutState can be one of: 'COMPLETED' | 'FAILED' | 'IN_PROGRESS' | None
+        """
+        resp = self.ecs_client.describe_services(cluster=cluster_name, services=[service_name])
+        services = resp.get("services", [])
+        if not services:
+            return None, "Service not found"
+
+        svc = services[0]
+        primary_deployment = None
+        for dep in svc.get("deployments", []):
+            if dep.get("status") == "PRIMARY":
+                primary_deployment = dep
+                break
+
+        if not primary_deployment:
+            return None, "No PRIMARY deployment found"
+
+        return primary_deployment.get("rolloutState"), primary_deployment.get("rolloutStateReason")
+
+    def get_container_names_from_ecs_tasks(
+        self, cluster_name: str, task_ids: list[str]
+    ) -> list[str]:
+        """Retrieve container names from each ECS task provided."""
+
+        response = self.ecs_client.describe_tasks(cluster=cluster_name, tasks=task_ids)
+
+        names = []
+        for task in response.get("tasks", []):
+            for container in task.get("containers", []):
+                if container["name"] not in names:
+                    names.append(container["name"])
+        return names
 
     def register_task_definition(
-        self, service_model: ServiceConfig, environment: str, application: str
-    ):
-        container_definitions = []
+        self,
+        service_model: ServiceConfig,
+        environment: str,
+        application: str,
+        account_id: str,
+        container_definitions: list[dict[str, Any]],
+        image_tag: Optional[str] = None,
+    ) -> str:
+        """Register a new task definition revision using provided model and
+        containerDefinitions."""
 
-        # This is the same for main service and sidecars
-        default_config = {
-            "mountPoints": [{"sourceVolume": "temporary-fs", "containerPath": "/tmp"}],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": f"/platform/ecs/service/{application}/{environment}/{service_model.name}",
-                    "awslogs-region": "eu-west-2",
-                    "awslogs-stream-prefix": "terraform",
-                },
-            },
-        }
+        if image_tag:
+            for container in container_definitions:
+                if container.get("name") == service_model.name:
+                    container["image"] = f"{str(service_model.image).rsplit(':', 1)[0]}:{image_tag}"
+                    break
 
-        # Main service definition
-        service_definition = {
-            "name": service_model.name,
-            "image": service_model.image.location,
-            "essential": True,
-            "environment": [
-                {"name": key, "value": str(value)}
-                for key, value in (service_model.variables or {}).items()
-            ],
-            "secrets": [
-                {"name": key, "valueFrom": value}
-                for key, value in (service_model.secrets or {}).items()
-            ],
-        }
-
-        if service_model.storage:
-            service_definition["readonlyRootFilesystem"] = service_model.storage.readonly_fs
-
-        if service_model.type == "Load Balanced Web Service":
-            service_definition["portMappings"] = [
-                {"containerPort": service_model.image.port, "protocol": "tcp"}
-            ]
-
-        if service_model.type == "Backend Service":
-            service_definition["entryPoint"] = [
-                entrypoint for entrypoint in service_model.entrypoint
-            ]
-
-        container_definitions.append(service_definition | default_config)
-
-        # Add sidecars
-        for sidecar_name, sidecar_config in (service_model.sidecars or {}).items():
-            sidecar_definition = {
-                "name": sidecar_name,
-                "image": sidecar_config.image,
-                "essential": (
-                    True if (sidecar_config.essential is None) else sidecar_config.essential
-                ),
-                "environment": [
-                    {"name": key, "value": str(value)}
-                    for key, value in (sidecar_config.variables or {}).items()
-                ],
-                "secrets": [
-                    {"name": key, "valueFrom": value}
-                    for key, value in (sidecar_config.secrets or {}).items()
-                ],
-                "portMappings": [
-                    {
-                        "containerPort": sidecar_config.port,
-                        "hostPort": sidecar_config.port,
-                        "protocol": "tcp",
-                    }
-                ],
-            }
-
-            if (
-                service_model.type == "Load Balanced Web Service"
-                and service_model.http.target_container == sidecar_name
-            ):
-                sidecar_definition["portMappings"][0]["name"] = "target"
-
-            container_definitions.append(sidecar_definition | default_config)
-
-        # Register task definition
         try:
             task_definition_response = self.ecs_client.register_task_definition(
                 family=f"{application}-{environment}-{service_model.name}-task-def",
-                taskRoleArn=f"arn:aws:iam::563763463626:role/{application}-{environment}-{service_model.name}-ecs-task-role",  # TODO - Remove account id hardcoding
-                executionRoleArn=f"arn:aws:iam::563763463626:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",  # TODO - Remove account id hardcoding
+                taskRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-role",
+                executionRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",
                 networkMode="awsvpc",
                 containerDefinitions=container_definitions,
                 volumes=[{"name": "temporary-fs", "host": {}}],
@@ -286,22 +273,21 @@ class ECS:
                 ],
             )
             return task_definition_response["taskDefinition"]["taskDefinitionArn"]
-        except PlatformException as err:
-            print(f"Error registering task definition: {err}")
+        except ClientError as err:
+            raise PlatformException(f"Error registering task definition: {err}")
 
     def update_service(
         self, service_model: ServiceConfig, task_def_arn: str, environment: str, application: str
-    ):
+    ) -> dict[str, Any]:
+        """Update an ECS service and return the response."""
+
         try:
             service_response = self.ecs_client.update_service(
                 cluster=f"{application}-{environment}-cluster",
                 service=f"{application}-{environment}-{service_model.name}",
-                desiredCount=service_model.count,
                 taskDefinition=task_def_arn,
-                healthCheckGracePeriodSeconds=int(
-                    service_model.http.healthcheck.grace_period.replace("s", "")
-                ),
+                desiredCount=service_model.count,
             )
-            return service_response["service"]["serviceArn"]
-        except PlatformException as err:
-            print(f"Error updating ECS service: {err}")
+            return service_response["service"]
+        except ClientError as err:
+            raise PlatformException(f"Error updating ECS service: {err}")
