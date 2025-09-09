@@ -104,4 +104,117 @@ locals {
     && rule.bucket_name != null
     && rule.bucket_account != null
   }
+
+
+  ##########################################################
+  # CONTAINER DEFINITIONS TEMPLATE (USED IN PLATFORM HELPER)
+  ##########################################################
+
+  # TODO - Remove COPILOT_ vars once nopilot is complete. Check ALL codebases for any references to them before removal.
+  required_env_vars = {
+    COPILOT_APPLICATION_NAME            = var.application
+    COPILOT_ENVIRONMENT_NAME            = var.environment
+    COPILOT_SERVICE_NAME                = var.service_config.name
+    COPILOT_SERVICE_DISCOVERY_ENDPOINT  = "${var.environment}.${var.application}.services.local"
+    PLATFORM_APPLICATION_NAME           = var.application
+    PLATFORM_ENVIRONMENT_NAME           = var.environment
+    PLATFORM_SERVICE_NAME               = var.service_config.name
+    PLATFORM_SERVICE_DISCOVERY_ENDPOINT = "${var.environment}.${var.application}.services.local"
+  }
+
+  default_container_config = {
+    mountPoints = [
+      { sourceVolume = "temporary-fs", containerPath = "/tmp" }
+    ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = "/platform/ecs/service/${var.application}/${var.environment}/${var.service_config.name}"
+        awslogs-region        = data.aws_region.current.region
+        awslogs-stream-prefix = "platform"
+      }
+    }
+  }
+
+  main_port_mappings = (
+    var.service_config.type == "Load Balanced Web Service" && try(var.service_config.image.port, null) != null
+    ) ? [
+    merge(
+      { containerPort = var.service_config.image.port, protocol = "tcp" },
+      (
+        try(var.service_config.http.target_container, "") == var.service_config.name
+      ) ? { name = "target" } : {}
+    )
+  ] : []
+
+  depends_on_map = {
+    for k, v in coalesce(try(var.service_config.image.depends_on, {}), {}) :
+    k => upper(v)
+  }
+
+  main_container = merge(
+    local.default_container_config,
+    {
+      name      = var.service_config.name
+      image     = var.service_config.image.location
+      essential = true
+      environment = [
+        for k, v in merge(try(var.service_config.variables, {}), local.required_env_vars) :
+        { name = k, value = tostring(v) }
+      ]
+      secrets = [
+        for k, v in coalesce(var.service_config.secrets, {}) :
+        { name = k, valueFrom = v }
+      ]
+      readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, null)
+      portMappings           = local.main_port_mappings
+      # Ensure main container always starts last
+      dependsOn = [
+        for sidecar in keys(coalesce(var.service_config.sidecars, {})) : {
+          containerName = sidecar
+          condition     = lookup(local.depends_on_map, sidecar, "START")
+        }
+      ]
+    },
+    var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
+    { entryPoint = [var.service_config.entrypoint] } : {},
+  )
+
+  sidecar_containers = [
+    for sidecar_name, sidecar in coalesce(var.service_config.sidecars, {}) : merge(
+      local.default_container_config,
+      {
+        name      = sidecar_name
+        image     = sidecar.image
+        essential = try(sidecar.essential, true)
+        environment = [
+          for k, v in merge(coalesce(sidecar.variables, {}), local.required_env_vars) :
+          { name = k, value = tostring(v) }
+        ]
+        secrets = [
+          for k, v in coalesce(sidecar.secrets, {}) : { name = k, valueFrom = v }
+        ]
+        portMappings = sidecar.port != null ? [
+          merge(
+            { containerPort = sidecar.port, protocol = "tcp" },
+            # Add Service Connect target port name when this sidecar is the declared target
+            (
+              var.service_config.type == "Load Balanced Web Service" &&
+              try(var.service_config.http.target_container, "") == sidecar_name
+            )
+            ? { name = "target" }
+            : {}
+          )
+        ] : []
+      }
+    )
+  ]
+
+  container_definitions_list = concat(
+    [local.main_container],
+    local.sidecar_containers
+  )
+
+  container_definitions_json = jsonencode(local.container_definitions_list)
+
 }

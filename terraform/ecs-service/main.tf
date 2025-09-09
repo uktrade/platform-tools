@@ -1,11 +1,18 @@
+resource "aws_s3_object" "container_definitions" {
+  bucket       = "ecs-container-definitions-${var.application}-${var.environment}"
+  key          = "${var.application}/${var.environment}/${var.service_config.name}.json"
+  content      = local.container_definitions_json
+  content_type = "application/json"
+}
+
 resource "aws_ecs_task_definition" "default_task_def" {
   family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
   requires_compatibilities = ["FARGATE"]
   cpu                      = 256
   memory                   = 512
   network_mode             = "awsvpc"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn #TODO - Create separate role?
-  task_role_arn            = aws_iam_role.ecs_task_role.arn           #TODO - Create separate role?
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
   tags                     = local.tags
 
   runtime_platform {
@@ -20,8 +27,10 @@ resource "aws_ecs_task_definition" "default_task_def" {
       essential = true
       portMappings = [
         {
-          containerPort = 8080
-          hostPort      = 8080
+          containerPort = 443
+          hostPort      = 443
+          name          = "target"
+          protocol      = "tcp"
         }
       ]
       logConfiguration = {
@@ -29,7 +38,7 @@ resource "aws_ecs_task_definition" "default_task_def" {
         options = {
           awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
           awslogs-region        = data.aws_region.current.region
-          awslogs-stream-prefix = "platform/ecs"
+          awslogs-stream-prefix = "platform"
         }
       }
     }
@@ -52,7 +61,7 @@ data "aws_subnets" "private-subnets" {
 }
 
 resource "aws_lambda_invocation" "dummy_listener_rule" {
-  for_each        = local.web_service_required == 1 ? [""] : []
+  count           = local.web_service_required
   function_name   = "${var.application}-${var.environment}-listener-rule-organiser"
   lifecycle_scope = "CRUD"
   terraform_key   = "Lifecycle"
@@ -63,13 +72,14 @@ resource "aws_lambda_invocation" "dummy_listener_rule" {
 }
 
 resource "aws_ecs_service" "service" {
-  name                   = "${var.application}-${var.environment}-${var.service_config.name}"
-  cluster                = data.aws_ecs_cluster.cluster.id
-  launch_type            = "FARGATE"
-  enable_execute_command = try(var.service_config.exec, false)
-  task_definition        = aws_ecs_task_definition.default_task_def.arn
-  desired_count          = 1
-  propagate_tags         = "SERVICE"
+  name                              = "${var.application}-${var.environment}-${var.service_config.name}"
+  cluster                           = data.aws_ecs_cluster.cluster.id
+  launch_type                       = "FARGATE"
+  enable_execute_command            = try(var.service_config.exec, false)
+  task_definition                   = aws_ecs_task_definition.default_task_def.arn
+  propagate_tags                    = "SERVICE"
+  desired_count                     = 1
+  health_check_grace_period_seconds = tonumber(trim(coalesce(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
 
 
   dynamic "load_balancer" {
@@ -77,7 +87,7 @@ resource "aws_ecs_service" "service" {
     content {
       target_group_arn = aws_lb_target_group.target_group[0].arn
       container_name   = "nginx"
-      container_port   = 8080
+      container_port   = 443
     }
   }
 
@@ -86,7 +96,7 @@ resource "aws_ecs_service" "service" {
     security_groups = [data.aws_security_group.env_security_group.id]
   }
 
-  # TODO - Potentially remove this once de-copiloting is complete, as Service Connect is also used. Verify that no team uses Service Discovery before any removal.
+  # TODO - See if discovery service can be removed once de-copiloting is complete, because we already use Service Connect for the same purposes. Verify that no team uses Service Discovery before any removal.
   dynamic "service_registries" {
     for_each = local.web_service_required == 1 ? [""] : []
 
@@ -116,7 +126,7 @@ resource "aws_ecs_service" "service" {
         options = {
           awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
           awslogs-region        = data.aws_region.current.region
-          awslogs-stream-prefix = "platform/ecs"
+          awslogs-stream-prefix = "platform"
         }
       }
     }
@@ -210,12 +220,6 @@ resource "aws_kms_key" "ecs_service_log_group_kms_key" {
   tags                = local.tags
 }
 
-resource "aws_kms_alias" "ecs_service_logs_kms_alias" {
-  depends_on    = [aws_kms_key.ecs_service_log_group_kms_key]
-  name          = "alias/${var.application}-${var.environment}-${var.service_config.name}-ecs-service-logs-key"
-  target_key_id = aws_kms_key.ecs_service_log_group_kms_key.id
-}
-
 resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
   key_id = aws_kms_key.ecs_service_log_group_kms_key.key_id
   policy = jsonencode({
@@ -239,7 +243,9 @@ resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
         "Action" : [
           "kms:Encrypt",
           "kms:Decrypt",
-          "kms:GenerateDataKey"
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
         ]
         "Resource" : "*"
       }
@@ -254,8 +260,6 @@ resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   retention_in_days = 30
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
-
-  depends_on = [aws_kms_key.ecs_service_log_group_kms_key]
 }
 
 data "aws_ssm_parameter" "log-destination-arn" {

@@ -52,8 +52,9 @@ variable "service_config" {
     })))
 
     image = object({
-      port     = optional(number)
-      location = string
+      port       = optional(number)
+      location   = string
+      depends_on = optional(map(string))
     })
 
     cpu        = number
@@ -61,6 +62,7 @@ variable "service_config" {
     count      = number
     exec       = optional(bool)
     entrypoint = optional(string)
+    essential  = optional(bool)
 
     network = optional(object({
       connect = optional(bool)
