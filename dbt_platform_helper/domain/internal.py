@@ -52,11 +52,10 @@ class Internal:
         application_envs = application_obj.environments
         account_id = application_envs.get(environment).account_id
 
-        # response = self.s3_provider.get_object(bucket_name=f"ecs-container-definitions-{application}-{environment}", object_key=f"{application}/{environment}/{service_model.name}.json")
         s3_response = self.s3_provider.get_object(
-            bucket_name=f"demodjango-dragos",
+            bucket_name=f"ecs-container-definitions-{application}-{environment}",
             object_key=f"{application}/{environment}/{service_model.name}.json",
-        )  # TODO - Replace with actual S3 bucket
+        )
 
         container_definitions = json.loads(s3_response)
 
