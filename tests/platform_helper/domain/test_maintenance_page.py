@@ -849,7 +849,13 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
                 call(
                     "https_listener",
@@ -859,7 +865,13 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
             ]
         )
@@ -871,7 +883,13 @@ class TestActivateMethod:
             "AllowedSourceIps",
             2,
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-            [{"Key": "service", "Value": "web"}],
+            [
+                {"Key": "application", "Value": "test-application"},
+                {"Key": "environment", "Value": "development"},
+                {"Key": "reason", "Value": "MaintenancePage"},
+                {"Key": "managed-by", "Value": "DBT Platform"},
+                {"Key": "service", "Value": "web"},
+            ],
         )
 
         maintenance_mocks.load_balancer.create_rule.assert_called_with(
@@ -898,8 +916,12 @@ class TestActivateMethod:
                 }
             ],
             tags=[
+                {"Key": "application", "Value": "test-application"},
+                {"Key": "environment", "Value": "development"},
+                {"Key": "reason", "Value": "MaintenancePage"},
                 {"Key": "name", "Value": "MaintenancePage"},
                 {"Key": "type", "Value": "default"},
+                {"Key": "managed-by", "Value": "DBT Platform"},
             ],
         )
 
@@ -972,7 +994,13 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
                 call(
                     "https_listener",
@@ -982,7 +1010,13 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
             ]
         )
@@ -994,7 +1028,13 @@ class TestActivateMethod:
             "AllowedSourceIps",
             2,
             [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-            [{"Key": "service", "Value": "web"}],
+            [
+                {"Key": "application", "Value": "test-application"},
+                {"Key": "environment", "Value": "development"},
+                {"Key": "reason", "Value": "MaintenancePage"},
+                {"Key": "managed-by", "Value": "DBT Platform"},
+                {"Key": "service", "Value": "web"},
+            ],
         )
 
         maintenance_mocks.load_balancer.create_rule.assert_called_with(
@@ -1021,8 +1061,12 @@ class TestActivateMethod:
                 }
             ],
             tags=[
+                {"Key": "application", "Value": "test-application"},
+                {"Key": "environment", "Value": "development"},
+                {"Key": "reason", "Value": "MaintenancePage"},
                 {"Key": "name", "Value": "MaintenancePage"},
                 {"Key": "type", "Value": "default"},
+                {"Key": "managed-by", "Value": "DBT Platform"},
             ],
         )
 
@@ -1204,7 +1248,13 @@ class TestActivateMethod:
                     "AllowedIps",
                     1,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
                 call(
                     "https_listener",
@@ -1214,7 +1264,13 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     3,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
                 call(
                     "https_listener",
@@ -1224,7 +1280,13 @@ class TestActivateMethod:
                     "AllowedIps",
                     4,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web2"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web2"},
+                    ],
                 ),
                 call(
                     "https_listener",
@@ -1234,7 +1296,13 @@ class TestActivateMethod:
                     "BypassIpFilter",
                     6,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web2"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web2"},
+                    ],
                 ),
             ]
         )
@@ -1248,7 +1316,13 @@ class TestActivateMethod:
                     "AllowedSourceIps",
                     2,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web"},
+                    ],
                 ),
                 call(
                     "https_listener",
@@ -1257,7 +1331,13 @@ class TestActivateMethod:
                     "AllowedSourceIps",
                     5,
                     [{"Field": "host-header", "HostHeaderConfig": {"Values": ["/test-path"]}}],
-                    [{"Key": "service", "Value": "web2"}],
+                    [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": "development"},
+                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "service", "Value": "web2"},
+                    ],
                 ),
             ]
         )
@@ -1286,8 +1366,12 @@ class TestActivateMethod:
                 }
             ],
             tags=[
+                {"Key": "application", "Value": "test-application"},
+                {"Key": "environment", "Value": "development"},
+                {"Key": "reason", "Value": "MaintenancePage"},
                 {"Key": "name", "Value": "MaintenancePage"},
                 {"Key": "type", "Value": "default"},
+                {"Key": "managed-by", "Value": "DBT Platform"},
             ],
         )
 
