@@ -124,7 +124,7 @@ def test_copilot_get_ecs_task_arns_with_running_task(
         "development",
     )
     assert ecs_manager.get_ecs_task_arns(
-        mocked_cluster_arn, f"copilot-{mock_task_name(addon_type)}"
+        cluster=mocked_cluster_arn, task_def_family=f"copilot-{mock_task_name(addon_type)}"
     )
 
 
@@ -139,7 +139,14 @@ def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, mock_application
         mock_application.name,
         "development",
     )
-    assert len(ecs_manager.get_ecs_task_arns(mocked_cluster_arn, mock_task_name(addon_type))) == 0
+    assert (
+        len(
+            ecs_manager.get_ecs_task_arns(
+                cluster=mocked_cluster_arn, task_def_family=mock_task_name(addon_type)
+            )
+        )
+        == 0
+    )
 
 
 @mock_aws
@@ -183,7 +190,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
         mock_application.name,
         "development",
     )
-    assert len(ecs_manager.get_ecs_task_arns(cluster_arn, task_name)) == 0
+    assert len(ecs_manager.get_ecs_task_arns(cluster=cluster_arn, task_def_family=task_name)) == 0
 
 
 @mock_aws
