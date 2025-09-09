@@ -73,7 +73,7 @@ class TestDummyRuleManagerCreate:
                 },
                 {
                     "Key": "reason",
-                    "Value": "dummy",
+                    "Value": "DummyRule",
                 },
             ],
         )
@@ -100,7 +100,7 @@ class TestDummyRuleManagerCreate:
                         {"Key": "environment", "Value": "myenv"},
                         {"Key": "service", "Value": "anotherservice"},
                         {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                        {"Key": "reason", "Value": "dummy"},
+                        {"Key": "reason", "Value": "DummyRule"},
                     ],
                 },
                 {
@@ -162,7 +162,7 @@ class TestDummyRuleManagerCreate:
                 },
                 {
                     "Key": "reason",
-                    "Value": "dummy",
+                    "Value": "DummyRule",
                 },
             ],
         )
@@ -189,7 +189,7 @@ class TestDummyRuleManagerCreate:
                         {"Key": "environment", "Value": "myenv"},
                         {"Key": "service", "Value": "myservice"},
                         {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                        {"Key": "reason", "Value": "dummy"},
+                        {"Key": "reason", "Value": "DummyRule"},
                     ],
                 },
                 {
@@ -241,7 +241,7 @@ class TestDummyRuleManagerCreate:
                         {"Key": "environment", "Value": "myenv"},
                         {"Key": "service", "Value": "myservice"},
                         {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                        {"Key": "reason", "Value": "dummy"},
+                        {"Key": "reason", "Value": "DummyRule"},
                     ],
                 },
                 {
@@ -299,7 +299,7 @@ class TestDummyRuleManagerCreate:
                         {"Key": "environment", "Value": "myenv"},
                         {"Key": "service", "Value": "myservice"},
                         {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                        {"Key": "reason", "Value": "dummy"},
+                        {"Key": "reason", "Value": "DummyRule"},
                     ],
                 },
                 {
@@ -309,7 +309,7 @@ class TestDummyRuleManagerCreate:
                         {"Key": "environment", "Value": "myenv"},
                         {"Key": "service", "Value": "anotherservice"},
                         {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                        {"Key": "reason", "Value": "dummy"},
+                        {"Key": "reason", "Value": "DummyRule"},
                     ],
                 },
                 {

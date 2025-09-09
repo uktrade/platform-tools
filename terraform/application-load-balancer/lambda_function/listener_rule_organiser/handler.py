@@ -41,7 +41,12 @@ def handler(event, context):
         case LifecycleAction.CREATE:
             organiser.create_dummy_rule(parameters.target_group, parameters.service_name)
         case LifecycleAction.UPDATE:
-            pass
+            if (
+                parameters.target_group != parameters.lifecycle.previous.target_group
+                or parameters.service_name != parameters.lifecycle.previous.service_name
+            ):
+                organiser.delete_dummy_rule(parameters.lifecycle.previous.service_name)
+                organiser.create_dummy_rule(parameters.target_group, parameters.service_name)
         case LifecycleAction.DELETE:
             organiser.delete_dummy_rule(parameters.lifecycle.previous.service_name)
         case _:

@@ -44,7 +44,7 @@ class DummyRuleManager:
         self._cached_rules = [
             r
             for r in current_rules.values()
-            if "reason" in r["Tags"] and r["Tags"]["reason"] == "dummy"
+            if "reason" in r["Tags"] and r["Tags"]["reason"] == "DummyRule"
         ]
 
         return self._cached_rules
@@ -95,7 +95,7 @@ class DummyRuleManager:
                 },
                 {
                     "Key": "reason",
-                    "Value": "dummy",
+                    "Value": "DummyRule",
                 },
             ],
         )
