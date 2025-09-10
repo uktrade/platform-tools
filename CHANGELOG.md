@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.10.0](https://github.com/uktrade/platform-tools/compare/15.9.0...15.10.0) (2025-09-10)
+
+
+### Features
+
+* Migrate copilot manifests (DBTP-2300) ([#1038](https://github.com/uktrade/platform-tools/issues/1038)) ([77105ce](https://github.com/uktrade/platform-tools/commit/77105cea504d0fcd07dabf13ab0c75a1f380605c))
+
 ## [15.9.0](https://github.com/uktrade/platform-tools/compare/15.8.0...15.9.0) (2025-09-09)
 
 
