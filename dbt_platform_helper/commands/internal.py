@@ -1,12 +1,8 @@
 import click
 
+from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.schema_migrations.schema_v1_to_v2_migration import (
-    SchemaV1ToV2Migration,
-)
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -16,14 +12,12 @@ def internal():
 
 
 @internal.command()
-def migrate_manifests():
+def migrate_service_manifests():
     """Migrate copilot manifests to service manifests."""
     click_io = ClickIOProvider()
 
     try:
-
-        config = ConfigProvider(ConfigValidator()).load_and_validate_platform_config()
-        migrator = SchemaV1ToV2Migration()
-        migrator.migrate(platform_config=config)
+        service_manager = ServiceManager()
+        service_manager.migrate_copilot_manifests()
     except PlatformException as error:
         click_io.abort_with_error(str(error))

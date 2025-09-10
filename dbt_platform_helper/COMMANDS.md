@@ -23,7 +23,7 @@
         - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
     - [platform-helper generate](#platform-helper-generate)
     - [platform-helper internal](#platform-helper-internal)
-        - [platform-helper internal migrate-manifests](#platform-helper-internal-migrate-manifests)
+        - [platform-helper internal migrate-service-manifests](#platform-helper-internal-migrate-service-manifests)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -554,7 +554,7 @@ platform-helper generate
 ## Usage
 
 ```
-platform-helper internal migrate-manifests 
+platform-helper internal migrate-service-manifests 
 ```
 
 ## Options
@@ -564,9 +564,9 @@ platform-helper internal migrate-manifests
 
 ## Commands
 
-- [`migrate-manifests` ↪](#platform-helper-internal-migrate-manifests)
+- [`migrate-service-manifests` ↪](#platform-helper-internal-migrate-service-manifests)
 
-# platform-helper internal migrate-manifests
+# platform-helper internal migrate-service-manifests
 
 [↩ Parent](#platform-helper-internal)
 
@@ -575,7 +575,7 @@ platform-helper internal migrate-manifests
 ## Usage
 
 ```
-platform-helper internal migrate-manifests 
+platform-helper internal migrate-service-manifests 
 ```
 
 ## Options
