@@ -250,7 +250,8 @@ class ECS:
         if image_tag:
             for container in container_definitions:
                 if container.get("name") == service_model.name:
-                    container["image"] = f"{str(service_model.image).rsplit(':', 1)[0]}:{image_tag}"
+                    image_uri = service_model.image.location.rsplit(":", 1)[0]
+                    container["image"] = f"{image_uri}:{image_tag}"
                     break
 
         try:
