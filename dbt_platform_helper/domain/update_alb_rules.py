@@ -1,10 +1,32 @@
 import copy
+from enum import Enum
 
+from dbt_platform_helper.constants import COPILOT_RULE_PRIORITY
+from dbt_platform_helper.constants import MAINTENANCE_PAGE_TAGS
+from dbt_platform_helper.constants import MANAGED_BY_PLATFORM
+from dbt_platform_helper.constants import MANAGED_BY_SERVICE_TERRAFORM
+from dbt_platform_helper.constants import PLATFORM_RULE_STARTING_PRIORITY
+from dbt_platform_helper.constants import RULE_PRIORITY_INCREMENT
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.utils.application import load_application
+
+
+class RuleType(Enum):
+    PLATFORM = "platform"
+    MAINTENANCE = "maintenance"
+    DEFAULT = "default"
+    COPILOT = "copilot"
+    MANUAL = "manual"
+
+
+class Deployment(Enum):
+    PLATFORM = "platform"
+    COPILOT = "copilot"
+    DUAL_DEPLOY_PLATFORM = "dual-deploy-platform-traffic"
+    DUAL_DEPLOY_COPILOT = "dual-deploy-copilot-traffic"
 
 
 class UpdateALBRules:
@@ -35,7 +57,7 @@ class UpdateALBRules:
         service_deployment_mode = (
             platform_config.get("environments")
             .get(environment, {})
-            .get("service-deployment-mode", "copilot")
+            .get("service-deployment-mode", Deployment.COPILOT.value)
         )
 
         self.io.info(f"Deployment Mode: {service_deployment_mode}")
@@ -48,67 +70,36 @@ class UpdateALBRules:
 
         rules = self.load_balancer.get_rules_with_tags_by_listener_arn(listener_arn)
 
-        # TODO move to constants
-        copilot_rule_priority = 48000
-        platform_rule_starting_priority = 10000
-
         def filter_rule_type(rule):
-            maintenance_page_tags = [
-                "MaintenancePage",
-                "AllowedIps",
-                "BypassIpFilter",
-                "AllowedSourceIps",
-            ]
-            for tag in rule["Tags"]:
-                if tag.get("Key", "") == "managed-by" and tag["Value"] == "DBT Platform":
-                    return "platform"
-                if tag.get("Key", "") == "name" and tag["Value"] in maintenance_page_tags:
-                    return "maintenance"
+            if rule["Tags"]:
+                if rule["Tags"].get("managed-by", "") == MANAGED_BY_PLATFORM:
+                    return RuleType.PLATFORM.value
+                if rule["Tags"].get("name", "") in MAINTENANCE_PAGE_TAGS:
+                    return RuleType.MAINTENANCE.value
 
             if rule["Priority"] == "default":
-                return "default"
-            if int(rule["Priority"]) >= copilot_rule_priority:
-                return "copilot"
+                return RuleType.DEFAULT.value
+            if int(rule["Priority"]) >= COPILOT_RULE_PRIORITY:
+                return RuleType.COPILOT.value
 
-            return "manual"
+            return RuleType.MANUAL.value
 
         mapped_rules = {
             key: [rule for rule in rules if filter_rule_type(rule) == key]
             for key in set(filter_rule_type(rule) for rule in rules)
         }
 
-        if mapped_rules["manual"]:
-            rule_arns = [rule["RuleArn"] for rule in mapped_rules["manual"]]
+        if mapped_rules.get(RuleType.MANUAL.value, ""):
+            rule_arns = [rule["RuleArn"] for rule in mapped_rules[RuleType.MANUAL]]
             message = f"""The following rules have been created manually please review and if required set 
-            the rules priority to the copilot range after priority: {copilot_rule_priority}.\n
+            the rules priority to the copilot range after priority: {COPILOT_RULE_PRIORITY}.\n
             Rules: {rule_arns}"""
             self.io.abort_with_error(message)
-
-        def extract_condition_information(conditions):
-            paths = []
-            hosts = []
-            prepared_conditions = []
-            for condition in conditions:
-                field = condition.get("Field", "")
-                values = condition.get("Values", [])
-                sorted_values = tuple(sorted(values) if isinstance(values, list) else [values])
-
-                if field == "host-header" and condition.get("HostHeaderConfig", None):
-                    hosts = sorted_values
-                    condition.pop("HostHeaderConfig")
-                elif field == "path-pattern" and condition.get("PathPatternConfig", None):
-                    paths = sorted_values
-                    condition.pop("PathPatternConfig")
-                prepared_conditions.append(condition)
-
-            # Take the deepest depth for priority ordering
-            depths = [len([sub_path for sub_path in path.split("/") if sub_path]) for path in paths]
-            max_depth = max(depths)
-            return (hosts, conditions, max_depth)
 
         def get_service_from_tg(rule):
             target_group_arn = ""
 
+            # TODO normalise this?
             for action in rule["Actions"]:
                 if action["Type"] == "forward":
                     target_group_arn = action["TargetGroupArn"]
@@ -118,35 +109,29 @@ class UpdateALBRules:
 
                 # Feels like I am making a lot of assumptions here so not robust enough
                 for tg in tgs:
-                    for tag in tg["Tags"]:
-                        if tag["Key"] == "copilot-service":
-                            return tag["Value"]
+                    return tg["Tags"].get("copilot-service", "")
             else:
                 # TODO add error handling if no target_group_arn
                 self.io.warn("no target group found")
             return
 
         def get_tg_arns_for_platform_services(
-            application, environment, managed_by="DBT Platform - Service Terraform"
+            application, environment, managed_by=MANAGED_BY_SERVICE_TERRAFORM
         ):
             tgs = self.load_balancer.get_target_groups_with_tags([])
 
             service_mapped_tgs = {}
             for tg in tgs:
-
-                tg_tags = {tag["Key"]: tag["Value"] for tag in tg["Tags"]}
-
-                if tg_tags.get("environment") != environment:
+                if tg["Tags"].get("environment") != environment:
                     continue
 
                 if (
-                    tg_tags.get("application") == application
-                    and tg_tags.get("environment") == environment
-                    and tg_tags.get("managed-by") == managed_by
+                    tg["Tags"].get("application", "") == application
+                    and tg["Tags"].get("environment", "") == environment
+                    and tg["Tags"].get("managed-by", "") == managed_by
                 ):
-                    service = tg_tags.get("service")
-                    if service:
-                        service_mapped_tgs[service] = tg["TargetGroupArn"]
+                    if tg["Tags"].get("service", ""):
+                        service_mapped_tgs[tg["Tags"].get("service")] = tg["TargetGroupArn"]
                     else:
                         tg_name = tg["name"]
                         self.io.warn(f"Target group {tg_name} has no 'service' tag")
@@ -161,16 +146,29 @@ class UpdateALBRules:
                     action.pop("ForwardConfig")
             return updated_actions
 
-        if service_deployment_mode == "platform" or "dual-deploy-platform-traffic":
+        if (
+            service_deployment_mode == Deployment.PLATFORM.value
+            or service_deployment_mode == Deployment.DUAL_DEPLOY_PLATFORM.value
+        ):
 
             grouped = dict()
 
             service_mapped_tgs = get_tg_arns_for_platform_services(application_name, environment)
 
-            for copilot_rule in mapped_rules.get("copilot", []):
+            for copilot_rule in mapped_rules.get(RuleType.COPILOT.value, []):
                 rule_arn = copilot_rule["RuleArn"]
                 self.io.info(f"Building platform rule for corresponding copilot rule: {rule_arn}")
-                hosts, conditions, depth = extract_condition_information(copilot_rule["Conditions"])
+                sorted_hosts = sorted(copilot_rule["Conditions"].get("host-header", []))
+                depth = max(
+                    [
+                        len([sub_path for sub_path in path.split("/") if sub_path])
+                        for path in copilot_rule["Conditions"].get("path-pattern", [])
+                    ]
+                )
+                list_conditions = [
+                    {"Field": key, "Values": value}
+                    for key, value in copilot_rule["Conditions"].items()
+                ]
 
                 service_name = get_service_from_tg(copilot_rule)
 
@@ -178,20 +176,20 @@ class UpdateALBRules:
 
                 actions = create_new_actions(copilot_rule["Actions"], tg_arn)
                 self.io.info(f"Updated forward action for service {service_name} to use: {tg_arn}")
-                if grouped.get(",".join(hosts)):
-                    grouped[",".join(hosts)].append(
+                if grouped.get(",".join(sorted_hosts)):
+                    grouped[",".join(sorted_hosts)].append(
                         {
                             "actions": actions,
-                            "conditions": conditions,
+                            "conditions": list_conditions,
                             "depth": depth,
                             "service_name": service_name,
                         }
                     )
                 else:
-                    grouped[",".join(hosts)] = [
+                    grouped[",".join(sorted_hosts)] = [
                         {
                             "actions": actions,
-                            "conditions": conditions,
+                            "conditions": list_conditions,
                             "depth": depth,
                             "service_name": service_name,
                         }
@@ -199,7 +197,7 @@ class UpdateALBRules:
 
                 # TODO delete any existing platform rules before re-creating
 
-            rule_priority = platform_rule_starting_priority
+            rule_priority = PLATFORM_RULE_STARTING_PRIORITY
 
             # TODO if an exception occurs rollback to all the conditions present before
             for hosts, rules in grouped.items():
@@ -222,21 +220,21 @@ class UpdateALBRules:
                             {"Key": "environment", "Value": environment},
                             {"Key": "service", "Value": rule["service_name"]},
                             {"Key": "reason", "Value": "service"},
-                            {"Key": "managed-by", "Value": "DBT Platform"},
+                            {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
                         ],
                     )
-                    rule_priority += 100
+                    rule_priority += RULE_PRIORITY_INCREMENT
 
                 next_thousandth = lambda x: ((x // 1000) + 1) * 1000
                 rule_priority = next_thousandth(rule_priority)
 
         # TODO if an expection occurs roll back?
         if (
-            service_deployment_mode == "copilot"
-            or service_deployment_mode == "dual-deploy-copilot-traffic"
+            service_deployment_mode == Deployment.COPILOT.value
+            or service_deployment_mode == Deployment.DUAL_DEPLOY_COPILOT.value
         ):
             deleted_rules = []
-            for rule in mapped_rules.get("platform", []):
+            for rule in mapped_rules.get(RuleType.PLATFORM.value, []):
                 rule_arn = rule["RuleArn"]
                 deleted_rules.append(
                     self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)

@@ -45,3 +45,11 @@ SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
 REFRESH_TOKEN_MESSAGE = (
     "To refresh this SSO session run `aws sso login` with the corresponding profile"
 )
+
+
+COPILOT_RULE_PRIORITY = 48000
+PLATFORM_RULE_STARTING_PRIORITY = 10000
+RULE_PRIORITY_INCREMENT = 100
+MAINTENANCE_PAGE_TAGS = ["MaintenancePage", "AllowedIps", "BypassIpFilter", "AllowedSourceIps"]
+MANAGED_BY_PLATFORM = "DBT Platform"
+MANAGED_BY_SERVICE_TERRAFORM = "DBT Platform - Service Terraform"

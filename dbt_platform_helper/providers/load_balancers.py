@@ -1,3 +1,4 @@
+from typing import Dict
 from typing import List
 
 from boto3 import Session
@@ -12,6 +13,17 @@ def normalise_to_cidr(ip: str):
         return ip
     SINGLE_IPV4_CIDR_PREFIX_LENGTH = "32"
     return f"{ip}/{SINGLE_IPV4_CIDR_PREFIX_LENGTH}"
+
+
+class ALBDataNormaliser:
+
+    @staticmethod
+    def tags_to_dict(tags: List[Dict[str, str]]) -> Dict[str, str]:
+        return {tag.get("Key", ""): tag.get("Value", "") for tag in tags}
+
+    @staticmethod
+    def conditions_to_dict(conditions: List[Dict[str, List[str]]]) -> Dict[str, List[str]]:
+        return {condition.get("Field", ""): condition.get("Values", "") for condition in conditions}
 
 
 class LoadBalancerProvider:
@@ -80,12 +92,16 @@ class LoadBalancerProvider:
 
         return tgs
 
-    def get_target_groups_with_tags(self, target_group_arns: List[str]):
+    def get_target_groups_with_tags(self, target_group_arns: List[str], normalise: bool = True):
         target_groups = self.get_target_groups(target_group_arns)
 
         tags = self.get_resources_tag_descriptions(target_groups, "TargetGroupArn")
 
         tgs_with_tags = self.merge_in_tags_by_resource_arn(target_groups, tags, "TargetGroupArn")
+
+        if normalise:
+            for tg in tgs_with_tags:
+                tg["Tags"] = ALBDataNormaliser.tags_to_dict(tg["Tags"])
         return tgs_with_tags
 
     def get_https_certificate_for_listener(self, listener_arn: str, env: str):
@@ -205,12 +221,20 @@ class LoadBalancerProvider:
             resource.update(tags)
         return resources
 
-    def get_rules_with_tags_by_listener_arn(self, listener_arn: str) -> list:
+    def get_rules_with_tags_by_listener_arn(
+        self, listener_arn: str, normalise: bool = True
+    ) -> list:
         rules = self.get_listener_rules_by_listener_arn(listener_arn)
 
         tags = self.get_resources_tag_descriptions(rules)
 
         rules_with_tags = self.merge_in_tags_by_resource_arn(rules, tags)
+
+        if normalise:
+            for rule in rules_with_tags:
+                rule["Conditions"] = ALBDataNormaliser.conditions_to_dict(rule["Conditions"])
+                rule["Tags"] = ALBDataNormaliser.tags_to_dict(rule["Tags"])
+
         return rules_with_tags
 
     def get_listener_rules_by_listener_arn(self, listener_arn: str) -> list:
