@@ -61,7 +61,7 @@ variable "service_config" {
     memory     = number
     count      = number
     exec       = optional(bool)
-    entrypoint = optional(string)
+    entrypoint = optional(list(string))
     essential  = optional(bool)
 
     network = optional(object({

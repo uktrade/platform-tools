@@ -188,6 +188,10 @@ class ServiceManager:
                             if "alb" in env_config["http"]:
                                 del env_config["http"]["alb"]
 
+                if "entrypoint" in service_manifest:
+                    if isinstance(service_manifest["entrypoint"], str):
+                        service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+
                 service_manifest = self.file_provider.find_and_replace(
                     config=service_manifest,
                     strings=["${COPILOT_APPLICATION_NAME}", "${COPILOT_ENVIRONMENT_NAME}"],
