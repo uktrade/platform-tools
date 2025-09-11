@@ -43,7 +43,7 @@ def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id=
 
 
 @patch("dbt_platform_helper.domain.internal.YamlFileProvider")
-def test_deploy_happy_path_uses_override_tag(yaml_file_provider):
+def test_service_deploy_success_with_override_tag(yaml_file_provider):
     mocks = InternalMocks()
     internal = Internal(**mocks.params())
 
@@ -128,7 +128,7 @@ def test_deploy_happy_path_uses_override_tag(yaml_file_provider):
 
 @patch("dbt_platform_helper.domain.internal.EnvironmentVariableProvider")
 @patch("dbt_platform_helper.domain.internal.YamlFileProvider")
-def test_deploy_uses_env_var_if_no_override(yaml_file_provider, env_var_provider):
+def test_deploy_success_uses_env_var(yaml_file_provider, env_var_provider):
     env_var_provider.get.return_value = "tag-123"
     mocks = InternalMocks()
     internal = Internal(**mocks.params())
@@ -229,7 +229,7 @@ def test_fetch_ecs_task_ids_times_out(time_sleep):
 
 
 @patch("dbt_platform_helper.domain.internal.time.sleep", return_value=None)
-def test_monitor_ecs_deployment_completed(time_sleep):
+def test_monitor_ecs_deployment_success(time_sleep):
     mocks = InternalMocks()
     internal = Internal(**mocks.params())
 
