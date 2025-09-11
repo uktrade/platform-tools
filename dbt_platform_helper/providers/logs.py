@@ -29,7 +29,7 @@ class LogsProvider:
         """
         Check whether the logs streams provided exist or not.
 
-        Re-try for up to 5 minutes.
+        Retry for up to 5 minutes.
         """
 
         found_log_streams = set()

@@ -202,12 +202,12 @@ class ECS:
         Returns rolloutState & rolloutStateReason for the PRIMARY deployment of
         an ECS service.
 
-        rolloutState can be one of: 'COMPLETED' | 'FAILED' | 'IN_PROGRESS' | None
+        rolloutState can be: COMPLETED | FAILED | IN_PROGRESS | None
         """
         resp = self.ecs_client.describe_services(cluster=cluster_name, services=[service_name])
         services = resp.get("services", [])
         if not services:
-            return None, "Service not found"
+            return None, f"Service '{service_name}' not found"
 
         svc = services[0]
         primary_deployment = None
@@ -217,7 +217,7 @@ class ECS:
                 break
 
         if not primary_deployment:
-            return None, "No PRIMARY deployment found"
+            return None, "No PRIMARY ECS deployment found"
 
         return primary_deployment.get("rolloutState"), primary_deployment.get("rolloutStateReason")
 
