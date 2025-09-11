@@ -6,6 +6,7 @@ resource "aws_s3_object" "container_definitions" {
 }
 
 resource "aws_ecs_task_definition" "default_task_def" {
+  # checkov:skip=CKV_AWS_336: Nginx needs access to a few paths on the root filesystem
   family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
   requires_compatibilities = ["FARGATE"]
   cpu                      = 256
@@ -16,14 +17,14 @@ resource "aws_ecs_task_definition" "default_task_def" {
   tags                     = local.tags
 
   runtime_platform {
-    cpu_architecture        = "ARM64"
+    cpu_architecture        = "X86_64"
     operating_system_family = "LINUX"
   }
 
   container_definitions = jsonencode([
     {
       name      = "nginx"
-      image     = "public.ecr.aws/nginx/nginx:alpine-slim"
+      image     = "public.ecr.aws/uktrade/copilot-bootstrap:latest"
       essential = true
       portMappings = [
         {
@@ -79,7 +80,7 @@ resource "aws_ecs_service" "service" {
   task_definition                   = aws_ecs_task_definition.default_task_def.arn
   propagate_tags                    = "SERVICE"
   desired_count                     = 1
-  health_check_grace_period_seconds = tonumber(trim(coalesce(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
+  health_check_grace_period_seconds = tonumber(trim(try(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
 
 
   dynamic "load_balancer" {
@@ -114,10 +115,10 @@ resource "aws_ecs_service" "service" {
       namespace = data.aws_service_discovery_dns_namespace.private_dns_namespace[0].arn
 
       service {
-        discovery_name = "web-sc"
+        discovery_name = "${var.service_config.name}-sc"
         port_name      = "target"
         client_alias {
-          dns_name = "web"
+          dns_name = var.service_config.name
           port     = 443
         }
       }
