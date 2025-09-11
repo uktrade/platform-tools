@@ -23,6 +23,7 @@
         - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
     - [platform-helper generate](#platform-helper-generate)
     - [platform-helper internal](#platform-helper-internal)
+        - [platform-helper internal migrate-service-manifests](#platform-helper-internal-migrate-service-manifests)
         - [platform-helper internal service](#platform-helper-internal-service)
             - [platform-helper internal service deploy](#platform-helper-internal-service-deploy)
     - [platform-helper pipeline](#platform-helper-pipeline)
@@ -555,7 +556,7 @@ platform-helper generate
 ## Usage
 
 ```
-platform-helper internal service 
+platform-helper internal (migrate-service-manifests|service) 
 ```
 
 ## Options
@@ -565,7 +566,25 @@ platform-helper internal service
 
 ## Commands
 
+- [`migrate-service-manifests` ↪](#platform-helper-internal-migrate-service-manifests)
 - [`service` ↪](#platform-helper-internal-service)
+
+# platform-helper internal migrate-service-manifests
+
+[↩ Parent](#platform-helper-internal)
+
+    Migrate copilot manifests to service manifests.
+
+## Usage
+
+```
+platform-helper internal migrate-service-manifests 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
 
 # platform-helper internal service
 
