@@ -1,4 +1,7 @@
 resource "aws_s3_bucket" "container_definitions" {
+  # checkov:skip=CKV_AWS_144: Cross Region Replication not Required
+  # checkov:skip=CKV2_AWS_62: Don't need even notifications
+  # checkov:skip=CKV_AWS_18:  Logging not required
   bucket = "ecs-container-definitions-${var.application}-${var.environment}"
   tags   = local.tags
 }
@@ -69,7 +72,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "container_definitions" {
   bucket = aws_s3_bucket.container_definitions.id
 
   rule {
-    id     = "noncurrent-versions-retention"
+    id     = "NonCurrentVersionsRetention"
     status = "Enabled"
 
     noncurrent_version_expiration {
@@ -77,10 +80,21 @@ resource "aws_s3_bucket_lifecycle_configuration" "container_definitions" {
     }
   }
 
+  # To make checkov happy
+  rule {
+    id     = "AbortIncompleteMultipartUpload"
+    status = "Enabled"
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
+
   depends_on = [aws_s3_bucket_versioning.container_definitions]
 }
 
 resource "aws_kms_key" "kms_key" {
+  # checkov:skip=CKV_AWS_7:We are not currently rotating the keys
   description = "KMS Key for S3 encryption"
   tags        = local.tags
 }
