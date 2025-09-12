@@ -8,7 +8,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class TestInternal:
-    @patch("dbt_platform_helper.commands.internal.Internal")
+    @patch("dbt_platform_helper.commands.internal.ServiceManager")
     @patch("dbt_platform_helper.commands.internal.ECS")
     @patch("dbt_platform_helper.commands.internal.load_application")
     @patch("dbt_platform_helper.commands.internal.ConfigProvider")
@@ -19,7 +19,7 @@ class TestInternal:
         mock_config_provider,
         mock_load_application,
         mock_ecs,
-        mock_internal,
+        mock_service_manager,
     ):
 
         mock_config_provider.return_value.get_enriched_config.return_value = {
@@ -68,8 +68,8 @@ class TestInternal:
 
         mock_ecs.assert_called_once_with(mock_ecs_client, mock_ssm_client, "myapp", "dev")
 
-        mock_internal.assert_called_once_with(ecs_provider=mock_ecs.return_value)
-        mock_internal.return_value.deploy.assert_called_once_with(
+        mock_service_manager.assert_called_once_with(ecs_provider=mock_ecs.return_value)
+        mock_service_manager.return_value.deploy.assert_called_once_with(
             service="web",
             environment="dev",
             application="myapp",
@@ -77,7 +77,7 @@ class TestInternal:
         )
 
     @patch("dbt_platform_helper.commands.internal.click.secho")
-    @patch("dbt_platform_helper.commands.internal.Internal")
+    @patch("dbt_platform_helper.commands.internal.ServiceManager")
     @patch("dbt_platform_helper.commands.internal.ECS")
     @patch("dbt_platform_helper.commands.internal.load_application")
     @patch("dbt_platform_helper.commands.internal.ConfigProvider")
@@ -88,7 +88,7 @@ class TestInternal:
         mock_config_provider,
         mock_load_application,
         mock_ecs,
-        mock_internal,
+        mock_service_manager,
         mock_click_secho,
     ):
         mock_config_provider.return_value.get_enriched_config.return_value = {
@@ -101,7 +101,7 @@ class TestInternal:
         app = Mock(name="myapp", environments={"dev": env})
         mock_load_application.return_value = app
 
-        mock_internal.return_value.deploy.side_effect = PlatformException("This has failed")
+        mock_service_manager.return_value.deploy.side_effect = PlatformException("This has failed")
 
         result = CliRunner().invoke(
             internal, ["service", "deploy", "--name", "web", "--environment", "dev"]
@@ -109,4 +109,4 @@ class TestInternal:
 
         assert result.exit_code == 1
         mock_click_secho.assert_called_with("Error: This has failed", err=True, fg="red")
-        mock_internal.return_value.deploy.assert_called_once()
+        mock_service_manager.return_value.deploy.assert_called_once()

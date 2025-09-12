@@ -1,6 +1,5 @@
 import click
 
-from dbt_platform_helper.domain.internal import Internal
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -59,8 +58,8 @@ def deploy(name, environment, image_tag_override):
         ssm_client = application.environments[environment].session.client("ssm")
         ecs_provider = ECS(ecs_client, ssm_client, application.name, environment)
 
-        internal = Internal(ecs_provider=ecs_provider)
-        internal.deploy(
+        service_manager = ServiceManager(ecs_provider=ecs_provider)
+        service_manager.deploy(
             service=name,
             environment=environment,
             application=application.name,
