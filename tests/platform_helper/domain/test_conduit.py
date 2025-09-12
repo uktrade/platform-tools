@@ -138,7 +138,9 @@ class TestConduitTerraform:
             io=self.io,
         )
         strategy.get_data.assert_called_once()
-        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.ecs_provider.get_ecs_task_arns.assert_called_with(
+            cluster="cluster-arn", task_def_family="task-def-fam"
+        )
         self.io.info.assert_has_calls(
             [
                 call(info_message),
@@ -259,7 +261,9 @@ class TestConduitTerraform:
             io=self.io,
         )
         strategy.get_data.assert_called_once()
-        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.ecs_provider.get_ecs_task_arns.assert_called_with(
+            cluster="cluster-arn", task_def_family="task-def-fam"
+        )
         self.io.info.assert_has_calls(
             [
                 call(info_message),
@@ -406,7 +410,9 @@ class TestConduitCopilot:
             io=self.io,
         )
         self.strategy.get_data.assert_called_once()
-        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.ecs_provider.get_ecs_task_arns.assert_called_with(
+            cluster="cluster-arn", task_def_family="task-def-fam"
+        )
         self.io.info.assert_has_calls(
             [
                 call(info_message),
@@ -525,7 +531,9 @@ class TestConduitCopilot:
             io=self.io,
         )
         self.strategy.get_data.assert_called_once()
-        self.ecs_provider.get_ecs_task_arns.assert_called_with("cluster-arn", "task-def-fam")
+        self.ecs_provider.get_ecs_task_arns.assert_called_with(
+            cluster="cluster-arn", task_def_family="task-def-fam"
+        )
         self.io.info.assert_has_calls(
             [
                 call(info_message),
