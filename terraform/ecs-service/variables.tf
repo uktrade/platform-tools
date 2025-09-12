@@ -72,7 +72,7 @@ variable "service_config" {
     }))
 
     storage = optional(object({
-      readonly_fs = bool
+      readonly_fs = optional(bool)
     }))
 
     variables = optional(map(any))

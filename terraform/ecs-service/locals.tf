@@ -166,7 +166,7 @@ locals {
         for k, v in coalesce(var.service_config.secrets, {}) :
         { name = k, valueFrom = v }
       ]
-      readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, null)
+      readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
       portMappings           = local.main_port_mappings
       # Ensure main container always starts last
       dependsOn = [
@@ -177,7 +177,7 @@ locals {
       ]
     },
     var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
-    { entryPoint = [var.service_config.entrypoint] } : {},
+    { entryPoint = var.service_config.entrypoint } : {},
   )
 
   sidecar_containers = [
