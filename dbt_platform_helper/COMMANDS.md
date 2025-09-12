@@ -41,6 +41,9 @@
         - [platform-helper database copy](#platform-helper-database-copy)
     - [platform-helper version](#platform-helper-version)
         - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
+    - [platform-helper ecr-housekeeping](#platform-helper-ecr-housekeeping)
+        - [platform-helper ecr-housekeeping tag-stale-images-for-deletion](#platform-helper-ecr-housekeeping-tag-stale-images-for-deletion)
+        - [platform-helper ecr-housekeeping list-live-images](#platform-helper-ecr-housekeeping-list-live-images)
 
 # platform-helper
 
@@ -65,6 +68,7 @@ platform-helper <command> [--version]
 - [`config` ↪](#platform-helper-config)
 - [`copilot` ↪](#platform-helper-copilot)
 - [`database` ↪](#platform-helper-database)
+- [`ecr-housekeeping` ↪](#platform-helper-ecr-housekeeping)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`internal` ↪](#platform-helper-internal)
@@ -1037,5 +1041,65 @@ platform-helper version get-platform-helper-for-project [--pipeline <pipeline>]
 
 - `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper ecr-housekeeping
+
+[↩ Parent](#platform-helper)
+
+    Housekeeping tasks for ECR image cleanup.
+
+## Usage
+
+```
+platform-helper ecr-housekeeping (tag-stale-images-for-deletion|list-live-images) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`list-live-images` ↪](#platform-helper-ecr-housekeeping-list-live-images)
+- [`tag-stale-images-for-deletion` ↪](#platform-helper-ecr-housekeeping-tag-stale-images-for-deletion)
+
+# platform-helper ecr-housekeeping tag-stale-images-for-deletion
+
+[↩ Parent](#platform-helper-ecr-housekeeping)
+
+    Adds a pending-deletion image tag to any stale unused images in the ECR repository
+
+## Usage
+
+```
+platform-helper ecr-housekeeping tag-stale-images-for-deletion <prod_profile> 
+```
+
+## Arguments
+
+- `prod_profile <text>`
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper ecr-housekeeping list-live-images
+
+[↩ Parent](#platform-helper-ecr-housekeeping)
+
+    Lists in-use images from current EC2 tasks
+
+## Usage
+
+```
+platform-helper ecr-housekeeping list-live-images 
+```
+
+## Options
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
