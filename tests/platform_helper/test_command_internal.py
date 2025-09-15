@@ -14,6 +14,8 @@ from dbt_platform_helper.platform_exception import PlatformException
 class TestInternal:
     @patch("dbt_platform_helper.commands.internal.ServiceManager")
     @patch("dbt_platform_helper.commands.internal.ECS")
+    @patch("dbt_platform_helper.commands.internal.LogsProvider")
+    @patch("dbt_platform_helper.commands.internal.S3Provider")
     @patch("dbt_platform_helper.commands.internal.load_application")
     @patch("dbt_platform_helper.commands.internal.ConfigProvider")
     @patch("dbt_platform_helper.commands.internal.ConfigValidator")
@@ -22,7 +24,9 @@ class TestInternal:
         mock_config_validator,
         mock_config_provider,
         mock_load_application,
-        mock_ecs,
+        mock_s3_provider,
+        mock_logs_provider,
+        mock_ecs_provider,
         mock_service_manager,
     ):
 
@@ -33,9 +37,16 @@ class TestInternal:
         # Mock AWS calls
         mock_ecs_client = Mock()
         mock_ssm_client = Mock()
+        mock_logs_client = Mock()
+        mock_s3_client = Mock()
         mock_session = Mock()
 
-        mock_session.client.side_effect = [mock_ecs_client, mock_ssm_client]
+        mock_session.client.side_effect = [
+            mock_ecs_client,
+            mock_ssm_client,
+            mock_s3_client,
+            mock_logs_client,
+        ]
 
         mock_env_obj = Mock()
         mock_env_obj.session = mock_session
@@ -69,10 +80,24 @@ class TestInternal:
         # Check AWS clients fetched
         mock_session.client.assert_any_call("ecs")
         mock_session.client.assert_any_call("ssm")
+        mock_session.client.assert_any_call("logs")
+        mock_session.client.assert_any_call("s3")
 
-        mock_ecs.assert_called_once_with(mock_ecs_client, mock_ssm_client, "myapp", "dev")
+        mock_ecs_provider.assert_called_once_with(
+            ecs_client=mock_ecs_client,
+            ssm_client=mock_ssm_client,
+            application_name="myapp",
+            env="dev",
+        )
+        mock_logs_provider.assert_called_once_with(client=mock_logs_client)
+        mock_s3_provider.assert_called_once_with(client=mock_s3_client)
 
-        mock_service_manager.assert_called_once_with(ecs_provider=mock_ecs.return_value)
+        mock_service_manager.assert_called_once_with(
+            ecs_provider=mock_ecs_provider.return_value,
+            s3_provider=mock_s3_provider.return_value,
+            logs_provider=mock_logs_provider.return_value,
+        )
+
         mock_service_manager.return_value.deploy.assert_called_once_with(
             service="web",
             environment="dev",

@@ -84,7 +84,7 @@ def test_check_log_streams_present_times_out(_sleep):
 
     # Fake time: 0 = deadline starts, 1 = loop once, 301 = timeout and exit
     with patch("dbt_platform_helper.providers.logs.time.monotonic", side_effect=[0, 1, 301]):
-        with pytest.raises(TimeoutError) as e:
+        with pytest.raises(PlatformException) as ex:
             provider.check_log_streams_present("/aws/logs/group", ["stream1", "stream2"])
 
-    assert "Timed out waiting for the following log streams to create" in str(e.value)
+    assert "Timed out waiting for the following log streams to create" in str(ex.value)

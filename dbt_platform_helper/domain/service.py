@@ -52,27 +52,23 @@ class ServiceManager:
         loader: ConfigLoader = ConfigLoader(),
         io: ClickIOProvider = ClickIOProvider(),
         file_provider=YamlFileProvider,
-        environment_variable_provider: EnvironmentVariableProvider = None,
         manifest_provider: TerraformManifestProvider = None,
         platform_helper_version_override: str = None,
         load_application=load_application,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         ecs_provider: ECS = None,
-        s3_provider: S3Provider = S3Provider(),
-        logs_provider: LogsProvider = LogsProvider(),
+        s3_provider: S3Provider = None,
+        logs_provider: LogsProvider = None,
     ):
 
         self.file_provider = file_provider
         self.config_provider = config_provider
         self.loader = loader
         self.io = io
-        self.environment_variable_provider = (
-            environment_variable_provider or EnvironmentVariableProvider()
-        )
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
         self.platform_helper_version_override = (
             platform_helper_version_override
-            or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
+            or EnvironmentVariableProvider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
         self.load_application = load_application
         self.installed_version_provider = installed_version_provider
@@ -106,7 +102,7 @@ class ServiceManager:
             except Exception as e:
                 self.io.abort_with_error(f"Failed extracting services with exception, {e}")
 
-        image_tag = image_tag_flag or self.environment_variable_provider.get(IMAGE_TAG_ENV_VAR)
+        image_tag = image_tag_flag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
         if not image_tag:
             raise PlatformException(
                 f"An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
@@ -139,12 +135,12 @@ class ServiceManager:
             or config.get("default_versions", {}).get("platform-helper")
         )
 
-        source_type = self.environment_variable_provider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
+        source_type = EnvironmentVariableProvider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
         if source_type == "LOCAL":
             module_source_override = ServiceConfig.local_terraform_source
         elif source_type == "OVERRIDE":
-            module_source_override = self.environment_variable_provider.get(
+            module_source_override = EnvironmentVariableProvider.get(
                 TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR
             )
         else:

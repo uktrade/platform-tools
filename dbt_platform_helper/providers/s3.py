@@ -6,8 +6,8 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 class S3Provider:
 
-    def __init__(self, client: boto3.client = None):
-        self.client = client or boto3.client("s3")
+    def __init__(self, client: boto3.client):
+        self.client = client
 
     def get_object(self, bucket_name: str, object_key: str) -> str:
         """Returns an object from an S3 bucket."""

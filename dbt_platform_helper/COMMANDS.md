@@ -624,9 +624,9 @@ platform-helper internal service deploy --name <name> --environment <environment
 - `--name <text>`
   - The name of the ECS service to create or update.
 - `--environment <text>`
-  - The name of the environment to create or update an ECS service to.
+  - The name of the environment where the ECS service will be created or updated.
 - `--image-tag-override <text>`
-  - Override the Docker image to be deployed for this service. This flag takes precedence over the $IMAGE_TAG environment variable.
+  - Custom image tag (overrides containerDefinitions object from S3). Takes precedence over $IMAGE_TAG.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -646,11 +646,11 @@ platform-helper internal service generate --environment <environment>
 ## Options
 
 - `--name <text>`
-  - The name of the service to generate a manifest for. Multiple values accepted.
+  - The name of the service(s) to generate service manifest(s) for.
 - `--environment <text>`
-  - The name of the environment to generate service manifests for. Multiple values accepted.
+  - The name of the environment to generate service manifests for.
 - `--image-tag <text>`
-  - Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.
+  - Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

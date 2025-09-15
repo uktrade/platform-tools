@@ -9,8 +9,8 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 class LogsProvider:
 
-    def __init__(self, client: boto3.client = None):
-        self.client = client or boto3.client("logs")
+    def __init__(self, client: boto3.client):
+        self.client = client
 
     def filter_log_events(
         self, log_group: str, log_streams: list[str], start_time: int
@@ -66,6 +66,6 @@ class LogsProvider:
                 time.sleep(poll_interval_seconds)
 
         missing_log_streams = expected_log_streams - found_log_streams
-        raise TimeoutError(
+        raise PlatformException(
             f"Timed out waiting for the following log streams to create: {missing_log_streams}"
         )

@@ -6,6 +6,8 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.logs import LogsProvider
+from dbt_platform_helper.providers.s3 import S3Provider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -37,12 +39,12 @@ def service():
 @click.option(
     "--environment",
     required=True,
-    help="The name of the environment to create or update an ECS service to.",
+    help="The name of the environment where the ECS service will be created or updated.",
 )
 @click.option(
     "--image-tag-override",
     required=False,
-    help="Override the Docker image to be deployed for this service. This flag takes precedence over the $IMAGE_TAG environment variable.",
+    help="Custom image tag (overrides containerDefinitions object from S3). Takes precedence over $IMAGE_TAG.",
 )
 def deploy(name, environment, image_tag_override):
     """Register a new ECS task definition from an S3 JSON template, update the
@@ -57,9 +59,21 @@ def deploy(name, environment, image_tag_override):
 
         ecs_client = application.environments[environment].session.client("ecs")
         ssm_client = application.environments[environment].session.client("ssm")
-        ecs_provider = ECS(ecs_client, ssm_client, application.name, environment)
+        s3_client = application.environments[environment].session.client("s3")
+        logs_client = application.environments[environment].session.client("logs")
 
-        service_manager = ServiceManager(ecs_provider=ecs_provider)
+        ecs_provider = ECS(
+            ecs_client=ecs_client,
+            ssm_client=ssm_client,
+            application_name=application.name,
+            env=environment,
+        )
+        s3_provider = S3Provider(client=s3_client)
+        logs_provider = LogsProvider(client=logs_client)
+
+        service_manager = ServiceManager(
+            ecs_provider=ecs_provider, s3_provider=s3_provider, logs_provider=logs_provider
+        )
         service_manager.deploy(
             service=name,
             environment=environment,
@@ -74,18 +88,18 @@ def deploy(name, environment, image_tag_override):
 @click.option(
     "--name",
     required=False,
-    help="The name of the service to generate a manifest for. Multiple values accepted.",
+    help="The name of the service(s) to generate service manifest(s) for.",
     multiple=True,
 )
 @click.option(
     "--environment",
     required=True,
-    help="The name of the environment to generate service manifests for. Multiple values accepted.",
+    help="The name of the environment to generate service manifests for.",
 )
 @click.option(
     "--image-tag",
     required=False,
-    help="Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.",
+    help="Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.",
 )
 def generate(name, environment, image_tag):
     """Validates the service-config.yml format, applies the environment-specific
