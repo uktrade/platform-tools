@@ -9,7 +9,6 @@ variable "environment" {
 variable "config" {
   type = object({
     domain_prefix           = optional(string)
-    env_root                = optional(string)
     cdn_domains_list        = optional(map(list(string)))
     additional_address_list = optional(list(string))
     enable_logging          = optional(bool)
