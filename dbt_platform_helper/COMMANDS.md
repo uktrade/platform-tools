@@ -22,6 +22,8 @@
         - [platform-helper environment generate](#platform-helper-environment-generate)
         - [platform-helper environment generate-terraform](#platform-helper-environment-generate-terraform)
     - [platform-helper generate](#platform-helper-generate)
+    - [platform-helper internal](#platform-helper-internal)
+        - [platform-helper internal migrate-service-manifests](#platform-helper-internal-migrate-service-manifests)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -65,6 +67,7 @@ platform-helper <command> [--version]
 - [`database` ↪](#platform-helper-database)
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
+- [`internal` ↪](#platform-helper-internal)
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
@@ -535,6 +538,44 @@ platform-helper environment generate-terraform --name <name>
 
 ```
 platform-helper generate 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal
+
+[↩ Parent](#platform-helper)
+
+    Internal commands for use within pipelines or by Platform Team.
+
+## Usage
+
+```
+platform-helper internal migrate-service-manifests 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`migrate-service-manifests` ↪](#platform-helper-internal-migrate-service-manifests)
+
+# platform-helper internal migrate-service-manifests
+
+[↩ Parent](#platform-helper-internal)
+
+    Migrate copilot manifests to service manifests.
+
+## Usage
+
+```
+platform-helper internal migrate-service-manifests 
 ```
 
 ## Options

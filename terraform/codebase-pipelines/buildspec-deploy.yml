@@ -135,13 +135,15 @@ phases:
           STATUS_TEXT="COMPLETE"
         
           IMAGE_TAG=${DEPLOY_TAG} copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
+          copilot_deploy_status=$?
 
-          if [ $? -ne 0 ]; then
+          if [ ${copilot_deploy_status} -ne 0 ]; then
             STATUS_EMOJI=":red_circle::warning:"
             STATUS_TEXT="FAILED"
           fi
           MESSAGE="${STATUS_EMOJI} ${STATUS_TEXT} - Deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+          exit ${copilot_deploy_status}
         else
           # Build image URI
           task_family="${APPLICATION}-${ENVIRONMENT}-${SERVICE}"
