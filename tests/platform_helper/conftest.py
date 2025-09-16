@@ -410,7 +410,7 @@ def valid_platform_config():
 schema_version: {PLATFORM_CONFIG_SCHEMA_VERSION}
 default_versions: 
   platform-helper: 14.0.0
-application: test-app
+application: test-application
 default_versions: 
     platform-helper: 10.2.0
 environments:
