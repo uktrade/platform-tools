@@ -145,7 +145,7 @@ def test_get_rules_tag_descriptions(mock_application):
 
     rules = created_rules["Rules"]
     alb_provider = LoadBalancerProvider(session)
-    result = alb_provider.get_rules_tag_descriptions(rules)
+    result = alb_provider.get_resources_tag_descriptions(rules)
 
     assert result[0]["Tags"] == [{"Key": "test-key", "Value": "test-value"}]
 
