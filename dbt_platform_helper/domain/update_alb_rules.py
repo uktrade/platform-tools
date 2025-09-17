@@ -18,6 +18,10 @@ from dbt_platform_helper.providers.load_balancers import LoadBalancerProvider
 from dbt_platform_helper.utils.application import load_application
 
 
+class RollbackException(PlatformException):
+    pass
+
+
 class RuleType(Enum):
     PLATFORM = "platform"
     MAINTENANCE = "maintenance"
@@ -84,8 +88,10 @@ class UpdateALBRules:
                 try:
                     self._rollback_changes(operation_state)
                     self.io.info("Rollack completed successfully")
-                except PlatformException as rollback_error:
-                    self.io.abort_with_error(f"Rollback failed: \n{str(rollback_error)}")
+                except RollbackException as rollback_error:
+                    raise PlatformException(f"Rollback failed: \n{str(rollback_error)}")
+            else:
+                raise
 
         if operation_state.created_rules:
             self.io.info(f"Created rules: {operation_state.created_rules}")
@@ -122,11 +128,11 @@ class UpdateALBRules:
         }
 
         if mapped_rules.get(RuleType.MANUAL.value, []):
-            rule_arns = [rule["RuleArn"] for rule in mapped_rules[RuleType.MANUAL]]
+            rule_arns = [rule["RuleArn"] for rule in mapped_rules[RuleType.MANUAL.value]]
             message = f"""The following rules have been created manually please review and if required set 
             the rules priority to the copilot range after priority: {COPILOT_RULE_PRIORITY}.\n
             Rules: {rule_arns}"""
-            self.io.abort_with_error(message)
+            raise PlatformException(message)
 
         if (
             service_deployment_mode == Deployment.PLATFORM.value
@@ -294,20 +300,28 @@ class UpdateALBRules:
 
     def _rollback_changes(self, operation_state: OperationState) -> bool:
         rollback_errors = []
+        delete_rollbacks = []
+        create_rollbacks = []
         for rule_arn in operation_state.created_rules:
             try:
-                self.io.info(f"Rolling back: Deleting created rule {rule_arn}")
-                self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
+                self.io.debug(f"Rolling back: Deleting created rule {rule_arn}")
+                delete_rollbacks.append(
+                    self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
+                )
             except Exception as e:
                 error_msg = f"Failed to delete rule {rule_arn} during rollback: {str(e)}"
                 rollback_errors.append(error_msg)
 
         for rule_snapshot in operation_state.deleted_rules:
             try:
-                self.io.info(f"Rolling back: Recreating deleted rule {rule_snapshot.rule_arn}")
+                self.io.debug(f"Rolling back: Recreating deleted rule {rule_snapshot.rule_arn}")
 
-                self.load_balancer.create_rule(
-                    operation_state.listener_arn,
+                create_rollbacks.append(
+                    self.load_balancer.create_rule(
+                        operation_state.listener_arn,
+                    )["Rules"][
+                        0
+                    ]["RuleArn"]
                 )
             except Exception as e:
                 error_msg = (
@@ -318,6 +332,9 @@ class UpdateALBRules:
         if rollback_errors:
             self.io.warn("Some rollback operations failed. Manual intervention may be required.")
             errors = "\n".join(rollback_errors)
-            raise PlatformException(f"Rollback partially failed: {errors}")
+            raise RollbackException(f"Rollback partially failed: {errors}")
         else:
             self.io.info("Rollback completed successfully")
+            raise PlatformException(
+                f"Rolledback rules by creating: {create_rollbacks} \n and deleting {delete_rollbacks}"
+            )
