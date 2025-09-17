@@ -65,10 +65,7 @@ class UpdateALBRules:
     ):
         """"""
 
-        operation_state = OperationState(
-            # created_rules=[],
-            # deleted_rules=[],
-        )
+        operation_state = OperationState()
 
         try:
             self._execute_rule_updates(environment, operation_state)
@@ -87,7 +84,8 @@ class UpdateALBRules:
         if operation_state.created_rules:
             self.io.info(f"Created rules: {operation_state.created_rules}")
         if operation_state.deleted_rules:
-            self.io.info(f"Deleted rules: {operation_state.deleted_rules}")
+            deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
+            self.io.info(f"Deleted rules: {deleted_arns}")
 
     def _execute_rule_updates(self, environment: str, operation_state: OperationState):
         platform_config = self.config_provider.get_enriched_config()
@@ -296,7 +294,9 @@ class UpdateALBRules:
             try:
                 self.io.debug(f"Rolling back: Deleting created rule {rule_arn}")
                 delete_rollbacks.append(
-                    self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
+                    self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)["Rules"][0][
+                        "RuleArn"
+                    ]
                 )
             except Exception as e:
                 error_msg = f"Failed to delete rule {rule_arn} during rollback: {str(e)}"

@@ -1055,7 +1055,18 @@ def test_alb_rules(
                         },
                         {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                     ],
-                    Actions=[{"Type": "forward", "TargetGroupArn": "tg-arn-doesnt-matter-2"}],
+                    Actions=[
+                        {
+                            "Type": "forward",
+                            "TargetGroupArn": "tg-arn-doesnt-matter-2",
+                            "ForwardConfig": {
+                                "TargetGroups": [
+                                    {"TargetGroupArn": "tg-arn-doesnt-matter-2", "Weight": 1}
+                                ],
+                                "TargetGroupStickinessConfig": {"Enabled": False},
+                            },
+                        }
+                    ],
                     Tags=[
                         {"Key": "application", "Value": "test-application"},
                         {"Key": "environment", "Value": input_args["environment"]},
@@ -1071,7 +1082,18 @@ def test_alb_rules(
                         {"Field": "path-pattern", "Values": ["/*"]},
                         {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                     ],
-                    Actions=[{"Type": "forward", "TargetGroupArn": "tg-arn-doesnt-matter-1"}],
+                    Actions=[
+                        {
+                            "Type": "forward",
+                            "TargetGroupArn": "tg-arn-doesnt-matter-1",
+                            "ForwardConfig": {
+                                "TargetGroups": [
+                                    {"TargetGroupArn": "tg-arn-doesnt-matter-1", "Weight": 1}
+                                ],
+                                "TargetGroupStickinessConfig": {"Enabled": False},
+                            },
+                        }
+                    ],
                     Tags=[
                         {"Key": "application", "Value": "test-application"},
                         {"Key": "environment", "Value": input_args["environment"]},
@@ -1087,7 +1109,18 @@ def test_alb_rules(
                         {"Field": "path-pattern", "Values": ["/*"]},
                         {"Field": "host-header", "Values": ["api.doesnt-matter"]},
                     ],
-                    Actions=[{"Type": "forward", "TargetGroupArn": "tg-arn-doesnt-matter-3"}],
+                    Actions=[
+                        {
+                            "Type": "forward",
+                            "TargetGroupArn": "tg-arn-doesnt-matter-3",
+                            "ForwardConfig": {
+                                "TargetGroups": [
+                                    {"TargetGroupArn": "tg-arn-doesnt-matter-3", "Weight": 1}
+                                ],
+                                "TargetGroupStickinessConfig": {"Enabled": False},
+                            },
+                        }
+                    ],
                     Tags=[
                         {"Key": "application", "Value": "test-application"},
                         {"Key": "environment", "Value": input_args["environment"]},
@@ -1108,11 +1141,6 @@ def test_alb_rules(
         )
 
 
-# TODO test rollback and errors
-# cause exception during rule create
-# assert role back messages
-
-
 def test_alb_rules_create_with_rollback(
     fakefs,
     create_valid_platform_config_file,
@@ -1127,7 +1155,7 @@ def test_alb_rules_create_with_rollback(
         mock_config_validator, installed_version_provider=mock_installed_version_provider
     )
 
-    mock_session = mock_application.environments["production"].session
+    mock_session = mock_application.environments["test"].session
 
     lb_paginator = Mock()
     lb_paginator.paginate.return_value = [
@@ -1508,7 +1536,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "alb-arn-doesnt-matter",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                         ],
                     },
                 ]
@@ -1538,7 +1566,7 @@ def test_alb_rules_create_with_rollback(
                     {
                         "ResourceArn": "tg-arn-doesnt-matter-1",
                         "Tags": [
-                            {"Key": "environment", "Value": "production"},
+                            {"Key": "environment", "Value": "test"},
                             {"Key": "application", "Value": "test-application"},
                             {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
                             {"Key": "service", "Value": "web"},
@@ -1547,7 +1575,7 @@ def test_alb_rules_create_with_rollback(
                     {
                         "ResourceArn": "tg-arn-doesnt-matter-2",
                         "Tags": [
-                            {"Key": "environment", "Value": "production"},
+                            {"Key": "environment", "Value": "test"},
                             {"Key": "application", "Value": "test-application"},
                             {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
                             {"Key": "service", "Value": "web-path"},
@@ -1556,7 +1584,7 @@ def test_alb_rules_create_with_rollback(
                     {
                         "ResourceArn": "tg-arn-doesnt-matter-3",
                         "Tags": [
-                            {"Key": "environment", "Value": "production"},
+                            {"Key": "environment", "Value": "test"},
                             {"Key": "application", "Value": "test-application"},
                             {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
                             {"Key": "service", "Value": "api"},
@@ -1566,7 +1594,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "tg-arn-doesnt-matter-7",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                             {"Key": "copilot-service", "Value": "web-path"},
                         ],
                     },
@@ -1574,7 +1602,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "tg-arn-doesnt-matter-8",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                             {"Key": "copilot-service", "Value": "api"},
                         ],
                     },
@@ -1582,7 +1610,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "tg-arn-doesnt-matter-9",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                             {"Key": "copilot-service", "Value": "web"},
                         ],
                     },
@@ -1594,7 +1622,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "tg-arn-doesnt-matter-7",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                             {"Key": "copilot-service", "Value": "web-path"},
                         ],
                     },
@@ -1606,7 +1634,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "tg-arn-doesnt-matter-8",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                             {"Key": "copilot-service", "Value": "api"},
                         ],
                     },
@@ -1618,7 +1646,7 @@ def test_alb_rules_create_with_rollback(
                         "ResourceArn": "tg-arn-doesnt-matter-9",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
+                            {"Key": "copilot-environment", "Value": "test"},
                             {"Key": "copilot-service", "Value": "web"},
                         ],
                     },
@@ -1657,16 +1685,34 @@ def test_alb_rules_create_with_rollback(
 
     with pytest.raises(
         PlatformException,
-        match="""Rolledback rules by creating: \['platform-new-web-path-arn'\] \n and deleting \[\]""",
+        match="""Rolledback rules by creating: \[\] \n and deleting \['platform-new-web-path-arn'\]""",
     ):
         update_aws.update_alb_rules(
-            environment="production",
+            environment="test",
         )
 
     mock_io.info.assert_has_calls(
         [
             call("Deployment Mode: dual-deploy-platform-traffic"),
             call("ARN: listener-arn-doesnt-matter"),
+            call(
+                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-1"
+            ),
+            call("Updated forward action for service web-path to use: tg-arn-doesnt-matter-2"),
+            call(
+                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-2"
+            ),
+            call("Updated forward action for service api to use: tg-arn-doesnt-matter-3"),
+            call(
+                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-3"
+            ),
+            call("Updated forward action for service web to use: tg-arn-doesnt-matter-1"),
+            call(
+                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-1"
+            ),
+            call(
+                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-3"
+            ),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
         ]
@@ -1684,7 +1730,18 @@ def test_alb_rules_create_with_rollback(
                     },
                     {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                 ],
-                Actions=[{"Type": "forward", "TargetGroupArn": "tg-arn-doesnt-matter-2"}],
+                Actions=[
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": "tg-arn-doesnt-matter-2",
+                        "ForwardConfig": {
+                            "TargetGroups": [
+                                {"TargetGroupArn": "tg-arn-doesnt-matter-2", "Weight": 1}
+                            ],
+                            "TargetGroupStickinessConfig": {"Enabled": False},
+                        },
+                    }
+                ],
                 Tags=[
                     {"Key": "application", "Value": "test-application"},
                     {"Key": "environment", "Value": "test"},
@@ -1700,7 +1757,18 @@ def test_alb_rules_create_with_rollback(
                     {"Field": "path-pattern", "Values": ["/*"]},
                     {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                 ],
-                Actions=[{"Type": "forward", "TargetGroupArn": "tg-arn-doesnt-matter-1"}],
+                Actions=[
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": "tg-arn-doesnt-matter-1",
+                        "ForwardConfig": {
+                            "TargetGroups": [
+                                {"TargetGroupArn": "tg-arn-doesnt-matter-1", "Weight": 1}
+                            ],
+                            "TargetGroupStickinessConfig": {"Enabled": False},
+                        },
+                    }
+                ],
                 Tags=[
                     {"Key": "application", "Value": "test-application"},
                     {"Key": "environment", "Value": "test"},
@@ -1733,7 +1801,7 @@ def test_alb_rules_delete_with_rollback(
         mock_config_validator, installed_version_provider=mock_installed_version_provider
     )
 
-    mock_session = mock_application.environments["test"].session
+    mock_session = mock_application.environments["production"].session
 
     lb_paginator = Mock()
     lb_paginator.paginate.return_value = [
@@ -1990,7 +2058,7 @@ def test_alb_rules_delete_with_rollback(
                         "ResourceArn": "alb-arn-doesnt-matter",
                         "Tags": [
                             {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
+                            {"Key": "copilot-environment", "Value": "production"},
                         ],
                     },
                 ]
@@ -2081,12 +2149,12 @@ def test_alb_rules_delete_with_rollback(
         match="""Rolledback rules by creating: \['listener-rule-arn-doesnt-matter-8'\] \n and deleting \[\]""",
     ):
         update_aws.update_alb_rules(
-            environment="test",
+            environment="production",
         )
 
     mock_io.info.assert_has_calls(
         [
-            call("Deployment Mode: dual-deploy-platform-traffic"),
+            call("Deployment Mode: copilot"),
             call("ARN: listener-arn-doesnt-matter"),
             call("Deleted existing rule: listener-rule-arn-doesnt-matter-8"),
             call("Attempting to rollback changes ..."),
