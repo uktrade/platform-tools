@@ -43,14 +43,6 @@ class OperationState:
     deleted_rules: List[object] = field(default_factory=list)
     listener_arn: str = ""
 
-    def __post_init__(self):
-        if self.created_rules is None:
-            self.created_rules = []
-        if self.deleted_rules is None:
-            self.deleted_rules = []
-        if self.listener_arn is None:
-            self.listener_arn = ""
-
 
 class UpdateALBRules:
 
