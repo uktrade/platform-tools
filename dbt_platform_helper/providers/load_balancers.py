@@ -370,8 +370,7 @@ class LoadBalancerProvider:
         return deleted_rules
 
     def delete_listener_rule_by_resource_arn(self, resource_arn: str) -> list:
-        self.evlb_client.delete_rule(RuleArn=resource_arn)
-        return resource_arn
+        return self.evlb_client.delete_rule(RuleArn=resource_arn)
 
 
 class LoadBalancerException(PlatformException):

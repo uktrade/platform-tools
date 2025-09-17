@@ -220,10 +220,8 @@ class UpdateALBRules:
         for rule in rules:
             rule_arn = rule["RuleArn"]
             try:
-
-                operation_state.deleted_rules.append(
-                    self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
-                )
+                self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
+                operation_state.deleted_rules.append(rule)
                 self.io.info(f"Deleted existing rule: {rule_arn}")
             except Exception as e:
                 self.io.error(f"Failed to delete existing rule {rule_arn}: {str(e)}")
@@ -286,7 +284,8 @@ class UpdateALBRules:
         for action in updated_actions:
             if action.get("Type") == "forward" and "TargetGroupArn" in action:
                 action["TargetGroupArn"] = tg_arn
-                action.pop("ForwardConfig", None)
+                for tg in action["ForwardConfig"]["TargetGroups"]:
+                    tg["TargetGroupArn"] = tg_arn
         return updated_actions
 
     def _rollback_changes(self, operation_state: OperationState) -> bool:
@@ -304,20 +303,26 @@ class UpdateALBRules:
                 rollback_errors.append(error_msg)
 
         for rule_snapshot in operation_state.deleted_rules:
+            rule_arn = rule_snapshot["RuleArn"]
             try:
-                self.io.debug(f"Rolling back: Recreating deleted rule {rule_snapshot.rule_arn}")
-
+                self.io.debug(f"Rolling back: Recreating deleted rule {rule_arn}")
                 create_rollbacks.append(
                     self.load_balancer.create_rule(
                         operation_state.listener_arn,
-                    )["Rules"][
-                        0
-                    ]["RuleArn"]
+                        actions=rule_snapshot["Actions"],
+                        conditions=[
+                            {"Field": key, "Values": value}
+                            for key, value in rule_snapshot["Conditions"].items()
+                        ],
+                        priority=rule_snapshot["Priority"],
+                        tags=[
+                            {"Key": key, "Value": value}
+                            for key, value in rule_snapshot["Tags"].items()
+                        ],
+                    )["Rules"][0]["RuleArn"]
                 )
             except Exception as e:
-                error_msg = (
-                    f"Failed to recreate rule {rule_snapshot.rule_arn} during rollback: {str(e)}"
-                )
+                error_msg = f"Failed to recreate rule {rule_arn} during rollback: {str(e)}"
                 rollback_errors.append(error_msg)
 
         if rollback_errors:
