@@ -79,7 +79,6 @@ class UpdateALBRules:
                 self.io.info("Attempting to rollback changes ...")
                 try:
                     self._rollback_changes(operation_state)
-                    self.io.info("Rollack completed successfully")
                 except RollbackException as rollback_error:
                     raise PlatformException(f"Rollback failed: \n{str(rollback_error)}")
             else:
