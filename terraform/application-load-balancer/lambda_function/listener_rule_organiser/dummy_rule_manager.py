@@ -17,7 +17,7 @@ class DummyRuleManager:
         return self.client
 
     @property
-    def rules(self):
+    def dummy_rules(self):
         if self._cached_rules is not None:
             return self._cached_rules
 
@@ -50,14 +50,14 @@ class DummyRuleManager:
         return self._cached_rules
 
     def create_dummy_rule(self, target_group_arn, service_name):
-        if service_name in [r["Tags"]["service"] for r in self.rules]:
+        if service_name in [r["Tags"]["service"] for r in self.dummy_rules]:
             print(f"service {service_name} already has a dummy rule, exiting")
             return
 
         next_priority = DUMMY_RULES_RANGE_START
 
-        if self.rules:
-            next_priority = max([int(r["Priority"]) for r in self.rules]) + 1
+        if self.dummy_rules:
+            next_priority = max([int(r["Priority"]) for r in self.dummy_rules]) + 1
 
         print(f"creating dummy rule with priority {next_priority}")
 
@@ -101,7 +101,7 @@ class DummyRuleManager:
         )
 
     def delete_dummy_rule(self, service_name):
-        rule = next((r for r in self.rules if r["Tags"]["service"] == service_name), None)
+        rule = next((r for r in self.dummy_rules if r["Tags"]["service"] == service_name), None)
 
         if rule is None:
             print(f"service {service_name} does not have a dummy rule, exiting")
