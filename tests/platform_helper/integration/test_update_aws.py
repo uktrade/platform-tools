@@ -145,9 +145,10 @@ class ALBRulesTestFixtures:
 
 class MockALBService:
 
-    def __init__(self, environment, create_platform_rules=False):
+    def __init__(self, environment, create_platform_rules=False, manual_rule=False):
         self.environment = environment
         self.create_platform_rules = create_platform_rules
+        self.manual_rule = manual_rule
         self.fixtures = ALBRulesTestFixtures()
 
         self._paginators = {}  # Store the mock so it doesn't get recreated each time
@@ -237,6 +238,14 @@ class MockALBService:
                     ),
                 ]
             )
+        if self.manual_rule:
+            rules.append(
+                self.fixtures.create_rule_response(
+                    11,
+                    "9000",
+                )
+            )
+        print()
         paginator.paginate.return_value = [
             {
                 "Rules": rules,
@@ -252,19 +261,27 @@ class MockALBService:
         Each item in the side effect is returned each call
         """
         paginator = Mock()
+
+        target_rules = [
+            self.fixtures.create_target_group(4, "/secondary-service"),
+            self.fixtures.create_target_group(5),
+            self.fixtures.create_target_group(6),
+            self.fixtures.create_target_group(7, "/doesnt-matter"),
+            self.fixtures.create_target_group(8, "/secondary-service"),
+            self.fixtures.create_target_group(9),
+            self.fixtures.create_target_group(10),
+        ]
+        if self.manual_rule:
+            target_rules.append(
+                self.fixtures.create_target_group(
+                    11,
+                )
+            )
         paginator.paginate = Mock(
             side_effect=[
                 [
                     {
-                        "TargetGroups": [
-                            self.fixtures.create_target_group(4, "/secondary-service"),
-                            self.fixtures.create_target_group(5),
-                            self.fixtures.create_target_group(6),
-                            self.fixtures.create_target_group(7, "/doesnt-matter"),
-                            self.fixtures.create_target_group(8, "/secondary-service"),
-                            self.fixtures.create_target_group(9),
-                            self.fixtures.create_target_group(10),
-                        ],
+                        "TargetGroups": target_rules,
                         "NextMarker": "string",
                     },
                 ],
@@ -300,9 +317,9 @@ class MockALBService:
         """Order is based on the order they are called so it is very important
         for boto3 calls."""
 
-        platform_rule_tags = []
+        rule_tags = []
         if self.create_platform_rules:
-            platform_rule_tags.extend(
+            rule_tags.extend(
                 [
                     self.fixtures.create_tag_descriptions(
                         "listener-rule-arn-doesnt-matter-8",
@@ -335,6 +352,13 @@ class MockALBService:
                         },
                     ),
                 ]
+            )
+
+        if self.manual_rule:
+            rule_tags.append(
+                self.fixtures.create_tag_descriptions(
+                    "listener-rule-arn-doesnt-matter-11",
+                )
             )
         return Mock(
             side_effect=[
@@ -375,7 +399,7 @@ class MockALBService:
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-7",
                         ),
-                        *platform_rule_tags,
+                        *rule_tags,
                     ]
                 },
                 {  # Target group tags
@@ -783,503 +807,10 @@ def test_alb_rules_create_with_rollback(
 
     mock_session = mock_application.environments["test"].session
 
-    lb_paginator = Mock()
-    lb_paginator.paginate.return_value = [
-        {
-            "LoadBalancers": [
-                {
-                    "LoadBalancerArn": "alb-arn-doesnt-matter",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    listener_paginator = Mock()
-    listener_paginator.paginate.return_value = [
-        {
-            "Listeners": [
-                {
-                    "ListenerArn": "listener-arn-doesnt-matter",
-                    "LoadBalancerArn": "alb-arn-doesnt-matter",
-                    "Port": 123,
-                    "Protocol": "HTTPS",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    describe_rules_paginator = Mock()
-    describe_rules_paginator.paginate.return_value = [
-        {
-            "Rules": [
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-1",
-                    "Priority": "48000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/secondary-service/*", "/secondary-service"],
-                            "PathPatternConfig": {
-                                "Values": ["/secondary-service/*", "/secondary-service"]
-                            },
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-7",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-1", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-1",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-2",
-                    "Priority": "49000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["api.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["api.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-2",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-3",
-                    "Priority": "50000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-9", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-3",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-4",
-                    "Priority": "default",
-                    "Conditions": [],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter",
-                            "Order": 1,
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": True,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-4",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    describe_target_groups_paginator = Mock()
-    # TODO set up tgs for each test environment
-    describe_target_groups_paginator.paginate = Mock(
-        side_effect=[
-            [
-                {
-                    "TargetGroups": [
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-2",
-                            "TargetGroupName": "web-path-tg",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": False,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/secondary-service",
-                            "Matcher": {"HttpCode": "200,301,302"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-1",
-                            "TargetGroupName": "web-tg-xxxxxx",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": True,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/",
-                            "Matcher": {"HttpCode": "200"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-3",
-                            "TargetGroupName": "api-tg-yyyyy",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": True,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/",
-                            "Matcher": {"HttpCode": "200"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-7",
-                            "TargetGroupName": "web-path-tg",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": False,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/secondary-service",
-                            "Matcher": {"HttpCode": "200,301,302"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                            "TargetGroupName": "web-tg-xxxxxx",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": True,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/",
-                            "Matcher": {"HttpCode": "200"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                            "TargetGroupName": "api-tg-yyyyy",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": True,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/",
-                            "Matcher": {"HttpCode": "200"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                    ],
-                    "NextMarker": "string",
-                },
-            ],
-            [
-                {
-                    "TargetGroups": [
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-7",
-                            "TargetGroupName": "web-path-tg",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": False,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/secondary-service",
-                            "Matcher": {"HttpCode": "200,301,302"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                    ],
-                    "NextMarker": "string",
-                }
-            ],
-            [
-                {
-                    "TargetGroups": [
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                            "TargetGroupName": "api-tg-yyyyy",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": True,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/",
-                            "Matcher": {"HttpCode": "200"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                    ],
-                    "NextMarker": "string",
-                }
-            ],
-            [
-                {
-                    "TargetGroups": [
-                        {
-                            "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                            "TargetGroupName": "web-tg-xxxxxx",
-                            "Protocol": "HTTPS",
-                            "Port": 443,
-                            "VpcId": "vpc-xxxxxxxxx",
-                            "HealthCheckProtocol": "HTTP",
-                            "HealthCheckPort": "8080",
-                            "HealthCheckEnabled": True,
-                            "HealthCheckIntervalSeconds": 35,
-                            "HealthCheckTimeoutSeconds": 30,
-                            "HealthyThresholdCount": 3,
-                            "UnhealthyThresholdCount": 3,
-                            "HealthCheckPath": "/",
-                            "Matcher": {"HttpCode": "200"},
-                            "LoadBalancerArns": ["alb-arn-doesnt-matter"],
-                            "TargetType": "ip",
-                            "ProtocolVersion": "HTTP1",
-                            "IpAddressType": "ipv4",
-                        },
-                    ],
-                    "NextMarker": "string",
-                }
-            ],
-        ]
+    mock_alb = MockALBService(
+        environment="test",
     )
-
-    mock_boto_elbv2_client = Mock(name="client-mock")
-    mock_boto_elbv2_client.get_paginator.side_effect = lambda op: {
-        "describe_load_balancers": lb_paginator,
-        "describe_listeners": listener_paginator,
-        "describe_rules": describe_rules_paginator,
-        "describe_target_groups": describe_target_groups_paginator,
-    }.get(op, Mock())
-
-    mock_boto_elbv2_client.describe_tags = Mock(
-        side_effect=[
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "alb-arn-doesnt-matter",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                        ],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-1",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-2",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-3",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-4",
-                        "Tags": [],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-1",
-                        "Tags": [
-                            {"Key": "environment", "Value": "test"},
-                            {"Key": "application", "Value": "test-application"},
-                            {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                            {"Key": "service", "Value": "web"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-2",
-                        "Tags": [
-                            {"Key": "environment", "Value": "test"},
-                            {"Key": "application", "Value": "test-application"},
-                            {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                            {"Key": "service", "Value": "web-path"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-3",
-                        "Tags": [
-                            {"Key": "environment", "Value": "test"},
-                            {"Key": "application", "Value": "test-application"},
-                            {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
-                            {"Key": "service", "Value": "api"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-7",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                            {"Key": "copilot-service", "Value": "web-path"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-8",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                            {"Key": "copilot-service", "Value": "api"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-9",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                            {"Key": "copilot-service", "Value": "web"},
-                        ],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-7",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                            {"Key": "copilot-service", "Value": "web-path"},
-                        ],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-8",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                            {"Key": "copilot-service", "Value": "api"},
-                        ],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "tg-arn-doesnt-matter-9",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                            {"Key": "copilot-service", "Value": "web"},
-                        ],
-                    },
-                ]
-            },
-        ]
-    )
+    mock_boto_elbv2_client = mock_alb.create_elbv2_client_mock()
 
     mock_boto_elbv2_client.create_rule = Mock(
         side_effect=[
@@ -1322,22 +853,22 @@ def test_alb_rules_create_with_rollback(
             call("Deployment Mode: dual-deploy-platform-traffic"),
             call("ARN: listener-arn-doesnt-matter"),
             call(
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-1"
+                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4"
             ),
-            call("Updated forward action for service web-path to use: tg-arn-doesnt-matter-2"),
+            call("Updated forward action for service web-path to use: tg-arn-doesnt-matter-8"),
             call(
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-2"
+                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5"
             ),
-            call("Updated forward action for service api to use: tg-arn-doesnt-matter-3"),
+            call("Updated forward action for service api to use: tg-arn-doesnt-matter-10"),
             call(
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-3"
+                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6"
             ),
-            call("Updated forward action for service web to use: tg-arn-doesnt-matter-1"),
+            call("Updated forward action for service web to use: tg-arn-doesnt-matter-9"),
             call(
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-1"
+                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4"
             ),
             call(
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-3"
+                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6"
             ),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
@@ -1350,21 +881,21 @@ def test_alb_rules_create_with_rollback(
                 ListenerArn="listener-arn-doesnt-matter",
                 Priority=10000,
                 Conditions=[
+                    {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                     {
                         "Field": "path-pattern",
                         "Values": ["/secondary-service/*", "/secondary-service"],
                     },
-                    {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                 ],
                 Actions=[
                     {
                         "Type": "forward",
-                        "TargetGroupArn": "tg-arn-doesnt-matter-2",
+                        "TargetGroupArn": "tg-arn-doesnt-matter-8",
                         "ForwardConfig": {
                             "TargetGroups": [
-                                {"TargetGroupArn": "tg-arn-doesnt-matter-2", "Weight": 1}
+                                {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
                             ],
-                            "TargetGroupStickinessConfig": {"Enabled": False},
+                            "TargetGroupStickiness": {"Enabled": False},
                         },
                     }
                 ],
@@ -1380,18 +911,18 @@ def test_alb_rules_create_with_rollback(
                 ListenerArn="listener-arn-doesnt-matter",
                 Priority=10100,
                 Conditions=[
-                    {"Field": "path-pattern", "Values": ["/*"]},
                     {"Field": "host-header", "Values": ["web.doesnt-matter"]},
+                    {"Field": "path-pattern", "Values": ["/*"]},
                 ],
                 Actions=[
                     {
                         "Type": "forward",
-                        "TargetGroupArn": "tg-arn-doesnt-matter-1",
+                        "TargetGroupArn": "tg-arn-doesnt-matter-9",
                         "ForwardConfig": {
                             "TargetGroups": [
-                                {"TargetGroupArn": "tg-arn-doesnt-matter-1", "Weight": 1}
+                                {"TargetGroupArn": "tg-arn-doesnt-matter-9", "Weight": 1}
                             ],
-                            "TargetGroupStickinessConfig": {"Enabled": False},
+                            "TargetGroupStickiness": {"Enabled": False},
                         },
                     }
                 ],
@@ -1429,318 +960,8 @@ def test_alb_rules_delete_with_rollback(
 
     mock_session = mock_application.environments["production"].session
 
-    lb_paginator = Mock()
-    lb_paginator.paginate.return_value = [
-        {
-            "LoadBalancers": [
-                {
-                    "LoadBalancerArn": "alb-arn-doesnt-matter",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    listener_paginator = Mock()
-    listener_paginator.paginate.return_value = [
-        {
-            "Listeners": [
-                {
-                    "ListenerArn": "listener-arn-doesnt-matter",
-                    "LoadBalancerArn": "alb-arn-doesnt-matter",
-                    "Port": 123,
-                    "Protocol": "HTTPS",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    describe_rules_paginator = Mock()
-    describe_rules_paginator.paginate.return_value = [
-        {
-            "Rules": [
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-8",
-                    "Priority": "10000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/secondary-service/*", "/secondary-service"],
-                            "PathPatternConfig": {
-                                "Values": ["/secondary-service/*", "/secondary-service"]
-                            },
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-2",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-2", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-8",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-9",
-                    "Priority": "10100",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-1",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-1", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-9",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-10",
-                    "Priority": "11000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["api.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["api.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-3",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-3", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-10",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-1",
-                    "Priority": "48000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/secondary-service/*", "/secondary-service"],
-                            "PathPatternConfig": {
-                                "Values": ["/secondary-service/*", "/secondary-service"]
-                            },
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-7",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-1", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-1",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-2",
-                    "Priority": "49000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["api.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["api.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-2",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-3",
-                    "Priority": "50000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-9", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-3",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-4",
-                    "Priority": "default",
-                    "Conditions": [],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter",
-                            "Order": 1,
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": True,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-4",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    mock_boto_elbv2_client = Mock(name="client-mock")
-    mock_boto_elbv2_client.get_paginator.side_effect = lambda op: {
-        "describe_load_balancers": lb_paginator,
-        "describe_listeners": listener_paginator,
-        "describe_rules": describe_rules_paginator,
-    }.get(op, Mock())
-
-    mock_boto_elbv2_client.describe_tags = Mock(
-        side_effect=[
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "alb-arn-doesnt-matter",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "production"},
-                        ],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-8",
-                        "Tags": [
-                            {"Key": "application", "Value": "test-application"},
-                            {"Key": "environment", "Value": "production"},
-                            {"Key": "service", "Value": "web-path"},
-                            {"Key": "reason", "Value": "service"},
-                            {"Key": "managed-by", "Value": "DBT Platform"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-9",
-                        "Tags": [
-                            {"Key": "application", "Value": "test-application"},
-                            {"Key": "environment", "Value": "production"},
-                            {"Key": "service", "Value": "web"},
-                            {"Key": "reason", "Value": "service"},
-                            {"Key": "managed-by", "Value": "DBT Platform"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-10",
-                        "Tags": [
-                            {"Key": "application", "Value": "test-application"},
-                            {"Key": "environment", "Value": "production"},
-                            {"Key": "service", "Value": "api"},
-                            {"Key": "reason", "Value": "service"},
-                            {"Key": "managed-by", "Value": "DBT Platform"},
-                        ],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-1",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-2",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-3",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-4",
-                        "Tags": [],
-                    },
-                ]
-            },
-        ]
-    )
+    mock_alb = MockALBService(environment="production", create_platform_rules=True)
+    mock_boto_elbv2_client = mock_alb.create_elbv2_client_mock()
 
     mock_boto_elbv2_client.delete_rule = Mock(
         side_effect=[
@@ -1794,21 +1015,21 @@ def test_alb_rules_delete_with_rollback(
                 ListenerArn="listener-arn-doesnt-matter",
                 Priority="10000",
                 Conditions=[
+                    {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                     {
                         "Field": "path-pattern",
                         "Values": ["/secondary-service/*", "/secondary-service"],
                     },
-                    {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                 ],
                 Actions=[
                     {
                         "Type": "forward",
-                        "TargetGroupArn": "tg-arn-doesnt-matter-2",
+                        "TargetGroupArn": "tg-arn-doesnt-matter-8",
                         "ForwardConfig": {
                             "TargetGroups": [
-                                {"TargetGroupArn": "tg-arn-doesnt-matter-2", "Weight": 1}
+                                {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
                             ],
-                            "TargetGroupStickinessConfig": {"Enabled": False},
+                            "TargetGroupStickiness": {"Enabled": False},
                         },
                     }
                 ],
@@ -1848,159 +1069,8 @@ def test_alb_rules_with_manual(
 
     mock_session = mock_application.environments["test"].session
 
-    lb_paginator = Mock()
-    lb_paginator.paginate.return_value = [
-        {
-            "LoadBalancers": [
-                {
-                    "LoadBalancerArn": "alb-arn-doesnt-matter",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    listener_paginator = Mock()
-    listener_paginator.paginate.return_value = [
-        {
-            "Listeners": [
-                {
-                    "ListenerArn": "listener-arn-doesnt-matter",
-                    "LoadBalancerArn": "alb-arn-doesnt-matter",
-                    "Port": 123,
-                    "Protocol": "HTTPS",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-
-    describe_rules_paginator = Mock()
-    describe_rules_paginator.paginate.return_value = [
-        {
-            "Rules": [
-                {
-                    "RuleArn": "listener-rule-arn-manual",
-                    "Priority": "10000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["api.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["api.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-2",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-3",
-                    "Priority": "50000",
-                    "Conditions": [
-                        {
-                            "Field": "path-pattern",
-                            "Values": ["/*"],
-                            "PathPatternConfig": {"Values": ["/*"]},
-                        },
-                        {
-                            "Field": "host-header",
-                            "Values": ["web.doesnt-matter"],
-                            "HostHeaderConfig": {"Values": ["web.doesnt-matter"]},
-                        },
-                    ],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-9", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": False,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-3",
-                },
-                {
-                    "RuleArn": "listener-rule-arn-doesnt-matter-4",
-                    "Priority": "default",
-                    "Conditions": [],
-                    "Actions": [
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter",
-                            "Order": 1,
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter", "Weight": 1}
-                                ],
-                                "TargetGroupStickinessConfig": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    "IsDefault": True,
-                    "ResourceArn": "listener-rule-arn-doesnt-matter-4",
-                },
-            ],
-            "NextMarker": "string",
-        }
-    ]
-    mock_boto_elbv2_client = Mock(name="client-mock")
-    mock_boto_elbv2_client.get_paginator.side_effect = lambda op: {
-        "describe_load_balancers": lb_paginator,
-        "describe_listeners": listener_paginator,
-        "describe_rules": describe_rules_paginator,
-    }.get(op, Mock())
-
-    mock_boto_elbv2_client.describe_tags = Mock(
-        side_effect=[
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "alb-arn-doesnt-matter",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "test-application"},
-                            {"Key": "copilot-environment", "Value": "test"},
-                        ],
-                    },
-                ]
-            },
-            {
-                "TagDescriptions": [
-                    {
-                        "ResourceArn": "listener-rule-arn-manual",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-3",
-                        "Tags": [],
-                    },
-                    {
-                        "ResourceArn": "listener-rule-arn-doesnt-matter-4",
-                        "Tags": [],
-                    },
-                ]
-            },
-        ]
-    )
+    mock_alb = MockALBService(environment="test", manual_rule=True)
+    mock_boto_elbv2_client = mock_alb.create_elbv2_client_mock()
 
     mock_session = Mock(name="session-mock")
     mock_session.client.return_value = mock_boto_elbv2_client
@@ -2016,7 +1086,7 @@ def test_alb_rules_with_manual(
 
     with pytest.raises(
         PlatformException,
-        match="""The following rules have been created manually please review and if required set \n            the rules priority to the copilot range after priority: 48000.\n\n            Rules: \['listener-rule-arn-manual'\]""",
+        match="""The following rules have been created manually please review and if required set \n            the rules priority to the copilot range after priority: 48000.\n\n            Rules: \['listener-rule-arn-doesnt-matter-11'\]""",
     ):
         update_aws.update_alb_rules(
             environment="test",
