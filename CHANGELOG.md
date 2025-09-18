@@ -1,5 +1,32 @@
 # Changelog
 
+## [15.9.0](https://github.com/uktrade/platform-tools/compare/15.8.0...15.9.0) (2025-09-09)
+
+
+### Features
+
+* Apply ecs-service terraform in codebase pipelines (DBTP-2160) ([#970](https://github.com/uktrade/platform-tools/issues/970)) ([175c899](https://github.com/uktrade/platform-tools/commit/175c899044e5dbecbe3365d5516085c16298d676))
+* Configure default providers for pipeline terraform to allow apply only with relevant profile and account_ids (DBPT-2031) ([#982](https://github.com/uktrade/platform-tools/issues/982)) ([bbc7f58](https://github.com/uktrade/platform-tools/commit/bbc7f58f3f97ec426e889f1976a584f0251b3945))
+* Convert copilot overrides (DBTP-2231) ([#993](https://github.com/uktrade/platform-tools/issues/993)) ([a53ba2f](https://github.com/uktrade/platform-tools/commit/a53ba2f327259e7f7f0bf6293288b37de3abfb3f))
+* Replace copilot service addons (DBTP-2230) ([#994](https://github.com/uktrade/platform-tools/issues/994)) ([f695c26](https://github.com/uktrade/platform-tools/commit/f695c26641dd80fefdb4275dde0d3868dc26e509))
+* Service config migration (DBTP-2195) ([#916](https://github.com/uktrade/platform-tools/issues/916)) ([a9fdacb](https://github.com/uktrade/platform-tools/commit/a9fdacb5ddb7b95aa788ea82790fe4886bf7d1d0))
+
+
+### Bug Fixes
+
+* Add additional tags to maintenance page rules (DBTP-2281) ([#1034](https://github.com/uktrade/platform-tools/issues/1034)) ([90b177d](https://github.com/uktrade/platform-tools/commit/90b177d921880005b32b018325c1c361227cf78b))
+* False success from pipeline after failed deployment (DBTP-2311) ([#1033](https://github.com/uktrade/platform-tools/issues/1033)) ([2f1ba5e](https://github.com/uktrade/platform-tools/commit/2f1ba5e2b3372a423bc1fd66154480e5209f56d8))
+* Make service terraform pipeline stage conditional (off-ticket) ([#1020](https://github.com/uktrade/platform-tools/issues/1020)) ([c3c8c17](https://github.com/uktrade/platform-tools/commit/c3c8c17810436a3eb67143281980e5c8b3d4aa9f))
+* Update Terraform AWS provider version (DBTP-2263) ([#1015](https://github.com/uktrade/platform-tools/issues/1015)) ([9f72fcc](https://github.com/uktrade/platform-tools/commit/9f72fcce2cb70eefa0224ece5840d9bc2e221585))
+* Update terraform versions (DBTP-1704) ([#991](https://github.com/uktrade/platform-tools/issues/991)) ([b7f52da](https://github.com/uktrade/platform-tools/commit/b7f52daf06138fd88161adfd86ce9def0c88e3ea))
+
+
+### Dependencies
+
+* Bump checkov from 3.2.458 to 3.2.461 ([#988](https://github.com/uktrade/platform-tools/issues/988)) ([7a978ea](https://github.com/uktrade/platform-tools/commit/7a978ea041d9a2aeed5601e16c4eaf63538ecd6b))
+* Bump jsonschema from 4.17.3 to 4.25.1 ([#995](https://github.com/uktrade/platform-tools/issues/995)) ([a1c9d34](https://github.com/uktrade/platform-tools/commit/a1c9d34f87cd41a9e83f48f25ee2f076e3ff7e86))
+* Bump yamllint from 1.35.1 to 1.37.1 ([#1016](https://github.com/uktrade/platform-tools/issues/1016)) ([52e2626](https://github.com/uktrade/platform-tools/commit/52e2626cba11199f1dc52ce3c3458228c62b7f40))
+
 ## [15.8.0](https://github.com/uktrade/platform-tools/compare/15.7.0...15.8.0) (2025-08-13)
 
 

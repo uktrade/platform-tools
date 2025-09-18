@@ -114,7 +114,6 @@ class PlatformConfigSchema:
                         Optional("default_waf"): str,
                         Optional("domain_prefix"): str,
                         Optional("enable_logging"): bool,
-                        Optional("env_root"): str,
                         Optional("forwarded_values_forward"): str,
                         Optional("forwarded_values_headers"): [str],
                         Optional("forwarded_values_query_string"): bool,
