@@ -3,6 +3,7 @@ resource "aws_s3_object" "container_definitions" {
   key          = "${var.application}/${var.environment}/${var.service_config.name}.json"
   content      = local.container_definitions_json
   content_type = "application/json"
+  tags         = local.tags
 }
 
 resource "aws_ecs_task_definition" "default_task_def" {
@@ -81,7 +82,17 @@ resource "aws_ecs_service" "service" {
   propagate_tags                    = "SERVICE"
   desired_count                     = 1
   health_check_grace_period_seconds = tonumber(trim(try(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
+  tags                              = local.tags
 
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  network_configuration {
+    subnets         = data.aws_subnets.private-subnets.ids
+    security_groups = [data.aws_security_group.env_security_group.id]
+  }
 
   dynamic "load_balancer" {
     for_each = local.web_service_required == 1 ? [""] : []
@@ -90,11 +101,6 @@ resource "aws_ecs_service" "service" {
       container_name   = "nginx"
       container_port   = 443
     }
-  }
-
-  network_configuration {
-    subnets         = data.aws_subnets.private-subnets.ids
-    security_groups = [data.aws_security_group.env_security_group.id]
   }
 
   # TODO - See if discovery service can be removed once de-copiloting is complete, because we already use Service Connect for the same purposes. Verify that no team uses Service Discovery before any removal.
