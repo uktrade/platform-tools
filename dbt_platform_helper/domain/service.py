@@ -267,11 +267,14 @@ class ServiceManager:
 
         print(f"Successfully updated ECS service '{service_response['serviceName']}'.\n")
 
+        primary_deployment_id = self._get_primary_deployment_id(service_response=service_response)
+        print(f"New ECS Deployment with ID '{primary_deployment_id}' has been triggered.\n")
+
         task_ids = self._fetch_ecs_task_ids(
             application=application,
             environment=environment,
             service_model=service_model,
-            service_response=service_response,
+            deployment_id=primary_deployment_id,
         )
 
         print(f"Detected {len(task_ids)} new ECS task(s) with the following ID(s) {task_ids}.")
@@ -305,27 +308,20 @@ class ServiceManager:
 
         return log_streams
 
+    @staticmethod
+    def _get_primary_deployment_id(service_response: dict[str, Any]):
+        for dep in service_response["deployments"]:
+            if dep["status"] == "PRIMARY":
+                return dep["id"]
+        raise PlatformException(
+            f"\nUnable to find primary ECS deployment for service '{service_response['serviceName']}'\n"
+        )
+
     def _fetch_ecs_task_ids(
-        self,
-        application: str,
-        environment: str,
-        service_model: ServiceConfig,
-        service_response: dict[str, Any],
+        self, application: str, environment: str, service_model: ServiceConfig, deployment_id: str
     ) -> list[str]:
         """Return ECS task ID(s) of tasks started by the PRIMARY ECS
         deployment."""
-
-        deployment_id = None
-        for dep in service_response["deployments"]:
-            if dep["status"] == "PRIMARY":
-                deployment_id = dep["id"]
-                break
-        if not deployment_id:
-            raise PlatformException(
-                f"\nUnable to find primary ECS deployment for service '{service_response['serviceName']}'\n"
-            )
-
-        print(f"New ECS Deployment with ID '{deployment_id}' has been triggered.\n")
 
         timeout_seconds = 600
         deadline = time.monotonic() + timeout_seconds  # 10 minute deadline before timing out

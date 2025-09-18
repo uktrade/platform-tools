@@ -99,7 +99,7 @@ class ServiceManagerMocks:
         )
 
 
-def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id="dep-123"):
+def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id="deployment-abc"):
     return {
         "serviceName": service_name,
         "deployments": [
@@ -127,7 +127,7 @@ def test_service_deploy_success_with_override_tag(yaml_file_provider):
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
     mocks.ecs_provider.update_service.return_value = get_ecs_update_service_response(
-        service_name="myapp-dev-web", deployment_id="dep-abc"
+        service_name="myapp-dev-web", deployment_id="deployment-123"
     )
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["web", "datadog"]
 
@@ -174,7 +174,7 @@ def test_service_deploy_success_with_override_tag(yaml_file_provider):
         application="myapp",
         environment="dev",
         service_model=svc_model,
-        service_response=mocks.ecs_provider.update_service.return_value,
+        deployment_id="deployment-123",
     )
     mocks.ecs_provider.get_container_names_from_ecs_tasks.assert_called_once_with(
         cluster_name="myapp-dev-cluster",
@@ -241,7 +241,7 @@ def test_fetch_ecs_task_ids_success(time_sleep):
         application="myapp",
         environment="dev",
         service_model=svc_model,
-        service_response=get_ecs_update_service_response(deployment_id="deployment-id"),
+        deployment_id="deployment-id",
     )
 
     assert task_ids == ["task1", "task2"]
@@ -253,21 +253,20 @@ def test_fetch_ecs_task_ids_success(time_sleep):
     )
 
 
-def test_fetch_ecs_task_ids_no_primary_deployment():
-    mocks = ServiceManagerMocks()
-    service_manager = ServiceManager(**mocks.params())
-    svc_model = Mock()
-    svc_model.name = "web"
-    svc_model.count = 1
+def test_get_primary_deployment_id_success():
+    service_manager = ServiceManager()
+    resp = get_ecs_update_service_response(service_name="svc", deployment_id="deployment-123")
+    assert service_manager._get_primary_deployment_id(resp) == "deployment-123"
 
+
+def test_get_primary_deployment_id_raises_exception():
+    service_manager = ServiceManager()
     ecs_response_with_wrong_deployment = {
         "serviceName": "svc",
         "deployments": [{"id": "deployment-id", "status": "INACTIVE"}],
     }
     with pytest.raises(PlatformException) as e:
-        service_manager._fetch_ecs_task_ids(
-            "myapp", "dev", svc_model, ecs_response_with_wrong_deployment
-        )
+        service_manager._get_primary_deployment_id(ecs_response_with_wrong_deployment)
     assert "Unable to find primary ECS deployment" in str(e.value)
 
 
