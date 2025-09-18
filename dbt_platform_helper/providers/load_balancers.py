@@ -83,7 +83,7 @@ class LoadBalancerProvider:
 
         return target_group_arn
 
-    def get_target_groups(self, target_group_arns: List[str]):
+    def get_target_groups(self, target_group_arns: List[str]) -> List[dict]:
         tgs = []
         paginator = self.evlb_client.get_paginator("describe_target_groups")
         page_iterator = paginator.paginate(TargetGroupArns=target_group_arns)
@@ -92,7 +92,9 @@ class LoadBalancerProvider:
 
         return tgs
 
-    def get_target_groups_with_tags(self, target_group_arns: List[str], normalise: bool = True):
+    def get_target_groups_with_tags(
+        self, target_group_arns: List[str], normalise: bool = True
+    ) -> List[dict]:
         target_groups = self.get_target_groups(target_group_arns)
 
         tags = self.get_resources_tag_descriptions(target_groups, "TargetGroupArn")
@@ -122,7 +124,7 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         return self.get_https_certificate_for_listener(listener_arn, env)
 
-    def get_listeners_for_load_balancer(self, load_balancer_arn):
+    def get_listeners_for_load_balancer(self, load_balancer_arn: str) -> List[dict]:
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
         page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
@@ -147,7 +149,7 @@ class LoadBalancerProvider:
 
         return listener_arn
 
-    def get_load_balancers(self):
+    def get_load_balancers(self) -> List[dict]:
         load_balancers = []
         paginator = self.evlb_client.get_paginator("describe_load_balancers")
         page_iterator = paginator.paginate()
@@ -211,7 +213,10 @@ class LoadBalancerProvider:
         return self.get_resources_tag_descriptions(rules)
 
     def merge_in_tags_by_resource_arn(
-        self, resources, tag_descriptions, resources_identifier="RuleArn"
+        self,
+        resources: List[dict],
+        tag_descriptions: List[dict],
+        resources_identifier: str = "RuleArn",
     ):
         tags_by_resource_arn = {
             rule_tags.get("ResourceArn"): rule_tags for rule_tags in tag_descriptions if rule_tags

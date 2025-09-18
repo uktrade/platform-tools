@@ -63,7 +63,11 @@ class UpdateALBRules:
         self,
         environment: str,
     ):
-        """"""
+        """
+        Change ALB rules for a given environment.
+
+        Attempt to rollback the rules created/deleted if a failure occurs.
+        """
 
         operation_state = OperationState()
 
@@ -214,7 +218,7 @@ class UpdateALBRules:
         ):
             self._delete_rules(mapped_rules.get(RuleType.PLATFORM.value, []), operation_state)
 
-    def _delete_rules(self, rules, operation_state: OperationState):
+    def _delete_rules(self, rules: List[dict], operation_state: OperationState):
         for rule in rules:
             rule_arn = rule["RuleArn"]
             try:
@@ -225,7 +229,7 @@ class UpdateALBRules:
                 self.io.error(f"Failed to delete existing rule {rule_arn}: {str(e)}")
                 raise
 
-    def _filter_rule_type(self, rule):
+    def _filter_rule_type(self, rule: dict) -> str:
         if rule["Tags"]:
             if rule["Tags"].get("managed-by", "") == MANAGED_BY_PLATFORM:
                 return RuleType.PLATFORM.value
@@ -239,7 +243,7 @@ class UpdateALBRules:
 
         return RuleType.MANUAL.value
 
-    def _get_service_from_tg(self, rule):
+    def _get_service_from_tg(self, rule: dict) -> str:
         target_group_arn = ""
 
         # TODO normalise this?
@@ -259,8 +263,8 @@ class UpdateALBRules:
         return None
 
     def _get_tg_arns_for_platform_services(
-        self, application, environment, managed_by=MANAGED_BY_SERVICE_TERRAFORM
-    ):
+        self, application: str, environment: str, managed_by: str = MANAGED_BY_SERVICE_TERRAFORM
+    ) -> dict:
         tgs = self.load_balancer.get_target_groups_with_tags([])
         service_mapped_tgs = {}
         for tg in tgs:
@@ -276,7 +280,7 @@ class UpdateALBRules:
                     self.io.warn(f"Target group {tg_name} has no 'service' tag")
         return service_mapped_tgs
 
-    def _create_new_actions(self, actions, tg_arn):
+    def _create_new_actions(self, actions: dict, tg_arn: str) -> dict:
 
         updated_actions = copy.deepcopy(actions)
         for action in updated_actions:
