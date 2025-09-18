@@ -42,7 +42,7 @@
   },
   "module": {
     "ecs-service": {
-      "source": "git::git@github.com:uktrade/platform-tools.git//terraform/ecs-service?depth=1&ref=10.2.0",
+      "source": "../../../../../platform-tools/terraform/ecs-service",
       "count": "${local.non_copilot_service_deployment_mode}",
       "application": "${local.application}",
       "environment": "${local.environment}",

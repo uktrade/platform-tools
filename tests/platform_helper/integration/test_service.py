@@ -27,22 +27,26 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
     [
         (
             {"environment": "development", "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-            },
-            None,  # Image tag not given, hence why not relevant - should throw an exception before generating main.tf.json contents
+            {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE"},
+            None,  # Image tag not given as it's not relevant - should throw an exception before generating main.tf.json contents
             True,
         ),
         (
             {"environment": "development", "services": [], "image_tag_flag": "doesnt-matter"},
-            {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
+            None,  # Happy path where no module source override is set, resulting in default being applied
             {"development": "development.json"},
+            False,
+        ),
+        (
+            {"environment": "development", "services": [], "image_tag_flag": "doesnt-matter"},
+            {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
+            {"development": "development_with_source_override.json"},
             False,
         ),
         (
             {"environment": "development", "services": []},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL", IMAGE_TAG_ENV_VAR: "doesnt-matter"},
-            {"development": "development.json"},
+            {"development": "development_with_source_override.json"},
             False,
         ),
     ],
@@ -65,8 +69,9 @@ def test_generate(
 ):
 
     # Test setup
-    for var, value in env_vars.items():
-        os.environ[var] = value
+    if env_vars:
+        for var, value in env_vars.items():
+            os.environ[var] = value
     load_application = Mock()
     load_application.return_value = mock_application
     mock_installed_version_provider = create_autospec(spec=InstalledVersionProvider, spec_set=True)
@@ -113,8 +118,9 @@ def test_generate(
 
             assert actual_json_content == expected_json_content
 
-        for var, value in env_vars.items():
-            del os.environ[var]
+        if env_vars:
+            for var, value in env_vars.items():
+                del os.environ[var]
 
     # actual_yaml = Path(f"terraform/services/development/web/service-config.yml")
     # assert actual_yaml.exists()
