@@ -26,36 +26,27 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
     "input_args, env_vars, expected_results, expect_exception",
     [
         (
-            {"environments": ["development"], "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-            },
-            None,  # Image tag not given, hence why not relevant - should throw an exception before generating main.tf.json contents
+            {"environment": "development", "services": []},
+            {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE"},
+            None,  # Image tag not given as it's not relevant - should throw an exception before generating main.tf.json contents
             True,
         ),
         (
-            {"environments": ["development"], "services": [], "image_tag_flag": "doesnt-matter"},
+            {"environment": "development", "services": [], "image_tag_flag": "doesnt-matter"},
+            None,  # Happy path where no module source override is set, resulting in default being applied
+            {"development": "development.json"},
+            False,
+        ),
+        (
+            {"environment": "development", "services": [], "image_tag_flag": "doesnt-matter"},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
-            {"development": "image_tag_flag.json"},
+            {"development": "development_with_source_override.json"},
             False,
         ),
         (
-            {"environments": ["development"], "services": []},
+            {"environment": "development", "services": []},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL", IMAGE_TAG_ENV_VAR: "doesnt-matter"},
-            {"development": "image_tag_flag.json"},
-            False,
-        ),
-        (
-            {"environments": [], "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-                IMAGE_TAG_ENV_VAR: "some-fake-image",
-            },
-            {
-                "development": "development.json",
-                "staging": "staging.json",
-                "production": "production.json",
-            },
+            {"development": "development_with_source_override.json"},
             False,
         ),
     ],
@@ -78,8 +69,9 @@ def test_generate(
 ):
 
     # Test setup
-    for var, value in env_vars.items():
-        os.environ[var] = value
+    if env_vars:
+        for var, value in env_vars.items():
+            os.environ[var] = value
     load_application = Mock()
     load_application.return_value = mock_application
     mock_installed_version_provider = create_autospec(spec=InstalledVersionProvider, spec_set=True)
@@ -126,8 +118,9 @@ def test_generate(
 
             assert actual_json_content == expected_json_content
 
-        for var, value in env_vars.items():
-            del os.environ[var]
+        if env_vars:
+            for var, value in env_vars.items():
+                del os.environ[var]
 
     # actual_yaml = Path(f"terraform/services/development/web/service-config.yml")
     # assert actual_yaml.exists()
@@ -170,7 +163,7 @@ def test_generate_no_service_dir(
             "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
         ),
     ):
-        service_manager.generate(environments=[], services=[])
+        service_manager.generate(environment="development", services=[])
 
     io.abort_with_error.assert_called_with(
         "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
@@ -212,7 +205,7 @@ def test_generate_no_service_config(
             "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
         ),
     ):
-        service_manager.generate(environments=[], services=[])
+        service_manager.generate(environment="development", services=[])
 
     io.warn.assert_has_calls(
         [
@@ -252,6 +245,6 @@ def test_generate_no_environment(
     )
     with pytest.raises(
         PlatformException,
-        match="""cannot generate terraform for environment doesnt-exist.  It does not exist in your configuration""",
+        match="""Cannot generate Terraform for environment 'doesnt-exist'. It does not exist in your configuration.""",
     ):
-        service_manager.generate(environments=["doesnt-exist"], services=[])
+        service_manager.generate(environment="doesnt-exist", services=[])

@@ -21,7 +21,10 @@ class HealthCheck(BaseModel):
     timeout: Optional[str] = Field(
         description="""The timeout for a healthcheck call""", default=None
     )
-    grace_period: Optional[str] = Field(description="""The time""", default=None)
+    grace_period: Optional[str] = Field(
+        description="""The time the service ignores unhealthy ALB and container health checks""",
+        default=None,
+    )
 
 
 class Http(BaseModel):
@@ -96,6 +99,7 @@ class ServiceConfig(BaseModel):
     http: Optional[Http] = Field(default=None)  # TODO http required if service type load balancer
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
+    entrypoint: list[str] = Field(default=None)
 
     cpu: int = Field()
     memory: int = Field()

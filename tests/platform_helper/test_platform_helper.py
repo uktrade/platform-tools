@@ -29,7 +29,6 @@ class TestCopilotHelperCli:
             "internal",
             "pipeline",
             "secrets",
-            "service",
             "notify",
             "database",
             "version",

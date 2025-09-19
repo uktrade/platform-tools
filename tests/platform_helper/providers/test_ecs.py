@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import boto3
 import pytest
+from botocore.exceptions import ClientError
 from moto import mock_aws
 
 from dbt_platform_helper.platform_exception import PlatformException
@@ -46,7 +47,7 @@ def test_get_cluster_arn_copilot_with_no_cluster_raises_error():
 
     ecs_client.list_clusters.return_value = {"clusterArns": []}
 
-    ecs_manager = ECS(ecs_client, ssm_client, application_name="my-app", env="development")
+    ecs_manager = ECS(ecs_client, ssm_client, application_name="myapp", env="development")
 
     with pytest.raises(NoClusterException):
         ecs_manager.get_cluster_arn_by_copilot_tag()
@@ -60,7 +61,7 @@ def test_get_cluster_arn_with_no_cluster_raises_error():
 
     ecs_client.describe_clusters.return_value = {"clusters": []}
 
-    ecs_manager = ECS(ecs_client, ssm_client, application_name="my-app", env="development")
+    ecs_manager = ECS(ecs_client, ssm_client, application_name="myapp", env="development")
 
     with pytest.raises(NoClusterException):
         ecs_manager.get_cluster_arn_by_name("does-not_exist")
@@ -78,7 +79,7 @@ def test_get_cluster_arn_by_name_multiple_clusters_returns_error():
         ]
     }
 
-    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+    ecs = ECS(ecs_client, ssm_client, "myapp", "development")
 
     with pytest.raises(NoClusterException):
         ecs.get_cluster_arn_by_name("some-cluster")
@@ -91,7 +92,7 @@ def test_get_cluster_arn_by_name_missing_arn_raises():
     ssm_client = MagicMock()
     ecs_client.describe_clusters.return_value = {"clusters": [{}]}  # Without 'clusterArn' field
 
-    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+    ecs = ECS(ecs_client, ssm_client, "myapp", "development")
 
     with pytest.raises(NoClusterException):
         ecs.get_cluster_arn_by_name("some-cluster")
@@ -102,7 +103,7 @@ def test_get_cluster_arn_by_name_passes_correct_cluster():
     ssm_client = MagicMock()
     ecs_client.describe_clusters.return_value = {"clusters": [{"clusterArn": "arn:cluster"}]}
 
-    ecs = ECS(ecs_client, ssm_client, "my-app", "development")
+    ecs = ECS(ecs_client, ssm_client, "myapp", "development")
     arn = ecs.get_cluster_arn_by_name("my-cluster")
 
     assert arn == "arn:cluster"
@@ -124,7 +125,7 @@ def test_copilot_get_ecs_task_arns_with_running_task(
         "development",
     )
     assert ecs_manager.get_ecs_task_arns(
-        mocked_cluster_arn, f"copilot-{mock_task_name(addon_type)}"
+        cluster=mocked_cluster_arn, task_def_family=f"copilot-{mock_task_name(addon_type)}"
     )
 
 
@@ -139,7 +140,14 @@ def test_get_ecs_task_arns_with_no_running_task(mocked_cluster, mock_application
         mock_application.name,
         "development",
     )
-    assert len(ecs_manager.get_ecs_task_arns(mocked_cluster_arn, mock_task_name(addon_type))) == 0
+    assert (
+        len(
+            ecs_manager.get_ecs_task_arns(
+                cluster=mocked_cluster_arn, task_def_family=mock_task_name(addon_type)
+            )
+        )
+        == 0
+    )
 
 
 @mock_aws
@@ -183,7 +191,7 @@ def test_get_ecs_task_arns_does_not_return_arns_from_other_tasks(mock_applicatio
         mock_application.name,
         "development",
     )
-    assert len(ecs_manager.get_ecs_task_arns(cluster_arn, task_name)) == 0
+    assert len(ecs_manager.get_ecs_task_arns(cluster=cluster_arn, task_def_family=task_name)) == 0
 
 
 @mock_aws
@@ -332,3 +340,244 @@ def test_exec_task_raises_platform_exception():
 
     assert ecs.exec_task.__wrapped_by__ == "retry"
     mock_suprocess.assert_called()
+
+
+def test_get_ecs_task_arns_returns_arns():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.list_tasks.return_value = {"taskArns": ["arn1", "arn2"]}
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+
+    arns = ecs.get_ecs_task_arns(
+        cluster="myapp-cluster",
+        max_results=50,
+        desired_status="RUNNING",
+        service_name="myapp-dev-web",
+        started_by="deployment-123",
+        task_def_family="my-task-def-family",
+    )
+
+    assert arns == ["arn1", "arn2"]
+    ecs_client.list_tasks.assert_called_once_with(
+        cluster="myapp-cluster",
+        maxResults=50,
+        desiredStatus="RUNNING",
+        serviceName="myapp-dev-web",
+        startedBy="deployment-123",
+        family="my-task-def-family",
+    )
+
+
+def test_get_service_rollout_state_success():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_services.return_value = {
+        "services": [
+            {
+                "serviceName": "myapp-dev-web",
+                "deployments": [
+                    {"id": "other-deployment", "status": "ACTIVE"},
+                    {
+                        "id": "primary-deployment",
+                        "status": "PRIMARY",
+                        "rolloutState": "COMPLETED",
+                        "rolloutStateReason": None,
+                    },
+                ],
+            }
+        ]
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    state, reason = ecs.get_service_rollout_state("myapp-dev-cluster", "myapp-dev-web")
+    assert state == "COMPLETED"
+    assert reason is None
+    ecs_client.describe_services.assert_called_once_with(
+        cluster="myapp-dev-cluster", services=["myapp-dev-web"]
+    )
+
+
+def test_get_service_rollout_state_failed():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_services.return_value = {
+        "services": [
+            {
+                "deployments": [
+                    {
+                        "id": "primary-deployment",
+                        "status": "PRIMARY",
+                        "rolloutState": "FAILED",
+                        "rolloutStateReason": "Some error occurred",
+                    },
+                ]
+            }
+        ]
+    }
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    assert ecs.get_service_rollout_state("cluster", "service") == ("FAILED", "Some error occurred")
+
+
+def test_get_service_rollout_state_service_not_found():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_services.return_value = {"services": []}
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    assert ecs.get_service_rollout_state("cluster", "non-existent-service") == (
+        None,
+        "Service 'non-existent-service' not found",
+    )
+
+
+def test_get_service_rollout_state_no_primary_deployment():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_services.return_value = {
+        "services": [{"deployments": [{"status": "ACTIVE"}]}]
+    }
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    assert ecs.get_service_rollout_state("cluster", "service") == (
+        None,
+        "No PRIMARY ECS deployment found",
+    )
+
+
+def test_get_container_names_from_ecs_tasks():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_tasks.return_value = {
+        "tasks": [
+            {"containers": [{"name": "web"}, {"name": "ip-filter"}]},
+            {"containers": [{"name": "web"}, {"name": "datadog"}]},
+        ]
+    }
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    names = ecs.get_container_names_from_ecs_tasks("cluster", ["task1", "task2"])
+    assert names == ["web", "ip-filter", "datadog"]
+    ecs_client.describe_tasks.assert_called_once_with(cluster="cluster", tasks=["task1", "task2"])
+
+
+def _client_error(operation="RegisterTaskDefinition"):
+    return ClientError(
+        error_response={"Error": {"Code": "SomeErrorCode", "Message": "Some error took place"}},
+        operation_name=operation,
+    )
+
+
+def test_register_task_definition_applies_image_tag_override():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.register_task_definition.return_value = {
+        "taskDefinition": {"taskDefinitionArn": "arn:taskdef:123"}
+    }
+
+    service_model = MagicMock()
+    service_model.name = "web"
+    service_model.cpu = 256
+    service_model.memory = 512
+    service_model.image.location = (
+        "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:old_image_tag"
+    )
+
+    container_definitions = [
+        {"name": "web", "image": "web:old"},
+        {"name": "sidecar", "image": "sidecar:v1.2.3"},
+    ]
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    arn = ecs.register_task_definition(
+        service_model=service_model,
+        environment="dev",
+        application="myapp",
+        account_id="111122223333",
+        container_definitions=container_definitions,
+        image_tag="new_image_tag",
+    )
+
+    assert arn == "arn:taskdef:123"
+    # Image tag is rewritten only for the main container
+    assert (
+        container_definitions[0]["image"]
+        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:new_image_tag"
+    )
+    assert container_definitions[1]["image"] == "sidecar:v1.2.3"
+
+    ecs_client.register_task_definition.assert_called_once()
+    kwargs = ecs_client.register_task_definition.call_args.kwargs
+    assert kwargs["family"] == "myapp-dev-web-task-def"
+    assert kwargs["containerDefinitions"] is container_definitions
+
+
+def test_register_task_definition_raises_exception():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.register_task_definition.side_effect = _client_error("RegisterTaskDefinition")
+
+    service_model = MagicMock(name="ServiceConfig")
+    service_model.name = "web"
+    service_model.cpu = 256
+    service_model.memory = 512
+    service_model.image.location = "repo/web:tag-1.2.3"
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+
+    with pytest.raises(PlatformException) as e:
+        ecs.register_task_definition(
+            service_model=service_model,
+            environment="dev",
+            application="myapp",
+            account_id="111122223333",
+            container_definitions=[{"name": "web", "image": "doesnt-matter"}],
+            image_tag="tag",
+        )
+    assert "Error registering task definition" in str(e.value)
+
+
+def test_update_service_success():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.update_service.return_value = {"service": {"serviceName": "myapp-dev-web"}}
+
+    service_model = MagicMock()
+    service_model.name = "web"
+    service_model.count = 2
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    svc = ecs.update_service(service_model, "arn:taskdef:1", "dev", "myapp")
+
+    assert svc == {"serviceName": "myapp-dev-web"}
+    ecs_client.update_service.assert_called_once_with(
+        cluster="myapp-dev-cluster",
+        service="myapp-dev-web",
+        taskDefinition="arn:taskdef:1",
+        desiredCount=2,
+    )
+
+
+def test_update_service_raises_exception():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.update_service.side_effect = _client_error("UpdateService")
+
+    service_model = MagicMock()
+    service_model.name = "web"
+    service_model.count = 1
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    with pytest.raises(PlatformException) as e:
+        ecs.update_service(service_model, "arn:taskdef:1", "dev", "myapp")
+    assert "Error updating ECS service" in str(e.value)
+
+
+@patch("time.sleep", return_value=None)
+def test_wait_for_task_to_register(time_sleep):
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+
+    # Returns task arn on third attempt
+    ecs.get_ecs_task_arns = MagicMock(side_effect=[[], [], ["arn1"]])
+
+    result = ecs.wait_for_task_to_register("cluster-arn", "task-def-family")
+    assert result == ["arn1"]
