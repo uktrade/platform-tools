@@ -40,7 +40,8 @@ from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.deep_merge import deep_merge
 
 SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service"]
-
+DEPLOYMENT_TIMEOUT_SECONDS = 600
+POLL_INTERVAL_SECONDS = 2
 
 # TODO add schema version to service config
 
@@ -259,16 +260,16 @@ class ServiceManager:
             container_definitions=container_definitions,
         )
 
-        print(f"Task definition successfully registered with ARN '{task_def_arn}'.\n")
+        self.io.info(f"Task definition successfully registered with ARN '{task_def_arn}'.\n")
 
         service_response = self.ecs_provider.update_service(
             service_model, task_def_arn, environment, application
         )
 
-        print(f"Successfully updated ECS service '{service_response['serviceName']}'.\n")
+        self.io.info(f"Successfully updated ECS service '{service_response['serviceName']}'.\n")
 
         primary_deployment_id = self._get_primary_deployment_id(service_response=service_response)
-        print(f"New ECS Deployment with ID '{primary_deployment_id}' has been triggered.\n")
+        self.io.info(f"New ECS Deployment with ID '{primary_deployment_id}' has been triggered.\n")
 
         task_ids = self._fetch_ecs_task_ids(
             application=application,
@@ -277,7 +278,9 @@ class ServiceManager:
             deployment_id=primary_deployment_id,
         )
 
-        print(f"Detected {len(task_ids)} new ECS task(s) with the following ID(s) {task_ids}.")
+        self.io.info(
+            f"Detected {len(task_ids)} new ECS task(s) with the following ID(s) {task_ids}."
+        )
 
         container_names = self.ecs_provider.get_container_names_from_ecs_tasks(
             cluster_name=f"{application}-{environment}-cluster",
@@ -323,10 +326,10 @@ class ServiceManager:
         """Return ECS task ID(s) of tasks started by the PRIMARY ECS
         deployment."""
 
-        timeout_seconds = 600
+        timeout_seconds = DEPLOYMENT_TIMEOUT_SECONDS
         deadline = time.monotonic() + timeout_seconds  # 10 minute deadline before timing out
 
-        print(f"Waiting for the new ECS task(s) to spin up.\n")
+        self.io.info(f"Waiting for the new ECS task(s) to spin up.\n")
 
         while time.monotonic() < deadline:
             task_arns = self.ecs_provider.get_ecs_task_arns(
@@ -338,7 +341,7 @@ class ServiceManager:
             if len(task_arns) >= service_model.count:
                 break
 
-            time.sleep(2)
+            time.sleep(POLL_INTERVAL_SECONDS)
 
         if len(task_arns) < service_model.count:
             raise PlatformException(
@@ -363,11 +366,13 @@ class ServiceManager:
         ecs_service_name = f"{application}-{environment}-{service}"
         log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
 
-        timeout_seconds = 600
+        timeout_seconds = DEPLOYMENT_TIMEOUT_SECONDS
         deadline = time.monotonic() + timeout_seconds  # 10 minute deadline before timing out
         start_time_ms = int(time.time() * 1000)
 
-        print(f"\nTailing CloudWatch logs for ECS deployment to service '{ecs_service_name}' ...\n")
+        self.io.info(
+            f"\nTailing CloudWatch logs for ECS deployment to service '{ecs_service_name}' ...\n"
+        )
 
         self.logs_provider.check_log_streams_present(
             log_group=log_group, expected_log_streams=log_streams
@@ -380,7 +385,9 @@ class ServiceManager:
 
             for event in response.get("events", []):
                 timestamp = datetime.fromtimestamp(event["timestamp"] / 1000)
-                print(f"[{event['logStreamName']}] [{timestamp}] {event['message'].rstrip()}")
+                self.io.info(
+                    f"[{event['logStreamName']}] [{timestamp}] {event['message'].rstrip()}"
+                )
                 start_time_ms = (
                     event["timestamp"] + 1
                 )  # move start_time_ms forward to avoid reprinting the same log
@@ -393,12 +400,12 @@ class ServiceManager:
                 raise PlatformException(f"Failed to fetch ECS rollout state: {e}")
 
             if state == "COMPLETED":
-                print("\nECS deployment complete!")
+                self.io.info("\nECS deployment complete!")
                 return True
             if state == "FAILED":
                 raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
 
-            time.sleep(2)
+            time.sleep(POLL_INTERVAL_SECONDS)
 
         raise PlatformException(
             f"Timed out after {timeout_seconds}s waiting for '{ecs_service_name}' to stabilise."
