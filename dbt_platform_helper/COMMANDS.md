@@ -615,7 +615,7 @@ platform-helper internal service (deploy|generate)
 ## Usage
 
 ```
-platform-helper internal service deploy --name <name> --environment <environment> 
+platform-helper internal service deploy --name <name> --env <environment> 
                                         [--image-tag-override <image_tag_override>] 
 ```
 
@@ -623,7 +623,7 @@ platform-helper internal service deploy --name <name> --environment <environment
 
 - `--name <text>`
   - The name of the ECS service to create or update.
-- `--environment <text>`
+- `--env <text>`
   - The name of the environment where the ECS service will be created or updated.
 - `--image-tag-override <text>`
   - Custom image tag (overrides containerDefinitions object from S3). Takes precedence over $IMAGE_TAG.
@@ -639,15 +639,15 @@ platform-helper internal service deploy --name <name> --environment <environment
 ## Usage
 
 ```
-platform-helper internal service generate --environment <environment> 
-                                          [--name <name>] [--image-tag <image_tag>] 
+platform-helper internal service generate --env <environment> [--name <name>] 
+                                          [--image-tag <image_tag>] 
 ```
 
 ## Options
 
 - `--name <text>`
   - The name of the service(s) to generate service manifest(s) for.
-- `--environment <text>`
+- `--env <text>`
   - The name of the environment to generate service manifests for.
 - `--image-tag <text>`
   - Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.

@@ -37,7 +37,7 @@ def service():
 @service.command(help="Trigger an ECS deployment.")
 @click.option("--name", required=True, help="The name of the ECS service to create or update.")
 @click.option(
-    "--environment",
+    "--env",
     required=True,
     help="The name of the environment where the ECS service will be created or updated.",
 )
@@ -46,7 +46,7 @@ def service():
     required=False,
     help="Custom image tag (overrides containerDefinitions object from S3). Takes precedence over $IMAGE_TAG.",
 )
-def deploy(name, environment, image_tag_override):
+def deploy(name, env, image_tag_override):
     """Register a new ECS task definition from an S3 JSON template, update the
     ECS service, and tail CloudWatch logs until the ECS rollout is complete."""
     click_io = ClickIOProvider()
@@ -55,18 +55,18 @@ def deploy(name, environment, image_tag_override):
 
         config = ConfigProvider(ConfigValidator()).get_enriched_config()
         application_name = config.get("application", "")
-        application = load_application(app=application_name, env=environment)
+        application = load_application(app=application_name, env=env)
 
-        ecs_client = application.environments[environment].session.client("ecs")
-        ssm_client = application.environments[environment].session.client("ssm")
-        s3_client = application.environments[environment].session.client("s3")
-        logs_client = application.environments[environment].session.client("logs")
+        ecs_client = application.environments[env].session.client("ecs")
+        ssm_client = application.environments[env].session.client("ssm")
+        s3_client = application.environments[env].session.client("s3")
+        logs_client = application.environments[env].session.client("logs")
 
         ecs_provider = ECS(
             ecs_client=ecs_client,
             ssm_client=ssm_client,
             application_name=application.name,
-            env=environment,
+            env=env,
         )
         s3_provider = S3Provider(client=s3_client)
         logs_provider = LogsProvider(client=logs_client)
@@ -76,7 +76,7 @@ def deploy(name, environment, image_tag_override):
         )
         service_manager.deploy(
             service=name,
-            environment=environment,
+            environment=env,
             application=application.name,
             image_tag_override=image_tag_override,
         )
@@ -92,7 +92,7 @@ def deploy(name, environment, image_tag_override):
     multiple=True,
 )
 @click.option(
-    "--environment",
+    "--env",
     required=True,
     help="The name of the environment to generate service manifests for.",
 )
@@ -101,7 +101,7 @@ def deploy(name, environment, image_tag_override):
     required=False,
     help="Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.",
 )
-def generate(name, environment, image_tag):
+def generate(name, env, image_tag):
     """Validates the service-config.yml format, applies the environment-specific
     overrides, and generates a Terraform manifest at
     /terraform/services/<environment>/<service>/main.tf.json."""
@@ -111,9 +111,7 @@ def generate(name, environment, image_tag):
 
     try:
         service_manager = ServiceManager()
-        service_manager.generate(
-            environment=environment, services=services, image_tag_flag=image_tag
-        )
+        service_manager.generate(environment=env, services=services, image_tag_flag=image_tag)
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))

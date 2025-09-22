@@ -63,7 +63,7 @@ class TestInternal:
                 "deploy",
                 "--name",
                 "web",
-                "--environment",
+                "--env",
                 "dev",
                 "--image-tag-override",
                 "test123",
@@ -133,7 +133,7 @@ class TestInternal:
         mock_service_manager.return_value.deploy.side_effect = PlatformException("This has failed")
 
         result = CliRunner().invoke(
-            internal, ["service", "deploy", "--name", "web", "--environment", "dev"]
+            internal, ["service", "deploy", "--name", "web", "--env", "dev"]
         )
 
         assert result.exit_code == 1
@@ -156,7 +156,7 @@ class TestInternal:
                 "generate",
                 "--name",
                 "web",
-                "--environment",
+                "--env",
                 "dev",
                 "--image-tag",
                 "test123",
@@ -181,7 +181,7 @@ class TestInternal:
 
         result = CliRunner().invoke(
             internal,
-            ["service", "generate", "--environment", "bad-env"],
+            ["service", "generate", "--env", "bad-env"],
         )
 
         assert result.exit_code == 1
