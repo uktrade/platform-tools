@@ -602,13 +602,13 @@ class MockALBService:
                 "info": [
                     "Deployment Mode: dual-deploy-platform-traffic",
                     "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
-                    "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                    # "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
                 ],
                 "debug": [
                     "Listener ARN: listener-arn-doesnt-matter",
-                    "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
-                    "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
-                    "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
+                    # "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
+                    # "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
+                    # "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
                     "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
                     "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
                     "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",

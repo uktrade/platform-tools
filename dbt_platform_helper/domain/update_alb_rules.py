@@ -134,7 +134,17 @@ class UpdateALBRules:
         ):
 
             # Clear out any platform rules which may be floating
-            self._delete_rules(mapped_rules.get(RuleType.PLATFORM.value, []), operation_state)
+            if len(mapped_rules.get(RuleType.PLATFORM.value, [])) > 0 and len(
+                mapped_rules.get(RuleType.PLATFORM.value, [])
+            ) != len(mapped_rules.get(RuleType.COPILOT.value, [])):
+                raise PlatformException("PLatform rules are partially created, please review.")
+                # compare Rules
+                # TODO comples option:
+                # compare that platform has corresponding copilot rule
+                #   detect extra rules (error on them)
+                #   detect missing rules and create them
+                #       done by comparing given params and if they are equal the are the same rule
+
             grouped = dict()
 
             service_mapped_tgs = self._get_tg_arns_for_platform_services(
