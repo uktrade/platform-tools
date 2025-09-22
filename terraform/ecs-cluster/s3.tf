@@ -75,6 +75,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "container_definitions" {
     id     = "NonCurrentVersionsRetention"
     status = "Enabled"
 
+    filter {}
+
     noncurrent_version_expiration {
       noncurrent_days = 90
     }
@@ -84,6 +86,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "container_definitions" {
   rule {
     id     = "AbortIncompleteMultipartUpload"
     status = "Enabled"
+
+    filter {}
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
