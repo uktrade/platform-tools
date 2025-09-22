@@ -74,12 +74,13 @@ class UpdateALBRules:
         try:
             self._execute_rule_updates(environment, operation_state)
         except Exception as e:
-            self.io.error(f"Error during rule update: {str(e)}")
-            self.io.warn("Rolling back")
             if operation_state.created_rules or operation_state.deleted_rules:
+                self.io.error(f"Error during rule update: {str(e)}")
+                self.io.warn("Rolling back")
                 self.io.info("Attempting to rollback changes ...")
                 try:
                     self._rollback_changes(operation_state)
+                    return
                 except RollbackException as rollback_error:
                     raise PlatformException(f"Rollback failed: \n{str(rollback_error)}")
             else:
@@ -111,7 +112,7 @@ class UpdateALBRules:
 
         operation_state.listener_arn = listener_arn
 
-        self.io.info(f"ARN: {listener_arn}")
+        self.io.debug(f"Listener ARN: {listener_arn}")
 
         rules = self.load_balancer.get_rules_with_tags_by_listener_arn(listener_arn)
 
@@ -141,7 +142,7 @@ class UpdateALBRules:
             )
             for copilot_rule in mapped_rules.get(RuleType.COPILOT.value, []):
                 rule_arn = copilot_rule["RuleArn"]
-                self.io.info(f"Building platform rule for corresponding copilot rule: {rule_arn}")
+                self.io.debug(f"Building platform rule for corresponding copilot rule: {rule_arn}")
                 sorted_hosts = sorted(copilot_rule["Conditions"].get("host-header", []))
                 depth = max(
                     [
@@ -159,7 +160,7 @@ class UpdateALBRules:
                 tg_arn = service_mapped_tgs[service_name]
 
                 actions = self._create_new_actions(copilot_rule["Actions"], tg_arn)
-                self.io.info(f"Updated forward action for service {service_name} to use: {tg_arn}")
+                self.io.debug(f"Updated forward action for service {service_name} to use: {tg_arn}")
                 if grouped.get(",".join(sorted_hosts)):
                     grouped[",".join(sorted_hosts)].append(
                         {
@@ -182,17 +183,15 @@ class UpdateALBRules:
                     ]
 
             rule_priority = PLATFORM_RULE_STARTING_PRIORITY
-
             for hosts, rules in grouped.items():
                 rules.sort(key=lambda x: x["depth"], reverse=True)
 
                 for rule in rules:
                     # Create rule with priority
                     copilot_rule = rule.get("copilot_rule", "")
-                    self.io.info(
+                    self.io.debug(
                         f"Creating platform rule for corresponding copilot rule: {copilot_rule}"
                     )
-
                     rule_arn = self.load_balancer.create_rule(
                         listener_arn,
                         rule["actions"],
@@ -224,7 +223,7 @@ class UpdateALBRules:
             try:
                 self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
                 operation_state.deleted_rules.append(rule)
-                self.io.info(f"Deleted existing rule: {rule_arn}")
+                self.io.debug(f"Deleted existing rule: {rule_arn}")
             except Exception as e:
                 self.io.error(f"Failed to delete existing rule {rule_arn}: {str(e)}")
                 raise
@@ -246,7 +245,6 @@ class UpdateALBRules:
     def _get_service_from_tg(self, rule: dict) -> str:
         target_group_arn = ""
 
-        # TODO normalise this?
         for action in rule["Actions"]:
             if action["Type"] == "forward":
                 target_group_arn = action["TargetGroupArn"]
@@ -254,7 +252,7 @@ class UpdateALBRules:
         if target_group_arn:
             tgs = self.load_balancer.get_target_groups_with_tags([target_group_arn])
 
-            # Feels like I am making a lot of assumptions here so not robust enough
+            # TODO make more robust?
             for tg in tgs:
                 return tg["Tags"].get("copilot-service", "")
         else:
@@ -297,11 +295,8 @@ class UpdateALBRules:
         for rule_arn in operation_state.created_rules:
             try:
                 self.io.debug(f"Rolling back: Deleting created rule {rule_arn}")
-                delete_rollbacks.append(
-                    self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)["Rules"][0][
-                        "RuleArn"
-                    ]
-                )
+                self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
+                delete_rollbacks.append(rule_arn)
             except Exception as e:
                 error_msg = f"Failed to delete rule {rule_arn} during rollback: {str(e)}"
                 rollback_errors.append(error_msg)
@@ -318,7 +313,7 @@ class UpdateALBRules:
                             {"Field": key, "Values": value}
                             for key, value in rule_snapshot["Conditions"].items()
                         ],
-                        priority=rule_snapshot["Priority"],
+                        priority=int(rule_snapshot["Priority"]),
                         tags=[
                             {"Key": key, "Value": value}
                             for key, value in rule_snapshot["Tags"].items()
@@ -335,6 +330,6 @@ class UpdateALBRules:
             raise RollbackException(f"Rollback partially failed: {errors}")
         else:
             self.io.info("Rollback completed successfully")
-            raise PlatformException(
+            self.io.info(
                 f"Rolledback rules by creating: {create_rollbacks} \n and deleting {delete_rollbacks}"
             )

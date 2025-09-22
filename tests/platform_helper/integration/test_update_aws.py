@@ -529,20 +529,24 @@ class MockALBService:
 
 
 @pytest.mark.parametrize(
-    "input_args, expected_results, create_platform_rules, assert_created_rules",
+    "input_args, expected_logs, create_platform_rules, assert_created_rules",
     [
         (
             {
                 "environment": "production",
             },
-            [
-                "Deployment Mode: copilot",
-                "ARN: listener-arn-doesnt-matter",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
-                "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
-            ],
+            {
+                "info": [
+                    "Deployment Mode: copilot",
+                    "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                ],
+                "debug": [
+                    "Listener ARN: listener-arn-doesnt-matter",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
+                ],
+            },
             True,
             False,
         ),
@@ -550,14 +554,18 @@ class MockALBService:
             {
                 "environment": "development",
             },
-            [
-                "Deployment Mode: dual-deploy-copilot-traffic",
-                "ARN: listener-arn-doesnt-matter",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
-                "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
-            ],
+            {
+                "info": [
+                    "Deployment Mode: dual-deploy-copilot-traffic",
+                    "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                ],
+                "debug": [
+                    "Listener ARN: listener-arn-doesnt-matter",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
+                ],
+            },
             True,
             False,
         ),
@@ -565,20 +573,24 @@ class MockALBService:
             {
                 "environment": "test",
             },
-            [
-                "Deployment Mode: dual-deploy-platform-traffic",
-                "ARN: listener-arn-doesnt-matter",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
-            ],
+            {
+                "info": [
+                    "Deployment Mode: dual-deploy-platform-traffic",
+                    "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
+                ],
+                "debug": [
+                    "Listener ARN: listener-arn-doesnt-matter",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
+                    "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                    "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
+                    "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                ],
+            },
             False,
             True,
         ),
@@ -586,24 +598,28 @@ class MockALBService:
             {
                 "environment": "test",
             },
-            [
-                "Deployment Mode: dual-deploy-platform-traffic",
-                "ARN: listener-arn-doesnt-matter",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
-                "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
-                "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
-            ],
+            {
+                "info": [
+                    "Deployment Mode: dual-deploy-platform-traffic",
+                    "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
+                    "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                ],
+                "debug": [
+                    "Listener ARN: listener-arn-doesnt-matter",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
+                    "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                    "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
+                    "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                ],
+            },
             True,  # platform rules exist so deleted and re-created
             True,
         ),
@@ -611,20 +627,24 @@ class MockALBService:
             {
                 "environment": "staging",
             },
-            [
-                "Deployment Mode: platform",
-                "ARN: listener-arn-doesnt-matter",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
-            ],
+            {
+                "info": [
+                    "Deployment Mode: platform",
+                    "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
+                ],
+                "debug": [
+                    "Listener ARN: listener-arn-doesnt-matter",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
+                    "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                    "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
+                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
+                    "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
+                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                ],
+            },
             False,
             True,
         ),
@@ -635,7 +655,7 @@ def test_alb_rules(
     create_valid_platform_config_file,
     mock_application,
     input_args,
-    expected_results,
+    expected_logs,
     create_platform_rules,
     assert_created_rules,
 ):
@@ -690,7 +710,8 @@ def test_alb_rules(
         **input_args,
     )
 
-    mock_io.info.assert_has_calls([call(result) for result in expected_results])
+    mock_io.info.assert_has_calls([call(result) for result in expected_logs["info"]])
+    mock_io.debug.assert_has_calls([call(result) for result in expected_logs["debug"]])
 
     if assert_created_rules:
         mock_boto_elbv2_client.create_rule.assert_has_calls(
@@ -840,18 +861,32 @@ def test_alb_rules_create_with_rollback(
         load_application=load_application,
     )
 
-    with pytest.raises(
-        PlatformException,
-        match="""Rolledback rules by creating: \[\] \n and deleting \['platform-new-web-path-arn'\]""",
-    ):
-        update_aws.update_alb_rules(
-            environment="test",
-        )
+    update_aws.update_alb_rules(
+        environment="test",
+    )
 
     mock_io.info.assert_has_calls(
         [
             call("Deployment Mode: dual-deploy-platform-traffic"),
-            call("ARN: listener-arn-doesnt-matter"),
+            call("Attempting to rollback changes ..."),
+            call("Rollback completed successfully"),
+            call("Rolledback rules by creating: [] \n and deleting ['platform-new-web-path-arn']"),
+        ]
+    )
+
+    mock_io.error.assert_has_calls(
+        [
+            call(
+                "Error during rule update: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
+            )
+        ]
+    )
+
+    mock_io.warn.assert_has_calls([call("Rolling back")])
+
+    mock_io.debug.assert_has_calls(
+        [
+            call("Listener ARN: listener-arn-doesnt-matter"),
             call(
                 "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4"
             ),
@@ -870,8 +905,6 @@ def test_alb_rules_create_with_rollback(
             call(
                 "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6"
             ),
-            call("Attempting to rollback changes ..."),
-            call("Rollback completed successfully"),
         ]
     )
 
@@ -991,21 +1024,32 @@ def test_alb_rules_delete_with_rollback(
         load_application=load_application,
     )
 
-    with pytest.raises(
-        PlatformException,
-        match="""Rolledback rules by creating: \['listener-rule-arn-doesnt-matter-8'\] \n and deleting \[\]""",
-    ):
-        update_aws.update_alb_rules(
-            environment="production",
-        )
+    update_aws.update_alb_rules(
+        environment="production",
+    )
 
     mock_io.info.assert_has_calls(
         [
             call("Deployment Mode: copilot"),
-            call("ARN: listener-arn-doesnt-matter"),
-            call("Deleted existing rule: listener-rule-arn-doesnt-matter-8"),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
+        ]
+    )
+
+    mock_io.error.assert_has_calls(
+        [
+            call(
+                "Error during rule update: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
+            )
+        ]
+    )
+
+    mock_io.warn.assert_has_calls([call("Rolling back")])
+
+    mock_io.debug.assert_has_calls(
+        [
+            call("Listener ARN: listener-arn-doesnt-matter"),
+            call("Deleted existing rule: listener-rule-arn-doesnt-matter-8"),
         ]
     )
 
@@ -1013,7 +1057,7 @@ def test_alb_rules_delete_with_rollback(
         [
             call(
                 ListenerArn="listener-arn-doesnt-matter",
-                Priority="10000",
+                Priority=10000,
                 Conditions=[
                     {"Field": "host-header", "Values": ["web.doesnt-matter"]},
                     {

@@ -135,6 +135,7 @@ class LoadBalancerProvider:
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
+        self.io.debug(f"Load Balancer ARN: {load_balancer_arn}")
         listeners = self.get_listeners_for_load_balancer(load_balancer_arn)
 
         listener_arn = None
