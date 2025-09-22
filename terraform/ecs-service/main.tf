@@ -215,10 +215,6 @@ resource "aws_service_discovery_service" "service_discovery_service" {
 
     routing_policy = "MULTIVALUE"
   }
-
-  health_check_custom_config {
-    failure_threshold = 1
-  }
 }
 
 resource "aws_kms_key" "ecs_service_log_group_kms_key" {
