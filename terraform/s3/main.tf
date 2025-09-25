@@ -322,26 +322,14 @@ resource "aws_guardduty_malware_protection_plan" "this" {
   actions {
     tagging {
       status = "ENABLED"
-      tags = {
-        MalwareScanStatus = "Scanned"
-      }
     }
   }
-
-  tags = local.tags
 
   depends_on = [
     aws_iam_role.guardduty_malware_protection,
     aws_s3_bucket.this,
     aws_kms_key.kms-key
   ]
-}
-
-resource "aws_guardduty_malware_protection_plan_attachment" "this" {
-  count = try(var.config.guardduty_malware_protection.enabled, false) ? 1 : 0
-
-  detector_id                = data.aws_guardduty_detector.existing[0].id
-  malware_protection_plan_id = aws_guardduty_malware_protection_plan.this[0].id
 }
 
 // Cloudfront resources for serving static content
