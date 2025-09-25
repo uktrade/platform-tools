@@ -8,6 +8,7 @@ my-rds-db:
   environments:
     default:
       plan: small-ha
+      version: 15
       volume_size: 700
       snapshot_id: test-snapshot-id
       multi_az: false
