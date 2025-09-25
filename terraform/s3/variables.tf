@@ -63,6 +63,12 @@ variable "config" {
       content_type = optional(string)
     })))
 
+    # GuardDuty malware protection configuration
+    guardduty_malware_protection = optional(object({
+      enabled        = optional(bool, true)
+      object_prefixes = optional(list(string), [])
+    }))
+
     # S3 to S3 data migration
     data_migration = optional(object({
       # `import` is a legacy variable and will be removed in the future. Use `import_sources` instead.
@@ -93,6 +99,14 @@ variable "config" {
       for k, v in var.config.cross_environment_service_access : (can(regex("^[\\w\\-\\.]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$", v.cyber_sign_off_by)))
     ])
     error_message = "All instances of cross_environment_service_access must be approved by cyber, and a cyber rep's email address entered."
+  }
+
+  validation {
+    condition = var.config.guardduty_malware_protection == null ? true : alltrue([
+      for prefix in coalesce(var.config.guardduty_malware_protection.object_prefixes, []) :
+      can(regex("^[a-zA-Z0-9!_.*'()-]+(/[a-zA-Z0-9!_.*'()-]+)*$", prefix))
+    ])
+    error_message = "GuardDuty object_prefixes must be valid S3 prefixes."
   }
 
 }

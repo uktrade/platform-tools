@@ -249,6 +249,101 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
   restrict_public_buckets = true
 }
 
+resource "aws_iam_role" "guardduty_malware_protection" {
+  count = try(var.config.guardduty_malware_protection.enabled, false) ? 1 : 0
+
+  name = "${var.application}-${var.environment}-guardduty-malware-protection"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "guardduty.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy" "guardduty_malware_protection_policy" {
+  count = try(var.config.guardduty_malware_protection.enabled, false) ? 1 : 0
+  name  = "${var.application}-${var.environment}-guardduty-malware-policy"
+  role  = aws_iam_role.guardduty_malware_protection[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          aws_s3_bucket.this.arn,
+          "${aws_s3_bucket.this.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kms:Decrypt",
+          "kms:GenerateDataKey"
+        ]
+        Resource = aws_kms_key.kms-key[0].arn
+        Condition = {
+          StringEquals = {
+            "kms:EncryptionContext:aws:s3:arn" = "${aws_s3_bucket.this.arn}/*"
+          }
+        }
+      }
+    ]
+  })
+}
+
+data "aws_guardduty_detector" "existing" {
+  count = try(var.config.guardduty_malware_protection.enabled, false) ? 1 : 0
+}
+
+resource "aws_guardduty_malware_protection_plan" "this" {
+  count = try(var.config.guardduty_malware_protection.enabled, false) ? 1 : 0
+
+  role = aws_iam_role.guardduty_malware_protection[0].arn
+
+  protected_resource {
+    s3_bucket {
+      bucket_name     = aws_s3_bucket.this.id
+      object_prefixes = try(var.config.guardduty_malware_protection.object_prefixes, [])
+    }
+  }
+
+  actions {
+    tagging {
+      status = "ENABLED"
+      tags = {
+        MalwareScanStatus = "Scanned"
+      }
+    }
+  }
+
+  tags = local.tags
+
+  depends_on = [
+    aws_iam_role.guardduty_malware_protection,
+    aws_s3_bucket.this,
+    aws_kms_key.kms-key
+  ]
+}
+
+resource "aws_guardduty_malware_protection_plan_attachment" "this" {
+  count = try(var.config.guardduty_malware_protection.enabled, false) ? 1 : 0
+
+  detector_id                = data.aws_guardduty_detector.existing[0].id
+  malware_protection_plan_id = aws_guardduty_malware_protection_plan.this[0].id
+}
+
 // Cloudfront resources for serving static content
 
 resource "aws_cloudfront_origin_access_control" "oac" {
