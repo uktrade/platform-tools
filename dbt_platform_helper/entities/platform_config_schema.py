@@ -292,6 +292,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __postgres_schema() -> dict:
         _valid_postgres_plans = Or(*plan_manager.get_plan_names("postgres"))
+        _valid_postgres_version = Or(int, float)
 
         # TODO: DBTP-1943: Move to Postgres provider?
         _valid_postgres_storage_types = Or("gp2", "gp3", "io1", "io2")
@@ -304,11 +305,12 @@ class PlatformConfigSchema:
 
         return {
             "type": "postgres",
-            "version": (Or(int, float)),
+            Optional("version"): _valid_postgres_version,
             Optional("deletion_policy"): PlatformConfigSchema.__valid_postgres_deletion_policy(),
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("plan"): _valid_postgres_plans,
+                    Optional("version"): (Or(int, float)),
                     Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
                     Optional("iops"): PlatformConfigSchema.is_integer_between(1000, 9950),
                     Optional("snapshot_id"): str,

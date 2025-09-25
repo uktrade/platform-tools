@@ -120,7 +120,6 @@ def test_validate_addons_success(addons_file):
             "postgres_addons_bad_data.yml",
             {
                 "my-rds-db-invalid-param": r"Wrong key 'im_invalid' in",
-                "my-rds-db-missing-version": r"Missing key: 'version'",
                 "my-rds-db-bad-deletion-policy": r"did not validate 77",
                 "my-rds-db-bad-plan": r"'environments'.*'default'.*'plan'.*does not match 'cunning'",
                 "my-rds-db-volume-too-small": r"environments'.*'default'.*'volume_size'.*should be an integer between 20 and 10000",
