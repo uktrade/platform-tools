@@ -117,15 +117,12 @@ def mock_application():
         from dbt_platform_helper.utils.application import Environment
         from dbt_platform_helper.utils.application import Service
 
-        sessions = {
-            "000000000": boto3,
-            "111111111": boto3,
-            "222222222": boto3,
-        }
+        sessions = {"000000000": boto3, "111111111": boto3, "222222222": boto3, "333333333": boto3}
         application = Application("test-application")
         application.environments["development"] = Environment("development", "000000000", sessions)
         application.environments["staging"] = Environment("staging", "111111111", sessions)
         application.environments["production"] = Environment("production", "222222222", sessions)
+        application.environments["test"] = Environment("test", "333333333", sessions)
         application.services["web"] = Service("web", "Load Balanced Web Service")
 
         load_application.return_value = application
@@ -413,7 +410,7 @@ def valid_platform_config():
 schema_version: {PLATFORM_CONFIG_SCHEMA_VERSION}
 default_versions: 
   platform-helper: 14.0.0
-application: test-app
+application: test-application
 default_versions: 
     platform-helper: 10.2.0
 environments:

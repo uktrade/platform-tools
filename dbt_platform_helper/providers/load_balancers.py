@@ -1,3 +1,6 @@
+from typing import Dict
+from typing import List
+
 from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
@@ -10,6 +13,17 @@ def normalise_to_cidr(ip: str):
         return ip
     SINGLE_IPV4_CIDR_PREFIX_LENGTH = "32"
     return f"{ip}/{SINGLE_IPV4_CIDR_PREFIX_LENGTH}"
+
+
+class ALBDataNormaliser:
+
+    @staticmethod
+    def tags_to_dict(tags: List[Dict[str, str]]) -> Dict[str, str]:
+        return {tag.get("Key", ""): tag.get("Value", "") for tag in tags}
+
+    @staticmethod
+    def conditions_to_dict(conditions: List[Dict[str, List[str]]]) -> Dict[str, List[str]]:
+        return {condition.get("Field", ""): condition.get("Values", "") for condition in conditions}
 
 
 class LoadBalancerProvider:
@@ -69,6 +83,29 @@ class LoadBalancerProvider:
 
         return target_group_arn
 
+    def get_target_groups(self, target_group_arns: List[str]) -> List[dict]:
+        tgs = []
+        paginator = self.evlb_client.get_paginator("describe_target_groups")
+        page_iterator = paginator.paginate(TargetGroupArns=target_group_arns)
+        for page in page_iterator:
+            tgs.extend(page["TargetGroups"])
+
+        return tgs
+
+    def get_target_groups_with_tags(
+        self, target_group_arns: List[str], normalise: bool = True
+    ) -> List[dict]:
+        target_groups = self.get_target_groups(target_group_arns)
+
+        tags = self.get_resources_tag_descriptions(target_groups, "TargetGroupArn")
+
+        tgs_with_tags = self.merge_in_tags_by_resource_arn(target_groups, tags, "TargetGroupArn")
+
+        if normalise:
+            for tg in tgs_with_tags:
+                tg["Tags"] = ALBDataNormaliser.tags_to_dict(tg["Tags"])
+        return tgs_with_tags
+
     def get_https_certificate_for_listener(self, listener_arn: str, env: str):
         certificates = []
         paginator = self.evlb_client.get_paginator("describe_listener_certificates")
@@ -87,7 +124,7 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         return self.get_https_certificate_for_listener(listener_arn, env)
 
-    def get_listeners_for_load_balancer(self, load_balancer_arn):
+    def get_listeners_for_load_balancer(self, load_balancer_arn: str) -> List[dict]:
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
         page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
@@ -98,6 +135,7 @@ class LoadBalancerProvider:
 
     def get_https_listener_for_application(self, app: str, env: str) -> str:
         load_balancer_arn = self.get_load_balancer_for_application(app, env)
+        self.io.debug(f"Load Balancer ARN: {load_balancer_arn}")
         listeners = self.get_listeners_for_load_balancer(load_balancer_arn)
 
         listener_arn = None
@@ -112,7 +150,7 @@ class LoadBalancerProvider:
 
         return listener_arn
 
-    def get_load_balancers(self):
+    def get_load_balancers(self) -> List[dict]:
         load_balancers = []
         paginator = self.evlb_client.get_paginator("describe_load_balancers")
         page_iterator = paginator.paginate()
@@ -173,7 +211,37 @@ class LoadBalancerProvider:
     def get_rules_tag_descriptions_by_listener_arn(self, listener_arn: str) -> list:
         rules = self.get_listener_rules_by_listener_arn(listener_arn)
 
-        return self.get_rules_tag_descriptions(rules)
+        return self.get_resources_tag_descriptions(rules)
+
+    def merge_in_tags_by_resource_arn(
+        self,
+        resources: List[dict],
+        tag_descriptions: List[dict],
+        resources_identifier: str = "RuleArn",
+    ):
+        tags_by_resource_arn = {
+            rule_tags.get("ResourceArn"): rule_tags for rule_tags in tag_descriptions if rule_tags
+        }
+        for resource in resources:
+            tags = tags_by_resource_arn[resource[resources_identifier]]
+            resource.update(tags)
+        return resources
+
+    def get_rules_with_tags_by_listener_arn(
+        self, listener_arn: str, normalise: bool = True
+    ) -> list:
+        rules = self.get_listener_rules_by_listener_arn(listener_arn)
+
+        tags = self.get_resources_tag_descriptions(rules)
+
+        rules_with_tags = self.merge_in_tags_by_resource_arn(rules, tags)
+
+        if normalise:
+            for rule in rules_with_tags:
+                rule["Conditions"] = ALBDataNormaliser.conditions_to_dict(rule["Conditions"])
+                rule["Tags"] = ALBDataNormaliser.tags_to_dict(rule["Tags"])
+
+        return rules_with_tags
 
     def get_listener_rules_by_listener_arn(self, listener_arn: str) -> list:
         rules = []
@@ -184,13 +252,15 @@ class LoadBalancerProvider:
 
         return rules
 
-    def get_rules_tag_descriptions(self, rules: list) -> list:
+    def get_resources_tag_descriptions(
+        self, resources: list, resource_identifier: str = "RuleArn"
+    ) -> list:
         tag_descriptions = []
         chunk_size = 20
 
-        for i in range(0, len(rules), chunk_size):
-            chunk = rules[i : i + chunk_size]
-            resource_arns = [r["RuleArn"] for r in chunk]
+        for i in range(0, len(resources), chunk_size):
+            chunk = resources[i : i + chunk_size]
+            resource_arns = [r[resource_identifier] for r in chunk]
             response = self.evlb_client.describe_tags(
                 ResourceArns=resource_arns
             )  # describe_tags cannot be paginated - 04/04/2025
@@ -304,6 +374,9 @@ class LoadBalancerProvider:
                     deleted_rules.append(description)
 
         return deleted_rules
+
+    def delete_listener_rule_by_resource_arn(self, resource_arn: str) -> list:
+        return self.evlb_client.delete_rule(RuleArn=resource_arn)
 
 
 class LoadBalancerException(PlatformException):

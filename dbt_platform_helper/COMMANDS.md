@@ -24,6 +24,8 @@
     - [platform-helper generate](#platform-helper-generate)
     - [platform-helper internal](#platform-helper-internal)
         - [platform-helper internal migrate-service-manifests](#platform-helper-internal-migrate-service-manifests)
+        - [platform-helper internal alb](#platform-helper-internal-alb)
+            - [platform-helper internal alb update-rules](#platform-helper-internal-alb-update-rules)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -554,7 +556,7 @@ platform-helper generate
 ## Usage
 
 ```
-platform-helper internal migrate-service-manifests 
+platform-helper internal (migrate-service-manifests|alb) 
 ```
 
 ## Options
@@ -564,6 +566,7 @@ platform-helper internal migrate-service-manifests
 
 ## Commands
 
+- [`alb` ↪](#platform-helper-internal-alb)
 - [`migrate-service-manifests` ↪](#platform-helper-internal-migrate-service-manifests)
 
 # platform-helper internal migrate-service-manifests
@@ -579,6 +582,47 @@ platform-helper internal migrate-service-manifests
 ```
 
 ## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal alb
+
+[↩ Parent](#platform-helper-internal)
+
+    Load Balancer related commands.
+
+## Usage
+
+```
+platform-helper internal alb update-rules 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`update-rules` ↪](#platform-helper-internal-alb-update-rules)
+
+# platform-helper internal alb update-rules
+
+[↩ Parent](#platform-helper-internal-alb)
+
+    Update alb rules based on service-deployment-mode for a given
+    environment.
+
+## Usage
+
+```
+platform-helper internal alb update-rules --env <environment> 
+```
+
+## Options
+
+- `--env <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
