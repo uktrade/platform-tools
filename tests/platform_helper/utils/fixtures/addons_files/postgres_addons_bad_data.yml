@@ -5,6 +5,12 @@ my-rds-db-invalid-param:
   version: 14.4
   im_invalid: true
 
+my-rds-apply-immediately-should-be-bool:
+  type: redis
+  environments:
+    default:
+      apply_immediately: "yes"
+
 my-rds-db-bad-deletion-policy:
   type: postgres
   version: 14.4

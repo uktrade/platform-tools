@@ -20,6 +20,7 @@ variable "env_config" {
 
 variable "config" {
   type = object({
+    apply_immediately     = optional(bool)
     version               = number
     deletion_protection   = optional(bool)
     volume_size           = optional(number)

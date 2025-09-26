@@ -309,6 +309,7 @@ class PlatformConfigSchema:
             Optional("deletion_policy"): PlatformConfigSchema.__valid_postgres_deletion_policy(),
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
+                    Optional("apply_immediately"): bool,
                     Optional("plan"): _valid_postgres_plans,
                     Optional("version"): (Or(int, float)),
                     Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
