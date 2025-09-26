@@ -168,7 +168,7 @@ phases:
         
           cd "${CODEBUILD_SRC_DIR}"
           local_ecs_service_path=../../../../platform-tools/terraform/ecs-service
-          TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
+          TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} IMAGE_TAG=${DEPLOY_TAG} platform-helper service generate --environment "${ENVIRONMENT}" --name "${SERVICE}"
           cd "${CODEBUILD_SRC_DIR}/terraform/services/${ENVIRONMENT}/${SERVICE}"
           terraform init
           terraform apply -auto-approve
