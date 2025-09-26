@@ -17,6 +17,7 @@ my-rds-db:
     dev:
       deletion_policy: "Delete"
       deletion_protection: false
+      apply_immediately: true
   database_copy:
     - from: prod
       to: hotfix
