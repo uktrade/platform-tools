@@ -261,7 +261,7 @@ class ECS:
                 executionRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",
                 networkMode="awsvpc",
                 containerDefinitions=container_definitions,
-                volumes=[{"name": "temporary-fs", "host": {}}],
+                volumes=[{"name": "temporary-fs", "host": {}}] + service_model.volumes,
                 placementConstraints=[],
                 requiresCompatibilities=["FARGATE"],
                 cpu=str(service_model.cpu),
