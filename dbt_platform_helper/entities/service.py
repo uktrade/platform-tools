@@ -44,6 +44,12 @@ class Sidecar(BaseModel):
     essential: Optional[bool] = Field(default=None)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
+    mountpoints: Optional[Dict[str, str]] = Field(default=None)
+
+
+class Volume(BaseModel):
+    name: str = Field()
+    host: Optional[str] = Field(default=None)
 
 
 class SidecarOverride(BaseModel):
@@ -52,6 +58,7 @@ class SidecarOverride(BaseModel):
     essential: Optional[bool] = Field(default=None)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
+    mountpoints: Optional[Dict[str, str]] = Field(default=None)
 
 
 class Image(BaseModel):
@@ -79,6 +86,7 @@ class ServiceConfigEnvironmentOverride(BaseModel):
     http: Optional[Http] = Field(default=None)
     sidecars: Optional[Dict[str, SidecarOverride]] = Field(default=None)
     image: Optional[Image] = Field(default=None)
+    mountpoints: Optional[Dict[str, str]] = Field(default=None)
 
     cpu: Optional[int] = Field(default=None)
     memory: Optional[int] = Field(default=None)
@@ -90,6 +98,7 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
+    volumes: Optional[list[Volume]] = Field(default=None)
 
 
 class ServiceConfig(BaseModel):
@@ -100,6 +109,7 @@ class ServiceConfig(BaseModel):
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
     entrypoint: list[str] = Field(default=None)
+    mountpoints: Optional[Dict[str, str]] = Field(default=None)
 
     cpu: int = Field()
     memory: int = Field()
@@ -113,6 +123,7 @@ class ServiceConfig(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(default=None)
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(default=None)
+    volumes: Optional[list[Volume]] = Field(default=None)
 
     # Class based variable used when handling the obejct
     local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
