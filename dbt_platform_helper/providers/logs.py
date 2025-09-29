@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -11,19 +10,6 @@ class LogsProvider:
 
     def __init__(self, client: boto3.client):
         self.client = client
-
-    def filter_log_events(
-        self, log_group: str, log_streams: list[str], start_time: int
-    ) -> dict[str, Any]:
-        """Returns new log events that have occured since the start_time
-        given."""
-
-        response = self.client.filter_log_events(
-            logGroupName=log_group,
-            logStreamNames=log_streams,
-            startTime=start_time,
-        )
-        return response
 
     def check_log_streams_present(self, log_group: str, expected_log_streams: list[str]) -> bool:
         """
