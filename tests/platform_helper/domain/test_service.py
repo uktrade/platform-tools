@@ -181,15 +181,7 @@ def test_service_deploy_success_with_override_tag(yaml_file_provider):
         task_ids=["task1", "task2"],
     )
     monitor_ecs_deployment.assert_called_once_with(
-        application="myapp",
-        environment="dev",
-        service="web",
-        log_streams=[
-            "platform/web/task1",
-            "platform/datadog/task1",
-            "platform/web/task2",
-            "platform/datadog/task2",
-        ],
+        application="myapp", environment="dev", service="web"
     )
 
 
@@ -270,6 +262,22 @@ def test_get_primary_deployment_id_raises_exception():
     assert "Unable to find primary ECS deployment" in str(e.value)
 
 
+def test_build_cloudwatch_live_tail_url():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+
+    cloudwatch_url = service_manager._build_cloudwatch_live_tail_url(
+        account_id="111222333",
+        log_group="/platform/ecs/service/myapp/dev/web",
+        log_streams=["stream1/test", "stream2/test"],
+    )
+
+    assert (
+        cloudwatch_url
+        == "https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:live-tail$3FlogGroupArns$3D~(~'arn*3aaws*3alogs*3aeu-west-2*3a111222333*3alog-group*3a*2fplatform*2fecs*2fservice*2fmyapp*2fdev*2fweb*3a*2a)$26logStreamNames$3D~(~'stream1*2ftest~'stream2*2ftest)"
+    )
+
+
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
 def test_fetch_ecs_task_ids_times_out(time_sleep):
     mocks = ServiceManagerMocks()
@@ -306,9 +314,7 @@ def test_monitor_ecs_deployment_success(time_sleep):
 
     # Fake time: 0 = deadline starts, 1 = loop once
     with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
-        deployment_success = service_manager._monitor_ecs_deployment(
-            "myapp", "dev", "web", ["platform/web/task1234"]
-        )
+        deployment_success = service_manager._monitor_ecs_deployment("myapp", "dev", "web")
     assert deployment_success is True
 
 
@@ -323,9 +329,7 @@ def test_monitor_ecs_deployment_failed(time_sleep):
     # Fake time: 0 = deadline starts, 1 = loop once
     with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
         with pytest.raises(PlatformException) as e:
-            service_manager._monitor_ecs_deployment(
-                "myapp", "dev", "web", ["platform/web/task1234"]
-            )
+            service_manager._monitor_ecs_deployment("myapp", "dev", "web")
     assert "ECS deployment failed: There was an error" in str(e.value)
 
 
@@ -340,7 +344,5 @@ def test_monitor_ecs_deployment_raises_exception(time_sleep):
     # Fake time: 0 = deadline starts, 1 = loop once
     with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
         with pytest.raises(PlatformException) as e:
-            service_manager._monitor_ecs_deployment(
-                "myapp", "dev", "web", ["platform/web/task1234"]
-            )
+            service_manager._monitor_ecs_deployment("myapp", "dev", "web")
     assert "Failed to fetch ECS rollout state: An exception" in str(e.value)
