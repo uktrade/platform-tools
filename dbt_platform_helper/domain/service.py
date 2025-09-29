@@ -41,7 +41,7 @@ from dbt_platform_helper.utils.deep_merge import deep_merge
 
 SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service"]
 DEPLOYMENT_TIMEOUT_SECONDS = 600
-POLL_INTERVAL_SECONDS = 2
+POLL_INTERVAL_SECONDS = 5
 
 # TODO add schema version to service config
 
@@ -279,7 +279,7 @@ class ServiceManager:
         )
 
         self.io.info(
-            f"Detected {len(task_ids)} new ECS task(s) with the following ID(s) {task_ids}."
+            f"Detected {len(task_ids)} new ECS task(s) with the following ID(s) {task_ids}.\n"
         )
 
         container_names = self.ecs_provider.get_container_names_from_ecs_tasks(
@@ -291,12 +291,42 @@ class ServiceManager:
             task_ids=task_ids, container_names=container_names, stream_prefix="platform"
         )
 
+        log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
+        self.logs_provider.check_log_streams_present(
+            log_group=log_group, expected_log_streams=log_streams
+        )
+
+        cloudwatch_url = self._build_cloudwatch_live_tail_url(
+            account_id=account_id, log_group=log_group, log_streams=log_streams
+        )
+        self.io.info(f"View real-time deployment logs in the AWS Console: \n{cloudwatch_url}\n")
+
         self._monitor_ecs_deployment(
             application=application,
             environment=environment,
             service=service_model.name,
-            log_streams=log_streams,
         )
+
+    @staticmethod
+    def _build_cloudwatch_live_tail_url(
+        account_id: str, log_group: str, log_streams: list[str]
+    ) -> str:
+        """Build CloudWatch live tail URL with log group and log streams pre-
+        populated in Rison format."""
+
+        log_group_rison = log_group.replace("/", "*2f")
+
+        delimiter = "~'"
+        log_streams_rison = ""
+        for stream in log_streams:
+            stream_rison = stream.replace("/", "*2f")
+            log_streams_rison = log_streams_rison + f"{delimiter}{stream_rison}"
+
+        base = "https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:live-tail"
+        log_group_fragment = f"$3FlogGroupArns$3D~(~'arn*3aaws*3alogs*3aeu-west-2*3a{account_id}*3alog-group*3a{log_group_rison}*3a*2a)"
+        log_streams_fragment = f"$26logStreamNames$3D~({log_streams_rison})"
+
+        return base + log_group_fragment + log_streams_fragment
 
     @staticmethod
     def _build_log_stream_names(
@@ -307,7 +337,10 @@ class ServiceManager:
         log_streams = []
         for id in task_ids:
             for name in container_names:
-                log_streams.append(f"{stream_prefix}/{name}/{id}")
+                if not name.startswith(
+                    "ecs-service-connect"
+                ):  # ECS Service Connect container logs are noisy and not relevant in most use cases
+                    log_streams.append(f"{stream_prefix}/{name}/{id}")
 
         return log_streams
 
@@ -353,45 +386,17 @@ class ServiceManager:
             task_ids.append(arn.rsplit("/", 1)[-1])
         return task_ids
 
-    def _monitor_ecs_deployment(
-        self, application: str, environment: str, service: str, log_streams: list[str]
-    ) -> bool:
-        """
-        Loop that prints new CloudWatch log lines for this service.
-
-        Keeps going until rollout state is COMPLETED/FAILED or else times out.
-        """
+    def _monitor_ecs_deployment(self, application: str, environment: str, service: str) -> bool:
+        """Loop until ECS rollout state is COMPLETED/FAILED or else times
+        out."""
 
         cluster_name = f"{application}-{environment}-cluster"
         ecs_service_name = f"{application}-{environment}-{service}"
-        log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
-
+        start_time = time.time()
         timeout_seconds = DEPLOYMENT_TIMEOUT_SECONDS
         deadline = time.monotonic() + timeout_seconds  # 10 minute deadline before timing out
-        start_time_ms = int(time.time() * 1000)
-
-        self.io.info(
-            f"\nTailing CloudWatch logs for ECS deployment to service '{ecs_service_name}' ...\n"
-        )
-
-        self.logs_provider.check_log_streams_present(
-            log_group=log_group, expected_log_streams=log_streams
-        )
 
         while time.monotonic() < deadline:
-            response = self.logs_provider.filter_log_events(
-                log_group=log_group, log_streams=log_streams, start_time=start_time_ms
-            )
-
-            for event in response.get("events", []):
-                timestamp = datetime.fromtimestamp(event["timestamp"] / 1000)
-                self.io.info(
-                    f"[{event['logStreamName']}] [{timestamp}] {event['message'].rstrip()}"
-                )
-                start_time_ms = (
-                    event["timestamp"] + 1
-                )  # move start_time_ms forward to avoid reprinting the same log
-
             try:
                 state, reason = self.ecs_provider.get_service_rollout_state(
                     cluster_name=cluster_name, service_name=ecs_service_name
@@ -405,6 +410,8 @@ class ServiceManager:
             if state == "FAILED":
                 raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
 
+            elapsed_time = int(time.time() - start_time)
+            self.io.info(f"Deployment in progress {elapsed_time}s")
             time.sleep(POLL_INTERVAL_SECONDS)
 
         raise PlatformException(
