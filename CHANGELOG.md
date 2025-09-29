@@ -1,5 +1,20 @@
 # Changelog
 
+## [15.10.0](https://github.com/uktrade/platform-tools/compare/15.9.0...15.10.0) (2025-09-29)
+
+
+### Features
+
+* Add `apply_immediately` PostgreSQL configuration (DBTP-2351) ([#1047](https://github.com/uktrade/platform-tools/issues/1047)) ([ffcc093](https://github.com/uktrade/platform-tools/commit/ffcc093d183df0cd77c3c1dc5ca2d29606f4b913))
+* Migrate copilot manifests (DBTP-2300) ([#1038](https://github.com/uktrade/platform-tools/issues/1038)) ([77105ce](https://github.com/uktrade/platform-tools/commit/77105cea504d0fcd07dabf13ab0c75a1f380605c))
+* Remove unused env_root property (DBTP-2302) ([#1040](https://github.com/uktrade/platform-tools/issues/1040)) ([7b2f1ed](https://github.com/uktrade/platform-tools/commit/7b2f1ed749b79614ed86ab81d5447a20723f7ac8))
+* Specify environment specific PostgreSQL versions (DBTP-2351) ([#1046](https://github.com/uktrade/platform-tools/issues/1046)) ([fd49007](https://github.com/uktrade/platform-tools/commit/fd490079064f90a05c39aaa55ececa969132907e))
+
+
+### Dependencies
+
+* Bump jinja2-simple-tags from 0.5.0 to 0.6.1 ([#1031](https://github.com/uktrade/platform-tools/issues/1031)) ([ae588f6](https://github.com/uktrade/platform-tools/commit/ae588f656f2a0af002b359da47f52fb25b1cb884))
+
 ## [15.9.0](https://github.com/uktrade/platform-tools/compare/15.8.0...15.9.0) (2025-09-09)
 
 
