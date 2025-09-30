@@ -270,7 +270,7 @@ class ECS:
                     {"key": "application", "value": application},
                     {"key": "environment", "value": environment},
                     {"key": "service", "value": service_model.name},
-                    {"key": "Managed-by", "value": "Platform Helper"},
+                    {"key": "managed-by", "value": "Platform Helper"},
                 ],
             )
             return task_definition_response["taskDefinition"]["taskDefinitionArn"]
