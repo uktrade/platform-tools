@@ -22,7 +22,6 @@ from dbt_platform_helper.domain.terraform_environment import (
 )
 from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.config import ConfigLoader
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
@@ -50,7 +49,6 @@ class ServiceManager:
     def __init__(
         self,
         config_provider=ConfigProvider(ConfigValidator()),
-        loader: ConfigLoader = ConfigLoader(),
         io: ClickIOProvider = ClickIOProvider(),
         file_provider=YamlFileProvider,
         manifest_provider: TerraformManifestProvider = None,
@@ -64,7 +62,6 @@ class ServiceManager:
 
         self.file_provider = file_provider
         self.config_provider = config_provider
-        self.loader = loader
         self.io = io
         self.manifest_provider = manifest_provider or TerraformManifestProvider()
         self.platform_helper_version_override = (
@@ -117,12 +114,7 @@ class ServiceManager:
                 ],
                 replacements=[application.name, environment],
             )
-            service_models.append(
-                self.loader.load_into_model(
-                    input=file_content,
-                    model=ServiceConfig,
-                )
-            )
+            service_models.append(ServiceConfig(**file_content))
 
         platform_helper_version_for_template: str = (
             self.platform_helper_version_override
@@ -228,7 +220,7 @@ class ServiceManager:
             f"terraform/services/{environment}/{service}/service-config.yml"
         )
 
-        service_model = self.loader.load_into_model(service_config, ServiceConfig)
+        service_model = ServiceConfig(**service_config)
         application_obj = self.load_application(app=application)
         application_envs = application_obj.environments
         account_id = application_envs.get(environment).account_id
@@ -254,7 +246,10 @@ class ServiceManager:
         self.io.info(f"Task definition successfully registered with ARN '{task_def_arn}'.\n")
 
         service_response = self.ecs_provider.update_service(
-            service_model, task_def_arn, environment, application
+            service_model=service_model,
+            task_def_arn=task_def_arn,
+            environment=environment,
+            application=application,
         )
 
         self.io.info(f"Successfully updated ECS service '{service_response['serviceName']}'.\n")

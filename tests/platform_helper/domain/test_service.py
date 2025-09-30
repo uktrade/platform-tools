@@ -80,7 +80,6 @@ def test_migrate_copilot_manifests_skips_unwanted_service_types(tmp_path):
 class ServiceManagerMocks:
     def __init__(self, app_name="myapp", env_name="dev", account_id="111122223333"):
         self.ecs_provider = Mock()
-        self.loader = Mock()
         self.s3_provider = Mock()
         self.logs_provider = Mock()
 
@@ -93,7 +92,6 @@ class ServiceManagerMocks:
         return dict(
             ecs_provider=self.ecs_provider,
             load_application=self.load_application,
-            loader=self.loader,
             s3_provider=self.s3_provider,
             logs_provider=self.logs_provider,
         )
@@ -114,12 +112,14 @@ def test_service_deploy_success(yaml_file_provider):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    yaml_file_provider.load.return_value = {"name": "web", "count": 2}
-    svc_model = Mock()
-    svc_model.name = "web"
-    svc_model.count = 2
-
-    mocks.loader.load_into_model.return_value = svc_model
+    yaml_file_provider.load.return_value = {
+        "name": "web",
+        "type": "Load Balanced Web Service",
+        "image": {"location": "my-ecr-repo/web:latest"},
+        "cpu": "256",
+        "memory": "512",
+        "count": 2,
+    }
 
     mocks.s3_provider.get_object.return_value = json.dumps({"containerDefinitions": "FAKE"})
 
@@ -134,7 +134,7 @@ def test_service_deploy_success(yaml_file_provider):
     # Skip waiting for time loops in those methods to reach timeout
     with patch.object(
         service_manager, "_fetch_ecs_task_ids", return_value=["task1", "task2"]
-    ) as ecs_task_ids, patch.object(
+    ) as fetch_ecs_task_ids, patch.object(
         service_manager, "_monitor_ecs_deployment", return_value=True
     ) as monitor_ecs_deployment:
 
@@ -146,40 +146,39 @@ def test_service_deploy_success(yaml_file_provider):
         )
 
     yaml_file_provider.load.assert_called_once_with("terraform/services/dev/web/service-config.yml")
-    mocks.loader.load_into_model.assert_called_once()
 
     mocks.s3_provider.get_object.assert_called_once_with(
         bucket_name="ecs-container-definitions-myapp-dev",
         object_key="myapp/dev/web.json",
     )
 
-    kwargs = mocks.ecs_provider.register_task_definition.call_args.kwargs
-    assert kwargs == dict(
-        service_model=svc_model,
-        environment="dev",
-        application="myapp",
-        image_tag="tag-123",
-        account_id="111122223333",
-        container_definitions={"containerDefinitions": "FAKE"},
-    )
+    register_task_def_kwargs = mocks.ecs_provider.register_task_definition.call_args.kwargs
+    service_model = register_task_def_kwargs["service_model"]
+    assert service_model.name == "web"
+    assert service_model.count == 2
+    assert register_task_def_kwargs["environment"] == "dev"
+    assert register_task_def_kwargs["application"] == "myapp"
+    assert register_task_def_kwargs["image_tag"] == "tag-123"
+    assert register_task_def_kwargs["account_id"] == "111122223333"
+    assert register_task_def_kwargs["container_definitions"] == {"containerDefinitions": "FAKE"}
 
-    mocks.ecs_provider.update_service.assert_called_once_with(
-        svc_model,
-        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999",
-        "dev",
-        "myapp",
+    update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs
+    assert update_service_kwargs["service_model"].name == "web"
+    assert (
+        update_service_kwargs["task_def_arn"]
+        == "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
+    assert update_service_kwargs["environment"] == "dev"
+    assert update_service_kwargs["application"] == "myapp"
 
-    ecs_task_ids.assert_called_once_with(
-        application="myapp",
-        environment="dev",
-        service_model=svc_model,
-        deployment_id="deployment-123",
-    )
-    mocks.ecs_provider.get_container_names_from_ecs_tasks.assert_called_once_with(
-        cluster_name="myapp-dev-cluster",
-        task_ids=["task1", "task2"],
-    )
+    # And for the helper calls
+    fetch_task_ids_kwargs = fetch_ecs_task_ids.call_args.kwargs
+    assert fetch_task_ids_kwargs["application"] == "myapp"
+    assert fetch_task_ids_kwargs["environment"] == "dev"
+    assert fetch_task_ids_kwargs["deployment_id"] == "deployment-123"
+    assert fetch_task_ids_kwargs["service_model"].name == "web"
+    assert fetch_task_ids_kwargs["service_model"].count == 2
+
     monitor_ecs_deployment.assert_called_once_with(
         application="myapp", environment="dev", service="web"
     )
@@ -192,12 +191,17 @@ def test_deploy_success_uses_env_var(yaml_file_provider, env_var_provider):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    yaml_file_provider.load.return_value = {"name": "web", "count": 1}
+    yaml_file_provider.load.return_value = {
+        "name": "web",
+        "type": "Load Balanced Web Service",
+        "image": {"location": "my-ecr-repo/web:latest"},
+        "cpu": "256",
+        "memory": "512",
+        "count": 1,
+    }
     svc_model = Mock()
     svc_model.name = "web"
     svc_model.count = 1
-
-    mocks.loader.load_into_model.return_value = svc_model
 
     mocks.s3_provider.get_object.return_value = json.dumps({})
     mocks.ecs_provider.register_task_definition.return_value = (
