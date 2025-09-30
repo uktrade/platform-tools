@@ -110,7 +110,7 @@ def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id=
 
 
 @patch("dbt_platform_helper.domain.service.YamlFileProvider")
-def test_service_deploy_success_with_override_tag(yaml_file_provider):
+def test_service_deploy_success(yaml_file_provider):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
@@ -142,7 +142,7 @@ def test_service_deploy_success_with_override_tag(yaml_file_provider):
             service="web",
             environment="dev",
             application="myapp",
-            image_tag_override="tag-123",
+            image_tag="tag-123",
         )
 
     yaml_file_provider.load.assert_called_once_with("terraform/services/dev/web/service-config.yml")

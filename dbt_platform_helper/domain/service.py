@@ -77,7 +77,7 @@ class ServiceManager:
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
 
-    def generate(self, environment: str, services: list[str], image_tag_flag: str = None):
+    def generate(self, environment: str, services: list[str]):
 
         config = self.config_provider.get_enriched_config()
         application_name = config.get("application", "")
@@ -103,12 +103,6 @@ class ServiceManager:
             except Exception as e:
                 self.io.abort_with_error(f"Failed extracting services with exception, {e}")
 
-        image_tag = image_tag_flag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
-        if not image_tag:
-            raise PlatformException(
-                f"An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
-            )
-
         service_models = []
         for service in services:
             file_content = self.file_provider.load(
@@ -120,9 +114,8 @@ class ServiceManager:
                 strings=[
                     "${PLATFORM_APPLICATION_NAME}",
                     "${PLATFORM_ENVIRONMENT_NAME}",
-                    "${IMAGE_TAG}",
                 ],
-                replacements=[application.name, environment, image_tag],
+                replacements=[application.name, environment],
             )
             service_models.append(
                 self.loader.load_into_model(
@@ -227,9 +220,7 @@ class ServiceManager:
                     f"{service_path}/service-config.yml", dict(service_manifest), message
                 )
 
-    def deploy(
-        self, service: str, environment: str, application: str, image_tag_override: str = None
-    ):
+    def deploy(self, service: str, environment: str, application: str, image_tag: str = None):
         """Register a new ECS task definition revision, update the ECS service
         with it, and output Cloudwatch logs until deployment is complete."""
 
@@ -249,7 +240,7 @@ class ServiceManager:
 
         container_definitions = json.loads(s3_response)
 
-        image_tag = image_tag_override or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
+        image_tag = image_tag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
 
         task_def_arn = self.ecs_provider.register_task_definition(
             service_model=service_model,
