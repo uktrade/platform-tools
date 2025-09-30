@@ -171,7 +171,6 @@ def test_service_deploy_success(yaml_file_provider):
     assert update_service_kwargs["environment"] == "dev"
     assert update_service_kwargs["application"] == "myapp"
 
-    # And for the helper calls
     fetch_task_ids_kwargs = fetch_ecs_task_ids.call_args.kwargs
     assert fetch_task_ids_kwargs["application"] == "myapp"
     assert fetch_task_ids_kwargs["environment"] == "dev"
