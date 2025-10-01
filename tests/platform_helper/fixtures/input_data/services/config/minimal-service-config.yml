@@ -1,6 +1,10 @@
 name: minimal
 type: Load Balanced Web Service
 
+http:
+  path: '/'
+  target_container: nginx
+
 cpu: 512 
 memory: 2048 
 count: 1 
