@@ -123,9 +123,6 @@ locals {
   }
 
   default_container_config = {
-    mountPoints = [
-      { sourceVolume = "temporary-fs", containerPath = "/tmp" }
-    ]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -168,6 +165,12 @@ locals {
       ]
       readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
       portMappings           = local.main_port_mappings
+      mountPoints = concat([
+        { sourceVolume = "path-tmp", containerPath = "/tmp" }
+        ], [
+        for path in try(var.service_config.storage.writable_directories, []) :
+        { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
+      ])
       # Ensure main container always starts last
       dependsOn = [
         for sidecar in keys(coalesce(var.service_config.sidecars, {})) : {

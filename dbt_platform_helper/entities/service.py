@@ -82,6 +82,7 @@ class Network(BaseModel):
 
 class Storage(BaseModel):
     readonly_fs: Optional[bool] = Field(default=None)
+    writable_directories: Optional[list[str]] = Field(default=None)
 
 
 class ServiceConfigEnvironmentOverride(BaseModel):
@@ -134,7 +135,6 @@ class ServiceConfig(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(default=None)
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(default=None)
-    writable_directories: Optional[list[str]] = Field(default=None)
 
     # Class based variable used when handling the object
     local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"

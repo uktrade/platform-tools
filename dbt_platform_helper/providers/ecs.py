@@ -254,6 +254,11 @@ class ECS:
                     container["image"] = f"{image_uri}:{image_tag}"
                     break
 
+        sc_volumes = []
+        for path in service_model.storage.writable_directories:
+            volume = {"name": f"path{path.replace(" / "," - ")}", "host": {}}
+            sc_volumes.append(volume)
+
         try:
             task_definition_response = self.ecs_client.register_task_definition(
                 family=f"{application}-{environment}-{service_model.name}-task-def",
@@ -261,7 +266,7 @@ class ECS:
                 executionRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",
                 networkMode="awsvpc",
                 containerDefinitions=container_definitions,
-                volumes=[{"name": "temporary-fs", "host": {}}],
+                volumes=[{"name": "path-tmp", "host": {}}] + sc_volumes,
                 placementConstraints=[],
                 requiresCompatibilities=["FARGATE"],
                 cpu=str(service_model.cpu),
