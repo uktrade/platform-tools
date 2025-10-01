@@ -187,7 +187,7 @@ locals {
       {
         name      = sidecar_name
         image     = sidecar.image
-        essential = try(sidecar.essential, true)
+        essential = coalesce(sidecar.essential, true)
         environment = [
           for k, v in merge(coalesce(sidecar.variables, {}), local.required_env_vars) :
           { name = k, value = tostring(v) }

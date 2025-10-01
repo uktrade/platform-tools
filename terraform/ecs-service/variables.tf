@@ -45,8 +45,9 @@ variable "service_config" {
     }))
 
     sidecars = optional(map(object({
-      port      = optional(number)
-      image     = optional(string)
+      port      = number
+      image     = string
+      essential = optional(bool)
       variables = optional(map(string))
       secrets   = optional(map(string))
       mountpoints = optional(list(object({
@@ -57,8 +58,8 @@ variable "service_config" {
     })))
 
     image = object({
-      port       = optional(number)
       location   = string
+      port       = optional(number)
       depends_on = optional(map(string))
     })
 

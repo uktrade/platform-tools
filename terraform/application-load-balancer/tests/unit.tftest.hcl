@@ -102,6 +102,7 @@ variables {
     }
     slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
   }
+  service_deployment_mode = "doesnt matter for all other tests, except for 'dummy_listener_rule_manager'"
 }
 
 
@@ -982,26 +983,30 @@ run "waf_and_rotate_lambda_cdn_domains_disabled" {
 run "dummy_listener_rule_manager" {
   command = plan
 
+  variables {
+    service_deployment_mode = "platform"
+  }
+
   # --- Test lambda function permissions ---
   assert {
-    condition     = aws_iam_role.listener-rule-organiser-role.name == "${var.application}-${var.environment}-listener-rule-organiser-role"
+    condition     = aws_iam_role.listener-rule-organiser-role[0].name == "${var.application}-${var.environment}-listener-rule-organiser-role"
     error_message = "Invalid role name for aws_iam_role.listener-rule-organiser-role"
   }
 
   assert {
-    condition     = aws_iam_role.listener-rule-organiser-role.assume_role_policy == "{\"Sid\": \"ListenerRuleLambdaAssumeRolePolicy\"}"
+    condition     = aws_iam_role.listener-rule-organiser-role[0].assume_role_policy == "{\"Sid\": \"ListenerRuleLambdaAssumeRolePolicy\"}"
     error_message = "Invalid assume role policy for aws_iam_role.listener-rule-organiser-role"
   }
 
   assert {
-    condition = jsonencode(aws_iam_role.listener-rule-organiser-role.tags) == jsonencode({
+    condition = jsonencode(aws_iam_role.listener-rule-organiser-role[0].tags) == jsonencode({
       application         = "app"
       copilot-application = "app"
       copilot-environment = "env"
       environment         = "env"
       managed-by          = "DBT Platform - Terraform"
     })
-    error_message = "Invalid tags for aws_iam_role.listener-rule-organiser-role, actual is ${jsonencode(aws_iam_role.listener-rule-organiser-role.tags)}"
+    error_message = "Invalid tags for aws_iam_role.listener-rule-organiser-role, actual is ${jsonencode(aws_iam_role.listener-rule-organiser-role[0].tags)}"
   }
 
   # --- Test that permissions policy is attached to role
@@ -1012,7 +1017,7 @@ run "dummy_listener_rule_manager" {
   # }
 
   assert {
-    condition     = aws_iam_role_policy.listener-rule-organiser-role-policy.name == "ListenerRuleOragniser"
+    condition     = aws_iam_role_policy.listener-rule-organiser-role-policy[0].name == "ListenerRuleOragniser"
     error_message = "Invalid name for attachment"
   }
 
@@ -1024,12 +1029,12 @@ run "dummy_listener_rule_manager" {
 
   # --- Test permission to create a listener rule on the correct load balancer
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[0].effect == "Allow"
+    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[0].effect == "Allow"
     error_message = "Zeroth statement effect should be: Allow"
   }
 
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[0].actions == toset(["elasticloadbalancing:CreateRule"])
+    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[0].actions == toset(["elasticloadbalancing:CreateRule"])
     error_message = "Zeroth statement action should be: elasticloadbalancing:CreateRule"
   }
 
@@ -1041,12 +1046,12 @@ run "dummy_listener_rule_manager" {
 
   # --- Test read rule and tag permissions
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[1].effect == "Allow"
+    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[1].effect == "Allow"
     error_message = "First statement effect should be: Allow"
   }
 
   assert {
-    condition = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[1].actions == toset([
+    condition = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[1].actions == toset([
       "elasticloadbalancing:DescribeTags",
       "elasticloadbalancing:DescribeRules",
     ])
@@ -1054,18 +1059,18 @@ run "dummy_listener_rule_manager" {
   }
 
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[1].resources == toset(["*"])
+    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[1].resources == toset(["*"])
     error_message = "First statement resource should be: *"
   }
 
   # --- Test delete rule and tagging permissions
   assert {
-    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[2].effect == "Allow"
+    condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[2].effect == "Allow"
     error_message = "Second statement effect should be: Allow"
   }
 
   assert {
-    condition = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[2].actions == toset([
+    condition = data.aws_iam_policy_document.listener-rule-organiser-role-policy[0].statement[2].actions == toset([
       "elasticloadbalancing:DeleteRule",
       "elasticloadbalancing:AddTags",
     ])
@@ -1082,42 +1087,42 @@ run "dummy_listener_rule_manager" {
 
   # --- Test lambda function configuration ---
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.function_name == "${var.application}-${var.environment}-listener-rule-organiser"
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].function_name == "${var.application}-${var.environment}-listener-rule-organiser"
     error_message = "Invalid name for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.description == "Listener Rule Organiser Lambda Function"
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].description == "Listener Rule Organiser Lambda Function"
     error_message = "Invalid description for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.handler == "handler.handler"
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].handler == "handler.handler"
     error_message = "Invalid handler for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.runtime == "python3.13"
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].runtime == "python3.13"
     error_message = "Invalid runtime for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.timeout == 300
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].timeout == 300
     error_message = "Invalid timeout for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.environment[0].variables.APPLICATION == var.application
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].environment[0].variables.APPLICATION == var.application
     error_message = "Invalid APPLICATION environment variable for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.environment[0].variables.ENVIRONMENT == var.environment
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].environment[0].variables.ENVIRONMENT == var.environment
     error_message = "Invalid ENVIRONMENT environment variable for aws_lambda_function.listener-rule-organiser-function"
   }
 
   assert {
-    condition     = aws_lambda_function.listener-rule-organiser-function.reserved_concurrent_executions == 1
+    condition     = aws_lambda_function.listener-rule-organiser-function[0].reserved_concurrent_executions == 1
     error_message = "Invalid reserved concurrency, must be one to avoid race conditions when creating dummy rules for multiple services"
   }
 }
