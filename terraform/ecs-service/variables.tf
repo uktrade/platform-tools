@@ -49,6 +49,11 @@ variable "service_config" {
       image     = optional(string)
       variables = optional(map(string))
       secrets   = optional(map(string))
+      mountpoints = optional(list(object({
+        sourceVolume  = optional(string)
+        containerPath = optional(string)
+        readOnly      = optional(bool)
+      })))
     })))
 
     image = object({
@@ -62,7 +67,12 @@ variable "service_config" {
     count      = number
     exec       = optional(bool)
     entrypoint = optional(list(string))
-    essential  = optional(bool)
+    mountpoints = optional(list(object({
+      sourceVolume  = optional(string)
+      containerPath = optional(string)
+      readOnly      = optional(bool)
+    })))
+    essential = optional(bool)
 
     network = optional(object({
       connect = optional(bool)

@@ -168,6 +168,7 @@ locals {
       ]
       readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
       portMappings           = local.main_port_mappings
+      mountPoints            = var.service_config.mountpoints
       # Ensure main container always starts last
       dependsOn = [
         for sidecar in keys(coalesce(var.service_config.sidecars, {})) : {
@@ -175,7 +176,6 @@ locals {
           condition     = lookup(local.depends_on_map, sidecar, "START")
         }
       ]
-      # add mountpoints here
     },
     var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
@@ -207,7 +207,7 @@ locals {
             : {}
           )
         ] : []
-        # add mountpoints here
+        mountPoints = sidecar.mountpoints
       }
     )
   ]
