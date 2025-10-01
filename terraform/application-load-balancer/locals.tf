@@ -59,4 +59,7 @@ locals {
       listener_id = null
     }
   )
+
+  # Validate if the 'service-deployment-mode' property from platform-config.yml is set to a non-copilot mode for the current environment
+  non_copilot_service_deployment_mode = var.service_deployment_mode == "dual-deploy-copilot-traffic" || var.service_deployment_mode == "dual-deploy-platform-traffic" || var.service_deployment_mode == "platform" ? 1 : 0
 }

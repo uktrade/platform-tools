@@ -31,3 +31,7 @@ variable "config" {
     error_message = "Items in cdn_domains_list should be between 3 and 63 characters long."
   }
 }
+
+variable "service_deployment_mode" {
+  type = string
+}

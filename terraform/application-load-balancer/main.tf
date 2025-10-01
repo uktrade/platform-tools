@@ -266,12 +266,16 @@ resource "aws_wafv2_web_acl" "waf-acl" {
 # AWS Lambda for listener rule insertion
 
 resource "aws_iam_role" "listener-rule-organiser-role" {
+  count = local.non_copilot_service_deployment_mode
+
   name               = "${var.application}-${var.environment}-listener-rule-organiser-role"
-  assume_role_policy = data.aws_iam_policy_document.listener-rule-organiser-role-assume.json
+  assume_role_policy = data.aws_iam_policy_document.listener-rule-organiser-role-assume[count.index].json
   tags               = local.tags
 }
 
 data "aws_iam_policy_document" "listener-rule-organiser-role-assume" {
+  count = local.non_copilot_service_deployment_mode
+
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
@@ -283,6 +287,8 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-assume" {
 }
 
 data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
+  count = local.non_copilot_service_deployment_mode
+
   statement {
     effect    = "Allow"
     actions   = ["elasticloadbalancing:CreateRule"]
@@ -309,15 +315,19 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
 }
 
 resource "aws_iam_role_policy" "listener-rule-organiser-role-policy" {
-  role   = aws_iam_role.listener-rule-organiser-role.id
+  count = local.non_copilot_service_deployment_mode
+
+  role   = aws_iam_role.listener-rule-organiser-role[count.index].id
   name   = "ListenerRuleOragniser"
-  policy = data.aws_iam_policy_document.listener-rule-organiser-role-policy.json
+  policy = data.aws_iam_policy_document.listener-rule-organiser-role-policy[count.index].json
 }
 
 # This file needs to exist, but it's not directly used in the Terraform so...
 # tflint-ignore: terraform_unused_declarations
 # This resource creates the Lambda function code zip file
 data "archive_file" "listener-rule-organiser-code" {
+  count = local.non_copilot_service_deployment_mode
+
   type        = "zip"
   source_dir  = "${path.module}/lambda_function/listener_rule_organiser"
   output_path = "${path.module}/listener_rule_organiser.zip" # This zip contains only your function code
@@ -334,15 +344,17 @@ resource "aws_lambda_function" "listener-rule-organiser-function" {
   # checkov:skip=CKV_AWS_173:Encryption of environmental variables is not configured with KMS key
   # checkov:skip=CKV_AWS_117:Run Lambda inside VPC with security groups & private subnets not necessary
   # checkov:skip=CKV_AWS_50:XRAY tracing not used
+  count = local.non_copilot_service_deployment_mode
+
   depends_on       = [data.archive_file.listener-rule-organiser-code, aws_iam_role.listener-rule-organiser-role]
-  filename         = data.archive_file.listener-rule-organiser-code.output_path
+  filename         = data.archive_file.listener-rule-organiser-code[count.index].output_path
   function_name    = "${var.application}-${var.environment}-listener-rule-organiser"
   description      = "Listener Rule Organiser Lambda Function"
   handler          = "handler.handler"
   runtime          = "python3.13"
   timeout          = 300
-  role             = aws_iam_role.listener-rule-organiser-role.arn
-  source_code_hash = data.archive_file.listener-rule-organiser-code.output_base64sha256
+  role             = aws_iam_role.listener-rule-organiser-role[count.index].arn
+  source_code_hash = data.archive_file.listener-rule-organiser-code[count.index].output_base64sha256
 
   # To avoid race conditions, we only call one at a time
   reserved_concurrent_executions = 1
