@@ -326,7 +326,7 @@ class Conduit:
         data_context = strategy.get_data()
 
         data_context["task_arns"] = self.ecs_provider.get_ecs_task_arns(
-            data_context["cluster_arn"], data_context["task_def_family"]
+            cluster=data_context["cluster_arn"], task_def_family=data_context["task_def_family"]
         )
 
         info_log = (

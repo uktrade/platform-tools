@@ -24,13 +24,14 @@
     - [platform-helper generate](#platform-helper-generate)
     - [platform-helper internal](#platform-helper-internal)
         - [platform-helper internal migrate-service-manifests](#platform-helper-internal-migrate-service-manifests)
+        - [platform-helper internal service](#platform-helper-internal-service)
+            - [platform-helper internal service deploy](#platform-helper-internal-service-deploy)
+            - [platform-helper internal service generate](#platform-helper-internal-service-generate)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
         - [platform-helper secrets copy](#platform-helper-secrets-copy)
         - [platform-helper secrets list](#platform-helper-secrets-list)
-    - [platform-helper service](#platform-helper-service)
-        - [platform-helper service generate](#platform-helper-service-generate)
     - [platform-helper notify](#platform-helper-notify)
         - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
         - [platform-helper notify post-message](#platform-helper-notify-post-message)
@@ -71,7 +72,6 @@ platform-helper <command> [--version]
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
-- [`service` ↪](#platform-helper-service)
 - [`version` ↪](#platform-helper-version)
 
 # platform-helper application
@@ -554,7 +554,7 @@ platform-helper generate
 ## Usage
 
 ```
-platform-helper internal migrate-service-manifests 
+platform-helper internal (migrate-service-manifests|service) 
 ```
 
 ## Options
@@ -565,6 +565,7 @@ platform-helper internal migrate-service-manifests
 ## Commands
 
 - [`migrate-service-manifests` ↪](#platform-helper-internal-migrate-service-manifests)
+- [`service` ↪](#platform-helper-internal-service)
 
 # platform-helper internal migrate-service-manifests
 
@@ -580,6 +581,73 @@ platform-helper internal migrate-service-manifests
 
 ## Options
 
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal service
+
+[↩ Parent](#platform-helper-internal)
+
+    Subgroup for 'internal service' commands.
+
+## Usage
+
+```
+platform-helper internal service (deploy|generate) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`deploy` ↪](#platform-helper-internal-service-deploy)
+- [`generate` ↪](#platform-helper-internal-service-generate)
+
+# platform-helper internal service deploy
+
+[↩ Parent](#platform-helper-internal-service)
+
+    Trigger an ECS deployment.
+
+## Usage
+
+```
+platform-helper internal service deploy --name <name> --env <environment> 
+                                        --image-tag <image_tag> 
+```
+
+## Options
+
+- `--name <text>`
+  - The name of the ECS service to create or update.
+- `--env <text>`
+  - The name of the environment where the ECS service will be created or updated.
+- `--image-tag <text>`
+  - Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal service generate
+
+[↩ Parent](#platform-helper-internal-service)
+
+    Generate Terraform manifest for the specified service(s).
+
+## Usage
+
+```
+platform-helper internal service generate --env <environment> [--name <name>] 
+```
+
+## Options
+
+- `--name <text>`
+  - The name of the service(s) to generate service manifest(s) for.
+- `--env <text>`
+  - The name of the environment to generate service manifests for.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -701,54 +769,6 @@ platform-helper secrets list <application> <environment>
 
 ## Options
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper service
-
-[↩ Parent](#platform-helper)
-
-    Commands affecting services.
-
-## Usage
-
-```
-platform-helper service generate 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`generate` ↪](#platform-helper-service-generate)
-
-# platform-helper service generate
-
-[↩ Parent](#platform-helper-service)
-
-    Generate terraform manifest for the specified service(s).
-
-## Usage
-
-```
-platform-helper service generate [--name <name>] [--environment <environment>] 
-                                 [--image-tag <image_tag>] 
-```
-
-## Options
-
-- `--name
--n <text>`
-  - The name of the service to generate a manifest for. Multiple values accepted.
-- `--environment
--e <text>`
-  - The name of the environment to generate service manifests for. Multiple values accepted.
-- `--image-tag
--i <text>`
-  - Docker image tag to deploy for the service. Overrides the $IMAGE_TAG environment variable.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

@@ -1,8 +1,12 @@
 import random
 import string
 import subprocess
-from typing import List
+from typing import Any
+from typing import Optional
 
+from botocore.exceptions import ClientError
+
+from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.platform_exception import ValidationException
 from dbt_platform_helper.providers.vpc import Vpc
@@ -39,7 +43,7 @@ class ECS:
         container_name: str,
         task_def_arn: str,
         vpc_config: Vpc,
-        env_vars: List[dict] = None,
+        env_vars: list[dict] = None,
     ):
         container_override = {"name": container_name}
         if env_vars:
@@ -107,13 +111,31 @@ class ECS:
             random_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=12))
             return f"conduit-{self.application_name}-{self.env}-{addon_name}-{random_id}"
 
-    def get_ecs_task_arns(self, cluster_arn: str, task_def_family: str):
-        """Gets the ECS task ARNs for a given task name and cluster ARN."""
-        tasks = self.ecs_client.list_tasks(
-            cluster=cluster_arn,
-            desiredStatus="RUNNING",
-            family=task_def_family,
-        )
+    def get_ecs_task_arns(
+        self,
+        cluster: str,
+        max_results: int = 100,
+        desired_status: str = "RUNNING",
+        service_name: Optional[str] = None,
+        started_by: Optional[str] = None,
+        task_def_family: Optional[str] = None,
+    ) -> list[str]:
+        """Returns the ECS task ARNs based on the parameters provided."""
+
+        params = {
+            "cluster": cluster,
+            "maxResults": max_results,
+            "desiredStatus": desired_status,
+        }
+
+        if service_name:
+            params["serviceName"] = service_name
+        if started_by:
+            params["startedBy"] = started_by
+        if task_def_family:
+            params["family"] = task_def_family
+
+        tasks = self.ecs_client.list_tasks(**params)
 
         if not tasks["taskArns"]:
             return []
@@ -137,7 +159,7 @@ class ECS:
         exceptions_to_catch=(ECSException,),
         message_on_false="ECS Agent Not running",
     )
-    def ecs_exec_is_available(self, cluster_arn: str, task_arns: List[str]) -> bool:
+    def ecs_exec_is_available(self, cluster_arn: str, task_arns: list[str]) -> bool:
         """
         Checks if the ExecuteCommandAgent is running on the specified ECS task.
 
@@ -168,7 +190,105 @@ class ECS:
         message_on_false="ECS task did not register in time",
     )
     def wait_for_task_to_register(self, cluster_arn: str, task_family: str) -> list[str]:
-        task_arns = self.get_ecs_task_arns(cluster_arn, task_family)
+        task_arns = self.get_ecs_task_arns(cluster=cluster_arn, task_def_family=task_family)
         if task_arns:
             return task_arns
         return False
+
+    def get_service_rollout_state(
+        self, cluster_name: str, service_name: str
+    ) -> tuple[Optional[str], Optional[str]]:
+        """
+        Returns rolloutState & rolloutStateReason for the PRIMARY deployment of
+        an ECS service.
+
+        rolloutState can be: COMPLETED | FAILED | IN_PROGRESS | None
+        """
+        resp = self.ecs_client.describe_services(cluster=cluster_name, services=[service_name])
+        services = resp.get("services", [])
+        if not services:
+            return None, f"Service '{service_name}' not found"
+
+        svc = services[0]
+        primary_deployment = None
+        for dep in svc.get("deployments", []):
+            if dep.get("status") == "PRIMARY":
+                primary_deployment = dep
+                break
+
+        if not primary_deployment:
+            return None, "No PRIMARY ECS deployment found"
+
+        return primary_deployment.get("rolloutState"), primary_deployment.get("rolloutStateReason")
+
+    def get_container_names_from_ecs_tasks(
+        self, cluster_name: str, task_ids: list[str]
+    ) -> list[str]:
+        """Retrieve container names from each ECS task provided."""
+
+        response = self.ecs_client.describe_tasks(cluster=cluster_name, tasks=task_ids)
+
+        names = []
+        for task in response.get("tasks", []):
+            for container in task.get("containers", []):
+                if container["name"] not in names:
+                    names.append(container["name"])
+        return names
+
+    def register_task_definition(
+        self,
+        service_model: ServiceConfig,
+        environment: str,
+        application: str,
+        account_id: str,
+        container_definitions: list[dict[str, Any]],
+        image_tag: Optional[str] = None,
+    ) -> str:
+        """Register a new task definition revision using provided model and
+        containerDefinitions."""
+
+        if image_tag:
+            for container in container_definitions:
+                if container.get("name") == service_model.name:
+                    image_uri = service_model.image.location.rsplit(":", 1)[0]
+                    container["image"] = f"{image_uri}:{image_tag}"
+                    break
+
+        try:
+            task_definition_response = self.ecs_client.register_task_definition(
+                family=f"{application}-{environment}-{service_model.name}-task-def",
+                taskRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-role",
+                executionRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",
+                networkMode="awsvpc",
+                containerDefinitions=container_definitions,
+                volumes=[{"name": "temporary-fs", "host": {}}],
+                placementConstraints=[],
+                requiresCompatibilities=["FARGATE"],
+                cpu=str(service_model.cpu),
+                memory=str(service_model.memory),
+                tags=[
+                    {"key": "application", "value": application},
+                    {"key": "environment", "value": environment},
+                    {"key": "service", "value": service_model.name},
+                    {"key": "managed-by", "value": "Platform Helper"},
+                ],
+            )
+            return task_definition_response["taskDefinition"]["taskDefinitionArn"]
+        except ClientError as err:
+            raise PlatformException(f"Error registering task definition: {err}")
+
+    def update_service(
+        self, service_model: ServiceConfig, task_def_arn: str, environment: str, application: str
+    ) -> dict[str, Any]:
+        """Update an ECS service and return the response."""
+
+        try:
+            service_response = self.ecs_client.update_service(
+                cluster=f"{application}-{environment}-cluster",
+                service=f"{application}-{environment}-{service_model.name}",
+                taskDefinition=task_def_arn,
+                desiredCount=service_model.count,
+            )
+            return service_response["service"]
+        except ClientError as err:
+            raise PlatformException(f"Error updating ECS service: {err}")

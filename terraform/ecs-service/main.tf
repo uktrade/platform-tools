@@ -1,73 +1,149 @@
-resource "aws_ecs_task_definition" "this" {
-  family                   = "${local.full_service_name}-task-def"
+resource "aws_s3_object" "container_definitions" {
+  bucket       = "ecs-container-definitions-${var.application}-${var.environment}"
+  key          = "${var.application}/${var.environment}/${var.service_config.name}.json"
+  content      = local.container_definitions_json
+  content_type = "application/json"
+  tags         = local.tags
+}
+
+resource "aws_ecs_task_definition" "default_task_def" {
+  # checkov:skip=CKV_AWS_336: Nginx needs access to a few paths on the root filesystem
+  family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
   requires_compatibilities = ["FARGATE"]
-  cpu                      = tostring(var.service_config.cpu)
-  memory                   = tostring(var.service_config.memory)
+  cpu                      = 256
+  memory                   = 512
   network_mode             = "awsvpc"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   tags                     = local.tags
 
-  container_definitions = jsonencode(
-    concat(
-      [
+  runtime_platform {
+    cpu_architecture        = "X86_64"
+    operating_system_family = "LINUX"
+  }
+
+  container_definitions = jsonencode([
+    {
+      name      = "nginx"
+      image     = "public.ecr.aws/uktrade/copilot-bootstrap:latest"
+      essential = true
+      portMappings = [
         {
-          name  = var.service_config.name
-          image = var.service_config.image.location
-          portMappings = var.service_config.image.port != null ? [
-            {
-              containerPort = var.service_config.image.port
-              protocol      = "tcp"
-            }
-          ] : []
-          essential = true
-          environment = [
-            for k, v in coalesce(var.service_config.variables, {}) : {
-              name  = k
-              value = tostring(v)
-            }
-          ]
-          secrets = [
-            for k, v in coalesce(var.service_config.secrets, {}) : {
-              name      = k
-              valueFrom = v
-            }
-          ]
-          logConfiguration = {
-            logDriver = "awslogs"
-            options = {
-              awslogs-group         = "/platform/ecs/service/${var.application}/${var.environment}/${var.service_config.name}"
-              awslogs-region        = data.aws_region.current.region
-              awslogs-stream-prefix = "ecs"
-            }
-          }
-        }
-      ],
-      [
-        for sidecar_name, sidecar in var.service_config.sidecars : {
-          name  = sidecar_name
-          image = sidecar.image
-          portMappings = sidecar.port != null ? [{
-            containerPort = sidecar.port
-            protocol      = "tcp"
-          }] : []
-          environment = sidecar.variables != null ? [
-            for k, v in sidecar.variables : {
-              name  = k
-              value = tostring(v)
-            }
-          ] : []
-          secrets = sidecar.secrets != null ? [
-            for k, v in sidecar.secrets : {
-              name      = k
-              valueFrom = v
-            }
-          ] : []
-          essential = false
+          containerPort = 443
+          hostPort      = 443
+          name          = "target"
+          protocol      = "tcp"
         }
       ]
-    )
-  )
+      logConfiguration = {
+        logDriver = "awslogs",
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
+          awslogs-region        = data.aws_region.current.region
+          awslogs-stream-prefix = "platform"
+        }
+      }
+    }
+  ])
+}
+
+data "aws_ecs_cluster" "cluster" {
+  cluster_name = "${var.application}-${var.environment}-cluster"
+}
+
+data "aws_security_group" "env_security_group" {
+  name = "${var.application}-${var.environment}-environment"
+}
+
+data "aws_subnets" "private-subnets" {
+  filter {
+    name   = "tag:Name"
+    values = ["${local.vpc_name}-private-*"]
+  }
+}
+
+resource "aws_lambda_invocation" "dummy_listener_rule" {
+  count           = local.web_service_required
+  function_name   = "${var.application}-${var.environment}-listener-rule-organiser"
+  lifecycle_scope = "CRUD"
+  terraform_key   = "Lifecycle"
+  input = jsonencode({
+    ServiceName = var.service_config.name
+    TargetGroup = aws_lb_target_group.target_group[0].arn
+  })
+}
+
+resource "aws_ecs_service" "service" {
+  name                              = "${var.application}-${var.environment}-${var.service_config.name}"
+  cluster                           = data.aws_ecs_cluster.cluster.id
+  launch_type                       = "FARGATE"
+  enable_execute_command            = try(var.service_config.exec, false)
+  task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition
+  propagate_tags                    = "SERVICE"
+  desired_count                     = 1
+  health_check_grace_period_seconds = tonumber(trim(try(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
+  tags                              = local.tags
+
+  deployment_circuit_breaker {
+    enable   = true
+    rollback = true
+  }
+
+  network_configuration {
+    subnets         = data.aws_subnets.private-subnets.ids
+    security_groups = [data.aws_security_group.env_security_group.id]
+  }
+
+  dynamic "load_balancer" {
+    for_each = local.web_service_required == 1 ? [""] : []
+    content {
+      target_group_arn = aws_lb_target_group.target_group[0].arn
+      container_name   = "nginx"
+      container_port   = 443
+    }
+  }
+
+  # TODO - See if discovery service can be removed once de-copiloting is complete, because we already use Service Connect for the same purposes. Verify that no team uses Service Discovery before any removal.
+  dynamic "service_registries" {
+    for_each = local.web_service_required == 1 ? [""] : []
+
+    content {
+      registry_arn = aws_service_discovery_service.service_discovery_service[0].arn
+      port         = 443
+    }
+  }
+
+  dynamic "service_connect_configuration" {
+    for_each = local.web_service_required == 1 ? [""] : []
+
+    content {
+      enabled   = true
+      namespace = data.aws_service_discovery_dns_namespace.private_dns_namespace[0].arn
+
+      service {
+        discovery_name = "${var.service_config.name}-sc"
+        port_name      = "target"
+        client_alias {
+          dns_name = var.service_config.name
+          port     = 443
+        }
+      }
+      log_configuration {
+        log_driver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.ecs_service_logs.name
+          awslogs-region        = data.aws_region.current.region
+          awslogs-stream-prefix = "platform"
+        }
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
+  }
+
+  depends_on = [aws_lambda_invocation.dummy_listener_rule]
 }
 
 data "aws_vpc" "vpc" {
@@ -139,22 +215,12 @@ resource "aws_service_discovery_service" "service_discovery_service" {
 
     routing_policy = "MULTIVALUE"
   }
-
-  health_check_custom_config {
-    failure_threshold = 1
-  }
 }
 
 resource "aws_kms_key" "ecs_service_log_group_kms_key" {
   description         = "KMS Key for ECS service '${local.full_service_name}' log encryption"
   enable_key_rotation = true
   tags                = local.tags
-}
-
-resource "aws_kms_alias" "ecs_service_logs_kms_alias" {
-  depends_on    = [aws_kms_key.ecs_service_log_group_kms_key]
-  name          = "alias/${var.application}-${var.environment}-${var.service_config.name}-ecs-service-logs-key"
-  target_key_id = aws_kms_key.ecs_service_log_group_kms_key.id
 }
 
 resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
@@ -180,7 +246,9 @@ resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
         "Action" : [
           "kms:Encrypt",
           "kms:Decrypt",
-          "kms:GenerateDataKey"
+          "kms:ReEncrypt*",
+          "kms:GenerateDataKey*",
+          "kms:DescribeKey"
         ]
         "Resource" : "*"
       }
@@ -195,8 +263,6 @@ resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   retention_in_days = 30
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
-
-  depends_on = [aws_kms_key.ecs_service_log_group_kms_key]
 }
 
 data "aws_ssm_parameter" "log-destination-arn" {
