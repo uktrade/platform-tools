@@ -9,26 +9,6 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.logs import LogsProvider
 
 
-def test_filter_log_events_success():
-    mock_logs = MagicMock()
-    mock_logs.filter_log_events.return_value = {"events": [{"message": "hi"}]}
-
-    provider = LogsProvider(client=mock_logs)
-
-    resp = provider.filter_log_events(
-        log_group="/aws/logs/group",
-        log_streams=["stream1", "stream2"],
-        start_time=1234567890,
-    )
-
-    assert resp == {"events": [{"message": "hi"}]}
-    mock_logs.filter_log_events.assert_called_once_with(
-        logGroupName="/aws/logs/group",
-        logStreamNames=["stream1", "stream2"],
-        startTime=1234567890,
-    )
-
-
 def test_check_log_streams_present_success():
     mock_logs = MagicMock()
 

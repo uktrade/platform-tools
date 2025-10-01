@@ -65,7 +65,7 @@ class TestInternal:
                 "web",
                 "--env",
                 "dev",
-                "--image-tag-override",
+                "--image-tag",
                 "test123",
             ],
         )
@@ -102,7 +102,7 @@ class TestInternal:
             service="web",
             environment="dev",
             application="myapp",
-            image_tag_override="test123",
+            image_tag="test123",
         )
 
     @patch("dbt_platform_helper.commands.internal.click.secho")
@@ -133,7 +133,8 @@ class TestInternal:
         mock_service_manager.return_value.deploy.side_effect = PlatformException("This has failed")
 
         result = CliRunner().invoke(
-            internal, ["service", "deploy", "--name", "web", "--env", "dev"]
+            internal,
+            ["service", "deploy", "--name", "web", "--env", "dev", "--image-tag", "tag123"],
         )
 
         assert result.exit_code == 1
@@ -158,15 +159,13 @@ class TestInternal:
                 "web",
                 "--env",
                 "dev",
-                "--image-tag",
-                "test123",
             ],
         )
 
         assert result.exit_code == 0
 
         mock_terraform_service_instance.generate.assert_called_with(
-            environment="dev", services=["web"], image_tag_flag="test123"
+            environment="dev", services=["web"]
         )
 
     @mock_aws

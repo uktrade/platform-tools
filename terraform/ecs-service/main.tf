@@ -78,7 +78,7 @@ resource "aws_ecs_service" "service" {
   cluster                           = data.aws_ecs_cluster.cluster.id
   launch_type                       = "FARGATE"
   enable_execute_command            = try(var.service_config.exec, false)
-  task_definition                   = aws_ecs_task_definition.default_task_def.arn
+  task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition
   propagate_tags                    = "SERVICE"
   desired_count                     = 1
   health_check_grace_period_seconds = tonumber(trim(try(var.service_config.http.healthcheck.grace_period, "30s"), "s"))

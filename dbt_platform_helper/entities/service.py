@@ -69,9 +69,9 @@ class SidecarOverride(BaseModel):
 
 
 class Image(BaseModel):
-    build: Optional[str] = Field(default=None)
-    location: Optional[str] = Field(default=None)
+    location: str = Field()
     port: Optional[int] = Field(default=None)
+    depends_on: dict[str, str] = Field(default=None)
 
 
 class VPC(BaseModel):

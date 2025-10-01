@@ -42,11 +42,11 @@ def service():
     help="The name of the environment where the ECS service will be created or updated.",
 )
 @click.option(
-    "--image-tag-override",
-    required=False,
-    help="Custom image tag (overrides containerDefinitions object from S3). Takes precedence over $IMAGE_TAG.",
+    "--image-tag",
+    required=True,
+    help="Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.",
 )
-def deploy(name, env, image_tag_override):
+def deploy(name, env, image_tag):
     """Register a new ECS task definition from an S3 JSON template, update the
     ECS service, and tail CloudWatch logs until the ECS rollout is complete."""
     click_io = ClickIOProvider()
@@ -78,7 +78,7 @@ def deploy(name, env, image_tag_override):
             service=name,
             environment=env,
             application=application.name,
-            image_tag_override=image_tag_override,
+            image_tag=image_tag,
         )
     except PlatformException as error:
         click_io.abort_with_error(str(error))
@@ -96,12 +96,7 @@ def deploy(name, env, image_tag_override):
     required=True,
     help="The name of the environment to generate service manifests for.",
 )
-@click.option(
-    "--image-tag",
-    required=False,
-    help="Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.",
-)
-def generate(name, env, image_tag):
+def generate(name, env):
     """Validates the service-config.yml format, applies the environment-specific
     overrides, and generates a Terraform manifest at
     /terraform/services/<environment>/<service>/main.tf.json."""
@@ -111,7 +106,7 @@ def generate(name, env, image_tag):
 
     try:
         service_manager = ServiceManager()
-        service_manager.generate(environment=env, services=services, image_tag_flag=image_tag)
+        service_manager.generate(environment=env, services=services)
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))
