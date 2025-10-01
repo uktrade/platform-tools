@@ -194,6 +194,18 @@ class ServiceManager:
 
                 service_manifest = self.file_provider.remove_empty_keys(service_manifest)
 
+                if "sidecars" in service_manifest:
+                    new_sidecars = {}
+
+                    for sidecar_name, sidecar in service_manifest["sidecars"].items():
+                        if "command" in sidecar and (
+                            "chown" in sidecar["command"] or "chmod" in sidecar["command"]
+                        ):
+                            continue
+                        new_sidecars[sidecar_name] = sidecar
+
+                    service_manifest["sidecars"] = new_sidecars
+
                 service_path = service_directory / service_manifest["name"]
 
                 self.io.info(

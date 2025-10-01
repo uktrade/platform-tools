@@ -52,19 +52,6 @@ class Sidecar(BaseModel):
     essential: Optional[bool] = Field(default=None)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
-    mountpoints: Optional[Dict[str, str]] = Field(default=None)
-
-
-class Volume(BaseModel):
-    name: str = Field()
-    host: Optional[str] = Field(default=None)
-    configure_at_launch: Optional[bool] = Field(default=None)
-
-
-class MountPoint(BaseModel):
-    sourceVolume: str = Field()
-    containerPath: str = Field()
-    readOnly: Optional[bool] = Field(default=None)
 
 
 class SidecarOverride(BaseModel):
@@ -73,7 +60,6 @@ class SidecarOverride(BaseModel):
     essential: Optional[bool] = Field(default=None)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
-    mountpoints: Optional[list[MountPoint]] = Field(default=None)
 
 
 class Image(BaseModel):
@@ -102,7 +88,6 @@ class ServiceConfigEnvironmentOverride(BaseModel):
     http: Optional[HttpOverride] = Field(default=None)
     sidecars: Optional[Dict[str, SidecarOverride]] = Field(default=None)
     image: Optional[Image] = Field(default=None)
-    mountpoints: Optional[list[MountPoint]] = Field(default=None)
 
     cpu: Optional[int] = Field(default=None)
     memory: Optional[int] = Field(default=None)
@@ -116,7 +101,6 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
-    volumes: Optional[list[Volume]] = Field(default=None)
 
 
 class ServiceConfig(BaseModel):
@@ -150,7 +134,7 @@ class ServiceConfig(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(default=None)
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(default=None)
-    volumes: Optional[list[Volume]] = Field(default=None)
+    writable_directories: Optional[list[str]] = Field(default=None)
 
     # Class based variable used when handling the object
     local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
