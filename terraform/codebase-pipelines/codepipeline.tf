@@ -220,12 +220,11 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     }
   }
 
-
   dynamic "stage" {
     for_each = local.service_terraform_deployment_enabled ? [""] : []
 
     content {
-      name = "Deploy-Terraform"
+      name = "Service-Terraform"
 
       dynamic "action" {
         for_each = local.service_order_list
@@ -240,7 +239,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
           run_order        = action.value.order + 1
 
           configuration = {
-            ProjectName = aws_codebuild_project.codebase_terraform_deploy[""].name
+            ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
             EnvironmentVariables : jsonencode([
               { name : "APPLICATION", value : var.application },
               { name : "AWS_REGION", value : data.aws_region.current.region },
@@ -258,41 +257,50 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     }
   }
 
-  stage {
-    name = "Deploy"
+  dynamic "stage" {
+    for_each = local.service_terraform_deployment_enabled ? [] : [""]
 
-    dynamic "action" {
-      for_each = local.service_order_list
-      content {
-        name             = action.value.name
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = action.value.order + 1
+    content {
+      name = "Deploy-Copilot"
 
-        configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy.name
-          EnvironmentVariables : jsonencode([
-            { name : "APPLICATION", value : var.application },
-            { name : "AWS_REGION", value : data.aws_region.current.region },
-            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-            { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-            { name : "REPOSITORY_URL", value : local.repository_url },
-            { name : "SERVICE", value : action.value.name },
-            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-          ])
+      dynamic "action" {
+        for_each = local.service_order_list
+        content {
+          name             = action.value.name
+          category         = "Build"
+          owner            = "AWS"
+          provider         = "CodeBuild"
+          input_artifacts  = ["deploy_source"]
+          output_artifacts = []
+          version          = "1"
+          run_order        = action.value.order + 1
+
+          configuration = {
+            ProjectName = aws_codebuild_project.codebase_deploy_copilot.name
+            EnvironmentVariables : jsonencode([
+              { name : "APPLICATION", value : var.application },
+              { name : "AWS_REGION", value : data.aws_region.current.region },
+              { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+              { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+              { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
+              { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
+              { name : "REPOSITORY_URL", value : local.repository_url },
+              { name : "SERVICE", value : action.value.name },
+              { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+            ])
+          }
         }
       }
     }
+  }
 
-    dynamic "action" {
-      for_each = toset(local.cache_invalidation_enabled ? [""] : [])
-      content {
+  dynamic "stage" {
+    for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+
+    content {
+      name = "Invalidate-Cache"
+
+      action {
         name             = "InvalidateCache"
         category         = "Build"
         owner            = "AWS"

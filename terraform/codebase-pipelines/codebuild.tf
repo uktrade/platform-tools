@@ -95,20 +95,6 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
   log_group_name = aws_cloudwatch_log_group.codebase_image_build[""].name
 }
 
-resource "aws_cloudwatch_log_group" "invalidate_cache" {
-  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
-  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
-  for_each          = toset(local.cache_invalidation_enabled ? [""] : [])
-  name              = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group"
-  retention_in_days = 90
-}
-
-resource "aws_cloudwatch_log_stream" "invalidate_cache" {
-  for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
-  name           = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-stream"
-  log_group_name = aws_cloudwatch_log_group.invalidate_cache[""].name
-}
-
 resource "aws_codebuild_webhook" "codebuild_webhook" {
   for_each     = toset(var.requires_image_build ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
@@ -145,10 +131,10 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
   }
 }
 
-resource "aws_codebuild_project" "codebase_terraform_deploy" {
+resource "aws_codebuild_project" "codebase_service_terraform" {
   for_each       = toset(local.service_terraform_deployment_enabled ? [""] : [])
-  name           = "${var.application}-${var.codebase}-codebase-terraform-deploy"
-  description    = "Deploy specified image tag to specified environment"
+  name           = "${var.application}-${var.codebase}-codebase-service-terraform"
+  description    = "Apply Terraform infrastructure for services"
   build_timeout  = 30
   service_role   = aws_iam_role.codebase_deploy.arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
@@ -186,19 +172,32 @@ resource "aws_codebuild_project" "codebase_terraform_deploy" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_terraform_deploy[""].name
-      stream_name = aws_cloudwatch_log_stream.codebase_terraform_deploy[""].name
+      group_name  = aws_cloudwatch_log_group.codebase_service_terraform[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_service_terraform[""].name
     }
   }
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = file("${path.module}/buildspec-terraform-deploy.yml")
+    buildspec = file("${path.module}/buildspec-service-terraform.yml")
   }
 
   tags = local.tags
 }
 
+resource "aws_cloudwatch_log_group" "codebase_service_terraform" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.service_terraform_deployment_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-group"
+  retention_in_days = 90
+}
+
+resource "aws_cloudwatch_log_stream" "codebase_service_terraform" {
+  for_each       = toset(local.service_terraform_deployment_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-stream"
+  log_group_name = aws_cloudwatch_log_group.codebase_service_terraform[""].name
+}
 
 resource "aws_codebuild_project" "invalidate_cache" {
   for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
@@ -244,8 +243,21 @@ resource "aws_codebuild_project" "invalidate_cache" {
   tags = local.tags
 }
 
+resource "aws_cloudwatch_log_group" "invalidate_cache" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.cache_invalidation_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group"
+  retention_in_days = 90
+}
 
-resource "aws_codebuild_project" "codebase_deploy" {
+resource "aws_cloudwatch_log_stream" "invalidate_cache" {
+  for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-stream"
+  log_group_name = aws_cloudwatch_log_group.invalidate_cache[""].name
+}
+
+resource "aws_codebuild_project" "codebase_deploy_copilot" {
   name           = "${var.application}-${var.codebase}-codebase-deploy"
   description    = "Deploy specified image tag to specified environment"
   build_timeout  = 30
@@ -285,41 +297,92 @@ resource "aws_codebuild_project" "codebase_deploy" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_deploy.name
-      stream_name = aws_cloudwatch_log_stream.codebase_deploy.name
+      group_name  = aws_cloudwatch_log_group.codebase_deploy_copilot.name
+      stream_name = aws_cloudwatch_log_stream.codebase_deploy_copilot.name
     }
   }
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = file("${path.module}/buildspec-deploy.yml")
+    buildspec = file("${path.module}/buildspec-deploy-copilot.yml")
   }
 
   tags = local.tags
 }
 
-resource "aws_cloudwatch_log_group" "codebase_deploy" {
+resource "aws_cloudwatch_log_group" "codebase_deploy_copilot" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
   name              = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group"
   retention_in_days = 90
 }
 
-resource "aws_cloudwatch_log_stream" "codebase_deploy" {
+resource "aws_cloudwatch_log_stream" "codebase_deploy_copilot" {
   name           = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_deploy.name
+  log_group_name = aws_cloudwatch_log_group.codebase_deploy_copilot.name
 }
 
-resource "aws_cloudwatch_log_group" "codebase_terraform_deploy" {
+resource "aws_codebuild_project" "codebase_deploy_platform" {
+  name           = "${var.application}-${var.codebase}-codebase-deploy-platform"
+  description    = "Deploy specified image tag to specified environment"
+  build_timeout  = 30
+  service_role   = aws_iam_role.codebase_deploy.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.artifact_store.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "ENV_CONFIG"
+      value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "CODESTAR_CONNECTION_ARN"
+      value = data.external.codestar_connections.result["ConnectionArn"]
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebase_deploy_platform.name
+      stream_name = aws_cloudwatch_log_stream.codebase_deploy_platform.name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = file("${path.module}/buildspec-deploy-platform.yml")
+  }
+
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_log_group" "codebase_deploy_platform" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
-  for_each          = toset(local.service_terraform_deployment_enabled ? [""] : [])
-  name              = "codebuild/${var.application}-${var.codebase}-codebase-terraform-deploy/log-group"
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group"
   retention_in_days = 90
 }
 
-resource "aws_cloudwatch_log_stream" "codebase_terraform_deploy" {
-  for_each       = toset(local.service_terraform_deployment_enabled ? [""] : [])
-  name           = "codebuild/${var.application}-${var.codebase}-codebase-terraform-deploy/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_terraform_deploy[""].name
+resource "aws_cloudwatch_log_stream" "codebase_deploy_platform" {
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-stream"
+  log_group_name = aws_cloudwatch_log_group.codebase_deploy_copilot.name
 }
