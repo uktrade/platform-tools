@@ -5,7 +5,7 @@ from enum import Enum
 from typing import List
 
 from dbt_platform_helper.constants import COPILOT_RULE_PRIORITY
-from dbt_platform_helper.constants import MAINTENANCE_PAGE_TAGS
+from dbt_platform_helper.constants import MAINTENANCE_PAGE_REASON
 from dbt_platform_helper.constants import MANAGED_BY_PLATFORM
 from dbt_platform_helper.constants import MANAGED_BY_SERVICE_TERRAFORM
 from dbt_platform_helper.constants import PLATFORM_RULE_STARTING_PRIORITY
@@ -233,7 +233,7 @@ class UpdateALBRules:
         if rule["Tags"]:
             if rule["Tags"].get("managed-by", "") == MANAGED_BY_PLATFORM:
                 return RuleType.PLATFORM.value
-            if rule["Tags"].get("name", "") in MAINTENANCE_PAGE_TAGS:
+            if rule["Tags"].get("reason", None) == MAINTENANCE_PAGE_REASON:
                 return RuleType.MAINTENANCE.value
 
         if rule["Priority"] == "default":
@@ -244,22 +244,21 @@ class UpdateALBRules:
         return RuleType.MANUAL.value
 
     def _get_service_from_tg(self, rule: dict) -> str:
-        target_group_arn = ""
+        target_group_arn = None
 
         for action in rule["Actions"]:
             if action["Type"] == "forward":
                 target_group_arn = action["TargetGroupArn"]
 
         if target_group_arn:
-            tgs = self.load_balancer.get_target_groups_with_tags([target_group_arn])
-
-            # TODO make more robust?
-            for tg in tgs:
-                return tg["Tags"].get("copilot-service", "")
+            try:
+                tgs = self.load_balancer.get_target_groups_with_tags([target_group_arn])
+                return tgs[0]["Tags"].get("copilot-service", None)
+            except IndexError:
+                raise PlatformException(f"No target group found for arn: {target_group_arn}")
         else:
-            # TODO add error handling if no target_group_arn
-            self.io.warn("no target group found")
-        return None
+            rule_arn = rule["RuleArn"]
+            raise PlatformException(f"No target group arn found in rule: {rule_arn}")
 
     def _get_tg_arns_for_platform_services(
         self, application: str, environment: str, managed_by: str = MANAGED_BY_SERVICE_TERRAFORM

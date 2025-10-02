@@ -377,15 +377,27 @@ class MockALBService:
                     "TagDescriptions": [
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-1",
-                            {"name": "AllowedIps", "service": "web"},
+                            {
+                                "name": "AllowedIps",
+                                "service": "web",
+                                "reason": "MaintenancePage",
+                            },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-2",
-                            {"name": "AllowedSourceIps", "service": "web"},
+                            {
+                                "name": "AllowedSourceIps",
+                                "service": "web",
+                                "reason": "MaintenancePage",
+                            },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-3",
-                            {"name": "BypassIpFilter", "service": "web"},
+                            {
+                                "name": "BypassIpFilter",
+                                "service": "web",
+                                "reason": "MaintenancePage",
+                            },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-4",
