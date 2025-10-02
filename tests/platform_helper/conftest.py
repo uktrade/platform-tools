@@ -678,16 +678,11 @@ secrets:
   DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
 
 environments:
-  dev:
-    http:
-      alb: arn:aws:elasticloadbalancing:eu-west-2:1122334455:loadbalancer/app/test-app-dev/4c84af3e661d6ba0
-  hotfix:
-    http:
-      alb: arn:aws:elasticloadbalancing:eu-west-2:9999999999:loadbalancer/app/test-app-hotfix/937d6308baba5404
   prod:
     http:
-      alb: arn:aws:elasticloadbalancing:eu-west-2:9999999999:loadbalancer/app/test-app-prod/9df7e0985fc9a089
+      path: '/'
       alias: web.test-app.prod.uktrade.digital
+      target_container: nginx
     sidecars:
       datadog-agent:
         variables:
@@ -695,14 +690,9 @@ environments:
   staging:
     variables:
       S3_CROSS_ENVIRONMENT_BUCKET_NAMES: test-app-hotfix-additional
-    http:
-      alb: arn:aws:elasticloadbalancing:eu-west-2:1122334455:loadbalancer/app/test-app-toolspr/e7d5af472c55e4d2
     sidecars:
       ipfilter:
         image: public.ecr.aws/uktrade/ip-filter:tag-latest
-  test:
-    http:
-      alb: arn:aws:elasticloadbalancing:eu-west-2:1122334455:loadbalancer/app/test-app-hotfix/937d6308baba5404
 """
     )
 

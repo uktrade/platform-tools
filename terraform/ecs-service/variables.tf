@@ -45,22 +45,25 @@ variable "service_config" {
     }))
 
     sidecars = optional(map(object({
-      port      = optional(number)
-      image     = optional(string)
+      port      = number
+      image     = string
+      essential = optional(bool)
       variables = optional(map(string))
       secrets   = optional(map(string))
     })))
 
     image = object({
-      port     = optional(number)
-      location = string
+      location   = string
+      port       = optional(number)
+      depends_on = optional(map(string))
     })
 
     cpu        = number
     memory     = number
     count      = number
     exec       = optional(bool)
-    entrypoint = optional(string)
+    entrypoint = optional(list(string))
+    essential  = optional(bool)
 
     network = optional(object({
       connect = optional(bool)
@@ -70,7 +73,7 @@ variable "service_config" {
     }))
 
     storage = optional(object({
-      readonly_fs = bool
+      readonly_fs = optional(bool)
     }))
 
     variables = optional(map(any))

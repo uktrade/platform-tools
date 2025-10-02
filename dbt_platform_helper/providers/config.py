@@ -30,17 +30,6 @@ class ConfigLoader:
         self.io = io
         self.file_provider = file_provider
 
-    def load_into_model(self, path, model):
-        try:
-            file_content = self.file_provider.load(path)
-            return model(**file_content)
-        except FileNotFoundException as e:
-            self.io.abort_with_error(
-                f"{e} Please check it exists and you are in the root directory of your -deploy repository."
-            )
-        except FileProviderException as e:
-            self.io.abort_with_error(f"Error loading configuration from {path}: {e}")
-
     def load(self, path):
         try:
             file_content = self.file_provider.load(path)
