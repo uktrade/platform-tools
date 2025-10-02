@@ -122,7 +122,7 @@ def test_service_deploy_success(yaml_file_provider):
         "count": 2,
     }
 
-    mocks.s3_provider.get_object.return_value = json.dumps({"containerDefinitions": "FAKE"})
+    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
 
     mocks.ecs_provider.register_task_definition.return_value = (
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
@@ -149,7 +149,7 @@ def test_service_deploy_success(yaml_file_provider):
     yaml_file_provider.load.assert_called_once_with("terraform/services/dev/web/service-config.yml")
 
     mocks.s3_provider.get_object.assert_called_once_with(
-        bucket_name="ecs-container-definitions-myapp-dev",
+        bucket_name="ecs-task-definitions-myapp-dev",
         object_key="myapp/dev/web.json",
     )
 
@@ -161,7 +161,7 @@ def test_service_deploy_success(yaml_file_provider):
     assert register_task_def_kwargs["application"] == "myapp"
     assert register_task_def_kwargs["image_tag"] == "tag-123"
     assert register_task_def_kwargs["account_id"] == "111122223333"
-    assert register_task_def_kwargs["container_definitions"] == {"containerDefinitions": "FAKE"}
+    assert register_task_def_kwargs["task_definition"] == {"fakeTaskDefinition": "FAKE"}
 
     update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs
     assert update_service_kwargs["service_model"].name == "web"

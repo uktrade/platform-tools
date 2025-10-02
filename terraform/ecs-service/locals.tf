@@ -168,7 +168,7 @@ locals {
       mountPoints = concat([
         { sourceVolume = "path-tmp", containerPath = "/tmp" }
         ], [
-        for path in try(var.service_config.storage.writable_directories, []) :
+        for path in coalesce(var.service_config.storage.writable_directories, []) :
         { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
       ])
       # Ensure main container always starts last
@@ -218,6 +218,28 @@ locals {
     local.sidecar_containers
   )
 
-  container_definitions_json = jsonencode(local.container_definitions_list)
+  writable_volumes = [
+    for path in coalesce(var.service_config.storage.writable_directories, []) :
+    { "name" : "path${replace(path, "/", "-")}", "host" : {} }
+  ]
+
+  task_definition_json = jsonencode({
+    family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
+    taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task-role"
+    executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task-execution-role"
+    networkMode             = "awsvpc"
+    containerDefinitions    = local.container_definitions_list
+    volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
+    placementConstraints    = []
+    requiresCompatibilities = ["FARGATE"]
+    cpu                     = tostring(var.service_config.cpu)
+    memory                  = tostring(var.service_config.memory)
+    tags = [
+      { "key" : "application", "value" : var.application },
+      { "key" : "environment", "value" : var.environment },
+      { "key" : "service", "value" : var.service_config.name },
+      { "key" : "managed-by", "value" : "Platform Helper" },
+    ]
+  })
 
 }
