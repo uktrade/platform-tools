@@ -136,6 +136,12 @@ class UpdateALBRules:
             ) != len(mapped_rules.get(RuleType.COPILOT.value, [])):
                 raise PlatformException("Platform rules are partially created, please review.")
 
+            if len(mapped_rules.get(RuleType.PLATFORM.value, [])) == len(
+                mapped_rules.get(RuleType.COPILOT.value, [])
+            ):
+                self.io.info("Platform rules already exist, skipping creation")
+                return  # early exit
+
             grouped = dict()
 
             service_mapped_tgs = self._get_tg_arns_for_platform_services(
@@ -146,7 +152,7 @@ class UpdateALBRules:
                 self.io.debug(f"Building platform rule for corresponding copilot rule: {rule_arn}")
                 sorted_hosts = sorted(copilot_rule["Conditions"].get("host-header", []))
                 # Depth represents the specificity of the path condition, allowing us to sort in decreasing complexity.
-                depth = max(
+                path_depth = max(
                     [
                         len([sub_path for sub_path in path.split("/") if sub_path])
                         for path in copilot_rule["Conditions"].get("path-pattern", [])
@@ -169,7 +175,7 @@ class UpdateALBRules:
                             "copilot_rule": rule_arn,
                             "actions": actions,
                             "conditions": list_conditions,
-                            "depth": depth,
+                            "path_depth": path_depth,
                             "service_name": service_name,
                         }
                     )
@@ -179,14 +185,14 @@ class UpdateALBRules:
                             "copilot_rule": rule_arn,
                             "actions": actions,
                             "conditions": list_conditions,
-                            "depth": depth,
+                            "path_depth": path_depth,
                             "service_name": service_name,
                         }
                     ]
 
             rule_priority = PLATFORM_RULE_STARTING_PRIORITY
             for hosts, rules in grouped.items():
-                rules.sort(key=lambda x: x["depth"], reverse=True)
+                rules.sort(key=lambda x: x["path_depth"], reverse=True)
 
                 for rule in rules:
                     # Create rule with priority
