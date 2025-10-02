@@ -541,7 +541,7 @@ class MockALBService:
 
 
 @pytest.mark.parametrize(
-    "input_args, expected_logs, create_platform_rules, assert_created_rules",
+    "input_args, expected_logs, create_platform_rules, assert_created_rules,assert_deleted_rules",
     [
         (
             {
@@ -561,6 +561,7 @@ class MockALBService:
             },
             True,
             False,
+            True,
         ),
         (
             {
@@ -580,6 +581,7 @@ class MockALBService:
             },
             True,
             False,
+            True,
         ),
         (
             {
@@ -605,6 +607,7 @@ class MockALBService:
             },
             False,
             True,
+            False,
         ),
         (
             {
@@ -613,27 +616,15 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: dual-deploy-platform-traffic",
-                    "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
-                    # "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                    "Platform rules already exist, skipping creation",
                 ],
                 "debug": [
                     "Listener ARN: listener-arn-doesnt-matter",
-                    # "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
-                    # "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
-                    # "Deleted existing rule: listener-rule-arn-doesnt-matter-10",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                    "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                    "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                    "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
                 ],
             },
-            True,  # platform rules exist so deleted and re-created
-            True,
+            True,  # platform rules exist
+            False,
+            False,
         ),
         (
             {
@@ -659,6 +650,7 @@ class MockALBService:
             },
             False,
             True,
+            False,
         ),
     ],
 )
@@ -670,6 +662,7 @@ def test_alb_rules(
     expected_logs,
     create_platform_rules,
     assert_created_rules,
+    assert_deleted_rules,
 ):
 
     load_application = Mock()
@@ -814,7 +807,8 @@ def test_alb_rules(
                 ),
             ]
         )
-    else:
+
+    if assert_deleted_rules:
         mock_boto_elbv2_client.delete_rule.assert_has_calls(
             [
                 call(RuleArn="listener-rule-arn-doesnt-matter-8"),
