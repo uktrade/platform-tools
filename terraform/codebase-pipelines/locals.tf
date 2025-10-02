@@ -77,8 +77,8 @@ locals {
   ])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
-  service_terraform_deployment_enabled = anytrue([for env in var.env_config : (env != null && coalesce(try(env.service-deployment-mode, null), "copilot") != "copilot")])
+  service_terraform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
-  copilot_deployment_enabled = anytrue([for env in var.env_config : (env != null && coalesce(try(env.service-deployment-mode, "copilot"), "platform") != "platform")])
+  copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 }

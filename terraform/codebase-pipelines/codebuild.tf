@@ -257,7 +257,7 @@ resource "aws_cloudwatch_log_stream" "invalidate_cache" {
   log_group_name = aws_cloudwatch_log_group.invalidate_cache[""].name
 }
 
-resource "aws_codebuild_project" "codebase_deploy_copilot" {
+resource "aws_codebuild_project" "codebase_deploy" {
   name           = "${var.application}-${var.codebase}-codebase-deploy"
   description    = "Deploy specified image tag to specified environment"
   build_timeout  = 30
@@ -297,8 +297,8 @@ resource "aws_codebuild_project" "codebase_deploy_copilot" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_deploy_copilot.name
-      stream_name = aws_cloudwatch_log_stream.codebase_deploy_copilot.name
+      group_name  = aws_cloudwatch_log_group.codebase_deploy.name
+      stream_name = aws_cloudwatch_log_stream.codebase_deploy.name
     }
   }
 
@@ -310,16 +310,16 @@ resource "aws_codebuild_project" "codebase_deploy_copilot" {
   tags = local.tags
 }
 
-resource "aws_cloudwatch_log_group" "codebase_deploy_copilot" {
+resource "aws_cloudwatch_log_group" "codebase_deploy" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
   name              = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group"
   retention_in_days = 90
 }
 
-resource "aws_cloudwatch_log_stream" "codebase_deploy_copilot" {
+resource "aws_cloudwatch_log_stream" "codebase_deploy" {
   name           = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_deploy_copilot.name
+  log_group_name = aws_cloudwatch_log_group.codebase_deploy.name
 }
 
 resource "aws_codebuild_project" "codebase_deploy_platform" {
@@ -384,5 +384,5 @@ resource "aws_cloudwatch_log_group" "codebase_deploy_platform" {
 
 resource "aws_cloudwatch_log_stream" "codebase_deploy_platform" {
   name           = "codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_deploy_copilot.name
+  log_group_name = aws_cloudwatch_log_group.codebase_deploy_platform.name
 }

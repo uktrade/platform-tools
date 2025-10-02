@@ -43,7 +43,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
   }
 
   dynamic "stage" {
-    for_each = local.service_terraform_deployment_enabled ? each.value.environments : []
+    for_each = [for env in each.value.environments : env if lookup(env, "service_deployment_mode", "copilot") != "copilot"]
     content {
       name = "Deploy-Terraform-${stage.value.name}"
       on_failure {
@@ -63,7 +63,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = stage.value.service_deployment_mode != "copilot" ? local.service_order_list : []
+        for_each = local.service_order_list
         content {
           name             = action.value.name
           category         = "Build"
@@ -114,7 +114,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = stage.value.service_deployment_mode != "platform" ? local.service_order_list : []
+        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "platform" ? local.service_order_list : []
         content {
           name             = "copilot-${action.value.name}"
           category         = "Build"
@@ -126,7 +126,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           run_order        = action.value.order + 1
 
           configuration = {
-            ProjectName = aws_codebuild_project.codebase_deploy_copilot.name
+            ProjectName = aws_codebuild_project.codebase_deploy.name
             EnvironmentVariables : jsonencode([
               { name : "APPLICATION", value : var.application },
               { name : "AWS_REGION", value : data.aws_region.current.region },
@@ -143,7 +143,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = stage.value.service_deployment_mode != "copilot" ? local.service_order_list : []
+        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "copilot" ? local.service_order_list : []
         content {
           name             = "platform-${action.value.name}"
           category         = "Build"
@@ -307,7 +307,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         run_order        = action.value.order + 1
 
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy_copilot.name
+          ProjectName = aws_codebuild_project.codebase_deploy.name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
             { name : "AWS_REGION", value : data.aws_region.current.region },
