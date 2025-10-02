@@ -145,6 +145,7 @@ class UpdateALBRules:
                 rule_arn = copilot_rule["RuleArn"]
                 self.io.debug(f"Building platform rule for corresponding copilot rule: {rule_arn}")
                 sorted_hosts = sorted(copilot_rule["Conditions"].get("host-header", []))
+                # Depth represents the specificity of the path condition, allowing us to sort in decreasing complexity.
                 depth = max(
                     [
                         len([sub_path for sub_path in path.split("/") if sub_path])
