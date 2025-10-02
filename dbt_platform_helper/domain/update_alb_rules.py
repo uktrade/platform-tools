@@ -133,17 +133,10 @@ class UpdateALBRules:
             or service_deployment_mode == Deployment.DUAL_DEPLOY_PLATFORM.value
         ):
 
-            # Clear out any platform rules which may be floating
             if len(mapped_rules.get(RuleType.PLATFORM.value, [])) > 0 and len(
                 mapped_rules.get(RuleType.PLATFORM.value, [])
             ) != len(mapped_rules.get(RuleType.COPILOT.value, [])):
-                raise PlatformException("PLatform rules are partially created, please review.")
-                # compare Rules
-                # TODO comples option:
-                # compare that platform has corresponding copilot rule
-                #   detect extra rules (error on them)
-                #   detect missing rules and create them
-                #       done by comparing given params and if they are equal the are the same rule
+                raise PlatformException("Platform rules are partially created, please review.")
 
             grouped = dict()
 
