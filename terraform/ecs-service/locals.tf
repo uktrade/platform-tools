@@ -1,7 +1,4 @@
 locals {
-
-  secrets      = values(coalesce(var.service_config.secrets, {}))
-  service_name = "${var.application}-${var.environment}-${var.service_config.name}"
   tags = {
     application = var.application
     environment = var.environment
@@ -11,6 +8,7 @@ locals {
 
   full_service_name    = "${var.application}-${var.environment}-${var.service_config.name}"
   vpc_name             = var.env_config[var.environment]["vpc"]
+  secrets              = values(coalesce(var.service_config.secrets, {}))
   web_service_required = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
