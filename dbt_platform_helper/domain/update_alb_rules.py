@@ -73,6 +73,11 @@ class UpdateALBRules:
 
         try:
             self._execute_rule_updates(environment, operation_state)
+            if operation_state.created_rules:
+                self.io.info(f"Created rules: {operation_state.created_rules}")
+            if operation_state.deleted_rules:
+                deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
+                self.io.info(f"Deleted rules: {deleted_arns}")
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
@@ -80,17 +85,10 @@ class UpdateALBRules:
                 self.io.info("Attempting to rollback changes ...")
                 try:
                     self._rollback_changes(operation_state)
-                    return
                 except RollbackException as rollback_error:
                     raise PlatformException(f"Rollback failed: \n{str(rollback_error)}")
             else:
                 raise
-
-        if operation_state.created_rules:
-            self.io.info(f"Created rules: {operation_state.created_rules}")
-        if operation_state.deleted_rules:
-            deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
-            self.io.info(f"Deleted rules: {deleted_arns}")
 
     def _execute_rule_updates(self, environment: str, operation_state: OperationState):
         platform_config = self.config_provider.get_enriched_config()
