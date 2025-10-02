@@ -238,9 +238,6 @@ class ECS:
     def register_task_definition(
         self,
         service_model: ServiceConfig,
-        environment: str,
-        application: str,
-        account_id: str,
         task_definition: dict,
         image_tag: Optional[str] = None,
     ) -> str:
@@ -248,7 +245,7 @@ class ECS:
         containerDefinitions."""
 
         if image_tag:
-            for container in task_definition["taskDefinition"]["containerDefinitions"]:
+            for container in task_definition["containerDefinitions"]:
                 if container.get("name") == service_model.name:
                     image_uri = service_model.image.location.rsplit(":", 1)[0]
                     container["image"] = f"{image_uri}:{image_tag}"

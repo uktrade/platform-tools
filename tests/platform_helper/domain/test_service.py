@@ -157,10 +157,7 @@ def test_service_deploy_success(yaml_file_provider):
     service_model = register_task_def_kwargs["service_model"]
     assert service_model.name == "web"
     assert service_model.count == 2
-    assert register_task_def_kwargs["environment"] == "dev"
-    assert register_task_def_kwargs["application"] == "myapp"
     assert register_task_def_kwargs["image_tag"] == "tag-123"
-    assert register_task_def_kwargs["account_id"] == "111122223333"
     assert register_task_def_kwargs["task_definition"] == {"fakeTaskDefinition": "FAKE"}
 
     update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs

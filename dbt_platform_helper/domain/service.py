@@ -248,10 +248,7 @@ class ServiceManager:
 
         task_def_arn = self.ecs_provider.register_task_definition(
             service_model=service_model,
-            environment=environment,
-            application=application,
             image_tag=image_tag,
-            account_id=account_id,
             task_definition=task_definition,
         )
 
