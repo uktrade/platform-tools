@@ -45,3 +45,8 @@ SERVICE_NAME_SUFFIX = f"Service-{COPILOT_IDENTIFIER}"
 REFRESH_TOKEN_MESSAGE = (
     "To refresh this SSO session run `aws sso login` with the corresponding profile"
 )
+PLATFORM_SSO_ROLES = [
+    "AdministratorAccess",
+    "DBTPlatformDeveloperWrite",
+    "DBTPlatformDeveloperRead",
+]
