@@ -70,7 +70,7 @@ resource "aws_db_instance" "default" {
   # upgrades
   allow_major_version_upgrade = true
   auto_minor_version_upgrade  = true
-  apply_immediately           = false
+  apply_immediately           = coalesce(var.config.apply_immediately, false)
   maintenance_window          = "Mon:00:00-Mon:03:00"
 
   # storage

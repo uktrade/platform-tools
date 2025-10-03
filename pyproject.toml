@@ -3,7 +3,7 @@ line-length = 100
 
 [tool.poetry]
 name = "dbt-platform-helper"
-version = "15.9.0"
+version = "15.10.0"
 description = "Set of tools to help transfer applications/services from GOV.UK PaaS to DBT PaaS augmenting AWS Copilot."
 authors = ["Department for Business and Trade Platform Team <sre-team@digital.trade.gov.uk>"]
 license = "MIT"
@@ -46,7 +46,7 @@ pre-commit = ">=3.3.3,<5.0.0"
 freezegun = "^1.2.2"
 parameterized = "^0.9.0"
 pytest-xdist = "^3.5.0"
-pytest-cov = "^6.0.0"
+pytest-cov = ">=6,<8"
 mypy-boto3-codebuild = "^1.40.8"
 
 python-hcl2 = "^7.3.1"

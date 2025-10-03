@@ -8,10 +8,8 @@ from unittest.mock import create_autospec
 from unittest.mock import patch
 
 import pytest
-import regex
 from freezegun import freeze_time
 
-from dbt_platform_helper.constants import IMAGE_TAG_ENV_VAR
 from dbt_platform_helper.constants import TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
@@ -23,40 +21,22 @@ from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 
 
 @pytest.mark.parametrize(
-    "input_args, env_vars, expected_results, expect_exception",
+    "input_args, env_vars, expected_results",
     [
         (
-            {"environments": ["development"], "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-            },
-            None,  # Image tag not given, hence why not relevant - should throw an exception before generating main.tf.json contents
-            True,
+            {"environment": "development", "services": []},
+            None,  # Happy path where no module source override is set, resulting in default being applied
+            {"development": "development.json"},
         ),
         (
-            {"environments": ["development"], "services": [], "image_tag_flag": "doesnt-matter"},
+            {"environment": "development", "services": []},
             {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
-            {"development": "image_tag_flag.json"},
-            False,
+            {"development": "development_with_source_override.json"},
         ),
         (
-            {"environments": ["development"], "services": []},
-            {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL", IMAGE_TAG_ENV_VAR: "doesnt-matter"},
-            {"development": "image_tag_flag.json"},
-            False,
-        ),
-        (
-            {"environments": [], "services": []},
-            {
-                TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "OVERRIDE",
-                IMAGE_TAG_ENV_VAR: "some-fake-image",
-            },
-            {
-                "development": "development.json",
-                "staging": "staging.json",
-                "production": "production.json",
-            },
-            False,
+            {"environment": "development", "services": []},
+            {TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR: "LOCAL"},
+            {"development": "development_with_source_override.json"},
         ),
     ],
 )
@@ -74,12 +54,12 @@ def test_generate(
     input_args,
     env_vars,
     expected_results,
-    expect_exception,
 ):
 
     # Test setup
-    for var, value in env_vars.items():
-        os.environ[var] = value
+    if env_vars:
+        for var, value in env_vars.items():
+            os.environ[var] = value
     load_application = Mock()
     load_application.return_value = mock_application
     mock_installed_version_provider = create_autospec(spec=InstalledVersionProvider, spec_set=True)
@@ -97,35 +77,27 @@ def test_generate(
     )
 
     # Test execution
-    if expect_exception:
-        with pytest.raises(
-            PlatformException,
-            match=regex.escape(
-                "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
-            ),
-        ):
-            service_manager.generate(**input_args)
-    else:
-        service_manager.generate(**input_args)
+    service_manager.generate(**input_args)
 
-        # Test Assertion
-        for environment, file in expected_results.items():
-            actual_terraform = Path(
-                f"terraform/services/{environment}/web/main.tf.json"
-            )  # Path where terraform manifest is generated
-            expected_terraform = (
-                EXPECTED_DATA_DIR / "services" / "terraform" / f"{file}"
-            )  # Location of expected results
+    # Test Assertion
+    for environment, file in expected_results.items():
+        actual_terraform = Path(
+            f"terraform/services/{environment}/web/main.tf.json"
+        )  # Path where terraform manifest is generated
+        expected_terraform = (
+            EXPECTED_DATA_DIR / "services" / "terraform" / f"{file}"
+        )  # Location of expected results
 
-            assert actual_terraform.exists()
+        assert actual_terraform.exists()
 
-            actual_content = actual_terraform.read_text()
-            expected_content = expected_terraform.read_text()
-            actual_json_content = json.loads(actual_content)
-            expected_json_content = json.loads(expected_content)
+        actual_content = actual_terraform.read_text()
+        expected_content = expected_terraform.read_text()
+        actual_json_content = json.loads(actual_content)
+        expected_json_content = json.loads(expected_content)
 
-            assert actual_json_content == expected_json_content
+        assert actual_json_content == expected_json_content
 
+    if env_vars:
         for var, value in env_vars.items():
             del os.environ[var]
 
@@ -163,14 +135,7 @@ def test_generate_no_service_dir(
         load_application=load_application,
     )
 
-    # Test execution
-    with pytest.raises(
-        PlatformException,
-        match=regex.escape(
-            "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
-        ),
-    ):
-        service_manager.generate(environments=[], services=[])
+    service_manager.generate(environment="development", services=[])
 
     io.abort_with_error.assert_called_with(
         "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
@@ -205,14 +170,7 @@ def test_generate_no_service_config(
         load_application=load_application,
     )
 
-    # Test execution
-    with pytest.raises(
-        PlatformException,
-        match=regex.escape(
-            "An image tag must be provided to deploy a service. This can be set by the $IMAGE_TAG environment variable, or the --image-tag flag."
-        ),
-    ):
-        service_manager.generate(environments=[], services=[])
+    service_manager.generate(environment="development", services=[])
 
     io.warn.assert_has_calls(
         [
@@ -252,6 +210,6 @@ def test_generate_no_environment(
     )
     with pytest.raises(
         PlatformException,
-        match="""cannot generate terraform for environment doesnt-exist.  It does not exist in your configuration""",
+        match="""Cannot generate Terraform for environment 'doesnt-exist'. It does not exist in your configuration.""",
     ):
-        service_manager.generate(environments=["doesnt-exist"], services=[])
+        service_manager.generate(environment="doesnt-exist", services=[])

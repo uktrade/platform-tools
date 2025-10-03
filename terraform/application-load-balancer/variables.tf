@@ -17,7 +17,6 @@ variable "dns_account_id" {
 variable "config" {
   type = object({
     domain_prefix                           = optional(string)
-    env_root                                = optional(string)
     cdn_domains_list                        = optional(map(list(string)))
     additional_address_list                 = optional(list(string))
     slack_alert_channel_alb_secret_rotation = optional(string)
@@ -31,4 +30,8 @@ variable "config" {
     ])
     error_message = "Items in cdn_domains_list should be between 3 and 63 characters long."
   }
+}
+
+variable "service_deployment_mode" {
+  type = string
 }

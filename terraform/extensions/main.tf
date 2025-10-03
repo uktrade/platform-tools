@@ -70,10 +70,11 @@ module "alb" {
   providers = {
     aws.domain = aws.domain
   }
-  application    = var.args.application
-  environment    = var.environment
-  vpc_name       = local.vpc_name
-  dns_account_id = local.dns_account_id
+  application             = var.args.application
+  environment             = var.environment
+  vpc_name                = local.vpc_name
+  dns_account_id          = local.dns_account_id
+  service_deployment_mode = local.service_deployment_mode
 
   config = each.value
 }

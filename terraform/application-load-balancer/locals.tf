@@ -22,7 +22,7 @@ locals {
 
   # The primary domain for every application follows these naming standard.  See README.md 
   domain_prefix             = coalesce(var.config.domain_prefix, "internal")
-  domain_suffix             = var.environment == "prod" ? coalesce(var.config.env_root, "prod.uktrade.digital") : coalesce(var.config.env_root, "uktrade.digital")
+  domain_suffix             = var.environment == "prod" ? "prod.uktrade.digital" : "uktrade.digital"
   domain_name               = var.environment == "prod" ? "${local.domain_prefix}.${var.application}.${local.domain_suffix}" : "${local.domain_prefix}.${var.environment}.${var.application}.${local.domain_suffix}"
   additional_address_domain = try(var.environment == "prod" ? "${var.application}.${local.domain_suffix}" : "${var.environment}.${var.application}.${local.domain_suffix}")
 
@@ -48,4 +48,18 @@ locals {
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
+
+  # calculate a few load balancer details
+  # alb_details = {alb_name = "name", alb_id = "id", listener_id = "id"}
+  alb_details = try(
+    regex(":listener\\/app\\/(?P<alb_name>[^\\/]+)\\/(?P<alb_id>[^\\/]+)\\/(?P<listener_id>[^\\/]+)$", aws_lb_listener.alb-listener["https"].arn),
+    {
+      alb_name    = null
+      alb_id      = null
+      listener_id = null
+    }
+  )
+
+  # Validate if the 'service-deployment-mode' property from platform-config.yml is set to a non-copilot mode for the current environment
+  non_copilot_service_deployment_mode = var.service_deployment_mode == "dual-deploy-copilot-traffic" || var.service_deployment_mode == "dual-deploy-platform-traffic" || var.service_deployment_mode == "platform" ? 1 : 0
 }
