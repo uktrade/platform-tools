@@ -43,7 +43,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
   }
 
   dynamic "stage" {
-    for_each = local.service_terraform_deployment_enabled ? each.value.environments : []
+    for_each = [for env in each.value.environments : env if lookup(env, "service_deployment_mode", "copilot") != "copilot"]
     content {
       name = "Deploy-Terraform-${stage.value.name}"
       on_failure {
@@ -75,7 +75,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           run_order        = action.value.order + 1
 
           configuration = {
-            ProjectName = aws_codebuild_project.codebase_terraform_deploy[""].name
+            ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
             EnvironmentVariables : jsonencode([
               { name : "APPLICATION", value : var.application },
               { name : "AWS_REGION", value : data.aws_region.current.region },
@@ -90,7 +90,6 @@ resource "aws_codepipeline" "codebase_pipeline" {
           }
         }
       }
-
     }
   }
 
@@ -115,9 +114,9 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = local.service_order_list
+        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "platform" ? local.service_order_list : []
         content {
-          name             = action.value.name
+          name             = "copilot-${action.value.name}"
           category         = "Build"
           owner            = "AWS"
           provider         = "CodeBuild"
@@ -144,6 +143,42 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
+        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "copilot" ? local.service_order_list : []
+        content {
+          name             = "platform-${action.value.name}"
+          category         = "Build"
+          owner            = "AWS"
+          provider         = "CodeBuild"
+          input_artifacts  = ["deploy_source"]
+          output_artifacts = []
+          version          = "1"
+          run_order        = action.value.order + 1
+
+          configuration = {
+            ProjectName = aws_codebuild_project.codebase_deploy_platform.name
+            EnvironmentVariables : jsonencode([
+              { name : "APPLICATION", value : var.application },
+              { name : "AWS_REGION", value : data.aws_region.current.region },
+              { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+              { name : "ENVIRONMENT", value : stage.value.name },
+              { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
+              { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
+              { name : "REPOSITORY_URL", value : local.repository_url },
+              { name : "SERVICE", value : action.value.name },
+              { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+            ])
+          }
+        }
+      }
+    }
+  }
+
+  dynamic "stage" {
+    for_each = toset(local.cache_invalidation_enabled ? each.value.environments : [])
+    content {
+      name = "Invalidate-Cache-${stage.value.name}"
+
+      dynamic "action" {
         for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
         content {
           name             = "InvalidateCache-${stage.value.name}"
@@ -153,7 +188,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = length(local.service_order_list) + 2
+          run_order        = 1
 
           configuration = {
             ProjectName = aws_codebuild_project.invalidate_cache[""].name
@@ -220,12 +255,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     }
   }
 
-
   dynamic "stage" {
     for_each = local.service_terraform_deployment_enabled ? [""] : []
-
     content {
-      name = "Deploy-Terraform"
+      name = "Service-Terraform"
 
       dynamic "action" {
         for_each = local.service_order_list
@@ -240,7 +273,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
           run_order        = action.value.order + 1
 
           configuration = {
-            ProjectName = aws_codebuild_project.codebase_terraform_deploy[""].name
+            ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
             EnvironmentVariables : jsonencode([
               { name : "APPLICATION", value : var.application },
               { name : "AWS_REGION", value : data.aws_region.current.region },
@@ -262,9 +295,9 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     name = "Deploy"
 
     dynamic "action" {
-      for_each = local.service_order_list
+      for_each = local.copilot_deployment_enabled ? local.service_order_list : []
       content {
-        name             = action.value.name
+        name             = "copilot-${action.value.name}"
         category         = "Build"
         owner            = "AWS"
         provider         = "CodeBuild"
@@ -291,8 +324,41 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     }
 
     dynamic "action" {
-      for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+      for_each = local.service_terraform_deployment_enabled ? local.service_order_list : []
       content {
+        name             = "platform-${action.value.name}"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = []
+        version          = "1"
+        run_order        = action.value.order + 1
+
+        configuration = {
+          ProjectName = aws_codebuild_project.codebase_deploy_platform.name
+          EnvironmentVariables : jsonencode([
+            { name : "APPLICATION", value : var.application },
+            { name : "AWS_REGION", value : data.aws_region.current.region },
+            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+            { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
+            { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
+            { name : "REPOSITORY_URL", value : local.repository_url },
+            { name : "SERVICE", value : action.value.name },
+            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+          ])
+        }
+      }
+    }
+  }
+
+  dynamic "stage" {
+    for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+    content {
+      name = "Invalidate-Cache"
+
+      action {
         name             = "InvalidateCache"
         category         = "Build"
         owner            = "AWS"
@@ -300,7 +366,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         input_artifacts  = ["deploy_source"]
         output_artifacts = []
         version          = "1"
-        run_order        = length(local.service_order_list) + 2
+        run_order        = 1
 
         configuration = {
           ProjectName = aws_codebuild_project.invalidate_cache[""].name
