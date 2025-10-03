@@ -27,6 +27,8 @@
         - [platform-helper internal service](#platform-helper-internal-service)
             - [platform-helper internal service deploy](#platform-helper-internal-service-deploy)
             - [platform-helper internal service generate](#platform-helper-internal-service-generate)
+        - [platform-helper internal alb](#platform-helper-internal-alb)
+            - [platform-helper internal alb update-rules](#platform-helper-internal-alb-update-rules)
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
@@ -554,7 +556,7 @@ platform-helper generate
 ## Usage
 
 ```
-platform-helper internal (migrate-service-manifests|service) 
+platform-helper internal (migrate-service-manifests|service|alb) 
 ```
 
 ## Options
@@ -564,6 +566,7 @@ platform-helper internal (migrate-service-manifests|service)
 
 ## Commands
 
+- [`alb` ↪](#platform-helper-internal-alb)
 - [`migrate-service-manifests` ↪](#platform-helper-internal-migrate-service-manifests)
 - [`service` ↪](#platform-helper-internal-service)
 
@@ -648,6 +651,47 @@ platform-helper internal service generate --env <environment> [--name <name>]
   - The name of the service(s) to generate service manifest(s) for.
 - `--env <text>`
   - The name of the environment to generate service manifests for.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper internal alb
+
+[↩ Parent](#platform-helper-internal)
+
+    Load Balancer related commands.
+
+## Usage
+
+```
+platform-helper internal alb update-rules 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`update-rules` ↪](#platform-helper-internal-alb-update-rules)
+
+# platform-helper internal alb update-rules
+
+[↩ Parent](#platform-helper-internal-alb)
+
+    Update alb rules based on service-deployment-mode for a given
+    environment.
+
+## Usage
+
+```
+platform-helper internal alb update-rules --env <environment> 
+```
+
+## Options
+
+- `--env <text>`
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
