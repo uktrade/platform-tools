@@ -7,7 +7,7 @@ from typing import Dict
 from prettytable import PrettyTable
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
-from dbt_platform_helper.constants import PLATFORM_SSO_ROLES
+from dbt_platform_helper.constants import STANDARD_PLATFORM_SSO_ROLES
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
@@ -199,11 +199,11 @@ class Config:
             max_results=100,
         )
 
-        roles_available = [r["roleName"] for r in role_list]
+        roles_retrieved = [r["roleName"] for r in role_list]
 
-        for role_type in PLATFORM_SSO_ROLES:
-            if role_type in roles_available:
-                return role_type
+        for role in STANDARD_PLATFORM_SSO_ROLES:
+            if role in roles_retrieved:
+                return role
         return role_list[0]["roleName"]
 
     def _add_version_status_row(

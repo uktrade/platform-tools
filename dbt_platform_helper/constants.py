@@ -52,7 +52,7 @@ MAINTENANCE_PAGE_TAGS = ["MaintenancePage", "AllowedIps", "BypassIpFilter", "All
 MAINTENANCE_PAGE_REASON = "MaintenancePage"
 MANAGED_BY_PLATFORM = "DBT Platform"
 MANAGED_BY_SERVICE_TERRAFORM = "DBT Platform - Service Terraform"
-PLATFORM_SSO_ROLES = [
+STANDARD_PLATFORM_SSO_ROLES = [
     "AdministratorAccess",
     "DBTPlatformDeveloperWrite",
     "DBTPlatformDeveloperRead",
