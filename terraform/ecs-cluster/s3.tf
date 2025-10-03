@@ -1,17 +1,17 @@
-resource "aws_s3_bucket" "container_definitions" {
+resource "aws_s3_bucket" "task_definitions" {
   # checkov:skip=CKV_AWS_144: Cross Region Replication not Required
   # checkov:skip=CKV2_AWS_62: Don't need even notifications
   # checkov:skip=CKV_AWS_18:  Logging not required
-  bucket = "ecs-container-definitions-${var.application}-${var.environment}"
+  bucket = "ecs-task-definitions-${var.application}-${var.environment}"
   tags   = local.tags
 }
 
-resource "aws_s3_bucket_policy" "container_definitions" {
-  bucket = aws_s3_bucket.container_definitions.id
-  policy = data.aws_iam_policy_document.container_definitions_bucket.json
+resource "aws_s3_bucket_policy" "task_definitions" {
+  bucket = aws_s3_bucket.task_definitions.id
+  policy = data.aws_iam_policy_document.task_definitions_bucket.json
 }
 
-data "aws_iam_policy_document" "container_definitions_bucket" {
+data "aws_iam_policy_document" "task_definitions_bucket" {
   statement {
     effect  = "Deny"
     actions = ["s3:*"]
@@ -21,8 +21,8 @@ data "aws_iam_policy_document" "container_definitions_bucket" {
     }
 
     resources = [
-      aws_s3_bucket.container_definitions.arn,
-      "${aws_s3_bucket.container_definitions.arn}/*"
+      aws_s3_bucket.task_definitions.arn,
+      "${aws_s3_bucket.task_definitions.arn}/*"
     ]
 
     condition {
@@ -49,27 +49,27 @@ data "aws_iam_policy_document" "container_definitions_bucket" {
     }
 
     resources = [
-      aws_s3_bucket.container_definitions.arn,
-      "${aws_s3_bucket.container_definitions.arn}/*"
+      aws_s3_bucket.task_definitions.arn,
+      "${aws_s3_bucket.task_definitions.arn}/*"
     ]
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "container_definitions" {
-  bucket                  = aws_s3_bucket.container_definitions.id
+resource "aws_s3_bucket_public_access_block" "task_definitions" {
+  bucket                  = aws_s3_bucket.task_definitions.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_versioning" "container_definitions" {
-  bucket = aws_s3_bucket.container_definitions.id
+resource "aws_s3_bucket_versioning" "task_definitions" {
+  bucket = aws_s3_bucket.task_definitions.id
   versioning_configuration { status = "Enabled" }
 }
 
-resource "aws_s3_bucket_lifecycle_configuration" "container_definitions" {
-  bucket = aws_s3_bucket.container_definitions.id
+resource "aws_s3_bucket_lifecycle_configuration" "task_definitions" {
+  bucket = aws_s3_bucket.task_definitions.id
 
   rule {
     id     = "NonCurrentVersionsRetention"
@@ -94,7 +94,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "container_definitions" {
     }
   }
 
-  depends_on = [aws_s3_bucket_versioning.container_definitions]
+  depends_on = [aws_s3_bucket_versioning.task_definitions]
 }
 
 resource "aws_kms_key" "kms_key" {
@@ -104,7 +104,7 @@ resource "aws_kms_key" "kms_key" {
 }
 
 resource "aws_kms_alias" "s3-bucket" {
-  name          = "alias/${var.environment}-container-definitions-key"
+  name          = "alias/${var.environment}-task-definitions-key"
   target_key_id = aws_kms_key.kms_key.id
   depends_on    = [aws_kms_key.kms_key]
 }
@@ -115,7 +115,7 @@ resource "aws_kms_key_policy" "key-policy" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "encryption-config" {
-  bucket = aws_s3_bucket.container_definitions.id
+  bucket = aws_s3_bucket.task_definitions.id
 
   rule {
     apply_server_side_encryption_by_default {

@@ -82,6 +82,7 @@ class Network(BaseModel):
 
 class Storage(BaseModel):
     readonly_fs: Optional[bool] = Field(default=None)
+    writable_directories: Optional[list[str]] = Field(default=None)
 
 
 class ServiceConfigEnvironmentOverride(BaseModel):

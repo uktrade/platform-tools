@@ -194,6 +194,18 @@ class ServiceManager:
 
                 service_manifest = self.file_provider.remove_empty_keys(service_manifest)
 
+                if "sidecars" in service_manifest:
+                    new_sidecars = {}
+
+                    for sidecar_name, sidecar in service_manifest["sidecars"].items():
+                        if "command" in sidecar and (
+                            "chown" in sidecar["command"] or "chmod" in sidecar["command"]
+                        ):
+                            continue
+                        new_sidecars[sidecar_name] = sidecar
+
+                    service_manifest["sidecars"] = new_sidecars
+
                 service_path = service_directory / service_manifest["name"]
 
                 self.io.info(
@@ -226,21 +238,18 @@ class ServiceManager:
         account_id = application_envs.get(environment).account_id
 
         s3_response = self.s3_provider.get_object(
-            bucket_name=f"ecs-container-definitions-{application}-{environment}",
+            bucket_name=f"ecs-task-definitions-{application}-{environment}",
             object_key=f"{application}/{environment}/{service_model.name}.json",
         )
 
-        container_definitions = json.loads(s3_response)
+        task_definition = json.loads(s3_response)
 
         image_tag = image_tag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
 
         task_def_arn = self.ecs_provider.register_task_definition(
             service_model=service_model,
-            environment=environment,
-            application=application,
             image_tag=image_tag,
-            account_id=account_id,
-            container_definitions=container_definitions,
+            task_definition=task_definition,
         )
 
         self.io.info(f"Task definition successfully registered with ARN '{task_def_arn}'.\n")
