@@ -3,6 +3,9 @@ from boto3 import Session
 
 from dbt_platform_helper.providers.aws.exceptions import CreateAccessTokenException
 from dbt_platform_helper.providers.aws.exceptions import UnableToRetrieveSSOAccountList
+from dbt_platform_helper.providers.aws.exceptions import (
+    UnableToRetrieveSSOAccountRolesList,
+)
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
@@ -54,6 +57,17 @@ class SSOAuthProvider:
         if len(aws_accounts_response.get("accountList", [])) == 0:
             raise UnableToRetrieveSSOAccountList()
         return aws_accounts_response.get("accountList")
+
+    def list_account_roles(self, access_token, account_id, max_results=100):
+        aws_account_roles_response = self.sso.list_account_roles(
+            accessToken=access_token,
+            accountId=account_id,
+            maxResults=max_results,
+        )
+
+        if len(aws_account_roles_response.get("roleList", [])) == 0:
+            raise UnableToRetrieveSSOAccountRolesList(account_id=account_id)
+        return aws_account_roles_response.get("roleList")
 
     def _get_client(self, client: str):
         if not self.session:
