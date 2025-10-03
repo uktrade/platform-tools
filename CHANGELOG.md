@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.11.0](https://github.com/uktrade/platform-tools/compare/15.10.0...15.11.0) (2025-10-03)
+
+
+### Features
+
+* Add service deploy command (DBTP-2250) ([#1030](https://github.com/uktrade/platform-tools/issues/1030)) ([afc15cf](https://github.com/uktrade/platform-tools/commit/afc15cf8c1837b9e7ccba9ddc6c4065aaaa45c98))
+* Internal alb rule (DBTP-2163) ([#1037](https://github.com/uktrade/platform-tools/issues/1037)) ([8bf48de](https://github.com/uktrade/platform-tools/commit/8bf48de1a05e049a9f1b876ded70dcff8bb1f15d))
+
+
+### Dependencies
+
+* Bump prettytable from 3.12.0 to 3.16.0 ([#1021](https://github.com/uktrade/platform-tools/issues/1021)) ([8168b08](https://github.com/uktrade/platform-tools/commit/8168b083f0bf117f0fd18981c988b7f06de6648d))
+
 ## [15.10.0](https://github.com/uktrade/platform-tools/compare/15.9.0...15.10.0) (2025-09-29)
 
 
