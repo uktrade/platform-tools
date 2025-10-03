@@ -141,7 +141,9 @@ class Config:
         if self.io.confirm(
             f"This command is destructive and will overwrite file contents at {file_path}. Are you sure you want to continue?"
         ):
-            self.io.info("Fetching credentials... this may take a while.")
+            self.io.info(
+                "Fetching credentials... this may take longer if you have access to many accounts."
+            )
 
             with open(aws_config_path, "w") as config_file:
                 config_file.write(AWS_CONFIG)
