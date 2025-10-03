@@ -1,4 +1,4 @@
-resource "aws_s3_object" "task_definitions" {
+resource "aws_s3_object" "task_definition" {
   bucket       = "ecs-task-definitions-${var.application}-${var.environment}"
   key          = "${var.application}/${var.environment}/${var.service_config.name}.json"
   content      = local.task_definition_json

@@ -183,6 +183,14 @@ locals {
     { entryPoint = var.service_config.entrypoint } : {},
   )
 
+  permissions_container = (var.service_config.storage.writable_directories == null
+    ) ? {
+    name      = "writable_directories_permission"
+    image     = "public.ecr.aws/docker/library/alpine:latest"
+    essential = "false"
+    command   = ["chown -R 1002:1000 /path"]
+  } : {}
+
   sidecar_containers = [
     for sidecar_name, sidecar in coalesce(var.service_config.sidecars, {}) : merge(
       local.default_container_config,
@@ -209,7 +217,8 @@ locals {
             : {}
           )
         ] : []
-      }
+      },
+      local.permissions_container
     )
   ]
 
