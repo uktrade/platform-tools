@@ -166,7 +166,7 @@ locals {
       readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
       portMappings           = local.main_port_mappings
       mountPoints = concat([
-        { sourceVolume = "path-tmp", containerPath = "/tmp" }
+        { sourceVolume = "path-tmp", containerPath = "/path" }
         ], [
         for path in coalesce(var.service_config.storage.writable_directories, []) :
         { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
@@ -183,13 +183,13 @@ locals {
     { entryPoint = var.service_config.entrypoint } : {},
   )
 
-  permissions_container = (var.service_config.storage.writable_directories == null
-    ) ? {
-    name      = "writable_directories_permission"
-    image     = "public.ecr.aws/docker/library/alpine:latest"
-    essential = "false"
-    command   = ["chown -R 1002:1000 /path"]
-  } : {}
+  permissions_container = {
+    name        = "writable_directories_permission"
+    image       = "public.ecr.aws/docker/library/alpine:latest"
+    essential   = false
+    command     = ["chmod", "-R", "a+w", "/path", "chown", "-R", "1002:1000", "/path/*"]
+    mountPoints = [{ sourceVolume = "path-tmp", containerPath = "/path" }]
+  }
 
   sidecar_containers = [
     for sidecar_name, sidecar in coalesce(var.service_config.sidecars, {}) : merge(
@@ -218,13 +218,13 @@ locals {
           )
         ] : []
       },
-      local.permissions_container
     )
   ]
 
   container_definitions_list = concat(
     [local.main_container],
-    local.sidecar_containers
+    local.sidecar_containers,
+    [local.permissions_container]
   )
 
   writable_volumes = [
