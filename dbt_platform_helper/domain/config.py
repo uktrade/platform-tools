@@ -188,9 +188,9 @@ class Config:
         """
         Selects the most appropriate IAM role for a given AWS account.
 
-        Roles listed in PLATFORM_SSO_ROLES are preferred if available. If none
-        are found, the first available role returned by sso.list_account_roles
-        is used.
+        Roles listed in STANDARD_PLATFORM_SSO_ROLES are preferred if available.
+        If none are found, the first available role returned by
+        sso.list_account_roles is used.
         """
 
         role_list = self.sso.list_account_roles(
