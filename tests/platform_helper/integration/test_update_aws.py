@@ -216,6 +216,8 @@ class MockALBService:
             self.fixtures.create_rule_response(1, "1", http_headers=["forward"]),
             self.fixtures.create_rule_response(2, "2", source_ip=True),
             self.fixtures.create_rule_response(3, "3", http_headers=["bypass-key"]),
+            # Dummy rule
+            self.fixtures.create_rule_response(12, "1000", http_headers=["forward"]),
             # Copilot rules >48000
             self.fixtures.create_rule_response(
                 4, "48000", path_pattern=["/secondary-service/*", "/secondary-service"]
@@ -270,6 +272,8 @@ class MockALBService:
             self.fixtures.create_target_group(8, "/secondary-service"),
             self.fixtures.create_target_group(9),
             self.fixtures.create_target_group(10),
+            # Dummy tg
+            self.fixtures.create_target_group(12),
         ]
         if self.manual_rule:
             target_rules.append(
@@ -411,6 +415,17 @@ class MockALBService:
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-7",
                         ),
+                        # Dummy Rule tags
+                        self.fixtures.create_tag_descriptions(
+                            "listener-rule-arn-doesnt-matter-12",
+                            {
+                                "application": "test-application",
+                                "service": "web",
+                                "reason": "DummyRule",
+                                "managed-by": "DBT Platform - Service Terraform",
+                                "environment": self.environment,
+                            },
+                        ),
                         *rule_tags,
                     ]
                 },
@@ -497,6 +512,9 @@ class MockALBService:
                         ),
                         self.fixtures.create_tag_descriptions(
                             "tg-arn-doesnt-matter-7",
+                        ),
+                        self.fixtures.create_tag_descriptions(
+                            "tg-arn-doesnt-matter-12",
                         ),
                     ]
                 },
