@@ -10,6 +10,8 @@ from typing import Union
 
 import click
 
+from dbt_platform_helper.constants import MAINTENANCE_PAGE_REASON
+from dbt_platform_helper.constants import MANAGED_BY_PLATFORM
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.load_balancers import ListenerRuleNotFoundException
@@ -202,8 +204,8 @@ class MaintenancePage:
                         [
                             {"Key": "application", "Value": app},
                             {"Key": "environment", "Value": env},
-                            {"Key": "reason", "Value": "MaintenancePage"},
-                            {"Key": "managed-by", "Value": "DBT Platform"},
+                            {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
+                            {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
                             {"Key": "service", "Value": svc.name},
                         ],
                     )
@@ -217,8 +219,8 @@ class MaintenancePage:
                         [
                             {"Key": "application", "Value": app},
                             {"Key": "environment", "Value": env},
-                            {"Key": "reason", "Value": "MaintenancePage"},
-                            {"Key": "managed-by", "Value": "DBT Platform"},
+                            {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
+                            {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
                             {"Key": "service", "Value": svc.name},
                         ],
                     )
@@ -234,8 +236,8 @@ class MaintenancePage:
                     [
                         {"Key": "application", "Value": app},
                         {"Key": "environment", "Value": env},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
+                        {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
                         {"Key": "service", "Value": svc.name},
                     ],
                 )
@@ -287,10 +289,10 @@ class MaintenancePage:
                     tags=[
                         {"Key": "application", "Value": app},
                         {"Key": "environment", "Value": env},
-                        {"Key": "reason", "Value": "MaintenancePage"},
+                        {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
                         {"Key": "name", "Value": "MaintenancePage"},
                         {"Key": "type", "Value": template},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
+                        {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
                     ],
                 )
         except Exception as e:

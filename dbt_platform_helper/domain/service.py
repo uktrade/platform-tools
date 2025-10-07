@@ -217,15 +217,24 @@ class ServiceManager:
 
                 if "sidecars" in service_manifest:
                     new_sidecars = {}
+                    writable_directories = []
 
                     for sidecar_name, sidecar in service_manifest["sidecars"].items():
-                        if "command" in sidecar and (
-                            "chown" in sidecar["command"] or "chmod" in sidecar["command"]
-                        ):
-                            continue
-                        new_sidecars[sidecar_name] = sidecar
+                        if "command" in sidecar:
+                            if "chown" in sidecar["command"]:
+                                if "mount_points" in sidecar:
+                                    for mountpoint in sidecar["mount_points"]:
+                                        if mountpoint["read_only"]:
+                                            continue
+                                        writable_directories.append(mountpoint["path"])
+                            elif "chmod" in sidecar["command"]:
+                                continue
+                            else:
+                                new_sidecars[sidecar_name] = sidecar
 
                     service_manifest["sidecars"] = new_sidecars
+                    if "storage" in service_manifest:
+                        service_manifest["storage"]["writable_directories"] = writable_directories
 
                 service_path = service_directory / service_manifest["name"]
 
