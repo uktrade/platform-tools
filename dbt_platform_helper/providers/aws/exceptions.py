@@ -63,3 +63,8 @@ class CreateAccessTokenException(AWSException):
 class UnableToRetrieveSSOAccountList(AWSException):
     def __init__(self):
         super().__init__("Unable to retrieve AWS SSO account list")
+
+
+class UnableToRetrieveSSOAccountRolesList(AWSException):
+    def __init__(self, account_id: str):
+        super().__init__(f"Unable to retrieve AWS SSO roles list for AWS account {account_id}")
