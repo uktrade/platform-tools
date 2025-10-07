@@ -6,6 +6,7 @@ resource "aws_s3_object" "task_definitions" {
   tags         = local.tags
 }
 
+# Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
 resource "aws_ecs_task_definition" "default_task_def" {
   # checkov:skip=CKV_AWS_336: Nginx needs access to a few paths on the root filesystem
   family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
@@ -78,9 +79,9 @@ resource "aws_ecs_service" "service" {
   cluster                           = data.aws_ecs_cluster.cluster.id
   launch_type                       = "FARGATE"
   enable_execute_command            = try(var.service_config.exec, false)
-  task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition
+  task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
-  desired_count                     = 1
+  desired_count                     = 1 # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by autoscaling.
   health_check_grace_period_seconds = tonumber(trim(try(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
   tags                              = local.tags
 
@@ -275,4 +276,83 @@ resource "aws_cloudwatch_log_subscription_filter" "ecs_service_logs_filter" {
   log_group_name  = aws_cloudwatch_log_group.ecs_service_logs.name
   filter_pattern  = ""
   destination_arn = local.central_log_group_destination
+}
+
+resource "aws_appautoscaling_target" "ecs_autoscaling" {
+  service_namespace  = "ecs"
+  resource_id        = "service/${data.aws_ecs_cluster.cluster.cluster_name}/${local.full_service_name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+
+  min_capacity = local.count_min
+  max_capacity = local.count_max
+}
+
+resource "aws_appautoscaling_policy" "cpu_autoscaling_policy" {
+  count = local.enable_cpu ? 1 : 0
+
+  name               = "${local.full_service_name}-cpu-autoscaling"
+  policy_type        = "TargetTrackingScaling"
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = local.cpu_value
+    scale_in_cooldown  = local.cpu_cool_in
+    scale_out_cooldown = local.cpu_cool_out
+  }
+}
+
+resource "aws_appautoscaling_policy" "memory_autoscaling_policy" {
+  count = local.enable_mem ? 1 : 0
+
+  name               = "${local.full_service_name}-memory-autoscaling"
+  policy_type        = "TargetTrackingScaling"
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    target_value       = local.mem_value
+    scale_in_cooldown  = local.mem_cool_in
+    scale_out_cooldown = local.mem_cool_out
+  }
+}
+
+# Look up the ALB that is attached to the TG (after the listener-rule Lambda runs)
+data "aws_lb" "load_balancer" {
+  count = local.enable_req ? 1 : 0
+  arn   = aws_lb_target_group.target_group[0].load_balancer_arns
+}
+
+# This policy is only for 'Load Balanced Web Service' type services
+resource "aws_appautoscaling_policy" "requests_autoscaling_policy" {
+  count = local.enable_req ? 1 : 0
+
+  name               = "${local.full_service_name}-req-100"
+  policy_type        = "TargetTrackingScaling"
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+
+  # Ensure the listener-rule Lambda runs first to attach the TG on the ALB
+  depends_on = [aws_lambda_invocation.dummy_listener_rule]
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ALBRequestCountPerTarget"
+      # Very specific format required: app/<load-balancer-name>/<load-balancer-id>/targetgroup/<target-group-name>/<target-group-id>
+      # See AWS docs: https://docs.aws.amazon.com/autoscaling/plans/APIReference/API_PredefinedScalingMetricSpecification.html
+      resource_label = "${data.aws_lb.load_balancer[0].arn_suffix}/${aws_lb_target_group.target_group[0].arn_suffix}"
+    }
+    target_value       = local.req_value
+    scale_in_cooldown  = local.req_cool_in
+    scale_out_cooldown = local.req_cool_out
+  }
 }

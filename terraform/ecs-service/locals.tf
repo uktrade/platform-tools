@@ -242,4 +242,43 @@ locals {
     ]
   })
 
+  ##################
+  # ECS AUTO-SCALING
+  ##################
+
+  # Note: Autoscaling is always be enabled. When not in use, 'count_min' and 'count_max' have the same value.
+
+  count_min = try(
+    tonumber(var.service_config.count.range.min), # preferred (if autoscaling is enabled)
+    tonumber(var.service_config.count)            # default (without autoscaling)
+  )
+
+  count_max = try(
+    tonumber(var.service_config.count.range.max), # preferred (if autoscaling is enabled)
+    tonumber(var.service_config.count)            # default (without autoscaling)
+  )
+
+  # Defaults for cooldowns
+  default_cool_in  = try(tonumber(trim(try(var.service_config.count.cooldown.in, "60s"), "s")), 60)
+  default_cool_out = try(tonumber(trim(try(var.service_config.count.cooldown.out, "60s"), "s")), 60)
+
+  # CPU properties
+  cpu_value    = try(var.service_config.count.cpu_percentage.value, var.service_config.count.cpu_percentage, null)
+  cpu_cool_in  = try(tonumber(trim(var.service_config.count.cpu_percentage.cooldown.in, "s")), local.default_cool_in)
+  cpu_cool_out = try(tonumber(trim(var.service_config.count.cpu_percentage.cooldown.out, "s")), local.default_cool_out)
+
+  # Memory properties
+  mem_value    = try(var.service_config.count.memory_percentage.value, var.service_config.count.memory_percentage, null)
+  mem_cool_in  = try(tonumber(trim(var.service_config.count.memory_percentage.cooldown.in, "s")), local.default_cool_in)
+  mem_cool_out = try(tonumber(trim(var.service_config.count.memory_percentage.cooldown.out, "s")), local.default_cool_out)
+
+  # Requests properties
+  req_value    = try(var.service_config.count.requests.value, var.service_config.count.requests, null)
+  req_cool_in  = try(tonumber(trim(var.service_config.count.requests.cooldown.in, "s")), local.default_cool_in)
+  req_cool_out = try(tonumber(trim(var.service_config.count.requests.cooldown.out, "s")), local.default_cool_out)
+
+  # Only create 'aws_appautoscaling_policy' resources when required
+  enable_cpu = local.cpu_value != null
+  enable_mem = local.mem_value != null
+  enable_req = local.req_value != null && local.web_service_required == 1
 }

@@ -5,6 +5,7 @@ from typing import Union
 
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import field_validator
 from pydantic import model_validator
 
 from dbt_platform_helper.platform_exception import PlatformException
@@ -85,6 +86,89 @@ class Storage(BaseModel):
     writable_directories: Optional[list[str]] = Field(default=None)
 
 
+class Range(BaseModel):
+    min: int = Field(
+        ge=0, description="Minimum number of ECS tasks that your service should maintain."
+    )
+    max: int = Field(
+        ge=0, description="Maximum number of ECS tasks that your service should maintain."
+    )
+
+
+class Cooldown(BaseModel):
+    in_: int = Field(
+        alias="in",
+        description="Number of seconds to wait before scaling in (down) after a drop in load.",
+    )
+    out: int = Field(
+        description="Number of seconds to wait before scaling out (up) after a spike in load."
+    )
+
+    @field_validator("in_", "out", mode="before")
+    @classmethod
+    def parse_seconds(cls, value):
+        if isinstance(value, str) and value.endswith("s"):
+            value = value.removesuffix("s")  # remove the trailing 's'
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            raise PlatformException("Cooldown values must be integers or strings like '30s'")
+
+
+class CpuPercentage(BaseModel):
+    value: int = Field(description="Target CPU utilisation percentage that triggers autoscaling.")
+    cooldown: Optional[Cooldown] = Field(
+        default=None, description="Optional CPU cooldown that overrides the global cooldown policy."
+    )
+
+
+class MemoryPercentage(BaseModel):
+    value: int = Field(description="Target CPU utilisation percentage that triggers autoscaling.")
+    cooldown: Optional[Cooldown] = Field(
+        default=None,
+        description="Optional memory cooldown that overrides the global cooldown policy.",
+    )
+
+
+class Requests(BaseModel):
+    value: int = Field(
+        description="Number of incoming requests per second that triggers autoscaling."
+    )
+    cooldown: Optional[Cooldown] = Field(
+        default=None,
+        description="Optional requests cooldown that overrides the global cooldown policy.",
+    )
+
+
+class Count(BaseModel):
+    range: Range = Field(description="Minimum and maximum number of ECS tasks to maintain.")
+    cooldown: Optional[Cooldown] = Field(
+        default=None,
+        description="Global cooldown applied to all autoscaling metrics unless overridden per metric.",
+    )
+    cpu_percentage: Optional[Union[int, CpuPercentage]] = Field(
+        default=None,
+        description="CPU utilisation threshold (0–100). Either a plain integer or a map with 'value' and 'cooldown'.",
+    )
+    memory_percentage: Optional[Union[int, MemoryPercentage]] = Field(
+        default=None,
+        description="Memory utilisation threshold (0–100). Either a plain integer or a map with 'value' and 'cooldown'.",
+    )
+    requests: Optional[Union[int, Requests]] = Field(
+        default=None,
+        description="Request-rate threshold. Either a plain integer or a map with 'value' and 'cooldown'.",
+    )
+
+    @model_validator(mode="after")
+    def at_least_one_autoscaling_dimension(self):
+        if not any([self.cpu_percentage, self.memory_percentage, self.requests]):
+            raise PlatformException(
+                "If autoscaling is enabled, you must define at least one dimension: "
+                "cpu_percentage, memory_percentage, or requests"
+            )
+        return self
+
+
 class ServiceConfigEnvironmentOverride(BaseModel):
     http: Optional[HttpOverride] = Field(default=None)
     sidecars: Optional[Dict[str, SidecarOverride]] = Field(default=None)
@@ -92,7 +176,7 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 
     cpu: Optional[int] = Field(default=None)
     memory: Optional[int] = Field(default=None)
-    count: Optional[int] = Field(default=None)
+    count: Optional[Union[int, Count]] = Field(default=None)
     exec: Optional[bool] = Field(default=None)
     entrypoint: Optional[list[str]] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
@@ -123,7 +207,9 @@ class ServiceConfig(BaseModel):
 
     cpu: int = Field()
     memory: int = Field()
-    count: int = Field()
+    count: Union[int, Count] = Field(
+        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'request' dimensions."
+    )
     exec: Optional[bool] = Field(default=None)
     entrypoint: Optional[list[str]] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
