@@ -57,6 +57,7 @@ phases:
       - echo "Deploying image with tag ${DEPLOY_TAG} to service ${SERVICE} in environment ${ENVIRONMENT}"
 
       # Construct Slack message env vars
+      - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
       - SLACK_REF=$(regctl image config "${REPOSITORY_URL}:${DEPLOY_TAG}" | jq -r '.config.Labels."uk.gov.trade.digital.build.timestamp"')
       - |
         if [ "${SLACK_REF}" = "null" ] || [ -z "${SLACK_REF}" ]; then
@@ -90,6 +91,8 @@ phases:
       - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
       # Deploy service
+      - cd "${CODEBUILD_SRC_DIR}"
+      - platform-helper internal service generate --env ${ENVIRONMENT} --name ${SERVICE}
       - platform-helper internal service deploy --env ${ENVIRONMENT} --name ${SERVICE} --image-tag ${DEPLOY_TAG}
 
       # Send notification on successful deployment or exit with an error code
@@ -98,7 +101,7 @@ phases:
           MESSAGE=":rocket::large_green_circle: COMPLETE - Platform deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
         else
-          echo "Error: Deployment failed | tee output.log
+          echo "Error: Deployment failed" | tee output.log
           exit 1
         fi
 
