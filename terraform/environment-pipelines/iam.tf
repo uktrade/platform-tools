@@ -472,6 +472,20 @@ data "aws_iam_policy_document" "cloudwatch" {
       ]
     }
   }
+
+  # Allow creation of Application Insights service-linked role 
+  # This SLR is created once per account and shared by all Application Insights applications
+  statement {
+    actions = ["iam:CreateServiceLinkedRole"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/application-insights.amazonaws.com/AWSServiceRoleForApplicationInsights"
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values   = ["application-insights.amazonaws.com"]
+    }
+  }
 }
 
 data "aws_ssm_parameter" "log-destination-arn" {
