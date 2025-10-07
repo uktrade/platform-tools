@@ -1,6 +1,8 @@
 import click
 
 from dbt_platform_helper.domain.service import ServiceManager
+from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
@@ -9,6 +11,7 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.logs import LogsProvider
 from dbt_platform_helper.providers.s3 import S3Provider
 from dbt_platform_helper.utils.application import load_application
+from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -110,3 +113,22 @@ def generate(name, env):
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))
+
+
+@internal.group(cls=ClickDocOptGroup)
+def alb():
+    """Load Balancer related commands."""
+    PlatformHelperVersioning().check_if_needs_update()
+
+
+@alb.command()
+@click.option("--env", type=str, required=True)
+def update_rules(env: str):
+    """Update alb rules based on service-deployment-mode for a given
+    environment."""
+    try:
+        session = get_aws_session_or_abort()
+        update_aws = UpdateALBRules(session)
+        update_aws.update_alb_rules(environment=env)
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
