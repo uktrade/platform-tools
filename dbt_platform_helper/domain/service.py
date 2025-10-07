@@ -136,7 +136,9 @@ class ServiceManager:
 
         for service in service_models:
 
-            model_dump = service.model_dump(exclude_none=True)
+            model_dump = service.model_dump(
+                exclude_none=True, by_alias=True
+            )  # Use by_alias=True so that the Cooldown field 'in_' is written as 'in' in the output
             env_overrides = model_dump.get("environments", {}).get(environment)
             if env_overrides:
                 merged_config = deep_merge(model_dump, env_overrides)

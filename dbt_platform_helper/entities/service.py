@@ -99,7 +99,7 @@ class Cooldown(BaseModel):
     in_: int = Field(
         alias="in",
         description="Number of seconds to wait before scaling in (down) after a drop in load.",
-    )
+    )  # Can't use 'in' because it's a reserved keyword
     out: int = Field(
         description="Number of seconds to wait before scaling out (up) after a spike in load."
     )
