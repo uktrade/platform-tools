@@ -12,6 +12,8 @@ import click
 
 from dbt_platform_helper.utils.template import setup_templates
 
+UNDOCUMENTED_COMMANDS = ["internal"]
+
 
 class Parameter(NamedTuple):
     """Command parameter definition."""
@@ -106,7 +108,8 @@ def get_cmd_metadata(
     )
 
     for sub in subcommands_names.values():
-        yield from get_cmd_metadata(sub, context, command_name, f"{indent}    ")
+        if sub.name not in UNDOCUMENTED_COMMANDS:
+            yield from get_cmd_metadata(sub, context, command_name, f"{indent}    ")
 
 
 def create_docs(base_command, output):
