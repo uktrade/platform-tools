@@ -107,29 +107,22 @@ def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id=
     }
 
 
-@patch("dbt_platform_helper.domain.service.YamlFileProvider")
-def test_service_deploy_success(yaml_file_provider):
+def test_service_deploy_success():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
-
-    yaml_file_provider.load.return_value = {
-        "name": "web",
-        "type": "Load Balanced Web Service",
-        "image": {"location": "my-ecr-repo/web:latest"},
-        "http": {"path": "/", "target_container": "nginx"},
-        "cpu": "256",
-        "memory": "512",
-        "count": 2,
-    }
 
     mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
 
     mocks.ecs_provider.register_task_definition.return_value = (
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
-    mocks.ecs_provider.update_service.return_value = get_ecs_update_service_response(
+
+    update_service_response = get_ecs_update_service_response(
         service_name="myapp-dev-web", deployment_id="deployment-123"
     )
+    update_service_response["desiredCount"] = 2
+    mocks.ecs_provider.update_service.return_value = update_service_response
+
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["web", "datadog"]
 
     # Skip waiting for time loops in those methods to reach timeout
@@ -146,22 +139,18 @@ def test_service_deploy_success(yaml_file_provider):
             image_tag="tag-123",
         )
 
-    yaml_file_provider.load.assert_called_once_with("terraform/services/dev/web/service-config.yml")
-
     mocks.s3_provider.get_object.assert_called_once_with(
         bucket_name="ecs-task-definitions-myapp-dev",
         object_key="myapp/dev/web.json",
     )
 
     register_task_def_kwargs = mocks.ecs_provider.register_task_definition.call_args.kwargs
-    service_model = register_task_def_kwargs["service_model"]
-    assert service_model.name == "web"
-    assert service_model.count == 2
+    assert register_task_def_kwargs["service"] == "web"
     assert register_task_def_kwargs["image_tag"] == "tag-123"
     assert register_task_def_kwargs["task_definition"] == {"fakeTaskDefinition": "FAKE"}
 
     update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs
-    assert update_service_kwargs["service_model"].name == "web"
+    assert update_service_kwargs["service"] == "web"
     assert (
         update_service_kwargs["task_def_arn"]
         == "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
@@ -173,8 +162,7 @@ def test_service_deploy_success(yaml_file_provider):
     assert fetch_task_ids_kwargs["application"] == "myapp"
     assert fetch_task_ids_kwargs["environment"] == "dev"
     assert fetch_task_ids_kwargs["deployment_id"] == "deployment-123"
-    assert fetch_task_ids_kwargs["service_model"].name == "web"
-    assert fetch_task_ids_kwargs["service_model"].count == 2
+    assert fetch_task_ids_kwargs["expected_count"] == 2
 
     monitor_ecs_deployment.assert_called_once_with(
         application="myapp", environment="dev", service="web"
@@ -182,30 +170,19 @@ def test_service_deploy_success(yaml_file_provider):
 
 
 @patch("dbt_platform_helper.domain.service.EnvironmentVariableProvider")
-@patch("dbt_platform_helper.domain.service.YamlFileProvider")
-def test_deploy_success_uses_env_var(yaml_file_provider, env_var_provider):
+def test_deploy_success_uses_env_var(env_var_provider):
     env_var_provider.get.return_value = "tag-123"
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
-
-    yaml_file_provider.load.return_value = {
-        "name": "web",
-        "type": "Load Balanced Web Service",
-        "image": {"location": "my-ecr-repo/web:latest"},
-        "http": {"path": "/", "target_container": "nginx"},
-        "cpu": "256",
-        "memory": "512",
-        "count": 1,
-    }
-    svc_model = Mock()
-    svc_model.name = "web"
-    svc_model.count = 1
 
     mocks.s3_provider.get_object.return_value = json.dumps({})
     mocks.ecs_provider.register_task_definition.return_value = (
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
-    mocks.ecs_provider.update_service.return_value = get_ecs_update_service_response()
+
+    update_service_response = get_ecs_update_service_response()
+    update_service_response["desiredCount"] = 1
+    mocks.ecs_provider.update_service.return_value = update_service_response
 
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["web", "datadog"]
 
@@ -216,15 +193,13 @@ def test_deploy_success_uses_env_var(yaml_file_provider, env_var_provider):
         service_manager.deploy(service="web", environment="dev", application="myapp")
 
     assert mocks.ecs_provider.register_task_definition.call_args.kwargs["image_tag"] == "tag-123"
+    assert mocks.ecs_provider.register_task_definition.call_args.kwargs["service"] == "web"
 
 
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
 def test_fetch_ecs_task_ids_success(time_sleep):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
-    svc_model = Mock()
-    svc_model.name = "web"
-    svc_model.count = 2
 
     mocks.ecs_provider.get_ecs_task_arns.return_value = [
         "arn:aws:ecs:eu-west-2:111122223333:task/myapp-dev-cluster/task1",
@@ -234,7 +209,7 @@ def test_fetch_ecs_task_ids_success(time_sleep):
     task_ids = service_manager._fetch_ecs_task_ids(
         application="myapp",
         environment="dev",
-        service_model=svc_model,
+        expected_count=2,
         deployment_id="deployment-id",
     )
 
@@ -284,11 +259,9 @@ def test_build_cloudwatch_live_tail_url():
 def test_fetch_ecs_task_ids_times_out(time_sleep):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
-    svc_model = Mock()
-    svc_model.name = "web"
-    svc_model.count = 3
+    expected_count = 3
 
-    # One task returned instead of 3
+    # One task is returned instead of the 3 tasks expected
     mocks.ecs_provider.get_ecs_task_arns.return_value = [
         "arn:aws:ecs:eu-west-2:111122223333:task/myapp-dev-cluster/task1234"
     ]
@@ -297,10 +270,10 @@ def test_fetch_ecs_task_ids_times_out(time_sleep):
     with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1, 601]):
         with pytest.raises(PlatformException) as e:
             service_manager._fetch_ecs_task_ids(
-                "myapp",
-                "dev",
-                svc_model,
-                get_ecs_update_service_response("myapp-dev-web", "deployment-id"),
+                application="myapp",
+                environment="dev",
+                deployment_id="deployment-id",
+                expected_count=expected_count,
             )
 
     assert "Timed out waiting for 3 RUNNING ECS task(s)" in str(e.value)
