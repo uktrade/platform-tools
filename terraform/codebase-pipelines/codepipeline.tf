@@ -42,37 +42,40 @@ resource "aws_codepipeline" "codebase_pipeline" {
     }
   }
 
+  # dynamic stage for running terraform plan and manual approval if set
+  #       dynamic "action" {
+  #        for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
+  #        content {
+  #          name      = "Approve-${stage.value.name}"
+  #          category  = "Approval"
+  #          owner     = "AWS"
+  #          provider  = "Manual"
+  #          version   = "1"
+  #          run_order = 1
+  #        }
+  #      }
+
   dynamic "stage" {
-    for_each = [for env in each.value.environments : env if lookup(env, "service_deployment_mode", "copilot") != "copilot"]
+    for_each = each.value.environments
+    # for_each = [for env in each.value.environments : env if lookup(env, "service_deployment_mode", "copilot") != "copilot"]
     content {
-      name = "Deploy-Terraform-${stage.value.name}"
+      name = "Deploy-${stage.value.name}"
       on_failure {
         result = "ROLLBACK"
       }
 
-      dynamic "action" {
-        for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
-        content {
-          name      = "Approve-${stage.value.name}"
-          category  = "Approval"
-          owner     = "AWS"
-          provider  = "Manual"
-          version   = "1"
-          run_order = 1
-        }
-      }
-
+      # Service Terraform
       dynamic "action" {
         for_each = local.service_order_list
         content {
-          name             = action.value.name
+          name             = "terraform-${action.value.name}"
           category         = "Build"
           owner            = "AWS"
           provider         = "CodeBuild"
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = action.value.order + 1
+          run_order        = action.value.order
 
           configuration = {
             ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
@@ -90,29 +93,8 @@ resource "aws_codepipeline" "codebase_pipeline" {
           }
         }
       }
-    }
-  }
 
-  dynamic "stage" {
-    for_each = each.value.environments
-    content {
-      name = "Deploy-${stage.value.name}"
-      on_failure {
-        result = "ROLLBACK"
-      }
-
-      dynamic "action" {
-        for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
-        content {
-          name      = "Approve-${stage.value.name}"
-          category  = "Approval"
-          owner     = "AWS"
-          provider  = "Manual"
-          version   = "1"
-          run_order = 1
-        }
-      }
-
+      # Copilot deployment
       dynamic "action" {
         for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "platform" ? local.service_order_list : []
         content {
@@ -142,6 +124,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
         }
       }
 
+      # Platform deployment
       dynamic "action" {
         for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "copilot" ? local.service_order_list : []
         content {
@@ -170,25 +153,19 @@ resource "aws_codepipeline" "codebase_pipeline" {
           }
         }
       }
-    }
-  }
 
-  dynamic "stage" {
-    for_each = toset(local.cache_invalidation_enabled ? each.value.environments : [])
-    content {
-      name = "Invalidate-Cache-${stage.value.name}"
-
+      # Cache invalidation
       dynamic "action" {
         for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
         content {
-          name             = "InvalidateCache-${stage.value.name}"
+          name             = "InvalidateCache"
           category         = "Build"
           owner            = "AWS"
           provider         = "CodeBuild"
           input_artifacts  = ["deploy_source"]
           output_artifacts = []
           version          = "1"
-          run_order        = 1
+          run_order        = max([for svc in local.service_order_list : svc.order]...) + 2
 
           configuration = {
             ProjectName = aws_codebuild_project.invalidate_cache[""].name
@@ -200,6 +177,9 @@ resource "aws_codepipeline" "codebase_pipeline" {
           }
         }
       }
+
+      # ALB rules
+      # TODO https://uktrade.atlassian.net/browse/DBTP-2164
     }
   }
 
