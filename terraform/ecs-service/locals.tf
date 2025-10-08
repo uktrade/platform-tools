@@ -166,30 +166,45 @@ locals {
       readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
       portMappings           = local.main_port_mappings
       mountPoints = concat([
-        { sourceVolume = "path-tmp", containerPath = "/path" }
+        { sourceVolume = "path-tmp", containerPath = "/tmp" }
         ], [
         for path in coalesce(var.service_config.storage.writable_directories, []) :
         { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
       ])
       # Ensure main container always starts last
-      dependsOn = [
+      dependsOn = concat([
         for sidecar in keys(coalesce(var.service_config.sidecars, {})) : {
           containerName = sidecar
           condition     = lookup(local.depends_on_map, sidecar, "START")
         }
-      ]
+        ], [
+        {
+          containerName = "writable_directories_permission"
+          condition     = "SUCCESS"
+        }
+        ]
+      )
     },
     var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
   )
 
-  permissions_container = {
-    name        = "writable_directories_permission"
-    image       = "public.ecr.aws/docker/library/alpine:latest"
-    essential   = false
-    command     = ["chmod", "-R", "a+w", "/path", "chown", "-R", "1002:1000", "/path/*"]
-    mountPoints = [{ sourceVolume = "path-tmp", containerPath = "/path" }]
-  }
+  permissions_container = merge(local.default_container_config, {
+    name      = "writable_directories_permission"
+    image     = "public.ecr.aws/docker/library/alpine:latest"
+    essential = false
+    command = [
+      "/bin/sh",
+      "-c",
+      "chmod -R a+w /tmp && chown -R 1002:1000 ${join(" ", coalesce(var.service_config.storage.writable_directories, []))}"
+    ]
+    mountPoints = concat([
+      { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
+      ], [
+      for path in coalesce(var.service_config.storage.writable_directories, []) :
+      { sourceVolume = "path${replace(path, "/", "-")}", readOnly = false, containerPath = path }
+    ])
+  })
 
   sidecar_containers = [
     for sidecar_name, sidecar in coalesce(var.service_config.sidecars, {}) : merge(

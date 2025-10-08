@@ -61,7 +61,10 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
       "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-execution-role",
       "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
-      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy"
+      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
+      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",
+      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-appconfig-policy",
+      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy"
     ]
   }
 }
@@ -198,6 +201,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "logs:ListTagsForResource",
       "logs:ListTagsLogGroup",
       "logs:AssociateKmsKey",
+      "logs:DescribeLogStreams"
     ]
     resources = [
       "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group:/platform/*"
@@ -206,13 +210,64 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
 
   statement {
     actions = [
-      "logs:DescribeLogGroups"
+      "logs:DescribeLogGroups",
+      "logs:DescribeSubscriptionFilters",
+      "logs:PutSubscriptionFilter"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group::log-stream:"
+      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group::log-stream:",
+      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group:/platform/ecs/service/${var.args.application}/${var.environment}/*:log-stream:",
+      local.central_log_group_destination
     ]
   }
 
+  statement {
+    actions = [
+      "ecs:DescribeClusters"
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group::log-stream:",
+      "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:cluster/${var.args.application}-${var.environment}-cluster"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "s3:GetObjectTagging",
+      "s3:PutObjectTagging"
+    ]
+    resources = [
+      "arn:aws:s3:::ecs-container-definitions-${var.args.application}-${var.environment}/${var.args.application}/${var.environment}/*.json"
+    ]
+  }
+
+  statement {
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+    resources = [
+      "arn:aws:lambda:${data.aws_region.current.region}:${local.pipeline_account_id}:function:${var.args.application}-${var.environment}-listener-rule-organiser:$LATEST"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ecs:CreateService"
+    ]
+    resources = [
+      "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:service/${var.args.application}-${var.environment}-cluster/*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "validate_platform_config_for_codebase" {
@@ -412,7 +467,9 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 
@@ -424,7 +481,9 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 
@@ -445,7 +504,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListTasks"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 
