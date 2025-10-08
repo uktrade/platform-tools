@@ -33,6 +33,7 @@ def _create_load_balancer(session):
         Tags=[
             {"Key": "copilot-application", "Value": "test-application"},
             {"Key": "copilot-environment", "Value": "development"},
+            {"Key": "managed-by", "Value": "DBT Platform - Terraform"},
         ],
     )["LoadBalancers"][0]["LoadBalancerArn"]
 
