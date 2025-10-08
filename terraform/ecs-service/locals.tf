@@ -196,7 +196,7 @@ locals {
     command = [
       "/bin/sh",
       "-c",
-      "chmod -R a+w /tmp && chown -R 1002:1000 /workspace/migrate /workspace/dont/migrate"
+      "chmod -R a+w /tmp && chown -R 1002:1000 ${join(" ", var.service_config.storage.writable_directories)}"
     ]
     mountPoints = concat([
       { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
