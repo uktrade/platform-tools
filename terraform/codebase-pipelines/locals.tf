@@ -24,7 +24,8 @@ locals {
     for name, config in var.env_config : name => {
       account_id : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "id", {}),
       account_name : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "deploy", {}), "name", {}),
-      dns_account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "dns", {}), "id", {})
+      dns_account : lookup(lookup(lookup(merge(lookup(var.env_config, "*", {}), config), "accounts", {}), "dns", {}), "id", {}),
+      service_deployment_mode : lookup(merge(lookup(var.env_config, "*", {}), config), "service-deployment-mode", "copilot")
     } if name != "*"
   }
 
@@ -76,5 +77,8 @@ locals {
   ])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
-  service_terraform_deployment_enabled = anytrue([for env in var.env_config : (env != null && coalesce(try(env.service-deployment-mode, null), "copilot") != "copilot")])
+  service_terraform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
+
+  # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
+  copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 }
