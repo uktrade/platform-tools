@@ -481,7 +481,7 @@ data "aws_iam_policy_document" "cloudwatch" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/application-insights.amazonaws.com/AWSServiceRoleForApplicationInsights"
     ]
     condition {
-      test     = "StringEquals"
+      test     = "StringLike"
       variable = "iam:AWSServiceName"
       values   = ["application-insights.amazonaws.com"]
     }
