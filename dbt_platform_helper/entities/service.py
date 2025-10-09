@@ -5,6 +5,7 @@ from typing import Union
 
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import field_validator
 from pydantic import model_validator
 
 from dbt_platform_helper.platform_exception import PlatformException
@@ -83,6 +84,17 @@ class Network(BaseModel):
 class Storage(BaseModel):
     readonly_fs: Optional[bool] = Field(default=None)
     writable_directories: Optional[list[str]] = Field(default=None)
+
+    @field_validator("writable_directories", mode="after")
+    @classmethod
+    def has_leading_forward_slash(cls, value: Union[list, None]) -> Union[list, None]:
+        if value is not None:
+            for path in value:
+                if not path.startswith("/"):
+                    raise PlatformException(
+                        "All writable directory paths must be absolute (starts with a /)"
+                    )
+        return value
 
 
 class ServiceConfigEnvironmentOverride(BaseModel):

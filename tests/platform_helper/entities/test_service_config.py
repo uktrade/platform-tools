@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -5,6 +6,7 @@ import yaml
 from pydantic import ValidationError
 
 from dbt_platform_helper.entities.service import ServiceConfig
+from dbt_platform_helper.platform_exception import PlatformException
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
 
@@ -17,6 +19,21 @@ def test_service_config(fakefs, input_data):
     input_data = yaml.safe_load(Path(f"{INPUT_DATA_DIR}/services/config/{input_data}").read_text())
 
     assert ServiceConfig.model_validate(input_data)
+
+
+def test_invalid_writable_directories_service_config(fakefs):
+
+    input_data = yaml.safe_load(
+        Path(f"{INPUT_DATA_DIR}/services/config/minimal-service-config.yml").read_text()
+    )
+
+    input_data["storage"] = {"writable_directories": ["relative/directory"]}
+
+    with pytest.raises(
+        PlatformException,
+        match=re.escape("""All writable directory paths must be absolute (starts with a /)"""),
+    ):
+        ServiceConfig.model_validate(input_data)
 
 
 def test_invalid_service_config(fakefs):
