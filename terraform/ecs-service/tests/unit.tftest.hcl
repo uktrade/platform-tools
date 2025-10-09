@@ -149,8 +149,7 @@ variables {
     }
 
     storage = {
-      readonly_fs          = false
-      writable_directories = []
+      readonly_fs = false
     }
 
     variables = {
