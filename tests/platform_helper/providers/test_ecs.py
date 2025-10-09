@@ -480,33 +480,33 @@ def test_register_task_definition_applies_image_tag_override():
         "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:old_image_tag"
     )
 
-    container_definitions = [
-        {"name": "web", "image": "web:old"},
-        {"name": "sidecar", "image": "sidecar:v1.2.3"},
-    ]
+    task_definition = {
+        "family": "doesn't matter",
+        "other parameters...": "they also don't matter",
+        "containerDefinitions": [
+            {"name": "web", "image": "web:old"},
+            {"name": "sidecar", "image": "sidecar:v1.2.3"},
+        ],
+    }
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
     arn = ecs.register_task_definition(
         service_model=service_model,
-        environment="dev",
-        application="myapp",
-        account_id="111122223333",
-        container_definitions=container_definitions,
+        task_definition=task_definition,
         image_tag="new_image_tag",
     )
 
     assert arn == "arn:taskdef:123"
     # Image tag is rewritten only for the main container
     assert (
-        container_definitions[0]["image"]
+        task_definition["containerDefinitions"][0]["image"]
         == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:new_image_tag"
     )
-    assert container_definitions[1]["image"] == "sidecar:v1.2.3"
+    assert task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
 
     ecs_client.register_task_definition.assert_called_once()
     kwargs = ecs_client.register_task_definition.call_args.kwargs
-    assert kwargs["family"] == "myapp-dev-web-task-def"
-    assert kwargs["containerDefinitions"] is container_definitions
+    assert kwargs["containerDefinitions"] is task_definition["containerDefinitions"]
 
 
 def test_register_task_definition_raises_exception():
@@ -522,13 +522,19 @@ def test_register_task_definition_raises_exception():
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
 
+    task_definition = {
+        "family": "doesn't matter",
+        "other parameters...": "they also don't matter",
+        "containerDefinitions": [
+            {"name": "web", "image": "web:tag-latest"},
+            {"name": "sidecar", "image": "sidecar:tag-1.2.3"},
+        ],
+    }
+
     with pytest.raises(PlatformException) as e:
         ecs.register_task_definition(
             service_model=service_model,
-            environment="dev",
-            application="myapp",
-            account_id="111122223333",
-            container_definitions=[{"name": "web", "image": "doesnt-matter"}],
+            task_definition=task_definition,
             image_tag="tag",
         )
     assert "Error registering task definition" in str(e.value)

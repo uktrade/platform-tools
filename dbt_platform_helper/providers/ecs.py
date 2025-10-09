@@ -238,41 +238,21 @@ class ECS:
     def register_task_definition(
         self,
         service_model: ServiceConfig,
-        environment: str,
-        application: str,
-        account_id: str,
-        container_definitions: list[dict[str, Any]],
+        task_definition: dict,
         image_tag: Optional[str] = None,
     ) -> str:
         """Register a new task definition revision using provided model and
         containerDefinitions."""
 
         if image_tag:
-            for container in container_definitions:
+            for container in task_definition["containerDefinitions"]:
                 if container.get("name") == service_model.name:
                     image_uri = service_model.image.location.rsplit(":", 1)[0]
                     container["image"] = f"{image_uri}:{image_tag}"
                     break
 
         try:
-            task_definition_response = self.ecs_client.register_task_definition(
-                family=f"{application}-{environment}-{service_model.name}-task-def",
-                taskRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-role",
-                executionRoleArn=f"arn:aws:iam::{account_id}:role/{application}-{environment}-{service_model.name}-ecs-task-execution-role",
-                networkMode="awsvpc",
-                containerDefinitions=container_definitions,
-                volumes=[{"name": "temporary-fs", "host": {}}],
-                placementConstraints=[],
-                requiresCompatibilities=["FARGATE"],
-                cpu=str(service_model.cpu),
-                memory=str(service_model.memory),
-                tags=[
-                    {"key": "application", "value": application},
-                    {"key": "environment", "value": environment},
-                    {"key": "service", "value": service_model.name},
-                    {"key": "managed-by", "value": "Platform Helper"},
-                ],
-            )
+            task_definition_response = self.ecs_client.register_task_definition(**task_definition)
             return task_definition_response["taskDefinition"]["taskDefinitionArn"]
         except ClientError as err:
             raise PlatformException(f"Error registering task definition: {err}")
