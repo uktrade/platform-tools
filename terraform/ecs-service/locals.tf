@@ -196,7 +196,7 @@ locals {
     command = [
       "/bin/sh",
       "-c",
-    "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) < 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"]
+    "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) > 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"]
     mountPoints = concat([
       { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
       ], [
