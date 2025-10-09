@@ -168,7 +168,7 @@ locals {
       mountPoints = concat([
         { sourceVolume = "path-tmp", containerPath = "/tmp" }
         ], [
-        for path in coalesce(var.service_config.storage.writable_directories, []) :
+        for path in try(var.service_config.storage.writable_directories, []) :
         { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
       ])
       # Ensure main container always starts last
@@ -196,11 +196,11 @@ locals {
     command = [
       "/bin/sh",
       "-c",
-    "chmod -R a+w /tmp ${var.service_config.storage.writable_directories != null ? "&& chown -R 1002:1000 ${var.service_config.storage.writable_directories}" : ""}"]
+    "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) < 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"]
     mountPoints = concat([
       { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
       ], [
-      for path in coalesce(var.service_config.storage.writable_directories, []) :
+      for path in try(var.service_config.storage.writable_directories, []) :
       { sourceVolume = "path${replace(path, "/", "-")}", readOnly = false, containerPath = path }
     ])
   })
@@ -242,7 +242,7 @@ locals {
   )
 
   writable_volumes = [
-    for path in coalesce(var.service_config.storage.writable_directories, []) :
+    for path in try(var.service_config.storage.writable_directories, []) :
     { "name" : "path${replace(path, "/", "-")}", "host" : {} }
   ]
 
