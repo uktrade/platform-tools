@@ -8,6 +8,8 @@ from pydantic import ValidationError
 from dbt_platform_helper.entities.service import Cooldown
 from dbt_platform_helper.entities.service import Count
 from dbt_platform_helper.entities.service import CpuPercentage
+from dbt_platform_helper.entities.service import MemoryPercentage
+from dbt_platform_helper.entities.service import RequestsPerSecond
 from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
 from tests.platform_helper.conftest import INPUT_DATA_DIR
@@ -92,21 +94,22 @@ def test_cooldown_rejects_invalid_values(bad_in, bad_out):
 
 def test_count_requires_at_least_one_dimension():
     with pytest.raises(
-        PlatformException, match="If autoscaling is enabled, you must define at least one dimension"
+        PlatformException, match="If autoscaling is enabled, you must define at least one metric"
     ):
         Count.model_validate({"range": "1-3"})
 
 
 def test_count_rejects_bad_range_format():
-    with pytest.raises(PlatformException, match="range must be in the format 'int-int' e.g. '1-2'"):
+    with pytest.raises(PlatformException, match="Range must be in the format 'int-int' e.g. '1-2'"):
         Count.model_validate({"range": "1 to 3", "cpu_percentage": 50})
 
 
-def test_count_rejects_min_greater_than_max():
+@pytest.mark.parametrize("range_value", ["2-1", "5-5"])
+def test_count_rejects_min_less_than_max(range_value):
     with pytest.raises(
-        PlatformException, match="range minimum value must not exceed the maximum value."
+        PlatformException, match="Range minimum value must be less than the maximum value."
     ):
-        Count.model_validate({"range": "3-1", "cpu_percentage": 50})
+        Count.model_validate({"range": range_value, "cpu_percentage": 50})
 
 
 def test_service_config_accepts_int_count():
@@ -122,22 +125,80 @@ def test_service_config_accepts_int_count():
 
 
 def test_count_autoscaling_minimal():
-    count = Count.model_validate({"range": "1-3", "cpu_percentage": 70})
+    count = Count.model_validate(
+        {"range": "1-3", "cpu_percentage": 70}
+    )  # Could've been memory_percentage or requests_per_second too
     assert count.cpu_percentage == 70
     assert count.range == "1-3"
 
 
-def test_count_autoscaling_maximal():
+def test_count_autoscaling_all_the_things():
     count = Count.model_validate(
         {
             "range": "2-5",
+            "cooldown": {"in": "5s", "out": "10s"},
             "cpu_percentage": {
                 "value": 60,
-                "cooldown": {"in": "15s", "out": "30s"},
+                "cooldown": {"in": "15s", "out": "25s"},
+            },
+            "memory_percentage": {
+                "value": 80,
+                "cooldown": {"in": "35s", "out": "45s"},
+            },
+            "requests_per_second": {
+                "value": 100,
+                "cooldown": {"in": "55s", "out": "65s"},
             },
         }
     )
     assert isinstance(count.cpu_percentage, CpuPercentage)
+    assert isinstance(count.memory_percentage, MemoryPercentage)
+    assert isinstance(count.requests_per_second, RequestsPerSecond)
+
     assert count.cpu_percentage.value == 60
     assert count.cpu_percentage.cooldown.in_ == 15
-    assert count.cpu_percentage.cooldown.out == 30
+    assert count.cpu_percentage.cooldown.out == 25
+
+    assert count.memory_percentage.value == 80
+    assert count.memory_percentage.cooldown.in_ == 35
+    assert count.memory_percentage.cooldown.out == 45
+
+    assert count.requests_per_second.value == 100
+    assert count.requests_per_second.cooldown.in_ == 55
+    assert count.requests_per_second.cooldown.out == 65
+
+
+def test_count_autoscaling_all_the_things():
+    count = Count.model_validate(
+        {
+            "range": "2-5",
+            "cooldown": {"in": "5s", "out": "10s"},
+            "cpu_percentage": {
+                "value": 60,
+                "cooldown": {"in": "15s", "out": "25s"},
+            },
+            "memory_percentage": {
+                "value": 80,
+                "cooldown": {"in": "35s", "out": "45s"},
+            },
+            "requests_per_second": {
+                "value": 100,
+                "cooldown": {"in": "55s", "out": "65s"},
+            },
+        }
+    )
+    assert isinstance(count.cpu_percentage, CpuPercentage)
+    assert isinstance(count.memory_percentage, MemoryPercentage)
+    assert isinstance(count.requests_per_second, RequestsPerSecond)
+
+    assert count.cpu_percentage.value == 60
+    assert count.cpu_percentage.cooldown.in_ == 15
+    assert count.cpu_percentage.cooldown.out == 25
+
+    assert count.memory_percentage.value == 80
+    assert count.memory_percentage.cooldown.in_ == 35
+    assert count.memory_percentage.cooldown.out == 45
+
+    assert count.requests_per_second.value == 100
+    assert count.requests_per_second.cooldown.in_ == 55
+    assert count.requests_per_second.cooldown.out == 65
