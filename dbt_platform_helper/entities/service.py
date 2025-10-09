@@ -1,3 +1,4 @@
+import re
 from typing import ClassVar
 from typing import Dict
 from typing import Optional
@@ -86,15 +87,6 @@ class Storage(BaseModel):
     writable_directories: Optional[list[str]] = Field(default=None)
 
 
-class Range(BaseModel):
-    min: int = Field(
-        ge=0, description="Minimum number of ECS tasks that your service should maintain."
-    )
-    max: int = Field(
-        ge=0, description="Maximum number of ECS tasks that your service should maintain."
-    )
-
-
 class Cooldown(BaseModel):
     in_: int = Field(
         alias="in",
@@ -141,7 +133,9 @@ class Requests(BaseModel):
 
 
 class Count(BaseModel):
-    range: Range = Field(description="Minimum and maximum number of ECS tasks to maintain.")
+    range: str = Field(
+        description="Minimum and maximum number of ECS tasks to maintain e.g. '1-2'."
+    )
     cooldown: Optional[Cooldown] = Field(
         default=None,
         description="Global cooldown applied to all autoscaling metrics unless overridden per metric.",
@@ -161,11 +155,20 @@ class Count(BaseModel):
 
     @model_validator(mode="after")
     def at_least_one_autoscaling_dimension(self):
+
         if not any([self.cpu_percentage, self.memory_percentage, self.requests]):
             raise PlatformException(
                 "If autoscaling is enabled, you must define at least one dimension: "
                 "cpu_percentage, memory_percentage, or requests"
             )
+
+        if not re.match(r"^(\d+)-(\d+)$", self.range):
+            raise PlatformException("range must be in the format 'int-int' e.g. '1-2'")
+
+        range_split = self.range.split("-")
+        if range_split[0] > range_split[1]:
+            raise PlatformException("range minimum value must not exceed the maximum value.")
+
         return self
 
 

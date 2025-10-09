@@ -272,14 +272,16 @@ locals {
 
   # Note: Autoscaling is always be enabled. When not in use, 'count_min' and 'count_max' have the same value.
 
+  count_range = split("-", var.service_config.count.range)
+
   count_min = try(
-    tonumber(var.service_config.count.range.min), # preferred (if autoscaling is enabled)
-    tonumber(var.service_config.count)            # default (without autoscaling)
+    tonumber(local.count_range[0]),    # preferred (if autoscaling is enabled)
+    tonumber(var.service_config.count) # default (without autoscaling)
   )
 
   count_max = try(
-    tonumber(var.service_config.count.range.max), # preferred (if autoscaling is enabled)
-    tonumber(var.service_config.count)            # default (without autoscaling)
+    tonumber(local.count_range[1]),    # preferred (if autoscaling is enabled)
+    tonumber(var.service_config.count) # default (without autoscaling)
   )
 
   # Defaults for cooldowns

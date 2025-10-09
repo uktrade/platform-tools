@@ -183,31 +183,10 @@ class ServiceManager:
                         if "http" in env_config:
                             if "alb" in env_config["http"]:
                                 del env_config["http"]["alb"]
-                        if "count" in env_config:
-                            if (
-                                isinstance(env_config["count"], dict)
-                                and "range" in env_config["count"]
-                            ):
-                                count_range = str(env_config["count"]["range"]).split("-")
-                                env_config["count"]["range"] = {
-                                    "min": int(count_range[0]),
-                                    "max": int(count_range[1]),
-                                }
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
                         service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
-
-                if "count" in service_manifest:
-                    if (
-                        isinstance(service_manifest["count"], dict)
-                        and "range" in service_manifest["count"]
-                    ):
-                        count_range = str(service_manifest["count"]["range"]).split("-")
-                        service_manifest["count"]["range"] = {
-                            "min": int(count_range[0]),
-                            "max": int(count_range[1]),
-                        }
 
                 service_manifest = self.file_provider.find_and_replace(
                     config=service_manifest,
