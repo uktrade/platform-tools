@@ -262,7 +262,7 @@ locals {
       { "key" : "application", "value" : var.application },
       { "key" : "environment", "value" : var.environment },
       { "key" : "service", "value" : var.service_config.name },
-      { "key" : "managed-by", "value" : "Platform Helper" },
+      { "key" : "managed-by", "value" : "DBT Platform" },
     ]
   })
 
