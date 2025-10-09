@@ -272,15 +272,15 @@ locals {
 
   # Note: Autoscaling is always be enabled. When not in use, 'count_min' and 'count_max' have the same value.
 
-  count_range = split("-", var.service_config.count.range)
+  count_range = try(split("-", var.service_config.count.range), null)
 
   count_min = try(
-    tonumber(local.count_range[0]),    # preferred (if autoscaling is enabled)
+    tonumber(local.count_range[0]),    # preferred (if autoscaling is enabled), otherwise will error out on null value
     tonumber(var.service_config.count) # default (without autoscaling)
   )
 
   count_max = try(
-    tonumber(local.count_range[1]),    # preferred (if autoscaling is enabled)
+    tonumber(local.count_range[1]),    # preferred (if autoscaling is enabled), otherwise will error out on null value
     tonumber(var.service_config.count) # default (without autoscaling)
   )
 
