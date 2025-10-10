@@ -133,7 +133,7 @@ class MemoryPercentage(BaseModel):
     )
 
 
-class RequestsPerSecond(BaseModel):
+class RequestsPerMinute(BaseModel):
     value: int = Field(
         description="Number of incoming requests per minute that triggers autoscaling."
     )
@@ -159,7 +159,7 @@ class Count(BaseModel):
         default=None,
         description="Memory utilisation threshold (0–100). Either a plain integer or a map with 'value' and 'cooldown'.",
     )
-    requests_per_minute: Optional[Union[int, RequestsPerSecond]] = Field(
+    requests_per_minute: Optional[Union[int, RequestsPerMinute]] = Field(
         default=None,
         description="Request-rate threshold. Either a plain integer or a map with 'value' and 'cooldown'.",
     )

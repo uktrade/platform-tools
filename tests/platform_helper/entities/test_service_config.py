@@ -9,7 +9,7 @@ from dbt_platform_helper.entities.service import Cooldown
 from dbt_platform_helper.entities.service import Count
 from dbt_platform_helper.entities.service import CpuPercentage
 from dbt_platform_helper.entities.service import MemoryPercentage
-from dbt_platform_helper.entities.service import RequestsPerSecond
+from dbt_platform_helper.entities.service import RequestsPerMinute
 from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
 from tests.platform_helper.conftest import INPUT_DATA_DIR
@@ -153,43 +153,7 @@ def test_count_autoscaling_all_the_things():
     )
     assert isinstance(count.cpu_percentage, CpuPercentage)
     assert isinstance(count.memory_percentage, MemoryPercentage)
-    assert isinstance(count.requests_per_minute, RequestsPerSecond)
-
-    assert count.cpu_percentage.value == 60
-    assert count.cpu_percentage.cooldown.in_ == 15
-    assert count.cpu_percentage.cooldown.out == 25
-
-    assert count.memory_percentage.value == 80
-    assert count.memory_percentage.cooldown.in_ == 35
-    assert count.memory_percentage.cooldown.out == 45
-
-    assert count.requests_per_minute.value == 100
-    assert count.requests_per_minute.cooldown.in_ == 55
-    assert count.requests_per_minute.cooldown.out == 65
-
-
-def test_count_autoscaling_all_the_things():
-    count = Count.model_validate(
-        {
-            "range": "2-5",
-            "cooldown": {"in": "5s", "out": "10s"},
-            "cpu_percentage": {
-                "value": 60,
-                "cooldown": {"in": "15s", "out": "25s"},
-            },
-            "memory_percentage": {
-                "value": 80,
-                "cooldown": {"in": "35s", "out": "45s"},
-            },
-            "requests_per_minute": {
-                "value": 100,
-                "cooldown": {"in": "55s", "out": "65s"},
-            },
-        }
-    )
-    assert isinstance(count.cpu_percentage, CpuPercentage)
-    assert isinstance(count.memory_percentage, MemoryPercentage)
-    assert isinstance(count.requests_per_minute, RequestsPerSecond)
+    assert isinstance(count.requests_per_minute, RequestsPerMinute)
 
     assert count.cpu_percentage.value == 60
     assert count.cpu_percentage.cooldown.in_ == 15
