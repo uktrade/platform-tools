@@ -1,5 +1,5 @@
 resource "aws_codepipeline" "codebase_pipeline" {
-  for_each       = local.pipeline_map
+  for_each       = local.pipeline_map_stages
   name           = "${var.application}-${var.codebase}-${each.value.name}-codebase"
   role_arn       = aws_iam_role.codebase_deploy_pipeline.arn
   depends_on     = [aws_iam_role_policy.artifact_store_access_for_codebase_pipeline]
@@ -42,162 +42,28 @@ resource "aws_codepipeline" "codebase_pipeline" {
     }
   }
 
-  # Plan and approve
   dynamic "stage" {
-    for_each = [for env in each.value.environments : env if lookup(env, "requires_approval", false)]
+    for_each = each.value.stages
     content {
-      name = "Approve-${stage.value.name}"
-
-      # TODO Terraform plan
-      # dynamic "action" {
-      #    for_each = coalesce(stage.value.requires_approval, false) ? [1] : []
-      #    content {
-      #      name      = "Approve-${stage.value.name}"
-      #      category  = "Approval"
-      #      owner     = "AWS"
-      #      provider  = "Manual"
-      #      version   = "1"
-      #      run_order = 1
-      #    }
-      #  }
-
-      # Manual approval
-      action {
-        name      = "Approve-${stage.value.name}"
-        category  = "Approval"
-        owner     = "AWS"
-        provider  = "Manual"
-        version   = "1"
-        run_order = 1
-      }
-    }
-  }
-
-  # Deployment
-  dynamic "stage" {
-    for_each = each.value.environments
-    content {
-      name = "Deploy-${stage.value.name}"
+      name = stage.value.name
       on_failure {
-        result = "ROLLBACK"
+        result = try(stage.value.on_failure, "ROLLBACK")
       }
 
-      # Service Terraform
       dynamic "action" {
-        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "copilot" ? local.service_order_list : []
+        for_each = stage.value.actions
         content {
-          name             = "terraform-${action.value.name}"
-          category         = "Build"
-          owner            = "AWS"
-          provider         = "CodeBuild"
-          input_artifacts  = ["deploy_source"]
+          name             = action.value.name
+          category         = try(action.value.category, "Build")
+          provider         = try(action.value.provider, "CodeBuild")
+          input_artifacts  = try(action.value.input_artifacts, ["deploy_source"])
           output_artifacts = []
+          owner            = "AWS"
           version          = "1"
           run_order        = action.value.order
-
-          configuration = {
-            ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
-            EnvironmentVariables : jsonencode([
-              { name : "APPLICATION", value : var.application },
-              { name : "AWS_REGION", value : data.aws_region.current.region },
-              { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
-              { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-              { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-              { name : "REPOSITORY_URL", value : local.repository_url },
-              { name : "SERVICE", value : action.value.name },
-              { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-            ])
-          }
+          configuration    = action.value.configuration
         }
       }
-
-      # Copilot deployment
-      dynamic "action" {
-        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "platform" ? local.service_order_list : []
-        content {
-          name             = "copilot-${action.value.name}"
-          category         = "Build"
-          owner            = "AWS"
-          provider         = "CodeBuild"
-          input_artifacts  = ["deploy_source"]
-          output_artifacts = []
-          version          = "1"
-          run_order        = action.value.order + 1
-
-          configuration = {
-            ProjectName = aws_codebuild_project.codebase_deploy.name
-            EnvironmentVariables : jsonencode([
-              { name : "APPLICATION", value : var.application },
-              { name : "AWS_REGION", value : data.aws_region.current.region },
-              { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
-              { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-              { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-              { name : "REPOSITORY_URL", value : local.repository_url },
-              { name : "SERVICE", value : action.value.name },
-              { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-            ])
-          }
-        }
-      }
-
-      # Platform deployment
-      dynamic "action" {
-        for_each = lookup(stage.value, "service_deployment_mode", "copilot") != "copilot" ? local.service_order_list : []
-        content {
-          name             = "platform-${action.value.name}"
-          category         = "Build"
-          owner            = "AWS"
-          provider         = "CodeBuild"
-          input_artifacts  = ["deploy_source"]
-          output_artifacts = []
-          version          = "1"
-          run_order        = action.value.order + 1
-
-          configuration = {
-            ProjectName = aws_codebuild_project.codebase_deploy_platform.name
-            EnvironmentVariables : jsonencode([
-              { name : "APPLICATION", value : var.application },
-              { name : "AWS_REGION", value : data.aws_region.current.region },
-              { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
-              { name : "ENVIRONMENT", value : stage.value.name },
-              { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-              { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-              { name : "REPOSITORY_URL", value : local.repository_url },
-              { name : "SERVICE", value : action.value.name },
-              { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-            ])
-          }
-        }
-      }
-
-      # Cache invalidation
-      dynamic "action" {
-        for_each = coalesce(stage.value.requires_cache_invalidation, false) ? [1] : []
-        content {
-          name             = "invalidate-cache"
-          category         = "Build"
-          owner            = "AWS"
-          provider         = "CodeBuild"
-          input_artifacts  = ["deploy_source"]
-          output_artifacts = []
-          version          = "1"
-          run_order        = max([for svc in local.service_order_list : svc.order]...) + 2
-
-          configuration = {
-            ProjectName = aws_codebuild_project.invalidate_cache[""].name
-            EnvironmentVariables : jsonencode([
-              { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
-              { name : "APPLICATION", value : var.application },
-              { name : "ENVIRONMENT", value : stage.value.name },
-            ])
-          }
-        }
-      }
-
-      # ALB rules
-      # TODO https://uktrade.atlassian.net/browse/DBTP-2164
     }
   }
 
@@ -258,7 +124,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
     # Service Terraform
     dynamic "action" {
-      for_each = local.service_terraform_deployment_enabled ? local.service_order_list : []
+      for_each = local.platform_deployment_enabled ? local.service_order_list : []
       content {
         name             = "terraform-${action.value.name}"
         category         = "Build"
@@ -300,7 +166,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         run_order        = action.value.order + 1
 
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy.name
+          ProjectName = aws_codebuild_project.codebase_deploy[""].name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
             { name : "AWS_REGION", value : data.aws_region.current.region },
@@ -318,7 +184,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
     # Platform deployment
     dynamic "action" {
-      for_each = local.service_terraform_deployment_enabled ? local.service_order_list : []
+      for_each = local.platform_deployment_enabled ? local.service_order_list : []
       content {
         name             = "platform-${action.value.name}"
         category         = "Build"
@@ -330,7 +196,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         run_order        = action.value.order + 1
 
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy_platform.name
+          ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
             { name : "AWS_REGION", value : data.aws_region.current.region },
