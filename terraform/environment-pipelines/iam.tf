@@ -425,52 +425,43 @@ data "aws_iam_policy_document" "ssm_parameter" {
 }
 
 data "aws_iam_policy_document" "cloudwatch" {
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
+  statement {
       actions = [
         "cloudwatch:GetDashboard",
         "cloudwatch:PutDashboard",
         "cloudwatch:DeleteDashboards"
       ]
-      resources = [
-        "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.application}-${statement.value.name}-compute"
-      ]
-    }
+      resources = [for env in local.environment_config :
+        "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.application}-${env.name}-compute"
+     ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "resource-groups:GetGroup",
-        "resource-groups:CreateGroup",
-        "resource-groups:Tag",
-        "resource-groups:GetGroupQuery",
-        "resource-groups:GetGroupConfiguration",
-        "resource-groups:GetTags",
-        "resource-groups:DeleteGroup"
-      ]
-      resources = [
-        "arn:aws:resource-groups:${local.account_region}:group/${var.application}-${statement.value.name}-application-insights-resources"
-      ]
-    }
+  statement {
+    actions = [
+      "resource-groups:GetGroup",
+      "resource-groups:CreateGroup",
+      "resource-groups:Tag",
+      "resource-groups:GetGroupQuery",
+      "resource-groups:GetGroupConfiguration",
+      "resource-groups:GetTags",
+      "resource-groups:DeleteGroup"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:resource-groups:${local.account_region}:group/${var.application}-${env.name}-application-insights-resources"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "applicationinsights:CreateApplication",
-        "applicationinsights:TagResource",
-        "applicationinsights:DescribeApplication",
-        "applicationinsights:ListTagsForResource",
-        "applicationinsights:DeleteApplication"
-      ]
-      resources = [
-        "arn:aws:applicationinsights:${local.account_region}:application/resource-group/${var.application}-${statement.value.name}-application-insights-resources"
-      ]
-    }
+  statement {
+    actions = [
+      "applicationinsights:CreateApplication",
+      "applicationinsights:TagResource",
+      "applicationinsights:DescribeApplication",
+      "applicationinsights:ListTagsForResource",
+      "applicationinsights:DeleteApplication"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:applicationinsights:${local.account_region}:application/resource-group/${var.application}-${env.name}-application-insights-resources"
+    ]
   }
 }
 
@@ -628,98 +619,84 @@ data "aws_iam_policy_document" "postgres" {
     ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "iam:CreateRole",
-        "iam:GetRole",
-        "iam:ListRolePolicies",
-        "iam:ListAttachedRolePolicies",
-        "iam:ListInstanceProfilesForRole",
-        "iam:DeleteRole",
-        "iam:AttachRolePolicy",
-        "iam:PutRolePolicy",
-        "iam:GetRolePolicy",
-        "iam:DeleteRolePolicy",
-        "iam:PassRole",
-        "iam:UpdateAssumeRolePolicy",
-        "iam:DetachRolePolicy"
-      ]
-      resources = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
-      ]
-    }
+  statement {
+    actions = [
+      "iam:CreateRole",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRole",
+      "iam:AttachRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:PassRole",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:DetachRolePolicy"
+    ]
+    resources = flatten(concat([for env in local.environment_config :
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*"
+    ], [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
+    ]))
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "lambda:GetFunction",
-        "lambda:InvokeFunction",
-        "lambda:ListVersionsByFunction",
-        "lambda:GetFunctionCodeSigningConfig",
-        "lambda:UpdateFunctionCode",
-        "lambda:UpdateFunctionConfiguration",
-        "lambda:CreateFunction",
-        "lambda:DeleteFunction"
-      ]
-      resources = [
-        "arn:aws:lambda:${local.account_region}:function:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "lambda:GetFunction",
+      "lambda:InvokeFunction",
+      "lambda:ListVersionsByFunction",
+      "lambda:GetFunctionCodeSigningConfig",
+      "lambda:UpdateFunctionCode",
+      "lambda:UpdateFunctionConfiguration",
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "lambda:GetLayerVersion"
-      ]
-      resources = [
-        "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
-        "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
-      ]
-    }
+  statement {
+    actions = [
+      "lambda:GetLayerVersion"
+    ]
+    resources = [
+      "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
+      "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "rds:CreateDBParameterGroup",
-        "rds:AddTagsToResource",
-        "rds:ModifyDBParameterGroup",
-        "rds:DescribeDBParameterGroups",
-        "rds:DescribeDBParameters",
-        "rds:ListTagsForResource",
-        "rds:CreateDBInstance",
-        "rds:ModifyDBInstance",
-        "rds:DeleteDBParameterGroup"
-      ]
-      resources = [
-        "arn:aws:rds:${local.account_region}:pg:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "rds:CreateDBParameterGroup",
+      "rds:AddTagsToResource",
+      "rds:ModifyDBParameterGroup",
+      "rds:DescribeDBParameterGroups",
+      "rds:DescribeDBParameters",
+      "rds:ListTagsForResource",
+      "rds:CreateDBInstance",
+      "rds:ModifyDBInstance",
+      "rds:DeleteDBParameterGroup"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:rds:${local.account_region}:pg:${var.application}-${env.name}-*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "rds:CreateDBSubnetGroup",
-        "rds:AddTagsToResource",
-        "rds:DescribeDBSubnetGroups",
-        "rds:ListTagsForResource",
-        "rds:DeleteDBSubnetGroup",
-        "rds:CreateDBInstance"
-      ]
-      resources = [
-        "arn:aws:rds:${local.account_region}:subgrp:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "rds:CreateDBSubnetGroup",
+      "rds:AddTagsToResource",
+      "rds:DescribeDBSubnetGroups",
+      "rds:ListTagsForResource",
+      "rds:DeleteDBSubnetGroup",
+      "rds:CreateDBInstance"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:rds:${local.account_region}:subgrp:${var.application}-${env.name}-*"
+    ]
   }
 
   statement {
@@ -731,18 +708,15 @@ data "aws_iam_policy_document" "postgres" {
     ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "rds:CreateDBInstance",
-        "rds:AddTagsToResource",
-        "rds:ModifyDBInstance"
-      ]
-      resources = [
-        "arn:aws:rds:${local.account_region}:db:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "rds:CreateDBInstance",
+      "rds:AddTagsToResource",
+      "rds:ModifyDBInstance"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:rds:${local.account_region}:db:${var.application}-${env.name}-*"
+    ]
   }
 
   statement {
