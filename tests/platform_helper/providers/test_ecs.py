@@ -472,35 +472,30 @@ def test_register_task_definition_applies_image_tag_override():
         "taskDefinition": {"taskDefinitionArn": "arn:taskdef:123"}
     }
 
-    service_model = MagicMock()
-    service_model.name = "web"
-    service_model.cpu = 256
-    service_model.memory = 512
-    service_model.image.location = (
-        "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:old_image_tag"
-    )
-
     task_definition = {
         "family": "doesn't matter",
         "other parameters...": "they also don't matter",
         "containerDefinitions": [
-            {"name": "web", "image": "web:old"},
+            {
+                "name": "web",
+                "image": "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:old-image-tag",
+            },
             {"name": "sidecar", "image": "sidecar:v1.2.3"},
         ],
     }
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
     arn = ecs.register_task_definition(
-        service_model=service_model,
+        service="web",
         task_definition=task_definition,
-        image_tag="new_image_tag",
+        image_tag="new-image-tag",
     )
 
     assert arn == "arn:taskdef:123"
     # Image tag is rewritten only for the main container
     assert (
         task_definition["containerDefinitions"][0]["image"]
-        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:new_image_tag"
+        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:new-image-tag"
     )
     assert task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
 
@@ -513,12 +508,6 @@ def test_register_task_definition_raises_exception():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.register_task_definition.side_effect = _client_error("RegisterTaskDefinition")
-
-    service_model = MagicMock(name="ServiceConfig")
-    service_model.name = "web"
-    service_model.cpu = 256
-    service_model.memory = 512
-    service_model.image.location = "repo/web:tag-1.2.3"
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
 
@@ -533,7 +522,7 @@ def test_register_task_definition_raises_exception():
 
     with pytest.raises(PlatformException) as e:
         ecs.register_task_definition(
-            service_model=service_model,
+            service="web",
             task_definition=task_definition,
             image_tag="tag",
         )
@@ -545,19 +534,16 @@ def test_update_service_success():
     ssm_client = MagicMock()
     ecs_client.update_service.return_value = {"service": {"serviceName": "myapp-dev-web"}}
 
-    service_model = MagicMock()
-    service_model.name = "web"
-    service_model.count = 2
-
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    svc = ecs.update_service(service_model, "arn:taskdef:1", "dev", "myapp")
+    svc = ecs.update_service(
+        service="web", task_def_arn="arn:taskdef:1", environment="dev", application="myapp"
+    )
 
     assert svc == {"serviceName": "myapp-dev-web"}
     ecs_client.update_service.assert_called_once_with(
         cluster="myapp-dev-cluster",
         service="myapp-dev-web",
         taskDefinition="arn:taskdef:1",
-        desiredCount=2,
     )
 
 

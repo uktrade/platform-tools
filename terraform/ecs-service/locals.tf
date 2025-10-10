@@ -196,7 +196,8 @@ locals {
     command = [
       "/bin/sh",
       "-c",
-    "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) > 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"]
+      "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) > 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"
+    ]
     mountPoints = concat([
       { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
       ], [
@@ -265,4 +266,45 @@ locals {
     ]
   })
 
+  ##################
+  # ECS AUTO-SCALING
+  ##################
+
+  # Note: Autoscaling is always be enabled. When not in use, 'count_min' and 'count_max' have the same value.
+
+  count_range = try(split("-", var.service_config.count.range), null)
+
+  count_min = try(
+    tonumber(local.count_range[0]),    # preferred (if autoscaling is enabled), otherwise will error out on null value
+    tonumber(var.service_config.count) # default (without autoscaling)
+  )
+
+  count_max = try(
+    tonumber(local.count_range[1]),    # preferred (if autoscaling is enabled), otherwise will error out on null value
+    tonumber(var.service_config.count) # default (without autoscaling)
+  )
+
+  # Defaults for cooldowns
+  default_cool_in  = try(var.service_config.count.cooldown.in, 60)
+  default_cool_out = try(var.service_config.count.cooldown.out, 60)
+
+  # CPU properties
+  cpu_value    = try(var.service_config.count.cpu_percentage.value, var.service_config.count.cpu_percentage, null)
+  cpu_cool_in  = try(var.service_config.count.cpu_percentage.cooldown.in, local.default_cool_in)
+  cpu_cool_out = try(var.service_config.count.cpu_percentage.cooldown.out, local.default_cool_out)
+
+  # Memory properties
+  mem_value    = try(var.service_config.count.memory_percentage.value, var.service_config.count.memory_percentage, null)
+  mem_cool_in  = try(var.service_config.count.memory_percentage.cooldown.in, local.default_cool_in)
+  mem_cool_out = try(var.service_config.count.memory_percentage.cooldown.out, local.default_cool_out)
+
+  # Requests properties
+  req_value    = try(var.service_config.count.requests_per_minute.value, var.service_config.count.requests_per_minute, null)
+  req_cool_in  = try(var.service_config.count.requests_per_minute.cooldown.in, local.default_cool_in)
+  req_cool_out = try(var.service_config.count.requests_per_minute.cooldown.out, local.default_cool_out)
+
+  # Only create 'aws_appautoscaling_policy' resources when required
+  enable_cpu = local.cpu_value != null
+  enable_mem = local.mem_value != null
+  enable_req = local.req_value != null && local.web_service_required == 1
 }

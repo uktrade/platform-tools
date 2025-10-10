@@ -6,7 +6,6 @@ from typing import Optional
 
 from botocore.exceptions import ClientError
 
-from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.platform_exception import ValidationException
 from dbt_platform_helper.providers.vpc import Vpc
@@ -237,7 +236,7 @@ class ECS:
 
     def register_task_definition(
         self,
-        service_model: ServiceConfig,
+        service: str,
         task_definition: dict,
         image_tag: Optional[str] = None,
     ) -> str:
@@ -246,8 +245,8 @@ class ECS:
 
         if image_tag:
             for container in task_definition["containerDefinitions"]:
-                if container.get("name") == service_model.name:
-                    image_uri = service_model.image.location.rsplit(":", 1)[0]
+                if container["name"] == service:
+                    image_uri = container["image"].rsplit(":", 1)[0]
                     container["image"] = f"{image_uri}:{image_tag}"
                     break
 
@@ -258,16 +257,15 @@ class ECS:
             raise PlatformException(f"Error registering task definition: {err}")
 
     def update_service(
-        self, service_model: ServiceConfig, task_def_arn: str, environment: str, application: str
+        self, service: str, task_def_arn: str, environment: str, application: str
     ) -> dict[str, Any]:
         """Update an ECS service and return the response."""
 
         try:
             service_response = self.ecs_client.update_service(
                 cluster=f"{application}-{environment}-cluster",
-                service=f"{application}-{environment}-{service_model.name}",
+                service=f"{application}-{environment}-{service}",
                 taskDefinition=task_def_arn,
-                desiredCount=service_model.count,
             )
             return service_response["service"]
         except ClientError as err:
