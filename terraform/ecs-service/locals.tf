@@ -299,9 +299,9 @@ locals {
   mem_cool_out = try(var.service_config.count.memory_percentage.cooldown.out, local.default_cool_out)
 
   # Requests properties
-  req_value    = try(var.service_config.count.requests.value, var.service_config.count.requests, null)
-  req_cool_in  = try(var.service_config.count.requests.cooldown.in, local.default_cool_in)
-  req_cool_out = try(var.service_config.count.requests.cooldown.out, local.default_cool_out)
+  req_value    = try(var.service_config.count.requests_per_minute.value, var.service_config.count.requests_per_minute, null)
+  req_cool_in  = try(var.service_config.count.requests_per_minute.cooldown.in, local.default_cool_in)
+  req_cool_out = try(var.service_config.count.requests_per_minute.cooldown.out, local.default_cool_out)
 
   # Only create 'aws_appautoscaling_policy' resources when required
   enable_cpu = local.cpu_value != null

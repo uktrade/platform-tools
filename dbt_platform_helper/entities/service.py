@@ -135,7 +135,7 @@ class MemoryPercentage(BaseModel):
 
 class RequestsPerSecond(BaseModel):
     value: int = Field(
-        description="Number of incoming requests per second that triggers autoscaling."
+        description="Number of incoming requests per minute that triggers autoscaling."
     )
     cooldown: Optional[Cooldown] = Field(
         default=None,
@@ -159,7 +159,7 @@ class Count(BaseModel):
         default=None,
         description="Memory utilisation threshold (0–100). Either a plain integer or a map with 'value' and 'cooldown'.",
     )
-    requests_per_second: Optional[Union[int, RequestsPerSecond]] = Field(
+    requests_per_minute: Optional[Union[int, RequestsPerSecond]] = Field(
         default=None,
         description="Request-rate threshold. Either a plain integer or a map with 'value' and 'cooldown'.",
     )
@@ -167,10 +167,10 @@ class Count(BaseModel):
     @model_validator(mode="after")
     def at_least_one_autoscaling_metric(self):
 
-        if not any([self.cpu_percentage, self.memory_percentage, self.requests_per_second]):
+        if not any([self.cpu_percentage, self.memory_percentage, self.requests_per_minute]):
             raise PlatformException(
                 "If autoscaling is enabled, you must define at least one metric: "
-                "cpu_percentage, memory_percentage, or requests_per_second"
+                "cpu_percentage, memory_percentage, or requests_per_minute"
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
@@ -222,7 +222,7 @@ class ServiceConfig(BaseModel):
     cpu: int = Field()
     memory: int = Field()
     count: Union[int, Count] = Field(
-        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_second' metrics."
+        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_minute' metrics."
     )
     exec: Optional[bool] = Field(default=None)
     entrypoint: Optional[list[str]] = Field(default=None)

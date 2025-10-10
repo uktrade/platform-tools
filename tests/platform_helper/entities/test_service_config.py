@@ -127,7 +127,7 @@ def test_service_config_accepts_int_count():
 def test_count_autoscaling_minimal():
     count = Count.model_validate(
         {"range": "1-3", "cpu_percentage": 70}
-    )  # Could've been memory_percentage or requests_per_second too
+    )  # Could've been memory_percentage or requests_per_minute too
     assert count.cpu_percentage == 70
     assert count.range == "1-3"
 
@@ -145,7 +145,7 @@ def test_count_autoscaling_all_the_things():
                 "value": 80,
                 "cooldown": {"in": "35s", "out": "45s"},
             },
-            "requests_per_second": {
+            "requests_per_minute": {
                 "value": 100,
                 "cooldown": {"in": "55s", "out": "65s"},
             },
@@ -153,7 +153,7 @@ def test_count_autoscaling_all_the_things():
     )
     assert isinstance(count.cpu_percentage, CpuPercentage)
     assert isinstance(count.memory_percentage, MemoryPercentage)
-    assert isinstance(count.requests_per_second, RequestsPerSecond)
+    assert isinstance(count.requests_per_minute, RequestsPerSecond)
 
     assert count.cpu_percentage.value == 60
     assert count.cpu_percentage.cooldown.in_ == 15
@@ -163,9 +163,9 @@ def test_count_autoscaling_all_the_things():
     assert count.memory_percentage.cooldown.in_ == 35
     assert count.memory_percentage.cooldown.out == 45
 
-    assert count.requests_per_second.value == 100
-    assert count.requests_per_second.cooldown.in_ == 55
-    assert count.requests_per_second.cooldown.out == 65
+    assert count.requests_per_minute.value == 100
+    assert count.requests_per_minute.cooldown.in_ == 55
+    assert count.requests_per_minute.cooldown.out == 65
 
 
 def test_count_autoscaling_all_the_things():
@@ -181,7 +181,7 @@ def test_count_autoscaling_all_the_things():
                 "value": 80,
                 "cooldown": {"in": "35s", "out": "45s"},
             },
-            "requests_per_second": {
+            "requests_per_minute": {
                 "value": 100,
                 "cooldown": {"in": "55s", "out": "65s"},
             },
@@ -189,7 +189,7 @@ def test_count_autoscaling_all_the_things():
     )
     assert isinstance(count.cpu_percentage, CpuPercentage)
     assert isinstance(count.memory_percentage, MemoryPercentage)
-    assert isinstance(count.requests_per_second, RequestsPerSecond)
+    assert isinstance(count.requests_per_minute, RequestsPerSecond)
 
     assert count.cpu_percentage.value == 60
     assert count.cpu_percentage.cooldown.in_ == 15
@@ -199,6 +199,6 @@ def test_count_autoscaling_all_the_things():
     assert count.memory_percentage.cooldown.in_ == 35
     assert count.memory_percentage.cooldown.out == 45
 
-    assert count.requests_per_second.value == 100
-    assert count.requests_per_second.cooldown.in_ == 55
-    assert count.requests_per_second.cooldown.out == 65
+    assert count.requests_per_minute.value == 100
+    assert count.requests_per_minute.cooldown.in_ == 55
+    assert count.requests_per_minute.cooldown.out == 65
