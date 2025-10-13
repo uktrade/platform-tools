@@ -479,7 +479,7 @@ run "waf_and_rotate_lambda" {
   }
 
   assert {
-    condition     = aws_lambda_function.origin-secret-rotate-function[""].runtime == "python3.9"
+    condition     = aws_lambda_function.origin-secret-rotate-function[""].runtime == "python3.13"
     error_message = "Invalid runtime for aws_lambda_function.origin-secret-rotate-function"
   }
 
