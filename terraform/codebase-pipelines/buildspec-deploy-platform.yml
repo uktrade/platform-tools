@@ -92,7 +92,6 @@ phases:
 
       # Deploy service
       - cd "${CODEBUILD_SRC_DIR}"
-      - platform-helper internal service generate --env ${ENVIRONMENT} --name ${SERVICE}
       - platform-helper internal service deploy --env ${ENVIRONMENT} --name ${SERVICE} --image-tag ${DEPLOY_TAG}
 
       # Send notification on successful deployment or exit with an error code

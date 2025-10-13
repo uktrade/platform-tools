@@ -179,10 +179,6 @@ phases:
   post_build:
     commands:
       - |
-        if [[ -z "${DEPLOY_TAG}" ]]; then
-          DEPLOY_TAG=${IMAGE_TAG}
-        fi
-      - |
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
           MESSAGE=":terraform::red_circle: FAILED - Service infrastructure changes for service \`${SERVICE}\` in environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
