@@ -100,7 +100,7 @@ phases:
           MESSAGE=":rocket::large_green_circle: COMPLETE - Platform deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
           platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
         else
-          echo "Error: Deployment failed" | tee output.log"
+          echo "Error: Deployment failed" | tee output.log
           exit 1
         fi
 

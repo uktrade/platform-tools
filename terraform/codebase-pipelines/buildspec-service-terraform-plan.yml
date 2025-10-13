@@ -114,7 +114,7 @@ phases:
           deploy_status="FAILED"
           STATUS_EMOJI=":red_circle:"
           STATUS_TEXT="FAILED"
-          echo "Error: Terraform plan FAILED | tee output.log
+          echo "Error: Terraform plan FAILED" | tee output.log
           exit 1
         fi
 
