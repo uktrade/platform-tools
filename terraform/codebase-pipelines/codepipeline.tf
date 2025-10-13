@@ -156,7 +156,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     dynamic "action" {
       for_each = local.copilot_deployment_enabled ? local.service_order_list : []
       content {
-        name             = "copilot-${action.value.name}"
+        name             = "copilot-deploy-${action.value.name}"
         category         = "Build"
         owner            = "AWS"
         provider         = "CodeBuild"
@@ -186,7 +186,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     dynamic "action" {
       for_each = local.platform_deployment_enabled ? local.service_order_list : []
       content {
-        name             = "platform-${action.value.name}"
+        name             = "platform-deploy-${action.value.name}"
         category         = "Build"
         owner            = "AWS"
         provider         = "CodeBuild"

@@ -77,8 +77,7 @@ locals {
             provider : "Manual",
             input_artifacts : [],
             configuration : {
-              CustomData : "Review Terraform Plan"
-              ExternalEntityLink : "https://${data.aws_region.current.region}.console.aws.amazon.com/codesuite/codebuild/${data.aws_caller_identity.current.account_id}/projects/${var.application}--environment-pipeline-plan/build/"
+              CustomData : "Review terraform plan for ${length(local.service_order_list)} services"
             }
           }])
         }] : [],
