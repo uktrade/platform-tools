@@ -77,7 +77,7 @@ locals {
             provider : "Manual",
             input_artifacts : [],
             configuration : {
-              CustomData : "Review terraform plan for ${length(local.service_order_list)} services"
+              CustomData : "Review terraform plan for ${length(local.service_order_list)} service(s)"
             }
           }])
         }] : [],

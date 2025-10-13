@@ -42,7 +42,8 @@ phases:
 
   pre_build:
     commands:
-      # Check if the specified image tag exists
+      # IMAGE_TAG is required to retrieve the Slack notification reference from the image
+      # Check if the specified image tag exists, also fails the pipeline early if an incorrect tag is supplied
       - aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
       - |
         if ! docker manifest inspect "${REPOSITORY_URL}:${IMAGE_TAG}" > /dev/null 2>&1; then
