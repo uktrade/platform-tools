@@ -281,7 +281,9 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
   statement {
     actions = [
       "application-autoscaling:RegisterScalableTarget",
-      "application-autoscaling:DescribeScalableTargets"
+      "application-autoscaling:DescribeScalableTargets",
+      "application-autoscaling:ListTagsForResource",
+      "application-autoscaling:DeregisterScalableTarget"
     ]
     resources = [
       "arn:aws:application-autoscaling:${data.aws_region.current.region}:${local.pipeline_account_id}:scalable-target/*"
