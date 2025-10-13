@@ -1,5 +1,5 @@
 resource "aws_codepipeline" "codebase_pipeline" {
-  for_each       = local.pipeline_map_stages
+  for_each       = local.pipeline_map
   name           = "${var.application}-${var.codebase}-${each.value.name}-codebase"
   role_arn       = aws_iam_role.codebase_deploy_pipeline.arn
   depends_on     = [aws_iam_role_policy.artifact_store_access_for_codebase_pipeline]
