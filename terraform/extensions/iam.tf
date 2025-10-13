@@ -243,11 +243,20 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
 
   statement {
     actions = [
+      "s3:ListBucketVersions"
+    ]
+    resources = [
+      "arn:aws:s3:::ecs-task-definitions-${var.args.application}-${var.environment}"
+    ]
+  }
+
+  statement {
+    actions = [
       "s3:GetObjectTagging",
       "s3:PutObjectTagging"
     ]
     resources = [
-      "arn:aws:s3:::ecs-container-definitions-${var.args.application}-${var.environment}/${var.args.application}/${var.environment}/*.json"
+      "arn:aws:s3:::ecs-task-definitions-${var.args.application}-${var.environment}/${var.args.application}/${var.environment}/*.json"
     ]
   }
 
@@ -266,6 +275,16 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:service/${var.args.application}-${var.environment}-cluster/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "application-autoscaling:RegisterScalableTarget",
+      "application-autoscaling:DescribeScalableTargets"
+    ]
+    resources = [
+      "arn:aws:application-autoscaling:${data.aws_region.current.region}:${local.pipeline_account_id}:scalable-target/*"
     ]
   }
 }
