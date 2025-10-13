@@ -59,7 +59,7 @@ class UpdateALBRules:
         self.config_provider = config_provider
         self.io = io
         self.load_application = load_application
-        self.load_balancer: LoadBalancerProvider = load_balancer_p(session)
+        self.load_balancer: LoadBalancerProvider = load_balancer_p(session, io=self.io)
 
     def update_alb_rules(
         self,
