@@ -1027,7 +1027,9 @@ run "test_iam_documents" {
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform/log-group",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform/log-group:*",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group:*",
     ])
     error_message = "Unexpected resources"
   }
