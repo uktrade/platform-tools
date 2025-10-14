@@ -631,15 +631,15 @@ run "aws_db_instance_unit_test_set_to_non_defaults" {
 
   variables {
     config = {
-      apply_immediately     = true
-      version               = 14,
-      deletion_protection   = false,
-      multi_az              = true,
-      skip_final_snapshot   = true,
-      volume_size           = 20,
-      iops                  = 3000,
-      instance              = "db.t3.small",
-      storage_type          = "io2"
+      apply_immediately   = true
+      version             = 14,
+      deletion_protection = false,
+      multi_az            = true,
+      skip_final_snapshot = true,
+      volume_size         = 20,
+      iops                = 3000,
+      instance            = "db.t3.small",
+      storage_type        = "io2"
     }
   }
 
