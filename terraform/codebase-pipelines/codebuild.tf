@@ -258,6 +258,7 @@ resource "aws_cloudwatch_log_stream" "invalidate_cache" {
 }
 
 resource "aws_codebuild_project" "codebase_deploy" {
+  for_each       = toset(local.copilot_deployment_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-deploy"
   description    = "Deploy specified image tag to specified environment"
   build_timeout  = 30
@@ -297,8 +298,8 @@ resource "aws_codebuild_project" "codebase_deploy" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_deploy.name
-      stream_name = aws_cloudwatch_log_stream.codebase_deploy.name
+      group_name  = aws_cloudwatch_log_group.codebase_deploy[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_deploy[""].name
     }
   }
 
@@ -313,13 +314,15 @@ resource "aws_codebuild_project" "codebase_deploy" {
 resource "aws_cloudwatch_log_group" "codebase_deploy" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.copilot_deployment_enabled ? [""] : [])
   name              = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group"
   retention_in_days = 90
 }
 
 resource "aws_cloudwatch_log_stream" "codebase_deploy" {
+  for_each       = toset(local.copilot_deployment_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-deploy/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_deploy.name
+  log_group_name = aws_cloudwatch_log_group.codebase_deploy[""].name
 }
 
 resource "aws_codebuild_project" "codebase_deploy_platform" {
@@ -456,4 +459,20 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform_plan" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_service_terraform_plan[""].name
+}
+
+# These moved blocks are to prevent resources being recreated
+moved {
+  from = aws_codebuild_project.codebase_deploy
+  to   = aws_codebuild_project.codebase_deploy[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_group.codebase_deploy
+  to   = aws_cloudwatch_log_group.codebase_deploy[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_stream.codebase_deploy
+  to   = aws_cloudwatch_log_stream.codebase_deploy[""]
 }

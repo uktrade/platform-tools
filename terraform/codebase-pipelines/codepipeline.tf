@@ -166,7 +166,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         run_order        = action.value.order + 1
 
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy.name
+          ProjectName = aws_codebuild_project.codebase_deploy[""].name
           EnvironmentVariables : jsonencode([
             { name : "APPLICATION", value : var.application },
             { name : "AWS_REGION", value : data.aws_region.current.region },

@@ -112,7 +112,7 @@ locals {
                 name : "copilot-deploy-${svc.name}",
                 order : svc.order + 1,
                 configuration = {
-                  ProjectName = aws_codebuild_project.codebase_deploy.name
+                  ProjectName = aws_codebuild_project.codebase_deploy[""].name
                   EnvironmentVariables : jsonencode(concat(local.default_variables, [
                     { name : "ENVIRONMENT", value : env.name },
                     { name : "SERVICE", value : svc.name },
