@@ -64,7 +64,8 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
       "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",
       "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-appconfig-policy",
-      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy"
+      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy",
+      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy"
     ]
   }
 }

@@ -236,8 +236,26 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       }
     }
 
-    # ALB rules
-    # TODO https://uktrade.atlassian.net/browse/DBTP-2164
+    dynamic "action" {
+      for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+      content {
+        name             = "traffic-switch"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = []
+        version          = "1"
+        run_order        = max([for svc in local.service_order_list : svc.order]...) + 2
+
+        configuration = {
+          ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+          EnvironmentVariables : jsonencode([
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+          ])
+        }
+      }
+    }
 
   }
 

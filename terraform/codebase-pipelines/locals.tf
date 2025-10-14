@@ -120,6 +120,16 @@ locals {
                 }
               }] : [],
             )]),
+            local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
+              name : "traffic-switch",
+              order : max([for svc in local.service_order_list : svc.order]...) + 2,
+              configuration = {
+                ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+                EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                  { name : "ENVIRONMENT", value : env.name },
+                ]))
+              }
+            }] : [],
             contains(local.environments_requiring_cache_invalidation, env.name) ? [{
               name : "invalidate-cache",
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
