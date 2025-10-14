@@ -321,9 +321,6 @@ class PlatformConfigSchema:
                     Optional("deletion_protection"): bool,
                     Optional("multi_az"): bool,
                     Optional("storage_type"): _valid_postgres_storage_types,
-                    Optional("backup_retention_days"): PlatformConfigSchema.is_integer_between(
-                        1, 35
-                    ),
                 }
             },
             Optional("database_copy"): [_valid_postgres_database_copy],

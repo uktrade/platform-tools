@@ -79,13 +79,6 @@ my-rds-storage_type-should-valid-option:
     default:
       storage_type: "floppydisc"
 
-my-rds-backup-retention-too-high:
-  type: postgres
-  version: 14.4
-  environments:
-    default:
-      backup_retention_days: 36
-
 my-rds-data-migration-invalid-key:
   type: postgres
   version: 14.4
