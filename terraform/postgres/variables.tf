@@ -30,7 +30,6 @@ variable "config" {
     multi_az              = optional(bool)
     instance              = optional(string)
     storage_type          = optional(string)
-    backup_retention_days = optional(number)
     database_copy = optional(list(
       object({
         from         = string
