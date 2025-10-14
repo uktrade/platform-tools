@@ -7,6 +7,7 @@ from typing import Dict
 from prettytable import PrettyTable
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import STANDARD_PLATFORM_SSO_ROLES
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
@@ -140,6 +141,10 @@ class Config:
         if self.io.confirm(
             f"This command is destructive and will overwrite file contents at {file_path}. Are you sure you want to continue?"
         ):
+            self.io.info(
+                "Fetching credentials... this may take longer if you have access to many accounts."
+            )
+
             with open(aws_config_path, "w") as config_file:
                 config_file.write(AWS_CONFIG)
 
@@ -147,7 +152,9 @@ class Config:
                     config_file.write(f"[profile {account['accountName']}]\n")
                     config_file.write("sso_session = uktrade\n")
                     config_file.write(f"sso_account_id = {account['accountId']}\n")
-                    config_file.write("sso_role_name = AdministratorAccess\n")
+                    config_file.write(
+                        f"sso_role_name = {self._retrieve_role_for_aws_account(aws_sso_token=access_token, account_id=account['accountId'])}\n"
+                    )
                     config_file.write("region = eu-west-2\n")
                     config_file.write("output = json\n")
                     config_file.write("\n")
@@ -176,6 +183,28 @@ class Config:
             max_results=100,
         )
         return accounts_list
+
+    def _retrieve_role_for_aws_account(self, aws_sso_token, account_id):
+        """
+        Selects the most appropriate IAM role for a given AWS account.
+
+        Roles listed in STANDARD_PLATFORM_SSO_ROLES are preferred if available.
+        If none are found, the first available role returned by
+        sso.list_account_roles is used.
+        """
+
+        role_list = self.sso.list_account_roles(
+            access_token=aws_sso_token,
+            account_id=account_id,
+            max_results=100,
+        )
+
+        roles_retrieved = [r["roleName"] for r in role_list]
+
+        for role in STANDARD_PLATFORM_SSO_ROLES:
+            if role in roles_retrieved:
+                return role
+        return role_list[0]["roleName"]
 
     def _add_version_status_row(
         self, table: PrettyTable, header: str, version_status: VersionStatus

@@ -567,7 +567,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
   function_name = "${var.application}-${var.environment}-origin-secret-rotate"
   description   = "Secrets Manager Rotation Lambda Function"
   handler       = "rotate_secret_lambda.lambda_handler"
-  runtime       = "python3.9"
+  runtime       = "python3.13"
   timeout       = 300
   role          = aws_iam_role.origin-secret-rotate-execution-role[""].arn
   # this is not a user-facing function that needs to scale rapidly

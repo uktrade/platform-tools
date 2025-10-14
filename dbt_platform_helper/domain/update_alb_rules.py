@@ -5,6 +5,7 @@ from enum import Enum
 from typing import List
 
 from dbt_platform_helper.constants import COPILOT_RULE_PRIORITY
+from dbt_platform_helper.constants import DUMMY_RULE_REASON
 from dbt_platform_helper.constants import MAINTENANCE_PAGE_REASON
 from dbt_platform_helper.constants import MANAGED_BY_PLATFORM
 from dbt_platform_helper.constants import MANAGED_BY_SERVICE_TERRAFORM
@@ -28,6 +29,7 @@ class RuleType(Enum):
     DEFAULT = "default"
     COPILOT = "copilot"
     MANUAL = "manual"
+    DUMMY = "dummy"
 
 
 class Deployment(Enum):
@@ -57,7 +59,7 @@ class UpdateALBRules:
         self.config_provider = config_provider
         self.io = io
         self.load_application = load_application
-        self.load_balancer: LoadBalancerProvider = load_balancer_p(session)
+        self.load_balancer: LoadBalancerProvider = load_balancer_p(session, io=self.io)
 
     def update_alb_rules(
         self,
@@ -242,6 +244,8 @@ class UpdateALBRules:
                 return RuleType.PLATFORM.value
             if rule["Tags"].get("reason", None) == MAINTENANCE_PAGE_REASON:
                 return RuleType.MAINTENANCE.value
+            if rule["Tags"].get("reason", None) == DUMMY_RULE_REASON:
+                return RuleType.DUMMY.value
 
         if rule["Priority"] == "default":
             return RuleType.DEFAULT.value

@@ -96,4 +96,7 @@ locals {
 
   service_deployment_mode             = lookup(var.args.env_config[var.environment], "service-deployment-mode", "copilot") # Default to `copilot` deployment mode to avoid causing a breaking change for teams already on the platform
   non_copilot_service_deployment_mode = local.service_deployment_mode == "dual-deploy-copilot-traffic" || local.service_deployment_mode == "dual-deploy-platform-traffic" || local.service_deployment_mode == "platform" ? 1 : 0
+
+  central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log_destination_arn.value)
+  central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
 }

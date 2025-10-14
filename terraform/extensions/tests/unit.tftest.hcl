@@ -222,6 +222,13 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_ssm_parameter.log_destination_arn
+  values = {
+    value = "{\"dev\":\"arn:aws:logs:eu-west-2:001122334455:log-group:/central/dev\",\"prod\":\"arn:aws:logs:eu-west-2:001122334455:log-group:/central/prod\"}"
+  }
+}
+
 run "aws_ssm_parameter_unit_test" {
   command = plan
 
@@ -812,7 +819,9 @@ run "codebase_deploy_iam_test" {
   assert {
     condition = data.aws_iam_policy_document.ecs_deploy_access.statement[0].resources == toset([
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env-cluster",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env-cluster/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -830,7 +839,9 @@ run "codebase_deploy_iam_test" {
   assert {
     condition = data.aws_iam_policy_document.ecs_deploy_access.statement[1].resources == toset([
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env",
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/test-application-test-env-cluster",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/test-application-test-env-cluster/*"
     ])
     error_message = "Unexpected resources"
   }
@@ -858,7 +869,10 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources) == "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env/*"
+    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[3].resources == toset([
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/test-application-test-env-cluster/*"
+    ])
     error_message = "Unexpected resources"
   }
   assert {
