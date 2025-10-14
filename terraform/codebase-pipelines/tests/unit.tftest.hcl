@@ -1391,8 +1391,8 @@ run "test_main_pipeline" {
 
   # Deploy dev environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "deploy-dev"
-    error_message = "Should be: deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    error_message = "Should be: Deploy-dev"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].on_failure[0].result == "ROLLBACK"
@@ -1526,8 +1526,8 @@ run "test_tagged_pipeline" {
 
   # Deploy staging environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].name == "deploy-staging"
-    error_message = "Should be: deploy-staging"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].name == "Deploy-staging"
+    error_message = "Should be: Deploy-staging"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[1].on_failure[0].result == "ROLLBACK"
@@ -1576,8 +1576,8 @@ run "test_tagged_pipeline" {
 
   # Approve prod environment
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "approve-prod"
-    error_message = "Should be: approve-prod"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Approve-prod"
+    error_message = "Should be: Approve-prod"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[2].on_failure[0].result == "FAIL"
@@ -1596,8 +1596,8 @@ run "test_tagged_pipeline" {
 
   # Deploy prod environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].name == "deploy-prod"
-    error_message = "Should be: deploy-prod"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].name == "Deploy-prod"
+    error_message = "Should be: Deploy-prod"
   }
 
   # Deploy service-1 action
@@ -2274,8 +2274,8 @@ run "test_main_pipeline_service_deployment_terraform" {
 
   # Deploy dev environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "deploy-dev"
-    error_message = "Should be: deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    error_message = "Should be: Deploy-dev"
   }
 
   # Deploy service-1 action
@@ -2308,8 +2308,8 @@ run "test_main_pipeline_service_deployment_terraform" {
 
   # Tagged pipeline approval stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "approve-prod"
-    error_message = "Should be: approve-prod"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Approve-prod"
+    error_message = "Should be: Approve-prod"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].name == "terraform-plan-service-1"
