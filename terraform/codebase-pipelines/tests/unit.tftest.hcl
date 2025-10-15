@@ -2431,7 +2431,7 @@ run "test_traffic_switch" {
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
-    error_message = "Should be: deploy-dev"
+    error_message = "Should be: Deploy-dev"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"

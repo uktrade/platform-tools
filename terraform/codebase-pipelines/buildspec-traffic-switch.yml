@@ -24,41 +24,30 @@ phases:
       ## Install platform helper
       - ./terraform/scripts/install_platform_helper.sh
 
-  pre_build:
-    commands:
-
-      # Check environment exists in config
-      - |
-        if [ $(echo $ENV_CONFIG | jq 'has('\"${ENVIRONMENT}\"')') == "false" ]; then
-          echo "Error: Environment ${ENVIRONMENT} not listed in environment config" | tee output.log
-          exit 1
-        fi
-
   build:
     commands:
-      - |
-        set -e
+      - set -e
 
-        # Assume environment role
-      
-        account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_id)
-        account_name=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_name)
-        assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
-        export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
-        export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
-        export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
-      
-        # Set an AWS profile for Terraform
-      
-        PROFILE_NAME="${account_name}"
-        aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}" --profile "${PROFILE_NAME}"
-        aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}" --profile "${PROFILE_NAME}"
-        aws configure set aws_session_token "${AWS_SESSION_TOKEN}" --profile "${PROFILE_NAME}"
-        aws configure set region "eu-west-2" --profile "${PROFILE_NAME}"
-        aws configure set output "json" --profile "${PROFILE_NAME}"
-        export AWS_PROFILE="${PROFILE_NAME}"
+      # Assume environment role
 
-        # Perform ALB traffic switch
-      
-        cd "${CODEBUILD_SRC_DIR}"
-        platform-helper internal alb update-rules --env "${ENVIRONMENT}"
+      - account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_id)
+      - account_name=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_name)
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Set an AWS profile for Terraform
+
+      - PROFILE_NAME="${account_name}"
+      - aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}" --profile "${PROFILE_NAME}"
+      - aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}" --profile "${PROFILE_NAME}"
+      - aws configure set aws_session_token "${AWS_SESSION_TOKEN}" --profile "${PROFILE_NAME}"
+      - aws configure set region "eu-west-2" --profile "${PROFILE_NAME}"
+      - aws configure set output "json" --profile "${PROFILE_NAME}"
+      - export AWS_PROFILE="${PROFILE_NAME}"
+
+      # Perform ALB traffic switch
+
+      - cd "${CODEBUILD_SRC_DIR}"
+      - platform-helper internal alb update-rules --env "${ENVIRONMENT}"
