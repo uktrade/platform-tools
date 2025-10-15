@@ -528,3 +528,19 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform_plan" {
   name           = "codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_service_terraform_plan[""].name
 }
+
+# These moved blocks are to prevent resources being recreated
+moved {
+  from = aws_codebuild_project.codebase_deploy
+  to   = aws_codebuild_project.codebase_deploy[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_group.codebase_deploy
+  to   = aws_cloudwatch_log_group.codebase_deploy[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_stream.codebase_deploy
+  to   = aws_cloudwatch_log_stream.codebase_deploy[""]
+}

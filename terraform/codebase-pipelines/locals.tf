@@ -58,7 +58,7 @@ locals {
         # Approval
         coalesce(env.requires_approval, false) ?
         [{
-          name : "approve-${env.name}",
+          name : "Approve-${env.name}",
           on_failure : "FAIL",
           actions : concat(local.base_env_config[env.name].service_deployment_mode != "copilot" ? [for svc in local.service_order_list : {
             name : "terraform-plan-${svc.name}",
@@ -77,17 +77,17 @@ locals {
             provider : "Manual",
             input_artifacts : [],
             configuration : {
-              CustomData : "Review terraform plan for ${length(local.service_order_list)} service(s)"
+              CustomData : "Review the Terraform plan for ${length(local.service_order_list)} service(s)"
             }
           }])
         }] : [],
         # Deployment
         [{
-          name : "deploy-${env.name}",
+          name : "Deploy-${env.name}",
           actions : concat(
             flatten([for svc in local.service_order_list : concat(
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
-                name : "service-terraform-${svc.name}",
+                name : "terraform-apply-${svc.name}",
                 order : svc.order,
                 configuration = {
                   ProjectName = aws_codebuild_project.codebase_service_terraform[""].name

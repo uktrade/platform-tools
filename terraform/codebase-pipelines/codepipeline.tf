@@ -126,7 +126,7 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     dynamic "action" {
       for_each = local.platform_deployment_enabled ? local.service_order_list : []
       content {
-        name             = "terraform-${action.value.name}"
+        name             = "terraform-apply-${action.value.name}"
         category         = "Build"
         owner            = "AWS"
         provider         = "CodeBuild"
