@@ -204,7 +204,7 @@ resource "aws_codebuild_project" "codebase_traffic_switch" {
   name           = "${var.application}-${var.codebase}-codebase-traffic-switch"
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30
-  service_role   = aws_iam_role.traffic_switch.arn
+  service_role   = aws_iam_role.traffic_switch[""].arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
 
   artifacts {

@@ -44,10 +44,10 @@ resource "aws_iam_role_policy" "log_access_for_codebuild_images" {
   for_each = toset(var.requires_image_build ? [""] : [])
   name     = "log-access"
   role     = aws_iam_role.codebase_image_build[""].name
-  policy   = data.aws_iam_policy_document.log_access.json
+  policy   = data.aws_iam_policy_document.log_access_for_codebuild_images.json
 }
 
-data "aws_iam_policy_document" "log_access" {
+data "aws_iam_policy_document" "log_access_for_codebuild_images" {
   statement {
     effect = "Allow"
     actions = [
@@ -57,18 +57,8 @@ data "aws_iam_policy_document" "log_access" {
       "logs:TagLogGroup"
     ]
     resources = [
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group:*",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group:*",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group:*",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-group:*",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group:*",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group:*"
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-image-build/log-group:*"
     ]
   }
 }
@@ -318,7 +308,29 @@ resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
 resource "aws_iam_role_policy" "log_access_for_codebuild_deploy" {
   name   = "log-access"
   role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.log_access.json
+  policy = data.aws_iam_policy_document.log_access_for_codebuild_deploy.json
+}
+
+data "aws_iam_policy_document" "log_access_for_codebuild_deploy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:TagLogGroup"
+    ]
+    resources = [
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group:*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "ecr_access_for_codebuild_deploy" {
@@ -499,7 +511,24 @@ resource "aws_iam_role_policy" "log_access_for_cache_invalidation" {
   for_each = toset(local.cache_invalidation_enabled ? [""] : [])
   name     = "invalidate-cache-log-access"
   role     = aws_iam_role.invalidate_cache[each.key].name
-  policy   = data.aws_iam_policy_document.log_access.json
+  policy   = data.aws_iam_policy_document.log_access_for_cache_invalidation[""].json
+}
+
+data "aws_iam_policy_document" "log_access_for_cache_invalidation" {
+  for_each = toset(local.cache_invalidation_enabled ? [""] : [])
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:TagLogGroup"
+    ]
+    resources = [
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-invalidate-cache/log-group:*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" {
@@ -510,12 +539,14 @@ resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" 
 }
 
 resource "aws_iam_role" "traffic_switch" {
+  for_each           = toset(local.platform_deployment_enabled ? [""] : [])
   name               = "${var.application}-${var.codebase}-traffic-switch"
-  assume_role_policy = data.aws_iam_policy_document.assume_traffic_switch_role.json
+  assume_role_policy = data.aws_iam_policy_document.assume_traffic_switch_role[""].json
   tags               = local.tags
 }
 
 data "aws_iam_policy_document" "assume_traffic_switch_role" {
+  for_each = toset(local.platform_deployment_enabled ? [""] : [])
   statement {
     effect = "Allow"
 
@@ -535,12 +566,14 @@ data "aws_iam_policy_document" "assume_traffic_switch_role" {
 }
 
 resource "aws_iam_role_policy" "log_access_traffic_switch" {
-  name   = "log-access"
-  role   = aws_iam_role.traffic_switch.name
-  policy = data.aws_iam_policy_document.log_access_traffic_switch.json
+  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  name     = "log-access"
+  role     = aws_iam_role.traffic_switch[""].name
+  policy   = data.aws_iam_policy_document.log_access_traffic_switch[""].json
 }
 
 data "aws_iam_policy_document" "log_access_traffic_switch" {
+  for_each = toset(local.platform_deployment_enabled ? [""] : [])
   statement {
     effect = "Allow"
     actions = [
@@ -557,13 +590,15 @@ data "aws_iam_policy_document" "log_access_traffic_switch" {
 }
 
 resource "aws_iam_role_policy" "environment_deploy_role_access_for_traffic_switch" {
-  name   = "environment-deploy-role-access"
-  role   = aws_iam_role.traffic_switch.name
-  policy = data.aws_iam_policy_document.environment_deploy_role_access.json
+  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  name     = "environment-deploy-role-access"
+  role     = aws_iam_role.traffic_switch[""].name
+  policy   = data.aws_iam_policy_document.environment_deploy_role_access.json
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_traffic_switch" {
-  name   = "artifact-store-access"
-  role   = aws_iam_role.traffic_switch.name
-  policy = data.aws_iam_policy_document.access_artifact_store.json
+  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  name     = "artifact-store-access"
+  role     = aws_iam_role.traffic_switch[""].name
+  policy   = data.aws_iam_policy_document.access_artifact_store.json
 }
