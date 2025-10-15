@@ -125,9 +125,12 @@ locals {
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
               configuration = {
                 ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
-                EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                EnvironmentVariables : jsonencode([
+                  { name : "APPLICATION", value : var.application },
                   { name : "ENVIRONMENT", value : env.name },
-                ]))
+                  { name : "AWS_REGION", value : data.aws_region.current.region },
+                  { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+                ])
               }
             }] : [],
             contains(local.environments_requiring_cache_invalidation, env.name) ? [{

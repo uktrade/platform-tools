@@ -540,7 +540,7 @@ resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" 
 
 resource "aws_iam_role" "traffic_switch" {
   for_each           = toset(local.platform_deployment_enabled ? [""] : [])
-  name               = "${var.application}-${var.codebase}-traffic-switch"
+  name               = "${var.application}-${var.codebase}-codebase-traffic-switch"
   assume_role_policy = data.aws_iam_policy_document.assume_traffic_switch_role[""].json
   tags               = local.tags
 }
@@ -601,4 +601,11 @@ resource "aws_iam_role_policy" "artifact_store_access_for_traffic_switch" {
   name     = "artifact-store-access"
   role     = aws_iam_role.traffic_switch[""].name
   policy   = data.aws_iam_policy_document.access_artifact_store.json
+}
+
+resource "aws_iam_role_policy" "codestar_access_for_traffic_switch" {
+  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  name     = "codestar-access"
+  role     = aws_iam_role.traffic_switch[""].name
+  policy   = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline.json
 }
