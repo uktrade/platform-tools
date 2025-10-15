@@ -26,8 +26,9 @@ phases:
       - cd "${CODEBUILD_SRC_DIR}/platform-tools"
       ## Setup venv
       - source terraform/scripts/setup_venv.sh
-      ## yq for yaml processing
-      - pip install yq --quiet
+      ## yq for yaml processing (The Go-based variant, not Python-based)
+      - curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
+      - chmod +x /usr/local/bin/yq
       ## Install platform helper
       - ./terraform/scripts/install_platform_helper.sh
 
@@ -38,6 +39,12 @@ phases:
         ENVIRONMENT="${ENVIRONMENT}"
         PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
         ALLOWED_MODES=("dual-deploy-copilot-traffic" "dual-deploy-platform-traffic" "platform")
+        
+        pwd
+        ls -l
+        echo "platform config path: $PLATFORM_CONFIG_PATH"
+        echo "platform config path: $ENVIRONMENT"
+        cat ${CODEBUILD_SRC_DIR}/platform-config.yml
 
         DEPLOY_MODE=$(yq eval ".environments.\"$ENVIRONMENT\".service-deployment-mode" "$PLATFORM_CONFIG_PATH")
 
