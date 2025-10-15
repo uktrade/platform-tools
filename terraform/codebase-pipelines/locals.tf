@@ -142,7 +142,6 @@ locals {
                 ])
               }
             }] : [],
-            # TODO add ALB rule update https://uktrade.atlassian.net/browse/DBTP-2164
           )
         }]
       )])

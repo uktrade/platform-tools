@@ -204,7 +204,7 @@ resource "aws_codebuild_project" "codebase_traffic_switch" {
   name           = "${var.application}-${var.codebase}-codebase-traffic-switch"
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30
-  service_role   = aws_iam_role.codebase_deploy.arn
+  service_role   = aws_iam_role.traffic_switch.arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
 
   artifacts {
@@ -257,13 +257,13 @@ resource "aws_cloudwatch_log_group" "codebase_traffic_switch" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
   for_each          = toset(local.platform_deployment_enabled ? [""] : [])
-  name              = "codebuild/${var.application}-${var.codebase}-codebase-traffc-switch/log-group"
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group"
   retention_in_days = 90
 }
 
 resource "aws_cloudwatch_log_stream" "codebase_traffic_switch" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
-  name           = "codebuild/${var.application}-${var.codebase}-codebase-traffc-switch/log-stream"
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
 }
 
