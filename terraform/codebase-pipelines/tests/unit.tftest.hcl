@@ -2430,7 +2430,7 @@ run "test_traffic_switch" {
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
     error_message = "Should be: deploy-dev"
   }
   assert {
