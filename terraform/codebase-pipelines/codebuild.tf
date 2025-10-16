@@ -199,6 +199,74 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform" {
   log_group_name = aws_cloudwatch_log_group.codebase_service_terraform[""].name
 }
 
+resource "aws_codebuild_project" "codebase_traffic_switch" {
+  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  name           = "${var.application}-${var.codebase}-codebase-traffic-switch"
+  description    = "Perform ALB traffic switch per environment"
+  build_timeout  = 30
+  service_role   = aws_iam_role.traffic_switch[""].arn
+  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.artifact_store.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "ENV_CONFIG"
+      value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "CODESTAR_CONNECTION_ARN"
+      value = data.external.codestar_connections.result["ConnectionArn"]
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_traffic_switch[""].name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = file("${path.module}/buildspec-traffic-switch.yml")
+  }
+
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_log_group" "codebase_traffic_switch" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.platform_deployment_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group"
+  retention_in_days = 90
+}
+
+resource "aws_cloudwatch_log_stream" "codebase_traffic_switch" {
+  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-stream"
+  log_group_name = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
+}
+
 resource "aws_codebuild_project" "invalidate_cache" {
   for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-invalidate-cache"

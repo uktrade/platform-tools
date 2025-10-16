@@ -82,7 +82,7 @@ resource "aws_ecs_service" "service" {
   task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
   desired_count                     = 1 # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by autoscaling.
-  health_check_grace_period_seconds = tonumber(trim(try(var.service_config.http.healthcheck.grace_period, "30s"), "s"))
+  health_check_grace_period_seconds = tonumber(trim(coalesce(try(var.service_config.http.healthcheck.grace_period, null), "30s"), "s"))
   tags                              = local.tags
 
   deployment_circuit_breaker {

@@ -17,7 +17,28 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.log_access
+  target = data.aws_iam_policy_document.log_access_for_codebuild_images
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_for_codebuild_deploy
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_for_cache_invalidation
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_traffic_switch
   values = {
     json = "{\"Sid\": \"CodeBuildLogs\"}"
   }
@@ -32,6 +53,13 @@ override_data {
 
 override_data {
   target = data.aws_iam_policy_document.assume_cache_invalidation_role
+  values = {
+    json = "{\"Sid\": \"AllowSpecificCodeBuildProjectAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.assume_traffic_switch_role
   values = {
     json = "{\"Sid\": \"AllowSpecificCodeBuildProjectAccess\"}"
   }
@@ -973,19 +1001,14 @@ run "test_iam_documents" {
 
   # Log access
   assert {
-    condition     = data.aws_iam_policy_document.log_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.log_access.statement[0].actions == toset(["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:TagLogGroup"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.log_access.statement[0].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*",
+    condition = data.aws_iam_policy_document.log_access_for_codebuild_images.statement[0].resources == toset([
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*"
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.log_access_for_codebuild_deploy.statement[0].resources == toset([
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group:*",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform/log-group",
@@ -994,6 +1017,13 @@ run "test_iam_documents" {
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group:*",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group:*",
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.log_access_for_cache_invalidation[""].statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*"
     ])
     error_message = "Unexpected resources"
   }
@@ -2334,5 +2364,77 @@ run "test_main_pipeline_service_deployment_terraform" {
   assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].provider == "Manual"
     error_message = "Action provider incorrect"
+  }
+}
+
+run "test_traffic_switch" {
+  command = plan
+
+  variables {
+    env_config = {
+      "*" = {
+        accounts = {
+          deploy = {
+            name = "sandbox"
+            id   = "000123456789"
+          }
+          dns = {
+            name = "dev"
+            id   = "111123456789"
+          }
+        },
+        service-deployment-mode : "dual-deploy-copilot-traffic"
+      },
+      "dev"     = null,
+      "staging" = null,
+      "prod" = {
+        accounts = {
+          deploy = {
+            name = "prod"
+            id   = "123456789000"
+          }
+          dns = {
+            name = "live"
+            id   = "222223456789"
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition = data.aws_iam_policy_document.log_access_traffic_switch[""].statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-traffic-switch/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-traffic-switch/log-group:*"
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition = aws_codebuild_project.codebase_traffic_switch[""].logs_config[0].cloudwatch_logs[
+      0
+    ].group_name == "codebuild/my-app-my-codebase-codebase-traffic-switch/log-group"
+    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-traffic-switch/log-group'"
+  }
+  assert {
+    condition = aws_codebuild_project.codebase_traffic_switch[""].logs_config[0].cloudwatch_logs[
+      0
+    ].stream_name == "codebuild/my-app-my-codebase-codebase-traffic-switch/log-stream"
+    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-traffic-switch/log-stream'"
+  }
+  assert {
+    condition     = length(regexall(".*alb update-rules.*", aws_codebuild_project.codebase_traffic_switch[""].source[0].buildspec)) > 0
+    error_message = "Should contain: 'alb update-rules'"
+  }
+  assert {
+    condition     = jsonencode(aws_codebuild_project.codebase_traffic_switch[""].tags) == jsonencode(var.expected_tags)
+    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    error_message = "Should be: Deploy-dev"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
+    error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
   }
 }

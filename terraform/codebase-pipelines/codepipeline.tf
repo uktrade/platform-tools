@@ -137,17 +137,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
         configuration = {
           ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
-          EnvironmentVariables : jsonencode([
-            { name : "APPLICATION", value : var.application },
-            { name : "AWS_REGION", value : data.aws_region.current.region },
-            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+          EnvironmentVariables : jsonencode(concat(local.default_variables, [
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-            { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-            { name : "REPOSITORY_URL", value : local.repository_url },
             { name : "SERVICE", value : action.value.name },
-            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-          ])
+          ]))
         }
       }
     }
@@ -167,17 +160,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
         configuration = {
           ProjectName = aws_codebuild_project.codebase_deploy[""].name
-          EnvironmentVariables : jsonencode([
-            { name : "APPLICATION", value : var.application },
-            { name : "AWS_REGION", value : data.aws_region.current.region },
-            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+          EnvironmentVariables : jsonencode(concat(local.default_variables, [
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-            { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-            { name : "REPOSITORY_URL", value : local.repository_url },
             { name : "SERVICE", value : action.value.name },
-            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-          ])
+          ]))
         }
       }
     }
@@ -197,17 +183,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
 
         configuration = {
           ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
-          EnvironmentVariables : jsonencode([
-            { name : "APPLICATION", value : var.application },
-            { name : "AWS_REGION", value : data.aws_region.current.region },
-            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+          EnvironmentVariables : jsonencode(concat(local.default_variables, [
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
-            { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
-            { name : "REPOSITORY_URL", value : local.repository_url },
             { name : "SERVICE", value : action.value.name },
-            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
-          ])
+          ]))
         }
       }
     }
@@ -236,9 +215,30 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       }
     }
 
-    # ALB rules
-    # TODO https://uktrade.atlassian.net/browse/DBTP-2164
+    dynamic "action" {
+      for_each = toset(local.platform_deployment_enabled ? [""] : [])
+      content {
+        name             = "traffic-switch"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = []
+        version          = "1"
+        run_order        = max([for svc in local.service_order_list : svc.order]...) + 2
 
+        configuration = {
+          ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+          EnvironmentVariables : jsonencode([
+            { name : "APPLICATION", value : var.application },
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+            { name : "AWS_REGION", value : data.aws_region.current.region },
+            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+          ])
+        }
+      }
+
+    }
   }
 
   tags = local.tags
