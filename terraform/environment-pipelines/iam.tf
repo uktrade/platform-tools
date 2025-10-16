@@ -423,54 +423,6 @@ data "aws_ssm_parameter" "log-destination-arn" {
   name = "/copilot/tools/central_log_groups"
 }
 
-data "aws_iam_policy_document" "logs" {
-  statement {
-    actions = [
-      "logs:DescribeResourcePolicies",
-      "logs:PutResourcePolicy",
-      "logs:DeleteResourcePolicy",
-      "logs:DescribeLogGroups"
-    ]
-    resources = [
-      "arn:aws:logs:${local.account_region}:log-group::log-stream:"
-    ]
-  }
-
-  statement {
-    actions = [
-      "logs:PutSubscriptionFilter"
-    ]
-    resources = [
-      jsondecode(data.aws_ssm_parameter.log-destination-arn.value)["dev"],
-      jsondecode(data.aws_ssm_parameter.log-destination-arn.value)["prod"]
-    ]
-  }
-
-  statement {
-    actions = [
-      "logs:PutRetentionPolicy",
-      "logs:ListTagsLogGroup",
-      "logs:ListTagsForResource",
-      "logs:DeleteLogGroup",
-      "logs:CreateLogGroup",
-      "logs:PutSubscriptionFilter",
-      "logs:DescribeSubscriptionFilters",
-      "logs:DeleteSubscriptionFilter",
-      "logs:TagResource",
-      "logs:AssociateKmsKey",
-      "logs:DescribeLogStreams",
-      "logs:DeleteLogStream"
-    ]
-    resources = [
-      "arn:aws:logs:${local.account_region}:log-group:/aws/opensearch/*",
-      "arn:aws:logs:${local.account_region}:log-group:/aws/rds/*",
-      "arn:aws:logs:${local.account_region}:log-group:/aws/elasticache/*",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/*",
-      "arn:aws:logs:${local.account_region}:log-group:/conduit/*"
-    ]
-  }
-}
-
 data "aws_iam_policy_document" "kms_key" {
   statement {
     actions = [
