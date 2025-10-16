@@ -1,3 +1,4 @@
+import time
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
@@ -372,74 +373,44 @@ def test_get_ecs_task_arns_returns_arns():
 def test_get_service_rollout_state_success():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
-    ecs_client.describe_services.return_value = {
-        "services": [
-            {
-                "serviceName": "myapp-dev-web",
-                "deployments": [
-                    {"id": "other-deployment", "status": "ACTIVE"},
-                    {
-                        "id": "primary-deployment",
-                        "status": "PRIMARY",
-                        "rolloutState": "COMPLETED",
-                        "rolloutStateReason": None,
-                    },
-                ],
-            }
-        ]
+    ecs_client.list_service_deployments.return_value = {
+        "serviceDeployments": [{"status": "SUCCESSFUL"}]
     }
-
+    start_time = time.time()
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    state, reason = ecs.get_service_rollout_state("myapp-dev-cluster", "myapp-dev-web")
-    assert state == "COMPLETED"
+    state, reason = ecs.get_service_rollout_state(
+        "myapp-dev-cluster", "myapp-dev-web", start_time=start_time
+    )
+    assert state == "SUCCESSFUL"
     assert reason is None
-    ecs_client.describe_services.assert_called_once_with(
-        cluster="myapp-dev-cluster", services=["myapp-dev-web"]
+    ecs_client.list_service_deployments.assert_called_once_with(
+        cluster="myapp-dev-cluster", service="myapp-dev-web", createdAt={"after": start_time}
     )
 
 
 def test_get_service_rollout_state_failed():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
-    ecs_client.describe_services.return_value = {
-        "services": [
-            {
-                "deployments": [
-                    {
-                        "id": "primary-deployment",
-                        "status": "PRIMARY",
-                        "rolloutState": "FAILED",
-                        "rolloutStateReason": "Some error occurred",
-                    },
-                ]
-            }
-        ]
+    ecs_client.list_service_deployments.return_value = {
+        "serviceDeployments": [{"status": "FAILED", "statusReason": "Some error occurred"}]
     }
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    assert ecs.get_service_rollout_state("cluster", "service") == ("FAILED", "Some error occurred")
+    assert ecs.get_service_rollout_state("cluster", "service", start_time=time.time()) == (
+        "FAILED",
+        "Some error occurred",
+    )
 
 
 def test_get_service_rollout_state_service_not_found():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
-    ecs_client.describe_services.return_value = {"services": []}
+    ecs_client.list_service_deployments.return_value = {"serviceDeployments": []}
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    assert ecs.get_service_rollout_state("cluster", "non-existent-service") == (
+    assert ecs.get_service_rollout_state(
+        "cluster", "non-existent-service", start_time=time.time()
+    ) == (
         None,
-        "Service 'non-existent-service' not found",
-    )
-
-
-def test_get_service_rollout_state_no_primary_deployment():
-    ecs_client = MagicMock()
-    ssm_client = MagicMock()
-    ecs_client.describe_services.return_value = {
-        "services": [{"deployments": [{"status": "ACTIVE"}]}]
-    }
-    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    assert ecs.get_service_rollout_state("cluster", "service") == (
-        None,
-        "No PRIMARY ECS deployment found",
+        "No deployments found for 'non-existent-service'",
     )
 
 

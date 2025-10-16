@@ -195,7 +195,7 @@ class ECS:
         return False
 
     def get_service_rollout_state(
-        self, cluster_name: str, service_name: str
+        self, cluster_name: str, service_name: str, start_time: float
     ) -> tuple[Optional[str], Optional[str]]:
         """
         Returns rolloutState & rolloutStateReason for the PRIMARY deployment of
@@ -203,22 +203,16 @@ class ECS:
 
         rolloutState can be: COMPLETED | FAILED | IN_PROGRESS | None
         """
-        resp = self.ecs_client.describe_services(cluster=cluster_name, services=[service_name])
-        services = resp.get("services", [])
-        if not services:
-            return None, f"Service '{service_name}' not found"
+        resp = self.ecs_client.list_service_deployments(
+            cluster=cluster_name, service=service_name, createdAt={"after": start_time}
+        )
+        deployments = resp.get("serviceDeployments", [])
 
-        svc = services[0]
-        primary_deployment = None
-        for dep in svc.get("deployments", []):
-            if dep.get("status") == "PRIMARY":
-                primary_deployment = dep
-                break
+        if not deployments:
+            return None, f"No deployments found for '{service_name}'"
 
-        if not primary_deployment:
-            return None, "No PRIMARY ECS deployment found"
-
-        return primary_deployment.get("rolloutState"), primary_deployment.get("rolloutStateReason")
+        deployment = deployments[0]
+        return deployment.get("status"), deployment.get("statusReason")
 
     def get_container_names_from_ecs_tasks(
         self, cluster_name: str, task_ids: list[str]

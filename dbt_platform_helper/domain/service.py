@@ -397,7 +397,7 @@ class ServiceManager:
         while time.monotonic() < deadline:
             try:
                 state, reason = self.ecs_provider.get_service_rollout_state(
-                    cluster_name=cluster_name, service_name=ecs_service_name
+                    cluster_name=cluster_name, service_name=ecs_service_name, start_time=start_time
                 )
             except Exception as e:
                 raise PlatformException(f"Failed to fetch ECS rollout state: {e}")
