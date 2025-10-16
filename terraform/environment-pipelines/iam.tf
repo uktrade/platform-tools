@@ -1158,7 +1158,7 @@ data "aws_iam_policy_document" "cloudwatch_and_logs" {
 resource "aws_iam_policy" "cloudwatch_and_logs" {
   name        = "${var.application}-${var.pipeline_name}-pipeline-cloudwatch-and-logs-access"
   path        = "/${var.application}/codebuild/"
-  description = "Allow ${var.application} codebuild job to access extension resources"
+  description = "Allow ${var.application} codebuild job to access cloudwatch and log resources"
   policy      = data.aws_iam_policy_document.cloudwatch_and_logs.json
 }
 
