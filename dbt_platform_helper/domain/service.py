@@ -385,8 +385,8 @@ class ServiceManager:
         return task_ids
 
     def _monitor_ecs_deployment(self, application: str, environment: str, service: str) -> bool:
-        """Loop until ECS rollout state is COMPLETED/FAILED or else times
-        out."""
+        """Loop until ECS rollout state is SUCCESSFUL or a fail status or else
+        times out."""
 
         cluster_name = f"{application}-{environment}-cluster"
         ecs_service_name = f"{application}-{environment}-{service}"

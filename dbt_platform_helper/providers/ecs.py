@@ -206,7 +206,7 @@ class ECS:
             ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
         """
         resp = self.ecs_client.list_service_deployments(
-            cluster=cluster_name, service=service_name, createdAt={"after": start_time}
+            cluster=cluster_name, service=service_name, createdAt={"after": start_time - 180}
         )
         deployments = resp.get("serviceDeployments", [])
 

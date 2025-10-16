@@ -384,7 +384,7 @@ def test_get_service_rollout_state_success():
     assert state == "SUCCESSFUL"
     assert reason is None
     ecs_client.list_service_deployments.assert_called_once_with(
-        cluster="myapp-dev-cluster", service="myapp-dev-web", createdAt={"after": start_time}
+        cluster="myapp-dev-cluster", service="myapp-dev-web", createdAt={"after": start_time - 180}
     )
 
 
