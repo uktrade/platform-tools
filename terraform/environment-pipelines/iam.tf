@@ -288,52 +288,46 @@ data "aws_iam_policy_document" "load_balancer" {
     ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "elasticloadbalancing:CreateTargetGroup",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:ModifyTargetGroupAttributes",
-        "elasticloadbalancing:DeleteTargetGroup"
-      ]
-      resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:targetgroup/${var.application}-${statement.value.name}-http/*"
-      ]
-    }
+  statement {
+    actions = [
+      "elasticloadbalancing:CreateTargetGroup",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:ModifyTargetGroupAttributes",
+      "elasticloadbalancing:DeleteTargetGroup"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:elasticloadbalancing:${local.account_region}:targetgroup/${var.application}-${env.name}-http/*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "elasticloadbalancing:CreateLoadBalancer",
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:ModifyLoadBalancerAttributes",
-        "elasticloadbalancing:DeleteLoadBalancer",
-        "elasticloadbalancing:CreateListener",
-        "elasticloadbalancing:ModifyListener",
-        "elasticloadbalancing:SetWebACL"
-      ]
-      resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:loadbalancer/app/${var.application}-${statement.value.name}/*"
-      ]
-    }
+
+  statement {
+    actions = [
+      "elasticloadbalancing:CreateLoadBalancer",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:ModifyLoadBalancerAttributes",
+      "elasticloadbalancing:DeleteLoadBalancer",
+      "elasticloadbalancing:CreateListener",
+      "elasticloadbalancing:ModifyListener",
+      "elasticloadbalancing:SetWebACL"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:elasticloadbalancing:${local.account_region}:loadbalancer/app/${var.application}-${env.name}/*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "elasticloadbalancing:AddTags",
-        "elasticloadbalancing:ModifyListener",
-        "elasticloadbalancing:CreateRule"
+
+  statement {
+    actions = [
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:ModifyListener",
+      "elasticloadbalancing:CreateRule"
+    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${env.name}/*",
+      "arn:aws:elasticloadbalancing:${local.account_region}:listener-rule/app/${var.application}-${env.name}/*"
       ]
-      resources = [
-        "arn:aws:elasticloadbalancing:${local.account_region}:listener/app/${var.application}-${statement.value.name}/*",
-        "arn:aws:elasticloadbalancing:${local.account_region}:listener-rule/app/${var.application}-${statement.value.name}/*"
-      ]
-    }
+    ])
   }
 
   statement {
@@ -628,99 +622,89 @@ data "aws_iam_policy_document" "postgres" {
     ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "iam:CreateRole",
-        "iam:GetRole",
-        "iam:ListRolePolicies",
-        "iam:ListAttachedRolePolicies",
-        "iam:ListInstanceProfilesForRole",
-        "iam:DeleteRole",
-        "iam:AttachRolePolicy",
-        "iam:PutRolePolicy",
-        "iam:GetRolePolicy",
-        "iam:DeleteRolePolicy",
-        "iam:PassRole",
-        "iam:UpdateAssumeRolePolicy",
-        "iam:DetachRolePolicy"
+  statement {
+    actions = [
+      "iam:CreateRole",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRole",
+      "iam:AttachRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:PassRole",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:DetachRolePolicy"
+    ]
+
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
       ]
-      resources = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
-      ]
-    }
+    ])
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "lambda:GetFunction",
-        "lambda:InvokeFunction",
-        "lambda:ListVersionsByFunction",
-        "lambda:GetFunctionCodeSigningConfig",
-        "lambda:UpdateFunctionCode",
-        "lambda:UpdateFunctionConfiguration",
-        "lambda:CreateFunction",
-        "lambda:DeleteFunction"
-      ]
-      resources = [
-        "arn:aws:lambda:${local.account_region}:function:${var.application}-${statement.value.name}-*"
-      ]
-    }
+
+  statement {
+    actions = [
+      "lambda:GetFunction",
+      "lambda:InvokeFunction",
+      "lambda:ListVersionsByFunction",
+      "lambda:GetFunctionCodeSigningConfig",
+      "lambda:UpdateFunctionCode",
+      "lambda:UpdateFunctionConfiguration",
+      "lambda:CreateFunction",
+      "lambda:DeleteFunction"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "lambda:GetLayerVersion"
+  statement {
+    actions = [
+      "lambda:GetLayerVersion"
+    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
+      "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
       ]
-      resources = [
-        "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
-        "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
-      ]
-    }
+    ])
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "rds:CreateDBParameterGroup",
-        "rds:AddTagsToResource",
-        "rds:ModifyDBParameterGroup",
-        "rds:DescribeDBParameterGroups",
-        "rds:DescribeDBParameters",
-        "rds:ListTagsForResource",
-        "rds:CreateDBInstance",
-        "rds:ModifyDBInstance",
-        "rds:DeleteDBParameterGroup"
-      ]
-      resources = [
-        "arn:aws:rds:${local.account_region}:pg:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "rds:CreateDBParameterGroup",
+      "rds:AddTagsToResource",
+      "rds:ModifyDBParameterGroup",
+      "rds:DescribeDBParameterGroups",
+      "rds:DescribeDBParameters",
+      "rds:ListTagsForResource",
+      "rds:CreateDBInstance",
+      "rds:ModifyDBInstance",
+      "rds:DeleteDBParameterGroup"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:rds:${local.account_region}:pg:${var.application}-${env.name}-*"
+    ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "rds:CreateDBSubnetGroup",
-        "rds:AddTagsToResource",
-        "rds:DescribeDBSubnetGroups",
-        "rds:ListTagsForResource",
-        "rds:DeleteDBSubnetGroup",
-        "rds:CreateDBInstance"
-      ]
-      resources = [
-        "arn:aws:rds:${local.account_region}:subgrp:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "rds:CreateDBSubnetGroup",
+      "rds:AddTagsToResource",
+      "rds:DescribeDBSubnetGroups",
+      "rds:ListTagsForResource",
+      "rds:DeleteDBSubnetGroup",
+      "rds:CreateDBInstance"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:rds:${local.account_region}:subgrp:${var.application}-${env.name}-*"
+    ]
   }
+
 
   statement {
     actions = [
@@ -731,18 +715,15 @@ data "aws_iam_policy_document" "postgres" {
     ]
   }
 
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "rds:CreateDBInstance",
-        "rds:AddTagsToResource",
-        "rds:ModifyDBInstance"
-      ]
-      resources = [
-        "arn:aws:rds:${local.account_region}:db:${var.application}-${statement.value.name}-*"
-      ]
-    }
+  statement {
+    actions = [
+      "rds:CreateDBInstance",
+      "rds:AddTagsToResource",
+      "rds:ModifyDBInstance"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:rds:${local.account_region}:db:${var.application}-${env.name}-*"
+    ]
   }
 
   statement {
@@ -1067,41 +1048,39 @@ resource "aws_iam_policy" "cloudformation" {
 }
 
 data "aws_iam_policy_document" "iam" {
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "iam:AttachRolePolicy",
-        "iam:DetachRolePolicy",
-        "iam:CreatePolicy",
-        "iam:DeletePolicy",
-        "iam:CreateRole",
-        "iam:DeleteRole",
-        "iam:TagRole",
-        "iam:PutRolePolicy",
-        "iam:GetRole",
-        "iam:ListRolePolicies",
-        "iam:GetRolePolicy",
-        "iam:ListAttachedRolePolicies",
-        "iam:ListInstanceProfilesForRole",
-        "iam:DeleteRolePolicy",
-        "iam:UpdateAssumeRolePolicy",
-        "iam:TagRole",
+  statement {
+    actions = [
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:TagRole",
+      "iam:PutRolePolicy",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:DeleteRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:TagRole",
+    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.application}-*-conduitEcsTask",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-CFNExecutionRole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-EnvManagerRole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-S3MigrationRole",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-exec",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-task",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-copy-pipeline-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-codebase-pipeline-deploy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-task-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-exec-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-invalidate-cache",
       ]
-      resources = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-${var.application}-*-conduitEcsTask",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-CFNExecutionRole",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-EnvManagerRole",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-S3MigrationRole",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-exec",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-*-task",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-copy-pipeline-*",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-codebase-pipeline-deploy",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*-conduit-task-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-*-conduit-exec-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-invalidate-cache",
-      ]
-    }
+    ])
   }
 
   statement {
