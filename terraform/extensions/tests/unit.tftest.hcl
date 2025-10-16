@@ -925,7 +925,10 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected actions"
   }
   assert {
-    condition     = one(data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources) == "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*"
+    condition = data.aws_iam_policy_document.ecs_deploy_access.statement[6].resources == toset([
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/test-application-test-env-cluster/*"
+    ])
     error_message = "Unexpected resources"
   }
   assert {

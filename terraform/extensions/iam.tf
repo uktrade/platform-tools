@@ -578,7 +578,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServiceDeployments"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 }
