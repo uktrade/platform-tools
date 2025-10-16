@@ -290,22 +290,20 @@ def assert_terraform(
         environment_pipeline_module = parsed_terraform["module"][0]["environment-pipelines"]
 
         if module_source_override:
-            assert environment_pipeline_module["source"][0] == module_source_override
+            assert environment_pipeline_module["source"] == module_source_override
         else:
             assert (
-                environment_pipeline_module["source"][0]
+                environment_pipeline_module["source"]
                 == f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={expected_version}"
             )
 
-        assert environment_pipeline_module["application"][0] == app_name
+        assert environment_pipeline_module["application"] == app_name
 
         if expected_branch:
-            assert environment_pipeline_module["branch"][0] == expected_branch
+            assert environment_pipeline_module["branch"] == expected_branch
         else:
-            assert environment_pipeline_module["branch"][0] == "${each.value.branch}"
+            assert environment_pipeline_module["branch"] == "${each.value.branch}"
 
-        assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"][0] == [
-            deploy_account_id
-        ]
+        assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"] == [deploy_account_id]
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
