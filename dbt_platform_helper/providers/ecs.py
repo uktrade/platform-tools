@@ -198,10 +198,9 @@ class ECS:
         self, cluster_name: str, service_name: str, start_time: float
     ) -> tuple[Optional[str], Optional[str]]:
         """
-        Returns rolloutState & rolloutStateReason for the PRIMARY deployment of
-        an ECS service.
+        Returns status & statusReason for the deployment of an ECS service.
 
-        rolloutState can be: COMPLETED | FAILED | IN_PROGRESS | None
+        rolloutState can be: PENDING | SUCCESSFUL | STOPPED | STOP_REQUESTED | IN_PROGRESS | ROLLBACK_REQUESTED | ROLLBACK_IN_PROGRESS | ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
         """
         resp = self.ecs_client.list_service_deployments(
             cluster=cluster_name, service=service_name, createdAt={"after": start_time}
@@ -211,8 +210,7 @@ class ECS:
         if not deployments:
             return None, f"No deployments found for '{service_name}'"
 
-        deployment = deployments[0]
-        return deployment.get("status"), deployment.get("statusReason")
+        return deployments[0].get("status"), deployments[0].get("statusReason")
 
     def get_container_names_from_ecs_tasks(
         self, cluster_name: str, task_ids: list[str]

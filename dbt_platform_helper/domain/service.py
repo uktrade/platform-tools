@@ -402,10 +402,10 @@ class ServiceManager:
             except Exception as e:
                 raise PlatformException(f"Failed to fetch ECS rollout state: {e}")
 
-            if state == "COMPLETED":
+            if state == "SUCCESSFUL":
                 self.io.info("\nECS deployment complete!")
                 return True
-            if state == "FAILED":
+            if state in ["STOPPED", "ROLLBACK_SUCCESSFUL", "ROLLBACK_FAILED"]:
                 raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
 
             elapsed_time = int(time.time() - start_time)

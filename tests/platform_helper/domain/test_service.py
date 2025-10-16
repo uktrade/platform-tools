@@ -285,7 +285,7 @@ def test_monitor_ecs_deployment_success(time_sleep):
     service_manager = ServiceManager(**mocks.params())
 
     mocks.logs_provider.filter_log_events.return_value = {"events": []}
-    mocks.ecs_provider.get_service_rollout_state.return_value = ("COMPLETED", None)
+    mocks.ecs_provider.get_service_rollout_state.return_value = ("SUCCESSFUL", None)
 
     # Fake time: 0 = deadline starts, 1 = loop once
     with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
