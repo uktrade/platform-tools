@@ -478,9 +478,9 @@ extensions:
     version: 16.2
     environments:
       prod:
-        backup_retention_days: 10
+        version: 17
       hotfix:
-        backup_retention_days: 10
+        deletion_policy: Retain
       dev:
         deletion_protection: true
       staging:

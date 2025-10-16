@@ -39,18 +39,116 @@ locals {
 
   cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
 
+  default_variables = [
+    { name : "APPLICATION", value : var.application },
+    { name : "AWS_REGION", value : data.aws_region.current.region },
+    { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+    { name : "REPOSITORY_URL", value : local.repository_url },
+    { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+    { name : "PIPELINE_EXECUTION_ID", value : "#{codepipeline.PipelineExecutionId}" },
+    { name : "IMAGE_TAG", value : "#{variables.IMAGE_TAG}" },
+  ]
+
   pipeline_map = {
-    for id, val in var.pipelines : id => merge(val, {
-      environments : [
-        for name, env in val.environments : merge(env, merge(
-          lookup(local.base_env_config, env.name, {}),
-          {
-            requires_cache_invalidation : contains(local.environments_requiring_cache_invalidation, env.name)
-          }
-        ))
-      ],
-      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest"
-    })
+    for id, val in var.pipelines : id => {
+      name : val.name,
+      branch : val.branch,
+      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest",
+      stages : flatten([for env in val.environments : concat(
+        # Approval
+        coalesce(env.requires_approval, false) ?
+        [{
+          name : "Approve-${env.name}",
+          on_failure : "FAIL",
+          actions : concat(local.base_env_config[env.name].service_deployment_mode != "copilot" ? [for svc in local.service_order_list : {
+            name : "terraform-plan-${svc.name}",
+            order : 1,
+            configuration : {
+              ProjectName = aws_codebuild_project.codebase_service_terraform_plan[""].name
+              EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                { name : "ENVIRONMENT", value : env.name },
+                { name : "SERVICE", value : svc.name },
+              ]))
+            }
+            }] : [], [{
+            name : "manual-approval",
+            order : 2,
+            category : "Approval",
+            provider : "Manual",
+            input_artifacts : [],
+            configuration : {
+              CustomData : "Review the Terraform plan for ${length(local.service_order_list)} service(s)"
+            }
+          }])
+        }] : [],
+        # Deployment
+        [{
+          name : "Deploy-${env.name}",
+          actions : concat(
+            flatten([for svc in local.service_order_list : concat(
+              local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
+                name : "terraform-apply-${svc.name}",
+                order : svc.order,
+                configuration = {
+                  ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
+                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                    { name : "ENVIRONMENT", value : env.name },
+                    { name : "SERVICE", value : svc.name },
+                  ]))
+                }
+              }] : [],
+              local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
+                name : "platform-deploy-${svc.name}",
+                order : svc.order + 1,
+                configuration = {
+                  ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
+                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                    { name : "ENVIRONMENT", value : env.name },
+                    { name : "SERVICE", value : svc.name },
+                  ]))
+                }
+              }] : [],
+              local.base_env_config[env.name].service_deployment_mode != "platform" ? [{
+                name : "copilot-deploy-${svc.name}",
+                order : svc.order + 1,
+                configuration = {
+                  ProjectName = aws_codebuild_project.codebase_deploy[""].name
+                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                    { name : "ENVIRONMENT", value : env.name },
+                    { name : "SERVICE", value : svc.name },
+                  ]))
+                }
+              }] : [],
+            )]),
+            local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
+              name : "traffic-switch",
+              order : max([for svc in local.service_order_list : svc.order]...) + 2,
+              configuration = {
+                ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+                EnvironmentVariables : jsonencode([
+                  { name : "APPLICATION", value : var.application },
+                  { name : "ENVIRONMENT", value : env.name },
+                  { name : "AWS_REGION", value : data.aws_region.current.region },
+                  { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+                ])
+              }
+            }] : [],
+            contains(local.environments_requiring_cache_invalidation, env.name) ? [{
+              name : "invalidate-cache",
+              order : max([for svc in local.service_order_list : svc.order]...) + 2,
+              configuration = {
+                ProjectName = aws_codebuild_project.invalidate_cache[""].name
+                EnvironmentVariables : jsonencode([
+                  { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
+                  { name : "APPLICATION", value : var.application },
+                  { name : "ENVIRONMENT", value : env.name },
+                ])
+              }
+            }] : [],
+          )
+        }]
+      )])
+    }
   }
 
   cache_invalidation_map = tomap({
@@ -77,7 +175,7 @@ locals {
   ])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
-  service_terraform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
+  platform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
