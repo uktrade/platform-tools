@@ -200,7 +200,10 @@ class ECS:
         """
         Returns status & statusReason for the deployment of an ECS service.
 
-        rolloutState can be: PENDING | SUCCESSFUL | STOPPED | STOP_REQUESTED | IN_PROGRESS | ROLLBACK_REQUESTED | ROLLBACK_IN_PROGRESS | ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
+        rolloutState can be:
+            PENDING | SUCCESSFUL | STOPPED | STOP_REQUESTED |
+            IN_PROGRESS | ROLLBACK_REQUESTED | ROLLBACK_IN_PROGRESS |
+            ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
         """
         resp = self.ecs_client.list_service_deployments(
             cluster=cluster_name, service=service_name, createdAt={"after": start_time}
