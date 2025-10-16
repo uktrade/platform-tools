@@ -551,66 +551,6 @@ data "aws_iam_policy_document" "kms_key" {
   }
 }
 
-data "aws_iam_policy_document" "redis" {
-  statement {
-    actions = [
-      "elasticache:CreateCacheSubnetGroup",
-      "elasticache:AddTagsToResource",
-      "elasticache:DescribeCacheSubnetGroups",
-      "elasticache:ListTagsForResource",
-      "elasticache:DeleteCacheSubnetGroup",
-      "elasticache:CreateReplicationGroup"
-    ]
-    resources = [
-      "arn:aws:elasticache:${local.account_region}:subnetgroup:*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "elasticache:AddTagsToResource",
-      "elasticache:CreateReplicationGroup",
-      "elasticache:DecreaseReplicaCount",
-      "elasticache:DeleteReplicationGroup",
-      "elasticache:DescribeReplicationGroups",
-      "elasticache:IncreaseReplicaCount",
-      "elasticache:ListTagsForResource",
-      "elasticache:ModifyReplicationGroup",
-    ]
-    resources = [
-      "arn:aws:elasticache:${local.account_region}:replicationgroup:*",
-      "arn:aws:elasticache:${local.account_region}:parametergroup:*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "elasticache:DescribeCacheClusters"
-    ]
-    resources = [
-      "arn:aws:elasticache:${local.account_region}:cluster:*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "elasticache:DescribeCacheEngineVersions"
-    ]
-    effect = "Allow"
-    resources = [
-      "*"
-    ]
-    sid = "AllowRedisListVersions"
-  }
-}
-
-resource "aws_iam_policy" "redis" {
-  name        = "${var.application}-${var.pipeline_name}-pipeline-redis-access"
-  path        = "/${var.application}/codebuild/"
-  description = "Allow ${var.application} codebuild job to access redis resources"
-  policy      = data.aws_iam_policy_document.redis.json
-}
-
 data "aws_iam_policy_document" "postgres" {
   statement {
     actions = [
@@ -744,33 +684,6 @@ resource "aws_iam_policy" "postgres" {
   policy      = data.aws_iam_policy_document.postgres.json
 }
 
-data "aws_iam_policy_document" "s3" {
-  statement {
-    actions = [
-      "iam:ListAccountAliases"
-    ]
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "s3:*"
-    ]
-    resources = [
-      "arn:aws:s3:::*"
-    ]
-  }
-}
-
-resource "aws_iam_policy" "s3" {
-  name        = "${var.application}-${var.pipeline_name}-pipeline-s3-access"
-  path        = "/${var.application}/codebuild/"
-  description = "Allow ${var.application} codebuild job to access s3 resources"
-  policy      = data.aws_iam_policy_document.s3.json
-}
-
 data "aws_iam_policy_document" "ecs" {
   # New ECS cluster perms here:
   statement {
@@ -851,41 +764,6 @@ resource "aws_iam_policy" "ecs" {
   path        = "/${var.application}/codebuild/"
   description = "Allow ${var.application} codebuild job to access ecs resources"
   policy      = data.aws_iam_policy_document.ecs.json
-}
-
-data "aws_iam_policy_document" "opensearch" {
-  statement {
-    actions = [
-      "es:CreateElasticsearchDomain",
-      "es:AddTags",
-      "es:DescribeDomain",
-      "es:DescribeDomainConfig",
-      "es:ListTags",
-      "es:DeleteDomain",
-      "es:UpdateDomainConfig"
-    ]
-    resources = [
-      "arn:aws:es:${local.account_region}:domain/*"
-    ]
-  }
-
-  statement {
-    actions = [
-      "es:ListVersions"
-    ]
-    effect = "Allow"
-    resources = [
-      "*"
-    ]
-    sid = "AllowOpensearchListVersions"
-  }
-}
-
-resource "aws_iam_policy" "opensearch" {
-  name        = "${var.application}-${var.pipeline_name}-pipeline-opensearch-access"
-  path        = "/${var.application}/codebuild/"
-  description = "Allow ${var.application} codebuild job to access opensearch resources"
-  policy      = data.aws_iam_policy_document.opensearch.json
 }
 
 data "aws_iam_policy_document" "origin_secret_rotate_access" {
@@ -1180,6 +1058,115 @@ resource "aws_iam_policy" "codepipeline" {
   policy      = data.aws_iam_policy_document.codepipeline.json
 }
 
+data "aws_iam_policy_document" "extensions" {
+  # REDIS
+  statement {
+    actions = [
+      "elasticache:CreateCacheSubnetGroup",
+      "elasticache:AddTagsToResource",
+      "elasticache:DescribeCacheSubnetGroups",
+      "elasticache:ListTagsForResource",
+      "elasticache:DeleteCacheSubnetGroup",
+      "elasticache:CreateReplicationGroup"
+    ]
+    resources = [
+      "arn:aws:elasticache:${local.account_region}:subnetgroup:*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "elasticache:AddTagsToResource",
+      "elasticache:CreateReplicationGroup",
+      "elasticache:DecreaseReplicaCount",
+      "elasticache:DeleteReplicationGroup",
+      "elasticache:DescribeReplicationGroups",
+      "elasticache:IncreaseReplicaCount",
+      "elasticache:ListTagsForResource",
+      "elasticache:ModifyReplicationGroup",
+    ]
+    resources = [
+      "arn:aws:elasticache:${local.account_region}:replicationgroup:*",
+      "arn:aws:elasticache:${local.account_region}:parametergroup:*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "elasticache:DescribeCacheClusters"
+    ]
+    resources = [
+      "arn:aws:elasticache:${local.account_region}:cluster:*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "elasticache:DescribeCacheEngineVersions"
+    ]
+    effect = "Allow"
+    resources = [
+      "*"
+    ]
+    sid = "AllowRedisListVersions"
+  }
+
+  # OPENSEARCH
+  statement {
+    actions = [
+      "es:CreateElasticsearchDomain",
+      "es:AddTags",
+      "es:DescribeDomain",
+      "es:DescribeDomainConfig",
+      "es:ListTags",
+      "es:DeleteDomain",
+      "es:UpdateDomainConfig"
+    ]
+    resources = [
+      "arn:aws:es:${local.account_region}:domain/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "es:ListVersions"
+    ]
+    effect = "Allow"
+    resources = [
+      "*"
+    ]
+    sid = "AllowOpensearchListVersions"
+  }
+
+  # S3
+  statement {
+    actions = [
+      "iam:ListAccountAliases"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "s3:*"
+    ]
+    resources = [
+      "arn:aws:s3:::*"
+    ]
+  }
+
+}
+
+resource "aws_iam_policy" "extensions" {
+  name        = "${var.application}-${var.pipeline_name}-pipeline-extensions-access"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to access extension resources"
+  policy      = data.aws_iam_policy_document.extensions.json
+}
+
+
 # Roles
 resource "aws_iam_role" "environment_pipeline_codepipeline" {
   name               = "${var.application}-${var.pipeline_name}-environment-pipeline-codepipeline"
@@ -1208,29 +1195,14 @@ resource "aws_iam_role_policy_attachment" "attach_codepipeline_policy" {
   policy_arn = aws_iam_policy.codepipeline.arn
 }
 
-resource "aws_iam_role_policy_attachment" "attach_redis_policy" {
-  role       = aws_iam_role.environment_pipeline_codebuild.name
-  policy_arn = aws_iam_policy.redis.arn
-}
-
 resource "aws_iam_role_policy_attachment" "attach_postgres_policy" {
   role       = aws_iam_role.environment_pipeline_codebuild.name
   policy_arn = aws_iam_policy.postgres.arn
 }
 
-resource "aws_iam_role_policy_attachment" "attach_opensearch_policy" {
-  role       = aws_iam_role.environment_pipeline_codebuild.name
-  policy_arn = aws_iam_policy.opensearch.arn
-}
-
 resource "aws_iam_role_policy_attachment" "attach_load_balancer_policy" {
   role       = aws_iam_role.environment_pipeline_codebuild.name
   policy_arn = aws_iam_policy.load_balancer.arn
-}
-
-resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
-  role       = aws_iam_role.environment_pipeline_codebuild.name
-  policy_arn = aws_iam_policy.s3.arn
 }
 
 resource "aws_iam_role_policy_attachment" "attach_ecs_policy" {
@@ -1242,6 +1214,12 @@ resource "aws_iam_role_policy_attachment" "attach_origin_secret_rotate_policy" {
   role       = aws_iam_role.environment_pipeline_codebuild.name
   policy_arn = aws_iam_policy.origin_secret_rotate_access.arn
 }
+
+resource "aws_iam_role_policy_attachment" "attach_extensions_policy" {
+  role       = aws_iam_role.environment_pipeline_codebuild.name
+  policy_arn = aws_iam_policy.extensions.arn
+}
+
 
 # Inline policies
 resource "aws_iam_role_policy" "artifact_store_access_for_environment_codepipeline" {
