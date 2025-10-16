@@ -200,7 +200,7 @@ class ECS:
         """
         Returns status & statusReason for the deployment of an ECS service.
 
-        rolloutState can be:
+        statusReason can be:
             PENDING | SUCCESSFUL | STOPPED | STOP_REQUESTED |
             IN_PROGRESS | ROLLBACK_REQUESTED | ROLLBACK_IN_PROGRESS |
             ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
