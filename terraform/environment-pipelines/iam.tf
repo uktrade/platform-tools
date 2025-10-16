@@ -418,55 +418,6 @@ data "aws_iam_policy_document" "ssm_parameter" {
   }
 }
 
-data "aws_iam_policy_document" "cloudwatch" {
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "cloudwatch:GetDashboard",
-        "cloudwatch:PutDashboard",
-        "cloudwatch:DeleteDashboards"
-      ]
-      resources = [
-        "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.application}-${statement.value.name}-compute"
-      ]
-    }
-  }
-
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "resource-groups:GetGroup",
-        "resource-groups:CreateGroup",
-        "resource-groups:Tag",
-        "resource-groups:GetGroupQuery",
-        "resource-groups:GetGroupConfiguration",
-        "resource-groups:GetTags",
-        "resource-groups:DeleteGroup"
-      ]
-      resources = [
-        "arn:aws:resource-groups:${local.account_region}:group/${var.application}-${statement.value.name}-application-insights-resources"
-      ]
-    }
-  }
-
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "applicationinsights:CreateApplication",
-        "applicationinsights:TagResource",
-        "applicationinsights:DescribeApplication",
-        "applicationinsights:ListTagsForResource",
-        "applicationinsights:DeleteApplication"
-      ]
-      resources = [
-        "arn:aws:applicationinsights:${local.account_region}:application/resource-group/${var.application}-${statement.value.name}-application-insights-resources"
-      ]
-    }
-  }
-}
 
 data "aws_ssm_parameter" "log-destination-arn" {
   name = "/copilot/tools/central_log_groups"
@@ -862,16 +813,13 @@ resource "aws_iam_policy" "origin_secret_rotate_access" {
 
 # Policies for AWS Copilot
 data "aws_iam_policy_document" "copilot_assume_role" {
-  dynamic "statement" {
-    for_each = local.environment_config
-    content {
-      actions = [
-        "sts:AssumeRole"
-      ]
-      resources = [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${statement.value.name}-EnvManagerRole"
-      ]
-    }
+  statement {
+    actions = [
+      "sts:AssumeRole"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-EnvManagerRole"
+    ]
   }
 
   dynamic "statement" {
@@ -1166,6 +1114,102 @@ resource "aws_iam_policy" "extensions" {
   policy      = data.aws_iam_policy_document.extensions.json
 }
 
+data "aws_iam_policy_document" "cloudwatch_and_logs" {
+  # CLOUDWATCH
+  statement {
+    actions = [
+      "cloudwatch:GetDashboard",
+      "cloudwatch:PutDashboard",
+      "cloudwatch:DeleteDashboards"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:cloudwatch::${data.aws_caller_identity.current.account_id}:dashboard/${var.application}-${env.name}-compute"
+    ]
+  }
+
+  statement {
+    actions = [
+      "resource-groups:GetGroup",
+      "resource-groups:CreateGroup",
+      "resource-groups:Tag",
+      "resource-groups:GetGroupQuery",
+      "resource-groups:GetGroupConfiguration",
+      "resource-groups:GetTags",
+      "resource-groups:DeleteGroup"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:resource-groups:${local.account_region}:group/${var.application}-${env.name}-application-insights-resources"
+    ]
+  }
+
+  statement {
+    actions = [
+      "applicationinsights:CreateApplication",
+      "applicationinsights:TagResource",
+      "applicationinsights:DescribeApplication",
+      "applicationinsights:ListTagsForResource",
+      "applicationinsights:DeleteApplication"
+    ]
+    resources = [for env in local.environment_config :
+      "arn:aws:applicationinsights:${local.account_region}:application/resource-group/${var.application}-${env.name}-application-insights-resources"
+    ]
+  }
+
+  # LOGGING
+  statement {
+    actions = [
+      "logs:DescribeResourcePolicies",
+      "logs:PutResourcePolicy",
+      "logs:DeleteResourcePolicy",
+      "logs:DescribeLogGroups"
+    ]
+    resources = [
+      "arn:aws:logs:${local.account_region}:log-group::log-stream:"
+    ]
+  }
+
+  statement {
+    actions = [
+      "logs:PutSubscriptionFilter"
+    ]
+    resources = [
+      jsondecode(data.aws_ssm_parameter.log-destination-arn.value)["dev"],
+      jsondecode(data.aws_ssm_parameter.log-destination-arn.value)["prod"]
+    ]
+  }
+
+  statement {
+    actions = [
+      "logs:PutRetentionPolicy",
+      "logs:ListTagsLogGroup",
+      "logs:ListTagsForResource",
+      "logs:DeleteLogGroup",
+      "logs:CreateLogGroup",
+      "logs:PutSubscriptionFilter",
+      "logs:DescribeSubscriptionFilters",
+      "logs:DeleteSubscriptionFilter",
+      "logs:TagResource",
+      "logs:AssociateKmsKey",
+      "logs:DescribeLogStreams",
+      "logs:DeleteLogStream"
+    ]
+    resources = [
+      "arn:aws:logs:${local.account_region}:log-group:/aws/opensearch/*",
+      "arn:aws:logs:${local.account_region}:log-group:/aws/rds/*",
+      "arn:aws:logs:${local.account_region}:log-group:/aws/elasticache/*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/*",
+      "arn:aws:logs:${local.account_region}:log-group:/conduit/*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "cloudwatch_and_logs" {
+  name        = "${var.application}-${var.pipeline_name}-pipeline-cloudwatch-and-logs-access"
+  path        = "/${var.application}/codebuild/"
+  description = "Allow ${var.application} codebuild job to access extension resources"
+  policy      = data.aws_iam_policy_document.cloudwatch_and_logs.json
+}
+
 
 # Roles
 resource "aws_iam_role" "environment_pipeline_codepipeline" {
@@ -1218,6 +1262,11 @@ resource "aws_iam_role_policy_attachment" "attach_origin_secret_rotate_policy" {
 resource "aws_iam_role_policy_attachment" "attach_extensions_policy" {
   role       = aws_iam_role.environment_pipeline_codebuild.name
   policy_arn = aws_iam_policy.extensions.arn
+}
+
+resource "aws_iam_role_policy_attachment" "attach_cloudwatch_and_logs_policy" {
+  role       = aws_iam_role.environment_pipeline_codebuild.name
+  policy_arn = aws_iam_policy.cloudwatch_and_logs.arn
 }
 
 
@@ -1295,18 +1344,6 @@ resource "aws_iam_role_policy" "ssm_parameter_for_environment_codebuild" {
   name   = "${var.application}-${var.pipeline_name}-ssm-parameter-for-environment-codebuild"
   role   = aws_iam_role.environment_pipeline_codebuild.name
   policy = data.aws_iam_policy_document.ssm_parameter.json
-}
-
-resource "aws_iam_role_policy" "cloudwatch_for_environment_codebuild" {
-  name   = "${var.application}-${var.pipeline_name}-cloudwatch-for-environment-codebuild"
-  role   = aws_iam_role.environment_pipeline_codebuild.name
-  policy = data.aws_iam_policy_document.cloudwatch.json
-}
-
-resource "aws_iam_role_policy" "logs_for_environment_codebuild" {
-  name   = "${var.application}-${var.pipeline_name}-logs-for-environment-codebuild"
-  role   = aws_iam_role.environment_pipeline_codebuild.name
-  policy = data.aws_iam_policy_document.logs.json
 }
 
 resource "aws_iam_role_policy" "kms_key_for_environment_codebuild" {
