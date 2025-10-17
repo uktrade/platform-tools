@@ -510,11 +510,10 @@ data "aws_iam_policy_document" "postgres" {
     actions = [
       "lambda:GetLayerVersion"
     ]
-    resources = flatten([for env in local.environment_config : [
+    resources = [
       "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
       "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
       ]
-    ])
   }
 
   statement {
