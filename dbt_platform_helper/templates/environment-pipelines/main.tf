@@ -8,9 +8,9 @@ locals {
 }
 
 provider "aws" {
-  region                   = "eu-west-2"
-  profile                  = "{{ aws_account }}"
-  allowed_account_ids      = ["{{ deploy_account_id }}"]
+  region              = "eu-west-2"
+  profile             = "{{ aws_account }}"
+  allowed_account_ids = ["{{ deploy_account_id }}"]
 }
 
 
@@ -38,14 +38,14 @@ module "environment-pipelines" {
 
   for_each = local.pipelines
 
-  application         = "{{ application }}"
-  pipeline_name       = each.key
-  repository          = "{{ deploy_repository }}"
+  application   = "{{ application }}"
+  pipeline_name = each.key
+  repository    = "{{ deploy_repository }}"
 
   environments        = each.value.environments
   all_pipelines       = local.all_pipelines
   environment_config  = local.environment_config
-  branch              = {% if deploy_branch %}"{{ deploy_branch }}"{% else %}each.value.branch{% endif %}
+  branch              = "%{if deploy_branch}{{ deploy_branch }}%{else}each.value.branch%{endif}"
   slack_channel       = each.value.slack_channel
   trigger_on_push     = each.value.trigger_on_push
   pipeline_to_trigger = lookup(each.value, "pipeline_to_trigger", null)

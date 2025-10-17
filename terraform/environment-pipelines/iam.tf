@@ -512,7 +512,7 @@ data "aws_iam_policy_document" "postgres" {
     resources = [
       "arn:aws:lambda:eu-west-2:763451185160:layer:python-postgres:*",
       "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:*"
-      ]
+    ]
   }
 
   statement {
