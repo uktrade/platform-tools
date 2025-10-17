@@ -418,7 +418,6 @@ data "aws_iam_policy_document" "ssm_parameter" {
   }
 }
 
-
 data "aws_ssm_parameter" "log-destination-arn" {
   name = "/copilot/tools/central_log_groups"
 }
