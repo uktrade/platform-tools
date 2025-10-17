@@ -136,7 +136,9 @@ class ServiceManager:
 
         for service in service_models:
 
-            model_dump = service.model_dump(exclude_none=True)
+            model_dump = service.model_dump(
+                exclude_none=True, by_alias=True
+            )  # Use by_alias=True so that the Cooldown field 'in_' is written as 'in' in the output
             env_overrides = model_dump.get("environments", {}).get(environment)
             if env_overrides:
                 merged_config = deep_merge(model_dump, env_overrides)
@@ -194,6 +196,23 @@ class ServiceManager:
 
                 service_manifest = self.file_provider.remove_empty_keys(service_manifest)
 
+                if "sidecars" in service_manifest:
+                    new_sidecars = {}
+                    writable_directories = []
+
+                    for sidecar_name, sidecar in service_manifest["sidecars"].items():
+                        if "chown" not in sidecar.get("command", "") and "chmod" not in sidecar.get(
+                            "command", ""
+                        ):
+                            new_sidecars[sidecar_name] = sidecar
+                        if "chown" in sidecar.get("command", "") and "mount_points" in sidecar:
+                            for mountpoint in sidecar["mount_points"]:
+                                writable_directories.append(mountpoint["path"])
+
+                    service_manifest["sidecars"] = new_sidecars
+                    if "storage" in service_manifest:
+                        service_manifest["storage"]["writable_directories"] = writable_directories
+
                 service_path = service_directory / service_manifest["name"]
 
                 self.io.info(
@@ -216,37 +235,29 @@ class ServiceManager:
         """Register a new ECS task definition revision, update the ECS service
         with it, and output Cloudwatch logs until deployment is complete."""
 
-        service_config = YamlFileProvider.load(
-            f"terraform/services/{environment}/{service}/service-config.yml"
-        )
-
-        service_model = ServiceConfig(**service_config)
         application_obj = self.load_application(app=application)
         application_envs = application_obj.environments
         account_id = application_envs.get(environment).account_id
 
         s3_response = self.s3_provider.get_object(
-            bucket_name=f"ecs-container-definitions-{application}-{environment}",
-            object_key=f"{application}/{environment}/{service_model.name}.json",
+            bucket_name=f"ecs-task-definitions-{application}-{environment}",
+            object_key=f"{application}/{environment}/{service}.json",
         )
 
-        container_definitions = json.loads(s3_response)
+        task_definition = json.loads(s3_response)
 
         image_tag = image_tag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
 
         task_def_arn = self.ecs_provider.register_task_definition(
-            service_model=service_model,
-            environment=environment,
-            application=application,
+            service=service,
             image_tag=image_tag,
-            account_id=account_id,
-            container_definitions=container_definitions,
+            task_definition=task_definition,
         )
 
         self.io.info(f"Task definition successfully registered with ARN '{task_def_arn}'.\n")
 
         service_response = self.ecs_provider.update_service(
-            service_model=service_model,
+            service=service,
             task_def_arn=task_def_arn,
             environment=environment,
             application=application,
@@ -257,11 +268,12 @@ class ServiceManager:
         primary_deployment_id = self._get_primary_deployment_id(service_response=service_response)
         self.io.info(f"New ECS Deployment with ID '{primary_deployment_id}' has been triggered.\n")
 
+        expected_count = service_response.get("desiredCount", 1)
         task_ids = self._fetch_ecs_task_ids(
             application=application,
             environment=environment,
-            service_model=service_model,
             deployment_id=primary_deployment_id,
+            expected_count=expected_count,
         )
 
         self.io.info(
@@ -290,7 +302,7 @@ class ServiceManager:
         self._monitor_ecs_deployment(
             application=application,
             environment=environment,
-            service=service_model.name,
+            service=service,
         )
 
     @staticmethod
@@ -325,7 +337,7 @@ class ServiceManager:
             for name in container_names:
                 if not name.startswith(
                     "ecs-service-connect"
-                ):  # ECS Service Connect container logs are noisy and not relevant in most use cases
+                ):  # ECS Service Connect container logs are noisy and not relevant in most cases
                     log_streams.append(f"{stream_prefix}/{name}/{id}")
 
         return log_streams
@@ -340,7 +352,7 @@ class ServiceManager:
         )
 
     def _fetch_ecs_task_ids(
-        self, application: str, environment: str, service_model: ServiceConfig, deployment_id: str
+        self, application: str, environment: str, deployment_id: str, expected_count: int
     ) -> list[str]:
         """Return ECS task ID(s) of tasks started by the PRIMARY ECS
         deployment."""
@@ -357,14 +369,14 @@ class ServiceManager:
                 desired_status="RUNNING",
             )
 
-            if len(task_arns) >= service_model.count:
+            if len(task_arns) >= expected_count:
                 break
 
             time.sleep(POLL_INTERVAL_SECONDS)
 
-        if len(task_arns) < service_model.count:
+        if len(task_arns) < expected_count:
             raise PlatformException(
-                f"Timed out waiting for {service_model.count} RUNNING ECS task(s) to spin up after {timeout_seconds}s. Got {len(task_arns)} instead."
+                f"Timed out waiting for {expected_count} RUNNING ECS task(s) to spin up after {timeout_seconds}s. Got {len(task_arns)} instead."
             )
 
         task_ids = []
@@ -373,8 +385,8 @@ class ServiceManager:
         return task_ids
 
     def _monitor_ecs_deployment(self, application: str, environment: str, service: str) -> bool:
-        """Loop until ECS rollout state is COMPLETED/FAILED or else times
-        out."""
+        """Loop until ECS rollout state is SUCCESSFUL or a fail status or else
+        times out."""
 
         cluster_name = f"{application}-{environment}-cluster"
         ecs_service_name = f"{application}-{environment}-{service}"
@@ -385,15 +397,15 @@ class ServiceManager:
         while time.monotonic() < deadline:
             try:
                 state, reason = self.ecs_provider.get_service_rollout_state(
-                    cluster_name=cluster_name, service_name=ecs_service_name
+                    cluster_name=cluster_name, service_name=ecs_service_name, start_time=start_time
                 )
             except Exception as e:
                 raise PlatformException(f"Failed to fetch ECS rollout state: {e}")
 
-            if state == "COMPLETED":
+            if state == "SUCCESSFUL":
                 self.io.info("\nECS deployment complete!")
                 return True
-            if state == "FAILED":
+            if state in ["STOPPED", "ROLLBACK_SUCCESSFUL", "ROLLBACK_FAILED"]:
                 raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
 
             elapsed_time = int(time.time() - start_time)

@@ -1,0 +1,53 @@
+version: 0.2
+
+env:
+  variables:
+    TERRAFORM_VERSION: 1.12.2
+
+phases:
+  install:
+    commands:
+      # Install cli tools
+      # Install Platform Helper
+      ## Clone platform-tools
+      - cd "${CODEBUILD_SRC_DIR}"
+      - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
+      - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
+      - git config --global credential.helper '!aws codecommit credential-helper $@'
+      - git config --global credential.UseHttpPath true
+      - git config --global advice.detachedHead false
+      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
+      - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
+      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
+      ## Setup venv
+      - source terraform/scripts/setup_venv.sh
+      ## Install platform helper
+      - ./terraform/scripts/install_platform_helper.sh
+
+  build:
+    commands:
+      - set -e
+
+      # Assume environment role
+
+      - account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_id)
+      - account_name=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_name)
+      - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
+      - export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
+      - export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
+      - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
+
+      # Set an AWS profile for Terraform
+
+      - PROFILE_NAME="${account_name}"
+      - aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}" --profile "${PROFILE_NAME}"
+      - aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}" --profile "${PROFILE_NAME}"
+      - aws configure set aws_session_token "${AWS_SESSION_TOKEN}" --profile "${PROFILE_NAME}"
+      - aws configure set region "eu-west-2" --profile "${PROFILE_NAME}"
+      - aws configure set output "json" --profile "${PROFILE_NAME}"
+      - export AWS_PROFILE="${PROFILE_NAME}"
+
+      # Perform ALB traffic switch
+
+      - cd "${CODEBUILD_SRC_DIR}"
+      - platform-helper internal alb update-rules --env "${ENVIRONMENT}"

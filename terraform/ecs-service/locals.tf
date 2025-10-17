@@ -123,9 +123,6 @@ locals {
   }
 
   default_container_config = {
-    mountPoints = [
-      { sourceVolume = "temporary-fs", containerPath = "/tmp" }
-    ]
     logConfiguration = {
       logDriver = "awslogs"
       options = {
@@ -168,17 +165,46 @@ locals {
       ]
       readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
       portMappings           = local.main_port_mappings
+      mountPoints = concat([
+        { sourceVolume = "path-tmp", containerPath = "/tmp" }
+        ], [
+        for path in try(var.service_config.storage.writable_directories, []) :
+        { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
+      ])
       # Ensure main container always starts last
-      dependsOn = [
+      dependsOn = concat([
         for sidecar in keys(coalesce(var.service_config.sidecars, {})) : {
           containerName = sidecar
           condition     = lookup(local.depends_on_map, sidecar, "START")
         }
-      ]
+        ], [
+        {
+          containerName = "writable_directories_permission"
+          condition     = "SUCCESS"
+        }
+        ]
+      )
     },
     var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
   )
+
+  permissions_container = merge(local.default_container_config, {
+    name      = "writable_directories_permission"
+    image     = "public.ecr.aws/docker/library/alpine:latest"
+    essential = false
+    command = [
+      "/bin/sh",
+      "-c",
+      "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) > 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"
+    ]
+    mountPoints = concat([
+      { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
+      ], [
+      for path in try(var.service_config.storage.writable_directories, []) :
+      { sourceVolume = "path${replace(path, "/", "-")}", readOnly = false, containerPath = path }
+    ])
+  })
 
   sidecar_containers = [
     for sidecar_name, sidecar in coalesce(var.service_config.sidecars, {}) : merge(
@@ -206,15 +232,79 @@ locals {
             : {}
           )
         ] : []
-      }
+      },
     )
   ]
 
   container_definitions_list = concat(
     [local.main_container],
-    local.sidecar_containers
+    local.sidecar_containers,
+    [local.permissions_container]
   )
 
-  container_definitions_json = jsonencode(local.container_definitions_list)
+  writable_volumes = [
+    for path in try(var.service_config.storage.writable_directories, []) :
+    { "name" : "path${replace(path, "/", "-")}", "host" : {} }
+  ]
 
+  task_definition_json = jsonencode({
+    family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
+    taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task-role"
+    executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task-execution-role"
+    networkMode             = "awsvpc"
+    containerDefinitions    = local.container_definitions_list
+    volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
+    placementConstraints    = []
+    requiresCompatibilities = ["FARGATE"]
+    cpu                     = tostring(var.service_config.cpu)
+    memory                  = tostring(var.service_config.memory)
+    tags = [
+      { "key" : "application", "value" : var.application },
+      { "key" : "environment", "value" : var.environment },
+      { "key" : "service", "value" : var.service_config.name },
+      { "key" : "managed-by", "value" : "DBT Platform" },
+    ]
+  })
+
+  ##################
+  # ECS AUTO-SCALING
+  ##################
+
+  # Note: Autoscaling is always be enabled. When not in use, 'count_min' and 'count_max' have the same value.
+
+  count_range = try(split("-", var.service_config.count.range), null)
+
+  count_min = try(
+    tonumber(local.count_range[0]),    # preferred (if autoscaling is enabled), otherwise will error out on null value
+    tonumber(var.service_config.count) # default (without autoscaling)
+  )
+
+  count_max = try(
+    tonumber(local.count_range[1]),    # preferred (if autoscaling is enabled), otherwise will error out on null value
+    tonumber(var.service_config.count) # default (without autoscaling)
+  )
+
+  # Defaults for cooldowns
+  default_cool_in  = try(var.service_config.count.cooldown.in, 60)
+  default_cool_out = try(var.service_config.count.cooldown.out, 60)
+
+  # CPU properties
+  cpu_value    = try(var.service_config.count.cpu_percentage.value, var.service_config.count.cpu_percentage, null)
+  cpu_cool_in  = try(var.service_config.count.cpu_percentage.cooldown.in, local.default_cool_in)
+  cpu_cool_out = try(var.service_config.count.cpu_percentage.cooldown.out, local.default_cool_out)
+
+  # Memory properties
+  mem_value    = try(var.service_config.count.memory_percentage.value, var.service_config.count.memory_percentage, null)
+  mem_cool_in  = try(var.service_config.count.memory_percentage.cooldown.in, local.default_cool_in)
+  mem_cool_out = try(var.service_config.count.memory_percentage.cooldown.out, local.default_cool_out)
+
+  # Requests properties
+  req_value    = try(var.service_config.count.requests_per_minute.value, var.service_config.count.requests_per_minute, null)
+  req_cool_in  = try(var.service_config.count.requests_per_minute.cooldown.in, local.default_cool_in)
+  req_cool_out = try(var.service_config.count.requests_per_minute.cooldown.out, local.default_cool_out)
+
+  # Only create 'aws_appautoscaling_policy' resources when required
+  enable_cpu = local.cpu_value != null
+  enable_mem = local.mem_value != null
+  enable_req = local.req_value != null && local.web_service_required == 1
 }

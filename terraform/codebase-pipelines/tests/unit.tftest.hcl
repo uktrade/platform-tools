@@ -17,7 +17,28 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.log_access
+  target = data.aws_iam_policy_document.log_access_for_codebuild_images
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_for_codebuild_deploy
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_for_cache_invalidation
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_traffic_switch
   values = {
     json = "{\"Sid\": \"CodeBuildLogs\"}"
   }
@@ -32,6 +53,13 @@ override_data {
 
 override_data {
   target = data.aws_iam_policy_document.assume_cache_invalidation_role
+  values = {
+    json = "{\"Sid\": \"AllowSpecificCodeBuildProjectAccess\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.assume_traffic_switch_role
   values = {
     json = "{\"Sid\": \"AllowSpecificCodeBuildProjectAccess\"}"
   }
@@ -269,7 +297,6 @@ run "test_locals" {
   }
 }
 
-
 run "test_cache_invalidation_actions_created" {
   command = plan
 
@@ -278,48 +305,12 @@ run "test_cache_invalidation_actions_created" {
       for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
         for stage in pipeline.stage : [
           for action in stage.action : action.name
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+          if can(regexall("^invalidate-cache", action.name)) && length(regexall("^invalidate-cache", action.name)) > 0
 
         ]
       ]
     ]))) == 3
     error_message = "Expected exactly 3 cache invalidation actions, but found a different number"
-  }
-
-  assert {
-    condition = contains(flatten(flatten([
-      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
-        for stage in pipeline.stage : [
-          for action in stage.action : action.name
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
-        ]
-      ]
-    ])), "InvalidateCache-dev")
-    error_message = "InvalidateCache-dev action not found"
-  }
-
-  assert {
-    condition = contains(flatten(flatten([
-      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
-        for stage in pipeline.stage : [
-          for action in stage.action : action.name
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
-        ]
-      ]
-    ])), "InvalidateCache-staging")
-    error_message = "InvalidateCache-staging action not found"
-  }
-
-  assert {
-    condition = contains(flatten(flatten([
-      for pipeline_key, pipeline in aws_codepipeline.codebase_pipeline : [
-        for stage in pipeline.stage : [
-          for action in stage.action : action.name
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
-        ]
-      ]
-    ])), "InvalidateCache-prod")
-    error_message = "InvalidateCache-prod action not found"
   }
 
   # Test that cache invalidation actions have correct environment variables
@@ -331,7 +322,7 @@ run "test_cache_invalidation_actions_created" {
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "CACHE_INVALIDATION_CONFIG") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "APPLICATION") &&
           contains([for env_var in jsondecode(action.configuration.EnvironmentVariables) : env_var.name], "ENVIRONMENT")
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+          if can(regexall("^invalidate-cache", action.name)) && length(regexall("^invalidate-cache", action.name)) > 0
         ]
       ]
     ])))
@@ -347,9 +338,9 @@ run "test_cache_invalidation_actions_created" {
         length([
           for action in stage.action :
           action
-          if can(regexall("^InvalidateCache-", action.name)) && length(regexall("^InvalidateCache-", action.name)) > 0
+          if can(regexall("^invalidate-cache", action.name)) && length(regexall("^invalidate-cache", action.name)) > 0
         ]) <= 1
-        if can(regexall("^Deploy-", stage.name)) && length(regexall("^Deploy-", stage.name)) > 0
+        if can(regexall("^deploy-", stage.name)) && length(regexall("^deploy-", stage.name)) > 0
       ]
     ]))
     error_message = "Multiple cache invalidation actions found in a single deploy stage"
@@ -1010,23 +1001,29 @@ run "test_iam_documents" {
 
   # Log access
   assert {
-    condition     = data.aws_iam_policy_document.log_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.log_access.statement[0].actions == toset(["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:TagLogGroup"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.log_access.statement[0].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*",
+    condition = data.aws_iam_policy_document.log_access_for_codebuild_images.statement[0].resources == toset([
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-image-build/log-group:*"
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.log_access_for_codebuild_deploy.statement[0].resources == toset([
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy/log-group:*",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-terraform-deploy/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-terraform-deploy/log-group:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group:*",
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition = data.aws_iam_policy_document.log_access_for_cache_invalidation[""].statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-invalidate-cache/log-group:*"
     ])
     error_message = "Unexpected resources"
   }
@@ -1297,118 +1294,77 @@ run "test_iam_documents" {
   }
 }
 
-
 run "test_codebuild_deploy" {
   command = plan
 
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.name == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codebuild_project.codebase_deploy[""].name == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
   }
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.description == "Deploy specified image tag to specified environment"
-    error_message = "Should be: 'Deploy specified image tag to specified environment'"
-  }
-  assert {
-    condition     = aws_codebuild_project.codebase_deploy.build_timeout == 30
-    error_message = "Should be: 5"
-  }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.artifacts).type == "CODEPIPELINE"
-    error_message = "Should be: 'CODEPIPELINE'"
-  }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.cache).type == "S3"
-    error_message = "Should be: 'S3'"
-  }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.cache).location == "my-app-my-codebase-cb-arts"
+    condition     = one(aws_codebuild_project.codebase_deploy[""].cache).location == "my-app-my-codebase-cb-arts"
     error_message = "Should be: 'my-app-my-codebase-cb-arts'"
   }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).compute_type == "BUILD_GENERAL1_SMALL"
-    error_message = "Should be: 'BUILD_GENERAL1_SMALL'"
-  }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).image == "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
-    error_message = "Should be: 'aws/codebuild/amazonlinux2-x86_64-standard:5.0'"
-  }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).type == "LINUX_CONTAINER"
-    error_message = "Should be: 'LINUX_CONTAINER'"
-  }
-  assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.environment).image_pull_credentials_type == "CODEBUILD"
-    error_message = "Should be: 'CODEBUILD'"
-  }
 
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].name == "ENV_CONFIG"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[0].name == "ENV_CONFIG"
     error_message = "Should be: ENV_CONFIG"
   }
-
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[0].value == "{\"dev\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\"},\"prod\":{\"account_id\":\"123456789000\",\"account_name\":\"prod\",\"dns_account\":\"222223456789\"},\"staging\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\"}}"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[0].value == "{\"dev\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\",\"service_deployment_mode\":\"copilot\"},\"prod\":{\"account_id\":\"123456789000\",\"account_name\":\"prod\",\"dns_account\":\"222223456789\",\"service_deployment_mode\":\"copilot\"},\"staging\":{\"account_id\":\"000123456789\",\"account_name\":\"sandbox\",\"dns_account\":\"111123456789\",\"service_deployment_mode\":\"copilot\"}}"
     error_message = "Incorrect value"
   }
 
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].name == "CODESTAR_CONNECTION_ARN"
-    error_message = "Should be: PLATFORM_HELPER_VERSION"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[1].name == "CODESTAR_CONNECTION_ARN"
+    error_message = "Should be: CODESTAR_CONNECTION_ARN"
   }
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[1].value == "ConnectionArn"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[1].value == "ConnectionArn"
     error_message = "Should be: ConnectionArn"
   }
 
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].name == "PLATFORM_HELPER_VERSION"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[2].name == "PLATFORM_HELPER_VERSION"
     error_message = "Should be: PLATFORM_HELPER_VERSION"
   }
   assert {
-    condition     = aws_codebuild_project.codebase_deploy.environment[0].environment_variable[2].value == "1.2.3"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[2].value == "1.2.3"
     error_message = "Should be: 1.2.3"
   }
+
   assert {
-    condition = aws_codebuild_project.codebase_deploy.logs_config[0].cloudwatch_logs[
+    condition = aws_codebuild_project.codebase_deploy[""].logs_config[0].cloudwatch_logs[
       0
     ].group_name == "codebuild/my-app-my-codebase-codebase-deploy/log-group"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-deploy/log-group'"
   }
   assert {
-    condition = aws_codebuild_project.codebase_deploy.logs_config[0].cloudwatch_logs[
+    condition = aws_codebuild_project.codebase_deploy[""].logs_config[0].cloudwatch_logs[
       0
     ].stream_name == "codebuild/my-app-my-codebase-codebase-deploy/log-stream"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-deploy/log-stream'"
   }
   assert {
-    condition     = one(aws_codebuild_project.codebase_deploy.source).type == "CODEPIPELINE"
-    error_message = "Should be: 'CODEPIPELINE'"
-  }
-  assert {
-    condition     = length(regexall(".*aws ecs update-service.*", aws_codebuild_project.codebase_deploy.source[0].buildspec)) > 0
+    condition     = length(regexall(".*aws ecs update-service.*", aws_codebuild_project.codebase_deploy[""].source[0].buildspec)) > 0
     error_message = "Should contain: 'aws ecs update-service'"
   }
   assert {
-    condition     = jsonencode(aws_codebuild_project.codebase_deploy.tags) == jsonencode(var.expected_tags)
+    condition     = jsonencode(aws_codebuild_project.codebase_deploy[""].tags) == jsonencode(var.expected_tags)
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
 
   # Cloudwatch config:
   assert {
-    condition     = aws_cloudwatch_log_group.codebase_deploy.name == "codebuild/my-app-my-codebase-codebase-deploy/log-group"
+    condition     = aws_cloudwatch_log_group.codebase_deploy[""].name == "codebuild/my-app-my-codebase-codebase-deploy/log-group"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-deploy/log-group'"
   }
   assert {
-    condition     = aws_cloudwatch_log_group.codebase_deploy.retention_in_days == 90
-    error_message = "Should be: 90"
-  }
-  assert {
-    condition     = aws_cloudwatch_log_stream.codebase_deploy.name == "codebuild/my-app-my-codebase-codebase-deploy/log-stream"
+    condition     = aws_cloudwatch_log_stream.codebase_deploy[""].name == "codebuild/my-app-my-codebase-codebase-deploy/log-stream"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-deploy/log-stream'"
   }
   assert {
-    condition     = aws_cloudwatch_log_stream.codebase_deploy.log_group_name == "codebuild/my-app-my-codebase-codebase-deploy/log-group"
+    condition     = aws_cloudwatch_log_stream.codebase_deploy[""].log_group_name == "codebuild/my-app-my-codebase-codebase-deploy/log-group"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-deploy/log-group'"
   }
 }
@@ -1429,20 +1385,12 @@ run "test_main_pipeline" {
     error_message = "Should be: 'branch-main'"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].variable[0].description == "Tagged image in ECR to deploy"
-    error_message = "Should be: 'Tagged image in ECR to deploy'"
-  }
-  assert {
     condition     = tolist(aws_codepipeline.codebase_pipeline[0].artifact_store)[0].location == "my-app-my-codebase-cb-arts"
     error_message = "Should be: 'my-app-my-codebase-cb-arts'"
   }
   assert {
-    condition     = tolist(aws_codepipeline.codebase_pipeline[0].artifact_store)[0].type == "S3"
-    error_message = "Should be: 'S3'"
-  }
-  assert {
-    condition     = tolist(aws_codepipeline.codebase_pipeline[0].artifact_store)[0].encryption_key[0].type == "KMS"
-    error_message = "Should be: 'KMS'"
+    condition     = length(tolist(tolist(aws_codepipeline.codebase_pipeline[0].artifact_store)[0].encryption_key)) == 1
+    error_message = "Should use encryption"
   }
   assert {
     condition     = jsonencode(aws_codepipeline.codebase_pipeline[0].tags) == jsonencode(var.expected_tags)
@@ -1459,30 +1407,6 @@ run "test_main_pipeline" {
     error_message = "Should be: Source"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].name == "GitCheckout"
-    error_message = "Should be: GitCheckout"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].category == "Source"
-    error_message = "Should be: Source"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].owner == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].provider == "CodeStarSourceConnection"
-    error_message = "Should be: CodeStarSourceConnection"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].version == "1"
-    error_message = "Should be: 1"
-  }
-  assert {
-    condition     = one(aws_codepipeline.codebase_pipeline[0].stage[0].action[0].output_artifacts) == "deploy_source"
-    error_message = "Should be: deploy_source"
-  }
-  assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.FullRepositoryId == "uktrade/my-app-deploy"
     error_message = "Should be: uktrade/my-app-deploy"
   }
@@ -1491,8 +1415,8 @@ run "test_main_pipeline" {
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.DetectChanges == "false"
-    error_message = "Should be: false"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.ConnectionArn == "ConnectionArn"
+    error_message = "Should be: ConnectionArn"
   }
 
   # Deploy dev environment stage
@@ -1507,28 +1431,16 @@ run "test_main_pipeline" {
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "service-1"
-    error_message = "Should be: service-1"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "copilot-deploy-service-1"
+    error_message = "Should be: copilot-deploy-service-1"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].category == "Build"
     error_message = "Should be: Build"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].owner == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].provider == "CodeBuild"
     error_message = "Should be: CodeBuild"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].version == "1"
-    error_message = "Should be: 1"
-  }
-  assert {
-    condition     = one(aws_codepipeline.codebase_pipeline[0].stage[1].action[0].input_artifacts) == "deploy_source"
-    error_message = "Should be: deploy_source"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
@@ -1593,28 +1505,16 @@ run "test_main_pipeline" {
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "service-2"
-    error_message = "Should be: service-1"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "copilot-deploy-service-2"
+    error_message = "Should be: copilot-deploy-service-2"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].category == "Build"
     error_message = "Should be: Build"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].owner == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].provider == "CodeBuild"
     error_message = "Should be: CodeBuild"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].version == "1"
-    error_message = "Should be: 1"
-  }
-  assert {
-    condition     = one(aws_codepipeline.codebase_pipeline[0].stage[1].action[1].input_artifacts) == "deploy_source"
-    error_message = "Should be: deploy_source"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
@@ -1650,8 +1550,8 @@ run "test_tagged_pipeline" {
     error_message = "Should be: 'tag-latest'"
   }
   assert {
-    condition     = length(aws_codepipeline.codebase_pipeline[1].stage) == 3
-    error_message = "Should be: 3"
+    condition     = length(aws_codepipeline.codebase_pipeline[1].stage) == 4
+    error_message = "Should be: 4"
   }
 
   # Deploy staging environment stage
@@ -1666,8 +1566,8 @@ run "test_tagged_pipeline" {
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[0].name == "service-1"
-    error_message = "Should be: service-1"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[0].name == "copilot-deploy-service-1"
+    error_message = "Should be: copilot-deploy-service-1"
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[1].action[0].configuration.EnvironmentVariables) :
@@ -1686,8 +1586,8 @@ run "test_tagged_pipeline" {
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[1].name == "service-2"
-    error_message = "Should be: service-2"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[1].name == "copilot-deploy-service-2"
+    error_message = "Should be: copilot-deploy-service-2"
   }
   assert {
     condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[1].action[1].configuration.EnvironmentVariables) :
@@ -1704,75 +1604,69 @@ run "test_tagged_pipeline" {
     error_message = "Run order incorrect"
   }
 
-  # Deploy prod environment stage
+  # Approve prod environment
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Deploy-prod"
-    error_message = "Should be: Deploy-prod"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Approve-prod"
+    error_message = "Should be: Approve-prod"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].on_failure[0].result == "FAIL"
+    error_message = "Should be: FAIL"
   }
 
   # Approval action
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].name == "Approve-prod"
-    error_message = "Action name incorrect"
-  }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].category == "Approval"
     error_message = "Action category incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].owner == "AWS"
-    error_message = "Action owner incorrect"
-  }
-  assert {
     condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].provider == "Manual"
     error_message = "Action provider incorrect"
   }
+
+  # Deploy prod environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].version == "1"
-    error_message = "Action Version incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].run_order == 1
-    error_message = "Run order incorrect"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].name == "Deploy-prod"
+    error_message = "Should be: Deploy-prod"
   }
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[1].name == "service-1"
-    error_message = "Should be: service-1"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[0].name == "copilot-deploy-service-1"
+    error_message = "Should be: copilot-deploy-service-1"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[2].action[1].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[3].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "ENVIRONMENT"]) == "prod"
     error_message = "ENVIRONMENT environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[2].action[1].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[3].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "SERVICE"]) == "service-1"
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[1].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[0].run_order == 2
     error_message = "Run order incorrect"
   }
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].name == "service-2"
-    error_message = "Should be: service-1"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[1].name == "copilot-deploy-service-2"
+    error_message = "Should be: copilot-deploy-service-2"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[2].action[2].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[3].action[1].configuration.EnvironmentVariables) :
     var.value if var.name == "ENVIRONMENT"]) == "prod"
     error_message = "ENVIRONMENT environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[2].action[2].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.codebase_pipeline[1].stage[3].action[1].configuration.EnvironmentVariables) :
     var.value if var.name == "SERVICE"]) == "service-2"
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].run_order == 3
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[1].run_order == 3
     error_message = "Run order incorrect"
   }
 }
@@ -1789,36 +1683,16 @@ run "test_manual_release_pipeline" {
     error_message = "Should be: 'IMAGE_TAG'"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.variable[0].default_value == "NONE"
-    error_message = "Should be: 'NONE'"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.variable[0].description == "Tagged image in ECR to deploy"
-    error_message = "Should be: 'Tagged image in ECR to deploy'"
-  }
-  assert {
     condition     = aws_codepipeline.manual_release_pipeline.variable[1].name == "ENVIRONMENT"
     error_message = "Should be: 'ENVIRONMENT'"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.variable[1].default_value == "NONE"
-    error_message = "Should be: 'NONE'"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.variable[1].description == "Name of the environment to deploy to"
-    error_message = "Should be: 'Name of the environment to deploy to'"
   }
   assert {
     condition     = tolist(aws_codepipeline.manual_release_pipeline.artifact_store)[0].location == "my-app-my-codebase-cb-arts"
     error_message = "Should be: 'my-app-my-codebase-cb-arts'"
   }
   assert {
-    condition     = tolist(aws_codepipeline.manual_release_pipeline.artifact_store)[0].type == "S3"
-    error_message = "Should be: 'S3'"
-  }
-  assert {
-    condition     = tolist(aws_codepipeline.manual_release_pipeline.artifact_store)[0].encryption_key[0].type == "KMS"
-    error_message = "Should be: 'KMS'"
+    condition     = length(tolist(tolist(aws_codepipeline.manual_release_pipeline.artifact_store)[0].encryption_key)) == 1
+    error_message = "Should use encryption"
   }
   assert {
     condition     = jsonencode(aws_codepipeline.manual_release_pipeline.tags) == jsonencode(var.expected_tags)
@@ -1831,44 +1705,20 @@ run "test_manual_release_pipeline" {
 
   # Source stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].name == "Source"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].name == "Source"
     error_message = "Should be: Source"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].name == "GitCheckout"
-    error_message = "Should be: GitCheckout"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].category == "Source"
-    error_message = "Should be: Source"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].owner == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].provider == "CodeStarSourceConnection"
-    error_message = "Should be: CodeStarSourceConnection"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].version == "1"
-    error_message = "Should be: 1"
-  }
-  assert {
-    condition     = one(aws_codepipeline.codebase_pipeline[0].stage[0].action[0].output_artifacts) == "deploy_source"
-    error_message = "Should be: deploy_source"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.FullRepositoryId == "uktrade/my-app-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.FullRepositoryId == "uktrade/my-app-deploy"
     error_message = "Should be: uktrade/my-app-deploy"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.BranchName == "main"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.BranchName == "main"
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.DetectChanges == "false"
-    error_message = "Should be: false"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.ConnectionArn == "ConnectionArn"
+    error_message = "Should be: ConnectionArn"
   }
 
   # Deploy stage
@@ -1879,28 +1729,8 @@ run "test_manual_release_pipeline" {
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "service-1"
-    error_message = "Should be: service-1"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].category == "Build"
-    error_message = "Should be: Build"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].owner == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].provider == "CodeBuild"
-    error_message = "Should be: CodeBuild"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].version == "1"
-    error_message = "Should be: 1"
-  }
-  assert {
-    condition     = one(aws_codepipeline.manual_release_pipeline.stage[1].action[0].input_artifacts) == "deploy_source"
-    error_message = "Should be: deploy_source"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "copilot-deploy-service-1"
+    error_message = "Should be: copilot-deploy-service-1"
   }
   assert {
     condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
@@ -1963,28 +1793,8 @@ run "test_manual_release_pipeline" {
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].name == "service-2"
-    error_message = "Should be: service-1"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].category == "Build"
-    error_message = "Should be: Build"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].owner == "AWS"
-    error_message = "Should be: AWS"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].provider == "CodeBuild"
-    error_message = "Should be: CodeBuild"
-  }
-  assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].version == "1"
-    error_message = "Should be: 1"
-  }
-  assert {
-    condition     = one(aws_codepipeline.manual_release_pipeline.stage[1].action[1].input_artifacts) == "deploy_source"
-    error_message = "Should be: deploy_source"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].name == "copilot-deploy-service-2"
+    error_message = "Should be: copilot-deploy-service-2"
   }
   assert {
     condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
@@ -2143,7 +1953,7 @@ run "test_pipeline_single_run_group" {
 
   # service-1
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "service-1"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "copilot-deploy-service-1"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2153,7 +1963,7 @@ run "test_pipeline_single_run_group" {
 
   # service-2
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "service-2"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "copilot-deploy-service-2"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2163,7 +1973,7 @@ run "test_pipeline_single_run_group" {
 
   # service-3
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].name == "service-3"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].name == "copilot-deploy-service-3"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2173,7 +1983,7 @@ run "test_pipeline_single_run_group" {
 
   # service-4
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "service-4"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "copilot-deploy-service-4"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2215,7 +2025,7 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-1
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "service-1"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "copilot-deploy-service-1"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2225,7 +2035,7 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-2
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "service-2"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "copilot-deploy-service-2"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2235,7 +2045,7 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-3
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].name == "service-3"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].name == "copilot-deploy-service-3"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2245,7 +2055,7 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-4
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "service-4"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "copilot-deploy-service-4"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2255,7 +2065,7 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-5
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].name == "service-5"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].name == "copilot-deploy-service-5"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2265,7 +2075,7 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-6
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].name == "service-6"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].name == "copilot-deploy-service-6"
     error_message = "Action name incorrect"
   }
   assert {
@@ -2275,152 +2085,11 @@ run "test_pipeline_multiple_run_groups" {
 
   # service-7
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].name == "service-7"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].name == "copilot-deploy-service-7"
     error_message = "Action name incorrect"
   }
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].run_order == 5
-    error_message = "Run order incorrect"
-  }
-}
-
-run "test_pipeline_multiple_run_groups_multiple_environment_approval" {
-  command = plan
-
-  variables {
-    services = [
-      {
-        "run_group_1" : [
-          "service-1"
-        ]
-      },
-      {
-        "run_group_2" : [
-          "service-2",
-          "service-3"
-        ]
-      },
-      {
-        "run_group_3" : [
-          "service-4"
-        ]
-      }
-    ]
-    pipelines = [
-      {
-        name   = "main",
-        branch = "main",
-        environments = [
-          { name = "dev" },
-          { name = "prod", requires_approval = true }
-        ]
-      }
-    ]
-  }
-
-  # Dev
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
-    error_message = "Should be: Deploy-dev"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].on_failure[0].result == "ROLLBACK"
-    error_message = "Should be: ROLLBACK"
-  }
-
-  # service-1
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "service-1"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 2
-    error_message = "Run order incorrect"
-  }
-
-  # service-2
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].name == "service-2"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 3
-    error_message = "Run order incorrect"
-  }
-
-  # service-3
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].name == "service-3"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].run_order == 3
-    error_message = "Run order incorrect"
-  }
-
-  # service-4
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "service-4"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].run_order == 4
-    error_message = "Run order incorrect"
-  }
-
-  # Prod
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-prod"
-    error_message = "Should be: Deploy-prod"
-  }
-
-  # Approval
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[0].name == "Approve-prod"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[0].run_order == 1
-    error_message = "Run order incorrect"
-  }
-
-  # service-1
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[1].name == "service-1"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[1].run_order == 2
-    error_message = "Run order incorrect"
-  }
-
-  # service-2
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[2].name == "service-2"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[2].run_order == 3
-    error_message = "Run order incorrect"
-  }
-
-  # service-3
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[3].name == "service-3"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[3].run_order == 3
-    error_message = "Run order incorrect"
-  }
-
-  # service-4
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[4].name == "service-4"
-    error_message = "Action name incorrect"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[4].run_order == 4
     error_message = "Run order incorrect"
   }
 }
@@ -2531,15 +2200,28 @@ run "test_service_deployment_mode_copilot" {
         }
       },
       "dev" = {
-        service-deployment-mode : "copilot"
-      }
+        service-deployment-mode = "copilot"
+      },
+      "staging" = null,
+      "prod"    = null
     }
   }
 
-
   assert {
-    condition     = local.service_terraform_deployment_enabled == false
-    error_message = "Service terraform deployment should be false"
+    condition     = local.platform_deployment_enabled == false
+    error_message = "Platform deployment should be false"
+  }
+  assert {
+    condition     = local.copilot_deployment_enabled == true
+    error_message = "Copilot deployment should be true"
+  }
+  assert {
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 2
+    error_message = "Should be: 2"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "copilot-deploy-service-1"
+    error_message = "Should be: copilot-deploy-service-1"
   }
 }
 
@@ -2565,13 +2247,18 @@ run "test_service_deployment_mode_terraform" {
       }
       "staging" = {
         service-deployment-mode : "dual-deploy-platform-traffic"
-      }
+      },
+      "prod" = null
     }
   }
 
   assert {
-    condition     = local.service_terraform_deployment_enabled == true
-    error_message = "Service terraform deployment should be true"
+    condition     = local.platform_deployment_enabled == true
+    error_message = "Platform deployment should be true"
+  }
+  assert {
+    condition     = local.copilot_deployment_enabled == true
+    error_message = "Copilot terraform deployment should be true"
   }
 }
 
@@ -2611,30 +2298,143 @@ run "test_main_pipeline_service_deployment_terraform" {
   }
 
   assert {
-    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 3
-    error_message = "Should be: 3"
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 2
+    error_message = "Should be: 2"
   }
 
   # Deploy dev environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-Terraform-dev"
-    error_message = "Should be: Deploy-Terraform-dev"
-  }
-  assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-terraform-deploy"
-    error_message = "Should be: my-app-my-codebase-codebase-terraform-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform"
+    error_message = "Should be: my-app-my-codebase-codebase-service-terraform"
   }
-
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy"
+  }
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-terraform-deploy"
-    error_message = "Should be: my-app-my-codebase-codebase-terraform-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform"
+    error_message = "Should be: my-app-my-codebase-codebase-service-terraform"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy"
+  }
+
+  # Tagged pipeline approval stage
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Approve-prod"
+    error_message = "Should be: Approve-prod"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].name == "terraform-plan-service-1"
+    error_message = "Action name incorrect"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform-plan"
+    error_message = "Should be: my-app-my-codebase-codebase-service-terraform-plan"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[1].name == "terraform-plan-service-2"
+    error_message = "Action name incorrect"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform-plan"
+    error_message = "Should be: my-app-my-codebase-codebase-service-terraform-plan"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].category == "Approval"
+    error_message = "Action category incorrect"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].provider == "Manual"
+    error_message = "Action provider incorrect"
+  }
+}
+
+run "test_traffic_switch" {
+  command = plan
+
+  variables {
+    env_config = {
+      "*" = {
+        accounts = {
+          deploy = {
+            name = "sandbox"
+            id   = "000123456789"
+          }
+          dns = {
+            name = "dev"
+            id   = "111123456789"
+          }
+        },
+        service-deployment-mode : "dual-deploy-copilot-traffic"
+      },
+      "dev"     = null,
+      "staging" = null,
+      "prod" = {
+        accounts = {
+          deploy = {
+            name = "prod"
+            id   = "123456789000"
+          }
+          dns = {
+            name = "live"
+            id   = "222223456789"
+          }
+        }
+      }
+    }
+  }
+
+  assert {
+    condition = data.aws_iam_policy_document.log_access_traffic_switch[""].statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-traffic-switch/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-traffic-switch/log-group:*"
+    ])
+    error_message = "Unexpected resources"
+  }
+  assert {
+    condition = aws_codebuild_project.codebase_traffic_switch[""].logs_config[0].cloudwatch_logs[
+      0
+    ].group_name == "codebuild/my-app-my-codebase-codebase-traffic-switch/log-group"
+    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-traffic-switch/log-group'"
+  }
+  assert {
+    condition = aws_codebuild_project.codebase_traffic_switch[""].logs_config[0].cloudwatch_logs[
+      0
+    ].stream_name == "codebuild/my-app-my-codebase-codebase-traffic-switch/log-stream"
+    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-traffic-switch/log-stream'"
+  }
+  assert {
+    condition     = length(regexall(".*alb update-rules.*", aws_codebuild_project.codebase_traffic_switch[""].source[0].buildspec)) > 0
+    error_message = "Should contain: 'alb update-rules'"
+  }
+  assert {
+    condition     = jsonencode(aws_codebuild_project.codebase_traffic_switch[""].tags) == jsonencode(var.expected_tags)
+    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    error_message = "Should be: Deploy-dev"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
+    error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
   }
 }

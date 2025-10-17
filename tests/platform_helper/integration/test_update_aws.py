@@ -183,6 +183,9 @@ class MockALBService:
             {
                 "LoadBalancers": [
                     {
+                        "LoadBalancerArn": "copilot-alb-arn",
+                    },
+                    {
                         "LoadBalancerArn": "alb-arn-doesnt-matter",
                     },
                 ],
@@ -216,6 +219,8 @@ class MockALBService:
             self.fixtures.create_rule_response(1, "1", http_headers=["forward"]),
             self.fixtures.create_rule_response(2, "2", source_ip=True),
             self.fixtures.create_rule_response(3, "3", http_headers=["bypass-key"]),
+            # Dummy rule
+            self.fixtures.create_rule_response(12, "1000", http_headers=["forward"]),
             # Copilot rules >48000
             self.fixtures.create_rule_response(
                 4, "48000", path_pattern=["/secondary-service/*", "/secondary-service"]
@@ -245,7 +250,6 @@ class MockALBService:
                     "9000",
                 )
             )
-        print()
         paginator.paginate.return_value = [
             {
                 "Rules": rules,
@@ -270,6 +274,8 @@ class MockALBService:
             self.fixtures.create_target_group(8, "/secondary-service"),
             self.fixtures.create_target_group(9),
             self.fixtures.create_target_group(10),
+            # Dummy tg
+            self.fixtures.create_target_group(12),
         ]
         if self.manual_rule:
             target_rules.append(
@@ -365,12 +371,22 @@ class MockALBService:
                 {  # ALB
                     "TagDescriptions": [
                         self.fixtures.create_tag_descriptions(
-                            "alb-arn-doesnt-matter",
+                            "copilot-alb-arn",
                             {
                                 "copilot-application": "test-application",
                                 "copilot-environment": self.environment,
                             },
-                        )
+                        ),
+                        self.fixtures.create_tag_descriptions(
+                            "alb-arn-doesnt-matter",
+                            {
+                                "copilot-application": "test-application",
+                                "copilot-environment": self.environment,
+                                "application": "test-application",
+                                "environment": self.environment,
+                                "managed-by": "DBT Platform - Terraform",
+                            },
+                        ),
                     ]
                 },
                 {  # Listener rule tags
@@ -410,6 +426,17 @@ class MockALBService:
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-7",
+                        ),
+                        # Dummy Rule tags
+                        self.fixtures.create_tag_descriptions(
+                            "listener-rule-arn-doesnt-matter-12",
+                            {
+                                "application": "test-application",
+                                "service": "web",
+                                "reason": "DummyRule",
+                                "managed-by": "DBT Platform - Service Terraform",
+                                "environment": self.environment,
+                            },
                         ),
                         *rule_tags,
                     ]
@@ -498,6 +525,9 @@ class MockALBService:
                         self.fixtures.create_tag_descriptions(
                             "tg-arn-doesnt-matter-7",
                         ),
+                        self.fixtures.create_tag_descriptions(
+                            "tg-arn-doesnt-matter-12",
+                        ),
                     ]
                 },
                 {
@@ -553,6 +583,7 @@ class MockALBService:
                     "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
                 ],
                 "debug": [
+                    "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
                     "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
                     "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
@@ -573,6 +604,7 @@ class MockALBService:
                     "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
                 ],
                 "debug": [
+                    "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
                     "Deleted existing rule: listener-rule-arn-doesnt-matter-8",
                     "Deleted existing rule: listener-rule-arn-doesnt-matter-9",
@@ -593,6 +625,7 @@ class MockALBService:
                     "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
                 ],
                 "debug": [
+                    "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
                     "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
                     "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
@@ -619,6 +652,7 @@ class MockALBService:
                     "Platform rules already exist, skipping creation",
                 ],
                 "debug": [
+                    "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
                 ],
             },
@@ -636,6 +670,7 @@ class MockALBService:
                     "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
                 ],
                 "debug": [
+                    "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
                     "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
                     "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",

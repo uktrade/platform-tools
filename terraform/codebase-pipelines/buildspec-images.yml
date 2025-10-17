@@ -51,8 +51,9 @@ phases:
           cd "${CODEBUILD_SRC_DIR}/platform-tools"
           ## Setup venv
           source terraform/scripts/setup_venv.sh
-          ## yq for yaml processing
-          pip install yq --quiet
+          ## yq for yaml processing (The Go-based variant, not Python-based)
+          curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
           ## Install platform helper
           ./terraform/scripts/install_platform_helper.sh
 

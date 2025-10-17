@@ -58,10 +58,14 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:UpdateAssumeRolePolicy"
     ]
     resources = [
-      "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
-      "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-execution-role",
-      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
-      "arn:aws:iam::${local.pipeline_account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-execution-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-appconfig-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy"
     ]
   }
 }
@@ -81,8 +85,8 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "ecs:RegisterTaskDefinition"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:task-definition/*",
-      "arn:aws:ecs:${data.aws_region.current.region}:${local.pipeline_account_id}:task-definition/"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task-definition/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task-definition/"
     ]
   }
 
@@ -110,7 +114,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "ec2:DescribeVpcAttribute"
     ]
     resources = [
-      "arn:aws:ec2:${data.aws_region.current.region}:${local.pipeline_account_id}:vpc/*"
+      "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:vpc/*"
     ]
   }
 
@@ -128,7 +132,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "servicediscovery:TagResource"
     ]
     resources = [
-      "arn:aws:servicediscovery:${data.aws_region.current.region}:${local.pipeline_account_id}:*"
+      "arn:aws:servicediscovery:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
 
@@ -147,7 +151,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "kms:ListResourceTags"
     ]
     resources = [
-      "arn:aws:kms:${data.aws_region.current.region}:${local.pipeline_account_id}:key/*"
+      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
     ]
   }
 
@@ -157,7 +161,7 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "kms:DeleteAlias",
     ]
     resources = [
-      "arn:aws:kms:${data.aws_region.current.region}:${local.pipeline_account_id}:alias/${var.args.application}-${var.environment}-*-ecs-service-logs-key"
+      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:alias/${var.args.application}-${var.environment}-*-ecs-service-logs-key"
     ]
   }
 
@@ -182,11 +186,26 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "elasticloadbalancing:DescribeTargetGroups",
       "elasticloadbalancing:DescribeTargetGroupAttributes",
       "elasticloadbalancing:DescribeTags",
+      "elasticloadbalancing:DescribeLoadBalancers",
+      "elasticloadbalancing:DescribeLoadBalancerAttributes",
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:DescribeRules"
     ]
     resources = [
       "*"
     ]
   }
+
+  statement {
+    actions = [
+      "elasticloadbalancing:CreateRule",
+      "elasticloadbalancing:DeleteRule"
+    ]
+    resources = [
+      "arn:aws:elasticloadbalancing:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:listener/app/${var.args.application}-${var.environment}/*"
+    ]
+  }
+
 
   statement {
     actions = [
@@ -198,21 +217,98 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "logs:ListTagsForResource",
       "logs:ListTagsLogGroup",
       "logs:AssociateKmsKey",
+      "logs:DescribeLogStreams"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group:/platform/*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/platform/*"
     ]
   }
 
   statement {
     actions = [
-      "logs:DescribeLogGroups"
+      "logs:DescribeLogGroups",
+      "logs:DescribeSubscriptionFilters",
+      "logs:PutSubscriptionFilter"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.region}:${local.pipeline_account_id}:log-group::log-stream:"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/platform/ecs/service/${var.args.application}/${var.environment}/*:log-stream:",
+      local.central_log_group_destination
     ]
   }
 
+  statement {
+    actions = [
+      "ecs:DescribeClusters"
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "s3:ListBucketVersions"
+    ]
+    resources = [
+      "arn:aws:s3:::ecs-task-definitions-${var.args.application}-${var.environment}"
+    ]
+  }
+
+  statement {
+    actions = [
+      "s3:GetObjectTagging",
+      "s3:PutObjectTagging"
+    ]
+    resources = [
+      "arn:aws:s3:::ecs-task-definitions-${var.args.application}-${var.environment}/${var.args.application}/${var.environment}/*.json"
+    ]
+  }
+
+  statement {
+    actions = [
+      "lambda:InvokeFunction"
+    ]
+    resources = [
+      "arn:aws:lambda:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:function:${var.args.application}-${var.environment}-listener-rule-organiser:$LATEST"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ecs:CreateService"
+    ]
+    resources = [
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-cluster/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "application-autoscaling:RegisterScalableTarget",
+      "application-autoscaling:DescribeScalableTargets",
+      "application-autoscaling:ListTagsForResource",
+      "application-autoscaling:DeregisterScalableTarget",
+      "application-autoscaling:PutScalingPolicy",
+      "application-autoscaling:DescribeScalingPolicies",
+      "application-autoscaling:DescribeScalingActivities",
+      "application-autoscaling:DeleteScalingPolicy"
+    ]
+    resources = [
+      "arn:aws:application-autoscaling:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:scalable-target/*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "validate_platform_config_for_codebase" {
@@ -239,10 +335,10 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       "ssm:GetParametersByPath"
     ]
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
-      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}",
-      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/copilot/applications/${var.args.application}/*",
-      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/***"
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.args.application}",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.args.application}/*",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/***"
     ]
   }
 
@@ -257,7 +353,7 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       values   = ["__all__", var.args.application]
     }
     resources = [
-      "arn:aws:ssm:${data.aws_region.current.region}:${local.pipeline_account_id}:parameter/***",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/***",
     ]
   }
 }
@@ -324,7 +420,7 @@ data "aws_iam_policy_document" "state_lock_dynamo_db_access" {
       "dynamodb:DeleteItem"
     ]
     resources = [
-      "arn:aws:dynamodb:${data.aws_region.current.region}:${local.pipeline_account_id}:table/terraform-platform-lockdb-${local.deploy_account_name}"
+      "arn:aws:dynamodb:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:table/terraform-platform-lockdb-${local.deploy_account_name}"
     ]
   }
 }
@@ -412,7 +508,9 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 
@@ -424,7 +522,9 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}",
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 
@@ -445,7 +545,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListTasks"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:container-instance/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 
@@ -477,7 +578,8 @@ data "aws_iam_policy_document" "ecs_deploy_access" {
       "ecs:ListServiceDeployments"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}/*",
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/${var.args.application}-${var.environment}-cluster/*"
     ]
   }
 }

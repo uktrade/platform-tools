@@ -3,6 +3,7 @@ from typing import List
 
 from boto3 import Session
 
+from dbt_platform_helper.constants import MANAGED_BY_PLATFORM_TERRAFORM
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -171,7 +172,11 @@ class LoadBalancerProvider:
         for lb in tag_descriptions:
             tags = {t["Key"]: t["Value"] for t in lb["Tags"]}
             # TODO: DBTP-1967: copilot hangover, creates coupling to specific tags could update to check application and environment
-            if tags.get("copilot-application") == app and tags.get("copilot-environment") == env:
+            if (
+                tags.get("copilot-application") == app
+                and tags.get("copilot-environment") == env
+                and tags.get("managed-by", "") == MANAGED_BY_PLATFORM_TERRAFORM
+            ):
                 return lb["ResourceArn"]
 
         raise LoadBalancerNotFoundException(app, env)
