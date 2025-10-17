@@ -151,6 +151,69 @@ locals {
     }
   }
 
+  manual_pipeline_actions_map = concat(
+    flatten([for svc in local.service_order_list : concat(
+      local.platform_deployment_enabled ? [{
+        name : "terraform-apply-${svc.name}",
+        order : svc.order,
+        configuration = {
+          ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
+          EnvironmentVariables : jsonencode(concat(local.default_variables, [
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+            { name : "SERVICE", value : svc.name },
+          ]))
+        }
+      }] : [],
+      local.platform_deployment_enabled ? [{
+        name : "platform-deploy-${svc.name}",
+        order : svc.order + 1,
+        configuration = {
+          ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
+          EnvironmentVariables : jsonencode(concat(local.default_variables, [
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+            { name : "SERVICE", value : svc.name },
+          ]))
+        }
+      }] : [],
+      local.copilot_deployment_enabled ? [{
+        name : "copilot-deploy-${svc.name}",
+        order : svc.order + 1,
+        configuration = {
+          ProjectName = aws_codebuild_project.codebase_deploy[""].name
+          EnvironmentVariables : jsonencode(concat(local.default_variables, [
+            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+            { name : "SERVICE", value : svc.name },
+          ]))
+        }
+      }] : [],
+    )]),
+    local.platform_deployment_enabled ? [{
+      name : "traffic-switch",
+      order : max([for svc in local.service_order_list : svc.order]...) + 2,
+      configuration = {
+        ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+        EnvironmentVariables : jsonencode([
+          { name : "APPLICATION", value : var.application },
+          { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+          { name : "AWS_REGION", value : data.aws_region.current.region },
+          { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+        ])
+      }
+    }] : [],
+    local.cache_invalidation_enabled ? [{
+      name : "invalidate-cache",
+      order : max([for svc in local.service_order_list : svc.order]...) + 2,
+      configuration = {
+        ProjectName = aws_codebuild_project.invalidate_cache[""].name
+        EnvironmentVariables : jsonencode([
+          { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
+          { name : "APPLICATION", value : var.application },
+          { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+        ])
+      }
+    }] : [],
+  )
+
   cache_invalidation_map = tomap({
     for env in local.environments_requiring_cache_invalidation : env => {
       for domain, data in var.cache_invalidation.domains : domain => data.paths if data.environment == env
