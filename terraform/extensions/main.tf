@@ -161,3 +161,6 @@ resource "aws_ssm_parameter" "environment_data" {
   tags = local.tags
 }
 
+data "aws_ssm_parameter" "log_destination_arn" {
+  name = "/copilot/tools/central_log_groups"
+}

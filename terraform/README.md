@@ -259,7 +259,6 @@ my-postgres-db:
   environments:
     '*':
       plan: tiny
-      backup_retention_days: 1 # Optional.  Must be between 1 and 35. Defaults to 7.
     prod:
       deletion_protection: true # Optional
 ```

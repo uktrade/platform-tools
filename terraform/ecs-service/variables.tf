@@ -60,7 +60,7 @@ variable "service_config" {
 
     cpu        = number
     memory     = number
-    count      = number
+    count      = any # Can be an integer or a map due to Copilot. See Copilot docs: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
     exec       = optional(bool)
     entrypoint = optional(list(string))
     essential  = optional(bool)
@@ -73,10 +73,16 @@ variable "service_config" {
     }))
 
     storage = optional(object({
-      readonly_fs = optional(bool)
+      readonly_fs          = optional(bool)
+      writable_directories = optional(list(string))
     }))
 
     variables = optional(map(any))
     secrets   = optional(map(string))
   })
+
+  validation {
+    condition     = (can(tonumber(var.service_config.count)) || (can(var.service_config.count.range)))
+    error_message = "service_config.count must be either a number, or a map with the correct autoscaling properties defined."
+  }
 }

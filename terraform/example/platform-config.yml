@@ -29,7 +29,6 @@ extensions:
     environments:
       "*":
         multi_az: false
-        backup_retention_days: 3
       prod:
         deletion_protection: true
 

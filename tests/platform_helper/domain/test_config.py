@@ -473,6 +473,11 @@ class TestConfigGenerateAWS:
             }
         ]
 
+        config_mocks.sso.list_account_roles.return_value = [
+            {"roleName": "DBTPlatformDeveloperWrite"},
+            {"roleName": "DBTPlatformDeveloperRead"},
+        ]
+
         config_domain.generate_aws("/test/aws/config")
 
         config_mocks.sso.register.assert_called_with(
@@ -519,7 +524,7 @@ class TestConfigGenerateAWS:
                 call("[profile TEST_AWS_ACCOUNT]\n"),
                 call("sso_session = uktrade\n"),
                 call("sso_account_id = TEST_AWS_ACCOUNT_ID\n"),
-                call("sso_role_name = AdministratorAccess\n"),
+                call("sso_role_name = DBTPlatformDeveloperWrite\n"),
                 call("region = eu-west-2\n"),
                 call("output = json\n"),
                 call("\n"),

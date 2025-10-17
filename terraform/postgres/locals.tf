@@ -24,7 +24,7 @@ locals {
   snapshot_id               = var.config.snapshot_id
   volume_size               = coalesce(var.config.volume_size, 100)
   deletion_protection       = coalesce(var.config.deletion_protection, true)
-  backup_retention_days     = coalesce(var.config.backup_retention_days, 7)
+  backup_retention_days     = var.environment == "prod" ? 35 : 7
 
   instance_class = coalesce(var.config.instance, "db.t3.micro")
   storage_type   = coalesce(var.config.storage_type, "gp3")
