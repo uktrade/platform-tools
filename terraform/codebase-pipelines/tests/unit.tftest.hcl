@@ -2314,12 +2314,12 @@ run "test_main_pipeline_service_deployment_terraform" {
     error_message = "Should be: my-app-my-codebase-codebase-service-terraform"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
-    error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
-    error_message = "Should be: my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
   }
 
   # Deploy service-2 action
@@ -2328,12 +2328,22 @@ run "test_main_pipeline_service_deployment_terraform" {
     error_message = "Should be: my-app-my-codebase-codebase-service-terraform"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
-    error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
-    error_message = "Should be: my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
+    error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
+  }
+
+  # Post deploy actions
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].configuration.ProjectName == "my-app-my-codebase-invalidate-cache"
+    error_message = "Should be: my-app-my-codebase-invalidate-cache"
+  }
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
+    error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
   }
 
   # Tagged pipeline approval stage
@@ -2434,7 +2444,7 @@ run "test_traffic_switch" {
     error_message = "Should be: Deploy-dev"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
     error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
   }
 }

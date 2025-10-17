@@ -51,7 +51,12 @@ resource "aws_codepipeline" "codebase_pipeline" {
       }
 
       dynamic "action" {
-        for_each = stage.value.actions
+        # Sort to prevent actions with the same run order causing unnecessary terraform changes
+        for_each = [
+          for n in sort([for a in stage.value.actions : "${a.order}-${a.name}"]) :
+          lookup({ for a in stage.value.actions : "${a.order}-${a.name}" => a }, n)
+        ]
+
         content {
           name             = action.value.name
           category         = try(action.value.category, "Build")
@@ -122,122 +127,24 @@ resource "aws_codepipeline" "manual_release_pipeline" {
   stage {
     name = "Deploy"
 
-    # Service Terraform
     dynamic "action" {
-      for_each = local.platform_deployment_enabled ? local.service_order_list : []
+      # Sort to prevent actions with the same run order causing unnecessary terraform changes
+      for_each = [
+        for n in sort([for a in local.manual_pipeline_actions_map : "${a.order}-${a.name}"]) :
+        lookup({ for a in local.manual_pipeline_actions_map : "${a.order}-${a.name}" => a }, n)
+      ]
+
       content {
-        name             = "terraform-apply-${action.value.name}"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
+        name             = action.value.name
+        category         = try(action.value.category, "Build")
+        provider         = try(action.value.provider, "CodeBuild")
+        input_artifacts  = try(action.value.input_artifacts, ["deploy_source"])
         output_artifacts = []
+        owner            = "AWS"
         version          = "1"
         run_order        = action.value.order
-
-        configuration = {
-          ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
-          EnvironmentVariables : jsonencode(concat(local.default_variables, [
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "SERVICE", value : action.value.name },
-          ]))
-        }
+        configuration    = action.value.configuration
       }
-    }
-
-    # Copilot deployment
-    dynamic "action" {
-      for_each = local.copilot_deployment_enabled ? local.service_order_list : []
-      content {
-        name             = "copilot-deploy-${action.value.name}"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = action.value.order + 1
-
-        configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy[""].name
-          EnvironmentVariables : jsonencode(concat(local.default_variables, [
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "SERVICE", value : action.value.name },
-          ]))
-        }
-      }
-    }
-
-    # Platform deployment
-    dynamic "action" {
-      for_each = local.platform_deployment_enabled ? local.service_order_list : []
-      content {
-        name             = "platform-deploy-${action.value.name}"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = action.value.order + 1
-
-        configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
-          EnvironmentVariables : jsonencode(concat(local.default_variables, [
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "SERVICE", value : action.value.name },
-          ]))
-        }
-      }
-    }
-
-    # Cache invalidation
-    dynamic "action" {
-      for_each = toset(local.cache_invalidation_enabled ? [""] : [])
-      content {
-        name             = "invalidate-cache"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = max([for svc in local.service_order_list : svc.order]...) + 2
-
-        configuration = {
-          ProjectName = aws_codebuild_project.invalidate_cache[""].name
-          EnvironmentVariables : jsonencode([
-            { name : "CACHE_INVALIDATION_CONFIG", value : jsonencode(local.cache_invalidation_map) },
-            { name : "APPLICATION", value : var.application },
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-          ])
-        }
-      }
-    }
-
-    dynamic "action" {
-      for_each = toset(local.platform_deployment_enabled ? [""] : [])
-      content {
-        name             = "traffic-switch"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["deploy_source"]
-        output_artifacts = []
-        version          = "1"
-        run_order        = max([for svc in local.service_order_list : svc.order]...) + 2
-
-        configuration = {
-          ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
-          EnvironmentVariables : jsonencode([
-            { name : "APPLICATION", value : var.application },
-            { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
-            { name : "AWS_REGION", value : data.aws_region.current.region },
-            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
-          ])
-        }
-      }
-
     }
   }
 
