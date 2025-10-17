@@ -8,9 +8,9 @@ locals {
 }
 
 provider "aws" {
-  region              = "eu-west-2"
-  profile             = "{{ aws_account }}"
-  allowed_account_ids = ["{{ deploy_account_id }}"]
+  region                   = "eu-west-2"
+  profile                  = "{{ aws_account }}"
+  allowed_account_ids      = ["{{ deploy_account_id }}"]
 }
 
 
@@ -38,9 +38,9 @@ module "environment-pipelines" {
 
   for_each = local.pipelines
 
-  application   = "{{ application }}"
-  pipeline_name = each.key
-  repository    = "{{ deploy_repository }}"
+  application         = "{{ application }}"
+  pipeline_name       = each.key
+  repository          = "{{ deploy_repository }}"
 
   environments        = each.value.environments
   all_pipelines       = local.all_pipelines
