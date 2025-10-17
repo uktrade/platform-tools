@@ -195,30 +195,25 @@ class ECS:
         return False
 
     def get_service_rollout_state(
-        self, cluster_name: str, service_name: str
+        self, cluster_name: str, service_name: str, start_time: float
     ) -> tuple[Optional[str], Optional[str]]:
         """
-        Returns rolloutState & rolloutStateReason for the PRIMARY deployment of
-        an ECS service.
+        Returns status & statusReason for the deployment of an ECS service.
 
-        rolloutState can be: COMPLETED | FAILED | IN_PROGRESS | None
+        statusReason can be:
+            PENDING | SUCCESSFUL | STOPPED | STOP_REQUESTED |
+            IN_PROGRESS | ROLLBACK_REQUESTED | ROLLBACK_IN_PROGRESS |
+            ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
         """
-        resp = self.ecs_client.describe_services(cluster=cluster_name, services=[service_name])
-        services = resp.get("services", [])
-        if not services:
-            return None, f"Service '{service_name}' not found"
+        resp = self.ecs_client.list_service_deployments(
+            cluster=cluster_name, service=service_name, createdAt={"after": start_time - 180}
+        )
+        deployments = resp.get("serviceDeployments", [])
 
-        svc = services[0]
-        primary_deployment = None
-        for dep in svc.get("deployments", []):
-            if dep.get("status") == "PRIMARY":
-                primary_deployment = dep
-                break
+        if not deployments:
+            return None, f"No deployments found for '{service_name}'"
 
-        if not primary_deployment:
-            return None, "No PRIMARY ECS deployment found"
-
-        return primary_deployment.get("rolloutState"), primary_deployment.get("rolloutStateReason")
+        return deployments[0].get("status"), deployments[0].get("statusReason")
 
     def get_container_names_from_ecs_tasks(
         self, cluster_name: str, task_ids: list[str]

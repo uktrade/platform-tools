@@ -385,8 +385,8 @@ class ServiceManager:
         return task_ids
 
     def _monitor_ecs_deployment(self, application: str, environment: str, service: str) -> bool:
-        """Loop until ECS rollout state is COMPLETED/FAILED or else times
-        out."""
+        """Loop until ECS rollout state is SUCCESSFUL or a fail status or else
+        times out."""
 
         cluster_name = f"{application}-{environment}-cluster"
         ecs_service_name = f"{application}-{environment}-{service}"
@@ -397,15 +397,15 @@ class ServiceManager:
         while time.monotonic() < deadline:
             try:
                 state, reason = self.ecs_provider.get_service_rollout_state(
-                    cluster_name=cluster_name, service_name=ecs_service_name
+                    cluster_name=cluster_name, service_name=ecs_service_name, start_time=start_time
                 )
             except Exception as e:
                 raise PlatformException(f"Failed to fetch ECS rollout state: {e}")
 
-            if state == "COMPLETED":
+            if state == "SUCCESSFUL":
                 self.io.info("\nECS deployment complete!")
                 return True
-            if state == "FAILED":
+            if state in ["STOPPED", "ROLLBACK_SUCCESSFUL", "ROLLBACK_FAILED"]:
                 raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
 
             elapsed_time = int(time.time() - start_time)
