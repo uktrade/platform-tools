@@ -95,16 +95,16 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.cloudwatch
+  target = data.aws_iam_policy_document.cloudwatch_and_logs
   values = {
-    json = "{\"Sid\": \"Cloudwatch\"}"
+    json = "{\"Sid\": \"Cloudwatch-And-Logs\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.logs
+  target = data.aws_iam_policy_document.extensions
   values = {
-    json = "{\"Sid\": \"Logs\"}"
+    json = "{\"Sid\": \"Extensions\"}"
   }
 }
 
@@ -115,12 +115,12 @@ override_data {
   }
 }
 
-override_data {
-  target = data.aws_iam_policy_document.redis
-  values = {
-    json = "{\"Sid\": \"Redis\"}"
-  }
-}
+# override_data {
+#   target = data.aws_iam_policy_document.redis
+#   values = {
+#     json = "{\"Sid\": \"Redis\"}"
+#   }
+# }
 
 override_data {
   target = data.aws_iam_policy_document.postgres
@@ -129,12 +129,12 @@ override_data {
   }
 }
 
-override_data {
-  target = data.aws_iam_policy_document.s3
-  values = {
-    json = "{\"Sid\": \"S3\"}"
-  }
-}
+# override_data {
+#   target = data.aws_iam_policy_document.s3
+#   values = {
+#     json = "{\"Sid\": \"S3\"}"
+#   }
+# }
 
 override_data {
   target = data.aws_iam_policy_document.ecs
@@ -143,12 +143,12 @@ override_data {
   }
 }
 
-override_data {
-  target = data.aws_iam_policy_document.opensearch
-  values = {
-    json = "{\"Sid\": \"OpenSearch\"}"
-  }
-}
+# override_data {
+#   target = data.aws_iam_policy_document.opensearch
+#   values = {
+#     json = "{\"Sid\": \"OpenSearch\"}"
+#   }
+# }
 
 override_data {
   target = data.aws_iam_policy_document.cloudformation
@@ -729,24 +729,6 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   # aws_iam_role_policy.ssm_parameter_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.cloudwatch_for_environment_codebuild.name == "my-app-my-pipeline-cloudwatch-for-environment-codebuild"
-    error_message = "Should be: 'my-app-cloudwatch-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.cloudwatch_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.cloudwatch_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_role_policy.logs_for_environment_codebuild.name == "my-app-my-pipeline-logs-for-environment-codebuild"
-    error_message = "Should be: 'my-app-logs-for-environment-codebuild'"
-  }
-  assert {
-    condition     = aws_iam_role_policy.logs_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
-    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
-  }
-  # aws_iam_role_policy.logs_for_environment_codebuild.policy cannot be tested on a plan
 
   assert {
     condition     = aws_iam_role_policy.kms_key_for_environment_codebuild.name == "my-app-my-pipeline-kms-key-for-environment-codebuild"
@@ -757,22 +739,7 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   # aws_iam_role_policy.kms_key_for_environment_codebuild.policy cannot be tested on a plan
-  assert {
-    condition     = aws_iam_policy.redis.name == "my-app-my-pipeline-pipeline-redis-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.redis.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.redis.description == "Allow my-app codebuild job to access redis resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.redis.policy == "{\"Sid\": \"Redis\"}"
-    error_message = "Unexpected policy"
-  }
+
   assert {
     condition     = aws_iam_policy.postgres.name == "my-app-my-pipeline-pipeline-postgres-access"
     error_message = "Unexpected name"
@@ -787,38 +754,6 @@ run "test_iam" {
   }
   assert {
     condition     = aws_iam_policy.postgres.policy == "{\"Sid\": \"Postgres\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.name == "my-app-my-pipeline-pipeline-s3-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.description == "Allow my-app codebuild job to access s3 resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.s3.policy == "{\"Sid\": \"S3\"}"
-    error_message = "Unexpected policy"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.name == "my-app-my-pipeline-pipeline-opensearch-access"
-    error_message = "Unexpected name"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.path == "/my-app/codebuild/"
-    error_message = "Unexpected path"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.description == "Allow my-app codebuild job to access opensearch resources"
-    error_message = "Unexpected description"
-  }
-  assert {
-    condition     = aws_iam_policy.opensearch.policy == "{\"Sid\": \"OpenSearch\"}"
     error_message = "Unexpected policy"
   }
   assert {
@@ -878,6 +813,46 @@ run "test_iam" {
   }
   assert {
     condition     = aws_iam_policy.ecs.policy == "{\"Sid\": \"ECS\"}"
+    error_message = "Unexpected policy"
+  }
+
+  assert {
+    condition     = aws_iam_policy.extensions.name == "my-app-my-pipeline-pipeline-extensions-access"
+    error_message = "Unexpected name"
+  }
+
+  assert {
+    condition     = aws_iam_policy.extensions.path == "/my-app/codebuild/"
+    error_message = "Unexpected path"
+  }
+
+  assert {
+    condition     = aws_iam_policy.extensions.description == "Allow my-app codebuild job to access extension resources"
+    error_message = "Unexpected description"
+  }
+
+  assert {
+    condition     = aws_iam_policy.extensions.policy == "{\"Sid\": \"Extensions\"}"
+    error_message = "Unexpected policy"
+  }
+
+  assert {
+    condition     = aws_iam_policy.cloudwatch_and_logs.name == "my-app-my-pipeline-pipeline-cloudwatch-and-logs-access"
+    error_message = "Unexpected name"
+  }
+
+  assert {
+    condition     = aws_iam_policy.cloudwatch_and_logs.path == "/my-app/codebuild/"
+    error_message = "Unexpected path"
+  }
+
+  assert {
+    condition     = aws_iam_policy.cloudwatch_and_logs.description == "Allow my-app codebuild job to access cloudwatch and log resources"
+    error_message = "Unexpected description"
+  }
+
+  assert {
+    condition     = aws_iam_policy.cloudwatch_and_logs.policy == "{\"Sid\": \"Cloudwatch-And-Logs\"}"
     error_message = "Unexpected policy"
   }
 }
