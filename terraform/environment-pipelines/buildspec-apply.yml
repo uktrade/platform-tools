@@ -9,6 +9,9 @@ phases:
     commands:
       - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
       - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+      ## yq for yaml processing (The Go-based variant, not Python-based)
+      - curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
+      - chmod +x /usr/local/bin/yq
   build:
     commands:
       - set -e
