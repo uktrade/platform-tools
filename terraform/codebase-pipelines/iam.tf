@@ -539,14 +539,14 @@ resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" 
 }
 
 resource "aws_iam_role" "traffic_switch" {
-  for_each           = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each           = toset(local.traffic_switch_enabled ? [""] : [])
   name               = "${var.application}-${var.codebase}-codebase-traffic-switch"
   assume_role_policy = data.aws_iam_policy_document.assume_traffic_switch_role[""].json
   tags               = local.tags
 }
 
 data "aws_iam_policy_document" "assume_traffic_switch_role" {
-  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each = toset(local.traffic_switch_enabled ? [""] : [])
   statement {
     effect = "Allow"
 
@@ -566,14 +566,14 @@ data "aws_iam_policy_document" "assume_traffic_switch_role" {
 }
 
 resource "aws_iam_role_policy" "log_access_traffic_switch" {
-  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each = toset(local.traffic_switch_enabled ? [""] : [])
   name     = "log-access"
   role     = aws_iam_role.traffic_switch[""].name
   policy   = data.aws_iam_policy_document.log_access_traffic_switch[""].json
 }
 
 data "aws_iam_policy_document" "log_access_traffic_switch" {
-  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each = toset(local.traffic_switch_enabled ? [""] : [])
   statement {
     effect = "Allow"
     actions = [
@@ -590,21 +590,21 @@ data "aws_iam_policy_document" "log_access_traffic_switch" {
 }
 
 resource "aws_iam_role_policy" "environment_deploy_role_access_for_traffic_switch" {
-  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each = toset(local.traffic_switch_enabled ? [""] : [])
   name     = "environment-deploy-role-access"
   role     = aws_iam_role.traffic_switch[""].name
   policy   = data.aws_iam_policy_document.environment_deploy_role_access.json
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_traffic_switch" {
-  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each = toset(local.traffic_switch_enabled ? [""] : [])
   name     = "artifact-store-access"
   role     = aws_iam_role.traffic_switch[""].name
   policy   = data.aws_iam_policy_document.access_artifact_store.json
 }
 
 resource "aws_iam_role_policy" "codestar_access_for_traffic_switch" {
-  for_each = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each = toset(local.traffic_switch_enabled ? [""] : [])
   name     = "codestar-access"
   role     = aws_iam_role.traffic_switch[""].name
   policy   = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline.json
