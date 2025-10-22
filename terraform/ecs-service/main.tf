@@ -358,6 +358,7 @@ resource "aws_appautoscaling_policy" "requests_autoscaling_policy" {
 }
 
 resource "aws_ssm_parameter" "service_data" {
+  # checkov:skip=CKV2_AWS_34: This AWS SSM Parameter doesn't need to be encrypted
   name = "/platform/applications/${var.application}/environments/${var.environment}/services/${var.service_config.name}"
   tier = "Intelligent-Tiering"
   type = "String"
