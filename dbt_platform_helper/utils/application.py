@@ -74,6 +74,7 @@ def load_application(app=None, default_session=None, env=None) -> Application:
         nesting.
 
         e.g.
+         - /platform/applications/test/environments/my_env will match.
          - /copilot/applications/test/environments/my_env will match.
          - /copilot/applications/test/environments/my_env/addons will not match.
         """
@@ -84,20 +85,24 @@ def load_application(app=None, default_session=None, env=None) -> Application:
 
     environments_data = []
 
-    # Try to load the new /platform SSM parameter if present
-    platform_env_path = f"/platform/applications/{application.name}/environments"
-    secrets = get_ssm_secrets(app, None, current_session, platform_env_path)
+    # Try to load all /platform SSM parameters that are present
+    env_params = get_ssm_secrets(
+        app=app,
+        env=None,
+        session=current_session,
+        path=f"/platform/applications/{application.name}/environments",
+    )
 
-    if secrets:
-        for name, value in secrets:
+    if env_params:
+        for name, value in env_params:
             try:
-                data = json.loads(value)
+                param_data = json.loads(value)
             except json.JSONDecodeError:
                 continue
 
-            # New /platform SSM parameter contains data about all environments
-            if "allEnvironments" in data:
-                environments_data = data["allEnvironments"]
+            # Each /platform SSM parameter contains data about all the environments of an application
+            if "allEnvironments" in param_data:
+                environments_data = param_data["allEnvironments"]
                 break  # Only need one
     else:
         try:
@@ -106,19 +111,20 @@ def load_application(app=None, default_session=None, env=None) -> Application:
                 Name=f"/copilot/applications/{application.name}",
                 WithDecryption=False,
             )
-            secrets = get_ssm_secrets(
+
+            # Legacy /copilot SSM parameters for each environment
+            env_params = get_ssm_secrets(
                 app, None, current_session, f"/copilot/applications/{application.name}/environments"
             )
 
-            for name, value in secrets:
+            for name, value in env_params:
                 try:
-                    data = json.loads(value)
+                    param_data = json.loads(value)
                 except json.JSONDecodeError:
                     continue
 
                 if is_environment_key(name):
-                    # Legacy /copilot SSM parameter. An individual SSM param is present per environment - looping through all of them is needed to extract necessary data about each env.
-                    environments_data.append(data)
+                    environments_data.append(param_data)
 
         except ssm_client.exceptions.ParameterNotFound:
             raise ApplicationNotFoundException(
@@ -130,6 +136,50 @@ def load_application(app=None, default_session=None, env=None) -> Application:
         for env in environments_data
     }
 
+    application.services = _load_services(ssm_client, application)
+
+    return application
+
+
+def _load_services(ssm_client, application: Application) -> Dict[str, Service]:
+    """
+    Try to load
+    /platform/applications/{app}/environments/{env}/services/{service}
+    parameters if present.
+
+    Otherwise, fall back to legacy /copilot/applications/{app}/components
+    parameters.
+    """
+    services: Dict[str, Service] = {}
+
+    # Try /platform SSM parameter
+    for env_name in application.environments.keys():
+        params = dict(
+            Path=f"/platform/applications/{application.name}/environments/{env_name}/services",
+            Recursive=False,
+            WithDecryption=False,
+        )
+
+        while True:
+            response = ssm_client.get_parameters_by_path(**params)
+            for ssm_param in response.get("Parameters", []):
+                try:
+                    data = json.loads(ssm_param["Value"])
+                    name = data["name"]
+                    kind = data["type"]
+                    services.setdefault(name, Service(name, kind))  # Avoid duplicates
+                except (json.JSONDecodeError, KeyError):
+                    continue
+
+            if "NextToken" in response:
+                params["NextToken"] = response["NextToken"]
+            else:
+                break
+
+    if services:
+        return services
+
+    # Fallback to legacy /copilot SSM parameter
     response = ssm_client.get_parameters_by_path(
         Path=f"/copilot/applications/{application.name}/components",
         Recursive=False,
@@ -145,12 +195,12 @@ def load_application(app=None, default_session=None, env=None) -> Application:
         )
         results.extend(response["Parameters"])
 
-    application.services = {
+    legacy_services = {
         svc["name"]: Service(svc["name"], svc["type"])
         for svc in [json.loads(parameter["Value"]) for parameter in results]
     }
 
-    return application
+    return legacy_services
 
 
 def get_application_name(abort=abort_with_error):

@@ -356,3 +356,14 @@ resource "aws_appautoscaling_policy" "requests_autoscaling_policy" {
     scale_out_cooldown = local.req_cool_out
   }
 }
+
+resource "aws_ssm_parameter" "service_data" {
+  name = "/platform/applications/${var.application}/environments/${var.environment}/services/${var.service_config.name}"
+  tier = "Intelligent-Tiering"
+  type = "String"
+  value = jsonencode({
+    "name" : var.service_config.name,
+    "type" : var.service_config.type
+  })
+  tags = local.tags
+}
