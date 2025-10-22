@@ -58,7 +58,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         self.io.info("Starting conduit in Terraform mode.")
         return {
             "cluster_arn": self.ecs_provider.get_cluster_arn_by_name(
-                f"{self.application.name}-{self.env}"
+                f"{self.application.name}-{self.env}-cluster"
             ),
             "task_def_family": self._generate_container_name(),
             "vpc_name": self._resolve_vpc_name(),
@@ -95,7 +95,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             ]
 
         self.ecs_provider.start_ecs_task(
-            f"{self.application.name}-{self.env}",
+            f"{self.application.name}-{self.env}-cluster",
             self._generate_container_name(),
             data_context["task_def_family"],
             vpc_config,
