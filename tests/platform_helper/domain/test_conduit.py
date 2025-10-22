@@ -627,7 +627,7 @@ class TestTerraformConduitStrategy:
         self.strategy.start_task(result)
 
         self.ecs_provider.start_ecs_task.assert_called_with(
-            "test-application-development",
+            "test-application-development-cluster",
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             Vpc("id", ["public-subnets"], ["private-subnets"], ["security-groups"]),
