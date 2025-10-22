@@ -206,6 +206,14 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
     ]
   }
 
+  statement {
+    actions = [
+      "elasticloadbalancing:DeleteRule"
+    ]
+    resources = [
+      "arn:aws:elasticloadbalancing:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${var.args.application}-${var.environment}/*"
+    ]
+  }
 
   statement {
     actions = [
