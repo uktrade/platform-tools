@@ -576,39 +576,35 @@ class TestTerraformConduitStrategy:
         }
 
     @pytest.mark.parametrize(
-        "addon_type, addon_name, access, cluster_arn, cluster_suffix",
+        "addon_type, addon_name, access, cluster_arn",
         [
             (
                 "postgres",
                 "custom-name-postgres",
                 "read",
                 "something/test-application-development",
-                "",
             ),
             (
                 "postgres",
                 "custom-name-postgres",
                 "write",
                 "something/test-application-development",
-                "",
             ),
             (
                 "opensearch",
                 "custom-name-opensearch",
                 "read",
                 "something/test-application-development",
-                "",
             ),
             (
                 "redis",
                 "custom-name-redis",
                 "read",
                 "something/test-application-development-cluster",
-                "-cluster",
             ),
         ],
     )
-    def test_strategy_methods(self, addon_type, addon_name, access, cluster_arn, cluster_suffix):
+    def test_strategy_methods(self, addon_type, addon_name, access, cluster_arn):
         self.setup()
 
         self.strategy = TerraformConduitStrategy(
@@ -651,7 +647,7 @@ class TestTerraformConduitStrategy:
         self.strategy.start_task(result)
 
         self.ecs_provider.start_ecs_task.assert_called_with(
-            f"test-application-development{cluster_suffix}",
+            cluster_arn.split("/")[-1],
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             Vpc("id", ["public-subnets"], ["private-subnets"], ["security-groups"]),
