@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -94,6 +95,15 @@ def _create_target_group(session, service_name="web", copilot_tags=False):
         VpcId=vpc_id,
         Tags=tags,
     )["TargetGroups"][0]["TargetGroupArn"]
+
+
+def _create_service_deployment_mode(session, value="platform"):
+    platform_env_param_name = "/platform/applications/test-application/environments/development"
+    platform_env_param_string = json.dumps({"service_deployment_mode": value})
+    ssm_client = session.client("ssm")
+    ssm_client.put_parameter(
+        Name=platform_env_param_name, Value=platform_env_param_string, Type="String"
+    )
 
 
 @mock_aws
@@ -282,6 +292,8 @@ def test_create_source_ip_rule(allowed_ips, expected_rule_cidr, mock_application
 def test_find_target_group(copilot_tags, mock_application):
     session = mock_application.environments["development"].session
 
+    if not copilot_tags:
+        _create_service_deployment_mode(session)
     _create_listener(session)
     target_group_arn = _create_target_group(session, copilot_tags=copilot_tags)
 
@@ -293,9 +305,10 @@ def test_find_target_group(copilot_tags, mock_application):
 
 
 @mock_aws
-def test_find_target_group_not_found(copilot_tags, mock_application):
+def test_find_target_group_not_found(mock_application):
     session = mock_application.environments["development"].session
 
+    _create_service_deployment_mode(session)
     _create_listener(session)
     _create_target_group(session)
 
@@ -558,14 +571,38 @@ class TestLoadBalancerProviderPagination:
                     ]
                 },
             ]
-        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = tags
+
+        mock_ssm_client = Mock(name="ssm-client-mock")
+        if not copilot_tags:
+            mock_ssm_client.get_parameter.return_value = {
+                "Parameter": {
+                    "Name": "/platform/applications/my-app/environments/my-env",
+                    "Type": "String",
+                    "Value": '{"service_deployment_mode": "platform"}',
+                }
+            }
+
+        mock_resourcegroupstaggingapi_client = Mock(name="resourcegroupstaggingapi")
+        mock_resourcegroupstaggingapi_client.get_paginator.return_value.paginate.return_value = tags
+        mock_session.client.side_effect = lambda service: {
+            "ssm": mock_ssm_client,
+            "resourcegroupstaggingapi": mock_resourcegroupstaggingapi_client,
+        }.get(service)
 
         alb_provider = LoadBalancerProvider(mock_session, Mock())
         result = alb_provider.find_target_group("my-app", "my-env", "my-svc")
 
         assert result == "abc123"
-        mock_session.client().get_paginator.assert_called_once_with("get_resources")
-        mock_session.client().get_paginator().paginate.assert_called_once()
+        mock_session.client("resourcegroupstaggingapi").get_paginator.assert_called_once_with(
+            "get_resources"
+        )
+        mock_session.client(
+            "resourcegroupstaggingapi"
+        ).get_paginator().paginate.assert_called_once()
+
+        mock_session.client("ssm").get_parameter.assert_called_once_with(
+            Name="/platform/applications/my-app/environments/my-env"
+        )
 
     def test_get_https_certificate_for_listener_given_multiple_pages(self):
         mock_session = Mock()

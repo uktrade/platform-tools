@@ -1,11 +1,14 @@
+import json
 from typing import Dict
 from typing import List
 
 from boto3 import Session
 
 from dbt_platform_helper.constants import MANAGED_BY_PLATFORM_TERRAFORM
+from dbt_platform_helper.constants import ROUTED_TO_PLATFORM_MODES
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 
 
@@ -33,6 +36,7 @@ class LoadBalancerProvider:
         self.session = session
         self.evlb_client = self._get_client("elbv2")
         self.rg_tagging_client = self._get_client("resourcegroupstaggingapi")
+        self.parameter_store_provider = ParameterStore(self._get_client("ssm"))
         self.io = io
 
     def _get_client(self, client: str):
@@ -41,21 +45,44 @@ class LoadBalancerProvider:
         return self.session.client(client)
 
     def find_target_group(self, app: str, env: str, svc: str) -> str:
+
+        # TODO once copilot is gone this is no longer needed
+        try:
+            result = self.parameter_store_provider.get_ssm_parameter_by_name(
+                f"/platform/applications/{app}/environments/{env}"
+            )["Value"]
+            env_config = json.loads(result)
+            service_deployment_mode = env_config["service_deployment_mode"]
+        except Exception:
+            service_deployment_mode = "copilot"
+
+        if service_deployment_mode in ROUTED_TO_PLATFORM_MODES:
+            application_key = "application"
+            environment_key = "environment"
+            service_key = "service"
+        else:
+            application_key = "copilot-application"
+            environment_key = "copilot-environment"
+            service_key = "copilot-service"
         target_group_arn = None
 
         paginator = self.rg_tagging_client.get_paginator("get_resources")
         page_iterator = paginator.paginate(
             TagFilters=[
                 {
-                    "Key": "copilot-application",
+                    "Key": application_key,
                     "Values": [
                         app,
                     ],
-                    "Key": "copilot-environment",
+                },
+                {
+                    "Key": environment_key,
                     "Values": [
                         env,
                     ],
-                    "Key": "copilot-service",
+                },
+                {
+                    "Key": service_key,
                     "Values": [
                         svc,
                     ],
@@ -71,9 +98,9 @@ class LoadBalancerProvider:
                 tags = {tag["Key"]: tag["Value"] for tag in resource["Tags"]}
 
                 if (
-                    tags.get("copilot-service") == svc
-                    and tags.get("copilot-environment") == env
-                    and tags.get("copilot-application") == app
+                    tags.get(service_key) == svc
+                    and tags.get(environment_key) == env
+                    and tags.get(application_key) == app
                 ):
                     target_group_arn = resource["ResourceARN"]
 
