@@ -24,10 +24,17 @@ handle_errors(){
   fi
 }
 
+echo "Detecting postgres version"
+PG_VERSION="$(psql "$DB_CONNECTION_STRING" -c "SELECT version();" | grep "PostgreSQL" | awk '{print $2;}' | awk -F"." '{print $1}')"
+if [ -z "$PG_VERSION" ]; then
+  PG_VERSION="17"
+fi
+echo "Detected postgres version $PG_VERSION"
+
 if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
   echo "Starting data dump"
-  pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > "${DUMP_FILE_NAME}.sql"
+  /usr/lib/postgresql/$PG_VERSION/bin/pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > "${DUMP_FILE_NAME}.sql"
   exit_code=$?
 
   if [ ${exit_code} -ne 0 ]
@@ -77,12 +84,12 @@ else
   done
 
   echo "Clearing down the database prior to loading new data"
-  psql "${DB_CONNECTION_STRING}" -f /clear_db.sql
+  /usr/lib/postgresql/$PG_VERSION/bin/psql "${DB_CONNECTION_STRING}" -f /clear_db.sql
 
   handle_errors $? "Clear down failed"
   
   echo "Restoring data from dump file"
-  pg_restore --format c --dbname "${DB_CONNECTION_STRING}" "${DUMP_FILE_NAME}.sql"
+  /usr/lib/postgresql/$PG_VERSION/bin/pg_restore --format c --dbname "${DB_CONNECTION_STRING}" "${DUMP_FILE_NAME}.sql"
   
   handle_errors $? "Restore failed"
   for service in ${SERVICES}
