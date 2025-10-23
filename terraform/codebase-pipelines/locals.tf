@@ -120,7 +120,7 @@ locals {
                 }
               }] : [],
             )]),
-            local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
+            strcontains(local.base_env_config[env.name].service_deployment_mode, "dual") ? [{
               name : "traffic-switch",
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
               configuration = {
@@ -187,7 +187,7 @@ locals {
         }
       }] : [],
     )]),
-    local.platform_deployment_enabled ? [{
+    local.traffic_switch_enabled ? [{
       name : "traffic-switch",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
       configuration = {
@@ -242,4 +242,7 @@ locals {
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
+
+  # Set to true if any environment contains a dual service-deployment-mode
+  traffic_switch_enabled = anytrue([for env in local.base_env_config : true if strcontains(env.service_deployment_mode, "dual")])
 }

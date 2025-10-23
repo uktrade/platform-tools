@@ -1,5 +1,44 @@
 # Changelog
 
+## [15.11.0](https://github.com/uktrade/platform-tools/compare/15.10.0...15.11.0) (2025-10-23)
+
+
+### Features
+
+* Add deploy command to codebase pipelines (DBTP-2162) ([#1055](https://github.com/uktrade/platform-tools/issues/1055)) ([08e53ff](https://github.com/uktrade/platform-tools/commit/08e53ff79b9623705ae47a4e31309407ce4a6ea2))
+* Add service deploy command (DBTP-2250) ([#1030](https://github.com/uktrade/platform-tools/issues/1030)) ([afc15cf](https://github.com/uktrade/platform-tools/commit/afc15cf8c1837b9e7ccba9ddc6c4065aaaa45c98))
+* Control temporary file systems (DBTP-2284) ([#1048](https://github.com/uktrade/platform-tools/issues/1048)) ([e59e01a](https://github.com/uktrade/platform-tools/commit/e59e01a712d91a105040d5be7d32dfec00c60d1e))
+* Dynamically determine which iam role to use when generating aws config profiles (off-ticket) ([#1057](https://github.com/uktrade/platform-tools/issues/1057)) ([70f5303](https://github.com/uktrade/platform-tools/commit/70f530382604d8403132e7227775b456807a710d))
+* ECS service autoscaling (DBTP-2373) ([#1068](https://github.com/uktrade/platform-tools/issues/1068)) ([fe10cdc](https://github.com/uktrade/platform-tools/commit/fe10cdc98db96d6134a09fdbf83a78c738f4567f))
+* Internal alb rule (DBTP-2163) ([#1037](https://github.com/uktrade/platform-tools/issues/1037)) ([8bf48de](https://github.com/uktrade/platform-tools/commit/8bf48de1a05e049a9f1b876ded70dcff8bb1f15d))
+* Move service terraform and deploy stages into a single stage (DBTP-2406) ([#1073](https://github.com/uktrade/platform-tools/issues/1073)) ([84b3834](https://github.com/uktrade/platform-tools/commit/84b3834fe9674dc9a287d38cce4f14ed8196e4b1))
+* Pipeline update ALB rules (DBTP-2164) ([#1085](https://github.com/uktrade/platform-tools/issues/1085)) ([2214e82](https://github.com/uktrade/platform-tools/commit/2214e827417c1f2b9272086bc6a114e4c783d278))
+* Standardise backup retention periods for PostgreSQL databases (DBTP-2372) ([#1082](https://github.com/uktrade/platform-tools/issues/1082)) ([f1e2369](https://github.com/uktrade/platform-tools/commit/f1e2369515172e36bd15f661d013925bbb363fc5))
+
+
+### Bug Fixes
+
+* Add move blocks for copilot deploy codebuild (DBTP-2406) ([#1083](https://github.com/uktrade/platform-tools/issues/1083)) ([d0d63a8](https://github.com/uktrade/platform-tools/commit/d0d63a88b9572fb21c922000a8e10bd403d992cb))
+* Add pidmode task (DBTP-2456) ([#1102](https://github.com/uktrade/platform-tools/issues/1102)) ([3bfe0ef](https://github.com/uktrade/platform-tools/commit/3bfe0ef5abbc687f35da39420659f4b6f7ef7ba2))
+* Ensure deterministic ordering of pipeline actions (DBTP-2406) ([#1095](https://github.com/uktrade/platform-tools/issues/1095)) ([8c79d4a](https://github.com/uktrade/platform-tools/commit/8c79d4a27497233aba187182b0ee65fe5959c4d0))
+* Ensure terraformed ALB is retrieved (off-ticket) ([#1072](https://github.com/uktrade/platform-tools/issues/1072)) ([f171b34](https://github.com/uktrade/platform-tools/commit/f171b34cbcc9a2c7be50032597757f83ca7e17ca))
+* Get deployment status faster (off-ticket) ([#1090](https://github.com/uktrade/platform-tools/issues/1090)) ([0fceb6f](https://github.com/uktrade/platform-tools/commit/0fceb6fbab352de72622489a202c266cdae294f8))
+* Group dummy rules (off-ticket) ([#1069](https://github.com/uktrade/platform-tools/issues/1069)) ([1d9a048](https://github.com/uktrade/platform-tools/commit/1d9a048c731020580f1ad690b57f1c60ec7ea593))
+* Make data copy select the correct client version (off-ticket) ([#1107](https://github.com/uktrade/platform-tools/issues/1107)) ([8813c61](https://github.com/uktrade/platform-tools/commit/8813c6186e2c6955629ebeec7081789015db0ada))
+* Only add traffic switch action in dual deployment modules (DBTP-2450) ([#1097](https://github.com/uktrade/platform-tools/issues/1097)) ([467bf3a](https://github.com/uktrade/platform-tools/commit/467bf3adacaa06235ef5eaf96b4963e8e27a901e))
+* Reduce IAM policy size to within limit on CodeBuild role (DBTP-2121) ([#1091](https://github.com/uktrade/platform-tools/issues/1091)) ([d3872d3](https://github.com/uktrade/platform-tools/commit/d3872d330fb232777198f24d401ad2c3abc510f3))
+
+
+### Dependencies
+
+* Bump prettytable from 3.12.0 to 3.16.0 ([#1021](https://github.com/uktrade/platform-tools/issues/1021)) ([8168b08](https://github.com/uktrade/platform-tools/commit/8168b083f0bf117f0fd18981c988b7f06de6648d))
+* Bump requests from 2.32.4 to 2.32.5 ([#1059](https://github.com/uktrade/platform-tools/issues/1059)) ([002f7de](https://github.com/uktrade/platform-tools/commit/002f7def882b3ab51a38176ebda98f9052ff546a))
+
+
+### Documentation
+
+* Do not include internal commands in exported docs (DBTP-2389) ([#1061](https://github.com/uktrade/platform-tools/issues/1061)) ([c1d89f3](https://github.com/uktrade/platform-tools/commit/c1d89f30e8b52cd928ba7d25e3ccc19af5cfe4bf))
+
 ## [15.10.0](https://github.com/uktrade/platform-tools/compare/15.9.0...15.10.0) (2025-09-29)
 
 

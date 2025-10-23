@@ -200,7 +200,7 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform" {
 }
 
 resource "aws_codebuild_project" "codebase_traffic_switch" {
-  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each       = toset(local.traffic_switch_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-traffic-switch"
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30
@@ -256,13 +256,13 @@ resource "aws_codebuild_project" "codebase_traffic_switch" {
 resource "aws_cloudwatch_log_group" "codebase_traffic_switch" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
-  for_each          = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each          = toset(local.traffic_switch_enabled ? [""] : [])
   name              = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group"
   retention_in_days = 90
 }
 
 resource "aws_cloudwatch_log_stream" "codebase_traffic_switch" {
-  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  for_each       = toset(local.traffic_switch_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
 }

@@ -115,7 +115,7 @@ locals {
     COPILOT_APPLICATION_NAME            = var.application
     COPILOT_ENVIRONMENT_NAME            = var.environment
     COPILOT_SERVICE_NAME                = var.service_config.name
-    COPILOT_SERVICE_DISCOVERY_ENDPOINT  = "${var.environment}.${var.application}.services.local"
+    COPILOT_SERVICE_DISCOVERY_ENDPOINT  = "${var.environment}.${var.application}.local"
     PLATFORM_APPLICATION_NAME           = var.application
     PLATFORM_ENVIRONMENT_NAME           = var.environment
     PLATFORM_SERVICE_NAME               = var.service_config.name
