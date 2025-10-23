@@ -576,15 +576,39 @@ class TestTerraformConduitStrategy:
         }
 
     @pytest.mark.parametrize(
-        "addon_type, addon_name, access",
+        "addon_type, addon_name, access, cluster_arn, cluster_suffix",
         [
-            ("postgres", "custom-name-postgres", "read"),
-            ("postgres", "custom-name-postgres", "write"),
-            ("opensearch", "custom-name-opensearch", "read"),
-            ("redis", "custom-name-redis", "read"),
+            (
+                "postgres",
+                "custom-name-postgres",
+                "read",
+                "something/test-application-development",
+                "",
+            ),
+            (
+                "postgres",
+                "custom-name-postgres",
+                "write",
+                "something/test-application-development",
+                "",
+            ),
+            (
+                "opensearch",
+                "custom-name-opensearch",
+                "read",
+                "something/test-application-development",
+                "",
+            ),
+            (
+                "redis",
+                "custom-name-redis",
+                "read",
+                "something/test-application-development-cluster",
+                "-cluster",
+            ),
         ],
     )
-    def test_strategy_methods(self, addon_type, addon_name, access):
+    def test_strategy_methods(self, addon_type, addon_name, access, cluster_arn, cluster_suffix):
         self.setup()
 
         self.strategy = TerraformConduitStrategy(
@@ -600,7 +624,7 @@ class TestTerraformConduitStrategy:
             self.get_postgres_admin_connection_string,
         )
 
-        self.ecs_provider.get_cluster_arn_by_name.return_value = "cluster-arn"
+        self.ecs_provider.get_cluster_arn_by_name.return_value = cluster_arn
         vpc_instance = MagicMock()
         vpc_instance.get_vpc.return_value = Vpc(
             "id", ["public-subnets"], ["private-subnets"], ["security-groups"]
@@ -611,7 +635,7 @@ class TestTerraformConduitStrategy:
         result = self.strategy.get_data()
 
         assert result == {
-            "cluster_arn": "cluster-arn",
+            "cluster_arn": cluster_arn,
             "task_def_family": f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             "vpc_name": "vpc-name",
             "addon_type": addon_type,
@@ -627,7 +651,7 @@ class TestTerraformConduitStrategy:
         self.strategy.start_task(result)
 
         self.ecs_provider.start_ecs_task.assert_called_with(
-            "test-application-development-cluster",
+            f"test-application-development{cluster_suffix}",
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             Vpc("id", ["public-subnets"], ["private-subnets"], ["security-groups"]),
@@ -637,7 +661,7 @@ class TestTerraformConduitStrategy:
         result["task_arns"] = ["task-arn"]
         self.strategy.exec_task(result)
 
-        self.ecs_provider.exec_task.assert_called_with("cluster-arn", "task-arn")
+        self.ecs_provider.exec_task.assert_called_with(cluster_arn, "task-arn")
 
     def test_strategy_postgres_admin(self):
         self.setup()

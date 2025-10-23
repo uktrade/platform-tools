@@ -95,13 +95,7 @@ class TerraformConduitStrategy(ConduitECSStrategy):
                 },
             ]
 
-        cluster_name = (
-            f"{self.application.name}-{self.env}-cluster"
-            if self.ecs_provider.get_cluster_arn_by_name(
-                f"{self.application.name}-{self.env}-cluster"
-            )
-            else f"{self.application.name}-{self.env}"
-        )
+        cluster_name = data_context["cluster_arn"].split("/")[-1]
 
         self.ecs_provider.start_ecs_task(
             cluster_name,
