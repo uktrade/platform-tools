@@ -12,7 +12,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle_rule" {
   bucket = aws_s3_bucket.artifact_store.id
 
   rule {
-    id     = "delete-after-7-days"
+    id     = "delete-after-10-days"
     status = "Enabled"
 
     filter {}
@@ -22,7 +22,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle_rule" {
     }
 
     expiration {
-      days = 7
+      days = 10
     }
   }
 }
