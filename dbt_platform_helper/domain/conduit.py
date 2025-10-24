@@ -56,9 +56,14 @@ class TerraformConduitStrategy(ConduitECSStrategy):
 
     def get_data(self):
         self.io.info("Starting conduit in Terraform mode.")
-        cluster_arn = self.ecs_provider.get_cluster_arn_by_name(
-            f"{self.application.name}-{self.env}-cluster"
-        ) or self.ecs_provider.get_cluster_arn_by_name(f"{self.application.name}-{self.env}")
+        try:
+            cluster_arn = self.ecs_provider.get_cluster_arn_by_name(
+                f"{self.application.name}-{self.env}-cluster"
+            )
+        except:
+            cluster_arn = self.ecs_provider.get_cluster_arn_by_name(
+                f"{self.application.name}-{self.env}"
+            )
         return {
             "cluster_arn": cluster_arn,
             "task_def_family": self._generate_container_name(),
