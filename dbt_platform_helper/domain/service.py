@@ -231,13 +231,17 @@ class ServiceManager:
                     f"{service_path}/service-config.yml", dict(service_manifest), message
                 )
 
-    def deploy(self, service: str, environment: str, application: str, image_tag: str = None):
+    def deploy(
+        self,
+        service: str,
+        environment: str,
+        application: str,
+        account_id: str,
+        image_tag: str = None,
+    ):
         """Register a new ECS task definition revision, update the ECS service
-        with it, and output Cloudwatch logs until deployment is complete."""
-
-        application_obj = self.load_application(app=application)
-        application_envs = application_obj.environments
-        account_id = application_envs.get(environment).account_id
+        with it, output a Cloudwatch logs URL, and wait until deployment is
+        complete."""
 
         s3_response = self.s3_provider.get_object(
             bucket_name=f"ecs-task-definitions-{application}-{environment}",
