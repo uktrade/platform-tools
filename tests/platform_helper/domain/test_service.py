@@ -136,6 +136,7 @@ def test_service_deploy_success():
             service="web",
             environment="dev",
             application="myapp",
+            account_id="111122223333",
             image_tag="tag-123",
         )
 
@@ -190,7 +191,9 @@ def test_deploy_success_uses_env_var(env_var_provider):
     with patch.object(service_manager, "_fetch_ecs_task_ids", return_value=["task1"]), patch.object(
         service_manager, "_monitor_ecs_deployment", return_value=True
     ):
-        service_manager.deploy(service="web", environment="dev", application="myapp")
+        service_manager.deploy(
+            service="web", environment="dev", application="myapp", account_id="111122223333"
+        )
 
     assert mocks.ecs_provider.register_task_definition.call_args.kwargs["image_tag"] == "tag-123"
     assert mocks.ecs_provider.register_task_definition.call_args.kwargs["service"] == "web"
