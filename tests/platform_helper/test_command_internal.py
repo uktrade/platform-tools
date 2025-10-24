@@ -50,6 +50,7 @@ class TestInternal:
 
         mock_env_obj = Mock()
         mock_env_obj.session = mock_session
+        mock_env_obj.account_id = "111122223333"
 
         mock_application = Mock()
         mock_application.name = "myapp"
@@ -102,6 +103,7 @@ class TestInternal:
             service="web",
             environment="dev",
             application="myapp",
+            account_id="111122223333",
             image_tag="test123",
         )
 
