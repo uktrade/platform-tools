@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -70,22 +71,39 @@ def _create_listener_with_cert(session, is_default=True, load_balancer_arn=None)
     return certificate_arn, listener_arn, load_balancer_arn
 
 
-def _create_target_group(session, service_name="web"):
+def _create_target_group(session, service_name="web", copilot_tags=False):
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
     vpc_id = vpc_response["Vpc"]["VpcId"]
 
+    if copilot_tags:
+        tags = [
+            {"Key": "copilot-application", "Value": "test-application"},
+            {"Key": "copilot-environment", "Value": "development"},
+            {"Key": "copilot-service", "Value": service_name},
+        ]
+    else:
+        tags = [
+            {"Key": "application", "Value": "test-application"},
+            {"Key": "environment", "Value": "development"},
+            {"Key": "service", "Value": service_name},
+        ]
     return session.client("elbv2").create_target_group(
         Name=f"{service_name}-target-group",
         Protocol="HTTPS",
         Port=123,
         VpcId=vpc_id,
-        Tags=[
-            {"Key": "copilot-application", "Value": "test-application"},
-            {"Key": "copilot-environment", "Value": "development"},
-            {"Key": "copilot-service", "Value": service_name},
-        ],
+        Tags=tags,
     )["TargetGroups"][0]["TargetGroupArn"]
+
+
+def _create_service_deployment_mode(session, value="platform"):
+    platform_env_param_name = "/platform/applications/test-application/environments/development"
+    platform_env_param_string = json.dumps({"service_deployment_mode": value})
+    ssm_client = session.client("ssm")
+    ssm_client.put_parameter(
+        Name=platform_env_param_name, Value=platform_env_param_string, Type="String"
+    )
 
 
 @mock_aws
@@ -266,12 +284,18 @@ def test_create_source_ip_rule(allowed_ips, expected_rule_cidr, mock_application
     )
 
 
+@pytest.mark.parametrize(
+    "copilot_tags",
+    [True, False],
+)
 @mock_aws
-def test_find_target_group(mock_application):
+def test_find_target_group(copilot_tags, mock_application):
     session = mock_application.environments["development"].session
 
+    if not copilot_tags:
+        _create_service_deployment_mode(session)
     _create_listener(session)
-    target_group_arn = _create_target_group(session)
+    target_group_arn = _create_target_group(session, copilot_tags=copilot_tags)
 
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
@@ -284,6 +308,7 @@ def test_find_target_group(mock_application):
 def test_find_target_group_not_found(mock_application):
     session = mock_application.environments["development"].session
 
+    _create_service_deployment_mode(session)
     _create_listener(session)
     _create_target_group(session)
 
@@ -485,41 +510,99 @@ def test_normalise_to_cidr(ip, expected_cidr):
 
 
 class TestLoadBalancerProviderPagination:
-    def test_find_target_group_given_multiple_pages(self):
+
+    @pytest.mark.parametrize(
+        "copilot_tags",
+        [True, False],
+    )
+    def test_find_target_group_given_multiple_pages(self, copilot_tags):
         mock_session = Mock()
-        mock_session.client.return_value.get_paginator.return_value.paginate.return_value = [
-            {
-                "ResourceTagMappingList": [
-                    {
-                        "ResourceARN": "abc123",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "my-app"},
-                            {"Key": "copilot-environment", "Value": "my-env"},
-                            {"Key": "copilot-service", "Value": "my-svc"},
-                        ],
-                    }
-                ]
-            },
-            {
-                "ResourceTagMappingList": [
-                    {
-                        "ResourceARN": "ghi123",
-                        "Tags": [
-                            {"Key": "copilot-application", "Value": "my-app2"},
-                            {"Key": "copilot-environment", "Value": "my-env2"},
-                            {"Key": "copilot-service", "Value": "my-svc2"},
-                        ],
-                    }
-                ]
-            },
-        ]
+        if copilot_tags:
+            tags = [
+                {
+                    "ResourceTagMappingList": [
+                        {
+                            "ResourceARN": "abc123",
+                            "Tags": [
+                                {"Key": "copilot-application", "Value": "my-app"},
+                                {"Key": "copilot-environment", "Value": "my-env"},
+                                {"Key": "copilot-service", "Value": "my-svc"},
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "ResourceTagMappingList": [
+                        {
+                            "ResourceARN": "ghi123",
+                            "Tags": [
+                                {"Key": "copilot-application", "Value": "my-app2"},
+                                {"Key": "copilot-environment", "Value": "my-env2"},
+                                {"Key": "copilot-service", "Value": "my-svc2"},
+                            ],
+                        }
+                    ]
+                },
+            ]
+        else:
+            tags = [
+                {
+                    "ResourceTagMappingList": [
+                        {
+                            "ResourceARN": "abc123",
+                            "Tags": [
+                                {"Key": "application", "Value": "my-app"},
+                                {"Key": "environment", "Value": "my-env"},
+                                {"Key": "service", "Value": "my-svc"},
+                            ],
+                        }
+                    ]
+                },
+                {
+                    "ResourceTagMappingList": [
+                        {
+                            "ResourceARN": "ghi123",
+                            "Tags": [
+                                {"Key": "application", "Value": "my-app2"},
+                                {"Key": "environment", "Value": "my-env2"},
+                                {"Key": "service", "Value": "my-svc2"},
+                            ],
+                        }
+                    ]
+                },
+            ]
+
+        mock_ssm_client = Mock(name="ssm-client-mock")
+        if not copilot_tags:
+            mock_ssm_client.get_parameter.return_value = {
+                "Parameter": {
+                    "Name": "/platform/applications/my-app/environments/my-env",
+                    "Type": "String",
+                    "Value": '{"service_deployment_mode": "platform"}',
+                }
+            }
+
+        mock_resourcegroupstaggingapi_client = Mock(name="resourcegroupstaggingapi")
+        mock_resourcegroupstaggingapi_client.get_paginator.return_value.paginate.return_value = tags
+        mock_session.client.side_effect = lambda service: {
+            "ssm": mock_ssm_client,
+            "resourcegroupstaggingapi": mock_resourcegroupstaggingapi_client,
+        }.get(service)
 
         alb_provider = LoadBalancerProvider(mock_session, Mock())
         result = alb_provider.find_target_group("my-app", "my-env", "my-svc")
 
         assert result == "abc123"
-        mock_session.client().get_paginator.assert_called_once_with("get_resources")
-        mock_session.client().get_paginator().paginate.assert_called_once()
+        mock_session.client("resourcegroupstaggingapi").get_paginator.assert_called_once_with(
+            "get_resources"
+        )
+        mock_session.client(
+            "resourcegroupstaggingapi"
+        ).get_paginator().paginate.assert_called_once()
+
+        mock_session.client("ssm").get_parameter.assert_called_once_with(
+            Name="/platform/applications/my-app/environments/my-env"
+        )
 
     def test_get_https_certificate_for_listener_given_multiple_pages(self):
         mock_session = Mock()
