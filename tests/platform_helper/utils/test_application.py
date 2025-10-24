@@ -323,3 +323,122 @@ class ApplicationTest(TestCase):
         assert "env1" in application.environments
         assert application.environments["env1"].account_id == "111111111"
         assert application.environments["env1"].session == session
+
+    @patch("dbt_platform_helper.utils.application.get_ssm_secrets")
+    @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
+    def test_services_prefer_platform_over_legacy(
+        self,
+        get_application_name,
+        get_ssm_secrets,
+        get_aws_session_or_abort,
+        get_profile_name_from_account_id,
+    ):
+        session = MagicMock(name="session-mock")
+        client = MagicMock(name="client-mock")
+        session.client.return_value = client
+        client.get_caller_identity.return_value = {"Account": "111111111"}
+
+        get_aws_session_or_abort.return_value = session
+        get_ssm_secrets.return_value = [
+            (
+                "/platform/applications/test/environments",
+                json.dumps(
+                    {
+                        "allEnvironments": [
+                            {"name": "dev", "accountID": "111111111"},
+                            {"name": "prod", "accountID": "222222222"},
+                        ]
+                    }
+                ),
+            )
+        ]
+
+        client.get_parameters_by_path.side_effect = [
+            {
+                "Parameters": [
+                    {
+                        "Name": "/platform/applications/test/environments/dev/services/web",
+                        "Value": '{"name": "web", "type": "Load Balanced Web Service"}',
+                    },
+                    {
+                        "Name": "/platform/applications/test/environments/dev/services/api",
+                        "Value": '{"name": "api", "type": "Backend Service"}',
+                    },
+                ]
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/platform/applications/test/environments/prod/services/web",
+                        "Value": '{"name": "web", "type": "Load Balanced Web Service"}',
+                    },
+                    {
+                        "Name": "/platform/applications/test/environments/prod/services/api",
+                        "Value": '{"name": "api", "type": "Backend Service"}',
+                    },
+                ]
+            },
+        ]
+
+        app = load_application(default_session=session)
+
+        assert app.services.keys() == {"web", "api"}
+        assert app.services["web"].kind == "Load Balanced Web Service"
+        assert app.services["api"].kind == "Backend Service"
+
+    @patch("dbt_platform_helper.utils.application.get_ssm_secrets")
+    @patch("dbt_platform_helper.utils.application.get_application_name", return_value="test")
+    def test_services_fallback_to_legacy_copilot_parameters(
+        self,
+        get_application_name,
+        get_ssm_secrets,
+        get_aws_session_or_abort,
+        get_profile_name_from_account_id,
+    ):
+        session = MagicMock(name="session-mock")
+        client = MagicMock(name="client-mock")
+        session.client.return_value = client
+        client.get_caller_identity.return_value = {"Account": "111111111"}
+        get_aws_session_or_abort.return_value = session
+
+        get_ssm_secrets.return_value = [
+            (
+                "/platform/applications/test/environments",
+                json.dumps(
+                    {
+                        "allEnvironments": [
+                            {"name": "dev", "accountID": "111111111"},
+                            {"name": "prod", "accountID": "222222222"},
+                        ]
+                    }
+                ),
+            )
+        ]
+
+        client.get_parameters_by_path.side_effect = [
+            {"Parameters": []},  # /platform dev parameters -> empty
+            {"Parameters": []},  # /platform prod parameters -> empty
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test/components/web",
+                        "Value": '{"name": "web", "type": "Load Balanced Web Service"}',
+                    }
+                ],
+                "NextToken": "token",
+            },
+            {
+                "Parameters": [
+                    {
+                        "Name": "/copilot/applications/test/components/celery-worker",
+                        "Value": '{"name": "celery-worker", "type": "Backend Service"}',
+                    }
+                ]
+            },
+        ]
+
+        app = load_application(default_session=session)
+
+        assert app.services.keys() == {"web", "celery-worker"}
+        assert app.services["web"].kind == "Load Balanced Web Service"
+        assert app.services["celery-worker"].kind == "Backend Service"
