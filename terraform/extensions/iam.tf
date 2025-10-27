@@ -82,10 +82,16 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
 
 }
 
-resource "aws_iam_role_policy" "ecs_service_access_for_codebase" {
-  name   = "ecs-permissions"
-  role   = aws_iam_role.codebase_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.ecs_service_access_for_codebase.json
+resource "aws_iam_role_policy_attachment" "ecs_service_access_for_codebase" {
+  role       = aws_iam_role.codebase_pipeline_deploy.name
+  policy_arn = aws_iam_policy.ecs_service_access_for_codebase.arn
+}
+
+resource "aws_iam_policy" "ecs_service_access_for_codebase" {
+  name        = "ecs-permissions"
+  path        = "/${var.args.application}/codebuild/"
+  description = "Allow pipeline to deploy ecs resources"
+  policy      = data.aws_iam_policy_document.ecs_service_access_for_codebase.json
 }
 
 data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
@@ -647,4 +653,3 @@ data "aws_iam_policy_document" "cloudformation_access" {
     ]
   }
 }
-
