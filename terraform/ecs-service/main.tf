@@ -169,7 +169,7 @@ resource "random_string" "tg_suffix" {
 resource "aws_lb_target_group" "target_group" {
   count = local.web_service_required
 
-  name                 = "${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}"
+  name                 = substr("${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}", 0, 32)
   port                 = 443
   protocol             = "HTTPS"
   target_type          = "ip"
