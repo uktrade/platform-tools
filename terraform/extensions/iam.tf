@@ -58,8 +58,8 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:UpdateAssumeRolePolicy"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-execution-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-task-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-task-exec",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",

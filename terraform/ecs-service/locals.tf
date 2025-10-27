@@ -249,8 +249,8 @@ locals {
 
   task_definition_json = jsonencode({
     family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
-    taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task-role"
-    executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task-execution-role"
+    taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-role"
+    executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-exec"
     networkMode             = "awsvpc"
     containerDefinitions    = local.container_definitions_list
     volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
