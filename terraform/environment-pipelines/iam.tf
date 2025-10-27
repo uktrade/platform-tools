@@ -447,9 +447,11 @@ data "aws_iam_policy_document" "kms_key" {
       "kms:CreateAlias",
       "kms:DeleteAlias"
     ]
-    resources = [
-      "arn:aws:kms:${local.account_region}:alias/${var.application}-*"
-    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:kms:${local.account_region}:alias/${var.application}-*",
+      "arn:aws:kms:{local.account_region}:alias/${env.name}-task-definitions-key",
+      ]
+    ])
   }
 }
 
@@ -748,9 +750,12 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
     actions = [
       "iam:TagRole"
     ]
-    resources = [
-      for env in local.environment_config : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-origin-secret-rotate-role"
-    ]
+    resources = flatten([
+      for env in local.environment_config : [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-origin-secret-rotate-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-listener-rule-organiser-role",
+      ]
+    ])
   }
 }
 
