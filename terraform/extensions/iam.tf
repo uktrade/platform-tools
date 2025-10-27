@@ -340,13 +340,24 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
     actions = [
       "ssm:GetParameter",
       "ssm:GetParameters",
-      "ssm:GetParametersByPath"
+      "ssm:GetParametersByPath",
+      "ssm:ListTagsForResource"
     ]
     resources = [
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/${var.args.application}/*/secrets/*",
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.args.application}",
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/applications/${var.args.application}/*",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.args.application}/*",
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/***"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ssm:DescribeParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
 

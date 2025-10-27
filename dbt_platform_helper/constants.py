@@ -1,4 +1,5 @@
 # TODO: DBTP-1888: Move to Config provider
+REPO_ORG = "uktrade"
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 SERVICE_DIRECTORY = "services"
 SERVICE_CONFIG_FILE = "service-config.yml"
@@ -59,3 +60,5 @@ STANDARD_PLATFORM_SSO_ROLES = [
     "DBTPlatformDeveloperWrite",
     "DBTPlatformDeveloperRead",
 ]
+ROUTED_TO_PLATFORM_MODES = ["platform", "dual-deploy-platform-traffic"]
+ROUTED_TO_COPILOT_MODES = ["copilot", "dual-deploy-copilot-traffic"]
