@@ -449,7 +449,7 @@ data "aws_iam_policy_document" "kms_key" {
     ]
     resources = flatten([for env in local.environment_config : [
       "arn:aws:kms:${local.account_region}:alias/${var.application}-*",
-      "arn:aws:kms:{local.account_region}:alias/${env.name}-task-definitions-key",
+      "arn:aws:kms:${local.account_region}:alias/${env.name}-task-definitions-key",
       ]
     ])
   }
