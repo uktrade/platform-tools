@@ -375,6 +375,15 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/***",
     ]
   }
+
+  statement {
+    actions = [
+      "ssm:PutParameter"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.args.application}/environments/${var.environment}/services/*"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "state_kms_key_access_for_codebase_codebuild" {
