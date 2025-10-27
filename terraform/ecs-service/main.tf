@@ -265,6 +265,9 @@ resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   retention_in_days = 30
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
+  depends_on = [
+    aws_kms_key.ecs_service_log_group_kms_key
+  ]
 }
 
 data "aws_ssm_parameter" "log-destination-arn" {
@@ -286,6 +289,10 @@ resource "aws_appautoscaling_target" "ecs_autoscaling" {
 
   min_capacity = local.count_min
   max_capacity = local.count_max
+
+  depends_on = [
+    aws_ecs_service.service
+  ]
 }
 
 resource "aws_appautoscaling_policy" "cpu_autoscaling_policy" {
