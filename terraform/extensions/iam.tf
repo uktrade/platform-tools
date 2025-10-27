@@ -378,7 +378,13 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
 
   statement {
     actions = [
-      "ssm:PutParameter"
+      "ssm:PutParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+      "ssm:DeleteParameter",
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource"
     ]
     resources = [
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.args.application}/environments/${var.environment}/services/*"
