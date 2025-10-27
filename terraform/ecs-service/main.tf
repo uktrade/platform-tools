@@ -266,8 +266,13 @@ resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
   depends_on = [
-    aws_kms_key.ecs_service_log_group_kms_key
+    time_sleep.kms_delay
   ]
+}
+
+resource "time_sleep" "kms_delay" {
+  depends_on      = [aws_kms_key.ecs_service_log_group_kms_key]
+  create_duration = "10s"
 }
 
 data "aws_ssm_parameter" "log-destination-arn" {
