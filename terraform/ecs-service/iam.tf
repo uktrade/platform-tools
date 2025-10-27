@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "secrets" {
       "secretsmanager:GetSecretValue",
     ]
     resources = [
-      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
+      "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:*"
     ]
     condition {
       test = "StringEquals"
@@ -103,7 +103,7 @@ data "aws_iam_policy_document" "secrets" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${trim(variable, "/")}"
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/*"
     ]
     condition {
       test     = "StringEquals"
