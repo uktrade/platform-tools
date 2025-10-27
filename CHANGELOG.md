@@ -1,5 +1,22 @@
 # Changelog
 
+## [15.12.0](https://github.com/uktrade/platform-tools/compare/15.11.0...15.12.0) (2025-10-27)
+
+
+### Features
+
+* New SSM parameter for each service (DBTP-2452) ([#1103](https://github.com/uktrade/platform-tools/issues/1103)) ([76247e1](https://github.com/uktrade/platform-tools/commit/76247e19b45076388579d55017e5b8d51f7aa5e4))
+
+
+### Bug Fixes
+
+* Cannot find platform target group by tags (DBTP-2454) ([#1106](https://github.com/uktrade/platform-tools/issues/1106)) ([169e36b](https://github.com/uktrade/platform-tools/commit/169e36b1711ca6cfa0d285bd6e5c0b2990363721))
+* Cluster arn variable not handling exception (Off-Ticket) ([#1111](https://github.com/uktrade/platform-tools/issues/1111)) ([0254dcb](https://github.com/uktrade/platform-tools/commit/0254dcbde28ee7c0ed03f9f6ffebefd0fd74b602))
+* Increase pipeline artefact bucket lifecycle policy (DBTP-2465) ([#1112](https://github.com/uktrade/platform-tools/issues/1112)) ([29b996d](https://github.com/uktrade/platform-tools/commit/29b996d267bb2047985a2e9abb985f735df16917))
+* Remove duplicate load_application (off-ticket) ([#1110](https://github.com/uktrade/platform-tools/issues/1110)) ([7b0d0f1](https://github.com/uktrade/platform-tools/commit/7b0d0f1a0462587fcd2f4d58d8b66acb3ef0a790))
+* Update terraform ecs cluster name in conduit (DBTP-2453) ([#1101](https://github.com/uktrade/platform-tools/issues/1101)) ([92c3b7e](https://github.com/uktrade/platform-tools/commit/92c3b7e1fad5dcf3eaf5e59dd666470a82560f3a))
+* When deployment mode is 'platform' do not deploy copilot env (DBTP-2451) ([#1098](https://github.com/uktrade/platform-tools/issues/1098)) ([d855a9f](https://github.com/uktrade/platform-tools/commit/d855a9f387d6405d92e25c77413a3630ef808c0d))
+
 ## [15.11.0](https://github.com/uktrade/platform-tools/compare/15.10.0...15.11.0) (2025-10-23)
 
 
