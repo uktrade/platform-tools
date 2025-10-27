@@ -891,12 +891,22 @@ data "aws_iam_policy_document" "iam" {
 
   statement {
     actions = [
+      "iam:AttachRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:ListRolePolicies",
+      "iam:PutRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
       "iam:GetPolicy",
       "iam:GetPolicyVersion",
       "iam:CreatePolicyVersion",
       "iam:CreatePolicy",
       "iam:DeletePolicy",
-      "iam:DeletePolicyVersion"
+      "iam:DeletePolicyVersion",
+      "iam:ListPolicyVersions"
     ]
     resources = [for environment in local.environment_config :
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/ecs-permissions"
