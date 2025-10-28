@@ -88,7 +88,7 @@ resource "aws_iam_role_policy_attachment" "ecs_service_access_for_codebase" {
 }
 
 resource "aws_iam_policy" "ecs_service_access_for_codebase" {
-  name        = "ecs-permissions-${var.environment}"
+  name        = "${var.args.application}-${var.environment}-ecs-permissions"
   path        = "/${var.args.application}/codebuild/"
   description = "Allow pipeline to deploy ecs resources"
   policy      = data.aws_iam_policy_document.ecs_service_access_for_codebase.json

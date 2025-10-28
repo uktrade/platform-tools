@@ -905,7 +905,7 @@ data "aws_iam_policy_document" "iam" {
       "iam:ListPolicyVersions"
     ]
     resources = [for environment in local.environment_config :
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/ecs-permissions-${environment.name}"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions"
     ]
   }
 }
