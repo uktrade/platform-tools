@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.12.1](https://github.com/uktrade/platform-tools/compare/15.12.0...15.12.1) (2025-10-28)
+
+
+### Bug Fixes
+
+* Revert back to the Python based yq variant (DBTP-2475) ([#1116](https://github.com/uktrade/platform-tools/issues/1116)) ([bf5bef6](https://github.com/uktrade/platform-tools/commit/bf5bef6853850cd67b6b1246d7704affefea18c6))
+
 ## [15.12.0](https://github.com/uktrade/platform-tools/compare/15.11.0...15.12.0) (2025-10-27)
 
 
