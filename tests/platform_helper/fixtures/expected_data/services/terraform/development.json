@@ -26,7 +26,7 @@
     "backend": {
       "s3": {
         "bucket": "terraform-platform-state-non-prod-acc",
-        "key": "tfstate/test-application/services/development/web.tfstate",
+        "key": "tfstate/application/test-application/services/development/web.tfstate",
         "region": "eu-west-2",
         "encrypt": true,
         "kms_key_id": "alias/terraform-platform-state-s3-key-non-prod-acc",

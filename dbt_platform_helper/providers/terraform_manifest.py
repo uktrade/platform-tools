@@ -42,7 +42,7 @@ class TerraformManifestProvider:
             terraform,
             platform_config,
             account,
-            f"tfstate/{application_name}/services/{environment}/{config_object.name}.tfstate",
+            f"tfstate/application/{application_name}/services/{environment}/{config_object.name}.tfstate",
         )
 
         self._add_service_module(terraform, platform_helper_version, module_source_override)
