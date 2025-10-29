@@ -58,8 +58,8 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:UpdateAssumeRolePolicy"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-role",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task-execution-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-task-exec",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",
@@ -68,12 +68,30 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy"
     ]
   }
+
+  # To create 'AWSServiceRoleForApplicationAutoScaling_ECSService' IAM role
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole",
+    ]
+
+    resources = ["*"]
+  }
+
 }
 
-resource "aws_iam_role_policy" "ecs_service_access_for_codebase" {
-  name   = "ecs-permissions"
-  role   = aws_iam_role.codebase_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.ecs_service_access_for_codebase.json
+resource "aws_iam_role_policy_attachment" "ecs_service_access_for_codebase" {
+  role       = aws_iam_role.codebase_pipeline_deploy.name
+  policy_arn = aws_iam_policy.ecs_service_access_for_codebase.arn
+}
+
+resource "aws_iam_policy" "ecs_service_access_for_codebase" {
+  name        = "${var.args.application}-${var.environment}-ecs-permissions"
+  path        = "/${var.args.application}/codebuild/"
+  description = "Allow pipeline to deploy ecs resources"
+  policy      = data.aws_iam_policy_document.ecs_service_access_for_codebase.json
 }
 
 data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
@@ -250,7 +268,6 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "ecs:DescribeClusters"
     ]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:",
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster"
     ]
   }
@@ -373,6 +390,21 @@ data "aws_iam_policy_document" "validate_platform_config_for_codebase" {
     }
     resources = [
       "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/***",
+    ]
+  }
+
+  statement {
+    actions = [
+      "ssm:PutParameter",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:GetParametersByPath",
+      "ssm:DeleteParameter",
+      "ssm:AddTagsToResource",
+      "ssm:ListTagsForResource"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.args.application}/environments/${var.environment}/services/*"
     ]
   }
 }
@@ -620,4 +652,3 @@ data "aws_iam_policy_document" "cloudformation_access" {
     ]
   }
 }
-

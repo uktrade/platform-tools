@@ -30,7 +30,7 @@ class TerraformManifestProvider:
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(environment, platform_config)
         deploy_to_account_id = self._get_account_id_for_account(account, platform_config)
-        state_key_suffix = f"{config_object.name}-{environment}"
+        application_name = platform_config["application"]
 
         terraform = {}
         self._add_header(terraform)
@@ -39,7 +39,10 @@ class TerraformManifestProvider:
 
         self._add_provider(terraform, account, deploy_to_account_id)
         self._add_backend(
-            terraform, platform_config, account, f"tfstate/services/{state_key_suffix}.tfstate"
+            terraform,
+            platform_config,
+            account,
+            f"tfstate/application/{application_name}/services/{environment}/{config_object.name}.tfstate",
         )
 
         self._add_service_module(terraform, platform_helper_version, module_source_override)
