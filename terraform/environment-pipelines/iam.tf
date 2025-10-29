@@ -447,7 +447,9 @@ data "aws_iam_policy_document" "kms_key" {
       "kms:CreateAlias",
       "kms:DeleteAlias"
     ]
-    resources = [for env in local.environment_config : "arn:aws:kms:${local.account_region}:alias/${var.application}-*"]
+    resources = [
+      "arn:aws:kms:${local.account_region}:alias/${var.application}-*"
+    ]
   }
 }
 
