@@ -126,10 +126,12 @@ def test_remove_empty_keys(fs):
             "empty2": [],
             "empty3": None,
             "not_empty": "name",
+            "empty_string": "",
         }
     }
     expected_test_output_file = """test:
   not_empty: name
+  empty_string: ''
 """
 
     test_content = YamlFileProvider.remove_empty_keys(test_content)
