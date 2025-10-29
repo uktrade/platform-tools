@@ -92,7 +92,7 @@ class YamlFileProvider:
         for k, v in config.items():
             if isinstance(v, (dict, OrderedDict)):
                 v = YamlFileProvider.remove_empty_keys(v)
-            if v not in ("", None, [], {}, ()):
+            if v not in (None, [], {}, ()):
                 cleaned[k] = v
 
         return cleaned
