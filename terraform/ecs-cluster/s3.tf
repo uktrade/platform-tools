@@ -104,7 +104,7 @@ resource "aws_kms_key" "kms_key" {
 }
 
 resource "aws_kms_alias" "s3-bucket" {
-  name          = "alias/${var.environment}-task-definitions-key"
+  name          = "alias/${var.application}-${var.environment}-task-def-key"
   target_key_id = aws_kms_key.kms_key.id
   depends_on    = [aws_kms_key.kms_key]
 }

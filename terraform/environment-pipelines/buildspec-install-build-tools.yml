@@ -14,12 +14,6 @@ phases:
       - set -e
       - pip install yq --quiet
       - echo "Deploying ${APPLICATION} environments"
-      - |
-          if [ ! -f .copilot-version ]; then
-            echo "Cannot find .copilot-version file"
-            exit 1
-          fi
-      - COPILOT_VERSION=`cat .copilot-version`
       - cd "${CODEBUILD_SRC_DIR}"
       - |
          if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
@@ -70,8 +64,6 @@ phases:
       - unzip terraform_install.zip
       - chmod +x terraform
       - rm terraform_install.zip
-      - curl -s -qL -o copilot https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v${COPILOT_VERSION}
-      - chmod +x copilot
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting install phase"
       - VERSION_OUTPUT+="\n$(terraform --version)"
       - VERSION_OUTPUT+="\n$(platform-helper --version)"

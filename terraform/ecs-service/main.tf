@@ -169,7 +169,7 @@ resource "random_string" "tg_suffix" {
 resource "aws_lb_target_group" "target_group" {
   count = local.web_service_required
 
-  name                 = "${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}"
+  name                 = substr("${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}", 0, 32)
   port                 = 443
   protocol             = "HTTPS"
   target_type          = "ip"
@@ -265,6 +265,14 @@ resource "aws_cloudwatch_log_group" "ecs_service_logs" {
   retention_in_days = 30
   tags              = local.tags
   kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
+  depends_on = [
+    time_sleep.kms_delay
+  ]
+}
+
+resource "time_sleep" "kms_delay" {
+  depends_on      = [aws_kms_key.ecs_service_log_group_kms_key]
+  create_duration = "10s"
 }
 
 data "aws_ssm_parameter" "log-destination-arn" {
@@ -286,6 +294,10 @@ resource "aws_appautoscaling_target" "ecs_autoscaling" {
 
   min_capacity = local.count_min
   max_capacity = local.count_max
+
+  depends_on = [
+    aws_ecs_service.service
+  ]
 }
 
 resource "aws_appautoscaling_policy" "cpu_autoscaling_policy" {
