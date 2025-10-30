@@ -13,7 +13,7 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${local.full_service_name}-ecs-task-execution-role"
+  name               = "${local.full_service_name}-task-exec"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
   tags               = local.tags
 }
@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "secrets" {
       "secretsmanager:GetSecretValue",
     ]
     resources = [
-      for secret in local.secrets : "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:${secret}"
+      "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:*"
     ]
     condition {
       test = "StringEquals"
@@ -103,7 +103,7 @@ data "aws_iam_policy_document" "secrets" {
       "ssm:GetParameters"
     ]
     resources = [
-      for variable in local.secrets : "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/${trim(variable, "/")}"
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/*"
     ]
     condition {
       test     = "StringEquals"
@@ -134,7 +134,7 @@ data "aws_iam_policy_document" "secrets" {
 }
 
 resource "aws_iam_role" "ecs_task_role" {
-  name               = "${local.full_service_name}-ecs-task-role"
+  name               = "${local.full_service_name}-ecs-task"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
   tags               = local.tags
 }

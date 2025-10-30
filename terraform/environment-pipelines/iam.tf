@@ -748,9 +748,12 @@ data "aws_iam_policy_document" "origin_secret_rotate_access" {
     actions = [
       "iam:TagRole"
     ]
-    resources = [
-      for env in local.environment_config : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-origin-secret-rotate-role"
-    ]
+    resources = flatten([
+      for env in local.environment_config : [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-origin-secret-rotate-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-listener-rule-organiser-role",
+      ]
+    ])
   }
 }
 
@@ -882,6 +885,30 @@ data "aws_iam_policy_document" "iam" {
       "iam:UpdateAssumeRolePolicy"
     ]
     resources = [for environment in local.environment_config : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${environment.name}-*-lambda-role"]
+  }
+
+  statement {
+    actions = [
+      "iam:AttachRolePolicy",
+      "iam:DeleteRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:ListRolePolicies",
+      "iam:PutRolePolicy",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:GetPolicy",
+      "iam:GetPolicyVersion",
+      "iam:CreatePolicyVersion",
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:DeletePolicyVersion",
+      "iam:ListPolicyVersions"
+    ]
+    resources = [for environment in local.environment_config :
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions"
+    ]
   }
 }
 
