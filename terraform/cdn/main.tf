@@ -269,3 +269,16 @@ resource "aws_cloudfront_origin_request_policy" "origin_request_policy" {
     query_string_behavior = "all"
   }
 }
+
+resource "aws_cloudfront_monitoring_subscription" "additional_metrics" {
+  provider = aws.domain-cdn
+
+  for_each        = aws_cloudfront_distribution.standard
+  distribution_id = aws_cloudfront_distribution.standard[each.key].id
+
+  monitoring_subscription {
+    realtime_metrics_subscription_config {
+      realtime_metrics_subscription_status = "Enabled"
+    }
+  }
+}
