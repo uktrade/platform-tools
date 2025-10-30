@@ -1,4 +1,4 @@
 python 3.12.8 3.11.5 3.10.13 3.9.18
 nodejs 18.18.2
-terraform 1.9.6
+terraform 1.12.2
 direnv 2.35.0
