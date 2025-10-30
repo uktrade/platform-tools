@@ -69,17 +69,15 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
     ]
   }
 
-  # To create 'AWSServiceRoleForApplicationAutoScaling_ECSService' IAM role
   statement {
     effect = "Allow"
-
     actions = [
       "iam:CreateServiceLinkedRole",
     ]
-
-    resources = ["*"]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+    ]
   }
-
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_service_access_for_codebase" {
