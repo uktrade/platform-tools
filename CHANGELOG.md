@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.13.0](https://github.com/uktrade/platform-tools/compare/15.12.1...15.13.0) (2025-10-30)
+
+
+### Features
+
+* Enable additional CloudFront metrics to enhance Datadog reporting (DBTP-2218) ([#1122](https://github.com/uktrade/platform-tools/issues/1122)) ([f020465](https://github.com/uktrade/platform-tools/commit/f020465663e82266e063d43ee67b784216df9283))
+
+
+### Bug Fixes
+
+* Migrate service manifests removes config (DBTP-2476) ([#1120](https://github.com/uktrade/platform-tools/issues/1120)) ([f89c1ca](https://github.com/uktrade/platform-tools/commit/f89c1cac63a6531a2eb72cd833528c8155652f92))
+* Various bug fixes around removing Copilot (DBTP-2469) ([#1114](https://github.com/uktrade/platform-tools/issues/1114)) ([d2bd641](https://github.com/uktrade/platform-tools/commit/d2bd6411d4c9e23376ce92c90286b8ecdd1efb70))
+
 ## [15.12.1](https://github.com/uktrade/platform-tools/compare/15.12.0...15.12.1) (2025-10-28)
 
 
