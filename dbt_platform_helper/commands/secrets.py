@@ -5,7 +5,10 @@ from pathlib import Path
 import click
 from botocore.exceptions import ClientError
 
+from dbt_platform_helper.domain.secrets import Secrets
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.aws import SSM_BASE_PATH
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -21,6 +24,18 @@ def secret_should_be_skipped(secret_name):
 @click.group(chain=True, cls=ClickDocOptGroup)
 def secrets():
     PlatformHelperVersioning().check_if_needs_update()
+
+
+@secrets.command()
+@click.option("--app", "-a", help="AWS application name", required=True)
+@click.option("--name", "-n", help="Name of secret", required=True)
+def create(app: str, name: str):
+    """"""
+
+    try:
+        Secrets().create(app, name)
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @secrets.command()
