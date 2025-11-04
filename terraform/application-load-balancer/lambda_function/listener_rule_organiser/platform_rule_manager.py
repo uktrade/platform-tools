@@ -7,3 +7,9 @@ class PlatformRuleManager(RuleManager):
         super().__init__(application, environment, listener_arn)
 
         self._cached_rules = None
+
+    def create_rules(self, parameters):
+        pass
+
+    def delete_rules(self, parameters):
+        pass

@@ -68,10 +68,11 @@ resource "aws_lambda_invocation" "dummy_listener_rule" {
   count           = local.web_service_required
   function_name   = "${var.application}-${var.environment}-listener-rule-organiser"
   lifecycle_scope = "CRUD"
-  terraform_key   = "Lifecycle"
+  terraform_key   = "lifecycle"
   input = jsonencode({
-    ServiceName = var.service_config.name
-    TargetGroup = aws_lb_target_group.target_group[0].arn
+    service_name = var.service_config.name
+    target_group = aws_lb_target_group.target_group[0].arn
+    deployment_mode = var.env_config.depl
   })
 }
 
