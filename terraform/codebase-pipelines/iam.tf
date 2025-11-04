@@ -23,6 +23,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
       test     = "StringEquals"
       variable = "aws:SourceArn"
       values = compact([
+        "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-install-tools",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-service-terraform",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-service-terraform-plan",
@@ -328,7 +329,9 @@ data "aws_iam_policy_document" "log_access_for_codebuild_deploy" {
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-deploy-platform/log-group:*",
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group:*"
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-install-tools/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-install-tools/log-group:*",
     ]
   }
 }

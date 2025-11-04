@@ -42,6 +42,37 @@ resource "aws_codepipeline" "codebase_pipeline" {
     }
   }
 
+
+  dynamic "stage" {
+    for_each = toset(local.platform_deployment_enabled ? [""] : [])
+    content {
+      name = "Install-Tools"
+      action {
+        name             = "InstallTools"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        version          = "1"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = ["tools_output"]
+
+        configuration = {
+          ProjectName   = aws_codebuild_project.codebase_install_tools[""].name
+          PrimarySource = "deploy_source"
+          EnvironmentVariables : jsonencode([
+            { name : "APPLICATION", value : var.application },
+            { name : "AWS_REGION", value : data.aws_region.current.region },
+            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+            { name : "PIPELINE_NAME", value : var.codebase },
+            { name : "REPOSITORY", value : var.repository },
+            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+            { name : "CODESTAR_CONNECTION_ARN", value : data.external.codestar_connections.result["ConnectionArn"] },
+          ])
+        }
+      }
+    }
+  }
+
   dynamic "stage" {
     for_each = each.value.stages
     content {
@@ -120,6 +151,36 @@ resource "aws_codepipeline" "manual_release_pipeline" {
         FullRepositoryId = var.deploy_repository != null ? var.deploy_repository : "uktrade/${var.application}-deploy"
         BranchName       = var.deploy_repository_branch
         DetectChanges    = false
+      }
+    }
+  }
+
+  dynamic "stage" {
+    for_each = toset(local.platform_deployment_enabled ? [""] : [])
+    content {
+      name = "Install-Tools"
+      action {
+        name             = "InstallTools"
+        category         = "Build"
+        owner            = "AWS"
+        provider         = "CodeBuild"
+        version          = "1"
+        input_artifacts  = ["deploy_source"]
+        output_artifacts = ["tools_output"]
+
+        configuration = {
+          ProjectName   = aws_codebuild_project.codebase_install_tools[""].name
+          PrimarySource = "deploy_source"
+          EnvironmentVariables : jsonencode([
+            { name : "APPLICATION", value : var.application },
+            { name : "AWS_REGION", value : data.aws_region.current.region },
+            { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
+            { name : "PIPELINE_NAME", value : var.codebase },
+            { name : "REPOSITORY", value : var.repository },
+            { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
+            { name : "CODESTAR_CONNECTION_ARN", value : data.external.codestar_connections.result["ConnectionArn"] },
+          ])
+        }
       }
     }
   }

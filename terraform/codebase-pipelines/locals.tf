@@ -88,9 +88,11 @@ locals {
             flatten([for svc in local.service_order_list : concat(
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
                 name : "terraform-apply-${svc.name}",
+                input_artifacts : ["tools_output"],
                 order : svc.order,
                 configuration = {
-                  ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
+                  ProjectName   = aws_codebuild_project.codebase_service_terraform[""].name
+                  PrimarySource = "tools_output"
                   EnvironmentVariables : jsonencode(concat(local.default_variables, [
                     { name : "ENVIRONMENT", value : env.name },
                     { name : "SERVICE", value : svc.name },
@@ -100,8 +102,10 @@ locals {
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
                 name : "platform-deploy-${svc.name}",
                 order : svc.order + 1,
+                input_artifacts : ["tools_output"],
                 configuration = {
-                  ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
+                  ProjectName   = aws_codebuild_project.codebase_deploy_platform[""].name
+                  PrimarySource = "tools_output"
                   EnvironmentVariables : jsonencode(concat(local.default_variables, [
                     { name : "ENVIRONMENT", value : env.name },
                     { name : "SERVICE", value : svc.name },
@@ -123,8 +127,10 @@ locals {
             strcontains(local.base_env_config[env.name].service_deployment_mode, "dual") ? [{
               name : "traffic-switch",
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
+              input_artifacts : ["tools_output"],
               configuration = {
-                ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+                ProjectName   = aws_codebuild_project.codebase_traffic_switch[""].name
+                PrimarySource = "tools_output"
                 EnvironmentVariables : jsonencode([
                   { name : "APPLICATION", value : var.application },
                   { name : "ENVIRONMENT", value : env.name },
@@ -156,8 +162,10 @@ locals {
       local.platform_deployment_enabled ? [{
         name : "terraform-apply-${svc.name}",
         order : svc.order,
+        input_artifacts : ["tools_output"],
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_service_terraform[""].name
+          ProjectName   = aws_codebuild_project.codebase_service_terraform[""].name
+          PrimarySource = "tools_output"
           EnvironmentVariables : jsonencode(concat(local.default_variables, [
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "SERVICE", value : svc.name },
@@ -167,8 +175,10 @@ locals {
       local.platform_deployment_enabled ? [{
         name : "platform-deploy-${svc.name}",
         order : svc.order + 1,
+        input_artifacts : ["tools_output"],
         configuration = {
-          ProjectName = aws_codebuild_project.codebase_deploy_platform[""].name
+          ProjectName   = aws_codebuild_project.codebase_deploy_platform[""].name
+          PrimarySource = "tools_output"
           EnvironmentVariables : jsonencode(concat(local.default_variables, [
             { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
             { name : "SERVICE", value : svc.name },
@@ -190,8 +200,10 @@ locals {
     local.traffic_switch_enabled ? [{
       name : "traffic-switch",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
+      input_artifacts : ["tools_output"],
       configuration = {
-        ProjectName = aws_codebuild_project.codebase_traffic_switch[""].name
+        ProjectName   = aws_codebuild_project.codebase_traffic_switch[""].name
+        PrimarySource = "tools_output"
         EnvironmentVariables : jsonencode([
           { name : "APPLICATION", value : var.application },
           { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
