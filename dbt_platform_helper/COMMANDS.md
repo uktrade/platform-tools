@@ -623,7 +623,7 @@ platform-helper secrets (create|copy|list)
 ## Usage
 
 ```
-platform-helper secrets create --app <application> --name <name> 
+platform-helper secrets create --app <application> --name <name> [--overwrite] 
 ```
 
 ## Options
@@ -634,6 +634,8 @@ platform-helper secrets create --app <application> --name <name>
 - `--name
 -n <text>`
   - Name of secret
+- `--overwrite <boolean>` _Defaults to False._
+  - Overwrite existing values.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

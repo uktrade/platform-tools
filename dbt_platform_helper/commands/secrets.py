@@ -29,11 +29,12 @@ def secrets():
 @secrets.command()
 @click.option("--app", "-a", help="AWS application name", required=True)
 @click.option("--name", "-n", help="Name of secret", required=True)
-def create(app: str, name: str):
+@click.option("--overwrite", is_flag=True, default=False, help="Overwrite existing values.")
+def create(app: str, name: str, overwrite: bool):
     """"""
 
     try:
-        Secrets().create(app, name)
+        Secrets().create(app, name, overwrite)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
