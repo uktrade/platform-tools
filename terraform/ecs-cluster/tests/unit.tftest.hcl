@@ -29,13 +29,6 @@ override_data {
   }
 }
 
-override_data {
-  target = data.aws_lb_listener.environment_alb_listener_http
-  values = {
-    arn = "arn:aws:elasticloadbalancing:eu-west-2:001122334455:loadbalancer/app/demodjango-dev/56a768d2354e5fe8"
-  }
-}
-
 run "test_create_ecs_cluster" {
   command = plan
 
