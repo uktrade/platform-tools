@@ -1,5 +1,6 @@
-import click
+import botocore
 
+from dbt_platform_helper.constants import MANAGED_BY_PLATFORM
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
@@ -18,12 +19,6 @@ class Secrets:
         self.application = None
         self.io = io
         self.parameter_store_provider: ParameterStore = parameter_store_provider
-        self.parameter_store: ParameterStore = None
-
-    # def __get_parameter_store(self,):
-    #     if not self.parameter_store:
-    #         self.parameter_store = self.parameter_store_provider(self.session.client("ssm"))
-    #     return self.parameter_store
 
     def create(self, app_name, name, overwrite):
         self.application = (
@@ -54,7 +49,7 @@ class Secrets:
             if has_access:
                 continue  # if has access move onto next account
 
-            role_policies = iam.list_role_polcies(RoleName=role_name)["PolicyNames"]
+            role_policies = iam.list_role_policies(RoleName=role_name)["PolicyNames"]
 
             for policy in role_policies:
                 policy_doc = iam.get_role_policy(RoleName=role_name, PolicyName=policy)[
@@ -76,43 +71,55 @@ class Secrets:
 
         get_secret_name = lambda x: f"/platform/{app_name}/{x}/secrets/{name.upper()}"
 
-        # TODO if overwrite == false
-        # Check if params exist
-        # throw error if param exists
+        found_params = []
+        for _, environment in self.application.environments.items():
+            parameter_store: ParameterStore = self.parameter_store_provider(
+                environment.session.client("ssm")
+            )
+            try:
+                param = parameter_store.get_ssm_parameter_by_name(get_secret_name(environment.name))
+                if param:
+                    found_params.append(environment.name)
+            except botocore.exceptions.ClientError as error:
+                if error.response["Error"]["Code"] == "ParameterNotFound":
+                    pass
+                else:
+                    raise PlatformException(error)
+        if overwrite is False and found_params:
+            envs = ", ".join(found_params)
+            raise PlatformException(
+                f"SSM parameter {name.upper()} already exists for the following environments: {envs}. \nRun with the --overwrite flag if you want to set new values."
+            )
 
         values = {}
         for _, environment in self.application.environments.items():
-
-            click.echo(environment)
-
-            # TODO add into click provider
-            value = click.prompt(
-                f"  {environment.name}", hide_input=True, confirmation_prompt=False, type=str
+            value = self.io.input(
+                f"Please enter value for secret {name.upper()} in environment {environment.name}",
+                hide_input=True,
             )
-
             values[environment.name] = value
 
         for environment_name, secret_value in values.items():
             environment = self.application.environments[environment_name]
 
-            click.echo(
-                f"Creating ssm value {secret_value} in {get_secret_name(environment.name)} with tags application: {app_name} and environment: {environment.name}"
+            data_dict = dict(
+                Name=get_secret_name(environment.name),
+                Value=secret_value,
+                Overwrite=False,
+                Type="SecureString",
+                Tags=[
+                    {"Key": "application", "Value": app_name},
+                    {"Key": "environment", "Value": environment.name},
+                    {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+                ],
             )
-
-            # ssm_client = environment.session.client("ssm")
-            # ssm_client.put_parameter(
-            #     Name=get_secret_name(environment.name),
-            #     Value=secret_value,
-            #     Overwrite=overwrite,
-            #     Type="SecureString",
-            #     Tags=[
-            #         {
-            #             "Key": "application",
-            #             "Value": app_name
-            #         },
-            #         {
-            #             "Key": "environment",
-            #             "Value": environment.name
-            #         },
-            #     ]
-            # )
+            if (
+                overwrite and environment_name in found_params
+            ):  # If in found params we are overwriting
+                data_dict["Overwrite"] = True
+                del data_dict["Tags"]
+            self.io.info(
+                f"Creating ssm value in {get_secret_name(environment.name)} with tags application: {app_name} and environment: {environment.name}"
+            )
+            ssm_client = environment.session.client("ssm")
+            ssm_client.put_parameter(**data_dict)
