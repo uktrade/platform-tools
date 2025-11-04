@@ -1,54 +1,30 @@
 import os
-from enum import Enum
-
 from dummy_rule_manager import DummyRuleManager
-
-
-class LifecycleAction(Enum):
-    CREATE = "create"
-    UPDATE = "update"
-    DELETE = "delete"
-
-
-class Lifecycle:
-    def __init__(self, lifecycle):
-        self.action = LifecycleAction(lifecycle["action"])
-        if lifecycle["prev_input"] is not None:
-            self.previous = Parameters(
-                lifecycle["prev_input"]["ServiceName"],
-                lifecycle["prev_input"]["TargetGroup"],
-            )
-
-
-class Parameters:
-    def __init__(self, service_name, target_group, lifecycle=None):
-        self.service_name = service_name
-        self.target_group = target_group
-        if lifecycle is not None:
-            self.lifecycle = Lifecycle(lifecycle)
+from parameters import Parameters
+from parameters import LifecycleAction
 
 
 def handler(event, context):
-    organiser = DummyRuleManager(
+    parameters = Parameters(**event)
+
+    rule_manager = DummyRuleManager(
         application=os.environ["APPLICATION"],
         environment=os.environ["ENVIRONMENT"],
         listener_arn=os.environ["LISTENER_ARN"],
     )
 
-    parameters = Parameters(event["ServiceName"], event["TargetGroup"], event["Lifecycle"])
-
     match parameters.lifecycle.action:
         case LifecycleAction.CREATE:
-            organiser.create_dummy_rule(parameters.target_group, parameters.service_name)
+            print('creating')
+            rule_manager.create_rules(parameters)
         case LifecycleAction.UPDATE:
-            if (
-                parameters.target_group != parameters.lifecycle.previous.target_group
-                or parameters.service_name != parameters.lifecycle.previous.service_name
-            ):
-                organiser.delete_dummy_rule(parameters.lifecycle.previous.service_name)
-                organiser.create_dummy_rule(parameters.target_group, parameters.service_name)
+            if parameters.has_changes():
+                print('updating')
+                rule_manager.delete_rules(parameters)
+                rule_manager.create_rules(parameters)
         case LifecycleAction.DELETE:
-            organiser.delete_dummy_rule(parameters.lifecycle.previous.service_name)
+            print('deleting')
+            rule_manager.delete_rules(parameters)
         case _:
             raise Exception("Unexpected lifecycle action")
 

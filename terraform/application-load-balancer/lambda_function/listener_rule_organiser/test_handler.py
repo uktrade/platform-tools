@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 from handler import handler
+from handler import Parameters
 
 TEST_ENVIRONMENT = {
     "APPLICATION": "myapp",
@@ -13,88 +14,129 @@ TEST_ENVIRONMENT = {
 
 @patch.dict(os.environ, TEST_ENVIRONMENT, clear=True)
 @patch("handler.DummyRuleManager")
-class TestHandler:
-    def test_create_a_service_dummy_rule(self, rule_manager_mock):
+class TestDummyHandler:
+    def test_create_a_service_dummy_rule(self, dummy_rule_manager):
         service_name = "myservice"
         target_group = "target:group"
         event = {
-            "ServiceName": service_name,
-            "TargetGroup": target_group,
-            "Lifecycle": {
+            "service_name": service_name,
+            "target_group": target_group,
+            "lifecycle": {
                 "action": "create",
                 "prev_input": None,
             },
         }
 
-        rule_manager_mock_instance = MagicMock()
-        rule_manager_mock.return_value = rule_manager_mock_instance
+        dummy_rule_manager_instance = MagicMock()
+        dummy_rule_manager.return_value = dummy_rule_manager_instance
         handler(event, None)
 
-        rule_manager_mock_instance.create_dummy_rule.assert_called_with("target:group", "myservice")
-        rule_manager_mock_instance.delete_dummy_rule.assert_not_called()
+        dummy_rule_manager_instance.create_rules.assert_called_with(Parameters(**event))
+        dummy_rule_manager_instance.delete_rules.assert_not_called()
 
-    def test_update_a_service_dummy_rule_without_a_change(self, rule_manager_mock):
+    def test_create_a_service_dummy_rule_without_deployment_mode(self, dummy_rule_manager):
         service_name = "myservice"
         target_group = "target:group"
         event = {
-            "ServiceName": service_name,
-            "TargetGroup": target_group,
-            "Lifecycle": {
+            "service_name": service_name,
+            "target_group": target_group,
+            "lifecycle": {
+                "action": "create",
+                "prev_input": None,
+            },
+        }
+
+        dummy_rule_manager_instance = MagicMock()
+        dummy_rule_manager.return_value = dummy_rule_manager_instance
+        handler(event, None)
+
+        dummy_rule_manager_instance.create_rules.assert_called_with(Parameters(**event))
+        dummy_rule_manager_instance.delete_rules.assert_not_called()
+
+    def test_update_a_service_dummy_rule_without_a_change(self, dummy_rule_manager):
+        service_name = "myservice"
+        target_group = "target:group"
+        event = {
+            "service_name": service_name,
+            "target_group": target_group,
+            "lifecycle": {
                 "action": "update",
                 "prev_input": {
-                    "ServiceName": service_name,
-                    "TargetGroup": target_group,
+                    "service_name": service_name,
+                    "target_group": target_group,
                 },
             },
         }
 
-        rule_manager_mock_instance = MagicMock()
-        rule_manager_mock.return_value = rule_manager_mock_instance
+        dummy_rule_manager_instance = MagicMock()
+        dummy_rule_manager.return_value = dummy_rule_manager_instance
         handler(event, None)
 
-        rule_manager_mock_instance.create_dummy_rule.assert_not_called()
-        rule_manager_mock_instance.delete_dummy_rule.assert_not_called()
+        dummy_rule_manager_instance.create_rules.assert_not_called()
+        dummy_rule_manager_instance.delete_rules.assert_not_called()
 
-    def test_update_a_service_dummy_rule_with_a_change(self, rule_manager_mock):
+    def test_update_a_service_dummy_rule_without_a_change_or_deployment_mode(self, dummy_rule_manager):
         service_name = "myservice"
         target_group = "target:group"
         event = {
-            "ServiceName": service_name,
-            "TargetGroup": target_group,
-            "Lifecycle": {
+            "service_name": service_name,
+            "target_group": target_group,
+            "lifecycle": {
                 "action": "update",
                 "prev_input": {
-                    "ServiceName": service_name,
-                    "TargetGroup": "target:group:old",
+                    "service_name": service_name,
+                    "target_group": target_group,
                 },
             },
         }
 
-        rule_manager_mock_instance = MagicMock()
-        rule_manager_mock.return_value = rule_manager_mock_instance
+        dummy_rule_manager_instance = MagicMock()
+        dummy_rule_manager.return_value = dummy_rule_manager_instance
         handler(event, None)
 
-        rule_manager_mock_instance.create_dummy_rule.assert_called_with("target:group", "myservice")
-        rule_manager_mock_instance.delete_dummy_rule.assert_called_with("myservice")
+        dummy_rule_manager_instance.create_rules.assert_not_called()
+        dummy_rule_manager_instance.delete_rules.assert_not_called()
 
-    def test_delete_a_service_dummy_rule(self, rule_manager_mock):
+    def test_update_a_service_dummy_rule_with_a_change(self, dummy_rule_manager):
         service_name = "myservice"
         target_group = "target:group"
         event = {
-            "ServiceName": service_name,
-            "TargetGroup": target_group,
-            "Lifecycle": {
+            "service_name": service_name,
+            "target_group": target_group,
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": service_name,
+                    "target_group": "target:group:old",
+                },
+            },
+        }
+
+        dummy_rule_manager_instance = MagicMock()
+        dummy_rule_manager.return_value = dummy_rule_manager_instance
+        handler(event, None)
+
+        dummy_rule_manager_instance.create_rules.assert_called_with(Parameters(**event))
+        dummy_rule_manager_instance.delete_rules.assert_called_with(Parameters(**event))
+
+    def test_delete_a_service_dummy_rule(self, dummy_rule_manager):
+        service_name = "myservice"
+        target_group = "target:group"
+        event = {
+            "service_name": service_name,
+            "target_group": target_group,
+            "lifecycle": {
                 "action": "delete",
                 "prev_input": {
-                    "ServiceName": service_name,
-                    "TargetGroup": target_group,
+                    "service_name": service_name,
+                    "target_group": target_group,
                 },
             },
         }
 
-        rule_manager_mock_instance = MagicMock()
-        rule_manager_mock.return_value = rule_manager_mock_instance
+        dummy_rule_manager_instance = MagicMock()
+        dummy_rule_manager.return_value = dummy_rule_manager_instance
         handler(event, None)
 
-        rule_manager_mock_instance.create_dummy_rule.assert_not_called()
-        rule_manager_mock_instance.delete_dummy_rule.assert_called_with("myservice")
+        dummy_rule_manager_instance.create_rules.assert_not_called()
+        dummy_rule_manager_instance.delete_rules.assert_called_with(Parameters(**event))

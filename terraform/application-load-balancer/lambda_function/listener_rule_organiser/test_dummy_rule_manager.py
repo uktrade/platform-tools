@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
 from dummy_rule_manager import DummyRuleManager
-from dummy_rule_manager import create_chunk_iterator
+from rule_manager import create_chunk_iterator
+from parameters import Parameters
 
 
 class TestDummyRuleManagerCreate:
@@ -34,7 +35,17 @@ class TestDummyRuleManagerCreate:
         organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
         organiser.get_client = MagicMock(return_value=mock_client)
 
-        organiser.create_dummy_rule("target:group", "myservice")
+        organiser.create_rules(Parameters(**{
+            "service_name": 'myservice',
+            "target_group": 'target:group',
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": 'myservice',
+                    "target_group": 'target:group',
+                },
+            },
+        }))
 
         mock_client.get_paginator.assert_called_once_with("describe_rules")
         mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
@@ -121,7 +132,17 @@ class TestDummyRuleManagerCreate:
         organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
         organiser.get_client = MagicMock(return_value=mock_client)
 
-        organiser.create_dummy_rule("target:group", "myservice")
+        organiser.create_rules(Parameters(**{
+            "service_name": 'myservice',
+            "target_group": 'target:group',
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": 'myservice',
+                    "target_group": 'target:group',
+                },
+            },
+        }))
 
         mock_client.get_paginator.assert_called_once_with("describe_rules")
         mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
@@ -210,7 +231,17 @@ class TestDummyRuleManagerCreate:
         organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
         organiser.get_client = MagicMock(return_value=mock_client)
 
-        organiser.create_dummy_rule("target:group", "myservice")
+        organiser.create_rules(Parameters(**{
+            "service_name": 'myservice',
+            "target_group": 'target:group',
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": 'myservice',
+                    "target_group": 'target:group',
+                },
+            },
+        }))
 
         mock_client.get_paginator.assert_called_once_with("describe_rules")
         mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
@@ -263,7 +294,17 @@ class TestDummyRuleManagerCreate:
         organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
         organiser.get_client = MagicMock(return_value=mock_client)
 
-        organiser.delete_dummy_rule("myservice")
+        organiser.delete_rules(Parameters(**{
+            "service_name": 'myservice',
+            "target_group": 'target:group',
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": 'myservice',
+                    "target_group": 'target:group',
+                },
+            },
+        }))
 
         mock_client.get_paginator.assert_called_once_with("describe_rules")
         mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
@@ -331,7 +372,17 @@ class TestDummyRuleManagerCreate:
         organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
         organiser.get_client = MagicMock(return_value=mock_client)
 
-        organiser.delete_dummy_rule("myservice")
+        organiser.delete_rules(Parameters(**{
+            "service_name": 'myservice',
+            "target_group": 'target:group',
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": 'myservice',
+                    "target_group": 'target:group',
+                },
+            },
+        }))
 
         mock_client.get_paginator.assert_called_once_with("describe_rules")
         mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
@@ -371,7 +422,17 @@ class TestDummyRuleManagerCreate:
         organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
         organiser.get_client = MagicMock(return_value=mock_client)
 
-        organiser.delete_dummy_rule("myservice")
+        organiser.delete_rules(Parameters(**{
+            "service_name": 'myservice',
+            "target_group": 'target:group',
+            "lifecycle": {
+                "action": "update",
+                "prev_input": {
+                    "service_name": 'myservice',
+                    "target_group": 'target:group',
+                },
+            },
+        }))
 
         mock_client.get_paginator.assert_called_once_with("describe_rules")
         mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
