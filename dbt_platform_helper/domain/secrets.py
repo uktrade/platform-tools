@@ -69,6 +69,7 @@ class Secrets:
 
         if no_access:
             account_ids = ", ".join(no_access)
+            # TODO what to do when we dont have access
             raise PlatformException(
                 f"You do not have SSM write access to the following AWS accounts: {account_ids}"
             )
