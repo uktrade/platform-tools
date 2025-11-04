@@ -111,9 +111,10 @@ module "ecs_cluster" {
 
   count = local.non_copilot_service_deployment_mode
 
-  application = var.args.application
-  environment = var.environment
-  vpc_name    = local.vpc_name
+  application                 = var.args.application
+  environment                 = var.environment
+  vpc_name                    = local.vpc_name
+  alb_https_security_group_id = one(values(module.alb)).https_security_group_id
 }
 
 module "datadog" {

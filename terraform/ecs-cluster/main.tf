@@ -25,10 +25,6 @@ resource "aws_service_discovery_private_dns_namespace" "private_dns_namespace" {
   tags        = local.tags
 }
 
-data "aws_security_group" "https_security_group" {
-  name = "${var.application}-${var.environment}-alb-https"
-}
-
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Name"
@@ -50,7 +46,7 @@ resource "aws_security_group" "environment_security_group" {
     to_port     = 0
     protocol    = "-1"
     security_groups = [
-      data.aws_security_group.https_security_group.id
+      var.alb_https_security_group_id
     ]
   }
 
