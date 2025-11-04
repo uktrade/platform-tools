@@ -49,22 +49,24 @@ class Secrets:
             if has_access:
                 continue  # if has access move onto next account
 
-            role_policies = iam.list_role_policies(RoleName=role_name)["PolicyNames"]
+            inline_policies = iam.list_role_policies(RoleName=role_name)["PolicyNames"]
 
-            for policy in role_policies:
+            for policy in inline_policies:
                 policy_doc = iam.get_role_policy(RoleName=role_name, PolicyName=policy)[
                     "PolicyDocument"
                 ]
                 for statement in policy_doc["Statement"]:
                     if "ssm:*" in statement["Action"] or "ssm:PutParmeter" in statement["Action"]:
                         has_access = True
+                        break
+                if has_access:
+                    break
 
             if not has_access:
                 no_access.append(account)
 
         if no_access:
             account_ids = ", ".join(no_access)
-            # TODO what to do when we dont have access
             raise PlatformException(
                 f"You do not have SSM write access to the following AWS accounts: {account_ids}"
             )
