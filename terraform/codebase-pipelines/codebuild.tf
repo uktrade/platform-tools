@@ -131,6 +131,65 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
   }
 }
 
+resource "aws_codebuild_project" "codebase_install_tools" {
+  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  name           = "${var.application}-${var.codebase}-codebase-install-tools"
+  description    = "Installs shared build tools for reuse across stages"
+  build_timeout  = 5
+  service_role   = aws_iam_role.codebase_deploy.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  cache {
+    type     = "S3"
+    location = aws_s3_bucket.artifact_store.bucket
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
+
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = aws_cloudwatch_log_group.codebase_install_tools[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_install_tools[""].name
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = file("${path.module}/buildspec-install-tools.yml")
+  }
+
+  tags = local.tags
+}
+
+resource "aws_cloudwatch_log_group" "codebase_install_tools" {
+  # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
+  # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.platform_deployment_enabled ? [""] : [])
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-install-tools/log-group"
+  retention_in_days = 90
+}
+
+resource "aws_cloudwatch_log_stream" "codebase_install_tools" {
+  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-install-tools/log-stream"
+  log_group_name = aws_cloudwatch_log_group.codebase_install_tools[""].name
+}
+
 resource "aws_codebuild_project" "codebase_service_terraform" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-service-terraform"
@@ -159,15 +218,6 @@ resource "aws_codebuild_project" "codebase_service_terraform" {
       value = jsonencode(local.base_env_config)
     }
 
-    environment_variable {
-      name  = "CODESTAR_CONNECTION_ARN"
-      value = data.external.codestar_connections.result["ConnectionArn"]
-    }
-
-    environment_variable {
-      name  = "PLATFORM_HELPER_VERSION"
-      value = var.platform_tools_version
-    }
   }
 
   logs_config {
@@ -227,15 +277,6 @@ resource "aws_codebuild_project" "codebase_traffic_switch" {
       value = jsonencode(local.base_env_config)
     }
 
-    environment_variable {
-      name  = "CODESTAR_CONNECTION_ARN"
-      value = data.external.codestar_connections.result["ConnectionArn"]
-    }
-
-    environment_variable {
-      name  = "PLATFORM_HELPER_VERSION"
-      value = var.platform_tools_version
-    }
   }
 
   logs_config {
@@ -421,15 +462,6 @@ resource "aws_codebuild_project" "codebase_deploy_platform" {
       value = jsonencode(local.base_env_config)
     }
 
-    environment_variable {
-      name  = "CODESTAR_CONNECTION_ARN"
-      value = data.external.codestar_connections.result["ConnectionArn"]
-    }
-
-    environment_variable {
-      name  = "PLATFORM_HELPER_VERSION"
-      value = var.platform_tools_version
-    }
   }
 
   logs_config {
@@ -489,15 +521,6 @@ resource "aws_codebuild_project" "codebase_service_terraform_plan" {
       value = jsonencode(local.base_env_config)
     }
 
-    environment_variable {
-      name  = "CODESTAR_CONNECTION_ARN"
-      value = data.external.codestar_connections.result["ConnectionArn"]
-    }
-
-    environment_variable {
-      name  = "PLATFORM_HELPER_VERSION"
-      value = var.platform_tools_version
-    }
   }
 
   logs_config {

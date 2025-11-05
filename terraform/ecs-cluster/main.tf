@@ -1,15 +1,6 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-data "aws_lb" "environment_load_balancer" {
-  name = "${var.application}-${var.environment}"
-}
-
-data "aws_lb_listener" "environment_alb_listener_http" {
-  load_balancer_arn = data.aws_lb.environment_load_balancer.arn
-  port              = 80
-}
-
 resource "aws_ecs_cluster" "cluster" {
   name = local.cluster_name
 
@@ -34,10 +25,6 @@ resource "aws_service_discovery_private_dns_namespace" "private_dns_namespace" {
   tags        = local.tags
 }
 
-data "aws_security_group" "https_security_group" {
-  name = "${var.application}-${var.environment}-alb-https"
-}
-
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Name"
@@ -59,7 +46,7 @@ resource "aws_security_group" "environment_security_group" {
     to_port     = 0
     protocol    = "-1"
     security_groups = [
-      data.aws_security_group.https_security_group.id
+      var.alb_https_security_group_id
     ]
   }
 
