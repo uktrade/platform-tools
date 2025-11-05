@@ -237,12 +237,11 @@ class ServiceManager:
         service: str,
         environment: str,
         application: str,
-        account_id: str,
         image_tag: str = None,
     ):
         """Register a new ECS task definition revision, update the ECS service
-        with it, output a Cloudwatch logs URL, and wait until deployment is
-        complete."""
+        with it, monitor service, task and container logs, and wait until
+        deployment is complete."""
 
         start_time = datetime.now(timezone.utc)
         cluster_name = f"{application}-{environment}-cluster"
@@ -299,18 +298,10 @@ class ServiceManager:
                 service_response=service_response
             )
 
-            # Log service events
-            for event in reversed(service_response.get("events", [])):
-                if event["id"] not in seen_events and event["createdAt"] > start_time:
-                    seen_events.add(event["id"])
-                    timestamp = event["createdAt"].strftime("%H:%M:%S")
-                    message = event["message"]
-                    if "error" in message or "failed" in message:
-                        self.io.deploy_error(f"[{timestamp}] {message}")
-                    else:
-                        self.io.info(f"[{timestamp}] {message}")
+            self._monitor_service_events(
+                service_response=service_response, seen_events=seen_events, start_time=start_time
+            )
 
-            # Get task level information
             task_ids = self._wait_for_new_tasks(
                 cluster_name=cluster_name, deployment_id=primary_deployment_id
             )
@@ -319,38 +310,11 @@ class ServiceManager:
                 task_ids=task_ids,
             )
 
-            for task in task_response:
-                for container in task["containers"]:
-                    if container.get("exitCode", 0) == 1:
-                        task_id = task["taskArn"].split("/")[-1]
-                        container_name = container["name"]
+            log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
+            self._monitor_task_events(
+                task_response=task_response, seen_events=seen_events, log_group=log_group
+            )
 
-                        if f"{task_id}-{container_name}" not in seen_events:
-                            seen_events.add(f"{task_id}-{container_name}")
-                            timestamp = datetime.now(timezone.utc).strftime("%H:%M:%S")
-                            self.io.deploy_error(
-                                f"[{timestamp}] Container '{container_name}' stopped in task '{task_id}'."
-                            )
-
-                        log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
-                        log_events = self.logs_provider.get_log_stream_events(
-                            log_group=log_group,
-                            log_stream=f"platform/{container_name}/{task_id}",
-                            limit=20,
-                        )
-
-                        for event in log_events:
-                            try:
-                                message = json.loads(event["message"])
-                            except json.decoder.JSONDecodeError:
-                                message = event["message"]
-
-                            if f"{task_id}-{message}" not in seen_events:
-                                seen_events.add(f"{task_id}-{message}")
-                                timestamp = datetime.now(timezone.utc).strftime("%H:%M:%S")
-                                self.io.deploy_error(f"[{timestamp}] {message}")
-
-            # Get overall deployment state
             state, reason = self.ecs_provider.get_service_deployment_state(
                 cluster_name=cluster_name,
                 service_name=ecs_service_name,
@@ -367,80 +331,6 @@ class ServiceManager:
 
         raise PlatformException(f"Timed out waiting for service to stabilise.")
 
-        # expected_count = service_response.get("desiredCount", 1)
-        # task_ids = self._fetch_ecs_task_ids(
-        #     application=application,
-        #     environment=environment,
-        #     deployment_id=primary_deployment_id,
-        #     expected_count=expected_count,
-        # )
-        #
-        # self.io.info(
-        #     f"Detected {len(task_ids)} new ECS task(s) with the following ID(s) {task_ids}.\n"
-        # )
-        #
-        # container_names = self.ecs_provider.get_container_names_from_ecs_tasks(
-        #     cluster_name=f"{application}-{environment}-cluster",
-        #     task_ids=task_ids,
-        # )
-        #
-        # log_streams = self._build_log_stream_names(
-        #     task_ids=task_ids, container_names=container_names, stream_prefix="platform"
-        # )
-        #
-        # log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
-        # self.logs_provider.check_log_streams_present(
-        #     log_group=log_group, expected_log_streams=log_streams
-        # )
-        #
-        # cloudwatch_url = self._build_cloudwatch_live_tail_url(
-        #     account_id=account_id, log_group=log_group, log_streams=log_streams
-        # )
-        # self.io.info(f"View real-time deployment logs in the AWS Console: \n{cloudwatch_url}\n")
-
-        # self._monitor_ecs_deployment(
-        #     application=application,
-        #     environment=environment,
-        #     service=service,
-        # )
-
-    # @staticmethod
-    # def _build_cloudwatch_live_tail_url(
-    #     account_id: str, log_group: str, log_streams: list[str]
-    # ) -> str:
-    #     """Build CloudWatch live tail URL with log group and log streams pre-
-    #     populated in Rison format."""
-    #
-    #     log_group_rison = log_group.replace("/", "*2f")
-    #
-    #     delimiter = "~'"
-    #     log_streams_rison = ""
-    #     for stream in log_streams:
-    #         stream_rison = stream.replace("/", "*2f")
-    #         log_streams_rison = log_streams_rison + f"{delimiter}{stream_rison}"
-    #
-    #     base = "https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:live-tail"
-    #     log_group_fragment = f"$3FlogGroupArns$3D~(~'arn*3aaws*3alogs*3aeu-west-2*3a{account_id}*3alog-group*3a{log_group_rison}*3a*2a)"
-    #     log_streams_fragment = f"$26logStreamNames$3D~({log_streams_rison})"
-    #
-    #     return base + log_group_fragment + log_streams_fragment
-
-    # @staticmethod
-    # def _build_log_stream_names(
-    #     task_ids: list[str], container_names: list[str], stream_prefix: str
-    # ) -> list[str]:
-    #     """Manually build names of the log stream that will get created."""
-    #
-    #     log_streams = []
-    #     for id in task_ids:
-    #         for name in container_names:
-    #             if not name.startswith(
-    #                 "ecs-service-connect"
-    #             ):  # ECS Service Connect container logs are noisy and not relevant in most cases
-    #                 log_streams.append(f"{stream_prefix}/{name}/{id}")
-    #
-    #     return log_streams
-
     @staticmethod
     def _get_primary_deployment_id(service_response: dict[str, Any]):
         for dep in service_response["deployments"]:
@@ -450,36 +340,57 @@ class ServiceManager:
             f"\nUnable to find primary ECS deployment for service '{service_response['serviceName']}'\n"
         )
 
-    # def _fetch_ecs_task_ids(
-    #     self, application: str, environment: str, deployment_id: str, expected_count: int
-    # ) -> list[str]:
-    #     """Return ECS task ID(s) of tasks started by the PRIMARY ECS
-    #     deployment."""
-    #
-    #     timeout_seconds = DEPLOYMENT_TIMEOUT_SECONDS
-    #     deadline = time.monotonic() + timeout_seconds  # 10 minute deadline before timing out
-    #
-    #     while time.monotonic() < deadline:
-    #         task_arns = self.ecs_provider.get_ecs_task_arns(
-    #             cluster=f"{application}-{environment}-cluster",
-    #             started_by=deployment_id,
-    #             desired_status="RUNNING",
-    #         )
-    #
-    #         if len(task_arns) >= expected_count:
-    #             break
-    #
-    #         time.sleep(POLL_INTERVAL_SECONDS)
-    #
-    #     if len(task_arns) < expected_count:
-    #         raise PlatformException(
-    #             f"Timed out waiting for {expected_count} RUNNING ECS task(s) to spin up after {timeout_seconds}s. Got {len(task_arns)} instead."
-    #         )
-    #
-    #     task_ids = []
-    #     for arn in task_arns:
-    #         task_ids.append(arn.rsplit("/", 1)[-1])
-    #     return task_ids
+    def _monitor_service_events(
+        self, service_response: dict[str, Any], seen_events: set[str], start_time: datetime
+    ):
+        """Output ECS service events during deployment."""
+
+        for event in reversed(service_response.get("events", [])):
+            if event["id"] not in seen_events and event["createdAt"] > start_time:
+                seen_events.add(event["id"])
+                timestamp = event["createdAt"].strftime("%H:%M:%S")
+                message = event["message"]
+                self._output_with_timestamp(
+                    message=message,
+                    error=("error" in message or "failed" in message),
+                    timestamp=timestamp,
+                )
+
+    def _monitor_task_events(
+        self, task_response: list[dict[str, Any]], seen_events: set[str], log_group: str
+    ):
+        """Output ECS task and container errors during deployment."""
+
+        for task in task_response:
+            for container in task["containers"]:
+                if container.get("exitCode", 0) != 1:
+                    continue
+
+                task_id = task["taskArn"].split("/")[-1]
+                container_name = container["name"]
+
+                if f"{task_id}-{container_name}" not in seen_events:
+                    seen_events.add(f"{task_id}-{container_name}")
+                    self._output_with_timestamp(
+                        message=f"Container '{container_name}' stopped in task '{task_id}'.",
+                        error=True,
+                    )
+
+                log_events = self.logs_provider.get_log_stream_events(
+                    log_group=log_group,
+                    log_stream=f"platform/{container_name}/{task_id}",
+                    limit=20,
+                )
+
+                for event in log_events:
+                    try:
+                        message = json.loads(event["message"])
+                    except json.decoder.JSONDecodeError:
+                        message = event["message"]
+
+                    if f"{task_id}-{message}" not in seen_events:
+                        seen_events.add(f"{task_id}-{message}")
+                        self._output_with_timestamp(message=message, error=True)
 
     def _wait_for_new_tasks(self, cluster_name: str, deployment_id: str) -> list[str]:
         """Return first ECS task ID started by the PRIMARY ECS deployment."""
@@ -509,38 +420,11 @@ class ServiceManager:
             task_ids.append(arn.rsplit("/", 1)[-1])
         return task_ids
 
-    # def _monitor_ecs_deployment(self, application: str, environment: str, service: str) -> bool:
-    #     """Loop until ECS rollout state is SUCCESSFUL or a fail status or else
-    #     times out."""
-    #
-    #     cluster_name = f"{application}-{environment}-cluster"
-    #     ecs_service_name = f"{application}-{environment}-{service}"
-    #     start_time = time.time()
-    #     timeout_seconds = DEPLOYMENT_TIMEOUT_SECONDS
-    #     deadline = time.monotonic() + timeout_seconds  # 10 minute deadline before timing out
-    #
-    #     while time.monotonic() < deadline:
-    #         try:
-    #             state, reason = self.ecs_provider.get_service_rollout_state(
-    #                 cluster_name=cluster_name, service_name=ecs_service_name, start_time=start_time
-    #             )
-    #         except Exception as e:
-    #             raise PlatformException(f"Failed to fetch ECS rollout state: {e}")
-    #
-    #         if state == "SUCCESSFUL":
-    #             self.io.info("\nECS deployment complete!")
-    #             return True
-    #         if state in ["STOPPED", "ROLLBACK_SUCCESSFUL", "ROLLBACK_FAILED"]:
-    #             raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
-    #
-    #         elapsed_time = int(time.time() - start_time)
-    #         self.io.info(f"Deployment in progress {elapsed_time}s")
-    #         time.sleep(POLL_INTERVAL_SECONDS)
-    #
-    #     raise PlatformException(
-    #         f"Timed out after {timeout_seconds}s waiting for '{ecs_service_name}' to stabilise."
-    #     )
+    def _output_with_timestamp(self, message: str, error: bool = False, timestamp: datetime = None):
+        if not timestamp:
+            timestamp = datetime.now(timezone.utc).strftime("%H:%M:%S")
 
-    def _output_with_timestamp(self, message: str):
-        timestamp = datetime.now(timezone.utc).strftime("%H:%M:%S")
-        self.io.info(f"[{timestamp}] {message}")
+        if error:
+            self.io.deploy_error(f"[{timestamp}] {message}")
+        else:
+            self.io.info(f"[{timestamp}] {message}")
