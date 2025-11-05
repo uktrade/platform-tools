@@ -4,6 +4,7 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import timezone
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
@@ -103,20 +104,16 @@ class ServiceManagerMocks:
         )
 
 
-def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id="deployment-abc"):
+def get_ecs_update_service_response(
+    service_name="myapp-dev-web", deployment_id="deployment-abc", events=None
+):
     return {
         "serviceName": service_name,
         "deployments": [
             {"id": "old-deployment", "status": "ACTIVE"},
             {"id": deployment_id, "status": "PRIMARY"},
         ],
-        "events": [
-            {
-                "id": "12345",
-                "createdAt": datetime.now(timezone.utc),
-                "message": "(service myapp-dev-web) has started 1 tasks: (task abc123).",
-            }
-        ],
+        "events": events or [],
     }
 
 
@@ -325,12 +322,25 @@ def test_service_deploy_failed(time_sleep):
 
 
 @freeze_time("2025-01-16 13:00:00")
-def test_monitor_service_events_success():
+def test_monitor_service_events_outputs_distinct_events():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
     service_response = get_ecs_update_service_response(
-        service_name="myapp-dev-web", deployment_id="deployment-123"
+        service_name="myapp-dev-web",
+        deployment_id="deployment-123",
+        events=[
+            {
+                "id": "12345",
+                "createdAt": datetime.now(timezone.utc),
+                "message": "duplicate event message should be ignored.",
+            },
+            {
+                "id": "12345",
+                "createdAt": datetime.now(timezone.utc),
+                "message": "(service myapp-dev-web) has started 1 tasks: (task abc123).",
+            },
+        ],
     )
 
     service_manager._monitor_service_events(
@@ -339,9 +349,35 @@ def test_monitor_service_events_success():
         start_time=datetime.now(timezone.utc) - timedelta(hours=1),
     )
 
-    mocks.io.info.assert_called_with(
+    mocks.io.info.assert_called_once_with(
         "[13:00:00] (service myapp-dev-web) has started 1 tasks: (task abc123)."
     )
+
+
+@freeze_time("2025-01-16 13:00:00")
+def test_monitor_service_events_outputs_errors():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+
+    service_response = get_ecs_update_service_response(
+        service_name="myapp-dev-web",
+        deployment_id="deployment-123",
+        events=[
+            {
+                "id": "12345",
+                "createdAt": datetime.now(timezone.utc),
+                "message": "Error task failed to start.",
+            }
+        ],
+    )
+
+    service_manager._monitor_service_events(
+        service_response=service_response,
+        seen_events=set(),
+        start_time=datetime.now(timezone.utc) - timedelta(hours=1),
+    )
+
+    mocks.io.deploy_error.assert_called_once_with("[13:00:00] Error task failed to start.")
 
 
 def test_monitor_task_events_success():
@@ -363,4 +399,28 @@ def test_monitor_task_events_success():
         log_group=log_group,
         log_stream=f"platform/web/123abc",
         limit=20,
+    )
+
+
+@freeze_time("2025-01-16 13:00:00")
+def test_monitor_task_events_outputs_events():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+
+    task_response = get_ecs_task_response(exit_code=1)
+    log_group = "/platform/ecs/service/myapp/dev/web"
+
+    mocks.logs_provider.get_log_stream_events.return_value = [{"message": "Application error"}]
+
+    service_manager._monitor_task_events(
+        task_response=task_response,
+        seen_events=set(),
+        log_group=log_group,
+    )
+
+    mocks.io.deploy_error.assert_has_calls(
+        [
+            call("[13:00:00] Container 'web' stopped in task '123abc'."),
+            call("[13:00:00] Application error"),
+        ]
     )
