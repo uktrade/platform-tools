@@ -3,7 +3,8 @@ import os
 import time
 from collections import OrderedDict
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime
+from datetime import timezone
 from importlib.metadata import version
 from pathlib import Path
 from typing import Any
@@ -256,7 +257,9 @@ class ServiceManager:
 
         image_tag = image_tag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
 
-        self.io.info(f"Deploying image tag '{image_tag}' to service '{ecs_service_name}' in environment '{environment}'.\n")
+        self.io.info(
+            f"Deploying image tag '{image_tag}' to service '{ecs_service_name}' in environment '{environment}'.\n"
+        )
 
         task_def_arn = self.ecs_provider.register_task_definition(
             service=service,
@@ -264,33 +267,40 @@ class ServiceManager:
             task_definition=task_definition,
         )
 
-        self._output_with_timestamp(f"Task definition successfully registered with ARN '{task_def_arn}'.")
+        self._output_with_timestamp(
+            f"Task definition successfully registered with ARN '{task_def_arn}'."
+        )
 
-        service_response = self.ecs_provider.update_service(
+        update_response = self.ecs_provider.update_service(
             service=service,
             task_def_arn=task_def_arn,
             environment=environment,
             application=application,
         )
 
-        self._output_with_timestamp(f"Successfully updated ECS service '{service_response['serviceName']}'.")
+        self._output_with_timestamp(
+            f"Successfully updated ECS service '{update_response['serviceName']}'."
+        )
 
-        primary_deployment_id = self._get_primary_deployment_id(service_response=service_response)
+        primary_deployment_id = self._get_primary_deployment_id(service_response=update_response)
 
-        self._output_with_timestamp(f"New deployment with ID '{primary_deployment_id}' has been triggered.")
+        self._output_with_timestamp(
+            f"New deployment with ID '{primary_deployment_id}' has been triggered."
+        )
 
         seen_events = set()
         deadline = time.monotonic() + DEPLOYMENT_TIMEOUT_SECONDS
 
         while time.monotonic() < deadline:
-            svc_response = self.ecs_provider.describe_service(
-                application=application,
-                environment=environment,
-                service=service
+            service_response = self.ecs_provider.describe_service(
+                application=application, environment=environment, service=service
+            )
+            primary_deployment_id = self._get_primary_deployment_id(
+                service_response=service_response
             )
 
             # Log service events
-            for event in reversed(svc_response.get("events", [])):
+            for event in reversed(service_response.get("events", [])):
                 if event["id"] not in seen_events and event["createdAt"] > start_time:
                     seen_events.add(event["id"])
                     timestamp = event["createdAt"].strftime("%H:%M:%S")
@@ -301,13 +311,13 @@ class ServiceManager:
                         self.io.info(f"[{timestamp}] {message}")
 
             # Get task level information
-            task_ids = self._wait_for_new_tasks(cluster_name=cluster_name, deployment_id=primary_deployment_id)
+            task_ids = self._wait_for_new_tasks(
+                cluster_name=cluster_name, deployment_id=primary_deployment_id
+            )
             task_response = self.ecs_provider.describe_tasks(
                 cluster_name=f"{application}-{environment}-cluster",
                 task_ids=task_ids,
             )
-
-            self.io.info(f"tasks : {len(task_response)}")
 
             for task in task_response:
                 for container in task["containers"]:
@@ -318,13 +328,16 @@ class ServiceManager:
                         if f"{task_id}-{container_name}" not in seen_events:
                             seen_events.add(f"{task_id}-{container_name}")
                             timestamp = datetime.now(timezone.utc).strftime("%H:%M:%S")
-                            self.io.deploy_error(f"[{timestamp}] Container '{container_name}' stopped in task '{task_id}'.")
+                            self.io.deploy_error(
+                                f"[{timestamp}] Container '{container_name}' stopped in task '{task_id}'."
+                            )
 
                         log_group = f"/platform/ecs/service/{application}/{environment}/{service}"
                         log_events = self.logs_provider.get_log_stream_events(
-                            log_group=log_group, log_stream=f"platform/{container_name}/{task_id}", limit=10
+                            log_group=log_group,
+                            log_stream=f"platform/{container_name}/{task_id}",
+                            limit=20,
                         )
-                        self.io.info(f"log events: {len(log_events)}")
 
                         for event in log_events:
                             try:
@@ -332,14 +345,16 @@ class ServiceManager:
                             except json.decoder.JSONDecodeError:
                                 message = event["message"]
 
-                            if message not in seen_events:
-                                seen_events.add(message)
+                            if f"{task_id}-{message}" not in seen_events:
+                                seen_events.add(f"{task_id}-{message}")
                                 timestamp = datetime.now(timezone.utc).strftime("%H:%M:%S")
                                 self.io.deploy_error(f"[{timestamp}] {message}")
 
             # Get overall deployment state
             state, reason = self.ecs_provider.get_service_deployment_state(
-                cluster_name=cluster_name, service_name=ecs_service_name, start_time=start_time.timestamp()
+                cluster_name=cluster_name,
+                service_name=ecs_service_name,
+                start_time=start_time.timestamp(),
             )
 
             if state == "SUCCESSFUL":
@@ -350,9 +365,7 @@ class ServiceManager:
 
             time.sleep(POLL_INTERVAL_SECONDS)
 
-        raise PlatformException(
-            f"Timed out waiting for service to stabilise."
-        )
+        raise PlatformException(f"Timed out waiting for service to stabilise.")
 
         # expected_count = service_response.get("desiredCount", 1)
         # task_ids = self._fetch_ecs_task_ids(
@@ -469,8 +482,7 @@ class ServiceManager:
     #     return task_ids
 
     def _wait_for_new_tasks(self, cluster_name: str, deployment_id: str) -> list[str]:
-        """Return first ECS task ID started by the PRIMARY ECS
-        deployment."""
+        """Return first ECS task ID started by the PRIMARY ECS deployment."""
 
         timeout_seconds = 180
         deadline = time.monotonic() + timeout_seconds

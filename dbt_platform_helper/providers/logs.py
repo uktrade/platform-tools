@@ -16,13 +16,13 @@ class LogsProvider:
         """
         Check whether the logs streams provided exist or not.
 
-        Retry for up to 5 minutes.
+        Retry for up to 1 minute.
         """
 
         found_log_streams = set()
         expected_log_streams = set(expected_log_streams)
-        timeout_seconds = 300
-        poll_interval_seconds = 2
+        timeout_seconds = 60
+        poll_interval_seconds = 5
         deadline_seconds = time.monotonic() + timeout_seconds
 
         while time.monotonic() < deadline_seconds:
