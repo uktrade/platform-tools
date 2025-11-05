@@ -323,13 +323,13 @@ class ServiceManager:
 
             if state == "SUCCESSFUL":
                 self._output_with_timestamp("Deployment complete.")
-                return True
+                return
             if state in ["STOPPED", "ROLLBACK_SUCCESSFUL", "ROLLBACK_FAILED"]:
-                raise PlatformException(f"\nECS deployment failed: {reason or 'unknown reason'}")
+                raise PlatformException(f"\nDeployment failed: {reason or 'unknown reason'}")
 
             time.sleep(POLL_INTERVAL_SECONDS)
 
-        raise PlatformException(f"Timed out waiting for service to stabilise.")
+        raise PlatformException("Timed out waiting for service to stabilise.")
 
     @staticmethod
     def _get_primary_deployment_id(service_response: dict[str, Any]):
@@ -412,7 +412,7 @@ class ServiceManager:
 
         if not task_arns:
             raise PlatformException(
-                f"Timed out waiting for RUNNING ECS task(s) to spin up after {timeout_seconds}s."
+                f"Timed out waiting for RUNNING ECS tasks to spin up after {timeout_seconds}s."
             )
 
         task_ids = []

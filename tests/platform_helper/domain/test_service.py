@@ -1,10 +1,14 @@
 import json
 import os
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
 import yaml
+from freezegun import freeze_time
 
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
@@ -82,6 +86,7 @@ class ServiceManagerMocks:
         self.ecs_provider = Mock()
         self.s3_provider = Mock()
         self.logs_provider = Mock()
+        self.io = Mock()
 
         # Fake Application object
         env = Environment(name=env_name, account_id=account_id, sessions={})
@@ -94,6 +99,7 @@ class ServiceManagerMocks:
             load_application=self.load_application,
             s3_provider=self.s3_provider,
             logs_provider=self.logs_provider,
+            io=self.io,
         )
 
 
@@ -104,9 +110,26 @@ def get_ecs_update_service_response(service_name="myapp-dev-web", deployment_id=
             {"id": "old-deployment", "status": "ACTIVE"},
             {"id": deployment_id, "status": "PRIMARY"},
         ],
+        "events": [
+            {
+                "id": "12345",
+                "createdAt": datetime.now(timezone.utc),
+                "message": "(service myapp-dev-web) has started 1 tasks: (task abc123).",
+            }
+        ],
     }
 
 
+def get_ecs_task_response(exit_code: int = 0):
+    return [
+        {
+            "taskArn": "arn:aws:ecs:eu-west-2:1234567890:task/myapp-dev-cluster/123abc",
+            "containers": [{"name": "web", "exitCode": exit_code}],
+        }
+    ]
+
+
+@freeze_time("2025-01-16 13:00:00")
 def test_service_deploy_success():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
@@ -120,23 +143,26 @@ def test_service_deploy_success():
     update_service_response = get_ecs_update_service_response(
         service_name="myapp-dev-web", deployment_id="deployment-123"
     )
-    update_service_response["desiredCount"] = 2
     mocks.ecs_provider.update_service.return_value = update_service_response
-
-    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["web", "datadog"]
+    mocks.ecs_provider.describe_service.return_value = update_service_response
 
     # Skip waiting for time loops in those methods to reach timeout
     with patch.object(
-        service_manager, "_fetch_ecs_task_ids", return_value=["task1", "task2"]
-    ) as fetch_ecs_task_ids, patch.object(
-        service_manager, "_monitor_ecs_deployment", return_value=True
-    ) as monitor_ecs_deployment:
+        service_manager, "_wait_for_new_tasks", return_value=["task1", "task2"]
+    ) as wait_for_new_tasks, patch.object(
+        service_manager, "_monitor_task_events"
+    ) as monitor_task_events, patch.object(
+        service_manager, "_monitor_service_events"
+    ) as monitor_service_events:
+
+        ecs_task_response = get_ecs_task_response()
+        mocks.ecs_provider.describe_tasks.return_value = ecs_task_response
+        mocks.ecs_provider.get_service_deployment_state.return_value = ("SUCCESSFUL", None)
 
         service_manager.deploy(
             service="web",
             environment="dev",
             application="myapp",
-            account_id="111122223333",
             image_tag="tag-123",
         )
 
@@ -159,14 +185,20 @@ def test_service_deploy_success():
     assert update_service_kwargs["environment"] == "dev"
     assert update_service_kwargs["application"] == "myapp"
 
-    fetch_task_ids_kwargs = fetch_ecs_task_ids.call_args.kwargs
-    assert fetch_task_ids_kwargs["application"] == "myapp"
-    assert fetch_task_ids_kwargs["environment"] == "dev"
+    fetch_task_ids_kwargs = wait_for_new_tasks.call_args.kwargs
+    assert fetch_task_ids_kwargs["cluster_name"] == "myapp-dev-cluster"
     assert fetch_task_ids_kwargs["deployment_id"] == "deployment-123"
-    assert fetch_task_ids_kwargs["expected_count"] == 2
 
-    monitor_ecs_deployment.assert_called_once_with(
-        application="myapp", environment="dev", service="web"
+    monitor_service_events.assert_called_once_with(
+        service_response=update_service_response,
+        seen_events=set(),
+        start_time=datetime.now(timezone.utc),
+    )
+
+    monitor_task_events.assert_called_once_with(
+        task_response=ecs_task_response,
+        seen_events=set(),
+        log_group="/platform/ecs/service/myapp/dev/web",
     )
 
 
@@ -182,25 +214,22 @@ def test_deploy_success_uses_env_var(env_var_provider):
     )
 
     update_service_response = get_ecs_update_service_response()
-    update_service_response["desiredCount"] = 1
     mocks.ecs_provider.update_service.return_value = update_service_response
-
-    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["web", "datadog"]
+    mocks.ecs_provider.describe_service.return_value = update_service_response
 
     # Skip waiting for the time-based loops in those methods to reach their timeouts
-    with patch.object(service_manager, "_fetch_ecs_task_ids", return_value=["task1"]), patch.object(
-        service_manager, "_monitor_ecs_deployment", return_value=True
-    ):
-        service_manager.deploy(
-            service="web", environment="dev", application="myapp", account_id="111122223333"
-        )
+    with patch.object(
+        service_manager, "_wait_for_new_tasks", return_value=["task1", "task2"]
+    ), patch.object(service_manager, "_monitor_task_events"):
+        mocks.ecs_provider.get_service_deployment_state.return_value = ("SUCCESSFUL", None)
+        service_manager.deploy(service="web", environment="dev", application="myapp")
 
     assert mocks.ecs_provider.register_task_definition.call_args.kwargs["image_tag"] == "tag-123"
     assert mocks.ecs_provider.register_task_definition.call_args.kwargs["service"] == "web"
 
 
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
-def test_fetch_ecs_task_ids_success(time_sleep):
+def test_wait_for_new_tasks_success(time_sleep):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
@@ -209,10 +238,8 @@ def test_fetch_ecs_task_ids_success(time_sleep):
         "arn:aws:ecs:eu-west-2:111122223333:task/myapp-dev-cluster/task2",
     ]
 
-    task_ids = service_manager._fetch_ecs_task_ids(
-        application="myapp",
-        environment="dev",
-        expected_count=2,
+    task_ids = service_manager._wait_for_new_tasks(
+        cluster_name="myapp-dev-cluster",
         deployment_id="deployment-id",
     )
 
@@ -242,88 +269,98 @@ def test_get_primary_deployment_id_raises_exception():
     assert "Unable to find primary ECS deployment" in str(e.value)
 
 
-def test_build_cloudwatch_live_tail_url():
-    mocks = ServiceManagerMocks()
-    service_manager = ServiceManager(**mocks.params())
-
-    cloudwatch_url = service_manager._build_cloudwatch_live_tail_url(
-        account_id="111222333",
-        log_group="/platform/ecs/service/myapp/dev/web",
-        log_streams=["stream1/test", "stream2/test"],
-    )
-
-    assert (
-        cloudwatch_url
-        == "https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:live-tail$3FlogGroupArns$3D~(~'arn*3aaws*3alogs*3aeu-west-2*3a111222333*3alog-group*3a*2fplatform*2fecs*2fservice*2fmyapp*2fdev*2fweb*3a*2a)$26logStreamNames$3D~(~'stream1*2ftest~'stream2*2ftest)"
-    )
-
-
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
-def test_fetch_ecs_task_ids_times_out(time_sleep):
+def test_wait_for_new_tasks_times_out(time_sleep):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
-    expected_count = 3
 
     # One task is returned instead of the 3 tasks expected
-    mocks.ecs_provider.get_ecs_task_arns.return_value = [
-        "arn:aws:ecs:eu-west-2:111122223333:task/myapp-dev-cluster/task1234"
-    ]
+    mocks.ecs_provider.get_ecs_task_arns.return_value = []
 
     # Fake time: 0 = deadline starts, 1 = loop once, 601 = timeout and exit
     with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1, 601]):
         with pytest.raises(PlatformException) as e:
-            service_manager._fetch_ecs_task_ids(
-                application="myapp",
-                environment="dev",
-                deployment_id="deployment-id",
-                expected_count=expected_count,
+            service_manager._wait_for_new_tasks(
+                cluster_name="myapp-dev-cluster", deployment_id="deployment-id"
             )
 
-    assert "Timed out waiting for 3 RUNNING ECS task(s)" in str(e.value)
+    assert "Timed out waiting for RUNNING ECS tasks" in str(e.value)
 
 
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
-def test_monitor_ecs_deployment_success(time_sleep):
+def test_service_deploy_failed(time_sleep):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    mocks.logs_provider.filter_log_events.return_value = {"events": []}
-    mocks.ecs_provider.get_service_rollout_state.return_value = ("SUCCESSFUL", None)
-
-    # Fake time: 0 = deadline starts, 1 = loop once
-    with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
-        deployment_success = service_manager._monitor_ecs_deployment("myapp", "dev", "web")
-    assert deployment_success is True
-
-
-@patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
-def test_monitor_ecs_deployment_failed(time_sleep):
-    mocks = ServiceManagerMocks()
-    service_manager = ServiceManager(**mocks.params())
-
-    mocks.logs_provider.filter_log_events.return_value = {"events": []}
-    mocks.ecs_provider.get_service_rollout_state.return_value = (
-        "ROLLBACK_SUCCESSFUL",
-        "There was an error",
+    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
+    mocks.ecs_provider.register_task_definition.return_value = (
+        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
 
-    # Fake time: 0 = deadline starts, 1 = loop once
-    with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
+    update_service_response = get_ecs_update_service_response(
+        service_name="myapp-dev-web", deployment_id="deployment-123"
+    )
+    mocks.ecs_provider.update_service.return_value = update_service_response
+    mocks.ecs_provider.describe_service.return_value = update_service_response
+
+    # Skip waiting for time loops in those methods to reach timeout
+    with patch.object(
+        service_manager, "_wait_for_new_tasks", return_value=["task1", "task2"]
+    ), patch.object(service_manager, "_monitor_task_events"):
+
+        mocks.ecs_provider.describe_tasks.return_value = get_ecs_task_response()
+        mocks.ecs_provider.get_service_deployment_state.return_value = (
+            "ROLLBACK_SUCCESSFUL",
+            "There was an error",
+        )
+
         with pytest.raises(PlatformException) as e:
-            service_manager._monitor_ecs_deployment("myapp", "dev", "web")
-    assert "ECS deployment failed: There was an error" in str(e.value)
+            service_manager.deploy(
+                service="web",
+                environment="dev",
+                application="myapp",
+                image_tag="tag-123",
+            )
+        assert "Deployment failed: There was an error" in str(e.value)
 
 
-@patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
-def test_monitor_ecs_deployment_raises_exception(time_sleep):
+@freeze_time("2025-01-16 13:00:00")
+def test_monitor_service_events_success():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    mocks.logs_provider.filter_log_events.return_value = {"events": []}
-    mocks.ecs_provider.get_service_rollout_state.side_effect = Exception("An exception")
+    service_response = get_ecs_update_service_response(
+        service_name="myapp-dev-web", deployment_id="deployment-123"
+    )
 
-    # Fake time: 0 = deadline starts, 1 = loop once
-    with patch("dbt_platform_helper.domain.service.time.monotonic", side_effect=[0, 1]):
-        with pytest.raises(PlatformException) as e:
-            service_manager._monitor_ecs_deployment("myapp", "dev", "web")
-    assert "Failed to fetch ECS rollout state: An exception" in str(e.value)
+    service_manager._monitor_service_events(
+        service_response=service_response,
+        seen_events=set(),
+        start_time=datetime.now(timezone.utc) - timedelta(hours=1),
+    )
+
+    mocks.io.info.assert_called_with(
+        "[13:00:00] (service myapp-dev-web) has started 1 tasks: (task abc123)."
+    )
+
+
+def test_monitor_task_events_success():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+
+    task_response = get_ecs_task_response(exit_code=1)
+    log_group = "/platform/ecs/service/myapp/dev/web"
+
+    mocks.logs_provider.get_log_stream_events.return_value = [{"message": "test"}]
+
+    service_manager._monitor_task_events(
+        task_response=task_response,
+        seen_events=set(),
+        log_group=log_group,
+    )
+
+    mocks.logs_provider.get_log_stream_events.assert_called_once_with(
+        log_group=log_group,
+        log_stream=f"platform/web/123abc",
+        limit=20,
+    )
