@@ -74,8 +74,6 @@ def deploy(name, env, image_tag):
         s3_provider = S3Provider(client=s3_client)
         logs_provider = LogsProvider(client=logs_client)
 
-        account_id = application.environments.get(env).account_id
-
         service_manager = ServiceManager(
             ecs_provider=ecs_provider, s3_provider=s3_provider, logs_provider=logs_provider
         )
@@ -83,7 +81,6 @@ def deploy(name, env, image_tag):
             service=name,
             environment=env,
             application=application.name,
-            account_id=account_id,
             image_tag=image_tag,
         )
     except PlatformException as error:
