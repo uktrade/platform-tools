@@ -3,12 +3,6 @@ import boto3
 DUMMY_RULES_RANGE_START = 1000
 
 
-# TODO: if there are any other platform rules for the service, this lambda takes no action.
-# TODO: update the internal alb update-rules command to:
-# 1. after successful creation of platform rules, delete the dummy rules (if in platform deploy mode)
-# 2. support creating rules when no copilot rules exist for a service.
-
-
 class DummyRuleManager:
     def __init__(self, application, environment, listener_arn):
         self.client = None
@@ -59,9 +53,21 @@ class DummyRuleManager:
             if "reason" in r["Tags"] and r["Tags"]["reason"] == "DummyRule"
         ]
 
+    @property
+    def platform_rules(self):
+        return [
+            r
+            for r in self.rules.values()
+            if "reason" in r["Tags"] and r["Tags"]["reason"] == "service"
+        ]
+
     def create_dummy_rule(self, target_group_arn, service_name):
         if service_name in [r["Tags"]["service"] for r in self.dummy_rules]:
             print(f"service {service_name} already has a dummy rule, exiting")
+            return
+
+        if service_name in [r["Tags"]["service"] for r in self.platform_rules]:
+            print(f"service {service_name} already has a platform rule, ignoring")
             return
 
         next_priority = DUMMY_RULES_RANGE_START
