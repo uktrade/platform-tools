@@ -18,8 +18,9 @@ class CreateMock:
 
     def setup(self, mock_application):
 
+        self.application = mock_application
         self.load_application_mock = MagicMock()
-        self._create_sessions(mock_application)
+        self._create_sessions()
         self.load_application_mock.return_value = mock_application
         self._create_existing_params()
 
@@ -72,9 +73,9 @@ class CreateMock:
             ]
         self.parameter_store_provider_mock.return_value = self.parameter_store_mock
 
-    def _create_sessions(self, application):
+    def _create_sessions(self):
         mocks = {}
-        for env, env_object in application.environments.items():
+        for env, env_object in self.application.environments.items():
             mock_session = MagicMock(name=f"{env}-session-mock")
             mock_sts_client = MagicMock(name=f"{env}-sts-client-mock")
             mock_sts_client.get_caller_identity.return_value = {
@@ -106,8 +107,8 @@ class CreateMock:
             mock_session.client.side_effect = self.__make_client_side_effect(
                 mock_sts_client, mock_iam_client, mock_ssm_client
             )
-            application.environments[env].sessions[
-                application.environments[env].account_id
+            self.application.environments[env].sessions[
+                self.application.environments[env].account_id
             ] = mock_session
         self.mocks = mocks
 

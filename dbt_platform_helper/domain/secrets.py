@@ -22,13 +22,10 @@ class Secrets:
 
     def _check_ssm_write_access(self, accounts):
         """
-        Get role name from sts_arn = sts.get_caller_identity()["Arn"]
+        Check access.
 
-        get role arn by
-        - calculating or
-        - get_role(RoleName=)
-        check role has ssm:PutParameter permission:
-        - iam.simulate_principal_policy
+        Cannot use iam.simulate_principal_policy due to read accounts not having
+        access
         """
         no_access = []
         # TODO try https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/simulate_principal_policy.html
