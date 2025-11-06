@@ -252,7 +252,12 @@ class ECS:
             raise PlatformException(f"Error registering task definition: {err}")
 
     def update_service(
-        self, service: str, task_def_arn: str, environment: str, application: str
+        self,
+        service: str,
+        task_def_arn: str,
+        environment: str,
+        application: str,
+        desired_count: int,
     ) -> dict[str, Any]:
         """Update an ECS service and return the response."""
 
@@ -261,6 +266,7 @@ class ECS:
                 cluster=f"{application}-{environment}-cluster",
                 service=f"{application}-{environment}-{service}",
                 taskDefinition=task_def_arn,
+                desiredCount=desired_count,
             )
             return service_response["service"]
         except ClientError as err:

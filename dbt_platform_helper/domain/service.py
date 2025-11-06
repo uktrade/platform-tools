@@ -23,6 +23,7 @@ from dbt_platform_helper.domain.terraform_environment import (
 )
 from dbt_platform_helper.entities.service import ServiceConfig
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
@@ -59,6 +60,7 @@ class ServiceManager:
         ecs_provider: ECS = None,
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
+        autoscaling_provider: AutoscalingProvider = None,
     ):
 
         self.file_provider = file_provider
@@ -74,6 +76,7 @@ class ServiceManager:
         self.ecs_provider = ecs_provider
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
+        self.autoscaling_provider = autoscaling_provider
 
     def generate(self, environment: str, services: list[str]):
 
@@ -270,11 +273,17 @@ class ServiceManager:
             f"Task definition successfully registered with ARN '{task_def_arn}'."
         )
 
+        autoscaling_response = self.autoscaling_provider.describe_autoscaling_target(
+            cluster_name=cluster_name, ecs_service_name=ecs_service_name
+        )
+        desired_count = autoscaling_response.get("MinCapacity", 1)
+
         update_response = self.ecs_provider.update_service(
             service=service,
             task_def_arn=task_def_arn,
             environment=environment,
             application=application,
+            desired_count=desired_count,
         )
 
         self._output_with_timestamp(
