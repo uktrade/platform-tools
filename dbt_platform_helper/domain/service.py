@@ -325,7 +325,7 @@ class ServiceManager:
                 self._output_with_timestamp("Deployment complete.")
                 return
             if state in ["STOPPED", "ROLLBACK_SUCCESSFUL", "ROLLBACK_FAILED"]:
-                raise PlatformException(f"\nDeployment failed: {reason or 'unknown reason'}")
+                raise PlatformException(f"Deployment failed: {reason or 'unknown reason'}")
 
             time.sleep(POLL_INTERVAL_SECONDS)
 
@@ -337,7 +337,7 @@ class ServiceManager:
             if dep["status"] == "PRIMARY":
                 return dep["id"]
         raise PlatformException(
-            f"\nUnable to find primary ECS deployment for service '{service_response['serviceName']}'\n"
+            f"Unable to find primary ECS deployment for service '{service_response['serviceName']}'."
         )
 
     def _monitor_service_events(
