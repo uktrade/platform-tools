@@ -67,6 +67,7 @@ resource "aws_cloudfront_distribution" "standard" {
   # checkov:skip=CKV_AWS_310:No fail-over origin required.
   # checkov:skip=CKV2_AWS_32:Response headers policy not required.
   # checkov:skip=CKV2_AWS_47:WAFv2 WebACL rules are set in https://gitlab.ci.uktrade.digital/webops/terraform-waf
+  # checkov:skip=CKV_AWS_174:We are already setting TLS v1.2 as minimum but it's not picking it up correctly
   depends_on = [
     aws_acm_certificate_validation.cert-validate,
     aws_cloudfront_cache_policy.cache_policy,
