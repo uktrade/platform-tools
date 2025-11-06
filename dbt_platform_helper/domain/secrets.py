@@ -28,7 +28,6 @@ class Secrets:
         access
         """
         no_access = []
-        # TODO try https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/simulate_principal_policy.html
 
         for account, session in accounts.items():
             has_access = False
