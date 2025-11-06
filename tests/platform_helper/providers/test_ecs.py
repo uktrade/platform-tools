@@ -370,7 +370,7 @@ def test_get_ecs_task_arns_returns_arns():
     )
 
 
-def test_get_service_rollout_state_success():
+def test_get_service_deployment_state_success():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.list_service_deployments.return_value = {
@@ -378,35 +378,35 @@ def test_get_service_rollout_state_success():
     }
     start_time = time.time()
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    state, reason = ecs.get_service_rollout_state(
+    state, reason = ecs.get_service_deployment_state(
         "myapp-dev-cluster", "myapp-dev-web", start_time=start_time
     )
     assert state == "SUCCESSFUL"
     assert reason is None
     ecs_client.list_service_deployments.assert_called_once_with(
-        cluster="myapp-dev-cluster", service="myapp-dev-web", createdAt={"after": start_time - 180}
+        cluster="myapp-dev-cluster", service="myapp-dev-web", createdAt={"after": start_time}
     )
 
 
-def test_get_service_rollout_state_failed():
+def test_get_service_deployment_state_failed():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.list_service_deployments.return_value = {
         "serviceDeployments": [{"status": "FAILED", "statusReason": "Some error occurred"}]
     }
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    assert ecs.get_service_rollout_state("cluster", "service", start_time=time.time()) == (
+    assert ecs.get_service_deployment_state("cluster", "service", start_time=time.time()) == (
         "FAILED",
         "Some error occurred",
     )
 
 
-def test_get_service_rollout_state_service_not_found():
+def test_get_service_deployment_state_service_not_found():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.list_service_deployments.return_value = {"serviceDeployments": []}
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
-    assert ecs.get_service_rollout_state(
+    assert ecs.get_service_deployment_state(
         "cluster", "non-existent-service", start_time=time.time()
     ) == (
         None,

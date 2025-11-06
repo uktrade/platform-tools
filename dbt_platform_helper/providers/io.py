@@ -41,6 +41,9 @@ class ClickIOProvider:
         click.secho(f"Error: {message}", err=True, fg="red")
         exit(1)
 
+    def deploy_error(self, message: str):
+        click.secho(message, fg="red")
+
     # TODO: DBTP-1979: messages will be a ValidationMessages class rather than a free-rein dictionary
     def process_messages(self, messages: dict):
         if not messages:
