@@ -20,16 +20,7 @@ class Secrets:
         self.io = io
         self.parameter_store_provider: ParameterStore = parameter_store_provider
 
-    def create(self, app_name, name, overwrite):
-        self.application = (
-            self.load_application_fn(app_name) if not self.application else self.application
-        )
-
-        accounts = {}
-        for _, environment in self.application.environments.items():
-            if environment.account_id not in accounts:
-                accounts[environment.account_id] = environment.session
-
+    def _check_ssm_write_access(self, accounts):
         no_access = []
         # TODO try https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/simulate_principal_policy.html
         for account, session in accounts.items():
@@ -68,13 +59,12 @@ class Secrets:
                 no_access.append(account)
 
         if no_access:
-            account_ids = ", ".join(no_access)
+            account_ids = "', '".join(no_access)
             raise PlatformException(
-                f"You do not have SSM write access to the following AWS accounts: {account_ids}"
+                f"You do not have SSM write access to the following AWS accounts: '{account_ids}'"
             )
 
-        get_secret_name = lambda x: f"/platform/{app_name}/{x}/secrets/{name.upper()}"
-
+    def _check_for_existing_params(self, get_secret_name):
         found_params = []
         for _, environment in self.application.environments.items():
             parameter_store: ParameterStore = self.parameter_store_provider(
@@ -90,22 +80,43 @@ class Secrets:
                 else:
                     raise PlatformException(error)
 
+        return found_params
+
+    def create(self, app_name, name, overwrite):
+        self.application = (
+            self.load_application_fn(app_name) if not self.application else self.application
+        )
+
+        accounts = {}
+        for _, environment in self.application.environments.items():
+            if environment.account_id not in accounts:
+                accounts[environment.account_id] = environment.session
+
+        self._check_ssm_write_access(accounts)
+
+        get_secret_name = lambda x: f"/platform/{app_name}/{x}/secrets/{name.upper()}"
+        found_params = self._check_for_existing_params(get_secret_name)
+
         if overwrite is False and found_params:
-            envs = ", ".join(found_params)
+            envs = "', '".join(found_params)
             raise PlatformException(
-                f"SSM parameter {name.upper()} already exists for the following environments: {envs}. \nRun with the --overwrite flag if you want to set new values."
+                f"SSM parameter '{name.upper()}' already exists for the following environments: '{envs}'. \nRun with the --overwrite flag if you want to set new values."
             )
 
         values = {}
         for _, environment in self.application.environments.items():
             value = self.io.input(
-                f"Please enter value for secret {name.upper()} in environment {environment.name}",
+                f"Please enter value for secret '{name.upper()}' in environment '{environment.name}'",
                 hide_input=True,
             )
             values[environment.name] = value
 
         for environment_name, secret_value in values.items():
+
             environment = self.application.environments[environment_name]
+            parameter_store: ParameterStore = self.parameter_store_provider(
+                environment.session.client("ssm")
+            )
 
             data_dict = dict(
                 Name=get_secret_name(environment.name),
@@ -118,13 +129,10 @@ class Secrets:
                     {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
                 ],
             )
-            if (
-                overwrite and environment_name in found_params
-            ):  # If in found params we are overwriting
+
+            # If in found params we are overwriting
+            if overwrite and environment_name in found_params:
                 data_dict["Overwrite"] = True
                 del data_dict["Tags"]
-            self.io.info(
-                f"Creating ssm value in {get_secret_name(environment.name)} with tags application: {app_name} and environment: {environment.name}"
-            )
-            ssm_client = environment.session.client("ssm")
-            ssm_client.put_parameter(**data_dict)
+            self.io.info(f"Creating AWS SSM secret {get_secret_name(environment.name)}")
+            parameter_store.put_parameter(data_dict)

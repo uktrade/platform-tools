@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+from unittest.mock import call
 
 import pytest
 from botocore.exceptions import ClientError
@@ -21,19 +22,19 @@ class CreateMock:
         load_application_mock.return_value = mock_application
         io_mock = MagicMock()
         io_mock.input.side_effect = ["1", "2", "3", "4"]
-        parameter_store_provider_mock = MagicMock()
+        self.parameter_store_provider_mock = MagicMock()
 
-        parameter_store_mock = MagicMock()
+        self.parameter_store_mock = MagicMock()
 
         if self.create_existing_params:
-            parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
+            self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
                 {"Name": "doesntmatter"},
                 {"Name": "doesntmatter1"},
                 {"Name": "doesntmatter2"},
                 {"Name": "doesntmatter3"},
             ]
         else:
-            parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
+            self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
                 ClientError(
                     {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
                     "GetParameter",
@@ -51,12 +52,12 @@ class CreateMock:
                     "GetParameter",
                 ),
             ]
-        parameter_store_provider_mock.return_value = parameter_store_mock
+        self.parameter_store_provider_mock.return_value = self.parameter_store_mock
 
         return dict(
             load_application=load_application_mock,
             io=io_mock,
-            parameter_store_provider=parameter_store_provider_mock,
+            parameter_store_provider=self.parameter_store_provider_mock,
         )
 
     def create_sessions(self, application):
@@ -128,6 +129,7 @@ def test_create(mock_application, input_args, policies, params_exist):
     secrets.create(**input_args)
 
     i = 1
+    put_parameter_calls = []
     for env, mocked in mock.mocks.items():
         mocked["session"].client("sts").get_caller_identity.assert_called_once()
         mocked["session"].client("iam").list_attached_role_policies.assert_called_with(RoleName=env)
@@ -153,8 +155,11 @@ def test_create(mock_application, input_args, policies, params_exist):
         if input_args["overwrite"]:
             called_with["Overwrite"] = True
             del called_with["Tags"]
-        mocked["session"].client("ssm").put_parameter.assert_called_with(**called_with)
+
+        put_parameter_calls.append(call(called_with))
+
         i += 1
+    mock.parameter_store_mock.put_parameter.assert_has_calls(put_parameter_calls)
 
 
 def test_create_no_access(mock_application):
@@ -209,7 +214,7 @@ def test_create_no_access(mock_application):
 
     with pytest.raises(
         PlatformException,
-        match="""You do not have SSM write access to the following AWS accounts: 000000000, 111111111, 222222222, 333333333""",
+        match="""You do not have SSM write access to the following AWS accounts: '000000000', '111111111', '222222222', '333333333'""",
     ):
         secrets.create("test-application", "secret", False)
 
@@ -268,6 +273,6 @@ def test_create_exception_parameter_found(mock_application):
 
     with pytest.raises(
         PlatformException,
-        match="""SSM parameter SECRET already exists for the following environments: development, staging, production, test.""",
+        match="""SSM parameter 'SECRET' already exists for the following environments: 'development', 'staging', 'production', 'test'.""",
     ):
         secrets.create("test-application", "secret", False)
