@@ -21,8 +21,18 @@ class Secrets:
         self.parameter_store_provider: ParameterStore = parameter_store_provider
 
     def _check_ssm_write_access(self, accounts):
+        """
+        Get role name from sts_arn = sts.get_caller_identity()["Arn"]
+
+        get role arn by
+        - calculating or
+        - get_role(RoleName=)
+        check role has ssm:PutParameter permission:
+        - iam.simulate_principal_policy
+        """
         no_access = []
         # TODO try https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/simulate_principal_policy.html
+
         for account, session in accounts.items():
             has_access = False
             sts = session.client("sts")
@@ -49,7 +59,7 @@ class Secrets:
                     "PolicyDocument"
                 ]
                 for statement in policy_doc["Statement"]:
-                    if "ssm:*" in statement["Action"] or "ssm:PutParmeter" in statement["Action"]:
+                    if "ssm:*" in statement["Action"] or "ssm:PutParameter" in statement["Action"]:
                         has_access = True
                         break
                 if has_access:
