@@ -3,6 +3,12 @@ import boto3
 DUMMY_RULES_RANGE_START = 1000
 
 
+# TODO: if there are any other platform rules for the service, this lambda takes no action.
+# TODO: update the internal alb update-rules command to:
+# 1. after successful creation of platform rules, delete the dummy rules (if in platform deploy mode)
+# 2. support creating rules when no copilot rules exist for a service.
+
+
 class DummyRuleManager:
     def __init__(self, application, environment, listener_arn):
         self.client = None
@@ -17,11 +23,11 @@ class DummyRuleManager:
         return self.client
 
     @property
-    def dummy_rules(self):
+    def rules(self):
         if self._cached_rules is not None:
             return self._cached_rules
 
-        print(f"pulling list of current dummy rules from {self.listener_arn}")
+        print(f"pulling list of current rules from {self.listener_arn}")
 
         # Get a list of all rules on the listener
         current_rules = {}
@@ -41,13 +47,17 @@ class DummyRuleManager:
                     item["Key"]: item["Value"] for item in tags["Tags"]
                 }
 
-        self._cached_rules = [
+        self._cached_rules = current_rules
+
+        return current_rules
+
+    @property
+    def dummy_rules(self):
+        return [
             r
-            for r in current_rules.values()
+            for r in self.rules.values()
             if "reason" in r["Tags"] and r["Tags"]["reason"] == "DummyRule"
         ]
-
-        return self._cached_rules
 
     def create_dummy_rule(self, target_group_arn, service_name):
         if service_name in [r["Tags"]["service"] for r in self.dummy_rules]:
