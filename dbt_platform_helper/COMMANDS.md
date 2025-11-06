@@ -620,6 +620,9 @@ platform-helper secrets (create|copy|list)
 
 [↩ Parent](#platform-helper-secrets)
 
+    Create a Parameter Store secret for all environments of an
+    application.
+
 ## Usage
 
 ```
@@ -628,14 +631,12 @@ platform-helper secrets create --app <application> --name <name> [--overwrite]
 
 ## Options
 
-- `--app
--a <text>`
-  - AWS application name
-- `--name
--n <text>`
-  - Name of secret
+- `--app <text>`
+  - Application name.
+- `--name <text>`
+  - Secret name (automatically uppercased).
 - `--overwrite <boolean>` _Defaults to False._
-  - Overwrite existing values.
+  - Allows overwriting the value of secrets if they already exist.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

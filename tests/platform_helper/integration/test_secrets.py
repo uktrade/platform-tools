@@ -170,7 +170,9 @@ def test_create(mock_application, input_args, policies, params_exist):
 
         put_parameter_calls.append(call(called_with))
         info_calls.append(
-            call(f"Creating AWS SSM secret /platform/test-application/{env}/secrets/SECRET")
+            call(
+                f"Creating AWS Parameter Store secret /platform/test-application/{env}/secrets/SECRET"
+            )
         )
         input_calls.append(
             call(
@@ -193,7 +195,7 @@ def test_create_no_access(mock_application):
 
     with pytest.raises(
         PlatformException,
-        match="""You do not have SSM write access to the following AWS accounts: '000000000', '111111111', '222222222', '333333333'""",
+        match="""You do not have AWS Parameter Store write access to the following AWS accounts: '000000000', '111111111', '222222222', '333333333'""",
     ):
         secrets.create("test-application", "secret", False)
 
@@ -206,7 +208,7 @@ def test_create_exception_parameter_found(mock_application):
 
     with pytest.raises(
         PlatformException,
-        match="""SSM parameter 'SECRET' already exists for the following environments: 'development', 'staging', 'production', 'test'.""",
+        match="""AWS Parameter Store secret 'SECRET' already exists for the following environments: 'development', 'staging', 'production', 'test'.""",
     ):
         secrets.create("test-application", "secret", False)
 

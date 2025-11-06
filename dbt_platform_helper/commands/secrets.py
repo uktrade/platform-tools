@@ -27,11 +27,17 @@ def secrets():
 
 
 @secrets.command()
-@click.option("--app", "-a", help="AWS application name", required=True)
-@click.option("--name", "-n", help="Name of secret", required=True)
-@click.option("--overwrite", is_flag=True, default=False, help="Overwrite existing values.")
+@click.option("--app", help="Application name.", required=True)
+@click.option("--name", help="Secret name (automatically uppercased).", required=True)
+@click.option(
+    "--overwrite",
+    is_flag=True,
+    default=False,
+    help="Allows overwriting the value of secrets if they already exist.",
+)
 def create(app: str, name: str, overwrite: bool):
-    """"""
+    """Create a Parameter Store secret for all environments of an
+    application."""
 
     try:
         Secrets().create(app, name, overwrite)

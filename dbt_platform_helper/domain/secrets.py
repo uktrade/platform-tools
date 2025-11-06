@@ -71,7 +71,7 @@ class Secrets:
         if no_access:
             account_ids = "', '".join(no_access)
             raise PlatformException(
-                f"You do not have SSM write access to the following AWS accounts: '{account_ids}'"
+                f"You do not have AWS Parameter Store write access to the following AWS accounts: '{account_ids}'"
             )
 
     def _check_for_existing_params(self, get_secret_name):
@@ -110,7 +110,7 @@ class Secrets:
         if overwrite is False and found_params:
             envs = "', '".join(found_params)
             raise PlatformException(
-                f"SSM parameter '{name.upper()}' already exists for the following environments: '{envs}'. \nRun with the --overwrite flag if you want to set new values."
+                f"AWS Parameter Store secret '{name.upper()}' already exists for the following environments: '{envs}'. \nUse the --overwrite flag to replacing existing secret values."
             )
 
         values = {}
@@ -144,5 +144,5 @@ class Secrets:
             if overwrite and environment_name in found_params:
                 data_dict["Overwrite"] = True
                 del data_dict["Tags"]
-            self.io.info(f"Creating AWS SSM secret {get_secret_name(environment.name)}")
+            self.io.info(f"Creating AWS Parameter Store secret {get_secret_name(environment.name)}")
             parameter_store.put_parameter(data_dict)
