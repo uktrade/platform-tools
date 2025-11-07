@@ -171,17 +171,26 @@ def test_create(mock_application, input_args, policies, params_exist):
             del called_with["Tags"]
 
         put_parameter_calls.append(call(called_with))
-        debug_calls.append(
-            call(
-                f"Creating AWS Parameter Store secret /platform/test-application/{env}/secrets/SECRET ..."
-            )
-        )
+
         input_calls.append(
             call(
                 f"Please enter value for secret 'SECRET' in environment '{env}'",
                 hide_input=True,
             )
         )
+
+        debug_calls.append(
+            call(
+                f"Creating AWS Parameter Store secret /platform/test-application/{env}/secrets/SECRET ..."
+            )
+        )
+
+        debug_calls.append(
+            call(
+                f"Successfully created AWS Parameter Store secret /platform/test-application/{env}/secrets/SECRET"
+            )
+        )
+
         i += 1
 
     info_calls.append(
@@ -193,6 +202,7 @@ def test_create(mock_application, input_args, policies, params_exist):
         call(
             message="```\nsecrets:\n\tSECRET: /platform/${PLATFORM_APPLICATION_NAME}/${PLATFORM_ENVIRONMENT_NAME}/secrets/SECRET\n```",
             fg="cyan",
+            bold=True,
         )
     )
 

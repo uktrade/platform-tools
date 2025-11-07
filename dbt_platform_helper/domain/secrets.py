@@ -144,6 +144,9 @@ class Secrets:
                 f"Creating AWS Parameter Store secret {get_secret_name(environment.name)} ..."
             )
             parameter_store.put_parameter(data_dict)
+            self.io.debug(
+                f"Successfully created AWS Parameter Store secret {get_secret_name(environment.name)}"
+            )
 
         self.io.info(
             "\nTo check or update your secrets head over to the AWS Console https://eu-west-2.console.aws.amazon.com/systems-manager/parameters/\n"
@@ -153,4 +156,5 @@ class Secrets:
         self.io.info(
             message=f"```\nsecrets:\n\t{name.upper()}: /platform/${{PLATFORM_APPLICATION_NAME}}/${{PLATFORM_ENVIRONMENT_NAME}}/secrets/{name.upper()}\n```",
             fg="cyan",
+            bold=True,
         )
