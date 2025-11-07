@@ -11,9 +11,9 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class CreateMock:
-    def __init__(self, user_policy_type="none", create_existing_params="none"):
+    def __init__(self, has_access=True, create_existing_params="none"):
         self.create_existing_params = create_existing_params
-        self.user_policy_type = user_policy_type
+        self.has_access = has_access
         self.mocks = None
 
     def setup(self, mock_application):
@@ -85,21 +85,28 @@ class CreateMock:
             mock_iam_client = MagicMock(name=f"{env}-iam-client-mock")
             mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
 
-            if self.user_policy_type == "admin":
-                mock_iam_client.list_attached_role_policies.return_value = {
-                    "AttachedPolicies": [{"PolicyName": "AdministratorAccess"}]
+            if self.has_access:
+                mock_iam_client.simulate_principal_policy.return_value = {
+                    "EvaluationResults": [
+                        {
+                            "EvalActionName": "ssm:PutParameter",
+                            "EvalResourceName": "*",
+                            "EvalDecision": "allowed",
+                            "MatchedStatements": [],
+                        }
+                    ],
                 }
             else:
-                mock_iam_client.list_attached_role_policies.return_value = {"AttachedPolicies": []}
-
-            if self.user_policy_type == "inline":
-                mock_iam_client.list_role_policies.return_value = {"PolicyNames": ["inline"]}
-                mock_iam_client.get_role_policy.return_value = {
-                    "PolicyDocument": {"Statement": [{"Action": ["acm:*", "ssm:*"]}]}
+                mock_iam_client.simulate_principal_policy.return_value = {
+                    "EvaluationResults": [
+                        {
+                            "EvalActionName": "ssm:PutParameter",
+                            "EvalResourceName": "*",
+                            "EvalDecision": "implicitDeny",
+                            "MatchedStatements": [],
+                        }
+                    ],
                 }
-            else:
-                mock_iam_client.list_role_policies.return_value = {"PolicyNames": []}
-
             mocks[env] = {
                 "session": mock_session,
             }
@@ -124,16 +131,16 @@ class CreateMock:
 
 
 @pytest.mark.parametrize(
-    "input_args, policies, params_exist",
+    "input_args, params_exist",
     [
-        ({"app_name": "test-application", "name": "secret", "overwrite": False}, "admin", "none"),
-        ({"app_name": "test-application", "name": "secret", "overwrite": True}, "inline", "exists"),
-        ({"app_name": "test-application", "name": "secret", "overwrite": False}, "inline", "none"),
+        ({"app_name": "test-application", "name": "secret", "overwrite": False}, "none"),
+        ({"app_name": "test-application", "name": "secret", "overwrite": True}, "exists"),
+        ({"app_name": "test-application", "name": "secret", "overwrite": False}, "none"),
     ],
 )
-def test_create(mock_application, input_args, policies, params_exist):
+def test_create(mock_application, input_args, params_exist):
 
-    mock = CreateMock(user_policy_type=policies, create_existing_params=params_exist)
+    mock = CreateMock(create_existing_params=params_exist)
     input_mocks = mock.setup(mock_application)
     secrets = Secrets(**input_mocks)
 
@@ -146,13 +153,22 @@ def test_create(mock_application, input_args, policies, params_exist):
     debug_calls = []
     for env, mocked in mock.mocks.items():
         mocked["session"].client("sts").get_caller_identity.assert_called_once()
-        mocked["session"].client("iam").list_attached_role_policies.assert_called_with(RoleName=env)
-
-        if policies == "inline":
-            mocked["session"].client("iam").list_role_policies.assert_called_with(RoleName=env)
-            mocked["session"].client("iam").get_role_policy.assert_called_with(
-                RoleName=env, PolicyName="inline"
-            )
+        account_id = mock.application.environments[env].account_id
+        mocked["session"].client("iam").simulate_principal_policy.assert_called_with(
+            PolicySourceArn=f"arn:aws:iam::{account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{env}",
+            ActionNames=[
+                "ssm:PutParameter",
+            ],
+            ContextEntries=[
+                {
+                    "ContextKeyName": "aws:RequestedRegion",
+                    "ContextKeyValues": [
+                        "eu-west-2",
+                    ],
+                    "ContextKeyType": "string",
+                }
+            ],
+        )
 
         called_with = dict(
             Name=f"/platform/test-application/{env}/secrets/SECRET",
@@ -214,7 +230,7 @@ def test_create(mock_application, input_args, policies, params_exist):
 
 def test_create_no_access(mock_application):
 
-    mock = CreateMock()
+    mock = CreateMock(has_access=False)
     input_mocks = mock.setup(mock_application)
     secrets = Secrets(**input_mocks)
 
@@ -227,7 +243,7 @@ def test_create_no_access(mock_application):
 
 def test_create_exception_parameter_found(mock_application):
 
-    mock = CreateMock(user_policy_type="admin", create_existing_params="exists")
+    mock = CreateMock(create_existing_params="exists")
     input_mocks = mock.setup(mock_application)
     secrets = Secrets(**input_mocks)
 
@@ -240,7 +256,7 @@ def test_create_exception_parameter_found(mock_application):
 
 def test_create_exception_unexpected(mock_application):
 
-    mock = CreateMock(user_policy_type="admin", create_existing_params="unexpected")
+    mock = CreateMock(create_existing_params="unexpected")
     input_mocks = mock.setup(mock_application)
     secrets = Secrets(**input_mocks)
 

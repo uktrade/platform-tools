@@ -30,36 +30,34 @@ class Secrets:
         no_access = []
 
         for account, session in accounts.items():
-            has_access = False
             sts = session.client("sts")
             iam = session.client("iam")
 
             sts_arn = sts.get_caller_identity()["Arn"]
             role_name = sts_arn.split("/")[1]
 
-            managed_policies = iam.list_attached_role_policies(RoleName=role_name)[
-                "AttachedPolicies"
+            role_arn = (
+                f"arn:aws:iam::{account}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{role_name}"
+            )
+            response = iam.simulate_principal_policy(
+                PolicySourceArn=role_arn,
+                ActionNames=[
+                    "ssm:PutParameter",
+                ],
+                ContextEntries=[
+                    {
+                        "ContextKeyName": "aws:RequestedRegion",
+                        "ContextKeyValues": [
+                            "eu-west-2",
+                        ],
+                        "ContextKeyType": "string",
+                    }
+                ],
+            )["EvaluationResults"]
+
+            has_access = [
+                account for eval_result in response if eval_result["EvalDecision"] == "allowed"
             ]
-
-            for policy in managed_policies:
-                if policy["PolicyName"] == "AdministratorAccess":
-                    has_access = True
-
-            if has_access:
-                continue  # if has access move onto next account
-
-            inline_policies = iam.list_role_policies(RoleName=role_name)["PolicyNames"]
-
-            for policy in inline_policies:
-                policy_doc = iam.get_role_policy(RoleName=role_name, PolicyName=policy)[
-                    "PolicyDocument"
-                ]
-                for statement in policy_doc["Statement"]:
-                    if "ssm:*" in statement["Action"] or "ssm:PutParameter" in statement["Action"]:
-                        has_access = True
-                        break
-                if has_access:
-                    break
 
             if not has_access:
                 no_access.append(account)
