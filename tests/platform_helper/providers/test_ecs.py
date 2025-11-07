@@ -507,7 +507,11 @@ def test_update_service_success():
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
     svc = ecs.update_service(
-        service="web", task_def_arn="arn:taskdef:1", environment="dev", application="myapp"
+        service="web",
+        task_def_arn="arn:taskdef:1",
+        environment="dev",
+        application="myapp",
+        desired_count=1,
     )
 
     assert svc == {"serviceName": "myapp-dev-web"}
@@ -515,6 +519,7 @@ def test_update_service_success():
         cluster="myapp-dev-cluster",
         service="myapp-dev-web",
         taskDefinition="arn:taskdef:1",
+        desiredCount=1,
     )
 
 
@@ -529,7 +534,7 @@ def test_update_service_raises_exception():
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
     with pytest.raises(PlatformException) as e:
-        ecs.update_service(service_model, "arn:taskdef:1", "dev", "myapp")
+        ecs.update_service(service_model, "arn:taskdef:1", "dev", "myapp", desired_count=1)
     assert "Error updating ECS service" in str(e.value)
 
 
@@ -544,3 +549,31 @@ def test_wait_for_task_to_register(time_sleep):
 
     result = ecs.wait_for_task_to_register("cluster-arn", "task-def-family")
     assert result == ["arn1"]
+
+
+def test_describe_service_success():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_services.return_value = {"services": [{"serviceName": "myapp-dev-web"}]}
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    svc = ecs.describe_service(service="web", environment="dev", application="myapp")
+
+    assert svc == {"serviceName": "myapp-dev-web"}
+    ecs_client.describe_services.assert_called_once_with(
+        cluster="myapp-dev-cluster", services=["myapp-dev-web"]
+    )
+
+
+def test_describe_tasks_success():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.describe_tasks.return_value = {
+        "tasks": [{"taskArn": "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"}]
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    tasks = ecs.describe_tasks(cluster_name="myapp-dev-cluster", task_ids=["abc123"])
+
+    assert tasks == [{"taskArn": "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"}]
+    ecs_client.describe_tasks.assert_called_once_with(cluster="myapp-dev-cluster", tasks=["abc123"])
