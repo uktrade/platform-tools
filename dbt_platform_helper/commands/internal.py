@@ -4,6 +4,7 @@ from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
@@ -64,6 +65,7 @@ def deploy(name, env, image_tag):
         ssm_client = application.environments[env].session.client("ssm")
         s3_client = application.environments[env].session.client("s3")
         logs_client = application.environments[env].session.client("logs")
+        autoscaling_client = application.environments[env].session.client("application-autoscaling")
 
         ecs_provider = ECS(
             ecs_client=ecs_client,
@@ -73,9 +75,13 @@ def deploy(name, env, image_tag):
         )
         s3_provider = S3Provider(client=s3_client)
         logs_provider = LogsProvider(client=logs_client)
+        autoscaling_provider = AutoscalingProvider(client=autoscaling_client)
 
         service_manager = ServiceManager(
-            ecs_provider=ecs_provider, s3_provider=s3_provider, logs_provider=logs_provider
+            ecs_provider=ecs_provider,
+            s3_provider=s3_provider,
+            logs_provider=logs_provider,
+            autoscaling_provider=autoscaling_provider,
         )
         service_manager.deploy(
             service=name,

@@ -87,6 +87,7 @@ class ServiceManagerMocks:
         self.ecs_provider = Mock()
         self.s3_provider = Mock()
         self.logs_provider = Mock()
+        self.autoscaling_provider = Mock()
         self.io = Mock()
 
         # Fake Application object
@@ -100,6 +101,7 @@ class ServiceManagerMocks:
             load_application=self.load_application,
             s3_provider=self.s3_provider,
             logs_provider=self.logs_provider,
+            autoscaling_provider=self.autoscaling_provider,
             io=self.io,
         )
 
@@ -142,6 +144,7 @@ def test_service_deploy_success():
     )
     mocks.ecs_provider.update_service.return_value = update_service_response
     mocks.ecs_provider.describe_service.return_value = update_service_response
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {"MinCapacity": 1}
 
     # Skip waiting for time loops in those methods to reach timeout
     with patch.object(
@@ -173,6 +176,12 @@ def test_service_deploy_success():
     assert register_task_def_kwargs["image_tag"] == "tag-123"
     assert register_task_def_kwargs["task_definition"] == {"fakeTaskDefinition": "FAKE"}
 
+    describe_autoscaling_target_kwargs = (
+        mocks.autoscaling_provider.describe_autoscaling_target.call_args.kwargs
+    )
+    assert describe_autoscaling_target_kwargs["cluster_name"] == "myapp-dev-cluster"
+    assert describe_autoscaling_target_kwargs["ecs_service_name"] == "myapp-dev-web"
+
     update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs
     assert update_service_kwargs["service"] == "web"
     assert (
@@ -181,6 +190,7 @@ def test_service_deploy_success():
     )
     assert update_service_kwargs["environment"] == "dev"
     assert update_service_kwargs["application"] == "myapp"
+    assert update_service_kwargs["desired_count"] == 1
 
     fetch_task_ids_kwargs = wait_for_new_tasks.call_args.kwargs
     assert fetch_task_ids_kwargs["cluster_name"] == "myapp-dev-cluster"
