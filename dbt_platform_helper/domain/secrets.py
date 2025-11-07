@@ -149,7 +149,7 @@ class Secrets:
             )
 
         self.io.info(
-            "\nTo check or update your secrets head over to the AWS Console https://eu-west-2.console.aws.amazon.com/systems-manager/parameters/\n"
+            "\nTo check or update your secrets, log into your AWS account via the Console and visit the Parameter Store https://eu-west-2.console.aws.amazon.com/systems-manager/parameters/\n"
             "You can attach secrets into ECS container by adding them to the `secrets` section of your 'service-config.yml' file."
         )
 
