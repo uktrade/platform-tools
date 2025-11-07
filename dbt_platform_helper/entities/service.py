@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 from typing import ClassVar
 from typing import Dict
 from typing import Optional
@@ -232,17 +233,24 @@ class ServiceConfigEnvironmentOverride(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(default=None)
 
 
+class ServiceType(str, Enum):
+    BACKEND_SERVICE = "Backend Service"
+    LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+
+
 class ServiceConfig(BaseModel):
     name: str = Field(description="Service name.")
-    type: str = Field(description="Service type.")
+    type: ServiceType = Field(
+        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
+    )
 
     http: Optional[Http] = Field(default=None)
 
     @model_validator(mode="after")
     def check_http_for_web_service(self):
-        if self.type == "Load Balanced Web Service" and self.http is None:
+        if self.type == ServiceType.LOAD_BALANCED_WEB_SERVICE and self.http is None:
             raise PlatformException(
-                "A 'http' block must be provided when service type == 'Load Balanced Web Service'"
+                f"A 'http' block must be provided when service type == {self.type.value}"
             )
         return self
 
