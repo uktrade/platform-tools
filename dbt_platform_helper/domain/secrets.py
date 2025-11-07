@@ -140,5 +140,17 @@ class Secrets:
             if overwrite and environment_name in found_params:
                 data_dict["Overwrite"] = True
                 del data_dict["Tags"]
-            self.io.info(f"Creating AWS Parameter Store secret {get_secret_name(environment.name)}")
+            self.io.debug(
+                f"Creating AWS Parameter Store secret {get_secret_name(environment.name)} ..."
+            )
             parameter_store.put_parameter(data_dict)
+
+        self.io.info(
+            "\nTo check or update your secrets head over to the AWS Console https://eu-west-2.console.aws.amazon.com/systems-manager/parameters/\n"
+            "You can attach secrets into ECS container by adding them to the `secrets` section of your 'service-config.yml' file."
+        )
+
+        self.io.info(
+            message=f"```\nsecrets:\n\t{name.upper()}: /platform/${{PLATFORM_APPLICATION_NAME}}/${{PLATFORM_ENVIRONMENT_NAME}}/secrets/{name.upper()}\n```",
+            fg="cyan",
+        )

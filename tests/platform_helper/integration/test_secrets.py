@@ -143,6 +143,7 @@ def test_create(mock_application, input_args, policies, params_exist):
     put_parameter_calls = []
     info_calls = []
     input_calls = []
+    debug_calls = []
     for env, mocked in mock.mocks.items():
         mocked["session"].client("sts").get_caller_identity.assert_called_once()
         mocked["session"].client("iam").list_attached_role_policies.assert_called_with(RoleName=env)
@@ -170,9 +171,9 @@ def test_create(mock_application, input_args, policies, params_exist):
             del called_with["Tags"]
 
         put_parameter_calls.append(call(called_with))
-        info_calls.append(
+        debug_calls.append(
             call(
-                f"Creating AWS Parameter Store secret /platform/test-application/{env}/secrets/SECRET"
+                f"Creating AWS Parameter Store secret /platform/test-application/{env}/secrets/SECRET ..."
             )
         )
         input_calls.append(
@@ -181,10 +182,23 @@ def test_create(mock_application, input_args, policies, params_exist):
                 hide_input=True,
             )
         )
-
         i += 1
+
+    info_calls.append(
+        call(
+            "\nTo check or update your secrets head over to the AWS Console https://eu-west-2.console.aws.amazon.com/systems-manager/parameters/\nYou can attach secrets into ECS container by adding them to the `secrets` section of your 'service-config.yml' file."
+        )
+    )
+    info_calls.append(
+        call(
+            message="```\nsecrets:\n\tSECRET: /platform/${PLATFORM_APPLICATION_NAME}/${PLATFORM_ENVIRONMENT_NAME}/secrets/SECRET\n```",
+            fg="cyan",
+        )
+    )
+
     mock.io_mock.info.assert_has_calls(info_calls)
     mock.io_mock.input.assert_has_calls(input_calls)
+    mock.io_mock.debug.assert_has_calls(debug_calls)
     mock.parameter_store_mock.put_parameter.assert_has_calls(put_parameter_calls)
 
 
