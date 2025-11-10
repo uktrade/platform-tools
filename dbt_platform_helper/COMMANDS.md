@@ -650,7 +650,7 @@ platform-helper secrets create --app <application> --name <name> [--overwrite]
 
 ```
 platform-helper secrets copy <source_environment> <target_environment> 
-                             --project-profile <project_profile> 
+                             --app <application> 
 ```
 
 ## Arguments
@@ -660,8 +660,8 @@ platform-helper secrets copy <source_environment> <target_environment>
 
 ## Options
 
-- `--project-profile <text>`
-  - AWS account profile name
+- `--app <text>`
+  - Application name.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

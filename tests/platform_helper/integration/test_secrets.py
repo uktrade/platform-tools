@@ -269,6 +269,17 @@ def test_create_exception_unexpected(mock_application):
         secrets.create("test-application", "secret", False)
 
 
+def make_client_side_effect(mock_sts_client, mock_iam_client, mock_ssm_client):
+    def client_side_effect(service):
+        return {
+            "sts": mock_sts_client,
+            "iam": mock_iam_client,
+            "ssm": mock_ssm_client,
+        }.get(service)
+
+    return client_side_effect
+
+
 @pytest.mark.parametrize(
     "input_args",
     [
@@ -280,12 +291,65 @@ def test_create_exception_unexpected(mock_application):
 def test_secrets_copy(mock_application, input_args):
 
     load_application_mock = MagicMock()
+
+    mocks = {}
+    for env, stage in [(input_args["source"], "source"), (input_args["target"], "target")]:
+        if env not in mock_application.environments:
+            continue  # skip envs that dont exist
+        mock_session = MagicMock(name=f"{env}-session-mock")
+        mock_sts_client = MagicMock(name=f"{env}-sts-client-mock")
+        mock_sts_client.get_caller_identity.return_value = {
+            "Arn": f"arn:sts:assume-role/{env}/something"
+        }
+        mock_iam_client = MagicMock(name=f"{env}-iam-client-mock")
+        mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
+
+        decision = "allowed"
+        if stage == "source":
+            mock_iam_client.simulate_principal_policy.side_effect = [
+                {
+                    "EvaluationResults": [
+                        {
+                            "EvalActionName": "ssm:GetParameter",
+                            "EvalResourceName": "*",
+                            "EvalDecision": decision,
+                            "MatchedStatements": [],
+                        }
+                    ],
+                },
+            ]
+        elif stage == "target":
+            mock_iam_client.simulate_principal_policy.side_effect = [
+                {
+                    "EvaluationResults": [
+                        {
+                            "EvalActionName": "ssm:PutParameter",
+                            "EvalResourceName": "*",
+                            "EvalDecision": decision,
+                            "MatchedStatements": [],
+                        }
+                    ],
+                },
+            ]
+
+        mocks[env] = {
+            "session": mock_session,
+        }
+
+        mock_session.client.side_effect = make_client_side_effect(
+            mock_sts_client, mock_iam_client, mock_ssm_client
+        )
+        mock_application.environments[env].sessions[
+            mock_application.environments[env].account_id
+        ] = mock_session
+
     load_application_mock.return_value = mock_application
 
     io_mock = MagicMock()
 
+    ps = MagicMock()
     parameter_store_mock = MagicMock()
-    parameter_store_mock.return_value = MagicMock()
+    parameter_store_mock.return_value = ps
 
     secrets = Secrets(
         io=io_mock,
@@ -302,22 +366,32 @@ def test_secrets_copy(mock_application, input_args):
         (
             {"app_name": "test-application", "source": "development", "target": "doesnt-exist"},
             """Secrets copy command failed, due to: Environment not found. Environment doesnt-exist is not found.""",
-            {"has_access": {"source": True}},
+            {"has_access": {"development": {"access": True, "stage": "source"}}},
         ),
         (
             {"app_name": "test-application", "source": "doesnt-exist", "target": "staging"},
             """Secrets copy command failed, due to: Environment not found. Environment doesnt-exist is not found.""",
-            {"has_access": {"target": True}},
+            {"has_access": {"staging": {"access": True, "stage": "target"}}},
         ),
         (
             {"app_name": "test-application", "source": "development", "target": "staging"},
             """You do not have AWS Parameter Store read access to the following AWS accounts: '000000000'""",
-            {"has_access": {"source": False, "target": True}},
+            {
+                "has_access": {
+                    "development": {"access": False, "stage": "source"},
+                    "staging": {"access": True, "stage": "target"},
+                }
+            },
         ),
         (
             {"app_name": "test-application", "source": "development", "target": "staging"},
             """You do not have AWS Parameter Store write access to the following AWS accounts: '111111111'""",
-            {"has_access": {"source": True, "target": False}},
+            {
+                "has_access": {
+                    "development": {"access": True, "stage": "source"},
+                    "staging": {"access": False, "stage": "target"},
+                }
+            },
         ),
         # (
         #     {"app_name": "doesnt-exist","source": "development", "target": "staging"},
@@ -331,18 +405,9 @@ def test_secrets_copy_exception_raised(mock_application, input_args, expected_me
 
     mocks = {}
 
-    def make_client_side_effect(mock_sts_client, mock_iam_client, mock_ssm_client):
-        def client_side_effect(service):
-            return {
-                "sts": mock_sts_client,
-                "iam": mock_iam_client,
-                "ssm": mock_ssm_client,
-            }.get(service)
-
-        return client_side_effect
-
-    for env, env_object in mock_application.environments.items():
-
+    for env in [input_args["source"], input_args["target"]]:
+        if env not in mock_application.environments:
+            continue  # skip envs that dont exist
         mock_session = MagicMock(name=f"{env}-session-mock")
         mock_sts_client = MagicMock(name=f"{env}-sts-client-mock")
         mock_sts_client.get_caller_identity.return_value = {
@@ -352,13 +417,14 @@ def test_secrets_copy_exception_raised(mock_application, input_args, expected_me
         mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
 
         calls = []
-        for place, perms in mocking.get("has_access", {}).items():
+        if mocking.get("has_access", {}).get(env, {}):
+            data = mocking["has_access"][env]
             action = "ssm:PutParameter"
-            if place == "source":
+            if data["stage"] == "source":
                 action = "ssm:GetParameter"
 
             decision = "allowed"
-            if not perms:
+            if not data["access"]:
                 decision = "implicitDeny"
 
             calls.append(
@@ -373,7 +439,6 @@ def test_secrets_copy_exception_raised(mock_application, input_args, expected_me
                     ],
                 }
             )
-        print(calls)
 
         mock_iam_client.simulate_principal_policy.side_effect = calls
         mocks[env] = {

@@ -158,11 +158,10 @@ class Secrets:
         )
 
     def __has_access(self, env, actions=["ssm:PutParameter"], access_type="write"):
-        print(env)
         sts_arn = env.session.client("sts").get_caller_identity()["Arn"]
         role_name = sts_arn.split("/")[1]
 
-        role_arn = f"arn:aws:iam::{env.session.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{role_name}"
+        role_arn = f"arn:aws:iam::{env.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{role_name}"
         response = env.session.client("iam").simulate_principal_policy(
             PolicySourceArn=role_arn,
             ActionNames=actions,
@@ -176,36 +175,28 @@ class Secrets:
                 }
             ],
         )["EvaluationResults"]
-        no_access = []
         has_access = [
             env.account_id for eval_result in response if eval_result["EvalDecision"] == "allowed"
         ]
 
         if not has_access:
-            no_access.append(env.account_id)
-
-        if no_access:
-            account_ids = "', '".join(no_access)
             raise PlatformException(
-                f"You do not have AWS Parameter Store {access_type} access to the following AWS accounts: '{account_ids}'"
+                f"You do not have AWS Parameter Store {access_type} access to the following AWS accounts: '{env.account_id}'"
             )
 
     def copy(self, app_name: str, source: str, target: str):
         """
-        # check that environments exist via load_application # check can do get
-        parameters in source account # check can do put parameters in target
-        account
+        - run get parameters by path for
+            - platform params
+            - copilot params
 
-        # run get parameters by path for #   platform params #   copilot params
-
-        # Check if param should be skipped # Set params in target env # Skip if
-        already existing and log warning
+        - Check if param should be skipped
+        - Set params in target env
+        - Skip if already existing and log warning
         """
         self.application = (
             self.load_application_fn(app_name) if not self.application else self.application
         )
-
-        [source, target]
 
         if not self.application.environments.get(target, ""):
             raise PlatformException(
@@ -223,3 +214,58 @@ class Secrets:
 
         self.__has_access(source_env, actions=["ssm:GetParameter"], access_type="read")
         self.__has_access(target_env)
+
+        parameter_store: ParameterStore = self.parameter_store_provider(
+            source_env.session.client("ssm")
+        )
+        copilot_secrets = parameter_store.get_ssm_parameters_by_path(
+            f"/copilot/{app_name}/{source}/secrets"
+        )
+        platform_secrets = parameter_store.get_ssm_parameters_by_path(
+            f"/platform/{app_name}/{source}/secrets"
+        )
+
+        secrets = copilot_secrets + platform_secrets
+
+        for secret in secrets:
+            new_secret_name = secret["Name"].replace(f"/{source}/", f"/{target}/")
+
+            # TODO skip terraformed secrets and AWS specific secrets
+            # if secret_should_be_skipped(secret_name):
+            #     continue
+
+            self.io.info(new_secret_name)
+            tags = [
+                {"Key": "application", "Value": app_name},
+                {"Key": "copied-from", "Value": source},
+                {"Key": "environment", "Value": target},
+                {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+            ]
+            if new_secret_name.startswith("/copilot/"):
+                # TODO retrieving __all__ tag
+                tags.extend(
+                    [
+                        {"Key": "copilot-application", "Value": app_name},
+                        {"Key": "copilot-environment", "Value": target},
+                    ]
+                )
+
+            data_dict = dict(
+                Name=new_secret_name,
+                Value=secret["Value"],
+                Overwrite=False,
+                Type="SecureString",
+                Description=f"Copied from {source} environment.",
+                Tags=tags,
+            )
+            self.io.debug(f"Creating AWS Parameter Store secret {new_secret_name} ...")
+
+            try:
+                parameter_store.put_parameter(data_dict)
+            except botocore.exceptions.ClientError as e:
+                if e.response["Error"]["Code"] == "ParameterAlreadyExists":
+                    self.io.warn(
+                        f"""The "{new_secret_name.split("/")[-1]}" parameter already exists for the "{target}" environment.""",
+                    )
+                else:
+                    raise PlatformException(e)
