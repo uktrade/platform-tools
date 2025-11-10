@@ -156,3 +156,6 @@ class Secrets:
             fg="cyan",
             bold=True,
         )
+
+    def copy(self):
+        pass

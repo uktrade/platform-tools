@@ -51,6 +51,12 @@ def create(app: str, name: str, overwrite: bool):
 @click.option("--project-profile", required=True, help="AWS account profile name")
 def copy(project_profile, source_environment, target_environment):
     """Copy secrets from one environment to a new environment."""
+
+    try:
+        Secrets().copy()
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
+
     get_aws_session_or_abort(project_profile)
 
     if not Path(f"copilot/environments/{target_environment}").exists():
