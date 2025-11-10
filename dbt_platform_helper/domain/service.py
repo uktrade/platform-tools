@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import urllib.parse
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
@@ -377,6 +378,7 @@ class ServiceManager:
 
                 task_id = task["taskArn"].split("/")[-1]
                 container_name = container["name"]
+                log_stream = f"platform/{container_name}/{task_id}"
 
                 if f"{task_id}-{container_name}" not in seen_events:
                     seen_events.add(f"{task_id}-{container_name}")
@@ -384,10 +386,14 @@ class ServiceManager:
                         message=f"Container '{container_name}' stopped in task '{task_id}'.",
                         error=True,
                     )
+                    log_url = f"https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:log-groups/log-group/{urllib.parse.quote_plus(log_group)}/log-events/{urllib.parse.quote_plus(log_stream)}"
+                    self._output_with_timestamp(
+                        message=f"View CloudWatch log: {log_url}", error=True
+                    )
 
                 log_events = self.logs_provider.get_log_stream_events(
                     log_group=log_group,
-                    log_stream=f"platform/{container_name}/{task_id}",
+                    log_stream=log_stream,
                     limit=20,
                 )
 
