@@ -16,6 +16,7 @@ class TestInternal:
     @patch("dbt_platform_helper.commands.internal.ECS")
     @patch("dbt_platform_helper.commands.internal.LogsProvider")
     @patch("dbt_platform_helper.commands.internal.S3Provider")
+    @patch("dbt_platform_helper.commands.internal.AutoscalingProvider")
     @patch("dbt_platform_helper.commands.internal.load_application")
     @patch("dbt_platform_helper.commands.internal.ConfigProvider")
     @patch("dbt_platform_helper.commands.internal.ConfigValidator")
@@ -24,6 +25,7 @@ class TestInternal:
         mock_config_validator,
         mock_config_provider,
         mock_load_application,
+        mock_autoscaling_provider,
         mock_s3_provider,
         mock_logs_provider,
         mock_ecs_provider,
@@ -40,17 +42,18 @@ class TestInternal:
         mock_logs_client = Mock()
         mock_s3_client = Mock()
         mock_session = Mock()
+        mock_autoscaling_client = Mock()
 
         mock_session.client.side_effect = [
             mock_ecs_client,
             mock_ssm_client,
             mock_s3_client,
             mock_logs_client,
+            mock_autoscaling_client,
         ]
 
         mock_env_obj = Mock()
         mock_env_obj.session = mock_session
-        mock_env_obj.account_id = "111122223333"
 
         mock_application = Mock()
         mock_application.name = "myapp"
@@ -83,6 +86,7 @@ class TestInternal:
         mock_session.client.assert_any_call("ssm")
         mock_session.client.assert_any_call("logs")
         mock_session.client.assert_any_call("s3")
+        mock_session.client.assert_any_call("application-autoscaling")
 
         mock_ecs_provider.assert_called_once_with(
             ecs_client=mock_ecs_client,
@@ -92,18 +96,19 @@ class TestInternal:
         )
         mock_logs_provider.assert_called_once_with(client=mock_logs_client)
         mock_s3_provider.assert_called_once_with(client=mock_s3_client)
+        mock_autoscaling_provider.assert_called_once_with(client=mock_autoscaling_client)
 
         mock_service_manager.assert_called_once_with(
             ecs_provider=mock_ecs_provider.return_value,
             s3_provider=mock_s3_provider.return_value,
             logs_provider=mock_logs_provider.return_value,
+            autoscaling_provider=mock_autoscaling_provider.return_value,
         )
 
         mock_service_manager.return_value.deploy.assert_called_once_with(
             service="web",
             environment="dev",
             application="myapp",
-            account_id="111122223333",
             image_tag="test123",
         )
 
