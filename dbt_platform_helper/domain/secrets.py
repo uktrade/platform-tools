@@ -157,5 +157,69 @@ class Secrets:
             bold=True,
         )
 
-    def copy(self):
-        pass
+    def __has_access(self, env, actions=["ssm:PutParameter"], access_type="write"):
+        print(env)
+        sts_arn = env.session.client("sts").get_caller_identity()["Arn"]
+        role_name = sts_arn.split("/")[1]
+
+        role_arn = f"arn:aws:iam::{env.session.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{role_name}"
+        response = env.session.client("iam").simulate_principal_policy(
+            PolicySourceArn=role_arn,
+            ActionNames=actions,
+            ContextEntries=[
+                {
+                    "ContextKeyName": "aws:RequestedRegion",
+                    "ContextKeyValues": [
+                        "eu-west-2",
+                    ],
+                    "ContextKeyType": "string",
+                }
+            ],
+        )["EvaluationResults"]
+        no_access = []
+        has_access = [
+            env.account_id for eval_result in response if eval_result["EvalDecision"] == "allowed"
+        ]
+
+        if not has_access:
+            no_access.append(env.account_id)
+
+        if no_access:
+            account_ids = "', '".join(no_access)
+            raise PlatformException(
+                f"You do not have AWS Parameter Store {access_type} access to the following AWS accounts: '{account_ids}'"
+            )
+
+    def copy(self, app_name: str, source: str, target: str):
+        """
+        # check that environments exist via load_application # check can do get
+        parameters in source account # check can do put parameters in target
+        account
+
+        # run get parameters by path for #   platform params #   copilot params
+
+        # Check if param should be skipped # Set params in target env # Skip if
+        already existing and log warning
+        """
+        self.application = (
+            self.load_application_fn(app_name) if not self.application else self.application
+        )
+
+        [source, target]
+
+        if not self.application.environments.get(target, ""):
+            raise PlatformException(
+                f"Secrets copy command failed, due to: Environment not found. "
+                f"Environment {target} is not found."
+            )
+        elif not self.application.environments.get(source, ""):
+            raise PlatformException(
+                f"Secrets copy command failed, due to: Environment not found. "
+                f"Environment {source} is not found."
+            )
+
+        source_env = self.application.environments.get(source)
+        target_env = self.application.environments.get(target)
+
+        self.__has_access(source_env, actions=["ssm:GetParameter"], access_type="read")
+        self.__has_access(target_env)
