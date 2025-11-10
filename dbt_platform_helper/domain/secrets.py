@@ -98,7 +98,7 @@ class Secrets:
 
         self._check_ssm_write_access(accounts)
 
-        get_secret_name = lambda x: f"/platform/{app_name}/{x}/secrets/{name.upper()}"
+        get_secret_name = lambda env: f"/platform/{app_name}/{env}/secrets/{name.upper()}"
         found_params = self._check_for_existing_params(get_secret_name)
 
         if overwrite is False and found_params:
