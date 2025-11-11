@@ -1045,7 +1045,9 @@ data "aws_iam_policy_document" "extensions" {
       "es:DescribeDomainConfig",
       "es:ListTags",
       "es:DeleteDomain",
-      "es:UpdateDomainConfig"
+      "es:UpdateDomainConfig",
+      "es:UpgradeDomain",
+      "es:GetUpgradeStatus"
     ]
     resources = [
       "arn:aws:es:${local.account_region}:domain/*"
