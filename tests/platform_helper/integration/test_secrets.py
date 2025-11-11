@@ -291,9 +291,11 @@ def make_client_side_effect(mock_sts_client, mock_iam_client, mock_ssm_client):
 def test_secrets_copy(mock_application, input_args):
 
     load_application_mock = MagicMock()
+    source = input_args["source"]
+    target = input_args["target"]
 
     mocks = {}
-    for env, stage in [(input_args["source"], "source"), (input_args["target"], "target")]:
+    for env, stage in [(source, "source"), (target, "target")]:
         if env not in mock_application.environments:
             continue  # skip envs that dont exist
         mock_session = MagicMock(name=f"{env}-session-mock")
@@ -348,6 +350,32 @@ def test_secrets_copy(mock_application, input_args):
     io_mock = MagicMock()
 
     ps = MagicMock()
+    ps.get_ssm_parameters_by_path.side_effect = [
+        [
+            {
+                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET1",
+                "Type": "SecureString",
+                "Value": "secret1",
+            },
+            {
+                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET2",
+                "Type": "SecureString",
+                "Value": "secret2",
+            },
+        ],
+        [
+            {
+                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET3",
+                "Type": "SecureString",
+                "Value": "secret3",
+            },
+            {
+                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET4",
+                "Type": "SecureString",
+                "Value": "secret4",
+            },
+        ],
+    ]
     parameter_store_mock = MagicMock()
     parameter_store_mock.return_value = ps
 
@@ -358,6 +386,104 @@ def test_secrets_copy(mock_application, input_args):
     )
 
     secrets.copy(**input_args)
+
+    source_env = mock_application.environments[input_args["source"]]
+    target_env = mock_application.environments[input_args["target"]]
+
+    source_env.session.client("iam").simulate_principal_policy.assert_called_with(
+        PolicySourceArn=f"arn:aws:iam::{source_env.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{source}",
+        ActionNames=["ssm:GetParameter"],
+        ContextEntries=[
+            {
+                "ContextKeyName": "aws:RequestedRegion",
+                "ContextKeyValues": [
+                    "eu-west-2",
+                ],
+                "ContextKeyType": "string",
+            }
+        ],
+    )
+    target_env.session.client("iam").simulate_principal_policy.assert_called_with(
+        PolicySourceArn=f"arn:aws:iam::{target_env.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{target}",
+        ActionNames=["ssm:PutParameter"],
+        ContextEntries=[
+            {
+                "ContextKeyName": "aws:RequestedRegion",
+                "ContextKeyValues": [
+                    "eu-west-2",
+                ],
+                "ContextKeyType": "string",
+            }
+        ],
+    )
+
+    ps.get_ssm_parameters_by_path.assert_has_calls(
+        [
+            call(f"/copilot/test-application/{source}/secrets"),
+            call(f"/platform/test-application/{source}/secrets"),
+        ]
+    )
+
+    io_mock.debug.assert_has_calls(
+        [
+            call(
+                f"Creating AWS Parameter Store secret /copilot/test-application/{target}/secrets/SECRET1 ..."
+            ),
+            call(
+                f"Creating AWS Parameter Store secret /copilot/test-application/{target}/secrets/SECRET2 ..."
+            ),
+            call(
+                f"Creating AWS Parameter Store secret /platform/test-application/{target}/secrets/SECRET3 ..."
+            ),
+            call(
+                f"Creating AWS Parameter Store secret /platform/test-application/{target}/secrets/SECRET4 ..."
+            ),
+        ]
+    )
+
+    put_parameter_fixture = lambda mode, index, tags=[]: dict(
+        Name=f"/{mode}/test-application/{target}/secrets/SECRET{index}",
+        Value=f"secret{index}",
+        Overwrite=False,
+        Type="SecureString",
+        Description=f"Copied from {source} environment.",
+        Tags=[
+            {"Key": "application", "Value": "test-application"},
+            {"Key": "copied-from", "Value": source},
+            {"Key": "environment", "Value": target},
+            {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+        ]
+        + tags,
+    )
+    ps.put_parameter.assert_has_calls(
+        [
+            call(
+                put_parameter_fixture(
+                    "copilot",
+                    1,
+                    [
+                        {"Key": "copilot-application", "Value": "test-application"},
+                        {"Key": "copilot-environment", "Value": target},
+                    ],
+                )
+            ),
+            call(
+                put_parameter_fixture(
+                    "copilot",
+                    2,
+                    [
+                        {"Key": "copilot-application", "Value": "test-application"},
+                        {"Key": "copilot-environment", "Value": target},
+                    ],
+                )
+            ),
+            call(put_parameter_fixture("platform", 3)),
+            call(put_parameter_fixture("platform", 4)),
+        ]
+    )
+
+
+# TODO add test where some variables already exist and assert they were called
 
 
 @pytest.mark.parametrize(

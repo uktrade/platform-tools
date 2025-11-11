@@ -185,15 +185,7 @@ class Secrets:
             )
 
     def copy(self, app_name: str, source: str, target: str):
-        """
-        - run get parameters by path for
-            - platform params
-            - copilot params
-
-        - Check if param should be skipped
-        - Set params in target env
-        - Skip if already existing and log warning
-        """
+        """"""
         self.application = (
             self.load_application_fn(app_name) if not self.application else self.application
         )
