@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from dataclasses import field
 from typing import Literal
+from typing import Optional
 from typing import Union
 
 import boto3
@@ -14,11 +16,21 @@ class Parameter:
     value: str
     arn: str = None
     data_type: Literal["text", "aws:ec2:image"] = "text"
-    param_type: Literal["String", "StringList", "SecureString"] = (
+    type: Literal["String", "StringList", "SecureString"] = (
         "SecureString"  # Returned as 'Type' from AWS
     )
     version: int = None
-    # tags: list = []
+    tags: Optional[dict[str, str]] = field(default_factory=dict)
+
+    def tags_to_list(self):
+        return [{"Key": tag, "Value": value} for tag, value in self.tags.items()]
+
+    def fetch_tags(self, ssm_client: boto3.client):
+        response = ssm_client.list_tags_for_resource(
+            ResourceType="Parameter", ResourceId=self.name
+        )["TagList"]
+
+        self.tags = {tag["Key"]: tag["Value"] for tag in response}
 
     def __str__(self):
         output = f"Application {self.name} with"
@@ -34,27 +46,49 @@ class ParameterStore:
         self.ssm_client = ssm_client
         self.with_model = with_model
 
-    def get_ssm_parameter_by_name(self, parameter_name: str) -> Union[dict | Parameter]:
+    def get_ssm_parameter_by_name(
+        self, parameter_name: str, add_tags: bool = False
+    ) -> Union[dict, Parameter]:
         """
         Retrieves the latest version of a parameter from parameter store for a
         given name/arn.
 
         Args:
-            path (str): The parameter name to retrieve the parameter value for.
+            parameter_name (str): The parameter name to retrieve the parameter value for.
+            add_tags (bool): Whether to retrieve the tags for the SSM parameters requested
         Returns:
             dict: A dictionary representation of your ssm parameter
         """
-        parameter = self.ssm_client.get_parameter(Name=parameter_name)["Parameter"]
-        if self.with_model:
-            parameter = Parameter()
-        return parameter
+        parameter = self.ssm_client.get_parameter(Name=parameter_name, WithDecryption=True)[
+            "Parameter"
+        ]
 
-    def get_ssm_parameters_by_path(self, path: str, add_tags=False) -> list:
+        if not self.with_model:
+            return parameter
+
+        model = Parameter(
+            name=parameter["Name"],
+            value=parameter["Value"],
+            arn=parameter["ARN"],
+            data_type=parameter["DataType"],
+            type=parameter["Type"],
+            version=parameter["Version"],
+        )
+
+        if add_tags:
+            model.fetch_tags(self.ssm_client)
+
+        return model
+
+    def get_ssm_parameters_by_path(
+        self, path: str, add_tags: bool = False
+    ) -> Union[list[dict], list[Parameter]]:
         """
         Retrieves all SSM parameters for a given path from parameter store.
 
         Args:
             path (str): The parameter path to retrieve the parameters for. e.g. /copilot/applications/
+            add_tags (bool): Whether to retrieve the tags for the SSM parameters requested
         Returns:
             list: A list of dictionaries containing all SSM parameters under the provided path.
         """
@@ -66,10 +100,28 @@ class ParameterStore:
         for page in page_iterator:
             parameters.extend(page.get("Parameters", []))
 
-        if parameters:
-            return parameters
-        else:
-            raise ParameterNotFoundForPathException()
+        if not self.with_model:
+            if parameters:
+                return parameters
+            else:
+                raise ParameterNotFoundForPathException()
+
+        to_model = lambda parameter: Parameter(
+            name=parameter["Name"],
+            value=parameter["Value"],
+            arn=parameter["ARN"],
+            data_type=parameter["DataType"],
+            type=parameter["Type"],
+            version=parameter["Version"],
+        )
+
+        models = [to_model(param) for param in parameters]
+
+        if add_tags:
+            for model in models:
+                model.fetch_tags(self.ssm_client)
+
+        return models
 
     def put_parameter(self, data_dict: dict) -> dict:
         return self.ssm_client.put_parameter(**data_dict)

@@ -1,8 +1,10 @@
 import botocore
 
 from dbt_platform_helper.constants import MANAGED_BY_PLATFORM
+from dbt_platform_helper.constants import MANAGED_BY_PLATFORM_TERRAFORM
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.parameter_store import Parameter
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.application import load_application
 
@@ -184,11 +186,10 @@ class Secrets:
                 f"You do not have AWS Parameter Store {access_type} access to the following AWS accounts: '{env.account_id}'"
             )
 
-    def __secret_should_be_skipped(self, secret_name):
-        return "AWS_" in secret_name
-
     def copy(self, app_name: str, source: str, target: str):
-        """"""
+        """Copy AWS Parameter Store secrets from one environment into
+        another."""
+
         self.application = (
             self.load_application_fn(app_name) if not self.application else self.application
         )
@@ -211,56 +212,58 @@ class Secrets:
         self.__has_access(target_env)
 
         parameter_store: ParameterStore = self.parameter_store_provider(
-            source_env.session.client("ssm")
+            source_env.session.client("ssm"), with_model=True
         )
-        copilot_secrets = parameter_store.get_ssm_parameters_by_path(
-            f"/copilot/{app_name}/{source}/secrets"
+
+        target_parameter_store: ParameterStore = self.parameter_store_provider(
+            target_env.session.client("ssm"), with_model=True
         )
-        platform_secrets = parameter_store.get_ssm_parameters_by_path(
-            f"/platform/{app_name}/{source}/secrets"
+
+        copilot_secrets: list[Parameter] = parameter_store.get_ssm_parameters_by_path(
+            f"/copilot/{app_name}/{source}/secrets", add_tags=True
+        )
+        platform_secrets: list[Parameter] = parameter_store.get_ssm_parameters_by_path(
+            f"/platform/{app_name}/{source}/secrets", add_tags=True
         )
 
         secrets = copilot_secrets + platform_secrets
 
         for secret in secrets:
-            new_secret_name = secret["Name"].replace(f"/{source}/", f"/{target}/")
+            secret.name = secret.name.replace(f"/{source}/", f"/{target}/")
 
-            # TODO skip terraformed secrets and AWS specific secrets
-            if self.__secret_should_be_skipped(new_secret_name):
+            # TODO - SSM params POSTGRES_APPLICATION_USER and POSTGRES_READ_ONLY_USER are tagged differently from the rest
+            if (
+                "AWS_" in secret.name
+                or secret.tags.get("managed-by", "") == MANAGED_BY_PLATFORM_TERRAFORM
+                or secret.tags.get("managed-by", "") == "Terraform"
+            ):
                 continue
 
-            self.io.info(new_secret_name)
-            tags = [
-                {"Key": "application", "Value": app_name},
-                {"Key": "copied-from", "Value": source},
-                {"Key": "environment", "Value": target},
-                {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-            ]
-            if new_secret_name.startswith("/copilot/"):
-                # TODO retrieving __all__ tag
-                tags.extend(
-                    [
-                        {"Key": "copilot-application", "Value": app_name},
-                        {"Key": "copilot-environment", "Value": target},
-                    ]
-                )
+            secret.tags["application"] = app_name
+            secret.tags["environment"] = target
+            secret.tags["managed-by"] = MANAGED_BY_PLATFORM
+            secret.tags["copied-from"] = source
 
             data_dict = dict(
-                Name=new_secret_name,
-                Value=secret["Value"],
+                Name=secret.name,
+                Value=secret.value,
                 Overwrite=False,
-                Type="SecureString",
+                Type=secret.type,
                 Description=f"Copied from {source} environment.",
-                Tags=tags,
+                Tags=secret.tags_to_list(),
             )
-            self.io.debug(f"Creating AWS Parameter Store secret {new_secret_name} ...")
+            self.io.debug(f"Creating AWS Parameter Store secret {secret.name} ...")
 
             try:
-                parameter_store.put_parameter(data_dict)
+                target_parameter_store.put_parameter(data_dict)
+                secret_name = secret.name.split("/")[-1]
+                self.io.info(
+                    f"Secret {secret_name} was successfully copied from the '{source} environment to '{target}'"
+                )
             except botocore.exceptions.ClientError as e:
                 if e.response["Error"]["Code"] == "ParameterAlreadyExists":
                     self.io.warn(
-                        f"""The "{new_secret_name.split("/")[-1]}" parameter already exists for the "{target}" environment.""",
+                        f"""The "{secret.name.split("/")[-1]}" parameter already exists for the "{target}" environment.""",
                     )
                 else:
                     raise PlatformException(e)

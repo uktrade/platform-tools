@@ -644,24 +644,22 @@ platform-helper secrets create --app <application> --name <name> [--overwrite]
 
 [↩ Parent](#platform-helper-secrets)
 
-    Copy secrets from one environment to a new environment.
+    Copy secrets from one environment to another.
 
 ## Usage
 
 ```
-platform-helper secrets copy <source_environment> <target_environment> 
-                             --app <application> 
+platform-helper secrets copy --app <application> --source <source> --target <target> 
 ```
-
-## Arguments
-
-- `source_environment <text>`
-- `target_environment <text>`
 
 ## Options
 
 - `--app <text>`
   - Application name.
+- `--source <text>`
+  - Source environment where to copy secrets from.
+- `--target <text>`
+  - Destination environment where to copy secrets to.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

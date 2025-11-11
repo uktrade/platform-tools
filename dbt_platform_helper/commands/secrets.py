@@ -41,14 +41,14 @@ def create(app: str, name: str, overwrite: bool):
 
 
 @secrets.command()
-@click.argument("source_environment")
-@click.argument("target_environment")
 @click.option("--app", help="Application name.", required=True)
-def copy(source_environment, target_environment, app):
-    """Copy secrets from one environment to a new environment."""
+@click.option("--source", help="Source environment where to copy secrets from.", required=True)
+@click.option("--target", help="Destination environment where to copy secrets to.", required=True)
+def copy(app, source, target):
+    """Copy secrets from one environment to another."""
 
     try:
-        Secrets().copy(app, source_environment, target_environment)
+        Secrets().copy(app, source, target)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
