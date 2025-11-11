@@ -1,13 +1,40 @@
+from dataclasses import dataclass
+from typing import Literal
+from typing import Union
+
 import boto3
 
 from dbt_platform_helper.platform_exception import PlatformException
 
 
-class ParameterStore:
-    def __init__(self, ssm_client: boto3.client):
-        self.ssm_client = ssm_client
+@dataclass
+class Parameter:
 
-    def get_ssm_parameter_by_name(self, parameter_name: str) -> dict:
+    name: str
+    value: str
+    arn: str = None
+    data_type: Literal["text", "aws:ec2:image"] = "text"
+    param_type: Literal["String", "StringList", "SecureString"] = (
+        "SecureString"  # Returned as 'Type' from AWS
+    )
+    version: int = None
+    # tags: list = []
+
+    def __str__(self):
+        output = f"Application {self.name} with"
+
+        return f"{output} no environments"
+
+    def __eq__(self, other: "Parameter"):
+        return str(self.name) == str(other.name)
+
+
+class ParameterStore:
+    def __init__(self, ssm_client: boto3.client, with_model: bool = False):
+        self.ssm_client = ssm_client
+        self.with_model = with_model
+
+    def get_ssm_parameter_by_name(self, parameter_name: str) -> Union[dict | Parameter]:
         """
         Retrieves the latest version of a parameter from parameter store for a
         given name/arn.
@@ -17,10 +44,12 @@ class ParameterStore:
         Returns:
             dict: A dictionary representation of your ssm parameter
         """
+        parameter = self.ssm_client.get_parameter(Name=parameter_name)["Parameter"]
+        if self.with_model:
+            parameter = Parameter()
+        return parameter
 
-        return self.ssm_client.get_parameter(Name=parameter_name)["Parameter"]
-
-    def get_ssm_parameters_by_path(self, path: str) -> list:
+    def get_ssm_parameters_by_path(self, path: str, add_tags=False) -> list:
         """
         Retrieves all SSM parameters for a given path from parameter store.
 

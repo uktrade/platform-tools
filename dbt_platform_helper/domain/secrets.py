@@ -184,6 +184,9 @@ class Secrets:
                 f"You do not have AWS Parameter Store {access_type} access to the following AWS accounts: '{env.account_id}'"
             )
 
+    def __secret_should_be_skipped(self, secret_name):
+        return "AWS_" in secret_name
+
     def copy(self, app_name: str, source: str, target: str):
         """"""
         self.application = (
@@ -223,8 +226,8 @@ class Secrets:
             new_secret_name = secret["Name"].replace(f"/{source}/", f"/{target}/")
 
             # TODO skip terraformed secrets and AWS specific secrets
-            # if secret_should_be_skipped(secret_name):
-            #     continue
+            if self.__secret_should_be_skipped(new_secret_name):
+                continue
 
             self.io.info(new_secret_name)
             tags = [
