@@ -242,6 +242,9 @@ class Secrets:
             secret.tags["managed-by"] = MANAGED_BY_PLATFORM
             secret.tags["copied-from"] = source
 
+            if secret.name.startswith("/copilot/"):
+                secret.tags["copilot-environment"] = target
+
             data_dict = dict(
                 Name=secret.name,
                 Value=secret.value,
