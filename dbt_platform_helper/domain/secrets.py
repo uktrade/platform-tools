@@ -196,13 +196,11 @@ class Secrets:
 
         if not self.application.environments.get(target, ""):
             raise PlatformException(
-                f"Secrets copy command failed, due to: Environment not found. "
-                f"Environment {target} is not found."
+                f"Environment '{target}' not found for application '{app_name}'."
             )
         elif not self.application.environments.get(source, ""):
             raise PlatformException(
-                f"Secrets copy command failed, due to: Environment not found. "
-                f"Environment {source} is not found."
+                f"Environment '{source}' not found for application '{app_name}'."
             )
 
         source_env = self.application.environments.get(source)
