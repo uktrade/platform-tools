@@ -95,7 +95,7 @@ class ParameterStore:
 
         parameters = []
         paginator = self.ssm_client.get_paginator("get_parameters_by_path")
-        page_iterator = paginator.paginate(Path=path, Recursive=True)
+        page_iterator = paginator.paginate(Path=path, Recursive=True, WithDecryption=True)
 
         for page in page_iterator:
             parameters.extend(page.get("Parameters", []))
