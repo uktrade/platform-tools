@@ -42,7 +42,7 @@ class Http(BaseModel):
     target_container: str = Field(description="""Target container for the requests""")
     healthcheck: Optional[HealthCheck] = Field(default=None)
     alias: Union[str, list] = Field(description="""The HTTP domain alias of the service.""")
-    additional_rules: Optional[AdditionalRules] = Field(default=None)
+    additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
 
 
 class HttpOverride(BaseModel):
@@ -56,7 +56,7 @@ class HttpOverride(BaseModel):
     alias: Optional[Union[str, list]] = Field(
         description="""The HTTP domain alias of the service."""
     )
-    additional_rules: Optional[AdditionalRules] = Field(default=None)
+    additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
 
 
 class Sidecar(BaseModel):
