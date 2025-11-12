@@ -26,7 +26,7 @@ class CreateMock:
         self._create_existing_params()
 
         self.io_mock = MagicMock()
-        self.io_mock.input.side_effect = ["1", "2", "3", "4"]
+        self.io_mock.input.side_effect = ["1", "2", "3", "4", "5"]
 
         return dict(
             load_application=self.load_application_mock,
@@ -45,6 +45,7 @@ class CreateMock:
                 {"Name": "doesntmatter1"},
                 {"Name": "doesntmatter2"},
                 {"Name": "doesntmatter3"},
+                {"Name": "doesntmatter4"},
             ]
         elif self.create_existing_params == "unexpected":
             self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
@@ -55,6 +56,10 @@ class CreateMock:
             ]
         else:
             self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
+                ClientError(
+                    {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
+                    "GetParameter",
+                ),
                 ClientError(
                     {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
                     "GetParameter",
@@ -108,8 +113,11 @@ class CreateMock:
                         }
                     ],
                 }
-            mocks[env] = {
+
+            # will overwrite but works in line with code
+            mocks[self.application.environments[env].account_id] = {
                 "session": mock_session,
+                "env": env,
             }
 
             mock_session.client.side_effect = self.__make_client_side_effect(
@@ -152,9 +160,9 @@ def test_create(mock_application, input_args, params_exist):
     info_calls = []
     input_calls = []
     debug_calls = []
-    for env, mocked in mock.mocks.items():
-        mocked["session"].client("sts").get_caller_identity.assert_called_once()
-        account_id = mock.application.environments[env].account_id
+    for account_id, mocked in mock.mocks.items():
+        env = mocked["env"]
+        mocked["session"].client("sts").get_caller_identity.assert_called()
         mocked["session"].client("iam").simulate_principal_policy.assert_called_with(
             PolicySourceArn=f"arn:aws:iam::{account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{env}",
             ActionNames=[
@@ -170,6 +178,8 @@ def test_create(mock_application, input_args, params_exist):
                 }
             ],
         )
+
+    for env, data in mock.application.environments.items():
 
         called_with = dict(
             Name=f"/platform/test-application/{env}/secrets/SECRET",
@@ -250,7 +260,7 @@ def test_create_exception_parameter_found(mock_application):
 
     with pytest.raises(
         PlatformException,
-        match="""AWS Parameter Store secret 'SECRET' already exists for the following environments: 'development', 'staging', 'production', 'test'.""",
+        match="""AWS Parameter Store secret 'SECRET' already exists for the following environments: 'development', 'staging', 'production', 'prod', 'test'.""",
     ):
         secrets.create("test-application", "secret", False)
 
@@ -294,7 +304,6 @@ def test_secrets_copy(mock_application, input_args):
     load_application_mock = MagicMock()
     source = input_args["source"]
     target = input_args["target"]
-
     mocks = {}
     for env, stage in [(source, "source"), (target, "target")]:
         if env not in mock_application.environments:
@@ -365,6 +374,14 @@ def test_secrets_copy(mock_application, input_args):
                     {
                         "Parameters": [
                             {
+                                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET_EXISTS",
+                                "Type": "SecureString",
+                                "Value": "secret_EXISTS",
+                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/SECRET_EXISTS",
+                                "DataType": "text",
+                                "Version": 1,
+                            },
+                            {
                                 "Name": f"/platform/{mock_application.name}/{source}/secrets/TERRAFORMED_SECRET",
                                 "Type": "SecureString",
                                 "Value": "terraformed",
@@ -423,6 +440,13 @@ def test_secrets_copy(mock_application, input_args):
                     "TagList": [
                         {"Key": "application", "Value": "test-application"},
                         {"Key": "environment", "Value": env},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                    ]
+                },
+                {
+                    "TagList": [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": env},
                         {"Key": "managed-by", "Value": "DBT Platform - Terraform"},
                     ]
                 },
@@ -441,6 +465,43 @@ def test_secrets_copy(mock_application, input_args):
                     ]
                 },
             ]
+        if stage == "target":
+
+            def _create_ssm_mock_with_failing_put_parameter(ssm_client, calls_to_fail_on=[2]):
+                original_put_parameter = ssm_client.put_parameter
+
+                def mock_put_parameter(*args, **kwargs):
+
+                    if not hasattr(mock_put_parameter, "assert_has_calls"):
+                        mock_put_parameter.assert_has_calls = mock_assert_has_calls
+                    if not hasattr(mock_put_parameter.assert_has_calls, "calls"):
+                        mock_put_parameter.assert_has_calls.calls = []
+                    if not hasattr(mock_put_parameter, "call_count"):
+                        mock_put_parameter.call_count = 0
+
+                    mock_put_parameter.assert_has_calls.calls.append(call(*args, **kwargs))
+                    if mock_put_parameter.call_count in calls_to_fail_on:
+                        mock_put_parameter.call_count += 1
+                        raise ClientError(
+                            {
+                                "Error": {
+                                    "Code": "ParameterAlreadyExists",
+                                    "Message": "Simulated failure",
+                                }
+                            },
+                            "CreateRule",
+                        )
+                    mock_put_parameter.call_count += 1
+                    return original_put_parameter(*args, **kwargs)
+
+                def mock_assert_has_calls(calls):
+                    assert mock_assert_has_calls.calls == calls
+
+                ssm_client.put_parameter = mock_put_parameter
+
+            print(mock_ssm_client.put_parameter)
+            _create_ssm_mock_with_failing_put_parameter(mock_ssm_client)
+            print(mock_ssm_client.put_parameter)
 
         mocks[env] = {
             "session": mock_session,
@@ -519,6 +580,9 @@ def test_secrets_copy(mock_application, input_args):
                 f"Creating AWS Parameter Store secret /copilot/test-application/{target}/secrets/SECRET2 ..."
             ),
             call(
+                "Creating AWS Parameter Store secret /platform/test-application/staging/secrets/SECRET_EXISTS ..."
+            ),
+            call(
                 "Skipping AWS Parameter Store secret /platform/test-application/staging/secrets/TERRAFORMED_SECRET with managed-by: DBT Platform - Terraform"
             ),
             call(
@@ -528,6 +592,9 @@ def test_secrets_copy(mock_application, input_args):
                 f"Creating AWS Parameter Store secret /platform/test-application/{target}/secrets/SECRET4 ..."
             ),
         ]
+    )
+    io_mock.warn.assert_called_with(
+        f"""The "SECRET_EXISTS" parameter already exists for the "{target}" environment."""
     )
 
     put_parameter_fixture = lambda mode, index, tags=[]: dict(
@@ -566,13 +633,13 @@ def test_secrets_copy(mock_application, input_args):
                     ],
                 )
             ),
+            call(**put_parameter_fixture("platform", "_EXISTS")),
             call(**put_parameter_fixture("platform", 3)),
             call(**put_parameter_fixture("platform", 4)),
         ]
     )
 
 
-# TODO add terraformed param
 # TODO add test where some variables already exist and assert they were called
 
 
@@ -613,10 +680,16 @@ def test_secrets_copy(mock_application, input_args):
                 }
             },
         ),
-        # (
-        #     {"app_name": "doesnt-exist","source": "development", "target": "staging"},
-        #     """Secrets copy command failed, due to: Application not found. Application doesnt-exist is not found."""
-        # ),
+        (
+            {"app_name": "test-application", "source": "production", "target": "staging"},
+            """Cannot transfer secrets out from 'production' in the prod account '222222222' to 'staging' in '111111111'""",
+            {
+                "has_access": {
+                    "production": {"access": True, "stage": "source"},
+                    "staging": {"access": True, "stage": "target"},
+                }
+            },
+        ),
     ],
 )
 def test_secrets_copy_exception_raised(mock_application, input_args, expected_message, mocking):

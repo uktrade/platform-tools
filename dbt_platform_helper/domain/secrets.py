@@ -30,7 +30,6 @@ class Secrets:
         access
         """
         no_access = []
-
         for account, session in accounts.items():
             sts = session.client("sts")
             iam = session.client("iam")
@@ -209,6 +208,16 @@ class Secrets:
         self.__has_access(source_env, actions=["ssm:GetParameter"], access_type="read")
         self.__has_access(target_env)
 
+        prod_account_id = self.application.environments["prod"].account_id
+        if (
+            self.application.environments[source].account_id == prod_account_id
+            and self.application.environments[target].account_id != prod_account_id
+        ):
+            raise PlatformException(
+                f"Cannot transfer secrets out from '{source}' in the prod account '{prod_account_id}'"
+                f" to '{target}' in '{self.application.environments[target].account_id}'"
+            )
+
         parameter_store: ParameterStore = self.parameter_store_provider(
             source_env.session.client("ssm"), with_model=True
         )
@@ -229,11 +238,11 @@ class Secrets:
         for secret in secrets:
             secret.name = secret.name.replace(f"/{source}/", f"/{target}/")
 
-            # TODO - SSM params POSTGRES_APPLICATION_USER and POSTGRES_READ_ONLY_USER are tagged differently from the rest
             if (
                 "AWS_" in secret.name
                 or secret.tags.get("managed-by", "") == MANAGED_BY_PLATFORM_TERRAFORM
-                or secret.tags.get("managed-by", "") == "Terraform"
+                or secret.tags.get("managed-by", "")
+                == "Terraform"  # SSM params POSTGRES_APPLICATION_USER and POSTGRES_READ_ONLY_USER are tagged differently from the rest
             ):
                 message = f"Skipping AWS Parameter Store secret {secret.name}"
                 if secret.tags.get("managed-by", ""):
