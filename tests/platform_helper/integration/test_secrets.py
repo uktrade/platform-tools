@@ -1,5 +1,6 @@
 import re
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 from unittest.mock import call
 
 import pytest
@@ -334,6 +335,98 @@ def test_secrets_copy(mock_application, input_args):
                 },
             ]
 
+        def _create_parameters_by_path_paginator():
+            paginator = Mock()
+            paginator.paginate.side_effect = [
+                [
+                    {
+                        "Parameters": [
+                            {
+                                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET1",
+                                "Type": "SecureString",
+                                "Value": "secret1",
+                                "ARN": f"arn:::parameter/copilot/{mock_application.name}/{source}/secrets/SECRET1",
+                                "DataType": "text",
+                                "Version": 1,
+                            },
+                            {
+                                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET2",
+                                "Type": "SecureString",
+                                "Value": "secret2",
+                                "ARN": f"arn:::parameter/copilot/{mock_application.name}/{source}/secrets/SECRET2",
+                                "DataType": "text",
+                                "Version": 1,
+                            },
+                        ],
+                        "NextMarker": "string",
+                    }
+                ],
+                [
+                    {
+                        "Parameters": [
+                            {
+                                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET3",
+                                "Type": "SecureString",
+                                "Value": "secret3",
+                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/SECRET3",
+                                "DataType": "text",
+                                "Version": 1,
+                            },
+                            {
+                                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET4",
+                                "Type": "SecureString",
+                                "Value": "secret4",
+                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/SECRET4",
+                                "DataType": "text",
+                                "Version": 1,
+                            },
+                        ],
+                        "NextMarker": "string",
+                    }
+                ],
+            ]
+            return paginator
+
+        # def get_paginator(operation_name):
+        #     _paginators = {}
+        #     if operation_name == "get_parameters_by_path":
+        #         _paginators[operation_name] = _create_parameters_by_path_paginator()
+        #     else:
+        #         _paginators[operation_name] = Mock()
+
+        #     return _paginators[operation_name]
+
+        if stage == "source":
+            mock_ssm_client.get_paginator.return_value = _create_parameters_by_path_paginator()
+            mock_ssm_client.list_tags_for_resource.side_effect = [
+                {
+                    "TagList": [
+                        {"Key": "copilot-application", "Value": "test-application"},
+                        {"Key": "copilot-environment", "Value": env},
+                    ]
+                },
+                {
+                    "TagList": [
+                        {"Key": "copilot-application", "Value": "test-application"},
+                        {"Key": "copilot-environment", "Value": env},
+                    ]
+                },
+                {
+                    "TagList": [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": env},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                    ]
+                },
+                {
+                    "TagList": [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": env},
+                        {"Key": "managed-by", "Value": "DBT Platform"},
+                    ]
+                },
+            ]
+
         mocks[env] = {
             "session": mock_session,
         }
@@ -349,40 +442,9 @@ def test_secrets_copy(mock_application, input_args):
 
     io_mock = MagicMock()
 
-    ps = MagicMock()
-    ps.get_ssm_parameters_by_path.side_effect = [
-        [
-            {
-                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET1",
-                "Type": "SecureString",
-                "Value": "secret1",
-            },
-            {
-                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET2",
-                "Type": "SecureString",
-                "Value": "secret2",
-            },
-        ],
-        [
-            {
-                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET3",
-                "Type": "SecureString",
-                "Value": "secret3",
-            },
-            {
-                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET4",
-                "Type": "SecureString",
-                "Value": "secret4",
-            },
-        ],
-    ]
-    parameter_store_mock = MagicMock()
-    parameter_store_mock.return_value = ps
-
     secrets = Secrets(
         io=io_mock,
         load_application=load_application_mock,
-        parameter_store_provider=parameter_store_mock,
     )
 
     secrets.copy(**input_args)
@@ -417,10 +479,20 @@ def test_secrets_copy(mock_application, input_args):
         ],
     )
 
-    ps.get_ssm_parameters_by_path.assert_has_calls(
+    source_env.session.client("ssm").get_paginator(
+        "get_ssm_parameters_by_path"
+    ).paginate.assert_has_calls(
         [
-            call(f"/copilot/test-application/{source}/secrets"),
-            call(f"/platform/test-application/{source}/secrets"),
+            call(
+                Path=f"/copilot/test-application/{source}/secrets",
+                Recursive=True,
+                WithDecryption=True,
+            ),
+            call(
+                Path=f"/platform/test-application/{source}/secrets",
+                Recursive=True,
+                WithDecryption=True,
+            ),
         ]
     )
 
@@ -447,18 +519,18 @@ def test_secrets_copy(mock_application, input_args):
         Overwrite=False,
         Type="SecureString",
         Description=f"Copied from {source} environment.",
-        Tags=[
+        Tags=tags
+        + [
             {"Key": "application", "Value": "test-application"},
-            {"Key": "copied-from", "Value": source},
             {"Key": "environment", "Value": target},
             {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-        ]
-        + tags,
+            {"Key": "copied-from", "Value": source},
+        ],
     )
-    ps.put_parameter.assert_has_calls(
+    target_env.session.client("ssm").put_parameter.assert_has_calls(
         [
             call(
-                put_parameter_fixture(
+                **put_parameter_fixture(
                     "copilot",
                     1,
                     [
@@ -468,7 +540,7 @@ def test_secrets_copy(mock_application, input_args):
                 )
             ),
             call(
-                put_parameter_fixture(
+                **put_parameter_fixture(
                     "copilot",
                     2,
                     [
@@ -477,12 +549,13 @@ def test_secrets_copy(mock_application, input_args):
                     ],
                 )
             ),
-            call(put_parameter_fixture("platform", 3)),
-            call(put_parameter_fixture("platform", 4)),
+            call(**put_parameter_fixture("platform", 3)),
+            call(**put_parameter_fixture("platform", 4)),
         ]
     )
 
 
+# TODO add terraformed param
 # TODO add test where some variables already exist and assert they were called
 
 
@@ -490,13 +563,17 @@ def test_secrets_copy(mock_application, input_args):
     "input_args, expected_message, mocking",
     [
         (
-            {"app_name": "test-application", "source": "development", "target": "doesnt-exist"},
-            """Secrets copy command failed, due to: Environment not found. Environment doesnt-exist is not found.""",
+            {
+                "app_name": "test-application",
+                "source": "development",
+                "target": "target-doesnt-exist",
+            },
+            """Environment 'target-doesnt-exist' not found for application 'test-application'.""",
             {"has_access": {"development": {"access": True, "stage": "source"}}},
         ),
         (
-            {"app_name": "test-application", "source": "doesnt-exist", "target": "staging"},
-            """Secrets copy command failed, due to: Environment not found. Environment doesnt-exist is not found.""",
+            {"app_name": "test-application", "source": "source-doesnt-exist", "target": "staging"},
+            """Environment 'source-doesnt-exist' not found for application 'test-application'.""",
             {"has_access": {"staging": {"access": True, "stage": "target"}}},
         ),
         (
