@@ -1,4 +1,3 @@
-import copy
 from collections import defaultdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -150,13 +149,22 @@ class UpdateALBRules:
 
             rules = []
             for (name, path), aliases in grouped.items():
-                rules.append(
-                    {
-                        "service": name,
-                        "path": path,
-                        "aliases": sorted(set(aliases)),
-                    }
-                )
+                path = "" if path == "/" else f"{path}/*"
+                # path_pattern = ["/*"] if path == "/" else [path, f"{path}/*"] TODO check if we need to do this
+
+                # AWS allows a maximum of 5 condition values per rule, 1 is used for the path
+                max_aliases = 4
+                if len(aliases) > max_aliases:
+                    i = 0
+                    while i < len(aliases):
+                        remaining_slots = max_aliases
+                        alias_split = aliases[i : i + remaining_slots] if aliases else []
+                        rules.append(
+                            {"service": name, "path": path, "aliases": sorted(set(alias_split))}
+                        )
+                        i += remaining_slots
+                else:
+                    rules.append({"service": name, "path": path, "aliases": sorted(set(aliases))})
 
             rules.sort(
                 key=lambda r: (len([s for s in r["path"].split("/") if s]), r["aliases"]),
@@ -169,14 +177,19 @@ class UpdateALBRules:
 
             rule_priority = PLATFORM_RULE_STARTING_PRIORITY
             for rule in rules:
-                path = rule["path"]
-                path_pattern = ["/*"] if path == "/" else [path, f"{path}/*"]
                 rule_arn = self.load_balancer.create_rule(
                     listener_arn,
                     [{"Type": "forward", "TargetGroupArn": service_mapped_tgs[rule["service"]]}],
                     [
                         {"Field": "host-header", "HostHeaderConfig": {"Values": rule["aliases"]}},
-                        {"Field": "path-pattern", "PathPatternConfig": {"Values": path_pattern}},
+                        (
+                            {
+                                "Field": "path-pattern",
+                                "PathPatternConfig": {"Values": [rule["path"]]},
+                            }
+                            if rule["path"]
+                            else {}
+                        ),
                     ],
                     rule_priority,
                     tags=[
@@ -189,102 +202,6 @@ class UpdateALBRules:
                 )["Rules"][0]["RuleArn"]
                 operation_state.created_rules.append(rule_arn)
                 rule_priority += RULE_PRIORITY_INCREMENT
-
-            return
-
-            # If a platform rule exists for a service
-            # for rule in mapped_rules.get(RuleType.PLATFORM.value, []):
-            #     service_name = self._get_service_from_tg(rule)
-            #     if service["name"] == service_name:
-            #         continue
-
-            # if len(mapped_rules.get(RuleType.PLATFORM.value, [])) > 0 and len(
-            #     mapped_rules.get(RuleType.PLATFORM.value, [])
-            # ) != len(mapped_rules.get(RuleType.COPILOT.value, [])):
-            #     raise PlatformException("Platform rules are partially created, please review.")
-            #
-            # if len(mapped_rules.get(RuleType.PLATFORM.value, [])) == len(
-            #     mapped_rules.get(RuleType.COPILOT.value, [])
-            # ):
-            #     self.io.info("Platform rules already exist, skipping creation")
-            #     return  # early exit
-            #
-            # grouped = dict()
-            #
-            # service_mapped_tgs = self._get_tg_arns_for_platform_services(
-            #     application_name, environment
-            # )
-            # for copilot_rule in mapped_rules.get(RuleType.COPILOT.value, []):
-            #     rule_arn = copilot_rule["RuleArn"]
-            #     self.io.debug(f"Building platform rule for corresponding copilot rule: {rule_arn}")
-            #     sorted_hosts = sorted(copilot_rule["Conditions"].get("host-header", []))
-            #     # Depth represents the specificity of the path condition, allowing us to sort in decreasing complexity.
-            #     path_depth = max(
-            #         [
-            #             len([sub_path for sub_path in path.split("/") if sub_path])
-            #             for path in copilot_rule["Conditions"].get("path-pattern", [])
-            #         ]
-            #     )
-            #     list_conditions = [
-            #         {"Field": key, "Values": value}
-            #         for key, value in copilot_rule["Conditions"].items()
-            #     ]
-            #
-            #     service_name = self._get_service_from_tg(copilot_rule)
-            #
-            #     tg_arn = service_mapped_tgs[service_name]
-            #
-            #     actions = self._create_new_actions(copilot_rule["Actions"], tg_arn)
-            #     self.io.debug(f"Updated forward action for service {service_name} to use: {tg_arn}")
-            #     if grouped.get(",".join(sorted_hosts)):
-            #         grouped[",".join(sorted_hosts)].append(
-            #             {
-            #                 "copilot_rule": rule_arn,
-            #                 "actions": actions,
-            #                 "conditions": list_conditions,
-            #                 "path_depth": path_depth,
-            #                 "service_name": service_name,
-            #             }
-            #         )
-            #     else:
-            #         grouped[",".join(sorted_hosts)] = [
-            #             {
-            #                 "copilot_rule": rule_arn,
-            #                 "actions": actions,
-            #                 "conditions": list_conditions,
-            #                 "path_depth": path_depth,
-            #                 "service_name": service_name,
-            #             }
-            #         ]
-            #
-            # rule_priority = PLATFORM_RULE_STARTING_PRIORITY
-            # for hosts, rules in grouped.items():
-            #     rules.sort(key=lambda x: x["path_depth"], reverse=True)
-            #
-            #     for rule in rules:
-            #         # Create rule with priority
-            #         copilot_rule = rule.get("copilot_rule", "")
-            #         self.io.debug(
-            #             f"Creating platform rule for corresponding copilot rule: {copilot_rule}"
-            #         )
-            #         rule_arn = self.load_balancer.create_rule(
-            #             listener_arn,
-            #             rule["actions"],
-            #             rule["conditions"],
-            #             rule_priority,
-            #             tags=[
-            #                 {"Key": "application", "Value": application_name},
-            #                 {"Key": "environment", "Value": environment},
-            #                 {"Key": "service", "Value": rule["service_name"]},
-            #                 {"Key": "reason", "Value": "service"},
-            #                 {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-            #             ],
-            #         )["Rules"][0]["RuleArn"]
-            #         operation_state.created_rules.append(rule_arn)
-            #         rule_priority += RULE_PRIORITY_INCREMENT
-            #
-            #     next_thousandth = lambda x: ((x // 1000) + 1) * 1000
-            #     rule_priority = next_thousandth(rule_priority)
 
         if (
             service_deployment_mode == Deployment.COPILOT.value
@@ -319,25 +236,6 @@ class UpdateALBRules:
 
         return RuleType.MANUAL.value
 
-    def _get_service_from_tg(self, rule: dict) -> str:
-        target_group_arn = None
-
-        for action in rule["Actions"]:
-            if action["Type"] == "forward":
-                target_group_arn = action["TargetGroupArn"]
-
-        if target_group_arn:
-            try:
-                tgs = self.load_balancer.get_target_groups_with_tags([target_group_arn])
-                copilot_service = tgs[0]["Tags"].get("copilot-service", None)
-                service = tgs[0]["Tags"].get("service", copilot_service)
-                return service
-            except IndexError:
-                raise PlatformException(f"No target group found for arn: {target_group_arn}")
-        else:
-            rule_arn = rule["RuleArn"]
-            raise PlatformException(f"No target group arn found in rule: {rule_arn}")
-
     def _get_tg_arns_for_platform_services(
         self, application: str, environment: str, managed_by: str = MANAGED_BY_SERVICE_TERRAFORM
     ) -> dict:
@@ -356,17 +254,7 @@ class UpdateALBRules:
                     self.io.warn(f"Target group {tg_name} has no 'service' tag")
         return service_mapped_tgs
 
-    def _create_new_actions(self, actions: dict, tg_arn: str) -> dict:
-
-        updated_actions = copy.deepcopy(actions)
-        for action in updated_actions:
-            if action.get("Type") == "forward" and "TargetGroupArn" in action:
-                action["TargetGroupArn"] = tg_arn
-                for tg in action["ForwardConfig"]["TargetGroups"]:
-                    tg["TargetGroupArn"] = tg_arn
-        return updated_actions
-
-    def _rollback_changes(self, operation_state: OperationState) -> bool:
+    def _rollback_changes(self, operation_state: OperationState):
         rollback_errors = []
         delete_rollbacks = []
         create_rollbacks = []
