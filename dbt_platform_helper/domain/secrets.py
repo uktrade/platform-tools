@@ -235,6 +235,11 @@ class Secrets:
                 or secret.tags.get("managed-by", "") == MANAGED_BY_PLATFORM_TERRAFORM
                 or secret.tags.get("managed-by", "") == "Terraform"
             ):
+                message = f"Skipping AWS Parameter Store secret {secret.name}"
+                if secret.tags.get("managed-by", ""):
+                    managed_by = secret.tags["managed-by"]
+                    message += f" with managed-by: {managed_by}"
+                self.io.debug(message)
                 continue
 
             secret.tags["application"] = app_name

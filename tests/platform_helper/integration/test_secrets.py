@@ -365,6 +365,14 @@ def test_secrets_copy(mock_application, input_args):
                     {
                         "Parameters": [
                             {
+                                "Name": f"/platform/{mock_application.name}/{source}/secrets/TERRAFORMED_SECRET",
+                                "Type": "SecureString",
+                                "Value": "terraformed",
+                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/TERRAFORMED_SECRET",
+                                "DataType": "text",
+                                "Version": 1,
+                            },
+                            {
                                 "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET3",
                                 "Type": "SecureString",
                                 "Value": "secret3",
@@ -415,6 +423,13 @@ def test_secrets_copy(mock_application, input_args):
                     "TagList": [
                         {"Key": "application", "Value": "test-application"},
                         {"Key": "environment", "Value": env},
+                        {"Key": "managed-by", "Value": "DBT Platform - Terraform"},
+                    ]
+                },
+                {
+                    "TagList": [
+                        {"Key": "application", "Value": "test-application"},
+                        {"Key": "environment", "Value": env},
                         {"Key": "managed-by", "Value": "DBT Platform"},
                     ]
                 },
@@ -446,7 +461,6 @@ def test_secrets_copy(mock_application, input_args):
         io=io_mock,
         load_application=load_application_mock,
     )
-
     secrets.copy(**input_args)
 
     source_env = mock_application.environments[input_args["source"]]
@@ -503,6 +517,9 @@ def test_secrets_copy(mock_application, input_args):
             ),
             call(
                 f"Creating AWS Parameter Store secret /copilot/test-application/{target}/secrets/SECRET2 ..."
+            ),
+            call(
+                "Skipping AWS Parameter Store secret /platform/test-application/staging/secrets/TERRAFORMED_SECRET with managed-by: DBT Platform - Terraform"
             ),
             call(
                 f"Creating AWS Parameter Store secret /platform/test-application/{target}/secrets/SECRET3 ..."
