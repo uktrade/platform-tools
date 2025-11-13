@@ -39,8 +39,24 @@ class AWSTestFixtures:
         }
 
     @staticmethod
-    def list_tags_for_resource_response():
-        pass
+    def list_tags_for_resource_response(
+        env, application="test-application", platform="platform", managed_by="DBT Platform"
+    ):
+        if platform == "platform":
+            return {
+                "TagList": [
+                    {"Key": "application", "Value": application},
+                    {"Key": "environment", "Value": env},
+                    {"Key": "managed-by", "Value": managed_by},
+                ]
+            }
+        else:
+            return {
+                "TagList": [
+                    {"Key": "copilot-application", "Value": application},
+                    {"Key": "copilot-environment", "Value": env},
+                ]
+            }
 
     @staticmethod
     def client_error_response(function, code="Unexpected", message="Simulated failure"):
@@ -55,7 +71,7 @@ class AWSTestFixtures:
 
     @staticmethod
     def put_parameter_already_exists_error_response():
-        pass
+        return AWSTestFixtures.client_error_response("PutParameter", code="ParameterAlreadyExists")
 
     @staticmethod
     def simulate_principal_policy_response(action="ssm:PutParameter", decision="allowed"):
@@ -415,7 +431,7 @@ def test_secrets_copy(mock_application, input_args):
                 ],
                 [
                     AWSTestFixtures.get_parameter_by_path_response(
-                        secrets=["secret_EXISTS", "terraformed_secret", "secret3", "secret4"],
+                        secrets=["secret_exists", "terraformed_secret", "secret3", "secret4"],
                         env=source,
                     ),
                 ],
@@ -434,84 +450,30 @@ def test_secrets_copy(mock_application, input_args):
         if stage == "source":
             mock_ssm_client.get_paginator.return_value = _create_parameters_by_path_paginator()
             mock_ssm_client.list_tags_for_resource.side_effect = [
-                {
-                    "TagList": [
-                        {"Key": "copilot-application", "Value": "test-application"},
-                        {"Key": "copilot-environment", "Value": env},
-                    ]
-                },
-                {
-                    "TagList": [
-                        {"Key": "copilot-application", "Value": "test-application"},
-                        {"Key": "copilot-environment", "Value": env},
-                    ]
-                },
-                {
-                    "TagList": [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": env},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ]
-                },
-                {
-                    "TagList": [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": env},
-                        {"Key": "managed-by", "Value": "DBT Platform - Terraform"},
-                    ]
-                },
-                {
-                    "TagList": [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": env},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ]
-                },
-                {
-                    "TagList": [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": env},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ]
-                },
+                AWSTestFixtures.list_tags_for_resource_response(env=env, platform="copilot"),
+                AWSTestFixtures.list_tags_for_resource_response(env=env, platform="copilot"),
+                AWSTestFixtures.list_tags_for_resource_response(env=env),
+                AWSTestFixtures.list_tags_for_resource_response(
+                    env=env, managed_by="DBT Platform - Terraform"
+                ),
+                AWSTestFixtures.list_tags_for_resource_response(env=env),
+                AWSTestFixtures.list_tags_for_resource_response(env=env),
             ]
         if stage == "target":
 
             def _create_ssm_mock_with_failing_put_parameter(ssm_client, calls_to_fail_on=[2]):
-                original_put_parameter = ssm_client.put_parameter
+                return_value = ssm_client.put_parameter.return_value
 
                 def mock_put_parameter(*args, **kwargs):
-
-                    if not hasattr(mock_put_parameter, "assert_has_calls"):
-                        mock_put_parameter.assert_has_calls = mock_assert_has_calls
-                    if not hasattr(mock_put_parameter.assert_has_calls, "calls"):
-                        mock_put_parameter.assert_has_calls.calls = []
                     if not hasattr(mock_put_parameter, "call_count"):
                         mock_put_parameter.call_count = 0
-
-                    mock_put_parameter.assert_has_calls.calls.append(call(*args, **kwargs))
                     if mock_put_parameter.call_count in calls_to_fail_on:
                         mock_put_parameter.call_count += 1
-                        raise ClientError(
-                            {
-                                "Error": {
-                                    "Code": "ParameterAlreadyExists",
-                                    "Message": "Simulated failure",
-                                }
-                            },
-                            "CreateRule",
-                        )
+                        raise AWSTestFixtures.put_parameter_already_exists_error_response()
                     mock_put_parameter.call_count += 1
-                    return original_put_parameter(*args, **kwargs)
+                    return return_value
 
-                def mock_assert_has_calls(calls):
-                    # print(calls[0].call_list())
-                    # print(calls[0].call_args)
-                    # print(calls[0].call_args.args)
-                    # print(calls[0].call_args.kwargs)
-                    assert mock_assert_has_calls.calls == calls
-
-                ssm_client.put_parameter = mock_put_parameter
+                ssm_client.put_parameter.side_effect = mock_put_parameter
 
             _create_ssm_mock_with_failing_put_parameter(mock_ssm_client)
 
@@ -540,30 +502,15 @@ def test_secrets_copy(mock_application, input_args):
     target_env = mock_application.environments[input_args["target"]]
 
     source_env.session.client("iam").simulate_principal_policy.assert_called_with(
-        PolicySourceArn=f"arn:aws:iam::{source_env.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{source}",
-        ActionNames=["ssm:GetParameter"],
-        ContextEntries=[
-            {
-                "ContextKeyName": "aws:RequestedRegion",
-                "ContextKeyValues": [
-                    "eu-west-2",
-                ],
-                "ContextKeyType": "string",
-            }
-        ],
+        **AWSTestFixtures.simulate_principal_policy_called_with(
+            source_env.account_id, source, ["ssm:GetParameter"]
+        )
     )
     target_env.session.client("iam").simulate_principal_policy.assert_called_with(
-        PolicySourceArn=f"arn:aws:iam::{target_env.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{target}",
-        ActionNames=["ssm:PutParameter"],
-        ContextEntries=[
-            {
-                "ContextKeyName": "aws:RequestedRegion",
-                "ContextKeyValues": [
-                    "eu-west-2",
-                ],
-                "ContextKeyType": "string",
-            }
-        ],
+        **AWSTestFixtures.simulate_principal_policy_called_with(
+            target_env.account_id,
+            target,
+        )
     )
 
     source_env.session.client("ssm").get_paginator(
@@ -603,55 +550,64 @@ def test_secrets_copy(mock_application, input_args):
         f"""The "SECRET_EXISTS" parameter already exists for the "{target}" environment."""
     )
 
-    put_parameter_fixture = lambda mode, index, tags=[]: dict(
-        Name=f"/{mode}/test-application/{target}/secrets/SECRET{index}",
-        Value=f"secret{index}",
-        Overwrite=False,
-        Type="SecureString",
-        Description=f"Copied from {source} environment.",
-        Tags=tags
-        + [
-            {"Key": "application", "Value": "test-application"},
-            {"Key": "environment", "Value": target},
-            {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-            {"Key": "copied-from", "Value": source},
-        ],
-    )
+    def sort_tags(mock_call):
+        sorted_tags = sorted(mock_call["Tags"], key=lambda x: x["Key"])
+        return call(
+            Name=mock_call["Name"],
+            Value=mock_call["Value"],
+            Overwrite=mock_call["Overwrite"],
+            Type=mock_call["Type"],
+            Description=mock_call["Description"],
+            Tags=sorted_tags,
+        )
 
-    # **AWSTestFixtures.put_parameter_copied_called_with(
-    #     "copilot",source, target, "secret1",
-    #     tags=[
-    #         {"Key": "copilot-application", "Value": "test-application"},
-    #         {"Key": "copilot-environment", "Value": target},
-    #     ],
-    # )
-    target_env.session.client("ssm").put_parameter.assert_has_calls(
-        [
-            call(
-                **put_parameter_fixture(
-                    "copilot",
-                    1,
-                    [
-                        {"Key": "copilot-application", "Value": "test-application"},
-                        {"Key": "copilot-environment", "Value": target},
-                    ],
-                )
-            ),
-            call(
-                **put_parameter_fixture(
-                    "copilot",
-                    2,
-                    [
-                        {"Key": "copilot-application", "Value": "test-application"},
-                        {"Key": "copilot-environment", "Value": target},
-                    ],
-                )
-            ),
-            call(**put_parameter_fixture("platform", "_EXISTS")),
-            call(**put_parameter_fixture("platform", 3)),
-            call(**put_parameter_fixture("platform", 4)),
-        ]
-    )
+    actual_calls = target_env.session.client("ssm").put_parameter.call_args_list
+    expected_calls = [
+        call(
+            **AWSTestFixtures.put_parameter_copied_called_with(
+                "copilot",
+                source,
+                target,
+                "secret1",
+                tags=[
+                    {"Key": "copilot-application", "Value": "test-application"},
+                    {"Key": "copilot-environment", "Value": target},
+                ],
+            )
+        ),
+        call(
+            **AWSTestFixtures.put_parameter_copied_called_with(
+                "copilot",
+                source,
+                target,
+                "secret2",
+                tags=[
+                    {"Key": "copilot-application", "Value": "test-application"},
+                    {"Key": "copilot-environment", "Value": target},
+                ],
+            )
+        ),
+        call(
+            **AWSTestFixtures.put_parameter_copied_called_with(
+                "platform", source, target, "secret_exists"
+            )
+        ),
+        call(
+            **AWSTestFixtures.put_parameter_copied_called_with(
+                "platform", source, target, "secret3"
+            )
+        ),
+        call(
+            **AWSTestFixtures.put_parameter_copied_called_with(
+                "platform", source, target, "secret4"
+            )
+        ),
+    ]
+
+    sorted_actual = [sort_tags(c.args[0] if c.args else c.kwargs) for c in actual_calls]
+    sorted_expected = [sort_tags(c.args[0] if c.args else c.kwargs) for c in expected_calls]
+
+    assert sorted_actual == sorted_expected
 
 
 # TODO add test where some variables already exist and assert they were called
@@ -734,18 +690,7 @@ def test_secrets_copy_exception_raised(mock_application, input_args, expected_me
             if not data["access"]:
                 decision = "implicitDeny"
 
-            calls.append(
-                {
-                    "EvaluationResults": [
-                        {
-                            "EvalActionName": action,
-                            "EvalResourceName": "*",
-                            "EvalDecision": decision,
-                            "MatchedStatements": [],
-                        }
-                    ],
-                }
-            )
+            calls.append(AWSTestFixtures.simulate_principal_policy_response(action, decision))
 
         mock_iam_client.simulate_principal_policy.side_effect = calls
         mocks[env] = {
