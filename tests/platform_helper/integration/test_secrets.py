@@ -160,13 +160,16 @@ class AWSTestFixtures:
         )
 
 
-class CreateMock:
-    def __init__(self, has_access=True, create_existing_params="none"):
+class AWSMocks:
+    def __init__(
+        self, has_access={"all": True}, unexpected_error=False, create_existing_params="none"
+    ):
         self.create_existing_params = create_existing_params
         self.has_access = has_access
         self.mocks = None
+        self.unexpected_error = unexpected_error
 
-    def setup(self, mock_application):
+    def setup_create(self, mock_application):
 
         self.application = mock_application
         self.load_application_mock = MagicMock()
@@ -222,7 +225,7 @@ class CreateMock:
             mock_iam_client = MagicMock(name=f"{env}-iam-client-mock")
             mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
 
-            if self.has_access:
+            if self.has_access["all"]:
                 mock_iam_client.simulate_principal_policy.return_value = (
                     AWSTestFixtures.simulate_principal_policy_response()
                 )
@@ -255,6 +258,114 @@ class CreateMock:
 
         return client_side_effect
 
+    def _create_parameters_by_path_paginator(self, env):
+        paginator = Mock()
+        paginator.paginate.side_effect = [
+            [
+                AWSTestFixtures.get_parameter_by_path_response(
+                    secrets=["secret1", "secret2"], env=env, platform="copilot"
+                ),
+            ],
+            [
+                AWSTestFixtures.get_parameter_by_path_response(
+                    secrets=["secret_exists", "terraformed_secret", "secret3", "secret4"],
+                    env=env,
+                ),
+            ],
+        ]
+        return paginator
+
+    def setup_copy(self, mock_application, source, target):
+
+        self.application = mock_application
+        self.load_application_mock = MagicMock()
+
+        mocks = {}
+        for env, stage in [(source, "source"), (target, "target")]:
+            if env not in self.application.environments:
+                continue  # skip envs that dont exist
+
+            mock_session = MagicMock(name=f"{env}-session-mock")
+            mock_sts_client = MagicMock(name=f"{env}-sts-client-mock")
+            mock_sts_client.get_caller_identity.return_value = {
+                "Arn": f"arn:sts:assume-role/{env}/something"
+            }
+            mock_iam_client = MagicMock(name=f"{env}-iam-client-mock")
+            mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
+
+            decision = "allowed"
+            if not self.has_access.get(env, "skip"):
+                decision = "implicitDeny"
+            if stage == "source":
+                mock_iam_client.simulate_principal_policy.side_effect = [
+                    AWSTestFixtures.simulate_principal_policy_response(
+                        action="ssm:GetParameter", decision=decision
+                    )
+                ]
+            elif stage == "target":
+                mock_iam_client.simulate_principal_policy.side_effect = [
+                    AWSTestFixtures.simulate_principal_policy_response(decision=decision)
+                ]
+
+            if stage == "source":
+                mock_ssm_client.get_paginator.return_value = (
+                    self._create_parameters_by_path_paginator(source)
+                )
+                mock_ssm_client.list_tags_for_resource.side_effect = [
+                    AWSTestFixtures.list_tags_for_resource_response(env=env, platform="copilot"),
+                    AWSTestFixtures.list_tags_for_resource_response(env=env, platform="copilot"),
+                    AWSTestFixtures.list_tags_for_resource_response(env=env),
+                    AWSTestFixtures.list_tags_for_resource_response(
+                        env=env, managed_by="DBT Platform - Terraform"
+                    ),
+                    AWSTestFixtures.list_tags_for_resource_response(env=env),
+                    AWSTestFixtures.list_tags_for_resource_response(env=env),
+                ]
+            if stage == "target":
+
+                def _create_ssm_mock_with_failing_put_parameter(ssm_client, calls_to_fail_on=[2]):
+                    return_value = ssm_client.put_parameter.return_value
+
+                    def mock_put_parameter(*args, **kwargs):
+                        if not hasattr(mock_put_parameter, "call_count"):
+                            mock_put_parameter.call_count = 0
+                        if mock_put_parameter.call_count in calls_to_fail_on:
+                            mock_put_parameter.call_count += 1
+                            raise AWSTestFixtures.put_parameter_already_exists_error_response()
+                        mock_put_parameter.call_count += 1
+                        return return_value
+
+                    ssm_client.put_parameter.side_effect = mock_put_parameter
+
+                if self.unexpected_error:
+                    mock_ssm_client.put_parameter.side_effect = (
+                        AWSTestFixtures.client_error_response("PutParameter")
+                    )
+                else:
+                    _create_ssm_mock_with_failing_put_parameter(mock_ssm_client)
+
+            mocks[env] = {
+                "session": mock_session,
+            }
+
+            mock_session.client.side_effect = self.__make_client_side_effect(
+                mock_sts_client, mock_iam_client, mock_ssm_client
+            )
+            self.application.environments[env].sessions[
+                self.application.environments[env].account_id
+            ] = mock_session
+
+        self.mocks = mocks
+
+        self.load_application_mock.return_value = mock_application
+
+        self.io_mock = MagicMock()
+
+        return dict(
+            load_application=self.load_application_mock,
+            io=self.io_mock,
+        )
+
 
 @pytest.mark.parametrize(
     "input_args, params_exist",
@@ -266,8 +377,8 @@ class CreateMock:
 )
 def test_create(mock_application, input_args, params_exist):
 
-    mock = CreateMock(create_existing_params=params_exist)
-    input_mocks = mock.setup(mock_application)
+    mock = AWSMocks(create_existing_params=params_exist)
+    input_mocks = mock.setup_create(mock_application)
     secrets = Secrets(**input_mocks)
 
     secrets.create(**input_args)
@@ -334,8 +445,8 @@ def test_create(mock_application, input_args, params_exist):
 
 def test_create_no_access(mock_application):
 
-    mock = CreateMock(has_access=False)
-    input_mocks = mock.setup(mock_application)
+    mock = AWSMocks(has_access={"all": False})
+    input_mocks = mock.setup_create(mock_application)
     secrets = Secrets(**input_mocks)
 
     with pytest.raises(
@@ -347,8 +458,8 @@ def test_create_no_access(mock_application):
 
 def test_create_exception_parameter_found(mock_application):
 
-    mock = CreateMock(create_existing_params="exists")
-    input_mocks = mock.setup(mock_application)
+    mock = AWSMocks(create_existing_params="exists")
+    input_mocks = mock.setup_create(mock_application)
     secrets = Secrets(**input_mocks)
 
     with pytest.raises(
@@ -360,8 +471,8 @@ def test_create_exception_parameter_found(mock_application):
 
 def test_create_exception_unexpected(mock_application):
 
-    mock = CreateMock(create_existing_params="unexpected")
-    input_mocks = mock.setup(mock_application)
+    mock = AWSMocks(create_existing_params="unexpected")
+    input_mocks = mock.setup_create(mock_application)
     secrets = Secrets(**input_mocks)
 
     with pytest.raises(
@@ -373,129 +484,21 @@ def test_create_exception_unexpected(mock_application):
         secrets.create("test-application", "secret", False)
 
 
-def make_client_side_effect(mock_sts_client, mock_iam_client, mock_ssm_client):
-    def client_side_effect(service):
-        return {
-            "sts": mock_sts_client,
-            "iam": mock_iam_client,
-            "ssm": mock_ssm_client,
-        }.get(service)
-
-    return client_side_effect
-
-
 @pytest.mark.parametrize(
     "input_args",
     [
         ({"app_name": "test-application", "source": "development", "target": "staging"}),
-        # ({"source": "development", "target": "prod"}),
-        # ({"source": "prod", "target": "development"}),
+        ({"app_name": "test-application", "source": "development", "target": "prod"}),
     ],
 )
 def test_secrets_copy(mock_application, input_args):
 
-    load_application_mock = MagicMock()
     source = input_args["source"]
     target = input_args["target"]
-    mocks = {}
-    for env, stage in [(source, "source"), (target, "target")]:
-        if env not in mock_application.environments:
-            continue  # skip envs that dont exist
-        mock_session = MagicMock(name=f"{env}-session-mock")
-        mock_sts_client = MagicMock(name=f"{env}-sts-client-mock")
-        mock_sts_client.get_caller_identity.return_value = {
-            "Arn": f"arn:sts:assume-role/{env}/something"
-        }
-        mock_iam_client = MagicMock(name=f"{env}-iam-client-mock")
-        mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
+    aws_mocks = AWSMocks()
+    inputs = aws_mocks.setup_copy(mock_application, source, target)
 
-        decision = "allowed"
-        if stage == "source":
-            mock_iam_client.simulate_principal_policy.side_effect = [
-                AWSTestFixtures.simulate_principal_policy_response(
-                    action="ssm:GetParameter", decision=decision
-                )
-            ]
-        elif stage == "target":
-            mock_iam_client.simulate_principal_policy.side_effect = [
-                AWSTestFixtures.simulate_principal_policy_response(decision=decision)
-            ]
-
-        def _create_parameters_by_path_paginator():
-            paginator = Mock()
-            paginator.paginate.side_effect = [
-                [
-                    AWSTestFixtures.get_parameter_by_path_response(
-                        secrets=["secret1", "secret2"], env=source, platform="copilot"
-                    ),
-                ],
-                [
-                    AWSTestFixtures.get_parameter_by_path_response(
-                        secrets=["secret_exists", "terraformed_secret", "secret3", "secret4"],
-                        env=source,
-                    ),
-                ],
-            ]
-            return paginator
-
-        # def get_paginator(operation_name):
-        #     _paginators = {}
-        #     if operation_name == "get_parameters_by_path":
-        #         _paginators[operation_name] = _create_parameters_by_path_paginator()
-        #     else:
-        #         _paginators[operation_name] = Mock()
-
-        #     return _paginators[operation_name]
-
-        if stage == "source":
-            mock_ssm_client.get_paginator.return_value = _create_parameters_by_path_paginator()
-            mock_ssm_client.list_tags_for_resource.side_effect = [
-                AWSTestFixtures.list_tags_for_resource_response(env=env, platform="copilot"),
-                AWSTestFixtures.list_tags_for_resource_response(env=env, platform="copilot"),
-                AWSTestFixtures.list_tags_for_resource_response(env=env),
-                AWSTestFixtures.list_tags_for_resource_response(
-                    env=env, managed_by="DBT Platform - Terraform"
-                ),
-                AWSTestFixtures.list_tags_for_resource_response(env=env),
-                AWSTestFixtures.list_tags_for_resource_response(env=env),
-            ]
-        if stage == "target":
-
-            def _create_ssm_mock_with_failing_put_parameter(ssm_client, calls_to_fail_on=[2]):
-                return_value = ssm_client.put_parameter.return_value
-
-                def mock_put_parameter(*args, **kwargs):
-                    if not hasattr(mock_put_parameter, "call_count"):
-                        mock_put_parameter.call_count = 0
-                    if mock_put_parameter.call_count in calls_to_fail_on:
-                        mock_put_parameter.call_count += 1
-                        raise AWSTestFixtures.put_parameter_already_exists_error_response()
-                    mock_put_parameter.call_count += 1
-                    return return_value
-
-                ssm_client.put_parameter.side_effect = mock_put_parameter
-
-            _create_ssm_mock_with_failing_put_parameter(mock_ssm_client)
-
-        mocks[env] = {
-            "session": mock_session,
-        }
-
-        mock_session.client.side_effect = make_client_side_effect(
-            mock_sts_client, mock_iam_client, mock_ssm_client
-        )
-        mock_application.environments[env].sessions[
-            mock_application.environments[env].account_id
-        ] = mock_session
-
-    load_application_mock.return_value = mock_application
-
-    io_mock = MagicMock()
-
-    secrets = Secrets(
-        io=io_mock,
-        load_application=load_application_mock,
-    )
+    secrets = Secrets(**inputs)
     secrets.copy(**input_args)
 
     source_env = mock_application.environments[input_args["source"]]
@@ -524,7 +527,7 @@ def test_secrets_copy(mock_application, input_args):
         ]
     )
 
-    io_mock.debug.assert_has_calls(
+    aws_mocks.io_mock.debug.assert_has_calls(
         [
             call(
                 f"Creating AWS Parameter Store secret /copilot/test-application/{target}/secrets/SECRET1 ..."
@@ -533,10 +536,10 @@ def test_secrets_copy(mock_application, input_args):
                 f"Creating AWS Parameter Store secret /copilot/test-application/{target}/secrets/SECRET2 ..."
             ),
             call(
-                "Creating AWS Parameter Store secret /platform/test-application/staging/secrets/SECRET_EXISTS ..."
+                f"Creating AWS Parameter Store secret /platform/test-application/{target}/secrets/SECRET_EXISTS ..."
             ),
             call(
-                "Skipping AWS Parameter Store secret /platform/test-application/staging/secrets/TERRAFORMED_SECRET with managed-by: DBT Platform - Terraform"
+                f"Skipping AWS Parameter Store secret /platform/test-application/{target}/secrets/TERRAFORMED_SECRET with managed-by: DBT Platform - Terraform"
             ),
             call(
                 f"Creating AWS Parameter Store secret /platform/test-application/{target}/secrets/SECRET3 ..."
@@ -546,7 +549,7 @@ def test_secrets_copy(mock_application, input_args):
             ),
         ]
     )
-    io_mock.warn.assert_called_with(
+    aws_mocks.io_mock.warn.assert_called_with(
         f"""The "SECRET_EXISTS" parameter already exists for the "{target}" environment."""
     )
 
@@ -610,9 +613,6 @@ def test_secrets_copy(mock_application, input_args):
     assert sorted_actual == sorted_expected
 
 
-# TODO add test where some variables already exist and assert they were called
-
-
 @pytest.mark.parametrize(
     "input_args, expected_message, mocking",
     [
@@ -623,20 +623,20 @@ def test_secrets_copy(mock_application, input_args):
                 "target": "target-doesnt-exist",
             },
             """Environment 'target-doesnt-exist' not found for application 'test-application'.""",
-            {"has_access": {"development": {"access": True, "stage": "source"}}},
+            {"has_access": {"development": True}},
         ),
         (
             {"app_name": "test-application", "source": "source-doesnt-exist", "target": "staging"},
             """Environment 'source-doesnt-exist' not found for application 'test-application'.""",
-            {"has_access": {"staging": {"access": True, "stage": "target"}}},
+            {"has_access": {"staging": True}},
         ),
         (
             {"app_name": "test-application", "source": "development", "target": "staging"},
             """You do not have AWS Parameter Store read access to the following AWS accounts: '000000000'""",
             {
                 "has_access": {
-                    "development": {"access": False, "stage": "source"},
-                    "staging": {"access": True, "stage": "target"},
+                    "development": False,
+                    "staging": True,
                 }
             },
         ),
@@ -645,8 +645,8 @@ def test_secrets_copy(mock_application, input_args):
             """You do not have AWS Parameter Store write access to the following AWS accounts: '111111111'""",
             {
                 "has_access": {
-                    "development": {"access": True, "stage": "source"},
-                    "staging": {"access": False, "stage": "target"},
+                    "development": True,
+                    "staging": False,
                 }
             },
         ),
@@ -655,67 +655,30 @@ def test_secrets_copy(mock_application, input_args):
             """Cannot transfer secrets out from 'production' in the prod account '222222222' to 'staging' in '111111111'""",
             {
                 "has_access": {
-                    "production": {"access": True, "stage": "source"},
-                    "staging": {"access": True, "stage": "target"},
+                    "production": True,
+                    "staging": True,
                 }
+            },
+        ),
+        (
+            {"app_name": "test-application", "source": "development", "target": "staging"},
+            """An error occurred (Unexpected) when calling the PutParameter operation: Simulated failure""",
+            {
+                "has_access": {
+                    "development": True,
+                    "staging": True,
+                },
+                "unexpected_error": True,
             },
         ),
     ],
 )
 def test_secrets_copy_exception_raised(mock_application, input_args, expected_message, mocking):
 
-    load_application_mock = MagicMock()
+    aws_mocks = AWSMocks(**mocking)
+    inputs = aws_mocks.setup_copy(mock_application, input_args["source"], input_args["target"])
 
-    mocks = {}
-
-    for env in [input_args["source"], input_args["target"]]:
-        if env not in mock_application.environments:
-            continue  # skip envs that dont exist
-        mock_session = MagicMock(name=f"{env}-session-mock")
-        mock_sts_client = MagicMock(name=f"{env}-sts-client-mock")
-        mock_sts_client.get_caller_identity.return_value = {
-            "Arn": f"arn:sts:assume-role/{env}/something"
-        }
-        mock_iam_client = MagicMock(name=f"{env}-iam-client-mock")
-        mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
-
-        calls = []
-        if mocking.get("has_access", {}).get(env, {}):
-            data = mocking["has_access"][env]
-            action = "ssm:PutParameter"
-            if data["stage"] == "source":
-                action = "ssm:GetParameter"
-
-            decision = "allowed"
-            if not data["access"]:
-                decision = "implicitDeny"
-
-            calls.append(AWSTestFixtures.simulate_principal_policy_response(action, decision))
-
-        mock_iam_client.simulate_principal_policy.side_effect = calls
-        mocks[env] = {
-            "session": mock_session,
-        }
-
-        mock_session.client.side_effect = make_client_side_effect(
-            mock_sts_client, mock_iam_client, mock_ssm_client
-        )
-        mock_application.environments[env].sessions[
-            mock_application.environments[env].account_id
-        ] = mock_session
-
-    load_application_mock.return_value = mock_application
-
-    io_mock = MagicMock()
-
-    parameter_store_mock = MagicMock()
-    parameter_store_mock.return_value = MagicMock()
-
-    secrets = Secrets(
-        io=io_mock,
-        load_application=load_application_mock,
-        parameter_store_provider=parameter_store_mock,
-    )
+    secrets = Secrets(**inputs)
 
     with pytest.raises(
         PlatformException,
