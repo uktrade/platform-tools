@@ -162,12 +162,15 @@ class AWSTestFixtures:
 
 class AWSMocks:
     def __init__(
-        self, has_access={"all": True}, unexpected_error=False, create_existing_params="none"
+        self,
+        has_access={"all": True},
+        put_parameter_unexpected=False,
+        create_existing_params="none",
     ):
         self.create_existing_params = create_existing_params
         self.has_access = has_access
         self.mocks = None
-        self.unexpected_error = unexpected_error
+        self.put_parameter_unexpected = put_parameter_unexpected
 
     def setup_create(self, mock_application):
 
@@ -175,7 +178,6 @@ class AWSMocks:
         self.load_application_mock = MagicMock()
         self._create_sessions()
         self.load_application_mock.return_value = mock_application
-        self._create_existing_params()
 
         self.io_mock = MagicMock()
         self.io_mock.input.side_effect = ["1", "2", "3", "4", "5"]
@@ -183,35 +185,7 @@ class AWSMocks:
         return dict(
             load_application=self.load_application_mock,
             io=self.io_mock,
-            parameter_store_provider=self.parameter_store_provider_mock,
         )
-
-    def _create_existing_params(self):
-        self.parameter_store_provider_mock = MagicMock()
-
-        self.parameter_store_mock = MagicMock()
-
-        if self.create_existing_params == "exists":
-            self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
-                {"Name": "doesntmatter"},
-                {"Name": "doesntmatter1"},
-                {"Name": "doesntmatter2"},
-                {"Name": "doesntmatter3"},
-                {"Name": "doesntmatter4"},
-            ]
-        elif self.create_existing_params == "unexpected":
-            self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
-                AWSTestFixtures.client_error_response("GetParameter")
-            ]
-        else:
-            self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
-                AWSTestFixtures.get_parameter_not_found_error_response(),
-                AWSTestFixtures.get_parameter_not_found_error_response(),
-                AWSTestFixtures.get_parameter_not_found_error_response(),
-                AWSTestFixtures.get_parameter_not_found_error_response(),
-                AWSTestFixtures.get_parameter_not_found_error_response(),
-            ]
-        self.parameter_store_provider_mock.return_value = self.parameter_store_mock
 
     def _create_sessions(self):
         mocks = {}
@@ -240,12 +214,25 @@ class AWSMocks:
                 "env": env,
             }
 
+            if self.create_existing_params == "exists":
+                mock_ssm_client.get_parameter.return_value = {"Parameter": {"Name": "doesntmatter"}}
+            elif self.create_existing_params == "unexpected":
+                mock_ssm_client.get_parameter.side_effect = AWSTestFixtures.client_error_response(
+                    "GetParameter"
+                )
+            else:
+                mock_ssm_client.get_parameter.side_effect = (
+                    AWSTestFixtures.get_parameter_not_found_error_response()
+                )
+
             mock_session.client.side_effect = self.__make_client_side_effect(
                 mock_sts_client, mock_iam_client, mock_ssm_client
             )
+
             self.application.environments[env].sessions[
                 self.application.environments[env].account_id
             ] = mock_session
+
         self.mocks = mocks
 
     def __make_client_side_effect(self, mock_sts_client, mock_iam_client, mock_ssm_client):
@@ -337,7 +324,7 @@ class AWSMocks:
 
                     ssm_client.put_parameter.side_effect = mock_put_parameter
 
-                if self.unexpected_error:
+                if self.put_parameter_unexpected:
                     mock_ssm_client.put_parameter.side_effect = (
                         AWSTestFixtures.client_error_response("PutParameter")
                     )
@@ -384,7 +371,6 @@ def test_create(mock_application, input_args, params_exist):
     secrets.create(**input_args)
 
     i = 1
-    put_parameter_calls = []
     info_calls = []
     input_calls = []
     debug_calls = []
@@ -397,10 +383,14 @@ def test_create(mock_application, input_args, params_exist):
 
     for env, data in mock.application.environments.items():
 
-        put_parameter_calls.append(
-            call(
-                AWSTestFixtures.put_parameter_called_with(env, i, overwrite=input_args["overwrite"])
-            )
+        data.session.client("ssm").put_parameter.assert_has_calls(
+            [
+                call(
+                    **AWSTestFixtures.put_parameter_called_with(
+                        env, i, overwrite=input_args["overwrite"]
+                    )
+                )
+            ]
         )
 
         input_calls.append(
@@ -440,7 +430,6 @@ def test_create(mock_application, input_args, params_exist):
     mock.io_mock.info.assert_has_calls(info_calls)
     mock.io_mock.input.assert_has_calls(input_calls)
     mock.io_mock.debug.assert_has_calls(debug_calls)
-    mock.parameter_store_mock.put_parameter.assert_has_calls(put_parameter_calls)
 
 
 def test_create_no_access(mock_application):
@@ -668,7 +657,7 @@ def test_secrets_copy(mock_application, input_args):
                     "development": True,
                     "staging": True,
                 },
-                "unexpected_error": True,
+                "put_parameter_unexpected": True,
             },
         ),
     ],
