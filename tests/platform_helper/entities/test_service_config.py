@@ -66,7 +66,7 @@ def test_web_service_requires_http_block():
 
     with pytest.raises(
         PlatformException,
-        match="A 'http' block must be provided when service type == 'Load Balanced Web Service'",
+        match="A 'http' block must be provided when service type == Load Balanced Web Service",
     ):
         ServiceConfig.model_validate(service_config)
 
