@@ -87,9 +87,6 @@ class UpdateALBRules:
                 deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
                 self.io.info(f"Deleted rules: {len(deleted_arns)}")
                 self.io.info("\n".join(deleted_arns))
-            if operation_state.updated_rules:
-                self.io.info(f"Updated rules: {len(operation_state.updated_rules)}")
-                self.io.info("\n".join(operation_state.updated_rules))
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
