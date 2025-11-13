@@ -4,6 +4,8 @@ from dataclasses import field
 from enum import Enum
 from typing import List
 
+from botocore.exceptions import ClientError
+
 from dbt_platform_helper.constants import COPILOT_RULE_PRIORITY
 from dbt_platform_helper.constants import DUMMY_RULE_REASON
 from dbt_platform_helper.constants import HTTP_SERVICE_TYPES
@@ -45,6 +47,7 @@ class Deployment(Enum):
 class OperationState:
     created_rules: List[str] = field(default_factory=list)
     deleted_rules: List[object] = field(default_factory=list)
+    updated_rules: List[str] = field(default_factory=list)
     listener_arn: str = ""
 
 
@@ -78,10 +81,15 @@ class UpdateALBRules:
         try:
             self._execute_rule_updates(environment, operation_state)
             if operation_state.created_rules:
-                self.io.info(f"Created rules: {operation_state.created_rules}")
+                self.io.info(f"Created rules: {len(operation_state.created_rules)}")
+                self.io.info("\n".join(operation_state.created_rules))
             if operation_state.deleted_rules:
                 deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
-                self.io.info(f"Deleted rules: {deleted_arns}")
+                self.io.info(f"Deleted rules: {len(deleted_arns)}")
+                self.io.info("\n".join(deleted_arns))
+            if operation_state.updated_rules:
+                self.io.info(f"Updated rules: {len(operation_state.updated_rules)}")
+                self.io.info("\n".join(operation_state.updated_rules))
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
@@ -197,31 +205,76 @@ class UpdateALBRules:
                 application_name, environment
             )
 
+            platform_rules = mapped_rules.get(RuleType.PLATFORM.value, [])
+
             rule_priority = PLATFORM_RULE_STARTING_PRIORITY
             for rule in rules:
-                rule_arn = self.load_balancer.create_rule(
-                    listener_arn,
-                    [{"Type": "forward", "TargetGroupArn": service_mapped_tgs[rule["service"]]}],
-                    [
-                        {"Field": "host-header", "HostHeaderConfig": {"Values": rule["aliases"]}},
-                        (
-                            {
-                                "Field": "path-pattern",
-                                "PathPatternConfig": {"Values": rule["path_pattern"]},
-                            }
-                        ),
-                    ],
-                    rule_priority,
-                    tags=[
-                        {"Key": "application", "Value": application_name},
-                        {"Key": "environment", "Value": environment},
-                        {"Key": "service", "Value": rule["service"]},
-                        {"Key": "reason", "Value": "service"},
-                        {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-                    ],
-                )["Rules"][0]["RuleArn"]
-                operation_state.created_rules.append(rule_arn)
+                actions = [
+                    {"Type": "forward", "TargetGroupArn": service_mapped_tgs[rule["service"]]}
+                ]
+                conditions = [
+                    {"Field": "host-header", "HostHeaderConfig": {"Values": rule["aliases"]}},
+                    {
+                        "Field": "path-pattern",
+                        "PathPatternConfig": {"Values": rule["path_pattern"]},
+                    },
+                ]
+                tags = [
+                    {"Key": "application", "Value": application_name},
+                    {"Key": "environment", "Value": environment},
+                    {"Key": "service", "Value": rule["service"]},
+                    {"Key": "reason", "Value": "service"},
+                    {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+                ]
+
+                try:
+                    rule_arn = self.load_balancer.create_rule(
+                        listener_arn,
+                        actions,
+                        conditions,
+                        rule_priority,
+                        tags,
+                    )["Rules"][0]["RuleArn"]
+
+                    if rule_arn in [rule["RuleArn"] for rule in platform_rules]:
+                        operation_state.updated_rules.append(rule_arn)
+                    else:
+                        operation_state.created_rules.append(rule_arn)
+
+                except ClientError as e:
+                    if e.response["Error"]["Code"] == "PriorityInUse":
+                        existing_rule = [
+                            r for r in platform_rules if r["Priority"] == str(rule_priority)
+                        ]
+                        if not existing_rule:
+                            raise PlatformException(
+                                f"Priority {rule_priority} in use but no matching platform rule found."
+                            )
+
+                        self._delete_rules(existing_rule, operation_state)
+
+                        rule_arn = self.load_balancer.create_rule(
+                            listener_arn,
+                            actions,
+                            conditions,
+                            rule_priority,
+                            tags,
+                        )["Rules"][0]["RuleArn"]
+
+                        operation_state.created_rules.append(rule_arn)
+
                 rule_priority += RULE_PRIORITY_INCREMENT
+
+            # Remove dangling rules
+            deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
+            managed_rules = [
+                *operation_state.created_rules,
+                *operation_state.updated_rules,
+                *deleted_arns,
+            ]
+            for rule in platform_rules:
+                if rule["RuleArn"] not in managed_rules:
+                    self._delete_rules([rule], operation_state)
 
             # Remove dummy rules
             self._delete_rules(mapped_rules.get(RuleType.DUMMY.value, []), operation_state)
