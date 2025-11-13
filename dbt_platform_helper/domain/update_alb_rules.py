@@ -159,22 +159,34 @@ class UpdateALBRules:
 
             rules = []
             for (name, path), aliases in grouped.items():
-                path = "" if path == "/" else f"{path}/*"
-                # path_pattern = ["/*"] if path == "/" else [path, f"{path}/*"] TODO check if we need to do this
+                path_pattern = ["/*"] if path == "/" else [path, f"{path}/*"]
+                condition_length = len(aliases) + len(path_pattern)
 
-                # AWS allows a maximum of 5 condition values per rule, 1 is used for the path
-                max_aliases = 4
-                if len(aliases) > max_aliases:
+                # AWS allows a maximum of 5 condition values per rule, this includes host and path values
+                max_conditions = 5
+                if condition_length > max_conditions:
                     i = 0
-                    while i < len(aliases):
-                        remaining_slots = max_aliases
+                    while i < condition_length:
+                        remaining_slots = max_conditions - len(path_pattern)
                         alias_split = aliases[i : i + remaining_slots] if aliases else []
                         rules.append(
-                            {"service": name, "path": path, "aliases": sorted(set(alias_split))}
+                            {
+                                "service": name,
+                                "path": path,
+                                "path_pattern": path_pattern,
+                                "aliases": sorted(set(alias_split)),
+                            }
                         )
                         i += remaining_slots
                 else:
-                    rules.append({"service": name, "path": path, "aliases": sorted(set(aliases))})
+                    rules.append(
+                        {
+                            "service": name,
+                            "path": path,
+                            "path_pattern": path_pattern,
+                            "aliases": sorted(set(aliases)),
+                        }
+                    )
 
             rules.sort(
                 key=lambda r: (len([s for s in r["path"].split("/") if s]), r["aliases"]),
@@ -195,10 +207,8 @@ class UpdateALBRules:
                         (
                             {
                                 "Field": "path-pattern",
-                                "PathPatternConfig": {"Values": [rule["path"]]},
+                                "PathPatternConfig": {"Values": rule["path_pattern"]},
                             }
-                            if rule["path"]
-                            else {}
                         ),
                     ],
                     rule_priority,
@@ -213,7 +223,8 @@ class UpdateALBRules:
                 operation_state.created_rules.append(rule_arn)
                 rule_priority += RULE_PRIORITY_INCREMENT
 
-            # TODO - delete dummy rules
+            # Remove dummy rules
+            self._delete_rules(mapped_rules.get(RuleType.DUMMY.value, []), operation_state)
 
         if (
             service_deployment_mode == Deployment.COPILOT.value
