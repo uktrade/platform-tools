@@ -431,6 +431,9 @@ def test_monitor_task_events_outputs_events():
     mocks.io.deploy_error.assert_has_calls(
         [
             call("[13:00:00] Container 'web' stopped in task '123abc'."),
+            call(
+                "[13:00:00] View CloudWatch log: https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:log-groups/log-group/%2Fplatform%2Fecs%2Fservice%2Fmyapp%2Fdev%2Fweb/log-events/platform%2Fweb%2F123abc"
+            ),
             call("[13:00:00] Application error"),
         ]
     )

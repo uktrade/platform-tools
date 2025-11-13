@@ -1,4 +1,5 @@
 import re
+from enum import Enum
 from typing import ClassVar
 from typing import Dict
 from typing import Optional
@@ -13,47 +14,67 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 
 class HealthCheck(BaseModel):
-    path: Optional[str] = Field(description="""Path the healthcheck calls""", default=None)
-    port: Optional[int] = Field(description="""Port the healthcheck calls""", default=None)
-    success_codes: Optional[str] = Field(
-        description="""The success codes the healthcheck looks for""", default=None
+    path: Optional[str] = Field(
+        description="The destination that the health check requests are sent to.", default=None
     )
-    healthy_threshold: Optional[int] = Field(description="""The number of  """, default=None)
-    unhealthy_threshold: Optional[int] = Field(description="""The number of """, default=None)
+    port: Optional[int] = Field(
+        description="The port that the health check requests are sent to.", default=None
+    )
+    success_codes: Optional[str] = Field(
+        description="The HTTP status codes that healthy targets must use when responding to a HTTP health check.",
+        default=None,
+    )
+    healthy_threshold: Optional[int] = Field(
+        description="The number of consecutive health check successes required before considering an unhealthy target healthy.",
+        default=None,
+    )
+    unhealthy_threshold: Optional[int] = Field(
+        description="The number of consecutive health check failures required before considering a target unhealthy.",
+        default=None,
+    )
     interval: Optional[str] = Field(
-        description="""The interval inbetween health check calls""", default=None
+        description="The approximate amount of time, in seconds, between health checks of an individual target.",
+        default=None,
     )
     timeout: Optional[str] = Field(
-        description="""The timeout for a healthcheck call""", default=None
+        description="The amount of time, in seconds, during which no response from a target means a failed health check. ",
+        default=None,
     )
     grace_period: Optional[str] = Field(
-        description="""The time the service ignores unhealthy ALB and container health checks""",
+        description="The amount of time to ignore failing target group healthchecks on container start.",
         default=None,
     )
 
 
 class Http(BaseModel):
-    path: str = Field(description="""Requests to this path will be forwarded to your service.""")
-    target_container: str = Field(description="""Target container for the requests""")
+    path: str = Field(description="Requests to this path will be forwarded to your service.")
+    target_container: str = Field(description="Target container for the requests.")
     healthcheck: Optional[HealthCheck] = Field(default=None)
 
 
 class HttpOverride(BaseModel):
     path: Optional[str] = Field(
-        description="""Requests to this path will be forwarded to your service.""", default=None
+        description="Requests to this path will be forwarded to your service.", default=None
     )
     target_container: Optional[str] = Field(
-        description="""Target container for the requests""", default=None
+        description="Target container for the requests", default=None
     )
     healthcheck: Optional[HealthCheck] = Field(default=None)
 
 
 class Sidecar(BaseModel):
-    port: int = Field()
-    image: str = Field()
-    essential: Optional[bool] = Field(default=None)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    port: int = Field(description="Container port exposed by the sidecar.")
+    image: str = Field(description="Container image URI for the sidecar (e.g. 'repo/image:tag').")
+    essential: Optional[bool] = Field(
+        description="Whether the ECS task should stop if this sidecar container exits.",
+        default=None,
+    )
+    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+        description="Environment variables to inject into the sidecar container.", default=None
+    )
+    secrets: Optional[Dict[str, str]] = Field(
+        description="Parameter Store secrets to inject into the sidecar.", default=None
+    )
 
 
 class SidecarOverride(BaseModel):
@@ -65,9 +86,14 @@ class SidecarOverride(BaseModel):
 
 
 class Image(BaseModel):
-    location: str = Field()
-    port: Optional[int] = Field(default=None)
-    depends_on: Optional[dict[str, str]] = Field(default=None)
+    location: str = Field(description="Main container image URI.")
+    port: Optional[int] = Field(
+        description="Port exposed by the main ECS task container (used by the load balancer/Service Connect).",
+        default=None,
+    )
+    depends_on: Optional[dict[str, str]] = Field(
+        description="Container dependency conditions.", default=None
+    )
 
 
 class VPC(BaseModel):
@@ -76,15 +102,20 @@ class VPC(BaseModel):
 
 class Network(BaseModel):
     connect: Optional[bool] = Field(
-        description="Enable Service Connect for intra-environment traffic between services.",
+        description="Enable ECS Service Connect for intra-environment traffic between services.",
         default=None,
     )
     vpc: Optional[VPC] = Field(default=None)
 
 
 class Storage(BaseModel):
-    readonly_fs: Optional[bool] = Field(default=None)
-    writable_directories: Optional[list[str]] = Field(default=None)
+    readonly_fs: Optional[bool] = Field(
+        description="Specify true to give your container read-only access to its root file system.",
+        default=None,
+    )
+    writable_directories: Optional[list[str]] = Field(
+        description="List of directories with read/write access.", default=None
+    )
 
     @field_validator("writable_directories", mode="after")
     @classmethod
@@ -202,39 +233,65 @@ class ServiceConfigEnvironmentOverride(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(default=None)
 
 
+class ServiceType(str, Enum):
+    BACKEND_SERVICE = "Backend Service"
+    LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+
+
 class ServiceConfig(BaseModel):
-    name: str = Field(description="""Name of the Service.""")
-    type: str = Field(description="""The type of service""")
+    name: str = Field(description="Service name.")
+    type: ServiceType = Field(
+        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
+    )
 
     http: Optional[Http] = Field(default=None)
 
     @model_validator(mode="after")
     def check_http_for_web_service(self):
-        if self.type == "Load Balanced Web Service" and self.http is None:
+        if self.type == ServiceType.LOAD_BALANCED_WEB_SERVICE and self.http is None:
             raise PlatformException(
-                "A 'http' block must be provided when service type == 'Load Balanced Web Service'"
+                f"A 'http' block must be provided when service type == {self.type.value}"
             )
         return self
 
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
 
-    cpu: int = Field()
-    memory: int = Field()
+    cpu: int = Field(
+        description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
+    )
+    memory: int = Field(
+        description="Memory in MiB reserved for the ECS task (e.g. 256, 512, 1024)."
+    )
     count: Union[int, Count] = Field(
         description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_minute' metrics."
     )
-    exec: Optional[bool] = Field(default=None)
-    entrypoint: Optional[list[str]] = Field(default=None)
-    essential: Optional[bool] = Field(default=None)
+    exec: Optional[bool] = Field(
+        description="Enable ECS Exec (remote command execution) for running ECS tasks.",
+        default=None,
+    )
+    entrypoint: Optional[list[str]] = Field(
+        description="Container entrypoint array (overrides default ENTRYPOINT).", default=None
+    )
+    essential: Optional[bool] = Field(
+        description="Whether the main container is marked essential; task stops if it exits.",
+        default=None,
+    )
     network: Optional[Network] = Field(default=None)
 
     storage: Optional[Storage] = Field(default=None)
 
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+        description="Environment variables to inject into the sidecar container.", default=None
+    )
+    secrets: Optional[Dict[str, str]] = Field(
+        description="Parameter Store secrets to inject into the sidecar.", default=None
+    )
     # Environment overrides can override almost the full config
-    environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(default=None)
+    environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
+        description="Allows you to override any service config property for specific environments (e.g. a higher ECS task count in prod than for your other environments).",
+        default=None,
+    )
 
     # Class based variable used when handling the object
     local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
