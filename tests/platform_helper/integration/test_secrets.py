@@ -11,6 +11,139 @@ from dbt_platform_helper.domain.secrets import Secrets
 from dbt_platform_helper.platform_exception import PlatformException
 
 
+class AWSTestFixtures:
+
+    @staticmethod
+    def get_parameter_response(name, value):
+        return {
+            "Name": name,
+            "Type": "SecureString",
+            "Value": value,
+            "ARN": f"arn:::parameter/{name}",
+            "DataType": "text",
+            "Version": 1,
+        }
+
+    @staticmethod
+    def get_parameter_by_path_response(
+        secrets, env, platform="platform", application="test-application"
+    ):
+        return {
+            "Parameters": [
+                AWSTestFixtures.get_parameter_response(
+                    f"/{platform}/{application}/{env}/secrets/{secret.upper()}", secret
+                )
+                for secret in secrets
+            ],
+            "NextMarker": "string",
+        }
+
+    @staticmethod
+    def list_tags_for_resource_response():
+        pass
+
+    @staticmethod
+    def client_error_response(function, code="Unexpected", message="Simulated failure"):
+        return ClientError(
+            {"Error": {"Code": code, "Message": message}},
+            function,
+        )
+
+    @staticmethod
+    def get_parameter_not_found_error_response():
+        return AWSTestFixtures.client_error_response("GetParameter", code="ParameterNotFound")
+
+    @staticmethod
+    def put_parameter_already_exists_error_response():
+        pass
+
+    @staticmethod
+    def simulate_principal_policy_response(action="ssm:PutParameter", decision="allowed"):
+        return {
+            "EvaluationResults": [
+                {
+                    "EvalActionName": action,
+                    "EvalResourceName": "*",
+                    "EvalDecision": decision,
+                    "MatchedStatements": [],
+                }
+            ],
+        }
+
+    @staticmethod
+    def put_parameter_called_with(
+        env,
+        value,
+        overwrite=False,
+        application="test-application",
+        description="",
+        secret="SECRET",
+        platform="platform",
+        tags=[],
+    ):
+        called_with = dict(
+            Name=f"/{platform}/test-application/{env}/secrets/{secret.upper()}",
+            Value=str(value),
+            Overwrite=False,
+            Type="SecureString",
+            Tags=tags
+            + [
+                {"Key": "application", "Value": application},
+                {"Key": "environment", "Value": env},
+                {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+            ],
+        )
+
+        if description:
+            called_with["Description"] = description
+        if overwrite:
+            called_with["Overwrite"] = True
+            del called_with["Tags"]
+
+        return called_with
+
+    @staticmethod
+    def put_parameter_copied_called_with(platform, source, target, secret, tags=[]):
+        tags = [{"Key": "copied-from", "Value": source}] + tags
+        description = f"Copied from {source} environment."
+        return AWSTestFixtures.put_parameter_called_with(
+            target,
+            value=secret,
+            secret=secret,
+            platform=platform,
+            description=description,
+            tags=tags,
+        )
+
+    @staticmethod
+    def simulate_principal_policy_called_with(account_id, role_name, actions=["ssm:PutParameter"]):
+        return dict(
+            PolicySourceArn=f"arn:aws:iam::{account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{role_name}",
+            ActionNames=actions,
+            ContextEntries=[
+                {
+                    "ContextKeyName": "aws:RequestedRegion",
+                    "ContextKeyValues": [
+                        "eu-west-2",
+                    ],
+                    "ContextKeyType": "string",
+                }
+            ],
+        )
+
+    @staticmethod
+    def get_ssm_parameters_by_path_called_with(
+        env,
+        application="test-application",
+        platform="platform",
+    ):
+        return dict(
+            Path=f"/{platform}/{application}/{env}/secrets",
+            Recursive=True,
+            WithDecryption=True,
+        )
+
+
 class CreateMock:
     def __init__(self, has_access=True, create_existing_params="none"):
         self.create_existing_params = create_existing_params
@@ -49,33 +182,15 @@ class CreateMock:
             ]
         elif self.create_existing_params == "unexpected":
             self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
-                ClientError(
-                    {"Error": {"Code": "Unexpected", "Message": "Simulated failure"}},
-                    "GetParameter",
-                ),
+                AWSTestFixtures.client_error_response("GetParameter")
             ]
         else:
             self.parameter_store_mock.get_ssm_parameter_by_name.side_effect = [
-                ClientError(
-                    {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
-                    "GetParameter",
-                ),
-                ClientError(
-                    {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
-                    "GetParameter",
-                ),
-                ClientError(
-                    {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
-                    "GetParameter",
-                ),
-                ClientError(
-                    {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
-                    "GetParameter",
-                ),
-                ClientError(
-                    {"Error": {"Code": "ParameterNotFound", "Message": "Simulated failure"}},
-                    "GetParameter",
-                ),
+                AWSTestFixtures.get_parameter_not_found_error_response(),
+                AWSTestFixtures.get_parameter_not_found_error_response(),
+                AWSTestFixtures.get_parameter_not_found_error_response(),
+                AWSTestFixtures.get_parameter_not_found_error_response(),
+                AWSTestFixtures.get_parameter_not_found_error_response(),
             ]
         self.parameter_store_provider_mock.return_value = self.parameter_store_mock
 
@@ -92,27 +207,13 @@ class CreateMock:
             mock_ssm_client = MagicMock(name=f"{env}-ssm-client-mock")
 
             if self.has_access:
-                mock_iam_client.simulate_principal_policy.return_value = {
-                    "EvaluationResults": [
-                        {
-                            "EvalActionName": "ssm:PutParameter",
-                            "EvalResourceName": "*",
-                            "EvalDecision": "allowed",
-                            "MatchedStatements": [],
-                        }
-                    ],
-                }
+                mock_iam_client.simulate_principal_policy.return_value = (
+                    AWSTestFixtures.simulate_principal_policy_response()
+                )
             else:
-                mock_iam_client.simulate_principal_policy.return_value = {
-                    "EvaluationResults": [
-                        {
-                            "EvalActionName": "ssm:PutParameter",
-                            "EvalResourceName": "*",
-                            "EvalDecision": "implicitDeny",
-                            "MatchedStatements": [],
-                        }
-                    ],
-                }
+                mock_iam_client.simulate_principal_policy.return_value = (
+                    AWSTestFixtures.simulate_principal_policy_response(decision="implicitDeny")
+                )
 
             # will overwrite but works in line with code
             mocks[self.application.environments[env].account_id] = {
@@ -164,40 +265,16 @@ def test_create(mock_application, input_args, params_exist):
         env = mocked["env"]
         mocked["session"].client("sts").get_caller_identity.assert_called()
         mocked["session"].client("iam").simulate_principal_policy.assert_called_with(
-            PolicySourceArn=f"arn:aws:iam::{account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{env}",
-            ActionNames=[
-                "ssm:PutParameter",
-            ],
-            ContextEntries=[
-                {
-                    "ContextKeyName": "aws:RequestedRegion",
-                    "ContextKeyValues": [
-                        "eu-west-2",
-                    ],
-                    "ContextKeyType": "string",
-                }
-            ],
+            **AWSTestFixtures.simulate_principal_policy_called_with(account_id, env)
         )
 
     for env, data in mock.application.environments.items():
 
-        called_with = dict(
-            Name=f"/platform/test-application/{env}/secrets/SECRET",
-            Value=str(i),
-            Overwrite=False,
-            Type="SecureString",
-            Tags=[
-                {"Key": "application", "Value": "test-application"},
-                {"Key": "environment", "Value": env},
-                {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-            ],
+        put_parameter_calls.append(
+            call(
+                AWSTestFixtures.put_parameter_called_with(env, i, overwrite=input_args["overwrite"])
+            )
         )
-
-        if input_args["overwrite"]:
-            called_with["Overwrite"] = True
-            del called_with["Tags"]
-
-        put_parameter_calls.append(call(called_with))
 
         input_calls.append(
             call(
@@ -319,95 +396,28 @@ def test_secrets_copy(mock_application, input_args):
         decision = "allowed"
         if stage == "source":
             mock_iam_client.simulate_principal_policy.side_effect = [
-                {
-                    "EvaluationResults": [
-                        {
-                            "EvalActionName": "ssm:GetParameter",
-                            "EvalResourceName": "*",
-                            "EvalDecision": decision,
-                            "MatchedStatements": [],
-                        }
-                    ],
-                },
+                AWSTestFixtures.simulate_principal_policy_response(
+                    action="ssm:GetParameter", decision=decision
+                )
             ]
         elif stage == "target":
             mock_iam_client.simulate_principal_policy.side_effect = [
-                {
-                    "EvaluationResults": [
-                        {
-                            "EvalActionName": "ssm:PutParameter",
-                            "EvalResourceName": "*",
-                            "EvalDecision": decision,
-                            "MatchedStatements": [],
-                        }
-                    ],
-                },
+                AWSTestFixtures.simulate_principal_policy_response(decision=decision)
             ]
 
         def _create_parameters_by_path_paginator():
             paginator = Mock()
             paginator.paginate.side_effect = [
                 [
-                    {
-                        "Parameters": [
-                            {
-                                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET1",
-                                "Type": "SecureString",
-                                "Value": "secret1",
-                                "ARN": f"arn:::parameter/copilot/{mock_application.name}/{source}/secrets/SECRET1",
-                                "DataType": "text",
-                                "Version": 1,
-                            },
-                            {
-                                "Name": f"/copilot/{mock_application.name}/{source}/secrets/SECRET2",
-                                "Type": "SecureString",
-                                "Value": "secret2",
-                                "ARN": f"arn:::parameter/copilot/{mock_application.name}/{source}/secrets/SECRET2",
-                                "DataType": "text",
-                                "Version": 1,
-                            },
-                        ],
-                        "NextMarker": "string",
-                    }
+                    AWSTestFixtures.get_parameter_by_path_response(
+                        secrets=["secret1", "secret2"], env=source, platform="copilot"
+                    ),
                 ],
                 [
-                    {
-                        "Parameters": [
-                            {
-                                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET_EXISTS",
-                                "Type": "SecureString",
-                                "Value": "secret_EXISTS",
-                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/SECRET_EXISTS",
-                                "DataType": "text",
-                                "Version": 1,
-                            },
-                            {
-                                "Name": f"/platform/{mock_application.name}/{source}/secrets/TERRAFORMED_SECRET",
-                                "Type": "SecureString",
-                                "Value": "terraformed",
-                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/TERRAFORMED_SECRET",
-                                "DataType": "text",
-                                "Version": 1,
-                            },
-                            {
-                                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET3",
-                                "Type": "SecureString",
-                                "Value": "secret3",
-                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/SECRET3",
-                                "DataType": "text",
-                                "Version": 1,
-                            },
-                            {
-                                "Name": f"/platform/{mock_application.name}/{source}/secrets/SECRET4",
-                                "Type": "SecureString",
-                                "Value": "secret4",
-                                "ARN": f"arn:::parameter/platform/{mock_application.name}/{source}/secrets/SECRET4",
-                                "DataType": "text",
-                                "Version": 1,
-                            },
-                        ],
-                        "NextMarker": "string",
-                    }
+                    AWSTestFixtures.get_parameter_by_path_response(
+                        secrets=["secret_EXISTS", "terraformed_secret", "secret3", "secret4"],
+                        env=source,
+                    ),
                 ],
             ]
             return paginator
@@ -495,13 +505,15 @@ def test_secrets_copy(mock_application, input_args):
                     return original_put_parameter(*args, **kwargs)
 
                 def mock_assert_has_calls(calls):
+                    # print(calls[0].call_list())
+                    # print(calls[0].call_args)
+                    # print(calls[0].call_args.args)
+                    # print(calls[0].call_args.kwargs)
                     assert mock_assert_has_calls.calls == calls
 
                 ssm_client.put_parameter = mock_put_parameter
 
-            print(mock_ssm_client.put_parameter)
             _create_ssm_mock_with_failing_put_parameter(mock_ssm_client)
-            print(mock_ssm_client.put_parameter)
 
         mocks[env] = {
             "session": mock_session,
@@ -559,15 +571,9 @@ def test_secrets_copy(mock_application, input_args):
     ).paginate.assert_has_calls(
         [
             call(
-                Path=f"/copilot/test-application/{source}/secrets",
-                Recursive=True,
-                WithDecryption=True,
+                **AWSTestFixtures.get_ssm_parameters_by_path_called_with(source, platform="copilot")
             ),
-            call(
-                Path=f"/platform/test-application/{source}/secrets",
-                Recursive=True,
-                WithDecryption=True,
-            ),
+            call(**AWSTestFixtures.get_ssm_parameters_by_path_called_with(source)),
         ]
     )
 
@@ -611,6 +617,14 @@ def test_secrets_copy(mock_application, input_args):
             {"Key": "copied-from", "Value": source},
         ],
     )
+
+    # **AWSTestFixtures.put_parameter_copied_called_with(
+    #     "copilot",source, target, "secret1",
+    #     tags=[
+    #         {"Key": "copilot-application", "Value": "test-application"},
+    #         {"Key": "copilot-environment", "Value": target},
+    #     ],
+    # )
     target_env.session.client("ssm").put_parameter.assert_has_calls(
         [
             call(
