@@ -25,13 +25,6 @@ class Parameter:
     def tags_to_list(self):
         return [{"Key": tag, "Value": value} for tag, value in self.tags.items()]
 
-    def fetch_tags(self, ssm_client: boto3.client):
-        response = ssm_client.list_tags_for_resource(
-            ResourceType="Parameter", ResourceId=self.name
-        )["TagList"]
-
-        self.tags = {tag["Key"]: tag["Value"] for tag in response}
-
     def __str__(self):
         output = f"Application {self.name} with"
 
@@ -45,6 +38,16 @@ class ParameterStore:
     def __init__(self, ssm_client: boto3.client, with_model: bool = False):
         self.ssm_client = ssm_client
         self.with_model = with_model
+
+    def __fetch_tags(self, parameter: Parameter, normalise=True):
+        response = self.ssm_client.list_tags_for_resource(
+            ResourceType="Parameter", ResourceId=parameter.name
+        )["TagList"]
+
+        if normalise:
+            return {tag["Key"]: tag["Value"] for tag in response}
+        else:
+            return response
 
     def get_ssm_parameter_by_name(
         self, parameter_name: str, add_tags: bool = False
@@ -76,7 +79,7 @@ class ParameterStore:
         )
 
         if add_tags:
-            model.fetch_tags(self.ssm_client)
+            model.tags = self.__fetch_tags(model)
 
         return model
 
@@ -119,7 +122,7 @@ class ParameterStore:
 
         if add_tags:
             for model in models:
-                model.fetch_tags(self.ssm_client)
+                model.tags = self.__fetch_tags(model)
 
         return models
 
