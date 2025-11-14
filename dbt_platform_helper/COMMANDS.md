@@ -643,7 +643,7 @@ platform-helper secrets copy <source_environment> <target_environment>
 
 [↩ Parent](#platform-helper-secrets)
 
-    List secret names and values for an environment.
+    [DELETED] List secret names and values for an environment.
 
 ## Usage
 
