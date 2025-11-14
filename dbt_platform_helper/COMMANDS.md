@@ -25,6 +25,7 @@
     - [platform-helper pipeline](#platform-helper-pipeline)
         - [platform-helper pipeline generate](#platform-helper-pipeline-generate)
     - [platform-helper secrets](#platform-helper-secrets)
+        - [platform-helper secrets create](#platform-helper-secrets-create)
         - [platform-helper secrets copy](#platform-helper-secrets-copy)
         - [platform-helper secrets list](#platform-helper-secrets-list)
     - [platform-helper notify](#platform-helper-notify)
@@ -601,7 +602,7 @@ This is generated from the terraform/environments-pipeline/<aws_account>/main.tf
 ## Usage
 
 ```
-platform-helper secrets (copy|list) 
+platform-helper secrets (create|copy|list) 
 ```
 
 ## Options
@@ -612,7 +613,32 @@ platform-helper secrets (copy|list)
 ## Commands
 
 - [`copy` ↪](#platform-helper-secrets-copy)
+- [`create` ↪](#platform-helper-secrets-create)
 - [`list` ↪](#platform-helper-secrets-list)
+
+# platform-helper secrets create
+
+[↩ Parent](#platform-helper-secrets)
+
+    Create a Parameter Store secret for all environments of an
+    application.
+
+## Usage
+
+```
+platform-helper secrets create --app <application> --name <name> [--overwrite] 
+```
+
+## Options
+
+- `--app <text>`
+  - Application name.
+- `--name <text>`
+  - Secret name (automatically uppercased).
+- `--overwrite <boolean>` _Defaults to False._
+  - Allows overwriting the value of secrets if they already exist.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
 
 # platform-helper secrets copy
 

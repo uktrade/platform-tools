@@ -42,6 +42,9 @@ class ParameterStore:
         else:
             raise ParameterNotFoundForPathException()
 
+    def put_parameter(self, data_dict: dict) -> dict:
+        return self.ssm_client.put_parameter(**data_dict)
+
 
 class ParameterNotFoundForPathException(PlatformException):
     """Exception raised when no parameters are found for a given path."""

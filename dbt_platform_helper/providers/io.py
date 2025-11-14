@@ -24,8 +24,12 @@ class ClickIOProvider:
     def info(self, message: str, **kwargs):
         click.secho(message, **kwargs)
 
-    def input(self, message: str) -> str:
-        return click.prompt(message)
+    def input(
+        self, message: str, hide_input=False, confirmation_prompt=False, input_type=str
+    ) -> str:
+        return click.prompt(
+            message, hide_input=hide_input, confirmation_prompt=confirmation_prompt, type=input_type
+        )
 
     def confirm(self, message: str) -> bool:
         try:
