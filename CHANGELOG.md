@@ -1,5 +1,25 @@
 # Changelog
 
+## [15.13.0](https://github.com/uktrade/platform-tools/compare/15.12.1...15.13.0) (2025-11-14)
+
+
+### Features
+
+* Codebase pipeline stage to install shared build tools (DBTP-2484) ([#1129](https://github.com/uktrade/platform-tools/issues/1129)) ([1ff56c5](https://github.com/uktrade/platform-tools/commit/1ff56c52a1ea64a013a20c9af0675f70efa6ffb5))
+* Enable additional CloudFront metrics to enhance Datadog reporting (DBTP-2218) ([#1122](https://github.com/uktrade/platform-tools/issues/1122)) ([f020465](https://github.com/uktrade/platform-tools/commit/f020465663e82266e063d43ee67b784216df9283))
+* Remove secrets list command (DBTP-2505) ([#1140](https://github.com/uktrade/platform-tools/issues/1140)) ([972c90c](https://github.com/uktrade/platform-tools/commit/972c90cb72dada0ec1e120a3a4911d4d1e8052f6))
+
+
+### Bug Fixes
+
+* ECS cluster depends on ALB creation (off-ticket) ([#1131](https://github.com/uktrade/platform-tools/issues/1131)) ([bc8d8f3](https://github.com/uktrade/platform-tools/commit/bc8d8f3dbd7fb12319fc96995a3bbe84f0b5a058))
+* Ensure minimum capacity on deployment (DBTP-2510) ([#1138](https://github.com/uktrade/platform-tools/issues/1138)) ([c1a0cb1](https://github.com/uktrade/platform-tools/commit/c1a0cb1127aeca74c18600f1a835ec7f4433fadc))
+* Give OpenSearch upgrade permission to env pipelines (off-ticket) ([#1141](https://github.com/uktrade/platform-tools/issues/1141)) ([0c8fb99](https://github.com/uktrade/platform-tools/commit/0c8fb995b3c53090bcfda56350abd2ca2399d6b7))
+* Improve deployment logs (DBTP-2485) ([#1134](https://github.com/uktrade/platform-tools/issues/1134)) ([59053d6](https://github.com/uktrade/platform-tools/commit/59053d6671efe0ad0645007b67c77d9aaed0ee4d))
+* Migrate service manifests removes config (DBTP-2476) ([#1120](https://github.com/uktrade/platform-tools/issues/1120)) ([f89c1ca](https://github.com/uktrade/platform-tools/commit/f89c1cac63a6531a2eb72cd833528c8155652f92))
+* Show cloudwatch log URL for failing container (off-ticket) ([#1139](https://github.com/uktrade/platform-tools/issues/1139)) ([f288881](https://github.com/uktrade/platform-tools/commit/f288881aa96e29cd940a24636919f0d90af1f40a))
+* Various bug fixes around removing Copilot (DBTP-2469) ([#1114](https://github.com/uktrade/platform-tools/issues/1114)) ([d2bd641](https://github.com/uktrade/platform-tools/commit/d2bd6411d4c9e23376ce92c90286b8ecdd1efb70))
+
 ## [15.12.1](https://github.com/uktrade/platform-tools/compare/15.12.0...15.12.1) (2025-10-28)
 
 
