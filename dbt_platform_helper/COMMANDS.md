@@ -667,7 +667,7 @@ platform-helper secrets copy --app <application> --source <source> --target <tar
 
 [↩ Parent](#platform-helper-secrets)
 
-    List secret names and values for an environment.
+    [DELETED] List secret names and values for an environment.
 
 ## Usage
 
