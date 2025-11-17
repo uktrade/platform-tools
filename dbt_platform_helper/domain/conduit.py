@@ -1,3 +1,4 @@
+import json
 from abc import ABC
 from abc import abstractmethod
 from typing import Callable
@@ -118,14 +119,18 @@ class TerraformConduitStrategy(ConduitECSStrategy):
 
     def _resolve_vpc_name(self):
         ssm_client = self.clients["ssm"]
-        parameter_key = f"/conduit/{self.application.name}/{self.env}/{_normalise_secret_name(self.addon_name)}_VPC_NAME"
+        parameter_key = f"/platform/applications/{self.application.name}/environments/{self.env}"
 
         try:
-            response = ssm_client.get_parameter(Name=parameter_key)
-            return response["Parameter"]["Value"]
+            response = ssm_client.get_parameter(Name=parameter_key)["Parameter"]["Value"]
+            return json.loads(response)["vpc_name"]
         except ssm_client.exceptions.ParameterNotFound:
             self.io.abort_with_error(
-                f"Could not find VPC name for {self.addon_name}. Missing SSM param: {parameter_key}"
+                f"Could not find AWS SSM parameter {parameter_key}. Please ensure your environment Terraform is up to date."
+            )
+        except KeyError:
+            self.io.abort_with_error(
+                f"The parameter {parameter_key} exists but does not contain the 'vpc_name' field. Please ensure your environment Terraform is up to date."
             )
 
 
