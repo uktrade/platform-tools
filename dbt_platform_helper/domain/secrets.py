@@ -23,12 +23,7 @@ class Secrets:
         self.parameter_store_provider: ParameterStore = parameter_store_provider
 
     def _check_ssm_write_access(self, accounts):
-        """
-        Check access.
-
-        Cannot use iam.simulate_principal_policy due to read accounts not having
-        access
-        """
+        """Check access."""
         no_access = []
         for account, session in accounts.items():
             sts = session.client("sts")
@@ -126,7 +121,7 @@ class Secrets:
             data_dict = dict(
                 Name=get_secret_name(environment.name),
                 Value=secret_value,
-                Overwrite=False,
+                Overwrite=overwrite,
                 Type="SecureString",
                 Tags=[
                     {"Key": "application", "Value": app_name},
