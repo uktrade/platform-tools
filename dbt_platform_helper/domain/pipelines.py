@@ -25,6 +25,66 @@ from dbt_platform_helper.providers.terraform_manifest import TerraformManifestPr
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 
+# Versioning:
+
+# Pipeline template
+# a. pass in an override to the pipeline class
+# b. set an env var and do not pass in an override
+# c. use the value set in platform-helper version
+
+# Modules used in the pipeline tf precedence:
+# 1. module source env vars:
+#   TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+#   TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+# 2. override pipeline parameter
+# 3. PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+# 4. default_version
+
+
+# auto:
+#
+
+
+class EnvironmentPipelineVersioning:
+    def __init__(
+        self,
+        config_provider: ConfigProvider,
+        environment_variable_provider: EnvironmentVariableProvider = EnvironmentVariableProvider(),
+        platform_helper_version_override: str = None,
+    ):
+        self.config_provider = config_provider
+        self.environment_variable_provider = environment_variable_provider
+        self.platform_helper_version_override = platform_helper_version_override
+
+    def get_modules_version(self):
+
+        environment_pipeline_module_override = self.environment_variable_provider.get(
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        )
+
+        if environment_pipeline_module_override:
+            return environment_pipeline_module_override
+
+        MODULE_PATH = f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
+
+        if self.platform_helper_version_override:
+            return f"{MODULE_PATH}{self.platform_helper_version_override}"
+
+        platform_helper_env_override = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
+
+        if platform_helper_env_override:
+            return f"{MODULE_PATH}{self.platform_helper_version_override}"
+
+        default_version = (
+            self.config_provider.load_and_validate_platform_config()
+            .get("default_versions", {})
+            .get("platform-helper")
+        )
+
+        return f"{MODULE_PATH}{default_version}"
+
 
 class Pipelines:
     def __init__(
@@ -118,6 +178,7 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
+        # module source (could be different from template version - why would we allow that????)
         env_pipeline_module_source = (
             self.environment_variable_provider.get(
                 TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR

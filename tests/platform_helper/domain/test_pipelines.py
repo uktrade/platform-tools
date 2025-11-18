@@ -10,6 +10,11 @@ import yaml
 from freezegun.api import freeze_time
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+from dbt_platform_helper.constants import (
+    TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.domain.pipelines import EnvironmentPipelineVersioning
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -18,6 +23,31 @@ from dbt_platform_helper.providers.environment_variable import (
     EnvironmentVariableProvider,
 )
 from dbt_platform_helper.providers.version import InstalledVersionProvider
+
+
+class EnvironmentPipelineVersioningMocks:
+    def __init__(self):
+        mock_installed_version_provider = create_autospec(
+            spec=InstalledVersionProvider, spec_set=True
+        )
+        mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            14, 0, 0
+        )
+        self.mock_config_provider = ConfigProvider(
+            ConfigValidator(), installed_version_provider=mock_installed_version_provider
+        )
+        self.mock_platform_helper_version_override = None
+        self.mock_environment_variable_provider = {
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "helper_override",
+        }
+
+    def params(self):
+        return {
+            "config_provider": self.mock_config_provider,
+            "platform_helper_version_override": self.mock_platform_helper_version_override,
+            "environment_variable_provider": self.mock_environment_variable_provider,
+        }
 
 
 class PipelineMocks:
@@ -307,3 +337,9 @@ def assert_terraform(
         assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"] == [deploy_account_id]
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
+
+
+def test_environment_pipeline_versioning_env_override_precedence():
+    mocks = EnvironmentPipelineVersioningMocks()
+    result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
+    assert result == "env_override"
