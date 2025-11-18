@@ -12,6 +12,9 @@ from freezegun.api import freeze_time
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import (
+    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.domain.pipelines import ENVIRONMENT_PIPELINE_MODULE_PATH
@@ -20,9 +23,6 @@ from dbt_platform_helper.domain.pipelines import PipelineVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.environment_variable import (
-    EnvironmentVariableProvider,
-)
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 
@@ -32,6 +32,7 @@ class PipelineVersioningMocks:
         self.mock_platform_helper_version_override = "platform_helper_param_override"
         self.mock_environment_variable_provider = {
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
         }
 
@@ -66,7 +67,11 @@ class PipelineMocks:
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
         self.mock_platform_helper_version_override = None
-        self.mock_environment_variable_provider = Mock(spec=EnvironmentVariableProvider)
+        self.mock_environment_variable_provider = {
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
+        }
 
     def params(self):
         return {
@@ -131,10 +136,15 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
     mocks = PipelineMocks(app_name)
+
     if use_environment_variable_platform_helper_version:
         mocks.mock_platform_helper_version_override = "test-branch"
+    else:
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
 
-    mocks.mock_environment_variable_provider.get.return_value = module_source_override
+    mocks.mock_environment_variable_provider[
+        TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = module_source_override
 
     pipelines = Pipelines(**mocks.params())
 
@@ -224,7 +234,9 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
     mocks = PipelineMocks(app_name)
     mocks.mock_platform_helper_version_override = expected_platform_helper_version
 
-    mocks.mock_environment_variable_provider.get.return_value = module_source
+    mocks.mock_environment_variable_provider[
+        TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -272,7 +284,9 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
         "yet-another-repo",
     ]
 
-    mocks.mock_environment_variable_provider.get.return_value = module_source
+    mocks.mock_environment_variable_provider[
+        TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = module_source
 
     mocks.mock_platform_helper_version_override = expected_platform_helper_version
 
