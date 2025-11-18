@@ -621,18 +621,10 @@ def valid_service_config():
     return yaml.safe_load(
         f"""
 schema_version: {SERVICE_CONFIG_SCHEMA_VERSION}
-
 name: web
 type: Load Balanced Web Service
-
-# Distribute traffic to your service.
 http:
-  # Requests to this path will be forwarded to your service.
-  alias: web.${"{ENVIRONMENT_NAME}"}.test-app.uktrade.digital
-  # To match all requests you can use the "/" path.
   path: '/'
-  # You can specify a custom health check path. The default is "/".
-  # healthcheck: '/'
   target_container: nginx
   healthcheck:
     path: '/'
@@ -647,10 +639,9 @@ http:
 sidecars:
   sidecar:
     port: 443
-    image: public.ecr.aws//sidecar:tlatest
+    image: public.ecr.aws/sidecar:latest
     variables:
       SERVER: localhost:8000
-
 
 # Configuration for your containers and service.
 image:
@@ -688,12 +679,16 @@ environments:
       datadog-agent:
         variables:
           DD_APM_ENABLED: true
-  staging:
-    variables:
-      S3_CROSS_ENVIRONMENT_BUCKET_NAMES: test-app-hotfix-additional
+  development:
+    http:
+      alias: web.test-app.dev.uktrade.digital
     sidecars:
       ipfilter:
         image: public.ecr.aws/uktrade/ip-filter:tag-latest
+    variables:
+      SETTING: only in dev 
+    secrets:
+      SECRET: only in dev
 """
     )
 
