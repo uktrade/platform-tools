@@ -48,7 +48,7 @@ ENVIRONMENT_PIPELINE_MODULE_PATH = (
 )
 
 
-class EnvironmentPipelineVersioning:
+class PipelineVersioning:
     def __init__(
         self,
         config_provider: ConfigProvider,
