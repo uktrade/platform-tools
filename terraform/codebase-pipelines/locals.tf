@@ -257,4 +257,7 @@ locals {
 
   # Set to true if any environment contains a dual service-deployment-mode
   traffic_switch_enabled = anytrue([for env in local.base_env_config : true if strcontains(env.service_deployment_mode, "dual")])
+
+  central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
+  central_log_group_destination = local.central_log_group_arns["dev"]
 }
