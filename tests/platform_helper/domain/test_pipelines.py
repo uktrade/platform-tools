@@ -28,15 +28,7 @@ from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 class EnvironmentPipelineVersioningMocks:
     def __init__(self):
-        mock_installed_version_provider = create_autospec(
-            spec=InstalledVersionProvider, spec_set=True
-        )
-        mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
-            14, 0, 0
-        )
-        self.mock_config_provider = ConfigProvider(
-            ConfigValidator(), installed_version_provider=mock_installed_version_provider
-        )
+        self.mock_config_provider = Mock()
         self.mock_platform_helper_version_override = "platform_helper_param_override"
         self.mock_environment_variable_provider = {
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
@@ -347,7 +339,9 @@ class TestEnvironmentPipelineVersioning:
         result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
         assert result == "env_override"
 
-    def test_environment_pipeline_versioning_precedence_without_env_override(self):
+    def test_environment_pipeline_versioning_without_env_override_falls_back_to_param_override(
+        self,
+    ):
         mocks = EnvironmentPipelineVersioningMocks()
         mocks.mock_environment_variable_provider[
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
@@ -355,7 +349,9 @@ class TestEnvironmentPipelineVersioning:
         result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_param_override"
 
-    def test_environment_pipeline_versioning_precedence_without_param_override(self):
+    def test_environment_pipeline_versioning_without_param_override_falls_back_to_env_override(
+        self,
+    ):
         mocks = EnvironmentPipelineVersioningMocks()
         mocks.mock_environment_variable_provider[
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
@@ -363,3 +359,20 @@ class TestEnvironmentPipelineVersioning:
         mocks.mock_platform_helper_version_override = None
         result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_env_override"
+
+    def test_environment_pipeline_versioning_without_any_override_defaults_to_config(
+        self, platform_config_for_env_pipelines
+    ):
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
+
+        mocks = EnvironmentPipelineVersioningMocks()
+        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_platform_helper_version_override = None
+        result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
+        assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}1.1.1"
