@@ -114,6 +114,11 @@ class Pipelines:
             platform_helper_version_override
             or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         )
+        self.pipelines_versioning = PipelineVersioning(
+            self.config_provider,
+            self.environment_variable_provider,
+            platform_helper_version_override,
+        )
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -179,13 +184,7 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
-        # module source (could be different from template version - why would we allow that????)
-        env_pipeline_module_source = (
-            self.environment_variable_provider.get(
-                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-            )
-            or f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={platform_helper_version_for_template}"
-        )
+        env_pipeline_module_source = self.pipelines_versioning.get_modules_version()
 
         if has_environment_pipelines:
             accounts = self._map_environment_pipeline_accounts(platform_config)
