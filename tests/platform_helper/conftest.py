@@ -122,6 +122,7 @@ def mock_application():
         application.environments["development"] = Environment("development", "000000000", sessions)
         application.environments["staging"] = Environment("staging", "111111111", sessions)
         application.environments["production"] = Environment("production", "222222222", sessions)
+        application.environments["prod"] = Environment("prod", "222222222", sessions)
         application.environments["test"] = Environment("test", "333333333", sessions)
         application.services["web"] = Service("web", "Load Balanced Web Service")
 
