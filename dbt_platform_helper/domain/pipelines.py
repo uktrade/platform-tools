@@ -76,7 +76,7 @@ class EnvironmentPipelineVersioning:
         )
 
         if platform_helper_env_override:
-            return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.platform_helper_version_override}"
+            return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{platform_helper_env_override}"
 
         default_version = (
             self.config_provider.load_and_validate_platform_config()

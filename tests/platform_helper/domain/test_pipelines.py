@@ -342,15 +342,24 @@ def assert_terraform(
 
 class TestEnvironmentPipelineVersioning:
 
-    def test_environment_pipeline_versioning_with_env_override_precedence(self):
+    def test_environment_pipeline_versioning_precedence_with_env_override(self):
         mocks = EnvironmentPipelineVersioningMocks()
         result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
         assert result == "env_override"
 
-    def test_environment_pipeline_versioning_without_env_override_precedence(self):
+    def test_environment_pipeline_versioning_precedence_without_env_override(self):
         mocks = EnvironmentPipelineVersioningMocks()
         mocks.mock_environment_variable_provider[
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = None
         result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_param_override"
+
+    def test_environment_pipeline_versioning_precedence_without_param_override(self):
+        mocks = EnvironmentPipelineVersioningMocks()
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
+        mocks.mock_platform_helper_version_override = None
+        result = EnvironmentPipelineVersioning(**mocks.params()).get_modules_version()
+        assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_env_override"
