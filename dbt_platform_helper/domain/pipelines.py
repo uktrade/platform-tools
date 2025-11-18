@@ -43,6 +43,9 @@ from dbt_platform_helper.utils.template import setup_templates
 
 # auto:
 #
+ENVIRONMENT_PIPELINE_MODULE_PATH = (
+    f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
+)
 
 
 class EnvironmentPipelineVersioning:
@@ -65,17 +68,15 @@ class EnvironmentPipelineVersioning:
         if environment_pipeline_module_override:
             return environment_pipeline_module_override
 
-        MODULE_PATH = f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
-
         if self.platform_helper_version_override:
-            return f"{MODULE_PATH}{self.platform_helper_version_override}"
+            return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.platform_helper_version_override}"
 
         platform_helper_env_override = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         )
 
         if platform_helper_env_override:
-            return f"{MODULE_PATH}{self.platform_helper_version_override}"
+            return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.platform_helper_version_override}"
 
         default_version = (
             self.config_provider.load_and_validate_platform_config()
@@ -83,7 +84,7 @@ class EnvironmentPipelineVersioning:
             .get("platform-helper")
         )
 
-        return f"{MODULE_PATH}{default_version}"
+        return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{default_version}"
 
 
 class Pipelines:
