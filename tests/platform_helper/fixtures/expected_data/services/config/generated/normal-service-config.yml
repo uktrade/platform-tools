@@ -20,6 +20,8 @@ sidecars:
     image: public.ecr.aws/sidecar:latest
     variables:
       SERVER: localhost:8000
+  ipfilter:
+    image: public.ecr.aws/uktrade/ip-filter:tag-latest
 image:
   location: public.ecr.aws/non-prod-acc/test-app/application:${IMAGE_TAG}
   port: 8080
@@ -37,5 +39,7 @@ variables:
   DEBUG: false
   PORT: 8080
   SECRET_KEY: testing-secret-key
+  SETTING: only in dev
 secrets:
   DJANGO_SECRET_KEY: DJANGO_SECRET_KEY
+  SECRET: only in dev
