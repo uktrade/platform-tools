@@ -647,7 +647,7 @@ http:
 sidecars:
   sidecar:
     port: 443
-    image: public.ecr.aws//sidecar:tlatest
+    image: public.ecr.aws/sidecar:latest
     variables:
       SERVER: localhost:8000
 

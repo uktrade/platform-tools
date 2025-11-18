@@ -18,6 +18,7 @@ from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from tests.platform_helper.conftest import EXPECTED_DATA_DIR
+from tests.platform_helper.conftest import FIXTURES_DIR
 
 
 @pytest.mark.parametrize(
@@ -55,11 +56,10 @@ def test_generate(
     env_vars,
     expected_results,
 ):
-
-    # Test setup
     if env_vars:
         for var, value in env_vars.items():
             os.environ[var] = value
+
     load_application = Mock()
     load_application.return_value = mock_application
     mock_installed_version_provider = create_autospec(spec=InstalledVersionProvider, spec_set=True)
@@ -101,11 +101,15 @@ def test_generate(
         for var, value in env_vars.items():
             del os.environ[var]
 
-    # actual_yaml = Path(f"terraform/services/development/web/service-config.yml")
-    # assert actual_yaml.exists()
-    # TODO check
-    # not environment overrides in service-config
-    # check environment overrides applied
+    generated_yaml = Path("terraform/services/development/web/service-config.yml")
+    assert generated_yaml.exists()
+
+    actual_yaml = Path(
+        FIXTURES_DIR / "expected_data/services/config/generated/normal-service-config.yml"
+    )
+    assert actual_yaml.exists()
+
+    assert generated_yaml.read_text() == actual_yaml.read_text()
 
 
 @patch("dbt_platform_helper.domain.service.version", return_value="14.0.0")
