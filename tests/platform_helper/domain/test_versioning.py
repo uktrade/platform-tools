@@ -49,7 +49,27 @@ def mocks():
     return mocks
 
 
+# TODO
+# generate commands should error - "Your service is running on a managed platform.  Changes must be made by running the pipelines"
+# other commands - error if not on latest version?
+
+
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
+
+    def test_is_managed(self, mocks):
+        platform_config = {"default_versions": {"platform-helper": "auto"}}
+        mocks.config_provider.load_and_validate_platform_config.return_value = platform_config
+        mocks.config_provider.load_unvalidated_config_file.return_value = platform_config
+
+        result = PlatformHelperVersioning(**mocks.params()).is_managed()
+
+        assert result == True
+
+    def test_not_is_managed(self, mocks):
+        result = PlatformHelperVersioning(**mocks.params()).is_managed()
+
+        assert result == False
+
     def test_shows_warning_when_different_than_file_spec(self, mocks):
         mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 1

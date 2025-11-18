@@ -49,6 +49,11 @@ class PlatformHelperVersioning:
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
         )
 
+    def is_managed(self):
+        platform_config = self.config_provider.load_unvalidated_config_file()
+        default_version = platform_config.get("default_versions", {}).get("platform-helper")
+        return default_version == "auto"
+
     def get_required_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
