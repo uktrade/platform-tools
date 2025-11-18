@@ -45,6 +45,12 @@ def generate(deploy_branch: str):
     """
     io = ClickIOProvider()
     try:
+
+        # (
+        #     platform_helper_version_for_template
+        #     or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
+        # )
+
         pipelines = Pipelines(
             ConfigProvider(ConfigValidator()),
             TerraformManifestProvider(),

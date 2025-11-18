@@ -50,8 +50,10 @@ def mocks():
 
 
 # TODO
-# generate commands should error - "Your service is running on a managed platform.  Changes must be made by running the pipelines"
+# generate commands should error when run locally - "Your service is running on a managed platform.  Changes must be made by running the pipelines"
+# generate commands must not error when run in the pipeline
 # other commands - error if not on latest version?
+# Are we allowing platform downgrades or are we explicitly not allowing them?
 
 
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
@@ -139,7 +141,7 @@ def test_skip_version_checks(
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
-    def test_if_platform_helper_version_needs_major_update_returns_red_warning_to_upgrade(
+    def test_if_platform_helper_version_needs_major_update_returns_error_with_red_message_to_upgrade(
         self,
         mocks,
     ):
@@ -154,6 +156,25 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             "You are running platform-helper v1.0.0, upgrade to v2.0.0 by running run `pip install "
             "--upgrade dbt-platform-helper`."
         )
+
+    # TODO Not sure we want this behaviour.  It prevents downgrades which we may need to do.
+    # It also forces upgrades when perhaps not necessary.
+    # def test_old_platform_helper_version_with_managed_versioning_returns_error_with_red_message_to_upgrade(
+    #     self,
+    #     mocks,
+    # ):
+    #     mocks.installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+    #         2, 0, 0
+    #     )
+    #     mocks.latest_version_provider.get_semantic_version.return_value = SemanticVersion(2, 1, 0)
+
+    #     PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
+
+    #     mocks.io.error.assert_called_with(
+    #         "Your service is on the managed platform and commands must be run with latest platform-helper version."
+    #         "You are running platform-helper v2.0.0. Upgrade to v2.1.0 by running `pip install "
+    #         "--upgrade dbt-platform-helper`."
+    #     )
 
     def test_if_platform_helper_version_needs_minor_update_returns_warning_to_upgrade(
         self,
