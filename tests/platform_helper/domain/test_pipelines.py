@@ -366,7 +366,7 @@ class TestPipelineVersioning:
 
     def test_environment_pipeline_versioning_precedence_with_env_override(self):
         mocks = PipelineVersioningMocks()
-        result = PipelineVersioning(**mocks.params()).get_modules_version()
+        result = PipelineVersioning(**mocks.params()).get_environment_pipeline_modules_version()
         assert result == "env_override"
 
     def test_environment_pipeline_versioning_without_env_override_falls_back_to_param_override(
@@ -376,7 +376,7 @@ class TestPipelineVersioning:
         mocks.mock_environment_variable_provider[
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = None
-        result = PipelineVersioning(**mocks.params()).get_modules_version()
+        result = PipelineVersioning(**mocks.params()).get_environment_pipeline_modules_version()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_param_override"
 
     def test_environment_pipeline_versioning_without_param_override_falls_back_to_env_override(
@@ -387,7 +387,7 @@ class TestPipelineVersioning:
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = None
         mocks.mock_platform_helper_version_override = None
-        result = PipelineVersioning(**mocks.params()).get_modules_version()
+        result = PipelineVersioning(**mocks.params()).get_environment_pipeline_modules_version()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_env_override"
 
     def test_environment_pipeline_versioning_without_any_override_defaults_to_config(
@@ -404,5 +404,5 @@ class TestPipelineVersioning:
         ] = None
         mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
         mocks.mock_platform_helper_version_override = None
-        result = PipelineVersioning(**mocks.params()).get_modules_version()
+        result = PipelineVersioning(**mocks.params()).get_environment_pipeline_modules_version()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}1.1.1"

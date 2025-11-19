@@ -75,7 +75,7 @@ class PipelineVersioning:
             return self.platform_helper_version_override
         return self.get_default_version()
 
-    def get_modules_version(self):
+    def get_environment_pipeline_modules_version(self):
 
         environment_pipeline_module_override = self.environment_variable_provider.get(
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
@@ -96,7 +96,7 @@ class PipelineVersioning:
 
         return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.get_default_version()}"
 
-    def get_codebase_modules_version(self):
+    def get_codebase_pipeline_modules_version(self):
 
         codebase_pipeline_module_override = self.environment_variable_provider.get(
             TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
@@ -196,7 +196,9 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
-        env_pipeline_module_source = self.pipeline_versioning.get_modules_version()
+        env_pipeline_module_source = (
+            self.pipeline_versioning.get_environment_pipeline_modules_version()
+        )
 
         if has_environment_pipelines:
             accounts = self._map_environment_pipeline_accounts(platform_config)
@@ -225,7 +227,7 @@ class Pipelines:
             }
 
             codebase_pipeline_module_source = (
-                self.pipeline_versioning.get_codebase_modules_version()
+                self.pipeline_versioning.get_codebase_pipeline_modules_version()
             )
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
