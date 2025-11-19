@@ -2,7 +2,6 @@
 import click
 
 from dbt_platform_helper.domain.pipelines import Pipelines
-from dbt_platform_helper.domain.pipelines import PipelineVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
@@ -50,12 +49,12 @@ def generate(deploy_branch: str):
     """
     config_provider = ConfigProvider(ConfigValidator())
     environment_variable_provider = EnvironmentVariableProvider()
-    pipeline_versioning = PipelineVersioning(
+    io = ClickIOProvider()
+    platform_helper_versioning = PlatformHelperVersioning(
+        io,
         config_provider,
         environment_variable_provider,
-        None,
     )
-    io = ClickIOProvider()
 
     try:
         pipelines = Pipelines(
@@ -66,7 +65,7 @@ def generate(deploy_branch: str):
             get_codestar_connection_arn,
             io,
             FileProvider(),
-            pipeline_versioning,
+            platform_helper_versioning,
         )
         pipelines.generate(deploy_branch)
     except Exception as exc:

@@ -7,11 +7,11 @@ from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.pipeline_versioning import PipelineVersioning
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
@@ -46,7 +46,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
-        pipeline_versioning: PipelineVersioning = None,
+        platform_helper_versioning: PlatformHelperVersioning = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -55,7 +55,7 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.pipeline_versioning = pipeline_versioning
+        self.platform_helper_versioning = platform_helper_versioning
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -115,7 +115,7 @@ class Pipelines:
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
         env_pipeline_module_source = (
-            self.pipeline_versioning.get_environment_pipeline_modules_version()
+            self.platform_helper_versioning.get_environment_pipeline_modules_version()
         )
 
         if has_environment_pipelines:
@@ -145,12 +145,12 @@ class Pipelines:
             }
 
             codebase_pipeline_module_source = (
-                self.pipeline_versioning.get_codebase_pipeline_modules_version()
+                self.platform_helper_versioning.get_codebase_pipeline_modules_version()
             )
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                self.pipeline_versioning.get_template_version(),
+                self.platform_helper_versioning.get_template_version(),
                 ecrs_that_need_importing,
                 deploy_repository,
                 codebase_pipeline_module_source,
