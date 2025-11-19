@@ -17,12 +17,14 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
-from dbt_platform_helper.domain.pipelines import ENVIRONMENT_PIPELINE_MODULE_PATH
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.pipelines import PipelineVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.pipeline_versioning import (
+    ENVIRONMENT_PIPELINE_MODULE_PATH,
+)
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 
 
