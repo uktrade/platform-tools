@@ -7,6 +7,9 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
+from dbt_platform_helper.constants import (
+    TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.entities.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -181,6 +184,11 @@ class PlatformHelperVersioning:
             return f"{CODEBASE_PIPELINE_MODULE_PATH}{platform_helper_env_override}"
 
         return f"{CODEBASE_PIPELINE_MODULE_PATH}{self.get_default_version()}"
+
+    def get_extensions_module_version(self):
+        return self.environment_variable_provider.get(
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        )
 
 
 class AWSVersioning:
