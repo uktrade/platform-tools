@@ -55,6 +55,7 @@ def generate(deploy_branch: str):
         environment_variable_provider,
         None,
     )
+    io = ClickIOProvider()
 
     try:
         pipelines = Pipelines(
@@ -63,7 +64,7 @@ def generate(deploy_branch: str):
             ECRProvider(),
             git_remote,
             get_codestar_connection_arn,
-            ClickIOProvider(),
+            io,
             FileProvider(),
             pipeline_versioning,
         )
