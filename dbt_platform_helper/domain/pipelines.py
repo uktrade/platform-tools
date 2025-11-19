@@ -94,13 +94,7 @@ class PipelineVersioning:
         if platform_helper_env_override:
             return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{platform_helper_env_override}"
 
-        default_version = (
-            self.config_provider.load_and_validate_platform_config()
-            .get("default_versions", {})
-            .get("platform-helper")
-        )
-
-        return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{default_version}"
+        return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.get_default_version()}"
 
     def get_codebase_modules_version(self):
 
@@ -121,13 +115,7 @@ class PipelineVersioning:
         if platform_helper_env_override:
             return f"{CODEBASE_PIPELINE_MODULE_PATH}{platform_helper_env_override}"
 
-        default_version = (
-            self.config_provider.load_and_validate_platform_config()
-            .get("default_versions", {})
-            .get("platform-helper")
-        )
-
-        return f"{CODEBASE_PIPELINE_MODULE_PATH}{default_version}"
+        return f"{CODEBASE_PIPELINE_MODULE_PATH}{self.get_default_version()}"
 
 
 class Pipelines:
