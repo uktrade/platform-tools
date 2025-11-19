@@ -18,38 +18,37 @@ from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.domain.pipelines import Pipelines
-from dbt_platform_helper.domain.versioning import ENVIRONMENT_PIPELINE_MODULE_PATH
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.version import InstalledVersionProvider
+from tests.platform_helper.domain.test_versioning import PlatformHelperVersioningMocks
 
+# class PlatformHelperVersioningMocks:
+#     def __init__(self):
+#         self.mock_io = Mock()
+#         self.mock_config_provider = Mock()
+#         self.mock_platform_helper_version_override = "platform_helper_param_override"
+#         self.mock_environment_variable_provider = {
+#             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
+#             TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
+#             PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
+#         }
+#         self.mock_latest_version_provider = Mock()
+#         self.mock_installed_version_provider = Mock()
+#         self.skip_versioning_checks = False
 
-class PlatformHelperVersioningMocks:
-    def __init__(self):
-        self.mock_io = Mock()
-        self.mock_config_provider = Mock()
-        self.mock_platform_helper_version_override = "platform_helper_param_override"
-        self.mock_environment_variable_provider = {
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
-            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
-        }
-        self.mock_latest_version_provider = Mock()
-        self.mock_installed_version_provider = Mock()
-        self.skip_versioning_checks = False
-
-    def params(self):
-        return {
-            "io": self.mock_io,
-            "config_provider": self.mock_config_provider,
-            "platform_helper_version_override": self.mock_platform_helper_version_override,
-            "environment_variable_provider": self.mock_environment_variable_provider,
-            "latest_version_provider": self.mock_latest_version_provider,
-            "installed_version_provider": self.mock_installed_version_provider,
-            "skip_versioning_checks": self.skip_versioning_checks,
-        }
+#     def params(self):
+#         return {
+#             "io": self.mock_io,
+#             "config_provider": self.mock_config_provider,
+#             "platform_helper_version_override": self.mock_platform_helper_version_override,
+#             "environment_variable_provider": self.mock_environment_variable_provider,
+#             "latest_version_provider": self.mock_latest_version_provider,
+#             "installed_version_provider": self.mock_installed_version_provider,
+#             "skip_versioning_checks": self.skip_versioning_checks,
+#         }
 
 
 class PipelineMocks:
@@ -370,57 +369,3 @@ def assert_terraform(
         assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"] == [deploy_account_id]
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
-
-
-class TestPlatformHelperVersioning:
-
-    def test_environment_platform_helper_versioning_precedence_with_env_override(self):
-        mocks = PlatformHelperVersioningMocks()
-        result = PlatformHelperVersioning(
-            **mocks.params()
-        ).get_environment_pipeline_modules_version()
-        assert result == "env_override"
-
-    def test_environment_platform_helper_versioning_without_env_override_falls_back_to_param_override(
-        self,
-    ):
-        mocks = PlatformHelperVersioningMocks()
-        mocks.mock_environment_variable_provider[
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = None
-        result = PlatformHelperVersioning(
-            **mocks.params()
-        ).get_environment_pipeline_modules_version()
-        assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_param_override"
-
-    def test_environment_platform_helper_versioning_without_param_override_falls_back_to_env_override(
-        self,
-    ):
-        mocks = PlatformHelperVersioningMocks()
-        mocks.mock_environment_variable_provider[
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = None
-        mocks.mock_platform_helper_version_override = None
-        result = PlatformHelperVersioning(
-            **mocks.params()
-        ).get_environment_pipeline_modules_version()
-        assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_env_override"
-
-    def test_environment_platform_helper_versioning_without_any_override_defaults_to_config(
-        self, platform_config_for_env_pipelines
-    ):
-        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
-
-        mocks = PlatformHelperVersioningMocks()
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
-            platform_config_for_env_pipelines
-        )
-        mocks.mock_environment_variable_provider[
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = None
-        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
-        mocks.mock_platform_helper_version_override = None
-        result = PlatformHelperVersioning(
-            **mocks.params()
-        ).get_environment_pipeline_modules_version()
-        assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}1.1.1"
