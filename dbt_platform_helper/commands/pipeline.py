@@ -2,10 +2,15 @@
 import click
 
 from dbt_platform_helper.domain.pipelines import Pipelines
+from dbt_platform_helper.domain.pipelines import PipelineVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecr import ECRProvider
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
+from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.aws import get_codestar_connection_arn
@@ -43,21 +48,24 @@ def generate(deploy_branch: str):
       The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
       The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
     """
-    io = ClickIOProvider()
+    config_provider = ConfigProvider(ConfigValidator())
+    environment_variable_provider = EnvironmentVariableProvider()
+    pipeline_versioning = PipelineVersioning(
+        config_provider,
+        environment_variable_provider,
+        None,
+    )
+
     try:
-
-        # (
-        #     platform_helper_version_for_template
-        #     or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
-        # )
-
         pipelines = Pipelines(
-            ConfigProvider(ConfigValidator()),
+            config_provider,
             TerraformManifestProvider(),
             ECRProvider(),
             git_remote,
             get_codestar_connection_arn,
-            io,
+            ClickIOProvider(),
+            FileProvider(),
+            pipeline_versioning,
         )
         pipelines.generate(deploy_branch)
     except Exception as exc:

@@ -63,6 +63,18 @@ class PipelineVersioning:
         self.environment_variable_provider = environment_variable_provider
         self.platform_helper_version_override = platform_helper_version_override
 
+    def get_default_version(self):
+        return (
+            self.config_provider.load_and_validate_platform_config()
+            .get("default_versions", {})
+            .get("platform-helper")
+        )
+
+    def get_template_version(self):
+        if self.platform_helper_version_override:
+            return self.platform_helper_version_override
+        return self.get_default_version()
+
     def get_modules_version(self):
 
         environment_pipeline_module_override = self.environment_variable_provider.get(
@@ -128,8 +140,7 @@ class Pipelines:
         get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
-        environment_variable_provider: EnvironmentVariableProvider = None,
-        platform_helper_version_override: str = None,
+        pipeline_versioning: PipelineVersioning = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -138,18 +149,7 @@ class Pipelines:
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.environment_variable_provider = (
-            environment_variable_provider or EnvironmentVariableProvider()
-        )
-        self.platform_helper_version_override = (
-            platform_helper_version_override
-            or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
-        )
-        self.pipelines_versioning = PipelineVersioning(
-            self.config_provider,
-            self.environment_variable_provider,
-            platform_helper_version_override,
-        )
+        self.pipeline_versioning = pipeline_versioning
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -202,9 +202,6 @@ class Pipelines:
             "platform-helper"
         )
 
-        if self.platform_helper_version_override:
-            platform_helper_version_for_template = self.platform_helper_version_override
-
         # TODO: DBTP-1965: - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
         if "deploy_repository" in platform_config.keys():
@@ -215,7 +212,7 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
-        env_pipeline_module_source = self.pipelines_versioning.get_modules_version()
+        env_pipeline_module_source = self.pipeline_versioning.get_modules_version()
 
         if has_environment_pipelines:
             accounts = self._map_environment_pipeline_accounts(platform_config)
@@ -244,12 +241,12 @@ class Pipelines:
             }
 
             codebase_pipeline_module_source = (
-                self.pipelines_versioning.get_codebase_modules_version()
+                self.pipeline_versioning.get_codebase_modules_version()
             )
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                platform_helper_version_for_template,
+                self.pipeline_versioning.get_template_version(),
                 ecrs_that_need_importing,
                 deploy_repository,
                 codebase_pipeline_module_source,

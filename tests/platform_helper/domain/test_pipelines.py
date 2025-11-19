@@ -66,12 +66,9 @@ class PipelineMocks:
             f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
         )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
-        self.mock_platform_helper_version_override = None
-        self.mock_environment_variable_provider = {
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
-            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
-        }
+        pipeline_versioning_mocks = PipelineVersioningMocks()
+        pipeline_versioning_mocks.mock_config_provider = self.mock_config_provider
+        self.mock_pipeline_versioning = PipelineVersioning(**pipeline_versioning_mocks.params())
 
     def params(self):
         return {
@@ -81,8 +78,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "get_codestar_arn": self.mock_codestar,
-            "platform_helper_version_override": self.mock_platform_helper_version_override,
-            "environment_variable_provider": self.mock_environment_variable_provider,
+            "pipeline_versioning": self.mock_pipeline_versioning,
         }
 
 
@@ -134,15 +130,27 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 
     app_name = "test-app"
 
+    platform_config_for_env_pipelines["default_versions"] = {
+        "platform-helper": expected_platform_helper_version
+    }
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
+
     mocks = PipelineMocks(app_name)
 
     if use_environment_variable_platform_helper_version:
-        mocks.mock_platform_helper_version_override = "test-branch"
+        mocks.mock_pipeline_versioning.platform_helper_version_override = None
+        mocks.mock_pipeline_versioning.environment_variable_provider[
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        ] = module_source_override
     else:
-        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_pipeline_versioning.platform_helper_version_override = (
+            expected_platform_helper_version
+        )
+        mocks.mock_pipeline_versioning.environment_variable_provider[
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        ] = None
 
-    mocks.mock_environment_variable_provider[
+    mocks.mock_pipeline_versioning.environment_variable_provider[
         TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
     ] = module_source_override
 
@@ -232,9 +240,11 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
     )
 
     mocks = PipelineMocks(app_name)
-    mocks.mock_platform_helper_version_override = expected_platform_helper_version
+    mocks.mock_pipeline_versioning.platform_helper_version_override = (
+        expected_platform_helper_version
+    )
 
-    mocks.mock_environment_variable_provider[
+    mocks.mock_pipeline_versioning.environment_variable_provider[
         TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
     ] = module_source
 
@@ -284,11 +294,17 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
         "yet-another-repo",
     ]
 
-    mocks.mock_environment_variable_provider[
-        TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source
-
-    mocks.mock_platform_helper_version_override = expected_platform_helper_version
+    mocks.mock_pipeline_versioning.platform_helper_version_override = (
+        expected_platform_helper_version
+    )
+    if use_environment_variable_platform_helper_version:
+        mocks.mock_pipeline_versioning.environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = module_source
+    else:
+        mocks.mock_pipeline_versioning.environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
 
     pipelines = Pipelines(**mocks.params())
 
