@@ -54,8 +54,6 @@ def mocks():
 # generate commands must not error when run in the pipeline
 # other commands - error if not on latest version?
 # Are we allowing platform downgrades or are we explicitly not allowing them?
-
-
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
     def test_is_managed(self, mocks):
