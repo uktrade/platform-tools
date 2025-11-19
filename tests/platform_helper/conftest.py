@@ -404,6 +404,7 @@ def clear_session_cache():
     AWS_SESSION_CACHE.clear()
 
 
+# TODO we're going to need a fixture for managed config and a suite of tests
 @pytest.fixture()
 def valid_platform_config():
     return yaml.safe_load(

@@ -23,13 +23,17 @@ phases:
       - curl -sL https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 -o ./build-tools/bin/regctl
       - chmod +x ./build-tools/bin/regctl
       ## Check for platform-helper version override
+      ## TODO 
+      ## REQUIRED_VERSION is latest, not from config (which would give "auto")
+      ## OR PLATFORM_HELPER_VERSION must be set and must be latest if "auto"
       - |
          if [ "${PLATFORM_HELPER_VERSION}" == "NONE" ]; then
-           echo "Install platform-helper version from platform-config default version"
+           echo "Install platform-helper version from platform-config default version"  
            REQUIRED_VERSION=$(yq eval ".default_versions.platform-helper" platform-config.yml)
          else
            REQUIRED_VERSION="${PLATFORM_HELPER_VERSION}"
          fi
+      ## Resolve COMMIT_TYPE for auto   
       - COMMIT_TYPE=$(python -c "import re, sys; print('tag' if re.match(r'\\d+\\.\\d+\\.\\d+', '${REQUIRED_VERSION}') else 'commit')")
       - echo "Installing build tools"
 
