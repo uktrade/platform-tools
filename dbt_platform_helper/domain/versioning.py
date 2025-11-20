@@ -1,5 +1,7 @@
 import os
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
+from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import (
     TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
@@ -30,14 +32,6 @@ from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.version import PyPiLatestVersionProvider
 from dbt_platform_helper.providers.version import VersionProvider
 from dbt_platform_helper.providers.version_status import VersionStatus
-
-ENVIRONMENT_PIPELINE_MODULE_PATH = (
-    "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
-)
-
-CODEBASE_PIPELINE_MODULE_PATH = (
-    "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref="
-)
 
 
 def running_as_installed_package():
