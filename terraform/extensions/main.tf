@@ -151,6 +151,7 @@ resource "aws_ssm_parameter" "environment_data" {
     "app" : var.args.application,
     "accountID" : local.deploy_account_id
     "region" : "eu-west-2",
+    "vpc_name" : local.vpc_name,
     "service_deployment_mode" : local.service_deployment_mode,
     allEnvironments = [
       for env_name, env_config in var.args.env_config : {
