@@ -242,7 +242,7 @@ class TestPlatformHelperVersioningPipelinesVersioning:
         mocks = PlatformHelperVersioningMocks()
         result = PlatformHelperVersioning(
             **mocks.params()
-        ).get_environment_pipeline_modules_version()
+        ).get_environment_pipeline_modules_source()
         assert result == "env_override"
 
     def test_environment_platform_helper_versioning_without_env_override_falls_back_to_param_override(
@@ -254,7 +254,7 @@ class TestPlatformHelperVersioningPipelinesVersioning:
         ] = None
         result = PlatformHelperVersioning(
             **mocks.params()
-        ).get_environment_pipeline_modules_version()
+        ).get_environment_pipeline_modules_source()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_param_override"
 
     def test_environment_platform_helper_versioning_without_param_override_falls_back_to_env_override(
@@ -267,7 +267,7 @@ class TestPlatformHelperVersioningPipelinesVersioning:
         mocks.mock_platform_helper_version_override = None
         result = PlatformHelperVersioning(
             **mocks.params()
-        ).get_environment_pipeline_modules_version()
+        ).get_environment_pipeline_modules_source()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}platform_helper_env_override"
 
     def test_environment_platform_helper_versioning_without_any_override_defaults_to_config(
@@ -286,7 +286,7 @@ class TestPlatformHelperVersioningPipelinesVersioning:
         mocks.mock_platform_helper_version_override = None
         result = PlatformHelperVersioning(
             **mocks.params()
-        ).get_environment_pipeline_modules_version()
+        ).get_environment_pipeline_modules_source()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}1.1.1"
 
 

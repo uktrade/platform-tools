@@ -71,11 +71,11 @@ class TestGenerateTerraform:
         environment_name = "test"
 
         if use_environment_variable_platform_helper_version:
-            mocks.mock_platform_helper_versioning.get_extensions_module_version.return_value = (
+            mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = (
                 module_source_override
             )
         else:
-            mocks.mock_platform_helper_versioning.get_extensions_module_version.return_value = None
+            mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = None
 
         terraform_environment = TerraformEnvironment(**mocks.params())
 

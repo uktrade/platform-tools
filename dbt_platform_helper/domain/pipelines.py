@@ -122,7 +122,7 @@ class Pipelines:
                     platform_config["application"],
                     deploy_repository,
                     account_name,
-                    self.platform_helper_versioning.get_environment_pipeline_modules_version(),
+                    self.platform_helper_versioning.get_environment_pipeline_modules_source(),
                     deploy_branch,
                     account_id,
                 )
@@ -145,7 +145,7 @@ class Pipelines:
                 self.platform_helper_versioning.get_template_version(),
                 ecrs_that_need_importing,
                 deploy_repository,
-                self.platform_helper_versioning.get_codebase_pipeline_modules_version(),
+                self.platform_helper_versioning.get_codebase_pipeline_modules_source(),
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
