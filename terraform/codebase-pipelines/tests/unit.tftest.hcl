@@ -1,6 +1,13 @@
 mock_provider "aws" {}
 
 override_data {
+  target = data.aws_caller_identity.current
+  values = {
+    account_id = "001122334455"
+  }
+}
+
+override_data {
   target = data.external.codestar_connections
 
   values = {
