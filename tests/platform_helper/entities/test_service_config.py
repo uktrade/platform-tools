@@ -72,6 +72,28 @@ def test_web_service_requires_http_block():
 
 
 @pytest.mark.parametrize(
+    "connect_value,placement_value,error_msg",
+    [
+        (False, "private", "Property 'connect' must always be set to 'true'."),
+        (True, "not-private", "Property 'placement' must always be set to 'private'."),
+    ],
+)
+def test_validate_service_connect_and_vpc_placement(connect_value, placement_value, error_msg):
+    service_config = {
+        "name": "web",
+        "type": "Backend Service",
+        "image": {"location": "hub.docker.com/repo:tag", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "count": 1,
+        "network": {"connect": connect_value, "vpc": {"placement": placement_value}},
+    }
+
+    with pytest.raises(PlatformException, match=error_msg):
+        ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize(
     "in_value,out_value,expected_in,expected_out",
     [
         ("30s", "45s", 30, 45),
