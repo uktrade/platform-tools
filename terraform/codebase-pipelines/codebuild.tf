@@ -95,6 +95,14 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
   log_group_name = aws_cloudwatch_log_group.codebase_image_build[""].name
 }
 
+resource "aws_cloudwatch_log_subscription_filter" "codebase_image_build" {
+  name            = aws_cloudwatch_log_group.codebase_image_build[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_image_build[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
+}
+
 resource "aws_codebuild_webhook" "codebuild_webhook" {
   for_each     = toset(var.requires_image_build ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
@@ -190,6 +198,14 @@ resource "aws_cloudwatch_log_stream" "codebase_install_tools" {
   log_group_name = aws_cloudwatch_log_group.codebase_install_tools[""].name
 }
 
+resource "aws_cloudwatch_log_subscription_filter" "codebase_install_tools" {
+  name            = aws_cloudwatch_log_group.codebase_install_tools[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_install_tools[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
+}
+
 resource "aws_codebuild_project" "codebase_service_terraform" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-service-terraform"
@@ -247,6 +263,14 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-service-terraform/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_service_terraform[""].name
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "codebase_service_terraform" {
+  name            = aws_cloudwatch_log_group.codebase_service_terraform[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_service_terraform[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
 }
 
 resource "aws_codebuild_project" "codebase_traffic_switch" {
@@ -308,6 +332,14 @@ resource "aws_cloudwatch_log_stream" "codebase_traffic_switch" {
   log_group_name = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
 }
 
+resource "aws_cloudwatch_log_subscription_filter" "codebase_traffic_switch" {
+  name            = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
+}
+
 resource "aws_codebuild_project" "invalidate_cache" {
   for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-invalidate-cache"
@@ -364,6 +396,14 @@ resource "aws_cloudwatch_log_stream" "invalidate_cache" {
   for_each       = toset(local.cache_invalidation_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-invalidate-cache/log-stream"
   log_group_name = aws_cloudwatch_log_group.invalidate_cache[""].name
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "invalidate_cache" {
+  name            = aws_cloudwatch_log_group.invalidate_cache[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.invalidate_cache[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
 }
 
 resource "aws_codebuild_project" "codebase_deploy" {
@@ -434,6 +474,14 @@ resource "aws_cloudwatch_log_stream" "codebase_deploy" {
   log_group_name = aws_cloudwatch_log_group.codebase_deploy[""].name
 }
 
+resource "aws_cloudwatch_log_subscription_filter" "codebase_deploy" {
+  name            = aws_cloudwatch_log_group.codebase_deploy[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_deploy[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
+}
+
 resource "aws_codebuild_project" "codebase_deploy_platform" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-deploy-platform"
@@ -493,6 +541,14 @@ resource "aws_cloudwatch_log_stream" "codebase_deploy_platform" {
   log_group_name = aws_cloudwatch_log_group.codebase_deploy_platform[""].name
 }
 
+resource "aws_cloudwatch_log_subscription_filter" "codebase_deploy_platform" {
+  name            = aws_cloudwatch_log_group.codebase_deploy_platform[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_deploy_platform[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
+}
+
 resource "aws_codebuild_project" "codebase_service_terraform_plan" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-service-terraform-plan"
@@ -550,6 +606,14 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform_plan" {
   for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-service-terraform-plan/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_service_terraform_plan[""].name
+}
+
+resource "aws_cloudwatch_log_subscription_filter" "codebase_service_terraform_plan" {
+  name            = aws_cloudwatch_log_group.codebase_service_terraform_plan[""].name
+  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
+  log_group_name  = aws_cloudwatch_log_group.codebase_service_terraform_plan[""].name
+  filter_pattern  = ""
+  destination_arn = local.central_log_group_destination
 }
 
 # These moved blocks are to prevent resources being recreated

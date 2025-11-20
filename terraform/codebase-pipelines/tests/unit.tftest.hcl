@@ -1,6 +1,13 @@
 mock_provider "aws" {}
 
 override_data {
+  target = data.aws_caller_identity.current
+  values = {
+    account_id = "001122334455"
+  }
+}
+
+override_data {
   target = data.external.codestar_connections
 
   values = {
@@ -139,6 +146,13 @@ override_data {
   target = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline
   values = {
     json = "{\"Sid\": \"AllowUseCodestarConnection\"}"
+  }
+}
+
+override_data {
+  target = data.aws_ssm_parameter.log-destination-arn
+  values = {
+    value = "{\"prod\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_prod\", \"dev\":\"arn:aws:logs:eu-west-2:123456789987:destination:central_log_groups_dev\"}"
   }
 }
 
