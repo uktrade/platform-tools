@@ -114,10 +114,6 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
-        env_pipeline_module_source = (
-            self.platform_helper_versioning.get_environment_pipeline_modules_version()
-        )
-
         if has_environment_pipelines:
             accounts = self._map_environment_pipeline_accounts(platform_config)
 
@@ -126,7 +122,7 @@ class Pipelines:
                     platform_config["application"],
                     deploy_repository,
                     account_name,
-                    env_pipeline_module_source,
+                    self.platform_helper_versioning.get_environment_pipeline_modules_version(),
                     deploy_branch,
                     account_id,
                 )
@@ -144,16 +140,12 @@ class Pipelines:
                 if repo in ecrs_already_provisioned
             }
 
-            codebase_pipeline_module_source = (
-                self.platform_helper_versioning.get_codebase_pipeline_modules_version()
-            )
-
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
                 self.platform_helper_versioning.get_template_version(),
                 ecrs_that_need_importing,
                 deploy_repository,
-                codebase_pipeline_module_source,
+                self.platform_helper_versioning.get_codebase_pipeline_modules_version(),
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
