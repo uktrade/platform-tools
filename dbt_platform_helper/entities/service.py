@@ -99,6 +99,12 @@ class Image(BaseModel):
 class VPC(BaseModel):
     placement: Optional[str] = Field(default=None)
 
+    @model_validator(mode="after")
+    def check_for_correct_network_properties(self):
+        if self.placement != "private":
+            raise PlatformException(f"Property 'placement' must always be set to 'private'.")
+        return self
+
 
 class Network(BaseModel):
     connect: Optional[bool] = Field(
@@ -106,6 +112,12 @@ class Network(BaseModel):
         default=None,
     )
     vpc: Optional[VPC] = Field(default=None)
+
+    @model_validator(mode="after")
+    def check_for_correct_network_properties(self):
+        if not self.connect:
+            raise PlatformException(f"Property 'connect' must always be set to 'true'.")
+        return self
 
 
 class Storage(BaseModel):
