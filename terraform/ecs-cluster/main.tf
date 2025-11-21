@@ -40,14 +40,17 @@ resource "aws_security_group" "environment_security_group" {
   vpc_id      = data.aws_vpc.vpc.id
   tags        = local.sg_env_tags
 
-  ingress {
-    description = "Allow from ALB"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    security_groups = [
-      var.alb_https_security_group_id
-    ]
+  dynamic "ingress" {
+    for_each = var.alb_https_security_group_id == null ? [] : [var.alb_https_security_group_id]
+    content {
+      description = "Allow from ALB"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      security_groups = [
+        ingress.value
+      ]
+    }
   }
 
   ingress {

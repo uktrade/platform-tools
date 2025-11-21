@@ -61,4 +61,30 @@ run "test_create_ecs_cluster" {
     condition     = aws_security_group.environment_security_group.tags.Name == "platform-demodjango-dev-env-sg"
     error_message = "Name tag was not as expected"
   }
+
+  assert {
+    condition     = length(aws_security_group.environment_security_group.ingress) == 2
+    error_message = "Ingress does not include enough groups."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.ingress)[0].security_groups == toset(["security-group-id"])
+    error_message = "Ingress does not include the passed in security group id."
+  }
+}
+
+run "test_create_ecs_cluster_without_an_alb" {
+  command = plan
+
+  variables {
+    application                 = "demodjango"
+    environment                 = "dev"
+    vpc_name                    = "terraform-tests-vpc"
+    alb_https_security_group_id = null
+  }
+
+  assert {
+    condition     = length(aws_security_group.environment_security_group.ingress) == 1
+    error_message = "Ingress includes more than containers in the same security group."
+  }
 }
