@@ -30,6 +30,7 @@ class ConfigValidator:
             self.validate_database_copy_section,
             self.validate_database_migration_input_sources,
             self.validate_cache_invalidation_config,
+            self.validate_config_for_managed_upgrades,
         ]
         self.io = io
         self.session = session
@@ -254,4 +255,12 @@ class ConfigValidator:
                         )
 
         if errors:
+            raise ConfigValidatorError("\n".join(errors))
+
+    def validate_config_for_managed_upgrades(self, config: dict):
+        errors = []
+        if config.get("default_versions").get("platform-helper") == "auto":
+            errors.append(
+                f"Your service is configured for managed upgrades.  Pipelines cannot contain manual approvals."
+            )
             raise ConfigValidatorError("\n".join(errors))
