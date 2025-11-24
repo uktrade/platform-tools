@@ -11,5 +11,6 @@ variable "vpc_name" {
 }
 
 variable "alb_https_security_group_id" {
-  type = string
+  type    = string
+  default = null
 }

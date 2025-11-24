@@ -114,7 +114,7 @@ module "ecs_cluster" {
   application                 = var.args.application
   environment                 = var.environment
   vpc_name                    = local.vpc_name
-  alb_https_security_group_id = one(values(module.alb)).https_security_group_id
+  alb_https_security_group_id = try(one(values(module.alb)).https_security_group_id, null)
 }
 
 module "datadog" {
