@@ -624,6 +624,7 @@ schema_version: {SERVICE_CONFIG_SCHEMA_VERSION}
 name: web
 type: Load Balanced Web Service
 http:
+  alias: web.${"{PLATFORM_ENVIRONMENT_NAME}"}.${"{PLATFORM_APPLICATION_NAME}"}.uktrade.digital
   path: '/'
   target_container: nginx
   healthcheck:

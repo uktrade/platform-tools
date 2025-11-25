@@ -110,6 +110,7 @@ variables {
     type = "Load Balanced Web Service"
 
     http = {
+      alias            = "web.dev.myapp.uktrade.digital"
       path             = "/"
       target_container = "nginx"
       healthcheck = {
