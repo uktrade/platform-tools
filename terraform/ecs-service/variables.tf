@@ -30,7 +30,7 @@ variable "service_config" {
     type = string
 
     http = optional(object({
-      alias            = string
+      alias            = list(string)
       stickiness       = optional(bool)
       path             = string
       target_container = string
