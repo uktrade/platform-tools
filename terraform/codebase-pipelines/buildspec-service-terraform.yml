@@ -130,19 +130,19 @@ phases:
             deploy_status="SUCCESSFUL"
             STATUS_EMOJI=":large_green_circle:"
             STATUS_TEXT="COMPLETE"
-            SEND_TO_MAIN_CHANNEL=""
+            SEND_TO_MAIN_CHANNEL="false"
           else
             deploy_status="FAILED"
             STATUS_EMOJI=":red_circle:"
             STATUS_TEXT="FAILED"
-            SEND_TO_MAIN_CHANNEL="--send-to-main-channel"
+            SEND_TO_MAIN_CHANNEL="true"
           fi
 
           # Send notification on successful deployment or exit with an error code
         
           if [ "${deploy_status}" == "SUCCESSFUL" ]; then
             MESSAGE=":terraform:${STATUS_EMOJI} ${STATUS_TEXT} - Service infrastructure changes for \`${SERVICE}\` in environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
-            platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" ${SEND_TO_MAIN_CHANNEL}
+            platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel "${SEND_TO_MAIN_CHANNEL}"
           else
             echo "Error: Deployment status is ${deploy_status}" | tee output.log
             exit 1
@@ -155,5 +155,5 @@ phases:
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
           MESSAGE=":terraform::red_circle: FAILED - Service infrastructure changes for service \`${SERVICE}\` in environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
-          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel true
         fi
