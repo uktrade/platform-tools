@@ -57,6 +57,7 @@ phases:
           aws configure set output "json" --profile "${PROFILE_NAME}"
           export AWS_PROFILE="${PROFILE_NAME}"
           platform-helper environment generate --name "${ENVIRONMENT}"
+          # TODO we need to ensure the generate command uses the modules override here - TERRAFORM_MODULE_SOURCE_OVERRIDE
           if [[ "${AWS_PROFILE_FOR_COPILOT}" == *"prod"* ]]
           then
             echo -e "\nAssuming role to deploy AWS Copilot environment resources in prod account"
