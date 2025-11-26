@@ -25,7 +25,10 @@ def copilot_manifest(tmp_path):
     manifest_content = {
         "name": "my-service",
         "type": "Load Balanced Web Service",
-        "environments": {"dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}}},
+        "environments": {
+            "dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}},
+            "prod": {"http": {"alb": "alb-arn", "alias": ["test.alias.com", "test2.alias.com"]}},
+        },
         "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
     }
     with open(manifest_path, "w") as f:
@@ -48,7 +51,10 @@ def test_migrate_copilot_manifests_generates_expected_service_config(tmp_path, c
     expected_service_config = {
         "name": "my-service",
         "type": "Load Balanced Web Service",
-        "environments": {"dev": {"http": {"alias": "test.alias.com"}}},
+        "environments": {
+            "dev": {"http": {"alias": ["test.alias.com"]}},
+            "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
+        },
         "variables": {
             "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
         },
