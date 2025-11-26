@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.13.1](https://github.com/uktrade/platform-tools/compare/15.13.0...15.13.1) (2025-11-26)
+
+
+### Bug Fixes
+
+* Changed http alias type to support multiple domain aliases in service config (off-ticket) ([#1157](https://github.com/uktrade/platform-tools/issues/1157)) ([45c63ee](https://github.com/uktrade/platform-tools/commit/45c63ee7928cb656bdb7b4dbe59a9058c3977916))
+
 ## [15.13.0](https://github.com/uktrade/platform-tools/compare/15.12.1...15.13.0) (2025-11-25)
 
 
