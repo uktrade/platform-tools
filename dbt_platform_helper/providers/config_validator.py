@@ -260,7 +260,13 @@ class ConfigValidator:
     def validate_config_for_managed_upgrades(self, config: dict):
         errors = []
         if config.get("default_versions").get("platform-helper") == "auto":
-            errors.append(
-                f"Your service is configured for managed upgrades.  Pipelines cannot contain manual approvals."
-            )
+            codebase_pipelines = config.get("codebase_pipelines")
+            config.get("environment_pipelines")
+
+            if not codebase_pipelines:
+                # requires_approval: true
+                errors.append(
+                    f"For auto default platform-helper version, environment and codebase pipelines must be configured"
+                )
+        if errors:
             raise ConfigValidatorError("\n".join(errors))

@@ -428,3 +428,59 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
         str(exception.value)
         == "Error in cache invalidation configuration for the domain 'web.demodjango.wrong.uktrade.digital'.  Environment 'wrong' is not defined for this application"
     )
+
+
+@pytest.mark.parametrize(
+    "env_pipeline_config, codebase_pipeline_config, expected_error",
+    [
+        (
+            {},
+            {},
+            "For auto default platform-helper version, environment and codebase pipelines must be configured",
+        ),
+        # ({},{},"Error"),
+        # ({},{},"Error"),
+        # ({
+        #     "main": {
+        #         "account": "non-prod",
+        #         "slack_channel": "/codebuild/notification_channel",
+        #         "trigger_on_push": True,
+        #         "environments": {
+        #             "dev": {
+        #                 "requires_approval": False,
+        #                 "pipeline_to_trigger": "main-prod"
+        #             },
+        #         },
+        #     },
+        #     "main-prod": {
+        #         "account": "prod",
+        #         "slack_channel": "/codebuild/notification_channel",
+        #         "trigger_on_push": True,
+        #         "environments": {
+        #             "prod": {
+        #                 "pipeline_to_trigger": "main-prod"
+        #             },
+        #         },
+        #     },
+        # },
+        # {
+        #     },
+        # "Error"),
+    ],
+)
+def test_validate_config_for_managed_upgrades(
+    platform_env_config,
+    env_pipeline_config,
+    codebase_pipeline_config,
+    expected_error,
+):
+    config = ConfigProvider.apply_environment_defaults(platform_env_config)
+
+    config["default_versions"]["platform-helper"] = "auto"
+    config["codebase_pipelines"] = codebase_pipeline_config
+    config["environment_pipelines"] = env_pipeline_config
+
+    with pytest.raises(ConfigValidatorError) as exception:
+        ConfigValidator().validate_config_for_managed_upgrades(config)
+
+    assert str(exception.value) == expected_error
