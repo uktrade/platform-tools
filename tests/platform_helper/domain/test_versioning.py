@@ -7,6 +7,7 @@ import pytest
 from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+from dbt_platform_helper.constants import PLATFORM_ORCHESTRATION_PINNED_VERSION
 from dbt_platform_helper.constants import (
     TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
@@ -378,7 +379,7 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider["PLATFORM_ORCHESTRATION_PINNED_VERSION"] = (
+        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
             "version_passed_in_from_platform_upgrade"
         )
 
@@ -397,7 +398,7 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider["PLATFORM_ORCHESTRATION_PINNED_VERSION"] = (
+        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
             "version_passed_in_from_platform_upgrade"
         )
 
@@ -414,7 +415,7 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider["PLATFORM_ORCHESTRATION_PINNED_VERSION"] = (
+        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
             "version_passed_in_from_platform_upgrade"
         )
 
@@ -431,7 +432,7 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider["PLATFORM_ORCHESTRATION_PINNED_VERSION"] = (
+        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
             "version_passed_in_from_platform_upgrade"
         )
 
