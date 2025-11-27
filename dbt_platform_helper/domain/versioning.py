@@ -162,6 +162,8 @@ class PlatformHelperVersioning:
         return f"{pipeline_module_path}{self.get_default_version()}"
 
     def get_environment_pipeline_modules_source(self):
+        if self.is_managed():
+            return self.environment_variable_provider.get("PLATFORM_ORCHESTRATION_PINNED_VERSION")
         return self._get_pipeline_modules_source(
             ENVIRONMENT_PIPELINE_MODULE_PATH,
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
