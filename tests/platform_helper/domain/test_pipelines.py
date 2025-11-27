@@ -244,18 +244,16 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
 
 
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source",
+    "expected_platform_helper_version, module_source",
     [
         (
-            False,
             "14.0.0",
             "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
         ),
-        (True, "test-branch", "../local/path/"),
+        ("test-branch", "../local/path/"),
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
-    use_environment_variable_platform_helper_version,
     expected_platform_helper_version,
     module_source,
     codebase_pipeline_config_for_2_pipelines_and_1_run_group,
@@ -278,14 +276,10 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     mocks.mock_platform_helper_versioning.platform_helper_version_override = (
         expected_platform_helper_version
     )
-    if use_environment_variable_platform_helper_version:
-        mocks.mock_platform_helper_versioning.environment_variable_provider[
-            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = module_source
-    else:
-        mocks.mock_platform_helper_versioning.environment_variable_provider[
-            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = None
+
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = module_source
 
     pipelines = Pipelines(**mocks.params())
 
