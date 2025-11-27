@@ -5,6 +5,7 @@ locals {
     managed-by          = "DBT Platform - Terraform"
     copilot-application = var.application
     copilot-environment = var.environment
+    test-deployment     = "it worked"
   }
 
   kms_alias_name = "${var.application}-${var.environment}-${var.config.bucket_name}-key"
