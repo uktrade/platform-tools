@@ -73,7 +73,6 @@ class ConfigProviderMocks:
 
 
 class TestLoadAndValidate:
-    # Add tests for auto compatibility with pipeline manual approval stages
     def test_comprehensive_platform_config_validates_successfully(self, valid_platform_config):
         config_provider = ConfigProvider(**ConfigProviderMocks(valid_platform_config).params())
 

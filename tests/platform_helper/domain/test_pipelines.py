@@ -25,31 +25,6 @@ from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from tests.platform_helper.domain.test_versioning import PlatformHelperVersioningMocks
 
-# class PlatformHelperVersioningMocks:
-#     def __init__(self):
-#         self.mock_io = Mock()
-#         self.mock_config_provider = Mock()
-#         self.mock_platform_helper_version_override = "platform_helper_param_override"
-#         self.mock_environment_variable_provider = {
-#             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
-#             TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
-#             PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
-#         }
-#         self.mock_latest_version_provider = Mock()
-#         self.mock_installed_version_provider = Mock()
-#         self.skip_versioning_checks = False
-
-#     def params(self):
-#         return {
-#             "io": self.mock_io,
-#             "config_provider": self.mock_config_provider,
-#             "platform_helper_version_override": self.mock_platform_helper_version_override,
-#             "environment_variable_provider": self.mock_environment_variable_provider,
-#             "latest_version_provider": self.mock_latest_version_provider,
-#             "installed_version_provider": self.mock_installed_version_provider,
-#             "skip_versioning_checks": self.skip_versioning_checks,
-#         }
-
 
 class PipelineMocks:
     def __init__(self, app_name):
