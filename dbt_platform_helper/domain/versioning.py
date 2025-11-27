@@ -137,47 +137,35 @@ class PlatformHelperVersioning:
             return self.platform_helper_version_override
         return self.get_default_version()
 
-    def get_environment_pipeline_modules_source(self):
+    def get_pipeline_modules_source(self, pipeline_module_path: str, override_env_var_key: str):
+        pipeline_module_override = self.environment_variable_provider.get(override_env_var_key)
 
-        environment_pipeline_module_override = self.environment_variable_provider.get(
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        )
-
-        if environment_pipeline_module_override:
-            return environment_pipeline_module_override
+        if pipeline_module_override:
+            return pipeline_module_override
 
         if self.platform_helper_version_override:
-            return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.platform_helper_version_override}"
+            return f"{pipeline_module_path}{self.platform_helper_version_override}"
 
         platform_helper_env_override = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         )
 
         if platform_helper_env_override:
-            return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{platform_helper_env_override}"
+            return f"{pipeline_module_path}{platform_helper_env_override}"
 
-        return f"{ENVIRONMENT_PIPELINE_MODULE_PATH}{self.get_default_version()}"
+        return f"{pipeline_module_path}{self.get_default_version()}"
+
+    def get_environment_pipeline_modules_source(self):
+        return self.get_pipeline_modules_source(
+            ENVIRONMENT_PIPELINE_MODULE_PATH,
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+        )
 
     def get_codebase_pipeline_modules_source(self):
-
-        codebase_pipeline_module_override = self.environment_variable_provider.get(
-            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        return self.get_pipeline_modules_source(
+            CODEBASE_PIPELINE_MODULE_PATH,
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
         )
-
-        if codebase_pipeline_module_override:
-            return codebase_pipeline_module_override
-
-        if self.platform_helper_version_override:
-            return f"{CODEBASE_PIPELINE_MODULE_PATH}{self.platform_helper_version_override}"
-
-        platform_helper_env_override = self.environment_variable_provider.get(
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-        )
-
-        if platform_helper_env_override:
-            return f"{CODEBASE_PIPELINE_MODULE_PATH}{platform_helper_env_override}"
-
-        return f"{CODEBASE_PIPELINE_MODULE_PATH}{self.get_default_version()}"
 
     def get_extensions_module_source(self):
         return self.environment_variable_provider.get(
