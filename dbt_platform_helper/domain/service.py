@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import urllib.parse
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
@@ -112,7 +113,9 @@ class ServiceManager:
         for service in service_models:
 
             model_dump = service.model_dump(
-                exclude_none=True, by_alias=True
+                exclude_none=True,
+                by_alias=True,
+                mode="json",
             )  # Use by_alias=True so that the Cooldown field 'in_' is written as 'in' in the output
 
             output_path = Path(
@@ -196,10 +199,16 @@ class ServiceManager:
                         if "http" in env_config:
                             if "alb" in env_config["http"]:
                                 del env_config["http"]["alb"]
+                            if isinstance(env_config["http"].get("alias", []), str):
+                                env_config["http"]["alias"] = [env_config["http"]["alias"]]
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
                         service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+
+                if "alias" in service_manifest.get("http", {}):
+                    if isinstance(service_manifest["http"]["alias"], str):
+                        service_manifest["http"]["alias"] = [service_manifest["http"]["alias"]]
 
                 service_manifest = self.file_provider.find_and_replace(
                     config=service_manifest,
@@ -386,6 +395,7 @@ class ServiceManager:
 
                 task_id = task["taskArn"].split("/")[-1]
                 container_name = container["name"]
+                log_stream = f"platform/{container_name}/{task_id}"
 
                 if f"{task_id}-{container_name}" not in seen_events:
                     seen_events.add(f"{task_id}-{container_name}")
@@ -393,10 +403,14 @@ class ServiceManager:
                         message=f"Container '{container_name}' stopped in task '{task_id}'.",
                         error=True,
                     )
+                    log_url = f"https://eu-west-2.console.aws.amazon.com/cloudwatch/home?region=eu-west-2#logsV2:log-groups/log-group/{urllib.parse.quote_plus(log_group)}/log-events/{urllib.parse.quote_plus(log_stream)}"
+                    self._output_with_timestamp(
+                        message=f"View CloudWatch log: {log_url}", error=True
+                    )
 
                 log_events = self.logs_provider.get_log_stream_events(
                     log_group=log_group,
-                    log_stream=f"platform/{container_name}/{task_id}",
+                    log_stream=log_stream,
                     limit=20,
                 )
 
