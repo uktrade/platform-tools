@@ -404,6 +404,23 @@ class TestPlatformHelperVersioningAuto:
         result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
         assert result == "version_passed_in_from_platform_upgrade"
 
+    def test_get_extension_modules_source_is_pinned_version_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider["PLATFORM_ORCHESTRATION_PINNED_VERSION"] = (
+            "version_passed_in_from_platform_upgrade"
+        )
+
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        assert result == "version_passed_in_from_platform_upgrade"
+
     # def test_environment_platform_helper_versioning_without_env_override_falls_back_to_param_override(
     #     self,
     # ):

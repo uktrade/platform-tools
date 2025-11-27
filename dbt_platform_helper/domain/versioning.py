@@ -177,6 +177,8 @@ class PlatformHelperVersioning:
         )
 
     def get_extensions_module_source(self):
+        if self.is_managed():
+            return self.environment_variable_provider.get("PLATFORM_ORCHESTRATION_PINNED_VERSION")
         return self.environment_variable_provider.get(
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         )
