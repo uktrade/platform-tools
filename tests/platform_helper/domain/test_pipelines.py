@@ -123,17 +123,14 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
 
     if use_environment_variable_platform_helper_version:
         mocks.mock_platform_helper_versioning.platform_helper_version_override = None
-        mocks.mock_platform_helper_versioning.environment_variable_provider[
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-        ] = module_source_override
     else:
         mocks.mock_platform_helper_versioning.platform_helper_version_override = (
             expected_platform_helper_version
         )
-        mocks.mock_platform_helper_versioning.environment_variable_provider[
-            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-        ] = None
 
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+    ] = expected_platform_helper_version
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
     ] = module_source_override
