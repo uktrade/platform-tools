@@ -92,16 +92,14 @@ def generate(name):
 )
 def generate_terraform(name):
     click_io = ClickIOProvider()
-    config_provider = ConfigProvider(ConfigValidator())
-    environment_variable_provider = EnvironmentVariableProvider()
-    platform_helper_versioning = PlatformHelperVersioning(
-        click_io,
-        config_provider,
-        environment_variable_provider,
-    )
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator(session=session))
+        platform_helper_versioning = PlatformHelperVersioning(
+            click_io,
+            config_provider,
+            EnvironmentVariableProvider(),
+        )
         TerraformEnvironment(
             config_provider, TerraformManifestProvider(), click_io, platform_helper_versioning
         ).generate(name)
