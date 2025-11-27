@@ -581,7 +581,18 @@ class MockALBService:
                 "info": [
                     "Deployment Mode: copilot",
                     "Deleted rules: 3",
-                    "listener-rule-arn-doesnt-matter-8\nlistener-rule-arn-doesnt-matter-9\nlistener-rule-arn-doesnt-matter-10",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
                 ],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
@@ -603,7 +614,18 @@ class MockALBService:
                 "info": [
                     "Deployment Mode: dual-deploy-copilot-traffic",
                     "Deleted rules: 3",
-                    "listener-rule-arn-doesnt-matter-8\nlistener-rule-arn-doesnt-matter-9\nlistener-rule-arn-doesnt-matter-10",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
                 ],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
@@ -625,7 +647,14 @@ class MockALBService:
                 "info": [
                     "Deployment Mode: dual-deploy-platform-traffic",
                     "Created rules: 2",
-                    "platform-new-web-arn\nplatform-new-api-arn",
+                    "ARN: platform-new-web-arn",
+                    "Priority: 10000",
+                    "Hosts: web.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
+                    "ARN: platform-new-api-arn",
+                    "Priority: 11000",
+                    "Hosts: api.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
                 ],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
@@ -644,9 +673,19 @@ class MockALBService:
                 "info": [
                     "Deployment Mode: platform",
                     "Created rules: 2",
-                    "platform-new-web-arn\nplatform-new-api-arn",
+                    "ARN: platform-new-web-arn",
+                    "Priority: 10000",
+                    "Hosts: web.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
+                    "ARN: platform-new-api-arn",
+                    "Priority: 11000",
+                    "Hosts: api.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
                     "Deleted rules: 1",
-                    "listener-rule-arn-doesnt-matter-12",
+                    "ARN: listener-rule-arn-doesnt-matter-12",
+                    "Priority: 1000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
                 ],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
@@ -689,8 +728,30 @@ def test_alb_rules(
     if assert_created_rules:
         mock_boto_elbv2_client.create_rule = Mock(
             side_effect=[
-                {"Rules": [{"RuleArn": "platform-new-web-arn"}]},
-                {"Rules": [{"RuleArn": "platform-new-api-arn"}]},
+                {
+                    "Rules": [
+                        {
+                            "RuleArn": "platform-new-web-arn",
+                            "Priority": 10000,
+                            "Conditions": {
+                                "host-header": ["web.dev.test-app.uktrade.digital"],
+                                "path-pattern": ["/*"],
+                            },
+                        }
+                    ]
+                },
+                {
+                    "Rules": [
+                        {
+                            "RuleArn": "platform-new-api-arn",
+                            "Priority": 11000,
+                            "Conditions": {
+                                "host-header": ["api.dev.test-app.uktrade.digital"],
+                                "path-pattern": ["/*"],
+                            },
+                        }
+                    ]
+                },
             ]
         )
 
@@ -822,7 +883,7 @@ def test_alb_rules_create_with_rollback(
             call("Deployment Mode: dual-deploy-platform-traffic"),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
-            call("Rolledback rules by creating: [] \n and deleting ['platform-new-web-path-arn']"),
+            call("Rolled back rules by creating: [] \n and deleting ['platform-new-web-path-arn']"),
         ]
     )
 

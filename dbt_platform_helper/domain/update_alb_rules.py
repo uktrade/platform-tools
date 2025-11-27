@@ -45,9 +45,9 @@ class Deployment(Enum):
 
 @dataclass
 class OperationState:
-    created_rules: List[str] = field(default_factory=list)
+    created_rules: List[object] = field(default_factory=list)
     deleted_rules: List[object] = field(default_factory=list)
-    updated_rules: List[str] = field(default_factory=list)
+    updated_rules: List[object] = field(default_factory=list)
     listener_arn: str = ""
 
 
@@ -82,11 +82,10 @@ class UpdateALBRules:
             self._execute_rule_updates(environment, operation_state)
             if operation_state.created_rules:
                 self.io.info(f"Created rules: {len(operation_state.created_rules)}")
-                self.io.info("\n".join(operation_state.created_rules))
+                self._output_rule_changes(operation_state.created_rules)
             if operation_state.deleted_rules:
-                deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
-                self.io.info(f"Deleted rules: {len(deleted_arns)}")
-                self.io.info("\n".join(deleted_arns))
+                self.io.info(f"Deleted rules: {len(operation_state.deleted_rules)}")
+                self._output_rule_changes(operation_state.deleted_rules)
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
@@ -225,18 +224,19 @@ class UpdateALBRules:
                 ]
 
                 try:
-                    rule_arn = self.load_balancer.create_rule(
+                    rule = self.load_balancer.create_rule(
                         listener_arn,
                         actions,
                         conditions,
                         rule_priority,
                         tags,
-                    )["Rules"][0]["RuleArn"]
+                    )["Rules"][0]
+                    rule_arn = rule["RuleArn"]
 
                     if rule_arn in [rule["RuleArn"] for rule in platform_rules]:
-                        operation_state.updated_rules.append(rule_arn)
+                        operation_state.updated_rules.append(rule)
                     else:
-                        operation_state.created_rules.append(rule_arn)
+                        operation_state.created_rules.append(rule)
 
                 except ClientError as e:
                     if e.response["Error"]["Code"] == "PriorityInUse":
@@ -250,27 +250,31 @@ class UpdateALBRules:
 
                         self._delete_rules(existing_rule, operation_state)
 
-                        rule_arn = self.load_balancer.create_rule(
+                        rule = self.load_balancer.create_rule(
                             listener_arn,
                             actions,
                             conditions,
                             rule_priority,
                             tags,
-                        )["Rules"][0]["RuleArn"]
+                        )["Rules"][0]
 
-                        operation_state.created_rules.append(rule_arn)
+                        operation_state.created_rules.append(rule)
                     else:
                         raise
 
                 rule_priority += RULE_PRIORITY_INCREMENT
 
             # Remove dangling rules
-            deleted_arns = [rule["RuleArn"] for rule in operation_state.deleted_rules]
             managed_rules = [
-                *operation_state.created_rules,
-                *operation_state.updated_rules,
-                *deleted_arns,
+                rule["RuleArn"]
+                for rules in [
+                    operation_state.created_rules,
+                    operation_state.updated_rules,
+                    operation_state.deleted_rules,
+                ]
+                for rule in rules
             ]
+
             for rule in platform_rules:
                 if rule["RuleArn"] not in managed_rules:
                     self._delete_rules([rule], operation_state)
@@ -334,7 +338,8 @@ class UpdateALBRules:
         rollback_errors = []
         delete_rollbacks = []
         create_rollbacks = []
-        for rule_arn in operation_state.created_rules:
+        for rule in operation_state.created_rules:
+            rule_arn = rule["RuleArn"]
             try:
                 self.io.debug(f"Rolling back: Deleting created rule {rule_arn}")
                 self.load_balancer.delete_listener_rule_by_resource_arn(rule_arn)
@@ -373,5 +378,30 @@ class UpdateALBRules:
         else:
             self.io.info("Rollback completed successfully")
             self.io.info(
-                f"Rolledback rules by creating: {create_rollbacks} \n and deleting {delete_rollbacks}"
+                f"Rolled back rules by creating: {create_rollbacks} \n and deleting {delete_rollbacks}"
             )
+
+    def _output_rule_changes(self, rules):
+        for rule in rules:
+            hosts = []
+            paths = []
+
+            conditions = rule.get("Conditions", [])
+            if isinstance(conditions, list):
+                for condition in conditions:
+                    if condition["Field"] == "host-header":
+                        hosts.extend(condition["HostHeaderConfig"]["Values"])
+                    elif condition["Field"] == "path-pattern":
+                        paths.extend(condition["PathPatternConfig"]["Values"])
+            elif isinstance(conditions, dict):
+                hosts.extend(conditions.get("host-header"))
+                paths.extend(conditions.get("path-pattern"))
+
+            rule_arn = rule["RuleArn"]
+            priority = rule["Priority"]
+            hosts = ",".join(hosts)
+            paths = ",".join(paths)
+            self.io.info(f"ARN: {rule_arn}")
+            self.io.info(f"Priority: {priority}")
+            self.io.info(f"Hosts: {hosts}")
+            self.io.info(f"Paths: {paths}\n")
