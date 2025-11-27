@@ -16,8 +16,8 @@ phases:
       - echo "Deploying ${APPLICATION} environments"
       - cd "${CODEBUILD_SRC_DIR}"
       - |
-         if [[ -n "PINNED_PLATFORM_VERSION"]]; then
-           REQUIRED_VERSION="${PINNED_PLATFORM_VERSION}"
+         if [[ -n "PLATFORM_ORCHESTRATION_PINNED_VERSION"]]; then
+           REQUIRED_VERSION="${PLATFORM_ORCHESTRATION_PINNED_VERSION}"
          elif [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
            echo "Install platform-helper version from platform-config default version"
            REQUIRED_VERSION=$(yq -r '.default_versions.["platform-helper"]' platform-config.yml)
