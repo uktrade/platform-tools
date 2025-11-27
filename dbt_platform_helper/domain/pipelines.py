@@ -16,25 +16,6 @@ from dbt_platform_helper.providers.terraform_manifest import TerraformManifestPr
 from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 
-# Versioning:
-
-# Pipeline template
-# a. pass in an override to the pipeline class
-# b. set an env var and do not pass in an override
-# c. use the value set in platform-helper version
-
-# Modules used in the pipeline tf precedence:
-# 1. module source env vars:
-#   TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-#   TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-# 2. override pipeline parameter
-# 3. PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-# 4. default_version
-
-
-# auto:
-#
-
 
 class Pipelines:
     def __init__(
