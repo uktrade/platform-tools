@@ -135,6 +135,12 @@ class PlatformHelperVersioning:
     def get_template_version(self):
         if self.platform_helper_version_override:
             return self.platform_helper_version_override
+        platform_helper_env_override = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
+        if platform_helper_env_override:
+            return platform_helper_env_override
+
         return self.get_default_version()
 
     def get_pipeline_modules_source(self, pipeline_module_path: str, override_env_var_key: str):
