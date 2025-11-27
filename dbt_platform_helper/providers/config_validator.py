@@ -28,7 +28,7 @@ class ConfigValidator:
             self.validate_environment_pipelines,
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
-            self.validate_database_migration_input_sources,
+            self.validate_s3_data_migration_config,
             self.validate_cache_invalidation_config,
         ]
         self.io = io
@@ -204,7 +204,7 @@ class ConfigValidator:
         if errors:
             raise ConfigValidatorError("\n".join(errors))
 
-    def validate_database_migration_input_sources(self, config: dict):
+    def validate_s3_data_migration_config(self, config: dict):
         extensions = config.get("extensions", {})
         if not extensions:
             return
@@ -223,6 +223,10 @@ class ConfigValidator:
                 if "data_migration" not in env_config:
                     continue
                 data_migration = env_config.get("data_migration", {})
+                if extension.get("serve_static_content", {}):
+                    errors.append(
+                        "Data migration is not supported for static S3 buckets to avoid the risk of unintentionally exposing private data. However, you can copy data on an ad hoc basis using AWS CLI commands such as 'aws s3 sync' or 'aws s3 cp'."
+                    )
                 if "import" in data_migration and "import_sources" in data_migration:
                     errors.append(
                         f"Error in '{extension_name}.environments.{env}.data_migration': only the 'import_sources' property is required - 'import' is deprecated."

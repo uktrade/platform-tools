@@ -47,12 +47,20 @@ class HealthCheck(BaseModel):
 
 
 class Http(BaseModel):
+    alias: list[str] = Field(
+        description="List of HTTPS domain alias(es) of your service.", default=None
+    )
+    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=None)
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
     healthcheck: Optional[HealthCheck] = Field(default=None)
 
 
 class HttpOverride(BaseModel):
+    alias: Optional[list[str]] = Field(
+        description="List of HTTPS domain alias(es) of your service.", default=None
+    )
+    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=None)
     path: Optional[str] = Field(
         description="Requests to this path will be forwarded to your service.", default=None
     )
@@ -99,6 +107,12 @@ class Image(BaseModel):
 class VPC(BaseModel):
     placement: Optional[str] = Field(default=None)
 
+    @model_validator(mode="after")
+    def check_for_correct_network_properties(self):
+        if self.placement != "private":
+            raise PlatformException(f"Property 'placement' must always be set to 'private'.")
+        return self
+
 
 class Network(BaseModel):
     connect: Optional[bool] = Field(
@@ -106,6 +120,12 @@ class Network(BaseModel):
         default=None,
     )
     vpc: Optional[VPC] = Field(default=None)
+
+    @model_validator(mode="after")
+    def check_for_correct_network_properties(self):
+        if not self.connect:
+            raise PlatformException(f"Property 'connect' must always be set to 'true'.")
+        return self
 
 
 class Storage(BaseModel):

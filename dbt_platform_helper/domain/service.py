@@ -142,7 +142,9 @@ class ServiceManager:
         for service in service_models:
 
             model_dump = service.model_dump(
-                exclude_none=True, by_alias=True
+                exclude_none=True,
+                by_alias=True,
+                mode="json",
             )  # Use by_alias=True so that the Cooldown field 'in_' is written as 'in' in the output
             env_overrides = model_dump.get("environments", {}).get(environment)
             if env_overrides:
@@ -188,10 +190,16 @@ class ServiceManager:
                         if "http" in env_config:
                             if "alb" in env_config["http"]:
                                 del env_config["http"]["alb"]
+                            if isinstance(env_config["http"].get("alias", []), str):
+                                env_config["http"]["alias"] = [env_config["http"]["alias"]]
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
                         service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+
+                if "alias" in service_manifest.get("http", {}):
+                    if isinstance(service_manifest["http"]["alias"], str):
+                        service_manifest["http"]["alias"] = [service_manifest["http"]["alias"]]
 
                 service_manifest = self.file_provider.find_and_replace(
                     config=service_manifest,
