@@ -1,3 +1,4 @@
+import json
 from unittest.mock import ANY
 from unittest.mock import MagicMock
 from unittest.mock import call
@@ -566,7 +567,9 @@ class TestTerraformConduitStrategy:
 
         self.ssm_client = MagicMock()
 
-        self.ssm_client.get_parameter.return_value = {"Parameter": {"Value": "vpc-name"}}
+        self.ssm_client.get_parameter.return_value = {
+            "Parameter": {"Value": json.dumps({"vpc_name": "vpc-name"})}
+        }  # There are other values in that SSM parameter too, but we only care about 'vpc_name'
         self.clients = {"ecs": MagicMock(), "iam": MagicMock(), "ssm": self.ssm_client}
 
         self.session = MagicMock()

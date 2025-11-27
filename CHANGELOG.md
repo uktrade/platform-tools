@@ -1,5 +1,41 @@
 # Changelog
 
+## [15.13.1](https://github.com/uktrade/platform-tools/compare/15.13.0...15.13.1) (2025-11-26)
+
+
+### Bug Fixes
+
+* Changed http alias type to support multiple domain aliases in service config (off-ticket) ([#1157](https://github.com/uktrade/platform-tools/issues/1157)) ([45c63ee](https://github.com/uktrade/platform-tools/commit/45c63ee7928cb656bdb7b4dbe59a9058c3977916))
+
+## [15.13.0](https://github.com/uktrade/platform-tools/compare/15.12.1...15.13.0) (2025-11-25)
+
+
+### Features
+
+* Codebase pipeline stage to install shared build tools (DBTP-2484) ([#1129](https://github.com/uktrade/platform-tools/issues/1129)) ([1ff56c5](https://github.com/uktrade/platform-tools/commit/1ff56c52a1ea64a013a20c9af0675f70efa6ffb5))
+* Conduit retrieves VPC name from a single location (off-ticket) ([#1146](https://github.com/uktrade/platform-tools/issues/1146)) ([eb451f4](https://github.com/uktrade/platform-tools/commit/eb451f40518d547138a032984aac6b3dd817405f))
+* Create platform secrets (DBTP-2499) ([#1130](https://github.com/uktrade/platform-tools/issues/1130)) ([2639763](https://github.com/uktrade/platform-tools/commit/26397638ed2e260e00a8df3da003539e74ad6a19))
+* Enable additional CloudFront metrics to enhance Datadog reporting (DBTP-2218) ([#1122](https://github.com/uktrade/platform-tools/issues/1122)) ([f020465](https://github.com/uktrade/platform-tools/commit/f020465663e82266e063d43ee67b784216df9283))
+* Refactor secrets copy command (DBTP-2506) ([#1143](https://github.com/uktrade/platform-tools/issues/1143)) ([54ef5a3](https://github.com/uktrade/platform-tools/commit/54ef5a35ee328a29cbb042189895b27aa8db605a))
+* Remove secrets list command (DBTP-2505) ([#1140](https://github.com/uktrade/platform-tools/issues/1140)) ([972c90c](https://github.com/uktrade/platform-tools/commit/972c90cb72dada0ec1e120a3a4911d4d1e8052f6))
+* Validation for service model fields (off-ticket) ([#1151](https://github.com/uktrade/platform-tools/issues/1151)) ([017aab3](https://github.com/uktrade/platform-tools/commit/017aab36d0dbe548d72a912eb5877b83c1518d31))
+
+
+### Bug Fixes
+
+* Add support for sticky sessions (off-ticket) ([#1156](https://github.com/uktrade/platform-tools/issues/1156)) ([ad2ae01](https://github.com/uktrade/platform-tools/commit/ad2ae01858d7cfbad3952dc3288e748c2be377c3))
+* Allow ecs cluster without an alb extension (off-ticket) ([#1155](https://github.com/uktrade/platform-tools/issues/1155)) ([77c6fe3](https://github.com/uktrade/platform-tools/commit/77c6fe39c29bdb89e54430b06f6ae7377f4cee84))
+* ECS cluster depends on ALB creation (off-ticket) ([#1131](https://github.com/uktrade/platform-tools/issues/1131)) ([bc8d8f3](https://github.com/uktrade/platform-tools/commit/bc8d8f3dbd7fb12319fc96995a3bbe84f0b5a058))
+* Ensure minimum capacity on deployment (DBTP-2510) ([#1138](https://github.com/uktrade/platform-tools/issues/1138)) ([c1a0cb1](https://github.com/uktrade/platform-tools/commit/c1a0cb1127aeca74c18600f1a835ec7f4433fadc))
+* Give OpenSearch upgrade permission to env pipelines (off-ticket) ([#1141](https://github.com/uktrade/platform-tools/issues/1141)) ([0c8fb99](https://github.com/uktrade/platform-tools/commit/0c8fb995b3c53090bcfda56350abd2ca2399d6b7))
+* Improve deployment logs (DBTP-2485) ([#1134](https://github.com/uktrade/platform-tools/issues/1134)) ([59053d6](https://github.com/uktrade/platform-tools/commit/59053d6671efe0ad0645007b67c77d9aaed0ee4d))
+* Migrate service manifests removes config (DBTP-2476) ([#1120](https://github.com/uktrade/platform-tools/issues/1120)) ([f89c1ca](https://github.com/uktrade/platform-tools/commit/f89c1cac63a6531a2eb72cd833528c8155652f92))
+* Missing permission for codebase pipelines (off-ticket) ([#1150](https://github.com/uktrade/platform-tools/issues/1150)) ([cf229f2](https://github.com/uktrade/platform-tools/commit/cf229f2cb6bfb95d794be8bc5663931f1eac7e2a))
+* No data_migration for static S3 buckets (DBTP-2533) ([#1154](https://github.com/uktrade/platform-tools/issues/1154)) ([b81b43f](https://github.com/uktrade/platform-tools/commit/b81b43f7e353f02e9354b4617ca1fdea949de8af))
+* Service type enum serialisation error (Off-ticket) ([#1147](https://github.com/uktrade/platform-tools/issues/1147)) ([84416bf](https://github.com/uktrade/platform-tools/commit/84416bf28208d9269df954dd311427b0265e78e0))
+* Show cloudwatch log URL for failing container (off-ticket) ([#1139](https://github.com/uktrade/platform-tools/issues/1139)) ([f288881](https://github.com/uktrade/platform-tools/commit/f288881aa96e29cd940a24636919f0d90af1f40a))
+* Various bug fixes around removing Copilot (DBTP-2469) ([#1114](https://github.com/uktrade/platform-tools/issues/1114)) ([d2bd641](https://github.com/uktrade/platform-tools/commit/d2bd6411d4c9e23376ce92c90286b8ecdd1efb70))
+
 ## [15.12.1](https://github.com/uktrade/platform-tools/compare/15.12.0...15.12.1) (2025-10-28)
 
 

@@ -601,7 +601,7 @@ class TestLoadBalancerProviderPagination:
         ).get_paginator().paginate.assert_called_once()
 
         mock_session.client("ssm").get_parameter.assert_called_once_with(
-            Name="/platform/applications/my-app/environments/my-env"
+            Name="/platform/applications/my-app/environments/my-env", WithDecryption=True
         )
 
     def test_get_https_certificate_for_listener_given_multiple_pages(self):
