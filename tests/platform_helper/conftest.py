@@ -624,14 +624,9 @@ schema_version: {SERVICE_CONFIG_SCHEMA_VERSION}
 name: web
 type: Load Balanced Web Service
 
-# Distribute traffic to your service.
 http:
-  # Requests to this path will be forwarded to your service.
   alias: web.${"{ENVIRONMENT_NAME}"}.test-app.uktrade.digital
-  # To match all requests you can use the "/" path.
   path: '/'
-  # You can specify a custom health check path. The default is "/".
-  # healthcheck: '/'
   target_container: nginx
   healthcheck:
     path: '/'
@@ -646,23 +641,20 @@ http:
 sidecars:
   sidecar:
     port: 443
-    image: public.ecr.aws//sidecar:tlatest
+    image: public.ecr.aws//sidecar:latest
     variables:
       SERVER: localhost:8000
 
-
-# Configuration for your containers and service.
 image:
   location: public.ecr.aws/non-prod-acc/test-app/application:${"{IMAGE_TAG}"}
-  # Port exposed through your container to route traffic to it.
   port: 8080
 
-cpu: 512 # Number of CPU units for the task.
-memory: 2048 # Amount of memory in MiB used by the task.
-count: 1 # Number of tasks that should be running in your service.
-exec: true # Enable running commands in your container.
+cpu: 512
+memory: 2048
+count: 1
+exec: true
 network:
-  connect: true # Enable Service Connect for intra-environment traffic between services.
+  connect: true
   vpc:
     placement: 'private'
 
@@ -693,6 +685,7 @@ environments:
     sidecars:
       ipfilter:
         image: public.ecr.aws/uktrade/ip-filter:tag-latest
+        port: 443
 """
     )
 
@@ -922,6 +915,25 @@ def create_valid_service_config_file(fakefs, valid_service_config):
         Path(f"{SERVICE_DIRECTORY}/web/{SERVICE_CONFIG_FILE}"),
         contents=yaml.dump(valid_service_config),
     )
+
+
+@pytest.fixture
+def create_valid_multiple_service_config_files(fakefs, valid_service_config):
+    services = ["api", "web"]
+
+    for service in services:
+        valid_service_config["name"] = service
+        valid_service_config["http"]["alias"] = f"{service}.dev.test-app.uktrade.digital"
+        valid_service_config["http"]["path"] = "/"
+        valid_service_config["environments"]["prod"][
+            "alias"
+        ] = f"{service}.prod.test-app.uktrade.digital"
+        valid_service_config["environments"]["prod"]["path"] = "/"
+
+        fakefs.create_file(
+            Path(f"{SERVICE_DIRECTORY}/{service}/{SERVICE_CONFIG_FILE}"),
+            contents=yaml.dump(valid_service_config),
+        )
 
 
 # TODO: DBTP-1969: - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.

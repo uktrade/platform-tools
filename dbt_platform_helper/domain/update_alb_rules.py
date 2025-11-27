@@ -259,6 +259,8 @@ class UpdateALBRules:
                         )["Rules"][0]["RuleArn"]
 
                         operation_state.created_rules.append(rule_arn)
+                    else:
+                        raise
 
                 rule_priority += RULE_PRIORITY_INCREMENT
 
@@ -273,7 +275,8 @@ class UpdateALBRules:
                 if rule["RuleArn"] not in managed_rules:
                     self._delete_rules([rule], operation_state)
 
-            # Remove dummy rules
+        # Remove dummy rules
+        if service_deployment_mode == Deployment.PLATFORM.value:
             self._delete_rules(mapped_rules.get(RuleType.DUMMY.value, []), operation_state)
 
         if (
