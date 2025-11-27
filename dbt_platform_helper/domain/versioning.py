@@ -133,6 +133,8 @@ class PlatformHelperVersioning:
         )
 
     def get_template_version(self):
+        if self.is_managed():
+            return self.environment_variable_provider.get("PLATFORM_ORCHESTRATION_PINNED_VERSION")
         if self.platform_helper_version_override:
             return self.platform_helper_version_override
         platform_helper_env_override = self.environment_variable_provider.get(
