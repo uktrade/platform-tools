@@ -108,7 +108,6 @@ class ConfigProvider:
 
     def _validate_schema_version(self):
         config_schema_version = self.config.get("schema_version")
-        # OK
         config_platform_helper_version = self.config.get("default_versions", {}).get(
             "platform-helper", ""
         )
@@ -200,9 +199,6 @@ class ConfigProvider:
         without_defaults_entry = {
             name: data if data else {} for name, data in environments.items() if name != "*"
         }
-
-        # What does this line do?
-        config.get("default_versions", {})
 
         def combine_env_data(data):
             return {
