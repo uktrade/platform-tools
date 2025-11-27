@@ -143,7 +143,7 @@ class PlatformHelperVersioning:
 
         return self.get_default_version()
 
-    def get_pipeline_modules_source(self, pipeline_module_path: str, override_env_var_key: str):
+    def _get_pipeline_modules_source(self, pipeline_module_path: str, override_env_var_key: str):
         pipeline_module_override = self.environment_variable_provider.get(override_env_var_key)
 
         if pipeline_module_override:
@@ -162,13 +162,13 @@ class PlatformHelperVersioning:
         return f"{pipeline_module_path}{self.get_default_version()}"
 
     def get_environment_pipeline_modules_source(self):
-        return self.get_pipeline_modules_source(
+        return self._get_pipeline_modules_source(
             ENVIRONMENT_PIPELINE_MODULE_PATH,
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
         )
 
     def get_codebase_pipeline_modules_source(self):
-        return self.get_pipeline_modules_source(
+        return self._get_pipeline_modules_source(
             CODEBASE_PIPELINE_MODULE_PATH,
             TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
         )

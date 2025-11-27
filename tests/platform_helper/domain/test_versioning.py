@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import (
@@ -11,6 +12,9 @@ from dbt_platform_helper.constants import (
 )
 from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.constants import (
+    TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
@@ -39,6 +43,7 @@ class PlatformHelperVersioningMocks:
         self.mock_skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
         self.mock_environment_variable_provider = {
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR: "extensions_env_override",
             TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "codebase_env_override",
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY: "platform_helper_env_override",
         }
@@ -212,7 +217,7 @@ class VersioningMocks:
         }
 
 
-class TestPlatformHelperVersioningPipelinesVersioning:
+class TestPlatformHelperVersioningEnvironmentPipelinesVersioning:
 
     def test_environment_platform_helper_versioning_precedence_with_env_override(self):
         mocks = PlatformHelperVersioningMocks()
@@ -264,6 +269,102 @@ class TestPlatformHelperVersioningPipelinesVersioning:
             **mocks.params()
         ).get_environment_pipeline_modules_source()
         assert result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}1.1.1"
+
+
+class TestPlatformHelperVersioningCodebasePipelinesVersioning:
+    def test_environment_platform_helper_versioning_precedence_with_env_override(self):
+        mocks = PlatformHelperVersioningMocks()
+        result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
+        assert result == "codebase_env_override"
+
+    def test_environment_platform_helper_versioning_without_env_override_falls_back_to_param_override(
+        self,
+    ):
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
+        result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
+        assert result == f"{CODEBASE_PIPELINE_MODULE_PATH}platform_helper_param_override"
+
+    def test_environment_platform_helper_versioning_without_param_override_falls_back_to_env_override(
+        self,
+    ):
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
+        mocks.mock_platform_helper_version_override = None
+        result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
+        assert result == f"{CODEBASE_PIPELINE_MODULE_PATH}platform_helper_env_override"
+
+    def test_environment_platform_helper_versioning_without_any_override_defaults_to_config(
+        self, platform_config_for_env_pipelines
+    ):
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_platform_helper_version_override = None
+        result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
+        assert result == f"{CODEBASE_PIPELINE_MODULE_PATH}1.1.1"
+
+    def test_get_template_version_override_parameter_precedence(
+        self, platform_config_for_env_pipelines
+    ):
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
+
+        mocks = PlatformHelperVersioningMocks()
+
+        result = PlatformHelperVersioning(**mocks.params()).get_template_version()
+        assert result == "platform_helper_param_override"
+
+    def test_get_template_version_env_var_override_fallback_when_no_variable_passed_in(
+        self, platform_config_for_env_pipelines
+    ):
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_platform_helper_version_override = None
+
+        result = PlatformHelperVersioning(**mocks.params()).get_template_version()
+        assert result == "platform_helper_env_override"
+
+    def test_get_template_version_default_fallback_when_no_overrides(
+        self, platform_config_for_env_pipelines
+    ):
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_platform_helper_version_override = None
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+
+        result = PlatformHelperVersioning(**mocks.params()).get_template_version()
+        assert result == "1.1.1"
+
+
+class TestPlatformHelperVersioningEnvironmentVersioning:
+    def test_get_extensions_module_source_precedence_with_env_override(self):
+        mocks = PlatformHelperVersioningMocks()
+
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        assert result == f"extensions_env_override"
+
+    def test_get_extensions_module_source_is_none_with_no_env_var_override(self):
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = None
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        assert result == None
 
 
 class TestAWSVersioning:
