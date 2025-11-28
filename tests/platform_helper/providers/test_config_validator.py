@@ -436,36 +436,114 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
         (
             {},
             {},
-            "For auto default platform-helper version, environment and codebase pipelines must be configured",
+            "For auto default platform-helper version, environment and codebase pipelines "
+            "must be configured in platform-config.yml. environment_pipelines is not configured.\n\n"
+            "For auto default platform-helper version, environment and codebase pipelines "
+            "must be configured in platform-config.yml. codebase_pipelines is not configured.\n",
         ),
-        # ({},{},"Error"),
-        # ({},{},"Error"),
-        # ({
-        #     "main": {
-        #         "account": "non-prod",
-        #         "slack_channel": "/codebuild/notification_channel",
-        #         "trigger_on_push": True,
-        #         "environments": {
-        #             "dev": {
-        #                 "requires_approval": False,
-        #                 "pipeline_to_trigger": "main-prod"
-        #             },
-        #         },
-        #     },
-        #     "main-prod": {
-        #         "account": "prod",
-        #         "slack_channel": "/codebuild/notification_channel",
-        #         "trigger_on_push": True,
-        #         "environments": {
-        #             "prod": {
-        #                 "pipeline_to_trigger": "main-prod"
-        #             },
-        #         },
-        #     },
-        # },
-        # {
-        #     },
-        # "Error"),
+        (
+            {
+                "main": {
+                    "account": "non-prod",
+                    "slack_channel": "/codebuild/channel",
+                    "trigger_on_push": True,
+                    "environments": {
+                        "dev": {"requires_approval": False},
+                        "staging": {"requires_approval": False},
+                    },
+                }
+            },
+            {},
+            "For auto default platform-helper version, environment and codebase pipelines "
+            "must be configured in platform-config.yml. codebase_pipelines is not configured.\n",
+        ),
+        (
+            {},
+            {
+                "application": {
+                    "repository": "uktrade/demodjango",
+                    "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
+                }
+            },
+            "For auto default platform-helper version, environment and codebase pipelines "
+            "must be configured in platform-config.yml. environment_pipelines is not configured.\n",
+        ),
+        (
+            {
+                "main": {
+                    "account": "non-prod",
+                    "slack_channel": "/codebuild/channel",
+                    "trigger_on_push": True,
+                    "environments": {"dev": {"requires_approval": False}},
+                }
+            },
+            {
+                "application": {
+                    "repository": "uktrade/demodjango",
+                    "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
+                }
+            },
+            None,
+        ),
+        (
+            {
+                "main": {
+                    "account": "non-prod",
+                    "slack_channel": "/codebuild/channel",
+                    "trigger_on_push": True,
+                    "environments": {"prod": {"requires_approval": True}},
+                }
+            },
+            {
+                "application": {
+                    "repository": "uktrade/demodjango",
+                    "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
+                }
+            },
+            "Managed upgrades enabled: (environment_pipelines) Pipeline 'main' environment 'prod' "
+            "cannot have manual approval when platform-helper is 'auto'.",
+        ),
+        (
+            {
+                "main": {
+                    "account": "non-prod",
+                    "slack_channel": "/codebuild/channel",
+                    "trigger_on_push": True,
+                    "environments": {"dev": {"requires_approval": False}},
+                }
+            },
+            {
+                "application": {
+                    "repository": "uktrade/demodjango",
+                    "pipelines": [
+                        {
+                            "name": "main",
+                            "environments": [{"name": "prod", "requires_approval": True}],
+                        }
+                    ],
+                }
+            },
+            "Managed upgrades enabled: (codebase_pipelines) Pipeline 'main' environment 'prod' "
+            "cannot have manual approval when platform-helper is 'auto'.",
+        ),
+        (
+            {},
+            {
+                "application": {
+                    "repository": "uktrade/demodjango",
+                    "pipelines": [
+                        {
+                            "name": "main",
+                            "environments": [{"name": "prod", "requires_approval": True}],
+                        }
+                    ],
+                }
+            },
+            "For auto default platform-helper version, environment and codebase pipelines "
+            "must be configured in platform-config.yml. environment_pipelines is not configured.\n\n"
+            "Managed upgrades enabled: (codebase_pipelines) Pipeline 'main' environment 'prod' "
+            "cannot have manual approval when platform-helper is 'auto'.",
+        ),
     ],
 )
 def test_validate_config_for_managed_upgrades(
@@ -480,7 +558,13 @@ def test_validate_config_for_managed_upgrades(
     config["codebase_pipelines"] = codebase_pipeline_config
     config["environment_pipelines"] = env_pipeline_config
 
-    with pytest.raises(ConfigValidatorError) as exception:
-        ConfigValidator().validate_config_for_managed_upgrades(config)
+    validator = ConfigValidator()
 
-    assert str(exception.value) == expected_error
+    if expected_error:
+        with pytest.raises(ConfigValidatorError) as exception:
+            validator.validate_config_for_managed_upgrades(config)
+
+        assert str(exception.value) == expected_error
+
+    else:
+        validator.validate_config_for_managed_upgrades(config)

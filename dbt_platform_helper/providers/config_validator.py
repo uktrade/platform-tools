@@ -261,32 +261,7 @@ class ConfigValidator:
         if errors:
             raise ConfigValidatorError("\n".join(errors))
 
-    # def validate_config_for_managed_upgrades(self, config: dict):
-    #     errors = []
-    #     if config.get("default_versions").get("platform-helper") == "auto":
-    #         errors.append(
-    #             f"Your service is configured for managed upgrades.  Pipelines cannot contain manual approvals."
-    #         )
-    #         raise ConfigValidatorError("\n".join(errors))
-
-    # def validate_config_for_managed_upgrades(self, config: dict, pipelines: list = ["environment_pipelines"]):
-    #     errors = []
-
-    #     if config.get("default_versions", {}).get("platform-helper") == "auto":
-    #         for pipelines_key in pipelines:
-    #             for pipeline_name, pipeline in config.get(pipelines_key, {}).items():
-    #                 environments = pipeline.get("environments", {})
-    #                 for env_name, env_config in environments.items():
-    #                     if isinstance(env_config, dict) and env_config.get("requires_approval"):
-    #                         errors.append(
-    #                             f"Your service is configured for managed upgrades. Pipeline '{pipeline_name}' environment '{env_name}' "
-    #                             "cannot have manual approval when platform-helper is 'auto'."
-    #                         )
-
-    #             if errors:
-    #                 raise ConfigValidatorError("\n".join(errors))
-
-    def validate_config_for_managed_upgrades(self, config: dict, pipelines_to_check=None):
+    def validate_config_for_managed_upgrades(self, config: dict):
         """
         Validates that pipelines do not contain manual approvals when managed
         upgrades are enabled.
@@ -296,28 +271,43 @@ class ConfigValidator:
             pipelines_to_check (list[str], optional): List of pipeline sections to validate.
                 Defaults to ["environment_pipelines", "codebase_pipelines"].
         Raises:
-            ConfigValidatorError: If any pipeline contains manual approvals when platform-helper is "auto".
+            ConfigValidatorError:
+            - If any pipeline contains manual approvals when platform-helper is "auto".
+            - If platform-config.yml is missing environment_pipelines or codebase_pipelines configuration.
         """
-        pipelines_to_check = pipelines_to_check or ["environment_pipelines", "codebase_pipelines"]
+        pipelines_to_check = ["environment_pipelines", "codebase_pipelines"]
         errors = []
 
         if config.get("default_versions", {}).get("platform-helper") == "auto":
             for pipeline_section in pipelines_to_check:
                 pipelines = config.get(pipeline_section, {})
+
                 if not pipelines:
                     errors.append(
-                        f"Pipeline section '{pipeline_section}' is missing but required for managed upgrades."
+                        f"For auto default platform-helper version, environment and codebase pipelines must be configured in platform-config.yml. {pipeline_section} is not configured.\n"
                     )
                     continue
 
                 for pipeline_name, pipeline in pipelines.items():
-                    environments = pipeline.get("environments", {})
-                    for env_name, env_config in environments.items():
-                        if isinstance(env_config, dict) and env_config.get("requires_approval"):
-                            errors.append(
-                                f"Managed upgrades enabled: Pipeline '{pipeline_name}' environment '{env_name}' "
-                                "cannot have manual approval when platform-helper is 'auto'."
-                            )
+                    if pipeline_section == "environment_pipelines":
+                        environments = pipeline.get("environments", {})
+                        for env_name, env_config in environments.items():
+                            if isinstance(env_config, dict) and env_config.get("requires_approval"):
+                                errors.append(
+                                    f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
+                                    "cannot have manual approval when platform-helper is 'auto'."
+                                )
+
+                    elif pipeline_section == "codebase_pipelines":
+                        for pipeline_config in pipeline.get("pipelines", []):
+                            env_list = pipeline_config.get("environments", [])
+                            for env_config in env_list:
+                                env_name = env_config.get("name")
+                                if env_config.get("requires_approval"):
+                                    errors.append(
+                                        f"Managed upgrades enabled: (codebase_pipelines) Pipeline '{pipeline_config.get('name')}' environment '{env_name}' "
+                                        "cannot have manual approval when platform-helper is 'auto'."
+                                    )
 
         if errors:
             raise ConfigValidatorError("\n".join(errors))
