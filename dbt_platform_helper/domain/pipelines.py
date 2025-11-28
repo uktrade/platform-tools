@@ -13,7 +13,6 @@ from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
-from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -24,14 +23,12 @@ class Pipelines:
         terraform_manifest_provider: TerraformManifestProvider,
         ecr_provider: ECRProvider,
         get_git_remote: Callable[[], str],
-        get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         platform_helper_versioning: PlatformHelperVersioning = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
-        self.get_codestar_arn = get_codestar_arn
         self.terraform_manifest_provider = terraform_manifest_provider
         self.ecr_provider = ecr_provider
         self.io = io
@@ -70,15 +67,9 @@ class Pipelines:
             self.io.warn("No pipelines defined: nothing to do.")
             return
 
-        app_name = get_application_name()
-
         git_repo = self.get_git_remote()
         if not git_repo:
             self.io.abort_with_error("The current directory is not a git repository")
-
-        codestar_connection_arn = self.get_codestar_arn(app_name)
-        if codestar_connection_arn is None:
-            self.io.abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
         base_path = Path(".")
         copilot_pipelines_dir = base_path / f"copilot/pipelines"

@@ -43,10 +43,6 @@ class PipelineMocks:
         self.io.abort_with_error = Mock(side_effect=SystemExit(1))
         self.mock_git_remote = Mock()
         self.mock_git_remote.return_value = "uktrade/test-app-deploy"
-        self.mock_codestar = Mock()
-        self.mock_codestar.return_value = (
-            f"arn:aws:codestar-connections:eu-west-2:1234567:connection/{app_name}"
-        )
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
         platform_helper_versioning_mocks = PlatformHelperVersioningMocks()
         platform_helper_versioning_mocks.mock_config_provider = self.mock_config_provider
@@ -61,7 +57,6 @@ class PipelineMocks:
             "ecr_provider": self.mock_ecr_provider,
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
-            "get_codestar_arn": self.mock_codestar,
             "platform_helper_versioning": self.mock_platform_helper_versioning,
         }
 
