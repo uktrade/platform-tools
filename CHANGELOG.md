@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.14.0](https://github.com/uktrade/platform-tools/compare/15.13.1...15.14.0) (2025-11-28)
+
+
+### Features
+
+* Post-nopilot load balancer rules (DBTP-2402) ([#1136](https://github.com/uktrade/platform-tools/issues/1136)) ([989d28b](https://github.com/uktrade/platform-tools/commit/989d28b5c80e7236504cc151aa11a41c78bfd008))
+
+
+### Bug Fixes
+
+* Add missing pipeline input artifact (off-ticket) ([#1160](https://github.com/uktrade/platform-tools/issues/1160)) ([94f8674](https://github.com/uktrade/platform-tools/commit/94f8674652a949342b4de8436e38577c94d50162))
+* Send deployment failure notifications to Slack channel (DBTP-2512) ([#1159](https://github.com/uktrade/platform-tools/issues/1159)) ([30a829e](https://github.com/uktrade/platform-tools/commit/30a829e1c963487cd14a2889bd761323d9f620e3))
+
 ## [15.13.1](https://github.com/uktrade/platform-tools/compare/15.13.0...15.13.1) (2025-11-26)
 
 
