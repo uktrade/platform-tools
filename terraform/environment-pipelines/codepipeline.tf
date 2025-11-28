@@ -95,9 +95,9 @@ resource "aws_codepipeline" "environment_pipeline" {
           { name : "REPOSITORY", value : var.repository },
           { name : "SLACK_CHANNEL_ID", value : var.slack_channel, type : "PARAMETER_STORE" },
           { name : "SLACK_THREAD_ID", value : "#{variables.SLACK_THREAD_ID}" },
-          { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
+          { name : "PLATFORM_HELPER_VERSION_OVERRIDE", value : var.pinned_version ? null : "#{variables.PLATFORM_HELPER_VERSION_OVERRIDE}" },
           { name : "CODESTAR_CONNECTION_ARN", value : data.external.codestar_connections.result["ConnectionArn"] },
-          { name : "PINNED_PLATFORM_VERSION", value : var.pinned_platform_version },
+          { name : "PLATFORM_ORCHESTRATION_PINNED_VERSION", value : var.pinned_version },
         ])
       }
     }
