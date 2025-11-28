@@ -212,15 +212,6 @@ def set_ssm_param(
     client.put_parameter(**parameter_args)
 
 
-def get_codestar_connection_arn(app_name):
-    session = get_aws_session_or_abort()
-    response = session.client("codestar-connections").list_connections()
-
-    for connection in response["Connections"]:
-        if connection["ConnectionName"] == app_name:
-            return connection["ConnectionArn"]
-
-
 def get_account_details(sts_client=None):
     if not sts_client:
         sts_client = get_aws_session_or_abort().client("sts")

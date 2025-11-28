@@ -32,7 +32,6 @@ class Pipelines:
         terraform_manifest_provider: TerraformManifestProvider,
         ecr_provider: ECRProvider,
         get_git_remote: Callable[[], str],
-        get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         environment_variable_provider: EnvironmentVariableProvider = None,
@@ -40,7 +39,6 @@ class Pipelines:
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
-        self.get_codestar_arn = get_codestar_arn
         self.terraform_manifest_provider = terraform_manifest_provider
         self.ecr_provider = ecr_provider
         self.io = io
