@@ -133,6 +133,7 @@ phases:
                 
           STATUS_EMOJI=":large_green_circle:"
           STATUS_TEXT="COMPLETE"
+          SEND_TO_MAIN_CHANNEL="false"
         
           IMAGE_TAG=${DEPLOY_TAG} copilot svc deploy --env "${ENVIRONMENT}" --name "${SERVICE}" --force
           copilot_deploy_status=$?
@@ -140,9 +141,10 @@ phases:
           if [ ${copilot_deploy_status} -ne 0 ]; then
             STATUS_EMOJI=":red_circle:"
             STATUS_TEXT="FAILED"
+            SEND_TO_MAIN_CHANNEL="true"
           fi
           MESSAGE=":rocket:${STATUS_EMOJI} ${STATUS_TEXT} - Copilot deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
-          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel "${SEND_TO_MAIN_CHANNEL}"
           exit ${copilot_deploy_status}
         else
           # Build image URI
@@ -224,10 +226,17 @@ phases:
               ;;
           esac
 
+        # Add flag only when deploy failed
+        if [[ "${deploy_status}" == "ROLLBACK_SUCCESSFUL" || "${deploy_status}" == "ROLLBACK_FAILED" ]]; then
+          SEND_TO_MAIN_CHANNEL="true"
+        else
+          SEND_TO_MAIN_CHANNEL="false"
+        fi
+
           # Send notification on successful deployment or exit with an error code
           if [ "${deploy_status}" == "SUCCESSFUL" ]; then
             MESSAGE=":rocket:${STATUS_EMOJI} ${STATUS_TEXT} - Copilot deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
-            platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+            platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel "${SEND_TO_MAIN_CHANNEL}"
           else
             echo "Error: Deployment status is ${deploy_status}" | tee output.log
             exit 1
@@ -244,5 +253,5 @@ phases:
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
           MESSAGE=":rocket::red_circle: FAILED - Copilot deployment of tag \`${DEPLOY_TAG}\` to service \`${SERVICE}\` for environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
-          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel true
         fi
