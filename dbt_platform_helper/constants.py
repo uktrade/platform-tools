@@ -7,6 +7,9 @@ ENVIRONMENT_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
 )
 
+EXTENSIONS_MODULE_PATH = (
+    "git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref="
+)
 CODEBASE_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref="
 )
@@ -21,6 +24,7 @@ TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR = (
 TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR = (
     "TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE"
 )
+PLATFORM_ORCHESTRATION_PINNED_VERSION = "PLATFORM_ORCHESTRATION_PINNED_VERSION"
 TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR = "TERRAFORM_MODULE_SOURCE_TYPE"  # "LOCAL", "SSH", "OVERRIDE"
 IMAGE_TAG_ENV_VAR = "IMAGE_TAG"
 PLATFORM_HELPER_PACKAGE_NAME = "dbt-platform-helper"

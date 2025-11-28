@@ -52,3 +52,8 @@ variable "trigger_on_push" {
   default = true
 }
 
+variable "is_managed" {
+  type    = bool
+  default = false
+}
+
