@@ -7,6 +7,9 @@ ENVIRONMENT_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
 )
 
+EXTENSIONS_MODULE_PATH = (
+    "git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref="
+)
 CODEBASE_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref="
 )

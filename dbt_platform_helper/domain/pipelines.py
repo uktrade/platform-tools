@@ -106,6 +106,7 @@ class Pipelines:
                     self.platform_helper_versioning.get_environment_pipeline_modules_source(),
                     deploy_branch,
                     account_id,
+                    self.platform_helper_versioning.is_managed(),
                 )
 
         if has_codebase_pipelines:
@@ -120,6 +121,12 @@ class Pipelines:
                 for codebase, repo in ecrs_to_be_managed.items()
                 if repo in ecrs_already_provisioned
             }
+
+            print("TEMPLATE: ", self.platform_helper_versioning.get_template_version())
+            print(
+                "CODEBASE_PIPELINE SOURCE: ",
+                self.platform_helper_versioning.get_codebase_pipeline_modules_source(),
+            )
 
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
@@ -142,6 +149,7 @@ class Pipelines:
         module_source: str,
         deploy_branch: str,
         aws_account_id: str,
+        is_managed: bool,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -155,6 +163,7 @@ class Pipelines:
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
                 "deploy_account_id": aws_account_id,
+                "is_managed": is_managed,
             }
         )
 

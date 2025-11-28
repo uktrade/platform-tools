@@ -6,6 +6,7 @@ import pytest
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
+from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import PLATFORM_ORCHESTRATION_PINNED_VERSION
 from dbt_platform_helper.constants import (
@@ -386,7 +387,7 @@ class TestPlatformHelperVersioningAuto:
         result = PlatformHelperVersioning(
             **mocks.params()
         ).get_environment_pipeline_modules_source()
-        assert result == "version_passed_in_from_platform_upgrade"
+        assert result == f"{EXTENSIONS_MODULE_PATH}version_passed_in_from_platform_upgrade"
 
     def test_get_codebase_pipeline_modules_source_is_pinned_version_given_auto(
         self, platform_config_for_env_pipelines
@@ -403,7 +404,7 @@ class TestPlatformHelperVersioningAuto:
         )
 
         result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
-        assert result == "version_passed_in_from_platform_upgrade"
+        assert result == f"{EXTENSIONS_MODULE_PATH}version_passed_in_from_platform_upgrade"
 
     def test_get_extension_modules_source_is_pinned_version_given_auto(
         self, platform_config_for_env_pipelines
@@ -420,7 +421,7 @@ class TestPlatformHelperVersioningAuto:
         )
 
         result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
-        assert result == "version_passed_in_from_platform_upgrade"
+        assert result == f"{EXTENSIONS_MODULE_PATH}version_passed_in_from_platform_upgrade"
 
     def test_get_template_version_is_pinned_version_given_auto(
         self, platform_config_for_env_pipelines
