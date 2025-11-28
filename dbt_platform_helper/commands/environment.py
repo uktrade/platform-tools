@@ -8,7 +8,11 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.cloudformation import CloudFormation
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.vpc import VpcProvider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -91,7 +95,14 @@ def generate_terraform(name):
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator(session=session))
-        TerraformEnvironment(config_provider).generate(name)
+        platform_helper_versioning = PlatformHelperVersioning(
+            click_io,
+            config_provider,
+            EnvironmentVariableProvider(),
+        )
+        TerraformEnvironment(
+            config_provider, TerraformManifestProvider(), click_io, platform_helper_versioning
+        ).generate(name)
 
     except PlatformException as err:
         click_io.abort_with_error(str(err))
