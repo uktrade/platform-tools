@@ -499,7 +499,8 @@ data "aws_iam_policy_document" "postgres" {
       "lambda:UpdateFunctionConfiguration",
       "lambda:CreateFunction",
       "lambda:DeleteFunction",
-      "lambda:TagResource"
+      "lambda:TagResource",
+      "lambda:PutFunctionConcurrency"
     ]
     resources = [for env in local.environment_config :
       "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
