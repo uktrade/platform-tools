@@ -498,7 +498,8 @@ data "aws_iam_policy_document" "postgres" {
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
       "lambda:CreateFunction",
-      "lambda:DeleteFunction"
+      "lambda:DeleteFunction",
+      "lambda:TagResource"
     ]
     resources = [for env in local.environment_config :
       "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
