@@ -110,7 +110,7 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
 
       filter {
         type    = "HEAD_REF"
-        pattern = "^refs/heads/${filter_group.value}$"
+        pattern = "^refs/heads/${replace(filter_group.value, "*", ".*")}$"
       }
     }
   }
