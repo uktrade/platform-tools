@@ -932,7 +932,7 @@ def create_valid_multiple_service_config_files(fakefs, valid_service_config):
 
     for service in services:
         valid_service_config["name"] = service
-        valid_service_config["http"]["alias"] = f"{service}.dev.test-app.uktrade.digital"
+        valid_service_config["http"]["alias"] = [f"{service}.dev.test-app.uktrade.digital"]
         valid_service_config["http"]["path"] = "/"
         valid_service_config["environments"]["prod"][
             "alias"

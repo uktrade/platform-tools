@@ -4,7 +4,8 @@ type: Load Balanced Web Service
 http:
   path: '/'
   target_container: nginx
-  alias: test.service.uktrade
+  alias:
+    - test.service.uktrade
 
 cpu: 512 
 memory: 2048 

@@ -48,7 +48,7 @@ class HealthCheck(BaseModel):
 
 class AdditionalRules(BaseModel):
     path: str = Field(description="""Requests to this path will be forwarded to your service.""")
-    alias: Union[str, list] = Field(description="""The HTTP domain alias of the service.""")
+    alias: list[str] = Field(description="""The HTTP domain alias of the service.""")
 
 
 class Http(BaseModel):
@@ -59,7 +59,6 @@ class Http(BaseModel):
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
     healthcheck: Optional[HealthCheck] = Field(default=None)
-    alias: Union[str, list] = Field(description="""The HTTP domain alias of the service.""")
     additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
 
 
@@ -75,9 +74,6 @@ class HttpOverride(BaseModel):
         description="Target container for the requests", default=None
     )
     healthcheck: Optional[HealthCheck] = Field(default=None)
-    alias: Optional[Union[str, list]] = Field(
-        description="""The HTTP domain alias of the service."""
-    )
     additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
 
 
