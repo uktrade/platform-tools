@@ -149,7 +149,7 @@ class Pipelines:
         module_source: str,
         deploy_branch: str,
         aws_account_id: str,
-        pinned_version: bool,
+        pinned_version: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
