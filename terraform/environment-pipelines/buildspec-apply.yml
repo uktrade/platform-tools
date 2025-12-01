@@ -7,6 +7,7 @@ env:
 phases:
   install:
     commands:
+      - echo "I have deployed using the right version!!!"
       - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
       - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
       ## yq for yaml processing (The Go-based variant, not Python-based)
