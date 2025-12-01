@@ -1,5 +1,17 @@
 import os
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
+from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+from dbt_platform_helper.constants import (
+    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.constants import (
+    TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.constants import (
+    TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.entities.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -9,6 +21,9 @@ from dbt_platform_helper.entities.semantic_version import (
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.version import AWSCLIInstalledVersionProvider
 from dbt_platform_helper.providers.version import CopilotInstalledVersionProvider
@@ -37,9 +52,11 @@ class PlatformHelperVersioning:
         self,
         io: ClickIOProvider = ClickIOProvider(),
         config_provider: ConfigProvider = ConfigProvider(),
+        environment_variable_provider: EnvironmentVariableProvider = EnvironmentVariableProvider(),
         latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         skip_versioning_checks: bool = None,
+        platform_helper_version_override: str = None,
     ):
         self.io = io
         self.config_provider = config_provider
@@ -48,6 +65,13 @@ class PlatformHelperVersioning:
         self.skip_versioning_checks = (
             skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
         )
+        self.environment_variable_provider = environment_variable_provider
+        self.platform_helper_version_override = platform_helper_version_override
+
+    def is_managed(self):
+        platform_config = self.config_provider.load_unvalidated_config_file()
+        default_version = platform_config.get("default_versions", {}).get("platform-helper")
+        return default_version == "auto"
 
     def get_required_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
@@ -100,6 +124,59 @@ class PlatformHelperVersioning:
         latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
+
+    def get_default_version(self):
+        return (
+            self.config_provider.load_and_validate_platform_config()
+            .get("default_versions", {})
+            .get("platform-helper")
+        )
+
+    def get_template_version(self):
+        if self.platform_helper_version_override:
+            return self.platform_helper_version_override
+        platform_helper_env_override = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
+        if platform_helper_env_override:
+            return platform_helper_env_override
+
+        return self.get_default_version()
+
+    def _get_pipeline_modules_source(self, pipeline_module_path: str, override_env_var_key: str):
+        pipeline_module_override = self.environment_variable_provider.get(override_env_var_key)
+
+        if pipeline_module_override:
+            return pipeline_module_override
+
+        if self.platform_helper_version_override:
+            return f"{pipeline_module_path}{self.platform_helper_version_override}"
+
+        platform_helper_env_override = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
+
+        if platform_helper_env_override:
+            return f"{pipeline_module_path}{platform_helper_env_override}"
+
+        return f"{pipeline_module_path}{self.get_default_version()}"
+
+    def get_environment_pipeline_modules_source(self):
+        return self._get_pipeline_modules_source(
+            ENVIRONMENT_PIPELINE_MODULE_PATH,
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+        )
+
+    def get_codebase_pipeline_modules_source(self):
+        return self._get_pipeline_modules_source(
+            CODEBASE_PIPELINE_MODULE_PATH,
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+        )
+
+    def get_extensions_module_source(self):
+        return self.environment_variable_provider.get(
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        )
 
 
 class AWSVersioning:
