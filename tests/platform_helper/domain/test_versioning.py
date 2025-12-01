@@ -387,7 +387,9 @@ class TestPlatformHelperVersioningAuto:
         result = PlatformHelperVersioning(
             **mocks.params()
         ).get_environment_pipeline_modules_source()
-        assert result == f"{EXTENSIONS_MODULE_PATH}version_passed_in_from_platform_upgrade"
+        assert (
+            result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}version_passed_in_from_platform_upgrade"
+        )
 
     def test_get_codebase_pipeline_modules_source_is_pinned_version_given_auto(
         self, platform_config_for_env_pipelines
@@ -404,7 +406,7 @@ class TestPlatformHelperVersioningAuto:
         )
 
         result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
-        assert result == f"{EXTENSIONS_MODULE_PATH}version_passed_in_from_platform_upgrade"
+        assert result == f"{CODEBASE_PIPELINE_MODULE_PATH}version_passed_in_from_platform_upgrade"
 
     def test_get_extension_modules_source_is_pinned_version_given_auto(
         self, platform_config_for_env_pipelines

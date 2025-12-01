@@ -52,8 +52,8 @@ variable "trigger_on_push" {
   default = true
 }
 
-variable "is_managed" {
-  type    = bool
+variable "pinned_version" {
+  type    = string
   default = false
 }
 

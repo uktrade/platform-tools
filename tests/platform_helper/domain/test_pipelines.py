@@ -335,4 +335,4 @@ def assert_terraform(
         assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"] == [deploy_account_id]
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
-        assert environment_pipeline_module["is_managed"] == False
+        assert environment_pipeline_module["pinned_version"] == expected_version
