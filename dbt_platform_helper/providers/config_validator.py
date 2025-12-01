@@ -268,8 +268,7 @@ class ConfigValidator:
 
         Args:
             config (dict): The platform configuration dictionary.
-            pipelines_to_check (list[str], optional): List of pipeline sections to validate.
-                Defaults to ["environment_pipelines", "codebase_pipelines"].
+
         Raises:
             ConfigValidatorError:
             - If any pipeline contains manual approvals when platform-helper is "auto".
