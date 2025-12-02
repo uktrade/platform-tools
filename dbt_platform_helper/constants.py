@@ -6,6 +6,7 @@ SERVICE_CONFIG_FILE = "service-config.yml"
 ENVIRONMENT_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
 )
+
 CODEBASE_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref="
 )
