@@ -126,12 +126,12 @@ locals {
                 }
               }] : [],
             )]),
-            strcontains(local.base_env_config[env.name].service_deployment_mode, "dual") ? [{
-              name : "traffic-switch",
+            [{
+              name : "update-alb-rules",
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
               input_artifacts : ["tools_output"],
               configuration = {
-                ProjectName   = aws_codebuild_project.codebase_traffic_switch[""].name
+                ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
                 PrimarySource = "tools_output"
                 EnvironmentVariables : jsonencode([
                   { name : "APPLICATION", value : var.application },
@@ -140,7 +140,7 @@ locals {
                   { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
                 ])
               }
-            }] : [],
+            }],
             contains(local.environments_requiring_cache_invalidation, env.name) ? [{
               name : "invalidate-cache",
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
@@ -199,12 +199,12 @@ locals {
         }
       }] : [],
     )]),
-    local.traffic_switch_enabled ? [{
-      name : "traffic-switch",
+    [{
+      name : "update-alb-rules",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
       input_artifacts : ["tools_output"],
       configuration = {
-        ProjectName   = aws_codebuild_project.codebase_traffic_switch[""].name
+        ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
         PrimarySource = "tools_output"
         EnvironmentVariables : jsonencode([
           { name : "APPLICATION", value : var.application },
@@ -213,7 +213,7 @@ locals {
           { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
         ])
       }
-    }] : [],
+    }],
     local.cache_invalidation_enabled ? [{
       name : "invalidate-cache",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
@@ -257,6 +257,4 @@ locals {
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
-  # Set to true if any environment contains a dual service-deployment-mode
-  traffic_switch_enabled = anytrue([for env in local.base_env_config : true if strcontains(env.service_deployment_mode, "dual")])
 }
