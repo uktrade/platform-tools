@@ -106,7 +106,7 @@ class Pipelines:
                     self.platform_helper_versioning.get_environment_pipeline_modules_source(),
                     deploy_branch,
                     account_id,
-                    self.platform_helper_versioning.get_template_version(),
+                    self.platform_helper_versioning.get_pinned_version(),
                 )
 
         if has_codebase_pipelines:
