@@ -287,7 +287,7 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = file("${path.module}/buildspec-traffic-switch.yml")
+    buildspec = file("${path.module}/buildspec-update-alb-rules.yml")
   }
 
   tags = local.tags
@@ -296,12 +296,12 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 resource "aws_cloudwatch_log_group" "codebase_update_alb_rules" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
-  name              = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group"
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-group"
   retention_in_days = 90
 }
 
 resource "aws_cloudwatch_log_stream" "codebase_update_alb_rules" {
-  name           = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-stream"
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-stream"
   log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules.name
 }
 

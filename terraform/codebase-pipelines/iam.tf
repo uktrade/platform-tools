@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-service-terraform",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-service-terraform-plan",
-        "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-traffic-switch",
+        "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-update-alb-rules",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy-platform",
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
       ])
@@ -542,7 +542,7 @@ resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" 
 }
 
 resource "aws_iam_role" "update_alb_rules" {
-  name               = "${var.application}-${var.codebase}-codebase-traffic-switch"
+  name               = "${var.application}-${var.codebase}-codebase-update-alb-rules"
   assume_role_policy = data.aws_iam_policy_document.assume_update_alb_rules_role.json
   tags               = local.tags
 }
@@ -561,7 +561,7 @@ data "aws_iam_policy_document" "assume_update_alb_rules_role" {
     condition {
       test     = "StringEquals"
       variable = "aws:SourceArn"
-      values   = ["arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-traffic-switch"]
+      values   = ["arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-update-alb-rules"]
     }
   }
 }
@@ -582,8 +582,8 @@ data "aws_iam_policy_document" "log_access_update_alb_rules" {
       "logs:TagLogGroup"
     ]
     resources = [
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group:*"
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-group:*"
     ]
   }
 }
