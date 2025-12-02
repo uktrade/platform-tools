@@ -6,9 +6,7 @@ import pytest
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
-from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-from dbt_platform_helper.constants import PLATFORM_ORCHESTRATION_PINNED_VERSION
 from dbt_platform_helper.constants import (
     TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
@@ -370,7 +368,7 @@ class TestPlatformHelperVersioningEnvironmentVersioning:
 
 
 class TestPlatformHelperVersioningAuto:
-    def test_get_environment_pipeline_modules_source_is_pinned_version_given_auto(
+    def test_get_environment_pipeline_modules_source_returns_modules_override_given_auto(
         self, platform_config_for_env_pipelines
     ):
 
@@ -380,16 +378,14 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
-            "version_passed_in_from_platform_upgrade"
-        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = "module_path_passed_in_from_platform_upgrade"
 
         result = PlatformHelperVersioning(
             **mocks.params()
         ).get_environment_pipeline_modules_source()
-        assert (
-            result == f"{ENVIRONMENT_PIPELINE_MODULE_PATH}version_passed_in_from_platform_upgrade"
-        )
+        assert result == f"module_path_passed_in_from_platform_upgrade"
 
     def test_get_codebase_pipeline_modules_source_is_pinned_version_given_auto(
         self, platform_config_for_env_pipelines
@@ -401,14 +397,14 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
-            "version_passed_in_from_platform_upgrade"
-        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = "module_path_passed_in_from_platform_upgrade"
 
         result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
-        assert result == f"{CODEBASE_PIPELINE_MODULE_PATH}version_passed_in_from_platform_upgrade"
+        assert result == "module_path_passed_in_from_platform_upgrade"
 
-    def test_get_extension_modules_source_is_pinned_version_given_auto(
+    def test_get_extension_modules_source_returns_modules_override_given_auto(
         self, platform_config_for_env_pipelines
     ):
 
@@ -418,14 +414,14 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
-            "version_passed_in_from_platform_upgrade"
-        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = "module_path_passed_in_from_platform_upgrade"
 
         result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
-        assert result == f"{EXTENSIONS_MODULE_PATH}version_passed_in_from_platform_upgrade"
+        assert result == "module_path_passed_in_from_platform_upgrade"
 
-    def test_get_template_version_is_pinned_version_given_auto(
+    def test_get_template_version_returns_platform_helper_override_given_auto(
         self, platform_config_for_env_pipelines
     ):
 
@@ -435,10 +431,14 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
-        mocks.mock_environment_variable_provider[PLATFORM_ORCHESTRATION_PINNED_VERSION] = (
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
             "version_passed_in_from_platform_upgrade"
         )
 
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            "version_passed_in_from_platform_upgrade"
+        )
+        mocks.mock_platform_helper_version_override = None
         result = PlatformHelperVersioning(**mocks.params()).get_template_version()
         assert result == "version_passed_in_from_platform_upgrade"
 

@@ -2,9 +2,7 @@ import os
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINE_MODULE_PATH
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINE_MODULE_PATH
-from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-from dbt_platform_helper.constants import PLATFORM_ORCHESTRATION_PINNED_VERSION
 from dbt_platform_helper.constants import (
     TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
@@ -71,7 +69,7 @@ class PlatformHelperVersioning:
         self.platform_helper_version_override = platform_helper_version_override
 
     def is_managed(self):
-        return True
+        # return True
         platform_config = self.config_provider.load_unvalidated_config_file()
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
@@ -136,11 +134,6 @@ class PlatformHelperVersioning:
         )
 
     def get_template_version(self):
-        if self.is_managed():
-            print(
-                f"--- TEMPLATE VERSION IS - PLATFORM_ORCHESTRATION_PINNED_VERSION = {self.environment_variable_provider.get(PLATFORM_ORCHESTRATION_PINNED_VERSION)} ---"
-            )
-            return self.environment_variable_provider.get(PLATFORM_ORCHESTRATION_PINNED_VERSION)
         if self.platform_helper_version_override:
             return self.platform_helper_version_override
         platform_helper_env_override = self.environment_variable_provider.get(
@@ -152,9 +145,6 @@ class PlatformHelperVersioning:
         return self.get_default_version()
 
     def _get_pipeline_modules_source(self, pipeline_module_path: str, override_env_var_key: str):
-        if self.is_managed():
-            return f"{pipeline_module_path}{self.environment_variable_provider.get(PLATFORM_ORCHESTRATION_PINNED_VERSION)}"
-
         pipeline_module_override = self.environment_variable_provider.get(override_env_var_key)
 
         if pipeline_module_override:
@@ -185,8 +175,6 @@ class PlatformHelperVersioning:
         )
 
     def get_extensions_module_source(self):
-        if self.is_managed():
-            return f"{EXTENSIONS_MODULE_PATH}{self.environment_variable_provider.get(PLATFORM_ORCHESTRATION_PINNED_VERSION)}"
         return self.environment_variable_provider.get(
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         )
