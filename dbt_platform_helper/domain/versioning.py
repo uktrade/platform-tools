@@ -69,7 +69,6 @@ class PlatformHelperVersioning:
         self.platform_helper_version_override = platform_helper_version_override
 
     def is_managed(self):
-        return True
         platform_config = self.config_provider.load_unvalidated_config_file()
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
@@ -150,9 +149,6 @@ class PlatformHelperVersioning:
         if self.is_managed():
             platform_helper_env_override = self.environment_variable_provider.get(
                 PLATFORM_HELPER_VERSION_OVERRIDE_KEY
-            )
-            print(
-                f"FOUND {platform_helper_env_override} PLATFORM_HELPER_VERSION_OVERRIDE in environment"
             )
             if platform_helper_env_override:
                 return platform_helper_env_override
