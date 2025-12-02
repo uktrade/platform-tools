@@ -2344,8 +2344,8 @@ run "test_main_pipeline_service_deployment_terraform" {
     error_message = "Should be: my-app-my-codebase-invalidate-cache"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
-    error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-update-alb-rules"
+    error_message = "Should be: my-app-my-codebase-codebase-update-alb-rules"
   }
 
   # Tagged pipeline approval stage
@@ -2415,30 +2415,30 @@ run "test_update_alb_rules" {
   }
 
   assert {
-    condition = data.aws_iam_policy_document.log_access_update_alb_rules[""].statement[0].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-traffic-switch/log-group",
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-traffic-switch/log-group:*"
+    condition = data.aws_iam_policy_document.log_access_update_alb_rules.statement[0].resources == toset([
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-update-alb-rules/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-update-alb-rules/log-group:*"
     ])
     error_message = "Unexpected resources"
   }
   assert {
-    condition = aws_codebuild_project.codebase_update_alb_rules[""].logs_config[0].cloudwatch_logs[
+    condition = aws_codebuild_project.codebase_update_alb_rules.logs_config[0].cloudwatch_logs[
       0
-    ].group_name == "codebuild/my-app-my-codebase-codebase-traffic-switch/log-group"
-    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-traffic-switch/log-group'"
+    ].group_name == "codebuild/my-app-my-codebase-codebase-update-alb-rules/log-group"
+    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-update-alb-rules/log-group'"
   }
   assert {
-    condition = aws_codebuild_project.codebase_update_alb_rules[""].logs_config[0].cloudwatch_logs[
+    condition = aws_codebuild_project.codebase_update_alb_rules.logs_config[0].cloudwatch_logs[
       0
-    ].stream_name == "codebuild/my-app-my-codebase-codebase-traffic-switch/log-stream"
-    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-traffic-switch/log-stream'"
+    ].stream_name == "codebuild/my-app-my-codebase-codebase-update-alb-rules/log-stream"
+    error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-update-alb-rules/log-stream'"
   }
   assert {
-    condition     = length(regexall(".*alb update-rules.*", aws_codebuild_project.codebase_update_alb_rules[""].source[0].buildspec)) > 0
+    condition     = length(regexall(".*alb update-rules.*", aws_codebuild_project.codebase_update_alb_rules.source[0].buildspec)) > 0
     error_message = "Should contain: 'alb update-rules'"
   }
   assert {
-    condition     = jsonencode(aws_codebuild_project.codebase_update_alb_rules[""].tags) == jsonencode(var.expected_tags)
+    condition     = jsonencode(aws_codebuild_project.codebase_update_alb_rules.tags) == jsonencode(var.expected_tags)
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
@@ -2446,7 +2446,7 @@ run "test_update_alb_rules" {
     error_message = "Should be: Deploy-dev"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
-    error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-update-alb-rules"
+    error_message = "Should be: my-app-my-codebase-codebase-update-alb-rules"
   }
 }
