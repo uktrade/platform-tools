@@ -253,7 +253,7 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
   name           = "${var.application}-${var.codebase}-codebase-update-alb-rules"
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30
-  service_role   = aws_iam_role.update_alb_rules[""].arn
+  service_role   = aws_iam_role.update_alb_rules.arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
 
   artifacts {
@@ -280,8 +280,8 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules[""].name
-      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules[""].name
+      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules.name
+      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules.name
     }
   }
 
@@ -302,7 +302,7 @@ resource "aws_cloudwatch_log_group" "codebase_update_alb_rules" {
 
 resource "aws_cloudwatch_log_stream" "codebase_update_alb_rules" {
   name           = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules[""].name
+  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules.name
 }
 
 resource "aws_codebuild_project" "invalidate_cache" {

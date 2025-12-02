@@ -131,7 +131,7 @@ locals {
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
               input_artifacts : ["tools_output"],
               configuration = {
-                ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
+                ProjectName   = aws_codebuild_project.codebase_update_alb_rules.name
                 PrimarySource = "tools_output"
                 EnvironmentVariables : jsonencode([
                   { name : "APPLICATION", value : var.application },
@@ -204,7 +204,7 @@ locals {
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
       input_artifacts : ["tools_output"],
       configuration = {
-        ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
+        ProjectName   = aws_codebuild_project.codebase_update_alb_rules.name
         PrimarySource = "tools_output"
         EnvironmentVariables : jsonencode([
           { name : "APPLICATION", value : var.application },

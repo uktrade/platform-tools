@@ -568,8 +568,8 @@ data "aws_iam_policy_document" "assume_update_alb_rules_role" {
 
 resource "aws_iam_role_policy" "log_access_update_alb_rules" {
   name   = "log-access"
-  role   = aws_iam_role.update_alb_rules[""].name
-  policy = data.aws_iam_policy_document.log_access_update_alb_rules[""].json
+  role   = aws_iam_role.update_alb_rules.name
+  policy = data.aws_iam_policy_document.log_access_update_alb_rules.json
 }
 
 data "aws_iam_policy_document" "log_access_update_alb_rules" {
@@ -590,18 +590,18 @@ data "aws_iam_policy_document" "log_access_update_alb_rules" {
 
 resource "aws_iam_role_policy" "environment_deploy_role_access_for_update_alb_rules" {
   name   = "environment-deploy-role-access"
-  role   = aws_iam_role.update_alb_rules[""].name
+  role   = aws_iam_role.update_alb_rules.name
   policy = data.aws_iam_policy_document.environment_deploy_role_access.json
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_update_alb_rules" {
   name   = "artifact-store-access"
-  role   = aws_iam_role.update_alb_rules[""].name
+  role   = aws_iam_role.update_alb_rules.name
   policy = data.aws_iam_policy_document.access_artifact_store.json
 }
 
 resource "aws_iam_role_policy" "codestar_access_for_update_alb_rules" {
   name   = "codestar-access"
-  role   = aws_iam_role.update_alb_rules[""].name
+  role   = aws_iam_role.update_alb_rules.name
   policy = data.aws_iam_policy_document.codestar_access_for_codebase_pipeline.json
 }
