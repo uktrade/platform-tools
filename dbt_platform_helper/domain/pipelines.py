@@ -122,12 +122,6 @@ class Pipelines:
                 if repo in ecrs_already_provisioned
             }
 
-            print("TEMPLATE: ", self.platform_helper_versioning.get_template_version())
-            print(
-                "CODEBASE_PIPELINE SOURCE: ",
-                self.platform_helper_versioning.get_codebase_pipeline_modules_source(),
-            )
-
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
                 self.platform_helper_versioning.get_template_version(),
