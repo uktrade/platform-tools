@@ -543,7 +543,7 @@ resource "aws_iam_role_policy" "dns_account_assume_role_for_cache_invalidation" 
 
 resource "aws_iam_role" "update_alb_rules" {
   name               = "${var.application}-${var.codebase}-codebase-traffic-switch"
-  assume_role_policy = data.aws_iam_policy_document.assume_update_alb_rules_role[""].json
+  assume_role_policy = data.aws_iam_policy_document.assume_update_alb_rules_role.json
   tags               = local.tags
 }
 
