@@ -3,9 +3,6 @@ REPO_ORG = "uktrade"
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 SERVICE_DIRECTORY = "services"
 SERVICE_CONFIG_FILE = "service-config.yml"
-# ENVIRONMENT_PIPELINE_MODULE_PATH = (
-#     "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
-# )
 ENVIRONMENT_PIPELINE_MODULE_PATH = (
     "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
 )
