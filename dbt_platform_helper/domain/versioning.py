@@ -150,7 +150,7 @@ class PlatformHelperVersioning:
                 PLATFORM_HELPER_VERSION_OVERRIDE_KEY
             )
             print(
-                "FOUND {platform_helper_env_override} PLATFORM_HELPER_VERSION_OVERRIDE in environment"
+                f"FOUND {platform_helper_env_override} PLATFORM_HELPER_VERSION_OVERRIDE in environment"
             )
             if platform_helper_env_override:
                 return platform_helper_env_override
