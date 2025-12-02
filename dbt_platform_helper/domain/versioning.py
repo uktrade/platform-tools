@@ -137,6 +137,9 @@ class PlatformHelperVersioning:
 
     def get_template_version(self):
         if self.is_managed():
+            print(
+                f"--- TEMPLATE VERSION IS - PLATFORM_ORCHESTRATION_PINNED_VERSION = {self.environment_variable_provider.get(PLATFORM_ORCHESTRATION_PINNED_VERSION)} ---"
+            )
             return self.environment_variable_provider.get(PLATFORM_ORCHESTRATION_PINNED_VERSION)
         if self.platform_helper_version_override:
             return self.platform_helper_version_override

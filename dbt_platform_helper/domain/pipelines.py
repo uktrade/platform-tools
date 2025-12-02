@@ -152,6 +152,7 @@ class Pipelines:
         pinned_version: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
+        print(f"ENV PIPELINE MODULE SOURCE ---- {module_source}")
 
         contents = env_pipeline_template.render(
             {
