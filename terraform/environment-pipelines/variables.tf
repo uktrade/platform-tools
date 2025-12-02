@@ -53,6 +53,6 @@ variable "trigger_on_push" {
 }
 
 variable "pinned_version" {
-  type    = string
+  type = string
 }
 

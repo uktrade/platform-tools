@@ -6,15 +6,6 @@ locals {
   ssm_param_name      = coalesce(var.config.serve_static_param_name, "STATIC_S3_ENDPOINT")
 }
 
-resource "aws_s3_bucket" "test" {
-  # checkov:skip=CKV_AWS_144: Cross Region Replication not Required
-  # checkov:skip=CKV2_AWS_62: Requires wider discussion around log/event ingestion before implementing. To be picked up on conclusion of DBTP-974
-  # checkov:skip=CKV_AWS_18:  Requires wider discussion around log/event ingestion before implementing. To be picked up on conclusion of DBTP-974
-  bucket = "${var.config.bucket_name}-test-bucket-shows-it-worked"
-}
-
-
-
 resource "aws_s3_bucket" "this" {
   # checkov:skip=CKV_AWS_144: Cross Region Replication not Required
   # checkov:skip=CKV2_AWS_62: Requires wider discussion around log/event ingestion before implementing. To be picked up on conclusion of DBTP-974
