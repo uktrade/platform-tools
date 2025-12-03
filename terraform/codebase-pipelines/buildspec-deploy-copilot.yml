@@ -45,31 +45,19 @@ phases:
       - |
         ENVIRONMENT="${ENVIRONMENT}"
         PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
-        ALLOWED_MODES=("dual-deploy-copilot-traffic" "dual-deploy-platform-traffic" "copilot")
 
+        # Check env-specific config
         DEPLOY_MODE=$(yq eval ".environments.\"$ENVIRONMENT\".service-deployment-mode" "$PLATFORM_CONFIG_PATH")
-
+        
+        # Check default env config
         if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
           DEPLOY_MODE=$(yq eval '.environments."*".service-deployment-mode' "$PLATFORM_CONFIG_PATH")
-          if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
-            echo "Property 'service-deployment-mode' not found in platform-config. No further action required, skipping pipeline stage ..."
-            export SKIP_BUILD="true"
-          fi
         fi
-
-        MATCHED=false
-        for mode in "${ALLOWED_MODES[@]}"; do
-          if [[ "$DEPLOY_MODE" == "$mode" ]]; then
-            MATCHED=true
-            break
-          fi
-        done
-
-        if [ "$MATCHED" == "false" ]; then
-          echo "Detected default service-deployment-mode. No further action required, skipping pipeline stage ..."
+        
+        # Only skip when it's exactly 'platform'
+        if [[ "$DEPLOY_MODE" == "platform" ]]; then
+          echo "Property service-deployment-mode is 'platform' for environment '$ENVIRONMENT'."
           export SKIP_BUILD="true"
-        else
-          echo "Property service-deployment-mode '$DEPLOY_MODE' detected. Resuming pipeline ..."
         fi
 
   build:
@@ -79,7 +67,7 @@ phases:
         
         # Skip pipeline if true
         if [[ "$SKIP_BUILD" == "true" ]]; then
-          echo "Skipping pipeline stage, no further action required."
+          echo "Detected 'platform' service-deployment-mode, skipping pipeline stage. No further action required."
           exit 0
         else
           # Check if the specified image tag exists
