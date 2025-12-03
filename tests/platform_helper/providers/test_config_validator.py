@@ -431,17 +431,19 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
 
 
 @pytest.mark.parametrize(
-    "env_pipeline_config, codebase_pipeline_config, expected_error",
+    "environment_config, env_pipeline_config, codebase_pipeline_config, expected_error",
     [
         (
             {},
             {},
+            {},
             "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. environment_pipelines is not configured.\n\n"
+            "must be configured in platform-config.yml. environment_pipelines is not configured.\n"
             "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. codebase_pipelines is not configured.\n",
+            "must be configured in platform-config.yml. codebase_pipelines is not configured.",
         ),
         (
+            {"dev": {}, "staging": {}},
             {
                 "main": {
                     "account": "non-prod",
@@ -455,9 +457,10 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
             },
             {},
             "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. codebase_pipelines is not configured.\n",
+            "must be configured in platform-config.yml. codebase_pipelines is not configured.",
         ),
         (
+            {"dev": {}},
             {},
             {
                 "application": {
@@ -465,10 +468,12 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
                     "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
                 }
             },
+            "For auto default platform-helper version, all environments ['dev'] must be deployed in an environment pipeline. Missing: dev\n"
             "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. environment_pipelines is not configured.\n",
+            "must be configured in platform-config.yml. environment_pipelines is not configured.",
         ),
         (
+            {"dev": {}},
             {
                 "main": {
                     "account": "non-prod",
@@ -486,6 +491,7 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
             None,
         ),
         (
+            {"dev": {}, "prod": {}},
             {
                 "main": {
                     "account": "non-prod",
@@ -500,10 +506,12 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
                     "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
                 }
             },
+            "For auto default platform-helper version, all environments ['dev', 'prod'] must be deployed in an environment pipeline. Missing: dev\n"
             "Managed upgrades enabled: (environment_pipelines) Pipeline 'main' environment 'prod' "
             "cannot have manual approval when platform-helper is 'auto'.",
         ),
         (
+            {"dev": {}, "prod": {}},
             {
                 "main": {
                     "account": "non-prod",
@@ -523,10 +531,12 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
                     ],
                 }
             },
+            "For auto default platform-helper version, all environments ['dev', 'prod'] must be deployed in an environment pipeline. Missing: prod\n"
             "Managed upgrades enabled: (codebase_pipelines) Pipeline 'main' environment 'prod' "
             "cannot have manual approval when platform-helper is 'auto'.",
         ),
         (
+            {"prod": {}},
             {},
             {
                 "application": {
@@ -539,15 +549,35 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
                     ],
                 }
             },
+            "For auto default platform-helper version, all environments ['prod'] must be deployed in an environment pipeline. Missing: prod\n"
             "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. environment_pipelines is not configured.\n\n"
+            "must be configured in platform-config.yml. environment_pipelines is not configured.\n"
             "Managed upgrades enabled: (codebase_pipelines) Pipeline 'main' environment 'prod' "
             "cannot have manual approval when platform-helper is 'auto'.",
+        ),
+        (
+            {"dev": {}, "prod": {}},
+            {
+                "main": {
+                    "account": "non-prod",
+                    "slack_channel": "/codebuild/channel",
+                    "trigger_on_push": True,
+                    "environments": {"dev": {"requires_approval": False}},
+                }
+            },
+            {
+                "application": {
+                    "repository": "uktrade/demodjango",
+                    "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
+                }
+            },
+            "For auto default platform-helper version, all environments ['dev', 'prod'] must be deployed in an environment pipeline. Missing: prod",
         ),
     ],
 )
 def test_validate_config_for_managed_upgrades(
     platform_env_config,
+    environment_config,
     env_pipeline_config,
     codebase_pipeline_config,
     expected_error,
@@ -557,6 +587,7 @@ def test_validate_config_for_managed_upgrades(
     config["default_versions"]["platform-helper"] = "auto"
     config["codebase_pipelines"] = codebase_pipeline_config
     config["environment_pipelines"] = env_pipeline_config
+    config["environments"] = environment_config
 
     validator = ConfigValidator()
 

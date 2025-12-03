@@ -277,13 +277,33 @@ class ConfigValidator:
         pipelines_to_check = ["environment_pipelines", "codebase_pipelines"]
         errors = []
 
+        def find_pipeline_for_env(env_pipelines, environment: str):
+            for name, config in env_pipelines.items():
+                if not isinstance(config, dict):
+                    continue
+                envs = config.get("environments", {})
+                if isinstance(envs, dict) and env in envs:
+                    return name
+
         if config.get("default_versions", {}).get("platform-helper") == "auto":
+
+            pipelines = {}
+            environments = [env for env in config.get("environments").keys() if env != "*"]
+            environment_pipelines = config.get("environment_pipelines", {})
+            for env in environments:
+                pipeline = find_pipeline_for_env(environment_pipelines, env)
+                if not pipeline:
+                    errors.append(
+                        f"For auto default platform-helper version, all environments {environments} must be deployed in an environment pipeline. Missing: {env}"
+                    )
+                pipelines[env] = pipeline
+
             for pipeline_section in pipelines_to_check:
                 pipelines = config.get(pipeline_section, {})
 
                 if not pipelines:
                     errors.append(
-                        f"For auto default platform-helper version, environment and codebase pipelines must be configured in platform-config.yml. {pipeline_section} is not configured.\n"
+                        f"For auto default platform-helper version, environment and codebase pipelines must be configured in platform-config.yml. {pipeline_section} is not configured."
                     )
                     continue
 
