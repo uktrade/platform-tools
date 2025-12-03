@@ -80,7 +80,6 @@ phases:
         # Skip pipeline if true
         if [[ "$SKIP_BUILD" == "true" ]]; then
           echo "Skipping pipeline stage, no further action required."
-          echo $SKIP_BUILD
           exit 0
         else
           # Check if the specified image tag exists
