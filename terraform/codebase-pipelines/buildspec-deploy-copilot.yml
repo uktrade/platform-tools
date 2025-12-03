@@ -47,11 +47,11 @@ phases:
         PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
 
         # Check env-specific config
-        DEPLOY_MODE=$(yq eval ".environments.\"$ENVIRONMENT\".service-deployment-mode" "$PLATFORM_CONFIG_PATH")
+        DEPLOY_MODE=$(yq -r ".environments.\"$ENVIRONMENT\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
         
         # Check default env config
         if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
-          DEPLOY_MODE=$(yq eval '.environments."*".service-deployment-mode' "$PLATFORM_CONFIG_PATH")
+          DEPLOY_MODE=$(yq -r ".environments.\"*\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
         fi
         
         # Only skip when it's exactly 'platform'
