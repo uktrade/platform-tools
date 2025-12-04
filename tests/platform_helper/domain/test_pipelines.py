@@ -21,7 +21,6 @@ from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from tests.platform_helper.domain.test_versioning import PlatformHelperVersioningMocks
 
@@ -35,7 +34,7 @@ class PipelineMocks:
             14, 0, 0
         )
         self.mock_config_provider = ConfigProvider(
-            ConfigValidator(), installed_version_provider=mock_installed_version_provider
+            Mock(), installed_version_provider=mock_installed_version_provider
         )
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
