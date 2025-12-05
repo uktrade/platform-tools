@@ -72,3 +72,4 @@ STANDARD_PLATFORM_SSO_ROLES = [
 ]
 ROUTED_TO_PLATFORM_MODES = ["platform", "dual-deploy-platform-traffic"]
 ROUTED_TO_COPILOT_MODES = ["copilot", "dual-deploy-copilot-traffic"]
+HTTP_SERVICE_TYPES = ["Load Balanced Web Service"]
