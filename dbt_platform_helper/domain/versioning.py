@@ -97,6 +97,10 @@ class PlatformHelperVersioning:
                 )
                 self.io.warn(message)
 
+        if required_version is "auto" and version_status.installed != version_status.latest:
+            message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Upgrade to v{version_status.latest}."
+            self.io.warn(message)
+
     def check_if_needs_update(self):
         if self.skip_versioning_checks:
             return
