@@ -367,6 +367,96 @@ class TestPlatformHelperVersioningEnvironmentVersioning:
         assert result == None
 
 
+class TestPlatformHelperVersioningAuto:
+    def test_get_environment_pipeline_modules_source_returns_modules_override_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = "module_path_passed_in_from_platform_upgrade"
+
+        result = PlatformHelperVersioning(
+            **mocks.params()
+        ).get_environment_pipeline_modules_source()
+        assert result == f"module_path_passed_in_from_platform_upgrade"
+
+    def test_get_codebase_pipeline_modules_source_is_pinned_version_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = "module_path_passed_in_from_platform_upgrade"
+
+        result = PlatformHelperVersioning(**mocks.params()).get_codebase_pipeline_modules_source()
+        assert result == "module_path_passed_in_from_platform_upgrade"
+
+    def test_get_extension_modules_source_returns_modules_override_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[
+            TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        ] = "module_path_passed_in_from_platform_upgrade"
+
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        assert result == "module_path_passed_in_from_platform_upgrade"
+
+    def test_get_template_version_returns_platform_helper_override_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            "version_passed_in_from_platform_upgrade"
+        )
+        mocks.mock_platform_helper_version_override = None
+        result = PlatformHelperVersioning(**mocks.params()).get_template_version()
+        assert result == "version_passed_in_from_platform_upgrade"
+
+    def test_get_pinned_version_returns_platform_helper_override_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            "version_passed_in_from_platform_upgrade"
+        )
+
+        mocks.mock_platform_helper_version_override = None
+        result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
+        assert result == "version_passed_in_from_platform_upgrade"
+
+
 class TestAWSVersioning:
     def test_get_aws_versioning(self):
         mocks = VersioningMocks()
