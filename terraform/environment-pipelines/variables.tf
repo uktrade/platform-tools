@@ -52,3 +52,7 @@ variable "trigger_on_push" {
   default = true
 }
 
+variable "pinned_version" {
+  type = string
+}
+

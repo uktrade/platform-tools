@@ -43,6 +43,7 @@ data "aws_iam_policy_document" "secrets" {
   count = var.service_config.secrets == null ? 0 : 1
 
   statement {
+    sid    = "AccessCopilotSecrets"
     effect = "Allow"
     actions = [
       "secretsmanager:GetSecretValue",
@@ -51,53 +52,92 @@ data "aws_iam_policy_document" "secrets" {
       "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:*"
     ]
     condition {
-      test = "StringEquals"
-      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
-      variable = "ssm:ResourceTag/copilot-environment"
-      values   = [var.environment]
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/copilot-application"
+      values   = [var.application]
     }
     condition {
-      test = "StringEquals"
-      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
-      variable = "aws:ResourceTag/copilot-application"
-      values   = [var.application]
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/copilot-environment"
+      values   = [var.environment]
     }
   }
 
   statement {
+    sid    = "AccessPlatformSecrets"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+    resources = [
+      "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:*"
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/application"
+      values   = [var.application]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/environment"
+      values   = [var.environment]
+    }
+  }
+
+  statement {
+    sid    = "AllowPlatformParametersDecrypt"
     effect = "Allow"
     actions = [
       "kms:Decrypt"
     ]
     resources = [
-      # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
-      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
+      "*"
     ]
+    condition {
+      test     = "StringLike"
+      variable = "kms:ViaService"
+      values   = ["ssm.*.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:ResourceTag/application"
+      values   = [var.application]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:ResourceTag/environment"
+      values   = [var.environment]
+    }
   }
+
   statement {
+    sid    = "AllowCopilotParametersDecrypt"
     effect = "Allow"
     actions = [
       "kms:Decrypt"
     ]
     resources = [
-      # TODO - Part of the `secrets update` command we should restrict the KMS key permissions
-      "arn:aws:kms:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:key/*"
+      "*"
     ]
     condition {
-      test = "StringEquals"
-      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
-      variable = "ssm:ResourceTag/copilot-environment"
-      values   = [var.environment]
+      test     = "StringLike"
+      variable = "kms:ViaService"
+      values   = ["ssm.*.amazonaws.com"]
     }
     condition {
-      test = "StringEquals"
-      # TODO - Consider changing condition when creating the new 'platform-helper secrets update' command
+      test     = "StringEquals"
       variable = "aws:ResourceTag/copilot-application"
       values   = [var.application]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:ResourceTag/copilot-environment"
+      values   = [var.environment]
     }
   }
 
   statement {
+    sid    = "GetCopilotParameters"
     effect = "Allow"
     actions = [
       "ssm:GetParameters"
@@ -107,17 +147,18 @@ data "aws_iam_policy_document" "secrets" {
     ]
     condition {
       test     = "StringEquals"
-      variable = "ssm:ResourceTag/copilot-environment"
-      values   = [var.environment]
+      variable = "ssm:ResourceTag/copilot-application"
+      values   = [var.application]
     }
     condition {
       test     = "StringEquals"
-      variable = "aws:ResourceTag/copilot-application"
-      values   = [var.application]
+      variable = "ssm:ResourceTag/copilot-environment"
+      values   = [var.environment]
     }
   }
 
   statement {
+    sid    = "GetPlatformParameters"
     effect = "Allow"
     actions = [
       "ssm:GetParameters"
@@ -127,7 +168,44 @@ data "aws_iam_policy_document" "secrets" {
     ]
     condition {
       test     = "StringEquals"
-      variable = "aws:ResourceTag/copilot-application"
+      variable = "ssm:ResourceTag/application"
+      values   = [var.application]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/environment"
+      values   = [var.environment]
+    }
+  }
+
+  statement {
+    sid    = "AccessCopilotApplicationSecrets"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/*"
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/copilot-application"
+      values   = ["__all__"]
+    }
+  }
+
+  statement {
+    sid    = "AccessPlatformApplicationSecrets"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameters"
+    ]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/*"
+    ]
+    condition {
+      test     = "StringEquals"
+      variable = "ssm:ResourceTag/application"
       values   = ["__all__"]
     }
   }
