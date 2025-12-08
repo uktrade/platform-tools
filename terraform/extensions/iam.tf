@@ -49,6 +49,7 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:GetRole",
       "iam:GetPolicy",
       "iam:GetPolicyVersion",
+      "iam:CreatePolicyVersion",
       "iam:ListRolePolicies",
       "iam:GetRolePolicy",
       "iam:ListAttachedRolePolicies",
@@ -69,15 +70,23 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
     ]
   }
 
+  # AWS service role needed by ECS autoscaling
   statement {
     effect = "Allow"
+
     actions = [
       "iam:CreateServiceLinkedRole",
     ]
-    resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
-    ]
+
+    condition {
+      test     = "StringEquals"
+      values   = ["ecs.application-autoscaling.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+
+    resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"]
   }
+
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_service_access_for_codebase" {

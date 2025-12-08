@@ -122,6 +122,7 @@ def mock_application():
         application.environments["development"] = Environment("development", "000000000", sessions)
         application.environments["staging"] = Environment("staging", "111111111", sessions)
         application.environments["production"] = Environment("production", "222222222", sessions)
+        application.environments["prod"] = Environment("prod", "222222222", sessions)
         application.environments["test"] = Environment("test", "333333333", sessions)
         application.services["web"] = Service("web", "Load Balanced Web Service")
 
@@ -620,18 +621,12 @@ def valid_service_config():
     return yaml.safe_load(
         f"""
 schema_version: {SERVICE_CONFIG_SCHEMA_VERSION}
-
 name: web
 type: Load Balanced Web Service
-
-# Distribute traffic to your service.
 http:
-  # Requests to this path will be forwarded to your service.
-  alias: web.${"{ENVIRONMENT_NAME}"}.test-app.uktrade.digital
-  # To match all requests you can use the "/" path.
+  alias:
+  - web.${"{PLATFORM_ENVIRONMENT_NAME}"}.${"{PLATFORM_APPLICATION_NAME}"}.uktrade.digital
   path: '/'
-  # You can specify a custom health check path. The default is "/".
-  # healthcheck: '/'
   target_container: nginx
   healthcheck:
     path: '/'
@@ -646,10 +641,9 @@ http:
 sidecars:
   sidecar:
     port: 443
-    image: public.ecr.aws//sidecar:tlatest
+    image: public.ecr.aws/sidecar:latest
     variables:
       SERVER: localhost:8000
-
 
 # Configuration for your containers and service.
 image:
@@ -681,18 +675,24 @@ environments:
   prod:
     http:
       path: '/'
-      alias: web.test-app.prod.uktrade.digital
+      alias:
+      - web.test-app.prod.uktrade.digital
       target_container: nginx
     sidecars:
       datadog-agent:
         variables:
           DD_APM_ENABLED: true
-  staging:
-    variables:
-      S3_CROSS_ENVIRONMENT_BUCKET_NAMES: test-app-hotfix-additional
+  development:
+    http:
+      alias:
+      - web.test-app.dev.uktrade.digital
     sidecars:
       ipfilter:
         image: public.ecr.aws/uktrade/ip-filter:tag-latest
+    variables:
+      SETTING: only in dev 
+    secrets:
+      SECRET: only in dev
 """
     )
 

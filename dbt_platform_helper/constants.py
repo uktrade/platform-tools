@@ -3,6 +3,16 @@ REPO_ORG = "uktrade"
 PLATFORM_CONFIG_FILE = "platform-config.yml"
 SERVICE_DIRECTORY = "services"
 SERVICE_CONFIG_FILE = "service-config.yml"
+ENVIRONMENT_PIPELINE_MODULE_PATH = (
+    "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
+)
+
+CODEBASE_PIPELINE_MODULE_PATH = (
+    "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref="
+)
+EXTENSIONS_MODULE_PATH = (
+    "git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref="
+)
 PLATFORM_HELPER_VERSION_OVERRIDE_KEY = "PLATFORM_HELPER_VERSION_OVERRIDE"
 TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR = "TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE"
 TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR = (

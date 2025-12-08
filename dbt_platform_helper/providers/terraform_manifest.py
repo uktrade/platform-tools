@@ -3,6 +3,7 @@ from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
+from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -234,10 +235,7 @@ class TerraformManifestProvider:
     def _add_extensions_module(
         terraform: dict, platform_helper_version: str, env: str, module_source_override: str = None
     ):
-        source = (
-            module_source_override
-            or f"git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
-        )
+        source = module_source_override or f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
         terraform["module"] = {
             "extensions": {
                 "source": source,
