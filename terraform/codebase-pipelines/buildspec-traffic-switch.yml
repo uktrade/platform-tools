@@ -1,28 +1,10 @@
 version: 0.2
 
-env:
-  variables:
-    TERRAFORM_VERSION: 1.12.2
-
 phases:
   install:
     commands:
-      # Install cli tools
-      # Install Platform Helper
-      ## Clone platform-tools
-      - cd "${CODEBUILD_SRC_DIR}"
-      - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
-      - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
-      - git config --global credential.helper '!aws codecommit credential-helper $@'
-      - git config --global credential.UseHttpPath true
-      - git config --global advice.detachedHead false
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
-      - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
-      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
-      ## Setup venv
-      - source terraform/scripts/setup_venv.sh
-      ## Install platform helper
-      - ./terraform/scripts/install_platform_helper.sh
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/py/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/py:${PYTHONPATH}"
 
   build:
     commands:

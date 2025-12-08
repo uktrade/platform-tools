@@ -28,8 +28,9 @@ class ConfigValidator:
             self.validate_environment_pipelines,
             self.validate_environment_pipelines_triggers,
             self.validate_database_copy_section,
-            self.validate_database_migration_input_sources,
+            self.validate_s3_data_migration_config,
             self.validate_cache_invalidation_config,
+            self.validate_config_for_managed_upgrades,
         ]
         self.io = io
         self.session = session
@@ -204,7 +205,7 @@ class ConfigValidator:
         if errors:
             raise ConfigValidatorError("\n".join(errors))
 
-    def validate_database_migration_input_sources(self, config: dict):
+    def validate_s3_data_migration_config(self, config: dict):
         extensions = config.get("extensions", {})
         if not extensions:
             return
@@ -223,6 +224,10 @@ class ConfigValidator:
                 if "data_migration" not in env_config:
                     continue
                 data_migration = env_config.get("data_migration", {})
+                if extension.get("serve_static_content", {}):
+                    errors.append(
+                        "Data migration is not supported for static S3 buckets to avoid the risk of unintentionally exposing private data. However, you can copy data on an ad hoc basis using AWS CLI commands such as 'aws s3 sync' or 'aws s3 cp'."
+                    )
                 if "import" in data_migration and "import_sources" in data_migration:
                     errors.append(
                         f"Error in '{extension_name}.environments.{env}.data_migration': only the 'import_sources' property is required - 'import' is deprecated."
@@ -252,6 +257,63 @@ class ConfigValidator:
                         errors.append(
                             f"Error in cache invalidation configuration for the domain '{domain}'.  Environment '{environment}' is not defined for this application"
                         )
+
+        if errors:
+            raise ConfigValidatorError("\n".join(errors))
+
+    def validate_config_for_managed_upgrades(self, config: dict):
+        """
+        Validates that pipelines do not contain manual approvals when managed
+        upgrades are enabled.
+
+        Args:
+            config (dict): The platform configuration dictionary.
+
+        Raises:
+            ConfigValidatorError:
+            - If any pipeline contains manual approvals when platform-helper is "auto".
+            - If platform-config.yml is missing environment_pipelines or codebase_pipelines configuration.
+        """
+        errors = []
+
+        def find_pipeline_for_env(env_pipelines, env: str):
+            for name, config in env_pipelines.items():
+                if not isinstance(config, dict):
+                    continue
+                envs = config.get("environments", {})
+                if isinstance(envs, dict) and env in envs:
+                    return name
+
+        if config.get("default_versions", {}).get("platform-helper") == "auto":
+
+            pipelines = {}
+            environments = [env for env in config.get("environments").keys() if env != "*"]
+            environment_pipelines = config.get("environment_pipelines", {})
+            for env in environments:
+                pipeline = find_pipeline_for_env(environment_pipelines, env)
+                if not pipeline:
+                    errors.append(
+                        f"For auto default platform-helper version, all environments {environments} must be deployed in an environment pipeline. Missing: {env}"
+                    )
+
+            for pipeline_section in ["environment_pipelines", "codebase_pipelines"]:
+                pipelines = config.get(pipeline_section, {})
+
+                if not pipelines:
+                    errors.append(
+                        f"For auto default platform-helper version, environment and codebase pipelines must be configured in platform-config.yml. {pipeline_section} is not configured."
+                    )
+                    continue
+
+                for pipeline_name, pipeline in pipelines.items():
+                    if pipeline_section == "environment_pipelines":
+                        pipeline_deploy_to_environments = pipeline.get("environments", {})
+                        for env_name, env_config in pipeline_deploy_to_environments.items():
+                            if isinstance(env_config, dict) and env_config.get("requires_approval"):
+                                errors.append(
+                                    f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
+                                    "cannot have manual approval when platform-helper is 'auto'."
+                                )
 
         if errors:
             raise ConfigValidatorError("\n".join(errors))

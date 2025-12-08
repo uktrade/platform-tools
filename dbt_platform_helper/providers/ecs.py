@@ -194,7 +194,7 @@ class ECS:
             return task_arns
         return False
 
-    def get_service_rollout_state(
+    def get_service_deployment_state(
         self, cluster_name: str, service_name: str, start_time: float
     ) -> tuple[Optional[str], Optional[str]]:
         """
@@ -206,7 +206,7 @@ class ECS:
             ROLLBACK_SUCCESSFUL | ROLLBACK_FAILED
         """
         resp = self.ecs_client.list_service_deployments(
-            cluster=cluster_name, service=service_name, createdAt={"after": start_time - 180}
+            cluster=cluster_name, service=service_name, createdAt={"after": start_time}
         )
         deployments = resp.get("serviceDeployments", [])
 
@@ -252,7 +252,12 @@ class ECS:
             raise PlatformException(f"Error registering task definition: {err}")
 
     def update_service(
-        self, service: str, task_def_arn: str, environment: str, application: str
+        self,
+        service: str,
+        task_def_arn: str,
+        environment: str,
+        application: str,
+        desired_count: int,
     ) -> dict[str, Any]:
         """Update an ECS service and return the response."""
 
@@ -261,7 +266,31 @@ class ECS:
                 cluster=f"{application}-{environment}-cluster",
                 service=f"{application}-{environment}-{service}",
                 taskDefinition=task_def_arn,
+                desiredCount=desired_count,
             )
             return service_response["service"]
         except ClientError as err:
             raise PlatformException(f"Error updating ECS service: {err}")
+
+    def describe_service(self, service: str, environment: str, application: str) -> dict[str, Any]:
+        """Return information about an ECS service."""
+
+        try:
+            service_response = self.ecs_client.describe_services(
+                cluster=f"{application}-{environment}-cluster",
+                services=[
+                    f"{application}-{environment}-{service}",
+                ],
+            )
+            return service_response["services"][0]
+        except ClientError as err:
+            raise PlatformException(f"Error retrieving ECS service: {err}")
+
+    def describe_tasks(self, cluster_name: str, task_ids: list[str]) -> list[dict[str, Any]]:
+        """Return information about ECS tasks."""
+
+        try:
+            response = self.ecs_client.describe_tasks(cluster=cluster_name, tasks=task_ids)
+            return response["tasks"]
+        except ClientError as err:
+            raise PlatformException(f"Error retrieving ECS tasks: {err}")

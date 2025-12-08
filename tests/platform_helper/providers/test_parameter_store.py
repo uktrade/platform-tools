@@ -18,7 +18,9 @@ def test_get_ssm_parameter_by_name_success():
 
     stubbed_ssm_client = Stubber(ssm_client)
     stubbed_ssm_client.add_response(
-        "get_parameter", {"Parameter": expected_response}, {"Name": parameter_name}
+        "get_parameter",
+        {"Parameter": expected_response},
+        {"Name": parameter_name, "WithDecryption": True},
     )
 
     with stubbed_ssm_client:
@@ -43,7 +45,7 @@ def test_get_ssm_parameters_by_path_success():
     stubbed_ssm_client.add_response(
         "get_parameters_by_path",
         {"Parameters": expected_response},
-        {"Path": parameter_path, "Recursive": True},
+        {"Path": parameter_path, "Recursive": True, "WithDecryption": True},
     )
 
     with stubbed_ssm_client:
@@ -63,7 +65,9 @@ def test_get_ssm_parameters_by_path_no_parameters_found():
 
     stubbed_ssm_client = Stubber(ssm_client)
     stubbed_ssm_client.add_response(
-        "get_parameters_by_path", {"Parameters": []}, {"Path": parameter_path, "Recursive": True}
+        "get_parameters_by_path",
+        {"Parameters": []},
+        {"Path": parameter_path, "Recursive": True, "WithDecryption": True},
     )
 
     with stubbed_ssm_client:

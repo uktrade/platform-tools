@@ -43,16 +43,6 @@ resource "aws_ecs_task_definition" "conduit_postgres" {
   }
 }
 
-resource "aws_ssm_parameter" "postgres_vpc_name" {
-  # checkov:skip=CKV2_AWS_34: AWS SSM Parameter doesn't need to be Encrypted
-  # checkov:skip=CKV_AWS_337: AWS SSM Parameter doesn't need to be Encrypted
-  name  = "/conduit/${var.application}/${var.environment}/${upper(replace("${var.name}_VPC_NAME", "-", "_"))}"
-  type  = "String"
-  value = var.vpc_name
-  tags  = local.tags
-
-}
-
 resource "aws_iam_role" "conduit-task-role" {
   name               = "${local.name}-conduit-task-role"
   assume_role_policy = data.aws_iam_policy_document.assume_ecstask_role.json

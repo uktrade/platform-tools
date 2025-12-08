@@ -103,7 +103,9 @@ class TestClickIOProvider:
     def test_input(self, mock_prompt):
         io = ClickIOProvider()
         io.input("Please select a service")
-        mock_prompt.assert_called_once_with("Please select a service")
+        mock_prompt.assert_called_once_with(
+            "Please select a service", hide_input=False, confirmation_prompt=False, type=str
+        )
 
     @patch("dbt_platform_helper.providers.io.click.confirm")
     def test_confirm(self, mock_confirm):

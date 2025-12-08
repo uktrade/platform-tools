@@ -1017,6 +1017,8 @@ run "test_iam_documents" {
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-deploy-platform/log-group:*",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group",
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-service-terraform-plan/log-group:*",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-install-tools/log-group",
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:codebuild/my-app-my-codebase-codebase-install-tools/log-group:*",
     ])
     error_message = "Unexpected resources"
   }
@@ -2298,81 +2300,81 @@ run "test_main_pipeline_service_deployment_terraform" {
   }
 
   assert {
-    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 2
-    error_message = "Should be: 2"
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 3
+    error_message = "Should be: 3"
   }
 
   # Deploy dev environment stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform"
     error_message = "Should be: my-app-my-codebase-codebase-service-terraform"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[2].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
     error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
   }
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[3].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform"
     error_message = "Should be: my-app-my-codebase-codebase-service-terraform"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[4].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[5].configuration.ProjectName == "my-app-my-codebase-codebase-deploy-platform"
     error_message = "Should be: my-app-my-codebase-codebase-deploy-platform"
   }
 
   # Post deploy actions
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].configuration.ProjectName == "my-app-my-codebase-invalidate-cache"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[6].configuration.ProjectName == "my-app-my-codebase-invalidate-cache"
     error_message = "Should be: my-app-my-codebase-invalidate-cache"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
     error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
   }
 
   # Tagged pipeline approval stage
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].name == "Approve-prod"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].name == "Approve-prod"
     error_message = "Should be: Approve-prod"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].name == "terraform-plan-service-1"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[0].name == "terraform-plan-service-1"
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform-plan"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform-plan"
     error_message = "Should be: my-app-my-codebase-codebase-service-terraform-plan"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[1].name == "terraform-plan-service-2"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[1].name == "terraform-plan-service-2"
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform-plan"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-service-terraform-plan"
     error_message = "Should be: my-app-my-codebase-codebase-service-terraform-plan"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].category == "Approval"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[2].category == "Approval"
     error_message = "Action category incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[2].action[2].provider == "Manual"
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[2].provider == "Manual"
     error_message = "Action provider incorrect"
   }
 }
@@ -2440,11 +2442,11 @@ run "test_traffic_switch" {
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].name == "Deploy-dev"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].name == "Deploy-dev"
     error_message = "Should be: Deploy-dev"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-traffic-switch"
     error_message = "Should be: my-app-my-codebase-codebase-traffic-switch"
   }
 }

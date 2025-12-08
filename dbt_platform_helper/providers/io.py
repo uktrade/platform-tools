@@ -24,8 +24,12 @@ class ClickIOProvider:
     def info(self, message: str, **kwargs):
         click.secho(message, **kwargs)
 
-    def input(self, message: str) -> str:
-        return click.prompt(message)
+    def input(
+        self, message: str, hide_input=False, confirmation_prompt=False, input_type=str
+    ) -> str:
+        return click.prompt(
+            message, hide_input=hide_input, confirmation_prompt=confirmation_prompt, type=input_type
+        )
 
     def confirm(self, message: str) -> bool:
         try:
@@ -36,6 +40,9 @@ class ClickIOProvider:
     def abort_with_error(self, message: str):
         click.secho(f"Error: {message}", err=True, fg="red")
         exit(1)
+
+    def deploy_error(self, message: str):
+        click.secho(message, fg="red")
 
     # TODO: DBTP-1979: messages will be a ValidationMessages class rather than a free-rein dictionary
     def process_messages(self, messages: dict):
