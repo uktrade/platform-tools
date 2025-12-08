@@ -47,12 +47,20 @@ class HealthCheck(BaseModel):
 
 
 class Http(BaseModel):
+    alias: list[str] = Field(
+        description="List of HTTPS domain alias(es) of your service.", default=None
+    )
+    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=None)
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
     healthcheck: Optional[HealthCheck] = Field(default=None)
 
 
 class HttpOverride(BaseModel):
+    alias: Optional[list[str]] = Field(
+        description="List of HTTPS domain alias(es) of your service.", default=None
+    )
+    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=None)
     path: Optional[str] = Field(
         description="Requests to this path will be forwarded to your service.", default=None
     )

@@ -62,9 +62,11 @@ locals {
           on_failure : "FAIL",
           actions : concat(local.base_env_config[env.name].service_deployment_mode != "copilot" ? [for svc in local.service_order_list : {
             name : "terraform-plan-${svc.name}",
+            input_artifacts : ["tools_output"],
             order : 1,
             configuration : {
-              ProjectName = aws_codebuild_project.codebase_service_terraform_plan[""].name
+              ProjectName   = aws_codebuild_project.codebase_service_terraform_plan[""].name
+              PrimarySource = "tools_output"
               EnvironmentVariables : jsonencode(concat(local.default_variables, [
                 { name : "ENVIRONMENT", value : env.name },
                 { name : "SERVICE", value : svc.name },

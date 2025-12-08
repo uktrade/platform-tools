@@ -3,11 +3,9 @@ from unittest.mock import Mock
 import pytest
 
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.environment_variable import (
-    EnvironmentVariableProvider,
-)
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
 VALID_ENV_CONFIG = {
@@ -35,15 +33,13 @@ class GenerateTerraformMocks:
         self.mock_config_provider = Mock(spec=ConfigProvider)
         self.mock_config_provider.get_enriched_config.return_value = VALID_ENRICHED_CONFIG
         self.mock_manifest_provider = Mock(spec=TerraformManifestProvider)
-        self.mock_platform_helper_version_override = None
-        self.mock_environment_variable_provider = Mock(spec=EnvironmentVariableProvider)
+        self.mock_platform_helper_versioning = Mock(spec=PlatformHelperVersioning)
 
     def params(self):
         return {
             "config_provider": self.mock_config_provider,
             "manifest_provider": self.mock_manifest_provider,
-            "platform_helper_version_override": self.mock_platform_helper_version_override,
-            "environment_variable_provider": self.mock_environment_variable_provider,
+            "platform_helper_versioning": self.mock_platform_helper_versioning,
         }
 
 
@@ -69,12 +65,17 @@ class TestGenerateTerraform:
         module_source_override,
     ):
         mocks = GenerateTerraformMocks()
+        mocks.mock_platform_helper_versioning.get_template_version.return_value = (
+            expected_platform_helper_version
+        )
         environment_name = "test"
 
         if use_environment_variable_platform_helper_version:
-            mocks.mock_platform_helper_version_override = "test-branch"
-
-        mocks.mock_environment_variable_provider.get.return_value = module_source_override
+            mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = (
+                module_source_override
+            )
+        else:
+            mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = None
 
         terraform_environment = TerraformEnvironment(**mocks.params())
 

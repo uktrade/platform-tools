@@ -200,8 +200,6 @@ class ConfigProvider:
             name: data if data else {} for name, data in environments.items() if name != "*"
         }
 
-        config.get("default_versions", {})
-
         def combine_env_data(data):
             return {
                 **env_defaults,
