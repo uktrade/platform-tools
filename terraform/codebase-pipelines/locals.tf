@@ -201,8 +201,6 @@ locals {
         }
       }] : [],
     )]),
-    local.base_env_config[env.name].service_deployment_mode != "copilot" &&
-    local.base_env_config[env.name].service_deployment_mode != null ?
     [{
       name : "update-alb-rules",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
@@ -217,7 +215,7 @@ locals {
           { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
         ])
       }
-    }] : [],
+    }],
     local.cache_invalidation_enabled ? [{
       name : "invalidate-cache",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
