@@ -479,6 +479,7 @@ resource "aws_ssm_parameter" "cloudfront_alias" {
   tags = local.tags
 }
 
+# Only supported for non-static S3 buckets
 module "data_migration" {
   count = local.has_data_migration_import_enabled ? 1 : 0
 

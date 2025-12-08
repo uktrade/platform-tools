@@ -3,6 +3,8 @@
 name: web
 type: Load Balanced Web Service
 http:
+  alias:
+  - web.test-app.dev.uktrade.digital
   path: /
   target_container: nginx
   healthcheck:

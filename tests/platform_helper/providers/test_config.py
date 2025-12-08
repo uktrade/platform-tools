@@ -499,6 +499,42 @@ class TestDataMigrationValidation:
         )
         assert "'platform' does not match 'something we dont want'" in str(exc.value)
 
+    def test_validate_data_migration_fails_if_bucket_is_static(self):
+        config = {
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
+            "application": "test-app",
+            "extensions": {
+                "test-s3-bucket": {
+                    "type": "s3",
+                    "serve_static_content": True,
+                    "environments": {
+                        "dev": {
+                            "bucket_name": "placeholder-to-pass-schema-validation",
+                            "data_migration": {
+                                "import_sources": [
+                                    {
+                                        "source_bucket_arn": "arn:aws:s3:::end-to-end-tests-s3-data-migration-source",
+                                        "source_kms_key_arn": "arn:aws:kms:eu-west-2:763451185160:key/0602bd28-253c-4ba8-88f5-cb34cb2ffb54",
+                                        "worker_role_arn": "arn:aws:iam::763451185160:role/end-to-end-tests-s3-data-migration-worker",
+                                    }
+                                ],
+                            },
+                        }
+                    },
+                }
+            },
+        }
+
+        config_provider_mocks = ConfigProviderMocks(config, use_mock_io=True)
+        config_provider = ConfigProvider(**config_provider_mocks.params())
+
+        config_provider.load_and_validate_platform_config()
+
+        config_provider.io.abort_with_error.assert_called_with(
+            "Config validation has failed.\nData migration is not supported for static S3 buckets to avoid the risk of unintentionally exposing private data. However, you can copy data on an ad hoc basis using AWS CLI commands such as 'aws s3 sync' or 'aws s3 cp'."
+        )
+
 
 class TestGetEnrichedConfig:
     def test_get_enriched_config_returns_config_with_environment_defaults_applied(self):

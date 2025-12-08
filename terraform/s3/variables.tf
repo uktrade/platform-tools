@@ -81,6 +81,11 @@ variable "config" {
   })
 
   validation {
+    condition     = !(var.config.serve_static_content == true && var.config.data_migration != null)
+    error_message = "Data migration is not supported for static S3 buckets to avoid the risk of unintentionally exposing private data. However, you can copy data on an ad hoc basis using AWS CLI commands such as 'aws s3 sync' or 'aws s3 cp'."
+  }
+
+  validation {
     condition = var.config.external_role_access == null ? true : alltrue([
       for k, v in var.config.external_role_access : (can(regex("^[\\w\\-\\.]+@(businessandtrade.gov.uk|digital.trade.gov.uk)$", v.cyber_sign_off_by)))
       # ((length(k) <= 63) && (length(k) >= 3))

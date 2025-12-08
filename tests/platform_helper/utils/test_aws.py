@@ -16,7 +16,6 @@ from dbt_platform_helper.utils.aws import NoProfileForAccountIdException
 from dbt_platform_helper.utils.aws import get_account_details
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_build_url_from_pipeline_execution_id
-from dbt_platform_helper.utils.aws import get_codestar_connection_arn
 from dbt_platform_helper.utils.aws import get_connection_string
 from dbt_platform_helper.utils.aws import get_image_build_project
 from dbt_platform_helper.utils.aws import get_manual_release_pipeline
@@ -28,7 +27,6 @@ from dbt_platform_helper.utils.aws import get_ssm_secrets
 from dbt_platform_helper.utils.aws import set_ssm_param
 from dbt_platform_helper.utils.aws import wait_for_log_group_to_exist
 from tests.platform_helper.conftest import mock_aws_client
-from tests.platform_helper.conftest import mock_codestar_connections_boto_client
 from tests.platform_helper.conftest import mock_get_caller_identity
 
 
@@ -368,45 +366,6 @@ def test_set_ssm_param_tags_with_existing_secret(mock_get_aws_session_or_abort):
             "TagList"
         ]
     )
-
-
-@patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")
-@pytest.mark.parametrize(
-    "connection_names, app_name, expected_arn",
-    [
-        [
-            [
-                "test-app-name",
-            ],
-            "test-app-name",
-            f"arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name",
-        ],
-        [
-            [
-                "test-app-name-1",
-                "test-app-name-2",
-                "test-app-name-3",
-            ],
-            "test-app-name-2",
-            f"arn:aws:codestar-connections:eu-west-2:1234567:connection/test-app-name-2",
-        ],
-        [
-            [
-                "test-app-name",
-            ],
-            "test-app-name-2",
-            None,
-        ],
-    ],
-)
-def test_get_codestar_connection_arn(
-    mock_get_aws_session_or_abort, connection_names, app_name, expected_arn
-):
-    mock_codestar_connections_boto_client(mock_get_aws_session_or_abort, connection_names)
-
-    result = get_codestar_connection_arn(app_name)
-
-    assert result == expected_arn
 
 
 @patch("dbt_platform_helper.utils.aws.get_aws_session_or_abort")

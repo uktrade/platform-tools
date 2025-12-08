@@ -250,6 +250,7 @@ data "aws_iam_policy_document" "pipeline_access" {
 }
 
 resource "aws_ecs_task_definition" "service" {
+  # checkov:skip=CKV_AWS_336: Needs write access to filesystem for database dump
   family = local.task_name
   container_definitions = jsonencode([
     {

@@ -187,6 +187,12 @@ resource "aws_lb_target_group" "target_group" {
     interval            = tonumber(trim(coalesce(var.service_config.http.healthcheck.interval, "35s"), "s"))
     timeout             = tonumber(trim(coalesce(var.service_config.http.healthcheck.timeout, "30s"), "s"))
   }
+
+  stickiness {
+    enabled         = coalesce(var.service_config.http.stickiness, false)
+    type            = "lb_cookie"
+    cookie_duration = 86400 # default value, 1 day in seconds
+  }
 }
 
 data "aws_service_discovery_dns_namespace" "private_dns_namespace" {

@@ -5,24 +5,14 @@ from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
-from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
-from dbt_platform_helper.constants import (
-    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
-)
-from dbt_platform_helper.constants import (
-    TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
-)
+from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
-from dbt_platform_helper.providers.environment_variable import (
-    EnvironmentVariableProvider,
-)
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
-from dbt_platform_helper.utils.application import get_application_name
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -33,26 +23,17 @@ class Pipelines:
         terraform_manifest_provider: TerraformManifestProvider,
         ecr_provider: ECRProvider,
         get_git_remote: Callable[[], str],
-        get_codestar_arn: Callable[[str], str],
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
-        environment_variable_provider: EnvironmentVariableProvider = None,
-        platform_helper_version_override: str = None,
+        platform_helper_versioning: PlatformHelperVersioning = None,
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
-        self.get_codestar_arn = get_codestar_arn
         self.terraform_manifest_provider = terraform_manifest_provider
         self.ecr_provider = ecr_provider
         self.io = io
         self.file_provider = file_provider
-        self.environment_variable_provider = (
-            environment_variable_provider or EnvironmentVariableProvider()
-        )
-        self.platform_helper_version_override = (
-            platform_helper_version_override
-            or self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
-        )
+        self.platform_helper_versioning = platform_helper_versioning
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -86,27 +67,14 @@ class Pipelines:
             self.io.warn("No pipelines defined: nothing to do.")
             return
 
-        app_name = get_application_name()
-
         git_repo = self.get_git_remote()
         if not git_repo:
             self.io.abort_with_error("The current directory is not a git repository")
-
-        codestar_connection_arn = self.get_codestar_arn(app_name)
-        if codestar_connection_arn is None:
-            self.io.abort_with_error(f'There is no CodeStar Connection named "{app_name}" to use')
 
         base_path = Path(".")
         copilot_pipelines_dir = base_path / f"copilot/pipelines"
 
         self._clean_pipeline_config(copilot_pipelines_dir)
-
-        platform_helper_version_for_template: str = platform_config.get("default_versions", {}).get(
-            "platform-helper"
-        )
-
-        if self.platform_helper_version_override:
-            platform_helper_version_for_template = self.platform_helper_version_override
 
         # TODO: DBTP-1965: - this whole code block/if-statement can fall away once the deploy_repository is a required key.
         deploy_repository = ""
@@ -118,13 +86,6 @@ class Pipelines:
             )
             deploy_repository = f"uktrade/{platform_config['application']}-deploy"
 
-        env_pipeline_module_source = (
-            self.environment_variable_provider.get(
-                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-            )
-            or f"git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref={platform_helper_version_for_template}"
-        )
-
         if has_environment_pipelines:
             accounts = self._map_environment_pipeline_accounts(platform_config)
 
@@ -133,9 +94,10 @@ class Pipelines:
                     platform_config["application"],
                     deploy_repository,
                     account_name,
-                    env_pipeline_module_source,
+                    self.platform_helper_versioning.get_environment_pipeline_modules_source(),
                     deploy_branch,
                     account_id,
+                    self.platform_helper_versioning.get_pinned_version(),
                 )
 
         if has_codebase_pipelines:
@@ -151,19 +113,12 @@ class Pipelines:
                 if repo in ecrs_already_provisioned
             }
 
-            codebase_pipeline_module_source = (
-                self.environment_variable_provider.get(
-                    TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-                )
-                or f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref={platform_helper_version_for_template}"
-            )
-
             self.terraform_manifest_provider.generate_codebase_pipeline_config(
                 platform_config,
-                platform_helper_version_for_template,
+                self.platform_helper_versioning.get_template_version(),
                 ecrs_that_need_importing,
                 deploy_repository,
-                codebase_pipeline_module_source,
+                self.platform_helper_versioning.get_codebase_pipeline_modules_source(),
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
@@ -179,6 +134,7 @@ class Pipelines:
         module_source: str,
         deploy_branch: str,
         aws_account_id: str,
+        pinned_version: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -192,6 +148,7 @@ class Pipelines:
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
                 "deploy_account_id": aws_account_id,
+                "pinned_version": pinned_version,
             }
         )
 

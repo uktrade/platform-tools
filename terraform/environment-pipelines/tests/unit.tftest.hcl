@@ -296,6 +296,7 @@ variables {
     "dev" : null
     "prod" : null
   }
+  pinned_version = null
 }
 
 run "test_code_pipeline" {

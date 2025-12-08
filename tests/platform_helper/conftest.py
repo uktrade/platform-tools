@@ -624,6 +624,8 @@ schema_version: {SERVICE_CONFIG_SCHEMA_VERSION}
 name: web
 type: Load Balanced Web Service
 http:
+  alias:
+  - web.${"{PLATFORM_ENVIRONMENT_NAME}"}.${"{PLATFORM_APPLICATION_NAME}"}.uktrade.digital
   path: '/'
   target_container: nginx
   healthcheck:
@@ -673,7 +675,8 @@ environments:
   prod:
     http:
       path: '/'
-      alias: web.test-app.prod.uktrade.digital
+      alias:
+      - web.test-app.prod.uktrade.digital
       target_container: nginx
     sidecars:
       datadog-agent:
@@ -681,7 +684,8 @@ environments:
           DD_APM_ENABLED: true
   development:
     http:
-      alias: web.test-app.dev.uktrade.digital
+      alias:
+      - web.test-app.dev.uktrade.digital
     sidecars:
       ipfilter:
         image: public.ecr.aws/uktrade/ip-filter:tag-latest

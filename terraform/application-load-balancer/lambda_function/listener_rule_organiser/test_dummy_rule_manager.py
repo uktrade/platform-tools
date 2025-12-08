@@ -219,6 +219,58 @@ class TestDummyRuleManagerCreate:
         )
         mock_client.create_rule.assert_not_called()
 
+    def test_create_when_platform_rule_exists_for_the_service(self):
+        mock_rules = {
+            "Rules": [
+                {
+                    "RuleArn": "platform:rule",
+                    "Priority": 10000,
+                },
+                {
+                    "RuleArn": "copilot:rule",
+                    "Priority": 48000,
+                },
+            ]
+        }
+        mock_rule_tags = {
+            "TagDescriptions": [
+                {
+                    "ResourceArn": "platform:rule",
+                    "Tags": [
+                        {"Key": "application", "Value": "myapp"},
+                        {"Key": "environment", "Value": "myenv"},
+                        {"Key": "service", "Value": "myservice"},
+                        {"Key": "managed-by", "Value": "DBT Platform - Service Terraform"},
+                        {"Key": "reason", "Value": "service"},
+                    ],
+                },
+                {
+                    "ResourceArn": "copilot:rule",
+                    "Tags": [
+                        {"Key": "Name", "Value": "test"},
+                    ],
+                },
+            ]
+        }
+        mock_client = MagicMock()
+        mock_rules_paginator = MagicMock()
+        mock_client.get_paginator.return_value = mock_rules_paginator
+        mock_rules_paginator.paginate.return_value = [mock_rules]
+        mock_client.describe_tags.return_value = mock_rule_tags
+        mock_client.create_rule.return_value = None
+
+        organiser = DummyRuleManager("myapp", "myenv", "listener_arn")
+        organiser.get_client = MagicMock(return_value=mock_client)
+
+        organiser.create_dummy_rule("target:group", "myservice")
+
+        mock_client.get_paginator.assert_called_once_with("describe_rules")
+        mock_rules_paginator.paginate.assert_called_once_with(ListenerArn="listener_arn")
+        mock_client.describe_tags.assert_called_once_with(
+            ResourceArns=["platform:rule", "copilot:rule"]
+        )
+        mock_client.create_rule.assert_not_called()
+
     def test_delete_when_this_is_the_only_dummy_rule(self):
         mock_rules = {
             "Rules": [

@@ -5,6 +5,7 @@ from unittest.mock import Mock
 import pytest
 from freezegun import freeze_time
 
+from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -242,10 +243,7 @@ def test_generate_environment_config_creates_file(
     assert aws_req_provider["version"] == SUPPORTED_AWS_PROVIDER_VERSION
 
     module = json_content["module"]["extensions"]
-    assert (
-        module["source"]
-        == f"git::git@github.com:uktrade/platform-tools.git//terraform/extensions?depth=1&ref={platform_helper_version}"
-    )
+    assert module["source"] == f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
     assert module["args"] == "${local.args}"
     assert module["environment"] == env
     assert (
