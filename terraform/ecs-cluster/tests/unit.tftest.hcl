@@ -22,27 +22,14 @@ override_data {
   }
 }
 
-override_data {
-  target = data.aws_security_group.https_security_group
-  values = {
-    id = "sg-00112233aabbccdef"
-  }
-}
-
-override_data {
-  target = data.aws_lb_listener.environment_alb_listener_http
-  values = {
-    arn = "arn:aws:elasticloadbalancing:eu-west-2:001122334455:loadbalancer/app/demodjango-dev/56a768d2354e5fe8"
-  }
-}
-
 run "test_create_ecs_cluster" {
   command = plan
 
   variables {
-    application = "demodjango"
-    environment = "dev"
-    vpc_name    = "terraform-tests-vpc"
+    application                 = "demodjango"
+    environment                 = "dev"
+    vpc_name                    = "terraform-tests-vpc"
+    alb_https_security_group_id = "security-group-id"
   }
 
   assert {
@@ -71,12 +58,33 @@ run "test_create_ecs_cluster" {
   }
 
   assert {
-    condition     = data.aws_security_group.https_security_group.name == "demodjango-dev-alb-https"
-    error_message = "Security group name should be: 'demodjango-dev-alb-https'"
+    condition     = aws_security_group.environment_security_group.tags.Name == "platform-demodjango-dev-env-sg"
+    error_message = "Name tag was not as expected"
   }
 
   assert {
-    condition     = aws_security_group.environment_security_group.tags.Name == "platform-demodjango-dev-env-sg"
-    error_message = "Name tag was not as expected"
+    condition     = length(aws_security_group.environment_security_group.ingress) == 2
+    error_message = "Ingress does not include enough groups."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.ingress)[0].security_groups == toset(["security-group-id"])
+    error_message = "Ingress does not include the passed in security group id."
+  }
+}
+
+run "test_create_ecs_cluster_without_an_alb" {
+  command = plan
+
+  variables {
+    application                 = "demodjango"
+    environment                 = "dev"
+    vpc_name                    = "terraform-tests-vpc"
+    alb_https_security_group_id = null
+  }
+
+  assert {
+    condition     = length(aws_security_group.environment_security_group.ingress) == 1
+    error_message = "Ingress includes more than containers in the same security group."
   }
 }

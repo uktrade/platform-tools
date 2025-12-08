@@ -1,44 +1,14 @@
 version: 0.2
 
 env:
-  variables:
-    TERRAFORM_VERSION: 1.12.2
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
 
 phases:
   install:
     commands:
-      # Install cli tools
-      ## regctl for listing images
-      - curl -s -L https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 > /usr/local/bin/regctl
-      - chmod +x /usr/local/bin/regctl
-
-      ## Terraform
-      - curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-      - unzip terraform_install.zip
-      - chmod +x terraform
-      - mv terraform /usr/local/bin/terraform
-      - rm terraform_install.zip
-
-      # Install Platform Helper
-      ## Clone platform-tools
-      - cd "${CODEBUILD_SRC_DIR}"
-      - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
-      - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
-      - git config --global credential.helper '!aws codecommit credential-helper $@'
-      - git config --global credential.UseHttpPath true
-      - git config --global advice.detachedHead false
-      - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${PLATFORM_HELPER_VERSION}" --depth 1 platform-tools
-      - 'echo -e "\nCurrent platform-tools branch/commit: $(git rev-parse --abbrev-ref HEAD)/$(git rev-parse HEAD)"'
-      - cd "${CODEBUILD_SRC_DIR}/platform-tools"
-      ## Setup venv
-      - source terraform/scripts/setup_venv.sh
-      ## yq for yaml processing (The Go-based variant, not Python-based)
-      - curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
-      - chmod +x /usr/local/bin/yq
-      ## Install platform helper
-      - ./terraform/scripts/install_platform_helper.sh
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/py/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/py:${PYTHONPATH}"
 
   pre_build:
     commands:
@@ -160,17 +130,19 @@ phases:
             deploy_status="SUCCESSFUL"
             STATUS_EMOJI=":large_green_circle:"
             STATUS_TEXT="COMPLETE"
+            SEND_TO_MAIN_CHANNEL="false"
           else
             deploy_status="FAILED"
             STATUS_EMOJI=":red_circle:"
             STATUS_TEXT="FAILED"
+            SEND_TO_MAIN_CHANNEL="true"
           fi
 
           # Send notification on successful deployment or exit with an error code
         
           if [ "${deploy_status}" == "SUCCESSFUL" ]; then
             MESSAGE=":terraform:${STATUS_EMOJI} ${STATUS_TEXT} - Service infrastructure changes for \`${SERVICE}\` in environment \`${ENVIRONMENT}\` <https://${AWS_REGION}.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=${AWS_REGION}|Build log> | <${PIPELINE_EXECUTION_URL}|Pipeline execution>"
-            platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+            platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel "${SEND_TO_MAIN_CHANNEL}"
           else
             echo "Error: Deployment status is ${deploy_status}" | tee output.log
             exit 1
@@ -183,5 +155,5 @@ phases:
         if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)          
           MESSAGE=":terraform::red_circle: FAILED - Service infrastructure changes for service \`${SERVICE}\` in environment \`${ENVIRONMENT}\` - $(cat output.log) - <https://eu-west-2.console.aws.amazon.com/codesuite/codebuild/${AWS_ACCOUNT_ID}/projects/${BUILD_ID_PREFIX}/build/${CODEBUILD_BUILD_ID}/?region=eu-west-2|Build log>"
-          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}"
+          platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "${MESSAGE}" --send-to-main-channel true
         fi

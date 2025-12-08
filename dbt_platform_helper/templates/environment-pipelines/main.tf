@@ -49,4 +49,5 @@ module "environment-pipelines" {
   slack_channel       = each.value.slack_channel
   trigger_on_push     = each.value.trigger_on_push
   pipeline_to_trigger = lookup(each.value, "pipeline_to_trigger", null)
+  pinned_version      = {% if pinned_version  %}"{{ pinned_version }}"{% else %}null{% endif %}
 }

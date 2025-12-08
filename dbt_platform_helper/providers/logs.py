@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -15,13 +16,13 @@ class LogsProvider:
         """
         Check whether the logs streams provided exist or not.
 
-        Retry for up to 5 minutes.
+        Retry for up to 1 minute.
         """
 
         found_log_streams = set()
         expected_log_streams = set(expected_log_streams)
-        timeout_seconds = 300
-        poll_interval_seconds = 2
+        timeout_seconds = 60
+        poll_interval_seconds = 5
         deadline_seconds = time.monotonic() + timeout_seconds
 
         while time.monotonic() < deadline_seconds:
@@ -55,3 +56,17 @@ class LogsProvider:
         raise PlatformException(
             f"Timed out waiting for the following log streams to create: {missing_log_streams}"
         )
+
+    def get_log_stream_events(
+        self, log_group: str, log_stream: str, limit: int
+    ) -> list[dict[str, Any]]:
+        """Return events for a specific log stream."""
+
+        try:
+            self.check_log_streams_present(log_group=log_group, expected_log_streams=[log_stream])
+            response = self.client.get_log_events(
+                logGroupName=log_group, logStreamName=log_stream, limit=limit
+            )
+            return response["events"]
+        except ClientError as err:
+            raise PlatformException(f"Error retrieving log stream events: {err}")

@@ -229,6 +229,13 @@ override_data {
   }
 }
 
+override_module {
+  target = module.alb[0]
+  outputs = {
+    https_security_group_id = "security-group-id"
+  }
+}
+
 run "aws_ssm_parameter_unit_test" {
   command = plan
 
