@@ -580,6 +580,18 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: copilot",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
                     "Deleted rules: 3",
                     "ARN: listener-rule-arn-doesnt-matter-8",
                     "Priority: 10000",
@@ -594,6 +606,7 @@ class MockALBService:
                     "Hosts: api.doesnt-matter",
                     "Paths: /*\n",
                 ],
+                "warn": ["Platform rules will be deleted"],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
@@ -613,6 +626,18 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: dual-deploy-copilot-traffic",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
                     "Deleted rules: 3",
                     "ARN: listener-rule-arn-doesnt-matter-8",
                     "Priority: 10000",
@@ -627,6 +652,7 @@ class MockALBService:
                     "Hosts: api.doesnt-matter",
                     "Paths: /*\n",
                 ],
+                "warn": ["Platform rules will be deleted"],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
@@ -1015,6 +1041,18 @@ def test_alb_rules_delete_with_rollback(
     mock_io.info.assert_has_calls(
         [
             call("Deployment Mode: copilot"),
+            call("ARN: listener-rule-arn-doesnt-matter-8"),
+            call("Priority: 10000"),
+            call("Hosts: web.doesnt-matter"),
+            call("Paths: /secondary-service/*,/secondary-service\n"),
+            call("ARN: listener-rule-arn-doesnt-matter-9"),
+            call("Priority: 10100"),
+            call("Hosts: web.doesnt-matter"),
+            call("Paths: /*\n"),
+            call("ARN: listener-rule-arn-doesnt-matter-10"),
+            call("Priority: 11000"),
+            call("Hosts: api.doesnt-matter"),
+            call("Paths: /*\n"),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
         ]

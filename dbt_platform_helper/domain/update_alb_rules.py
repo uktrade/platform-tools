@@ -283,10 +283,16 @@ class UpdateALBRules:
             service_deployment_mode == Deployment.COPILOT.value
             or service_deployment_mode == Deployment.DUAL_DEPLOY_COPILOT.value
         ):
+            rules_to_delete = mapped_rules.get(RuleType.PLATFORM.value, [])
+            if not rules_to_delete:
+                return
+
+            self.io.warn("Platform rules will be deleted")
+            self._output_rule_changes(rules_to_delete)
             if self.io.confirm(
                 f"This command is destructive and will remove load balancer listener rules created by the platform, you may lose access to your services. Are you sure you want to continue?"
             ):
-                self._delete_rules(mapped_rules.get(RuleType.PLATFORM.value, []), operation_state)
+                self._delete_rules(rules_to_delete, operation_state)
 
     def _delete_rules(self, rules: List[dict], operation_state: OperationState):
         for rule in rules:
