@@ -192,6 +192,11 @@ class ServiceManager:
                                 del env_config["http"]["alb"]
                             if isinstance(env_config["http"].get("alias", []), str):
                                 env_config["http"]["alias"] = [env_config["http"]["alias"]]
+                        if "network" in env_config:
+                            del env_config["network"]
+
+                if "network" in service_manifest:
+                    del service_manifest["network"]
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
