@@ -86,6 +86,8 @@ class UpdateALBRules:
             if operation_state.deleted_rules:
                 self.io.info(f"Deleted rules: {len(operation_state.deleted_rules)}")
                 self._output_rule_changes(operation_state.deleted_rules)
+            if not operation_state.created_rules and not operation_state.deleted_rules:
+                self.io.info("No rule updates required")
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
@@ -290,7 +292,10 @@ class UpdateALBRules:
             service_deployment_mode == Deployment.COPILOT.value
             or service_deployment_mode == Deployment.DUAL_DEPLOY_COPILOT.value
         ):
-            self._delete_rules(mapped_rules.get(RuleType.PLATFORM.value, []), operation_state)
+            if self.io.confirm(
+                f"This command is destructive and will remove load balancer listener rules created by the platform, you may lose access to your services. Are you sure you want to continue?"
+            ):
+                self._delete_rules(mapped_rules.get(RuleType.PLATFORM.value, []), operation_state)
 
     def _delete_rules(self, rules: List[dict], operation_state: OperationState):
         for rule in rules:
