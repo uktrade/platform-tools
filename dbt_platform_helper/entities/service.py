@@ -35,15 +35,15 @@ class HealthCheck(BaseModel):
     interval: Optional[str] = Field(
         description="The approximate amount of time, in seconds, between health checks of an individual target.",
         default=None,
-    )
+    )  # TODO - Needs to be made into int within trailing s
     timeout: Optional[str] = Field(
         description="The amount of time, in seconds, during which no response from a target means a failed health check.",
         default=None,
-    )
+    )  # TODO - Needs to be made into int within trailing s
     grace_period: Optional[str] = Field(
         description="The amount of time to ignore failing target group healthchecks on container start.",
         default=None,
-    )
+    )  # TODO - Needs to be made into int within trailing s
 
 
 class Http(BaseModel):
@@ -70,6 +70,26 @@ class HttpOverride(BaseModel):
     healthcheck: Optional[HealthCheck] = Field(default=None)
 
 
+class ContainerHealthCheck(BaseModel):
+    command: list[str] = Field(
+        description="The command to run to determine if the container is healthy."
+    )
+    interval: Optional[str] = Field(
+        default=None, description="Time period between health checks, in seconds."
+    )  # TODO - Needs to be made into int within trailing s
+    retries: Optional[int] = Field(
+        default=None, description="Number of times to retry before container is deemed unhealthy."
+    )
+    timeout: Optional[str] = Field(
+        default=None,
+        description="How long to wait before considering the health check failed, in seconds.",
+    )  # TODO - Needs to be made into int within trailing s
+    start_period: Optional[str] = Field(
+        default=None,
+        description="Length of grace period for containers to bootstrap before failed health checks count towards the maximum number of retries.",
+    )  # TODO - Needs to be made into int within trailing s
+
+
 class Sidecar(BaseModel):
     port: int = Field(description="Container port exposed by the sidecar to receive traffic.")
     image: str = Field(description="Container image URI for the sidecar (e.g. 'repo/image:tag').")
@@ -83,6 +103,7 @@ class Sidecar(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the sidecar.", default=None
     )
+    healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
 class SidecarOverride(BaseModel):
@@ -91,6 +112,7 @@ class SidecarOverride(BaseModel):
     essential: Optional[bool] = Field(default=None)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
+    healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
 class Image(BaseModel):
@@ -102,6 +124,7 @@ class Image(BaseModel):
     depends_on: Optional[dict[str, str]] = Field(
         description="Container dependency conditions.", default=None
     )
+    healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
 class Storage(BaseModel):

@@ -52,12 +52,26 @@ variable "service_config" {
       essential = optional(bool)
       variables = optional(map(string))
       secrets   = optional(map(string))
+      healthcheck = optional(object({
+        command      = list(string)
+        interval     = optional(string)
+        retries      = optional(number)
+        timeout      = optional(string)
+        start_period = optional(string)
+      }))
     })))
 
     image = object({
       location   = string
       port       = optional(number)
       depends_on = optional(map(string))
+      healthcheck = optional(object({
+        command      = list(string)
+        interval     = optional(string)
+        retries      = optional(number)
+        timeout      = optional(string)
+        start_period = optional(string)
+      }))
     })
 
     cpu        = number

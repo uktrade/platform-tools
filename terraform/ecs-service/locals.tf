@@ -187,6 +187,27 @@ locals {
     },
     try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
+
+    try(var.service_config.image.healthcheck, null) != null ?
+    {
+      healthCheck = merge(
+        {
+          command = var.service_config.image.healthcheck.command
+        },
+        try(var.service_config.image.healthcheck.interval, null) != null ? {
+          interval = tonumber(replace(var.service_config.image.healthcheck.interval, "s", ""))
+        } : {},
+        try(var.service_config.image.healthcheck.retries, null) != null ? {
+          retries = var.service_config.image.healthcheck.retries
+        } : {},
+        try(var.service_config.image.healthcheck.timeout, null) != null ? {
+          timeout = tonumber(replace(var.service_config.image.healthcheck.timeout, "s", ""))
+        } : {},
+        try(var.service_config.image.healthcheck.start_period, null) != null ? {
+          startPeriod = tonumber(replace(var.service_config.image.healthcheck.start_period, "s", ""))
+        } : {}
+      )
+    } : {},
   )
 
   permissions_container = merge(local.default_container_config, {
@@ -233,6 +254,26 @@ locals {
           )
         ] : []
       },
+      try(sidecar.healthcheck, null) != null ?
+      {
+        healthCheck = merge(
+          {
+            command = sidecar.healthcheck.command
+          },
+          try(sidecar.healthcheck.interval, null) != null ? {
+            interval = tonumber(replace(sidecar.healthcheck.interval, "s", ""))
+          } : {},
+          try(sidecar.healthcheck.retries, null) != null ? {
+            retries = sidecar.healthcheck.retries
+          } : {},
+          try(sidecar.healthcheck.timeout, null) != null ? {
+            timeout = tonumber(replace(sidecar.healthcheck.timeout, "s", ""))
+          } : {},
+          try(sidecar.healthcheck.start_period, null) != null ? {
+            startPeriod = tonumber(replace(sidecar.healthcheck.start_period, "s", ""))
+          } : {}
+        )
+      } : {},
     )
   ]
 
