@@ -147,21 +147,12 @@ class UpdateALBRules:
                 if service.type not in HTTP_SERVICE_TYPES:
                     continue
 
-                aliases = (
-                    [service.http.alias]
-                    if isinstance(service.http.alias, str)
-                    else service.http.alias
-                )
-
                 additional_rules = getattr(service.http, "additional_rules", None)
                 if additional_rules:
                     for rule in additional_rules:
-                        additional_aliases = (
-                            [rule.alias] if isinstance(rule.alias, str) else rule.alias
-                        )
-                        grouped[(service.name, rule.path)].extend(additional_aliases)
+                        grouped[(service.name, rule.path)].extend(rule.alias)
 
-                grouped[(service.name, service.http.path)].extend(aliases)
+                grouped[(service.name, service.http.path)].extend(service.http.alias)
 
             rules = []
             for (name, path), aliases in grouped.items():
