@@ -21,7 +21,7 @@ class HealthCheck(BaseModel):
         description="The port that the health check requests are sent to.", default=None
     )
     success_codes: Optional[str] = Field(
-        description="The HTTP status codes that healthy targets must use when responding to a HTTP health check.",
+        description="A comma-separated list of HTTP status codes that healthy targets must use when responding to a HTTP health check.",
         default=None,
     )
     healthy_threshold: Optional[int] = Field(
@@ -37,7 +37,7 @@ class HealthCheck(BaseModel):
         default=None,
     )
     timeout: Optional[str] = Field(
-        description="The amount of time, in seconds, during which no response from a target means a failed health check. ",
+        description="The amount of time, in seconds, during which no response from a target means a failed health check.",
         default=None,
     )
     grace_period: Optional[str] = Field(
@@ -71,7 +71,7 @@ class HttpOverride(BaseModel):
 
 
 class Sidecar(BaseModel):
-    port: int = Field(description="Container port exposed by the sidecar.")
+    port: int = Field(description="Container port exposed by the sidecar to receive traffic.")
     image: str = Field(description="Container image URI for the sidecar (e.g. 'repo/image:tag').")
     essential: Optional[bool] = Field(
         description="Whether the ECS task should stop if this sidecar container exits.",
@@ -104,30 +104,6 @@ class Image(BaseModel):
     )
 
 
-class VPC(BaseModel):
-    placement: Optional[str] = Field(default=None)
-
-    @model_validator(mode="after")
-    def check_for_correct_network_properties(self):
-        if self.placement != "private":
-            raise PlatformException(f"Property 'placement' must always be set to 'private'.")
-        return self
-
-
-class Network(BaseModel):
-    connect: Optional[bool] = Field(
-        description="Enable ECS Service Connect for intra-environment traffic between services.",
-        default=None,
-    )
-    vpc: Optional[VPC] = Field(default=None)
-
-    @model_validator(mode="after")
-    def check_for_correct_network_properties(self):
-        if not self.connect:
-            raise PlatformException(f"Property 'connect' must always be set to 'true'.")
-        return self
-
-
 class Storage(BaseModel):
     readonly_fs: Optional[bool] = Field(
         description="Specify true to give your container read-only access to its root file system.",
@@ -150,11 +126,11 @@ class Storage(BaseModel):
 
 
 class Cooldown(BaseModel):
-    in_: int = Field(
+    in_: Optional[int] = Field(
         alias="in",
         description="Number of seconds to wait before scaling in (down) after a drop in load.",
     )  # Can't use 'in' because it's a reserved keyword
-    out: int = Field(
+    out: Optional[int] = Field(
         description="Number of seconds to wait before scaling out (up) after a spike in load."
     )
 
@@ -245,7 +221,6 @@ class ServiceConfigEnvironmentOverride(BaseModel):
     exec: Optional[bool] = Field(default=None)
     entrypoint: Optional[list[str]] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
-    network: Optional[Network] = Field(default=None)
 
     storage: Optional[Storage] = Field(default=None)
 
@@ -263,7 +238,6 @@ class ServiceConfig(BaseModel):
     type: ServiceType = Field(
         description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
     )
-
     http: Optional[Http] = Field(default=None)
 
     @model_validator(mode="after")
@@ -276,7 +250,6 @@ class ServiceConfig(BaseModel):
 
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
-
     cpu: int = Field(
         description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
     )
@@ -291,25 +264,24 @@ class ServiceConfig(BaseModel):
         default=None,
     )
     entrypoint: Optional[list[str]] = Field(
-        description="Container entrypoint array (overrides default ENTRYPOINT).", default=None
+        description="Overrides the default entrypoint in the image.", default=None
     )
     essential: Optional[bool] = Field(
-        description="Whether the main container is marked essential; task stops if it exits.",
+        description="Whether the main container is marked essential; The entire ECS task stops if it exits.",
         default=None,
     )
-    network: Optional[Network] = Field(default=None)
-
     storage: Optional[Storage] = Field(default=None)
-
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
-        description="Environment variables to inject into the sidecar container.", default=None
+        description="Environment variables to inject into the main application container.",
+        default=None,
     )
     secrets: Optional[Dict[str, str]] = Field(
-        description="Parameter Store secrets to inject into the sidecar.", default=None
+        description="Parameter Store secrets to inject into the main application container.",
+        default=None,
     )
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
-        description="Allows you to override any service config property for specific environments (e.g. a higher ECS task count in prod than for your other environments).",
+        description="Allows you to override almost service config property for specific environments.",
         default=None,
     )
 

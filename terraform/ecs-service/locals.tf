@@ -185,7 +185,7 @@ locals {
         ]
       )
     },
-    var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
+    try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
   )
 

@@ -142,7 +142,7 @@ resource "aws_ecs_service" "service" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
+    ignore_changes = [task_definition, desired_count]
   }
 
   depends_on = [aws_lambda_invocation.dummy_listener_rule]
