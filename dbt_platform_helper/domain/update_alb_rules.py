@@ -173,6 +173,9 @@ class UpdateALBRules:
                     while i < condition_length:
                         remaining_slots = max_conditions - len(path_pattern)
                         alias_split = aliases[i : i + remaining_slots] if aliases else []
+                        if not alias_split:
+                            break
+
                         rules.append(
                             {
                                 "service": name,
