@@ -21,7 +21,6 @@ from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
-from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from tests.platform_helper.domain.test_versioning import PlatformHelperVersioningMocks
 
@@ -35,7 +34,7 @@ class PipelineMocks:
             14, 0, 0
         )
         self.mock_config_provider = ConfigProvider(
-            ConfigValidator(), installed_version_provider=mock_installed_version_provider
+            Mock(), installed_version_provider=mock_installed_version_provider
         )
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
@@ -89,29 +88,36 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch, module_source_override",
+    "use_environment_variable_platform_helper_version, is_auto, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch, expected_pinned_version, module_source_override",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        (False, "14.0.0", "demodjango-branch", "demodjango-branch", "../local/path/"),
-        (False, "14.0.0", None, None, None),
-        (True, "test-branch", None, None, "../local/path/"),
-        (True, "test-branch", None, None, None),
+        (False, False, "14.0.0", "demodjango-branch", "demodjango-branch", None, "../local/path/"),
+        (False, False, "14.0.0", None, None, None, None),
+        (True, False, "test-branch", None, None, None, "../local/path/"),
+        (True, False, "test-branch", None, None, None, None),
+        (True, True, "test-branch", None, None, "test-branch", None),
     ],
 )
 def test_pipeline_generate_command_generate_terraform_files_for_environment_pipeline_manifest(
     fakefs,
     use_environment_variable_platform_helper_version,
+    is_auto,
     expected_platform_helper_version,
     cli_demodjango_branch,
     expected_demodjango_branch,
+    expected_pinned_version,
     module_source_override,
     platform_config_for_env_pipelines,
 ):
 
     app_name = "test-app"
 
-    platform_config_for_env_pipelines["default_versions"] = {
-        "platform-helper": expected_platform_helper_version
-    }
+    if is_auto:
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+    else:
+        platform_config_for_env_pipelines["default_versions"] = {
+            "platform-helper": expected_platform_helper_version
+        }
+
     fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
 
     mocks = PipelineMocks(app_name)
@@ -148,6 +154,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         "platform-sandbox-test",
         expected_platform_helper_version,
         expected_demodjango_branch,
+        expected_pinned_version,
         module_source_override,
         "1111111111",
     )
@@ -156,6 +163,7 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         "platform-prod-test",
         expected_platform_helper_version,
         expected_demodjango_branch,
+        expected_pinned_version,
         module_source_override,
         "3333333333",
     )
@@ -295,6 +303,7 @@ def assert_terraform(
     aws_account,
     expected_version,
     expected_branch,
+    expected_pinned_version,
     module_source_override,
     deploy_account_id,
 ):
@@ -330,3 +339,4 @@ def assert_terraform(
         assert parsed_terraform["provider"][0]["aws"]["allowed_account_ids"] == [deploy_account_id]
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
+        assert environment_pipeline_module["pinned_version"] == expected_pinned_version
