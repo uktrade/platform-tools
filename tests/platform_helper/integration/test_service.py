@@ -112,6 +112,7 @@ def test_generate(
 
     assert generated_yaml.read_text() == actual_yaml.read_text()
 
+
 @patch("dbt_platform_helper.domain.service.version", return_value="14.0.0")
 @patch("dbt_platform_helper.providers.terraform_manifest.version", return_value="14.0.0")
 @freeze_time("2025-01-16 13:00:00")
