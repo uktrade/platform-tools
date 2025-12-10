@@ -132,7 +132,7 @@ locals {
               order : max([for svc in local.service_order_list : svc.order]...) + 2,
               input_artifacts : ["tools_output"],
               configuration = {
-                ProjectName   = aws_codebuild_project.codebase_update_alb_rules.name
+                ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
                 PrimarySource = "tools_output"
                 EnvironmentVariables : jsonencode([
                   { name : "APPLICATION", value : var.application },
@@ -200,12 +200,12 @@ locals {
         }
       }] : [],
     )]),
-    [{
+    local.platform_deployment_enabled ? [{
       name : "update-alb-rules",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
       input_artifacts : ["tools_output"],
       configuration = {
-        ProjectName   = aws_codebuild_project.codebase_update_alb_rules.name
+        ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
         PrimarySource = "tools_output"
         EnvironmentVariables : jsonencode([
           { name : "APPLICATION", value : var.application },
@@ -214,7 +214,7 @@ locals {
           { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
         ])
       }
-    }],
+    }] : [],
     local.cache_invalidation_enabled ? [{
       name : "invalidate-cache",
       order : max([for svc in local.service_order_list : svc.order]...) + 2,
