@@ -32,18 +32,18 @@ class HealthCheck(BaseModel):
         description="The number of consecutive health check failures required before considering a target unhealthy.",
         default=None,
     )
-    interval: Optional[str] = Field(
+    interval: Optional[int] = Field(
         description="The approximate amount of time, in seconds, between health checks of an individual target.",
         default=None,
-    )  # TODO - Needs to be made into int within trailing s
-    timeout: Optional[str] = Field(
+    )
+    timeout: Optional[int] = Field(
         description="The amount of time, in seconds, during which no response from a target means a failed health check.",
         default=None,
-    )  # TODO - Needs to be made into int within trailing s
-    grace_period: Optional[str] = Field(
+    )
+    grace_period: Optional[int] = Field(
         description="The amount of time to ignore failing target group healthchecks on container start.",
         default=None,
-    )  # TODO - Needs to be made into int within trailing s
+    )
 
 
 class Http(BaseModel):
@@ -54,6 +54,10 @@ class Http(BaseModel):
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
     healthcheck: Optional[HealthCheck] = Field(default=None)
+    deregistration_delay: Optional[int] = Field(
+        default=None,
+        description="The amount of time to wait for targets to drain connections during deregistration.",
+    )
 
 
 class HttpOverride(BaseModel):
@@ -68,26 +72,30 @@ class HttpOverride(BaseModel):
         description="Target container for the requests", default=None
     )
     healthcheck: Optional[HealthCheck] = Field(default=None)
+    deregistration_delay: Optional[int] = Field(
+        default=None,
+        description="The amount of time to wait for targets to drain connections during deregistration.",
+    )
 
 
 class ContainerHealthCheck(BaseModel):
     command: list[str] = Field(
         description="The command to run to determine if the container is healthy."
     )
-    interval: Optional[str] = Field(
+    interval: Optional[int] = Field(
         default=None, description="Time period between health checks, in seconds."
-    )  # TODO - Needs to be made into int within trailing s
+    )
     retries: Optional[int] = Field(
         default=None, description="Number of times to retry before container is deemed unhealthy."
     )
-    timeout: Optional[str] = Field(
+    timeout: Optional[int] = Field(
         default=None,
         description="How long to wait before considering the health check failed, in seconds.",
-    )  # TODO - Needs to be made into int within trailing s
-    start_period: Optional[str] = Field(
+    )
+    start_period: Optional[int] = Field(
         default=None,
         description="Length of grace period for containers to bootstrap before failed health checks count towards the maximum number of retries.",
-    )  # TODO - Needs to be made into int within trailing s
+    )
 
 
 class Sidecar(BaseModel):

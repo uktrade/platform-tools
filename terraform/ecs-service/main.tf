@@ -83,7 +83,7 @@ resource "aws_ecs_service" "service" {
   task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
   desired_count                     = 1 # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by autoscaling.
-  health_check_grace_period_seconds = tonumber(trim(coalesce(try(var.service_config.http.healthcheck.grace_period, null), "30s"), "s"))
+  health_check_grace_period_seconds = try(var.service_config.http.healthcheck.grace_period, 30)
   tags                              = local.tags
 
   deployment_circuit_breaker {
@@ -174,7 +174,7 @@ resource "aws_lb_target_group" "target_group" {
   protocol             = "HTTPS"
   target_type          = "ip"
   vpc_id               = data.aws_vpc.vpc[count.index].id
-  deregistration_delay = 60
+  deregistration_delay = try(var.service_config.http.deregistration_delay, 60)
   tags                 = local.tags
 
   health_check {
@@ -184,12 +184,12 @@ resource "aws_lb_target_group" "target_group" {
     matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
     healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
     unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
-    interval            = tonumber(trim(coalesce(var.service_config.http.healthcheck.interval, "35s"), "s"))
-    timeout             = tonumber(trim(coalesce(var.service_config.http.healthcheck.timeout, "30s"), "s"))
+    interval            = try(var.service_config.http.healthcheck.interval, 35)
+    timeout             = try(var.service_config.http.healthcheck.timeout, 30)
   }
 
   stickiness {
-    enabled         = coalesce(var.service_config.http.stickiness, false)
+    enabled         = try(var.service_config.http.stickiness, false)
     type            = "lb_cookie"
     cookie_duration = 86400 # default value, 1 day in seconds
   }

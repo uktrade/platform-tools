@@ -195,16 +195,16 @@ locals {
           command = var.service_config.image.healthcheck.command
         },
         try(var.service_config.image.healthcheck.interval, null) != null ? {
-          interval = tonumber(replace(var.service_config.image.healthcheck.interval, "s", ""))
+          interval = var.service_config.image.healthcheck.interval
         } : {},
         try(var.service_config.image.healthcheck.retries, null) != null ? {
           retries = var.service_config.image.healthcheck.retries
         } : {},
         try(var.service_config.image.healthcheck.timeout, null) != null ? {
-          timeout = tonumber(replace(var.service_config.image.healthcheck.timeout, "s", ""))
+          timeout = var.service_config.image.healthcheck.timeout
         } : {},
         try(var.service_config.image.healthcheck.start_period, null) != null ? {
-          startPeriod = tonumber(replace(var.service_config.image.healthcheck.start_period, "s", ""))
+          startPeriod = var.service_config.image.healthcheck.start_period
         } : {}
       )
     } : {},
@@ -261,16 +261,16 @@ locals {
             command = sidecar.healthcheck.command
           },
           try(sidecar.healthcheck.interval, null) != null ? {
-            interval = tonumber(replace(sidecar.healthcheck.interval, "s", ""))
+            interval = sidecar.healthcheck.interval
           } : {},
           try(sidecar.healthcheck.retries, null) != null ? {
             retries = sidecar.healthcheck.retries
           } : {},
           try(sidecar.healthcheck.timeout, null) != null ? {
-            timeout = tonumber(replace(sidecar.healthcheck.timeout, "s", ""))
+            timeout = sidecar.healthcheck.timeout
           } : {},
           try(sidecar.healthcheck.start_period, null) != null ? {
-            startPeriod = tonumber(replace(sidecar.healthcheck.start_period, "s", ""))
+            startPeriod = sidecar.healthcheck.start_period
           } : {}
         )
       } : {},
