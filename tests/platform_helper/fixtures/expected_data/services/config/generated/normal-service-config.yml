@@ -31,10 +31,6 @@ cpu: 512
 memory: 2048
 count: 1
 exec: true
-network:
-  connect: true
-  vpc:
-    placement: private
 storage:
   readonly_fs: false
 variables:
