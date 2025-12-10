@@ -250,6 +250,7 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform" {
 }
 
 resource "aws_codebuild_project" "codebase_update_alb_rules" {
+  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-codebase-update-alb-rules"
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30

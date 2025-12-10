@@ -2422,23 +2422,23 @@ run "test_update_alb_rules" {
     error_message = "Unexpected resources"
   }
   assert {
-    condition = aws_codebuild_project.codebase_update_alb_rules.logs_config[0].cloudwatch_logs[
+    condition = aws_codebuild_project.codebase_update_alb_rules[""].logs_config[0].cloudwatch_logs[
       0
     ].group_name == "codebuild/my-app-my-codebase-codebase-update-alb-rules/log-group"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-update-alb-rules/log-group'"
   }
   assert {
-    condition = aws_codebuild_project.codebase_update_alb_rules.logs_config[0].cloudwatch_logs[
+    condition = aws_codebuild_project.codebase_update_alb_rules[""].logs_config[0].cloudwatch_logs[
       0
     ].stream_name == "codebuild/my-app-my-codebase-codebase-update-alb-rules/log-stream"
     error_message = "Should be: 'codebuild/my-app-my-codebase-codebase-update-alb-rules/log-stream'"
   }
   assert {
-    condition     = length(regexall(".*alb update-rules.*", aws_codebuild_project.codebase_update_alb_rules.source[0].buildspec)) > 0
+    condition     = length(regexall(".*alb update-rules.*", aws_codebuild_project.codebase_update_alb_rules[""].source[0].buildspec)) > 0
     error_message = "Should contain: 'alb update-rules'"
   }
   assert {
-    condition     = jsonencode(aws_codebuild_project.codebase_update_alb_rules.tags) == jsonencode(var.expected_tags)
+    condition     = jsonencode(aws_codebuild_project.codebase_update_alb_rules[""].tags) == jsonencode(var.expected_tags)
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
