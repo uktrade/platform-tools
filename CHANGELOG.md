@@ -1,5 +1,38 @@
 # Changelog
 
+## [15.14.1](https://github.com/uktrade/platform-tools/compare/15.14.0...15.14.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* Do not deploy update-alb-rules for copilot mode (off-ticket) ([#1179](https://github.com/uktrade/platform-tools/issues/1179)) ([741ec5a](https://github.com/uktrade/platform-tools/commit/741ec5a6524ae20c146e8b0d2d5809533fdf0bb8))
+
+## [15.14.0](https://github.com/uktrade/platform-tools/compare/15.13.1...15.14.0) (2025-12-10)
+
+
+### Features
+
+* Add back update ALB rules to pipeline (DBTP-2535) ([#1165](https://github.com/uktrade/platform-tools/issues/1165)) ([fd66281](https://github.com/uktrade/platform-tools/commit/fd66281b4263f9b5cee9673bbe92b75bfdf81165))
+* Create new platform ALB rules (DBTP-2402) ([#1142](https://github.com/uktrade/platform-tools/issues/1142)) ([4e3104f](https://github.com/uktrade/platform-tools/commit/4e3104f4ec452092457dc4d3219a553cdd7e71a1))
+* Pin modules and helper version for auto (DBTP-2493) ([#1162](https://github.com/uktrade/platform-tools/issues/1162)) ([af94f48](https://github.com/uktrade/platform-tools/commit/af94f48a195601cb729f082796984ad01e913c2a))
+* Post-nopilot load balancer rules (DBTP-2402) ([#1136](https://github.com/uktrade/platform-tools/issues/1136)) ([989d28b](https://github.com/uktrade/platform-tools/commit/989d28b5c80e7236504cc151aa11a41c78bfd008))
+* Validations for `auto` platform-helper default-version (DBTP-2493) ([#1164](https://github.com/uktrade/platform-tools/issues/1164)) ([03a1826](https://github.com/uktrade/platform-tools/commit/03a18269c9678a58320145a87c46b748eecdf222))
+
+
+### Bug Fixes
+
+* Add missing pipeline input artifact (off-ticket) ([#1160](https://github.com/uktrade/platform-tools/issues/1160)) ([94f8674](https://github.com/uktrade/platform-tools/commit/94f8674652a949342b4de8436e38577c94d50162))
+* Allows manual approvals in codebase pipelines with auto (DBTP-2498) ([#1169](https://github.com/uktrade/platform-tools/issues/1169)) ([63ebcda](https://github.com/uktrade/platform-tools/commit/63ebcdadaa8fba603b09ed56bbf693858b451157))
+* Pipeline domain tests do not need to validate config test data (off-ticket) ([#1168](https://github.com/uktrade/platform-tools/issues/1168)) ([cb70a2e](https://github.com/uktrade/platform-tools/commit/cb70a2e2105f90421fddab772217381b393dccf2))
+* Remove failing codestar connection validation (DBTP-2550) ([#1163](https://github.com/uktrade/platform-tools/issues/1163)) ([7f88e7d](https://github.com/uktrade/platform-tools/commit/7f88e7d07bf5a3024ddacee1f0ee4d23e4acebb4))
+* Send deployment failure notifications to Slack channel (DBTP-2512) ([#1159](https://github.com/uktrade/platform-tools/issues/1159)) ([30a829e](https://github.com/uktrade/platform-tools/commit/30a829e1c963487cd14a2889bd761323d9f620e3))
+
+
+### Dependencies
+
+* Bump boto3 from 1.35.49 to 1.35.99 ([#1063](https://github.com/uktrade/platform-tools/issues/1063)) ([857450c](https://github.com/uktrade/platform-tools/commit/857450c62945f42e689636e5068cbc163ac70753))
+* Bump psycopg2-binary from 2.9.10 to 2.9.11 ([#1093](https://github.com/uktrade/platform-tools/issues/1093)) ([4958c9c](https://github.com/uktrade/platform-tools/commit/4958c9c37122e54a123f402c687c3646b74f1419))
+
 ## [15.13.1](https://github.com/uktrade/platform-tools/compare/15.13.0...15.13.1) (2025-11-26)
 
 

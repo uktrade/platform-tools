@@ -249,12 +249,12 @@ resource "aws_cloudwatch_log_stream" "codebase_service_terraform" {
   log_group_name = aws_cloudwatch_log_group.codebase_service_terraform[""].name
 }
 
-resource "aws_codebuild_project" "codebase_traffic_switch" {
-  for_each       = toset(local.traffic_switch_enabled ? [""] : [])
-  name           = "${var.application}-${var.codebase}-codebase-traffic-switch"
+resource "aws_codebuild_project" "codebase_update_alb_rules" {
+  for_each       = toset(local.platform_deployment_enabled ? [""] : [])
+  name           = "${var.application}-${var.codebase}-codebase-update-alb-rules"
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30
-  service_role   = aws_iam_role.traffic_switch[""].arn
+  service_role   = aws_iam_role.update_alb_rules.arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
 
   artifacts {
@@ -281,31 +281,29 @@ resource "aws_codebuild_project" "codebase_traffic_switch" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
-      stream_name = aws_cloudwatch_log_stream.codebase_traffic_switch[""].name
+      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules.name
+      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules.name
     }
   }
 
   source {
     type      = "CODEPIPELINE"
-    buildspec = file("${path.module}/buildspec-traffic-switch.yml")
+    buildspec = file("${path.module}/buildspec-update-alb-rules.yml")
   }
 
   tags = local.tags
 }
 
-resource "aws_cloudwatch_log_group" "codebase_traffic_switch" {
+resource "aws_cloudwatch_log_group" "codebase_update_alb_rules" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
-  for_each          = toset(local.traffic_switch_enabled ? [""] : [])
-  name              = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-group"
+  name              = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-group"
   retention_in_days = 90
 }
 
-resource "aws_cloudwatch_log_stream" "codebase_traffic_switch" {
-  for_each       = toset(local.traffic_switch_enabled ? [""] : [])
-  name           = "codebuild/${var.application}-${var.codebase}-codebase-traffic-switch/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_traffic_switch[""].name
+resource "aws_cloudwatch_log_stream" "codebase_update_alb_rules" {
+  name           = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-stream"
+  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules.name
 }
 
 resource "aws_codebuild_project" "invalidate_cache" {

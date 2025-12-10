@@ -46,6 +46,11 @@ class HealthCheck(BaseModel):
     )
 
 
+class AdditionalRules(BaseModel):
+    path: str = Field(description="""Requests to this path will be forwarded to your service.""")
+    alias: list[str] = Field(description="""The HTTP domain alias of the service.""")
+
+
 class Http(BaseModel):
     alias: list[str] = Field(
         description="List of HTTPS domain alias(es) of your service.", default=None
@@ -54,6 +59,7 @@ class Http(BaseModel):
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
     healthcheck: Optional[HealthCheck] = Field(default=None)
+    additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
     deregistration_delay: Optional[int] = Field(
         default=None,
         description="The amount of time to wait for targets to drain connections during deregistration.",
@@ -72,6 +78,7 @@ class HttpOverride(BaseModel):
         description="Target container for the requests", default=None
     )
     healthcheck: Optional[HealthCheck] = Field(default=None)
+    additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
     deregistration_delay: Optional[int] = Field(
         default=None,
         description="The amount of time to wait for targets to drain connections during deregistration.",
