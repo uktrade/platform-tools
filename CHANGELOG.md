@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.14.1](https://github.com/uktrade/platform-tools/compare/15.14.0...15.14.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* Do not deploy update-alb-rules for copilot mode (off-ticket) ([#1179](https://github.com/uktrade/platform-tools/issues/1179)) ([741ec5a](https://github.com/uktrade/platform-tools/commit/741ec5a6524ae20c146e8b0d2d5809533fdf0bb8))
+
 ## [15.14.0](https://github.com/uktrade/platform-tools/compare/15.13.1...15.14.0) (2025-12-10)
 
 
