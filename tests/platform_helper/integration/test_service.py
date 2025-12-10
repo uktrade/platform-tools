@@ -1,6 +1,7 @@
 import json
 import os
 from pathlib import Path
+import sys
 from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import call
@@ -111,7 +112,6 @@ def test_generate(
 
     assert generated_yaml.read_text() == actual_yaml.read_text()
 
-
 @patch("dbt_platform_helper.domain.service.version", return_value="14.0.0")
 @patch("dbt_platform_helper.providers.terraform_manifest.version", return_value="14.0.0")
 @freeze_time("2025-01-16 13:00:00")
@@ -141,9 +141,14 @@ def test_generate_no_service_dir(
 
     service_manager.generate(environment="development", services=[])
 
-    io.abort_with_error.assert_called_with(
-        "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
-    )
+    if sys.version_info >= (3, 13):
+        io.abort_with_error.assert_called_with(
+            "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
+        )
+    else:
+        io.abort_with_error.assert_called_with(
+            "Failed extracting services with exception, [Errno 2] No such file or directory: '/services'"
+        )
 
 
 @patch("dbt_platform_helper.domain.service.version", return_value="14.0.0")
