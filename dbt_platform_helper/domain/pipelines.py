@@ -97,6 +97,7 @@ class Pipelines:
                     self.platform_helper_versioning.get_environment_pipeline_modules_source(),
                     deploy_branch,
                     account_id,
+                    self.platform_helper_versioning.get_pinned_version(),
                 )
 
         if has_codebase_pipelines:
@@ -133,6 +134,7 @@ class Pipelines:
         module_source: str,
         deploy_branch: str,
         aws_account_id: str,
+        pinned_version: str,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
@@ -146,6 +148,7 @@ class Pipelines:
                 "terraform_version": SUPPORTED_TERRAFORM_VERSION,
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
                 "deploy_account_id": aws_account_id,
+                "pinned_version": pinned_version,
             }
         )
 
