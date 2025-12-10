@@ -195,15 +195,13 @@ class ServiceManager:
                         if "network" in env_config:
                             del env_config["network"]
                         if "observability" in env_config:
-                            if "container_insights" in env_config["observability"]:
-                                del env_config["observability"]["container_insights"]
+                            del env_config["observability"]
 
                 if "network" in service_manifest:
                     del service_manifest["network"]
 
                 if "observability" in service_manifest:
-                    if "container_insights" in service_manifest["observability"]:
-                        del service_manifest["observability"]["container_insights"]
+                    del service_manifest["observability"]
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
