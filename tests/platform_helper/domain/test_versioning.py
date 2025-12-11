@@ -121,7 +121,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
         mocks.mock_io.warn.assert_called_with(
-            f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Upgrade to v2.0.0.",
+            f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v1.0.0. Upgrade to v2.0.0.",
         )
 
 
