@@ -315,16 +315,5 @@ class ConfigValidator:
                                     "cannot have manual approval when platform-helper is 'auto'."
                                 )
 
-                    elif pipeline_section == "codebase_pipelines":
-                        for pipeline_config in pipeline.get("pipelines", []):
-                            env_list = pipeline_config.get("environments", [])
-                            for env_config in env_list:
-                                env_name = env_config.get("name")
-                                if env_config.get("requires_approval"):
-                                    errors.append(
-                                        f"Managed upgrades enabled: (codebase_pipelines) Pipeline '{pipeline_config.get('name')}' environment '{env_name}' "
-                                        "cannot have manual approval when platform-helper is 'auto'."
-                                    )
-
         if errors:
             raise ConfigValidatorError("\n".join(errors))
