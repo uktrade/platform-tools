@@ -185,8 +185,29 @@ locals {
         ]
       )
     },
-    var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
+    try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
+
+    try(var.service_config.image.healthcheck, null) != null ?
+    {
+      healthCheck = merge(
+        {
+          command = var.service_config.image.healthcheck.command
+        },
+        try(var.service_config.image.healthcheck.interval, null) != null ? {
+          interval = var.service_config.image.healthcheck.interval
+        } : {},
+        try(var.service_config.image.healthcheck.retries, null) != null ? {
+          retries = var.service_config.image.healthcheck.retries
+        } : {},
+        try(var.service_config.image.healthcheck.timeout, null) != null ? {
+          timeout = var.service_config.image.healthcheck.timeout
+        } : {},
+        try(var.service_config.image.healthcheck.start_period, null) != null ? {
+          startPeriod = var.service_config.image.healthcheck.start_period
+        } : {}
+      )
+    } : {},
   )
 
   permissions_container = merge(local.default_container_config, {
@@ -233,6 +254,26 @@ locals {
           )
         ] : []
       },
+      try(sidecar.healthcheck, null) != null ?
+      {
+        healthCheck = merge(
+          {
+            command = sidecar.healthcheck.command
+          },
+          try(sidecar.healthcheck.interval, null) != null ? {
+            interval = sidecar.healthcheck.interval
+          } : {},
+          try(sidecar.healthcheck.retries, null) != null ? {
+            retries = sidecar.healthcheck.retries
+          } : {},
+          try(sidecar.healthcheck.timeout, null) != null ? {
+            timeout = sidecar.healthcheck.timeout
+          } : {},
+          try(sidecar.healthcheck.start_period, null) != null ? {
+            startPeriod = sidecar.healthcheck.start_period
+          } : {}
+        )
+      } : {},
     )
   ]
 

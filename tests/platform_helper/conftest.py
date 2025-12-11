@@ -635,9 +635,9 @@ http:
     success_codes: '200'
     healthy_threshold: 3
     unhealthy_threshold: 3
-    interval: 35s
-    timeout: 30s
-    grace_period: 30s
+    interval: 35
+    timeout: 30
+    grace_period: 30
 
 sidecars:
   sidecar:
