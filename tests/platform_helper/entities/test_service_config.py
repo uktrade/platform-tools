@@ -49,10 +49,9 @@ def test_invalid_service_config(fakefs):
 
     with pytest.raises(
         ValidationError,
-        match="""1 validation error for ServiceConfig\ntype\n  Field required \[type=missing, input_value=\{'name': 'invalid', 'cpu'...GE_TAG}', 'port': 8080}}, input_type=dict\]\n    For further information visit https://errors.pydantic.dev/2.11/v/missing""",
+        match=re.escape("""1 validation error for ServiceConfig\ntype\n  Field required [type=missing, input_value={'name': 'invalid', 'cpu'...GE_TAG}', 'port': 8080}}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.12/v/missing"""),
     ):
         ServiceConfig.model_validate(input_data)
-
 
 def test_web_service_requires_http_block():
     service_config = {
