@@ -73,7 +73,7 @@ class PlatformHelperVersioning:
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
-    def get_required_version(self):
+    def get_default_platform_helper_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         self.io.info(required_version)
@@ -85,7 +85,7 @@ class PlatformHelperVersioning:
             return
 
         version_status = self.get_version_status()
-        required_version = self.get_required_version()
+        required_version = self.get_default_platform_helper_version()
 
         if SemanticVersion.is_semantic_version(required_version):
             required_version_semver = SemanticVersion.from_string(required_version)

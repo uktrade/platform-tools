@@ -126,8 +126,8 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
-    def test_platform_helper_get_required_version(self, mocks):
-        result = PlatformHelperVersioning(**mocks.params()).get_required_version()
+    def test_platform_helper_get_default_platform_helper_version(self, mocks):
+        result = PlatformHelperVersioning(**mocks.params()).get_default_platform_helper_version()
 
         assert str(result) == "1.0.0"
         mocks.mock_config_provider.load_unvalidated_config_file.assert_called_once()
