@@ -126,8 +126,8 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
-    def test_platform_helper_get_default_platform_helper_version(self, mocks):
-        result = PlatformHelperVersioning(**mocks.params()).get_default_platform_helper_version()
+    def test_platform_helper_get_default_version(self, mocks):
+        result = PlatformHelperVersioning(**mocks.params()).get_default_version()
 
         assert str(result) == "1.0.0"
         mocks.mock_config_provider.load_unvalidated_config_file.assert_called_once()
@@ -274,7 +274,7 @@ class TestPlatformHelperVersioningEnvironmentPipelinesVersioning:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
         mocks = PlatformHelperVersioningMocks()
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
         mocks.mock_environment_variable_provider[
@@ -321,7 +321,7 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
         mocks = PlatformHelperVersioningMocks()
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
         mocks.mock_environment_variable_provider[
@@ -358,6 +358,9 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
         mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
         mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
             platform_config_for_env_pipelines
         )

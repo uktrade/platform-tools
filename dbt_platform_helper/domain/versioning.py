@@ -73,7 +73,7 @@ class PlatformHelperVersioning:
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
-    def get_default_platform_helper_version(self):
+    def get_default_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         self.io.info(required_version)
@@ -85,7 +85,7 @@ class PlatformHelperVersioning:
             return
 
         version_status = self.get_version_status()
-        required_version = self.get_default_platform_helper_version()
+        required_version = self.get_default_version()
 
         if SemanticVersion.is_semantic_version(required_version):
             required_version_semver = SemanticVersion.from_string(required_version)
@@ -128,13 +128,6 @@ class PlatformHelperVersioning:
         latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
-
-    def get_default_version(self):
-        return (
-            self.config_provider.load_and_validate_platform_config()
-            .get("default_versions", {})
-            .get("platform-helper")
-        )
 
     def get_template_version(self):
         if self.is_managed():
