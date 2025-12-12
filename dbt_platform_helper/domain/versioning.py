@@ -73,11 +73,33 @@ class PlatformHelperVersioning:
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
-    def get_required_version(self):
+    def get_default_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         self.io.info(required_version)
         return required_version
+
+    def check_auto_environment(self):
+        platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        ) or self.environment_variable_provider.get("PLATFORM_HELPER_VERSION")
+        modules_override_is_set_in_environment = (
+            self.environment_variable_provider.get(
+                TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or self.environment_variable_provider.get(
+                TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or self.environment_variable_provider.get(
+                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+        )
+        if platform_helper_version_is_set_in_environment and modules_override_is_set_in_environment:
+            return
+        else:
+            self.io.error(
+                "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
+            )
 
     # Used in the generate command
     def check_platform_helper_version_mismatch(self):
@@ -85,7 +107,7 @@ class PlatformHelperVersioning:
             return
 
         version_status = self.get_version_status()
-        required_version = self.get_required_version()
+        required_version = self.get_default_version()
 
         if SemanticVersion.is_semantic_version(required_version):
             required_version_semver = SemanticVersion.from_string(required_version)
@@ -95,6 +117,12 @@ class PlatformHelperVersioning:
                     f"WARNING: You are running platform-helper v{version_status.installed} against "
                     f"v{required_version_semver} specified for the project."
                 )
+                self.io.warn(message)
+
+        if required_version == "auto":
+            self.check_auto_environment()
+            if version_status.installed != version_status.latest:
+                message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
                 self.io.warn(message)
 
     def check_if_needs_update(self):
@@ -124,13 +152,6 @@ class PlatformHelperVersioning:
         latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
-
-    def get_default_version(self):
-        return (
-            self.config_provider.load_and_validate_platform_config()
-            .get("default_versions", {})
-            .get("platform-helper")
-        )
 
     def get_template_version(self):
         if self.is_managed():
