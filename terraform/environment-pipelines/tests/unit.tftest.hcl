@@ -299,7 +299,7 @@ variables {
   pinned_version = null
 }
 
-run "test_pinned_version_pipeline" {
+run "test_pinned_version_pipeline_variables" {
   command = plan
 
   variables {
