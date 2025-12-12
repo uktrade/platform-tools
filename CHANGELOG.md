@@ -1,5 +1,17 @@
 # Changelog
 
+## [15.15.0](https://github.com/uktrade/platform-tools/compare/15.14.1...15.15.0) (2025-12-12)
+
+
+### Features
+
+* Remove platform-helper version override variable from pipeline when it is centrally managed (off-ticket) ([#1184](https://github.com/uktrade/platform-tools/issues/1184)) ([8771971](https://github.com/uktrade/platform-tools/commit/877197184036734db88b22f0398551af909c029a))
+
+
+### Bug Fixes
+
+* resolve git command error in codebase pipeline (off-ticket) ([#1185](https://github.com/uktrade/platform-tools/issues/1185)) ([d4b57db](https://github.com/uktrade/platform-tools/commit/d4b57db00307217809af627b815d12596b5f3b45))
+
 ## [15.14.1](https://github.com/uktrade/platform-tools/compare/15.14.0...15.14.1) (2025-12-10)
 
 
