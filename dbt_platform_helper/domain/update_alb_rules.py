@@ -91,10 +91,10 @@ class UpdateALBRules:
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
-                self.io.warn("Rolling back")
                 self.io.info("Attempting to rollback changes ...")
                 try:
                     self._rollback_changes(operation_state)
+                    raise PlatformException(f"Rule update failed and rolled back")
                 except RollbackException as rollback_error:
                     raise PlatformException(f"Rollback failed: \n{str(rollback_error)}")
             else:
