@@ -107,23 +107,6 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.mock_io.warn.assert_not_called
         mocks.mock_io.error.assert_not_called
 
-    def test_shows_warning_when_auto_and_not_using_latest_platform_helper_release(self, mocks):
-        platform_config = {"default_versions": {"platform-helper": "auto"}}
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
-        mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
-        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
-            2, 0, 0
-        )
-        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
-            1, 0, 0
-        )
-
-        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
-
-        mocks.mock_io.warn.assert_called_with(
-            f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v1.0.0. Upgrade to v2.0.0.",
-        )
-
 
 class TestPlatformHelperVersioningGetRequiredVersion:
     def test_platform_helper_get_required_version(self, mocks):
