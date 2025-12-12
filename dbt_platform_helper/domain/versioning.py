@@ -79,6 +79,28 @@ class PlatformHelperVersioning:
         self.io.info(required_version)
         return required_version
 
+    def check_auto_environment(self):
+        platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        ) or self.environment_variable_provider.get("PLATFORM_HELPER_VERSION")
+        modules_override_is_set_in_environment = (
+            self.environment_variable_provider.get(
+                TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or self.environment_variable_provider.get(
+                TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or self.environment_variable_provider.get(
+                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+        )
+        if platform_helper_version_is_set_in_environment and modules_override_is_set_in_environment:
+            return
+        else:
+            self.io.error(
+                "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
+            )
+
     # Used in the generate command
     def check_platform_helper_version_mismatch(self):
         if self.skip_versioning_checks:
@@ -97,9 +119,11 @@ class PlatformHelperVersioning:
                 )
                 self.io.warn(message)
 
-        if required_version is "auto" and version_status.installed != version_status.latest:
-            message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
-            self.io.warn(message)
+        if required_version == "auto":
+            self.check_auto_environment()
+            if version_status.installed != version_status.latest:
+                message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
+                self.io.warn(message)
 
     def check_if_needs_update(self):
         if self.skip_versioning_checks:
