@@ -299,6 +299,24 @@ variables {
   pinned_version = null
 }
 
+run "test_pinned_version_pipeline" {
+  command = plan
+
+  variables {
+    pinned_version = "15.14.1"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.environment_pipeline.variable) == 1
+    error_message = "Should be: 1"
+  }
+
+  assert {
+    condition     = aws_codepipeline.environment_pipeline.variable[0].name == "SLACK_THREAD_ID"
+    error_message = "Should be: SLACK_THREAD_ID"
+  }
+}
+
 run "test_code_pipeline" {
   command = plan
 
@@ -307,6 +325,16 @@ run "test_code_pipeline" {
     error_message = "Should be: my-app-my-pipeline-environment-pipeline"
   }
   # aws_codepipeline.environment_pipeline.role_arn cannot be tested on a plan
+  assert {
+    condition     = length(aws_codepipeline.environment_pipeline.variable) == 2
+    error_message = "Should be: 2"
+  }
+
+  assert {
+    condition     = aws_codepipeline.environment_pipeline.variable[1].name == "PLATFORM_HELPER_VERSION_OVERRIDE"
+    error_message = "Should be: PLATFORM_HELPER_VERSION_OVERRIDE"
+  }
+
   assert {
     condition     = aws_codepipeline.environment_pipeline.variable[0].name == "SLACK_THREAD_ID"
     error_message = "Should be: 'SLACK_THREAD_ID'"
