@@ -73,6 +73,13 @@ class PlatformHelperVersioning:
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
+    def get_project_version(self):
+        version_status = self.get_version_status()
+        if self.is_managed():
+            return version_status.latest
+        else:
+            return self.get_default_version()
+
     def get_default_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")

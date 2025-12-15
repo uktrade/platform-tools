@@ -150,7 +150,24 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         )
 
 
-class TestPlatformHelperVersioningGetRequiredVersion:
+class TestPlatformHelperVersioningGetProjectVersion:
+    def test_platform_helper_get_project_version_auto(
+        self, mocks, platform_config_for_env_pipelines
+    ):
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
+            2, 0, 0
+        )
+
+        result = PlatformHelperVersioning(**mocks.params()).get_project_version()
+
+        assert str(result) == "2.0.0"
+
+
+class TestPlatformHelperVersioningGetDefaultVersion:
     def test_platform_helper_get_default_version(self, mocks):
         result = PlatformHelperVersioning(**mocks.params()).get_default_version()
 
