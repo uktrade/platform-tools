@@ -76,17 +76,14 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
 
 
 def test_pipeline_generate_with_auto_errors_outside_of_pipeline_environment():
+    mock_config = {
+        "application": "anything",
+        "default_versions": {"platform-helper": "auto"},
+    }
     mock_config_provider = Mock()
-    app_name = "my-app"
-    mock_config_provider.load_and_validate_platform_config.return_value = {
-        "application": app_name,
-        "default_versions": {"platform-helper": "auto"},
-    }
-    mock_config_provider.load_unvalidated_config_file.return_value = {
-        "application": app_name,
-        "default_versions": {"platform-helper": "auto"},
-    }
-    mocks = PipelineMocks(app_name)
+    mock_config_provider.load_and_validate_platform_config.return_value = mock_config
+    mock_config_provider.load_unvalidated_config_file.return_value = mock_config
+    mocks = PipelineMocks("anything")
     mocks.mock_config_provider = mock_config_provider
     mocks.mock_platform_helper_versioning.config_provider = mock_config_provider
     mock_env_var_provider = Mock()
