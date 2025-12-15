@@ -76,10 +76,10 @@ class PlatformHelperVersioning:
     def get_default_version(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
-        self.io.info(required_version)
         return required_version
 
     def check_auto_environment(self):
+        print("CHECKING ENVIRONMENT")
         platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         ) or self.environment_variable_provider.get("PLATFORM_HELPER_VERSION")
@@ -97,11 +97,11 @@ class PlatformHelperVersioning:
         if platform_helper_version_is_set_in_environment and modules_override_is_set_in_environment:
             return
         else:
-            self.io.error(
+            self.io.abort_with_error(
                 "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
             )
 
-    # Used in the generate command
+    # Used only in the generate command
     def check_platform_helper_version_mismatch(self):
         if self.skip_versioning_checks:
             return

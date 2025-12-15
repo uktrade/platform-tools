@@ -145,7 +145,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
         PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
-        mocks.mock_io.error.assert_called_with(
+        mocks.mock_io.abort_with_error.assert_called_with(
             "You are on managed upgrades. Generate commands should only be running inside a pipeline environment.",
         )
 
