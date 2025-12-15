@@ -75,7 +75,7 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
 
 
-def test_pipeline_generate_with_auto_errors_outside_of_pipeline_environment():
+def test_pipeline_generate_with_auto_errors_when_expected_env_vars_are_not_set():
     mock_config = {
         "application": "anything",
         "default_versions": {"platform-helper": "auto"},
@@ -86,9 +86,11 @@ def test_pipeline_generate_with_auto_errors_outside_of_pipeline_environment():
     mocks = PipelineMocks("anything")
     mocks.mock_config_provider = mock_config_provider
     mocks.mock_platform_helper_versioning.config_provider = mock_config_provider
+
     mock_env_var_provider = Mock()
     mock_env_var_provider.get.return_value = None
     mocks.mock_platform_helper_versioning.environment_variable_provider = mock_env_var_provider
+
     pipelines = Pipelines(**mocks.params())
 
     with pytest.raises(SystemExit):
