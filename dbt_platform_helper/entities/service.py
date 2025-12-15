@@ -147,7 +147,7 @@ class Image(BaseModel):
         image_name = value.split("/")[-1]
         if ":" in image_name:
             raise PlatformException(
-                f"Image location cannot contain a tag '{value}'\nPlease remove the tag from your image location.The image tag is automatically added during deployment."
+                f"Image location cannot contain a tag '{value}'\nPlease remove the tag from your image location. The image tag is automatically added during deployment."
             )
         return value
 
@@ -329,7 +329,7 @@ class ServiceConfig(BaseModel):
     )
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
-        description="Allows you to override almost service config property for specific environments.",
+        description="Allows you to override most service config properties for specific environments.",
         default=None,
     )
 
