@@ -113,7 +113,6 @@ class PlatformHelperVersioning:
             message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
             self.io.warn(message)
 
-    # Used only in the generate command
     def check_platform_helper_version_mismatch(self):
         if self.skip_versioning_checks:
             return
