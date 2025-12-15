@@ -30,7 +30,9 @@ run "test_create_ecs_cluster" {
     environment                 = "dev"
     vpc_name                    = "terraform-tests-vpc"
     alb_https_security_group_id = "security-group-id"
+    egress_rules                 = null 
   }
+
 
   assert {
     condition     = aws_ecs_cluster.cluster.name == "demodjango-dev-cluster"
@@ -66,12 +68,81 @@ run "test_create_ecs_cluster" {
     condition     = length(aws_security_group.environment_security_group.ingress) == 2
     error_message = "Ingress does not include enough groups."
   }
-
   assert {
     condition     = tolist(aws_security_group.environment_security_group.ingress)[0].security_groups == toset(["security-group-id"])
     error_message = "Ingress does not include the passed in security group id."
   }
+
+  assert {
+    condition     = length(aws_security_group.environment_security_group.egress) == 1
+    error_message = "Egress does not exist."
+  }
+
+   assert {
+    condition     = toset(tolist(aws_security_group.environment_security_group.egress)[0].cidr_blocks) == toset(["0.0.0.0/0"])
+    error_message = "egress does not include the default cidr range."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.egress)[0].to_port == 0
+    error_message = "egress to_port is not as expected."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.egress)[0].from_port == 0
+    error_message = "egress from_port is not as expected."
+  }
 }
+
+run "test_create_ecs_cluster_with_egress_rules" {
+  command = plan
+
+  variables {
+    application                 = "demodjango"
+    environment                 = "dev"
+    vpc_name                    = "terraform-tests-vpc"
+    alb_https_security_group_id = "security-group-id"
+    egress_rules = [ 
+      {
+        to = {
+          cidr_blocks = ["172.65.64.208/30"]
+        }
+        protocol = "tcp"
+        from_port = 443
+        to_port = 443
+      }
+    ]
+
+  }
+  assert {
+    condition     = toset(tolist(aws_security_group.environment_security_group.egress)[0].cidr_blocks) == toset(["172.65.64.208/30"])
+    error_message = "egress does not include the default cidr range."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.egress)[0].protocol == "tcp"
+    error_message = "egress protocol is not as expected."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.egress)[0].to_port == 443
+    error_message = "egress to_port is not as expected."
+  }
+
+  assert {
+    condition     = tolist(aws_security_group.environment_security_group.egress)[0].from_port == 443
+    error_message = "egress from_port is not as expected."
+  }
+
+  assert {
+    condition     = length(aws_security_group.environment_security_group.egress) == 1
+    error_message = "Egress does not exist."
+  }
+
+}
+
+
+
 
 run "test_create_ecs_cluster_without_an_alb" {
   command = plan
