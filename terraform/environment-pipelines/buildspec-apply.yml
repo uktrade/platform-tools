@@ -15,7 +15,7 @@ phases:
       - |
         DEPLOY_MODE=$(yq eval ".environments.\"${ENVIRONMENT}\".service-deployment-mode" "${CODEBUILD_SRC_DIR}/platform-config.yml")
         if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
-          DEPLOY_MODE=$(yq eval ".environments."*".service-deployment-mode" "${CODEBUILD_SRC_DIR}/platform-config.yml")
+          DEPLOY_MODE=$(yq -r '[.environments."*".service-deployment-mode | select(. != null)][0]' "${CODEBUILD_SRC_DIR}/platform-config.yml")
         fi
         
         if [ "$DEPLOY_MODE" != "platform" ]; then
