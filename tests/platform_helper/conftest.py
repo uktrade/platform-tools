@@ -648,7 +648,7 @@ sidecars:
 
 # Configuration for your containers and service.
 image:
-  location: public.ecr.aws/non-prod-acc/test-app/application:${"{IMAGE_TAG}"}
+  location: public.ecr.aws/non-prod-acc/test-app/application
   # Port exposed through your container to route traffic to it.
   port: 8080
 

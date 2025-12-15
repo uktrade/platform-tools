@@ -238,12 +238,10 @@ class ECS:
         """Register a new task definition revision using provided model and
         containerDefinitions."""
 
-        if image_tag:
-            for container in task_definition["containerDefinitions"]:
-                if container["name"] == service:
-                    image_uri = container["image"].rsplit(":", 1)[0]
-                    container["image"] = f"{image_uri}:{image_tag}"
-                    break
+        for container in task_definition["containerDefinitions"]:
+            if container["name"] == service:
+                container["image"] = f"{container['image']}:{image_tag}"
+                break
 
         try:
             task_definition_response = self.ecs_client.register_task_definition(**task_definition)

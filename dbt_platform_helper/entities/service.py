@@ -131,7 +131,7 @@ class SidecarOverride(BaseModel):
 
 
 class Image(BaseModel):
-    location: str = Field(description="Main container image URI.")
+    location: str = Field(description="Main container image location.")
     port: Optional[int] = Field(
         description="Port exposed by the main ECS task container (used by the load balancer/Service Connect).",
         default=None,
@@ -140,6 +140,16 @@ class Image(BaseModel):
         description="Container dependency conditions.", default=None
     )
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
+
+    @field_validator("location", mode="after")
+    @classmethod
+    def is_image_untagged(cls, value: str) -> str:
+        image_name = value.split("/")[-1]
+        if ":" in image_name:
+            raise PlatformException(
+                f"Image location cannot contain a tag '{value}'\nPlease remove the tag from your image location.The image tag is automatically added during deployment."
+            )
+        return value
 
 
 class Storage(BaseModel):

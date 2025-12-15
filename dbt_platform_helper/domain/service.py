@@ -10,7 +10,6 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
-from dbt_platform_helper.constants import IMAGE_TAG_ENV_VAR
 from dbt_platform_helper.constants import PLATFORM_HELPER_PACKAGE_NAME
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SERVICE_CONFIG_FILE
@@ -218,6 +217,8 @@ class ServiceManager:
                                         grace_period.rstrip("s")
                                     )
                         if "image" in env_config:
+                            image_without_tag = env_config["image"]["location"].rsplit(":", 1)[0]
+                            env_config["image"]["location"] = image_without_tag
                             if "healthcheck" in env_config["image"]:
                                 if "interval" in env_config["image"]["healthcheck"]:
                                     interval = env_config["image"]["healthcheck"]["interval"]
@@ -271,6 +272,9 @@ class ServiceManager:
                         )
 
                 if "image" in service_manifest:
+                    if "location" in service_manifest["image"]:
+                        image_without_tag = service_manifest["image"]["location"].rsplit(":", 1)[0]
+                        service_manifest["image"]["location"] = image_without_tag
                     if "healthcheck" in service_manifest["image"]:
                         if "interval" in service_manifest["image"]["healthcheck"]:
                             interval = service_manifest["image"]["healthcheck"]["interval"]
@@ -373,8 +377,6 @@ class ServiceManager:
         )
 
         task_definition = json.loads(s3_response)
-
-        image_tag = image_tag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
 
         self.io.info(
             f"Deploying image tag '{image_tag}' to service '{ecs_service_name}' in environment '{environment}'.\n"

@@ -26,7 +26,7 @@ sidecars:
     port: 443
     image: public.ecr.aws/uktrade/ip-filter:tag-latest
 image:
-  location: public.ecr.aws/non-prod-acc/test-app/application:${IMAGE_TAG}
+  location: public.ecr.aws/non-prod-acc/test-app/application
   port: 8080
 cpu: 512
 memory: 2048
