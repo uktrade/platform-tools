@@ -38,13 +38,15 @@ class PipelineMocks:
         )
         self.mock_terraform_manifest_provider = Mock()
         self.mock_ecr_provider = Mock()
-        self.io = Mock()
+        mock_io = Mock()
+        self.io = mock_io
         self.io.abort_with_error = Mock(side_effect=SystemExit(1))
         self.mock_git_remote = Mock()
         self.mock_git_remote.return_value = "uktrade/test-app-deploy"
         self.mock_ecr_provider.get_ecr_repo_names.return_value = []
         platform_helper_versioning_mocks = PlatformHelperVersioningMocks()
         platform_helper_versioning_mocks.mock_config_provider = self.mock_config_provider
+        platform_helper_versioning_mocks.mock_io = mock_io
         self.mock_platform_helper_versioning = PlatformHelperVersioning(
             **platform_helper_versioning_mocks.params()
         )
@@ -71,6 +73,29 @@ def test_pipeline_generate_with_empty_platform_config_yml_outputs_warning():
     pipelines.generate(None)
 
     mocks.io.warn.assert_called_once_with("No pipelines defined: nothing to do.")
+
+
+def test_pipeline_generate_with_auto_errors_outside_of_pipeline_environment():
+    mock_config_provider = Mock()
+    app_name = "my-app"
+    mock_config_provider.load_and_validate_platform_config.return_value = {
+        "application": app_name,
+        "default_versions": {"platform-helper": "auto"},
+    }
+    mock_config_provider.load_unvalidated_config_file.return_value = {
+        "application": app_name,
+        "default_versions": {"platform-helper": "auto"},
+    }
+    mocks = PipelineMocks(app_name)
+    mocks.mock_config_provider = mock_config_provider
+    mocks.mock_platform_helper_versioning.config_provider = mock_config_provider
+    mock_env_var_provider = Mock()
+    mock_env_var_provider.get.return_value = None
+    mocks.mock_platform_helper_versioning.environment_variable_provider = mock_env_var_provider
+    pipelines = Pipelines(**mocks.params())
+
+    with pytest.raises(SystemExit):
+        pipelines.generate(None)
 
 
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning():

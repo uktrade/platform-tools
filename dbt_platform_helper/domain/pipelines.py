@@ -58,6 +58,9 @@ class Pipelines:
         self,
         deploy_branch: str,
     ):
+        if self.platform_helper_versioning.is_managed():
+            self.platform_helper_versioning.check_platform_helper_version_mismatch()
+
         platform_config = self.config_provider.load_and_validate_platform_config()
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
