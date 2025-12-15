@@ -61,37 +61,37 @@ resource "aws_security_group" "environment_security_group" {
     self        = true
   }
 
-  # dynamic "egress" {
-  #   for_each = var.egress_rules == null ? [] : var.egress_rules
-  #   content {
-  #     description = "Allow traffic out"
-  #     from_port   = 0
-  #     to_port     = 0
-  #     protocol    = "-1"
-  #     cidr_blocks = var.egress_rules[egress.key].to.cidr_blocks
-  #   }
-  # }
+  dynamic "egress" {
+    for_each = var.egress_rules == null ? [] : var.egress_rules
+    content {
+      description = "Allow traffic out"
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1"
+      cidr_blocks = var.egress_rules[egress.key].to.cidr_blocks
+    }
+  }
 
 
-  # dynamic "egress" {
-  #   for_each = var.egress_rules == null ? [] : [1]
-  #   content {
-  #     description = "Allow traffic out"
-  #     protocol    = "-1"
-  #     from_port   = 0
-  #     to_port     = 0
-  #     cidr_blocks = ["0.0.0.0/0"]
-  #   }
-  # }
+  dynamic "egress" {
+    for_each = var.egress_rules == null ? [] : [1]
+    content {
+      description = "Allow traffic out"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
 
-  # dynamic "egress" {
-  #   for_each = var.egress_rules == null ? [] : [1]
-  #   content {
-  #     description = "Custom tenable egress rules"
-  #     protocol = "tcp"
-  #     from_port = 443
-  #     to_port = 443
-  #     cidr_blocks = ["72.65.64.208/30"]
-  #   }
-  # }
+  dynamic "egress" {
+    for_each = var.egress_rules == null ? [] : [1]
+    content {
+      description = "Custom tenable egress rules"
+      protocol = "tcp"
+      from_port = 443
+      to_port = 443
+      cidr_blocks = ["72.65.64.208/30"]
+    }
+  }
 }
