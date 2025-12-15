@@ -74,7 +74,7 @@ resource "aws_security_group" "environment_security_group" {
 
 
   dynamic "egress" {
-    for_each = var.egress_rules == null ? [] : [1]
+    for_each = var.egress_rules == null ? [1] : []
     content {
       description = "Allow traffic out"
       protocol    = "-1"
