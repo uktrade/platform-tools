@@ -72,17 +72,17 @@ def mocks():
 
 class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
-    def test_is_managed(self, mocks):
+    def test_is_auto(self, mocks):
         platform_config = {"default_versions": {"platform-helper": "auto"}}
         mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
-        result = PlatformHelperVersioning(**mocks.params()).is_managed()
+        result = PlatformHelperVersioning(**mocks.params()).is_auto()
 
         assert result == True
 
-    def test_not_is_managed(self, mocks):
-        result = PlatformHelperVersioning(**mocks.params()).is_managed()
+    def test_not_is_auto(self, mocks):
+        result = PlatformHelperVersioning(**mocks.params()).is_auto()
 
         assert result == False
 

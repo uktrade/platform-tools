@@ -58,7 +58,7 @@ class Pipelines:
         self,
         deploy_branch: str,
     ):
-        if self.platform_helper_versioning.is_managed():
+        if self.platform_helper_versioning.is_auto():
             self.platform_helper_versioning.check_platform_helper_version_mismatch()
 
         platform_config = self.config_provider.load_and_validate_platform_config()
