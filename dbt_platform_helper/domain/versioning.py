@@ -85,7 +85,7 @@ class PlatformHelperVersioning:
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         return required_version
 
-    def check_auto_environment(self):
+    def _check_auto_environment(self):
         print("CHECKING ENVIRONMENT")
         platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
@@ -108,29 +108,34 @@ class PlatformHelperVersioning:
                 "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
             )
 
+    def _check_auto_installed_version(self):
+        version_status = self.get_version_status()
+        if version_status.installed != version_status.latest:
+            message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
+            self.io.warn(message)
+
     # Used only in the generate command
     def check_platform_helper_version_mismatch(self):
         if self.skip_versioning_checks:
             return
 
-        version_status = self.get_version_status()
-        required_version = self.get_default_version()
+        if self.is_managed():
+            self._check_auto_environment()
+            self._check_auto_installed_version()
 
-        if SemanticVersion.is_semantic_version(required_version):
-            required_version_semver = SemanticVersion.from_string(required_version)
+        else:
+            version_status = self.get_version_status()
+            required_version = self.get_default_version()
 
-            if not version_status.installed == required_version_semver:
-                message = (
-                    f"WARNING: You are running platform-helper v{version_status.installed} against "
-                    f"v{required_version_semver} specified for the project."
-                )
-                self.io.warn(message)
+            if SemanticVersion.is_semantic_version(required_version):
+                required_version_semver = SemanticVersion.from_string(required_version)
 
-        if required_version == "auto":
-            self.check_auto_environment()
-            if version_status.installed != version_status.latest:
-                message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
-                self.io.warn(message)
+                if not version_status.installed == required_version_semver:
+                    message = (
+                        f"WARNING: You are running platform-helper v{version_status.installed} against "
+                        f"v{required_version_semver} specified for the project."
+                    )
+                    self.io.warn(message)
 
     def check_if_needs_update(self):
         if self.skip_versioning_checks:
