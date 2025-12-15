@@ -329,7 +329,7 @@ class ServiceConfig(BaseModel):
     )
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
-        description="Allows you to override almost service config property for specific environments.",
+        description="Allows you to override most service config properties for specific environments.",
         default=None,
     )
 
