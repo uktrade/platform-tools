@@ -30,6 +30,9 @@ class TerraformEnvironment:
         environment_name: str,
     ):
 
+        if self.platform_helper_versioning.is_managed():
+            self.platform_helper_versioning.check_platform_helper_version_mismatch()
+
         config = self.config_provider.get_enriched_config()
 
         if environment_name not in config.get("environments").keys():
