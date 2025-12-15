@@ -85,8 +85,7 @@ class PlatformHelperVersioning:
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         return required_version
 
-    def _check_auto_environment(self):
-        print("CHECKING ENVIRONMENT")
+    def _check_managed_environment(self):
         platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         ) or self.environment_variable_provider.get("PLATFORM_HELPER_VERSION")
@@ -108,7 +107,7 @@ class PlatformHelperVersioning:
                 "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
             )
 
-    def _check_auto_installed_version(self):
+    def _check_managed_installed_version(self):
         version_status = self.get_version_status()
         if version_status.installed != version_status.latest:
             message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
@@ -120,8 +119,8 @@ class PlatformHelperVersioning:
             return
 
         if self.is_managed():
-            self._check_auto_environment()
-            self._check_auto_installed_version()
+            self._check_managed_environment()
+            self._check_managed_installed_version()
 
         else:
             version_status = self.get_version_status()
