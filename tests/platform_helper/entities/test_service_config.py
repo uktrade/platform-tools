@@ -48,10 +48,13 @@ def test_invalid_service_config(fakefs):
         Path(f"{INPUT_DATA_DIR}/services/config/invalid-service-config.yml").read_text()
     )
 
-    with pytest.raises(
-        ValidationError,
-        match="""1 validation error for ServiceConfig\ntype\n  Field required \[type=missing, input_value=\{'name': 'invalid', 'cpu'...ication', 'port': 8080}}, input_type=dict\]\n    For further information visit https://errors.pydantic.dev/2.11/v/missing""",
-    ):
+    expected = (
+        "1 validation error for ServiceConfig\n"
+        "type\n"
+        "  Field required [type=missing, input_value={'name': 'invalid', 'cpu'...ication', 'port': 8080}}, input_type=dict]"
+    )
+
+    with pytest.raises(ValidationError, match=re.escape(expected)):
         ServiceConfig.model_validate(input_data)
 
 
