@@ -136,13 +136,8 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
             1, 0, 0
         )
-        mocks.mock_environment_variable_provider[
-            TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = None
-        mocks.mock_environment_variable_provider[
-            TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-        ] = None
-        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_environment_variable_provider = {}
+
         PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
         mocks.mock_io.abort_with_error.assert_called_with(
