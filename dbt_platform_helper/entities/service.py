@@ -147,7 +147,7 @@ class Image(BaseModel):
         image_name = value.split("/")[-1]
         if ":" in image_name:
             raise PlatformException(
-                f"Image location cannot contain a tag '{value}'\nPlease remove the tag from your image location.The image tag is automatically added during deployment."
+                f"Image location cannot contain a tag '{value}'\nPlease remove the tag from your image location. The image tag is automatically added during deployment."
             )
         return value
 
