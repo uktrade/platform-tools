@@ -65,10 +65,10 @@ resource "aws_security_group" "environment_security_group" {
     for_each = var.egress_rules == null ? [] : var.egress_rules
     content {
       description = "Allow traffic out"
-      from_port   = var.egress_rules[egress.key].from_port
-      to_port     = var.egress_rules[egress.key].to_port
-      protocol    = var.egress_rules[egress.key].protocol
-      cidr_blocks = var.egress_rules[egress.key].to.cidr_blocks
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      cidr_blocks = egress.value.to.cidr_blocks
     }
   }
 
