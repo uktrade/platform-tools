@@ -30,7 +30,7 @@ run "test_create_ecs_cluster" {
     environment                 = "dev"
     vpc_name                    = "terraform-tests-vpc"
     alb_https_security_group_id = "security-group-id"
-    egress_rules                 = null 
+    egress_rules                = null
   }
 
 
@@ -78,7 +78,7 @@ run "test_create_ecs_cluster" {
     error_message = "Egress does not exist."
   }
 
-   assert {
+  assert {
     condition     = toset(tolist(aws_security_group.environment_security_group.egress)[0].cidr_blocks) == toset(["0.0.0.0/0"])
     error_message = "egress does not include the default cidr range."
   }
@@ -107,22 +107,22 @@ run "test_create_ecs_cluster_with_egress_rules" {
     environment                 = "dev"
     vpc_name                    = "terraform-tests-vpc"
     alb_https_security_group_id = "security-group-id"
-    egress_rules = [ 
+    egress_rules = [
       {
         to = {
           cidr_blocks = ["172.65.64.208/30"]
         }
-        protocol = "tcp"
+        protocol  = "tcp"
         from_port = 443
-        to_port = 443
+        to_port   = 443
       },
       {
         to = {
           cidr_blocks = ["15.200.117.191/32", "172.65.64.208/30"]
         }
-        protocol = "udp"
+        protocol  = "udp"
         from_port = 7000
-        to_port = 7010
+        to_port   = 7010
       }
 
     ]
