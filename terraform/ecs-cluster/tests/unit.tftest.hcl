@@ -84,6 +84,11 @@ run "test_create_ecs_cluster" {
   }
 
   assert {
+    condition     = tolist(aws_security_group.environment_security_group.egress)[0].protocol == "-1"
+    error_message = "egress protocol is not as expected."
+  }
+
+  assert {
     condition     = tolist(aws_security_group.environment_security_group.egress)[0].to_port == 0
     error_message = "egress to_port is not as expected."
   }
@@ -110,32 +115,66 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol = "tcp"
         from_port = 443
         to_port = 443
+      },
+      {
+        to = {
+          cidr_blocks = ["15.200.117.191/32", "172.65.64.208/30"]
+        }
+        protocol = "udp"
+        from_port = 7000
+        to_port = 7010
       }
+
     ]
 
   }
+
   assert {
-    condition     = toset(tolist(aws_security_group.environment_security_group.egress)[0].cidr_blocks) == toset(["172.65.64.208/30"])
-    error_message = "egress does not include the default cidr range."
+    condition = {
+      for block in aws_security_group.environment_security_group.egress :
+      block.description => toset(block.cidr_blocks)
+    } == {
+      "Egress rule 0" = toset(["172.65.64.208/30"])
+      "Egress rule 1" = toset(["15.200.117.191/32", "172.65.64.208/30"])
+    }
+    error_message = "Egress cidr_blocks attributes are not as expected."
   }
 
   assert {
-    condition     = tolist(aws_security_group.environment_security_group.egress)[0].protocol == "tcp"
-    error_message = "egress protocol is not as expected."
+    condition = {
+      for block in aws_security_group.environment_security_group.egress :
+      block.description => block.protocol
+    } == {
+      "Egress rule 0" = "tcp"
+      "Egress rule 1" = "udp"
+    }
+    error_message = "Egress protocol attributes are not as expected."
   }
 
   assert {
-    condition     = tolist(aws_security_group.environment_security_group.egress)[0].to_port == 443
-    error_message = "egress to_port is not as expected."
+    condition = {
+      for block in aws_security_group.environment_security_group.egress :
+      block.description => block.from_port
+    } == {
+      "Egress rule 0" = 443
+      "Egress rule 1" = 7000
+    }
+    error_message = "Egress from_port attributes are not as expected."
   }
 
   assert {
-    condition     = tolist(aws_security_group.environment_security_group.egress)[0].from_port == 443
-    error_message = "egress from_port is not as expected."
+    condition = {
+      for block in aws_security_group.environment_security_group.egress :
+      block.description => block.to_port
+    } == {
+      "Egress rule 0" = 443
+      "Egress rule 1" = 7010
+    }
+    error_message = "Egress to_port attributes are not as expected."
   }
 
   assert {
-    condition     = length(aws_security_group.environment_security_group.egress) == 1
+    condition     = length(aws_security_group.environment_security_group.egress) == 2
     error_message = "Egress does not exist."
   }
 

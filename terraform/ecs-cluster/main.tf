@@ -64,7 +64,7 @@ resource "aws_security_group" "environment_security_group" {
   dynamic "egress" {
     for_each = var.egress_rules == null ? [] : var.egress_rules
     content {
-      description = "Allow traffic out"
+      description = "Egress rule ${egress.key}"
       from_port   = egress.value.from_port
       to_port     = egress.value.to_port
       protocol    = egress.value.protocol
