@@ -65,9 +65,9 @@ resource "aws_security_group" "environment_security_group" {
     for_each = var.egress_rules == null ? [] : var.egress_rules
     content {
       description = "Allow traffic out"
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
+      from_port   = var.egress_rules[egress.key].from_port
+      to_port     = var.egress_rules[egress.key].to_port
+      protocol    = var.egress_rules[egress.key].protocol
       cidr_blocks = var.egress_rules[egress.key].to.cidr_blocks
     }
   }
@@ -81,17 +81,6 @@ resource "aws_security_group" "environment_security_group" {
       from_port   = 0
       to_port     = 0
       cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-
-  dynamic "egress" {
-    for_each = var.egress_rules == null ? [] : [1]
-    content {
-      description = "Custom tenable egress rules"
-      protocol = "tcp"
-      from_port = 443
-      to_port = 443
-      cidr_blocks = ["72.65.64.208/30"]
     }
   }
 }

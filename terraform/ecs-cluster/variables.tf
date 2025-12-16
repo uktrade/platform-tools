@@ -20,6 +20,9 @@ variable "egress_rules" {
     to = object({
       cidr_blocks = set(string)
     })
+    protocol = string
+    from_port = number
+    to_port = number
   }))
   default = null
 }
