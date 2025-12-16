@@ -399,8 +399,8 @@ class UpdateALBRules:
                     elif condition["Field"] == "path-pattern":
                         paths.extend(condition["PathPatternConfig"]["Values"])
             elif isinstance(conditions, dict):
-                hosts.extend(conditions.get("host-header", ""))
-                paths.extend(conditions.get("path-pattern", ""))
+                hosts.extend(conditions.get("host-header"))
+                paths.extend(conditions.get("path-pattern"))
 
             rule_arn = rule["RuleArn"]
             priority = rule["Priority"]
