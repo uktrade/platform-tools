@@ -190,23 +190,13 @@ locals {
 
     try(var.service_config.image.healthcheck, null) != null ?
     {
-      healthCheck = merge(
-        {
-          command = var.service_config.image.healthcheck.command
-        },
-        try(var.service_config.image.healthcheck.interval, null) != null ? {
-          interval = var.service_config.image.healthcheck.interval
-        } : {},
-        try(var.service_config.image.healthcheck.retries, null) != null ? {
-          retries = var.service_config.image.healthcheck.retries
-        } : {},
-        try(var.service_config.image.healthcheck.timeout, null) != null ? {
-          timeout = var.service_config.image.healthcheck.timeout
-        } : {},
-        try(var.service_config.image.healthcheck.start_period, null) != null ? {
-          startPeriod = var.service_config.image.healthcheck.start_period
-        } : {}
-      )
+      healthCheck = {
+        command     = var.service_config.image.healthcheck.command
+        interval    = coalesce(var.service_config.image.healthcheck.interval, 10)
+        retries     = coalesce(var.service_config.image.healthcheck.retries, 2)
+        timeout     = coalesce(var.service_config.image.healthcheck.timeout, 5)
+        startPeriod = coalesce(var.service_config.image.healthcheck.start_period, 0)
+      }
     } : {},
   )
 
@@ -256,23 +246,13 @@ locals {
       },
       try(sidecar.healthcheck, null) != null ?
       {
-        healthCheck = merge(
-          {
-            command = sidecar.healthcheck.command
-          },
-          try(sidecar.healthcheck.interval, null) != null ? {
-            interval = sidecar.healthcheck.interval
-          } : {},
-          try(sidecar.healthcheck.retries, null) != null ? {
-            retries = sidecar.healthcheck.retries
-          } : {},
-          try(sidecar.healthcheck.timeout, null) != null ? {
-            timeout = sidecar.healthcheck.timeout
-          } : {},
-          try(sidecar.healthcheck.start_period, null) != null ? {
-            startPeriod = sidecar.healthcheck.start_period
-          } : {}
-        )
+        healthCheck = {
+          command     = sidecar.healthcheck.command
+          interval    = coalesce(sidecar.healthcheck.interval, 10)
+          retries     = coalesce(sidecar.healthcheck.retries, 2)
+          timeout     = coalesce(sidecar.healthcheck.timeout, 5)
+          startPeriod = coalesce(sidecar.healthcheck.start_period, 0)
+        }
       } : {},
     )
   ]

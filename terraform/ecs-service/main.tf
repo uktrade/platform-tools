@@ -174,7 +174,7 @@ resource "aws_lb_target_group" "target_group" {
   protocol             = "HTTPS"
   target_type          = "ip"
   vpc_id               = data.aws_vpc.vpc[count.index].id
-  deregistration_delay = try(var.service_config.http.deregistration_delay, 60)
+  deregistration_delay = coalesce(var.service_config.http.deregistration_delay, 60)
   tags                 = local.tags
 
   health_check {
@@ -182,14 +182,14 @@ resource "aws_lb_target_group" "target_group" {
     path                = try(var.service_config.http.healthcheck.path, "/")
     protocol            = "HTTP"
     matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
-    healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
-    unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
+    healthy_threshold   = try(var.service_config.http.healthcheck.healthy_threshold, 3)
+    unhealthy_threshold = try(var.service_config.http.healthcheck.unhealthy_threshold, 3)
     interval            = try(var.service_config.http.healthcheck.interval, 35)
     timeout             = try(var.service_config.http.healthcheck.timeout, 30)
   }
 
   stickiness {
-    enabled         = try(var.service_config.http.stickiness, false)
+    enabled         = coalesce(var.service_config.http.stickiness, false)
     type            = "lb_cookie"
     cookie_duration = 86400 # default value, 1 day in seconds
   }
