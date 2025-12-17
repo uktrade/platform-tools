@@ -328,4 +328,6 @@ locals {
   enable_cpu = local.cpu_value != null
   enable_mem = local.mem_value != null
   enable_req = local.req_value != null && local.web_service_required == 1
+
+  service_deployment_mode = lookup(var.env_config[var.environment], "service-deployment-mode", "copilot")
 }

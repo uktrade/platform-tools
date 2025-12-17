@@ -900,9 +900,13 @@ def test_alb_rules_create_with_rollback(
         load_application=load_application,
     )
 
-    update_aws.update_alb_rules(
-        environment="test",
-    )
+    with pytest.raises(
+        PlatformException,
+        match="Rule update failed and rolled back",
+    ):
+        update_aws.update_alb_rules(
+            environment="test",
+        )
 
     mock_io.info.assert_has_calls(
         [
@@ -920,8 +924,6 @@ def test_alb_rules_create_with_rollback(
             )
         ]
     )
-
-    mock_io.warn.assert_has_calls([call("Rolling back")])
 
     mock_boto_elbv2_client.create_rule.assert_has_calls(
         [
@@ -1034,9 +1036,13 @@ def test_alb_rules_delete_with_rollback(
         load_application=load_application,
     )
 
-    update_aws.update_alb_rules(
-        environment="production",
-    )
+    with pytest.raises(
+        PlatformException,
+        match="Rule update failed and rolled back",
+    ):
+        update_aws.update_alb_rules(
+            environment="production",
+        )
 
     mock_io.info.assert_has_calls(
         [
@@ -1065,8 +1071,6 @@ def test_alb_rules_delete_with_rollback(
             )
         ]
     )
-
-    mock_io.warn.assert_has_calls([call("Rolling back")])
 
     mock_io.debug.assert_has_calls(
         [
