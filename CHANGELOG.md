@@ -5,15 +5,18 @@
 
 ### Features
 
-* Remove platform-helper version override variable from pipeline when it is centrally managed (off-ticket) ([#1184](https://github.com/uktrade/platform-tools/issues/1184)) ([8771971](https://github.com/uktrade/platform-tools/commit/877197184036734db88b22f0398551af909c029a))
-* Service config improvements (DBTP-2507) ([#1178](https://github.com/uktrade/platform-tools/issues/1178)) ([b4fb99a](https://github.com/uktrade/platform-tools/commit/b4fb99a9cf14c758c681ef12a06fb679823bf810))
+* **Centralised services only** - Remove platform-helper version parameter from environment pipeline(s).
+  Once a service has been centralised their environment pipelines are pinned to the latest version and cannot be overriden (off-ticket) 
+  ([#1184](https://github.com/uktrade/platform-tools/issues/1184)) ([8771971](https://github.com/uktrade/platform-tools/commit/877197184036734db88b22f0398551af909c029a))
+
+* **Decopiloted services only** - Added missing properties to service model and changed some datatypes. (DBTP-2507) ([#1178](https://github.com/uktrade/platform-tools/issues/1178)) ([b4fb99a](https://github.com/uktrade/platform-tools/commit/b4fb99a9cf14c758c681ef12a06fb679823bf810))
 
 
 ### Bug Fixes
 
-* Ensure ALB rule update fails in pipeline when rollback is successful (DBTP-2583) ([#1181](https://github.com/uktrade/platform-tools/issues/1181)) ([8bec744](https://github.com/uktrade/platform-tools/commit/8bec744300d36c4580836ce69d6fb557ce79e230))
-* Increase Artefact bucket lifecycle to 60 days (DBTP-2556) ([#1188](https://github.com/uktrade/platform-tools/issues/1188)) ([48fa726](https://github.com/uktrade/platform-tools/commit/48fa72682f82639649cb8755d0ba22895e6dacd4))
-* resolve git command error in codebase pipeline (off-ticket) ([#1185](https://github.com/uktrade/platform-tools/issues/1185)) ([d4b57db](https://github.com/uktrade/platform-tools/commit/d4b57db00307217809af627b815d12596b5f3b45))
+* **Decopiloted services only** - Ensure Codebase pipeline fails when ALB rule update fails (DBTP-2583) ([#1181](https://github.com/uktrade/platform-tools/issues/1181)) ([8bec744](https://github.com/uktrade/platform-tools/commit/8bec744300d36c4580836ce69d6fb557ce79e230))
+* Increase Codebase pipeline artefact bucket lifecycle from 10 to 60 days (DBTP-2556) ([#1188](https://github.com/uktrade/platform-tools/issues/1188)) ([48fa726](https://github.com/uktrade/platform-tools/commit/48fa72682f82639649cb8755d0ba22895e6dacd4))
+* Resolve git command error in Codebase pipeline (off-ticket) ([#1185](https://github.com/uktrade/platform-tools/issues/1185)) ([d4b57db](https://github.com/uktrade/platform-tools/commit/d4b57db00307217809af627b815d12596b5f3b45))
 
 ## [15.14.1](https://github.com/uktrade/platform-tools/compare/15.14.0...15.14.1) (2025-12-10)
 
