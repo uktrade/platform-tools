@@ -1,6 +1,11 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+data "aws_ip_ranges" "cloudfront" {
+  services = ["CLOUDFRONT"]
+  regions  = ["GLOBAL", "eu-west-2"]
+  }
+
 resource "aws_ecs_cluster" "cluster" {
   name = local.cluster_name
 

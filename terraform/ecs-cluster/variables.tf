@@ -20,15 +20,24 @@ variable "vpc_endpoints_security_group_id" {
   default = null
 }
 
+variable "regions" {
+  type = string
+}
+
 variable "egress_rules" {
   type = list(object({
     to = object({
       cidr_blocks   = optional(set(string))
       vpc_endpoints = optional(bool)
+      aws_cidr_blocks = optional(object({
+        regions = set(string)
+        services = set(string)
+      })))
     })
     protocol  = string
     from_port = number
     to_port   = number
+    
   }))
   default = null
   validation {
