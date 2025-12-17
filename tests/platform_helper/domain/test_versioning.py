@@ -140,7 +140,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         )
 
 
-class TestPlatformHelperVersioningGetProjectVersion:
+class TestPlatformHelperVersioningGetRequiredVersion:
     def test_platform_helper_get_required_version_auto(
         self, mocks, platform_config_for_env_pipelines
     ):
