@@ -158,8 +158,11 @@ class PlatformHelperVersioning:
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
 
     def get_default_version(self):
-        platform_config = self.config_provider.load_unvalidated_config_file()
-        return platform_config.get("default_versions", {}).get("platform-helper")
+        return (
+            self.config_provider.load_unvalidated_config_file()
+            .get("default_versions", {})
+            .get("platform-helper")
+        )
 
     def get_template_version(self):
         if self.is_auto():
