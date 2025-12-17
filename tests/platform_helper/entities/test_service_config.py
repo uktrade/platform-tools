@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from dbt_platform_helper.entities.service import Cooldown
 from dbt_platform_helper.entities.service import Count
 from dbt_platform_helper.entities.service import CpuPercentage
+from dbt_platform_helper.entities.service import Image
 from dbt_platform_helper.entities.service import MemoryPercentage
 from dbt_platform_helper.entities.service import RequestsPerMinute
 from dbt_platform_helper.entities.service import ServiceConfig
@@ -47,10 +48,13 @@ def test_invalid_service_config(fakefs):
         Path(f"{INPUT_DATA_DIR}/services/config/invalid-service-config.yml").read_text()
     )
 
-    with pytest.raises(
-        ValidationError,
-        match="""1 validation error for ServiceConfig\ntype\n  Field required \[type=missing, input_value=\{'name': 'invalid', 'cpu'...GE_TAG}', 'port': 8080}}, input_type=dict\]\n    For further information visit https://errors.pydantic.dev/2.11/v/missing""",
-    ):
+    expected = (
+        "1 validation error for ServiceConfig\n"
+        "type\n"
+        "  Field required [type=missing, input_value={'name': 'invalid', 'cpu'...ication', 'port': 8080}}, input_type=dict]"
+    )
+
+    with pytest.raises(ValidationError, match=re.escape(expected)):
         ServiceConfig.model_validate(input_data)
 
 
@@ -58,7 +62,7 @@ def test_web_service_requires_http_block():
     service_config = {
         "name": "web",
         "type": "Load Balanced Web Service",
-        "image": {"location": "hub.docker.com/repo:tag", "port": 8080},
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
         "cpu": 256,
         "memory": 512,
         "count": 1,
@@ -68,28 +72,6 @@ def test_web_service_requires_http_block():
         PlatformException,
         match="A 'http' block must be provided when service type == Load Balanced Web Service",
     ):
-        ServiceConfig.model_validate(service_config)
-
-
-@pytest.mark.parametrize(
-    "connect_value,placement_value,error_msg",
-    [
-        (False, "private", "Property 'connect' must always be set to 'true'."),
-        (True, "not-private", "Property 'placement' must always be set to 'private'."),
-    ],
-)
-def test_validate_service_connect_and_vpc_placement(connect_value, placement_value, error_msg):
-    service_config = {
-        "name": "web",
-        "type": "Backend Service",
-        "image": {"location": "hub.docker.com/repo:tag", "port": 8080},
-        "cpu": 256,
-        "memory": 512,
-        "count": 1,
-        "network": {"connect": connect_value, "vpc": {"placement": placement_value}},
-    }
-
-    with pytest.raises(PlatformException, match=error_msg):
         ServiceConfig.model_validate(service_config)
 
 
@@ -138,7 +120,7 @@ def test_service_config_accepts_int_count():
     service_config = {
         "name": "web",
         "type": "Backend Service",
-        "image": {"location": "hub.docker.com/repo:tag", "port": 8080},
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
         "cpu": 256,
         "memory": 512,
         "count": 1,
@@ -188,3 +170,8 @@ def test_count_autoscaling_all_the_things():
     assert count.requests_per_minute.value == 100
     assert count.requests_per_minute.cooldown.in_ == 55
     assert count.requests_per_minute.cooldown.out == 65
+
+
+def test_tagged_image_raises_exception():
+    with pytest.raises(PlatformException, match="Image location cannot contain a tag"):
+        Image.model_validate({"location": "public.ecr.aws/docker/library/alpine:latest"})
