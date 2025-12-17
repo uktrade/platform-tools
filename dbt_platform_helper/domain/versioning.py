@@ -109,6 +109,7 @@ class PlatformHelperVersioning:
 
     def check_platform_helper_version_mismatch(self):
         if self.skip_versioning_checks:
+            self.io.info("Skipping versioning checks")
             return
 
         if self.is_auto():
