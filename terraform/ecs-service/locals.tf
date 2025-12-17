@@ -185,8 +185,19 @@ locals {
         ]
       )
     },
-    var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
+    try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
+
+    try(var.service_config.image.healthcheck, null) != null ?
+    {
+      healthCheck = {
+        command     = var.service_config.image.healthcheck.command
+        interval    = coalesce(var.service_config.image.healthcheck.interval, 10)
+        retries     = coalesce(var.service_config.image.healthcheck.retries, 2)
+        timeout     = coalesce(var.service_config.image.healthcheck.timeout, 5)
+        startPeriod = coalesce(var.service_config.image.healthcheck.start_period, 0)
+      }
+    } : {},
   )
 
   permissions_container = merge(local.default_container_config, {
@@ -233,6 +244,16 @@ locals {
           )
         ] : []
       },
+      try(sidecar.healthcheck, null) != null ?
+      {
+        healthCheck = {
+          command     = sidecar.healthcheck.command
+          interval    = coalesce(sidecar.healthcheck.interval, 10)
+          retries     = coalesce(sidecar.healthcheck.retries, 2)
+          timeout     = coalesce(sidecar.healthcheck.timeout, 5)
+          startPeriod = coalesce(sidecar.healthcheck.start_period, 0)
+        }
+      } : {},
     )
   ]
 
@@ -307,4 +328,6 @@ locals {
   enable_cpu = local.cpu_value != null
   enable_mem = local.mem_value != null
   enable_req = local.req_value != null && local.web_service_required == 1
+
+  service_deployment_mode = lookup(var.env_config[var.environment], "service-deployment-mode", "copilot")
 }

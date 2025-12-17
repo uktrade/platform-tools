@@ -13,9 +13,9 @@ http:
     success_codes: '200'
     healthy_threshold: 3
     unhealthy_threshold: 3
-    interval: 35s
-    timeout: 30s
-    grace_period: 30s
+    interval: 35
+    timeout: 30
+    grace_period: 30
 sidecars:
   sidecar:
     port: 443
@@ -26,16 +26,12 @@ sidecars:
     port: 443
     image: public.ecr.aws/uktrade/ip-filter:tag-latest
 image:
-  location: public.ecr.aws/non-prod-acc/test-app/application:${IMAGE_TAG}
+  location: public.ecr.aws/non-prod-acc/test-app/application
   port: 8080
 cpu: 512
 memory: 2048
 count: 1
 exec: true
-network:
-  connect: true
-  vpc:
-    placement: private
 storage:
   readonly_fs: false
 variables:
