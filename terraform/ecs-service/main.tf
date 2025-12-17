@@ -73,17 +73,9 @@ resource "aws_lambda_invocation" "dummy_listener_rule" {
     ServiceName = var.service_config.name
     TargetGroup = aws_lb_target_group.target_group[0].arn
   })
-  lifecycle {
-    replace_triggered_by = [
-      terraform_data.service_deployment_mode
-    ]
+  triggers = {
+    service_deployment_mode = local.service_deployment_mode
   }
-}
-
-resource "terraform_data" "service_deployment_mode" {
-  triggers_replace = [
-    local.service_deployment_mode
-  ]
 }
 
 resource "aws_ecs_service" "service" {
