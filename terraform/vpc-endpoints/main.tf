@@ -13,8 +13,15 @@ data "aws_subnets" "private-subnets" {
 }
 
 resource "aws_vpc_endpoint" "main" {
-  service_name      = var.instances.ecr.service_name
-  vpc_endpoint_type = "Interface"
-  vpc_id            = data.aws_vpc.vpc.id
-  subnet_ids        = data.aws_subnets.private-subnets.ids
+  for_each           = var.instances
+  service_name       = each.value.service_name
+  vpc_endpoint_type  = "Interface"
+  vpc_id             = data.aws_vpc.vpc.id
+  subnet_ids         = data.aws_subnets.private-subnets.ids
+  security_group_ids = [aws_security_group.main.id]
+}
+
+resource "aws_security_group" "main" {
+  name   = "${var.application}-${var.environment}-vpc-endpoints"
+  vpc_id = data.aws_vpc.vpc.id
 }
