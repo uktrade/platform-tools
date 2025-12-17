@@ -74,9 +74,8 @@ class PlatformHelperVersioning:
         return default_version == "auto"
 
     def get_required_version(self):
-        version_status = self.get_version_status()
         if self.is_auto():
-            return version_status.latest
+            return self.get_version_status().latest
         else:
             return self.get_default_version()
 
