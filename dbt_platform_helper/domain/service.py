@@ -427,7 +427,7 @@ class ServiceManager:
     def _wait_for_new_tasks(self, cluster_name: str, deployment_id: str) -> list[str]:
         """Return first ECS task ID started by the PRIMARY ECS deployment."""
 
-        timeout_seconds = 180
+        timeout_seconds = 300
         deadline = time.monotonic() + timeout_seconds
 
         while time.monotonic() < deadline:
