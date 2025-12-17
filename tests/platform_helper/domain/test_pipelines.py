@@ -169,6 +169,9 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         "File terraform/environment-pipelines/platform-prod-test/main.tf created",
     ]
 
+    if is_auto:
+        expected_messages = ["Checking auto versioning consistency"] + expected_messages
+
     called_messages = [call_obj.args[0] for call_obj in pipelines.io.info.call_args_list]
 
     assert sorted(called_messages) == sorted(expected_messages)
