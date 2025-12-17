@@ -19,7 +19,7 @@ resource "aws_vpc_endpoint" "main" {
   vpc_id             = data.aws_vpc.vpc.id
   subnet_ids         = data.aws_subnets.private-subnets.ids
   security_group_ids = [aws_security_group.main.id]
-  tags              = local.tags
+  tags               = local.tags
 }
 
 resource "aws_security_group" "main" {

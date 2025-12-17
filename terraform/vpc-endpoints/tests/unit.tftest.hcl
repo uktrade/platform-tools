@@ -41,7 +41,7 @@ run "test_create_vpc_endpoints" {
   }
 
 
-   assert {
+  assert {
     condition     = aws_vpc_endpoint.main["ecr"].tags.application == "demodjango"
     error_message = "application tag was not as expected"
   }
@@ -57,7 +57,7 @@ run "test_create_vpc_endpoints" {
   }
 
   assert {
-    condition = aws_vpc_endpoint.main["ecr"].security_group_ids == toset([aws_security_group.main.id])
+    condition     = aws_vpc_endpoint.main["ecr"].security_group_ids == toset([aws_security_group.main.id])
     error_message = "aws_vpc_endpoint security_group_ids are not as expected"
   }
 
@@ -117,7 +117,7 @@ run "test_create_vpc_endpoints" {
   }
 
   assert {
-    condition = output.security_group_id == aws_security_group.main.id
+    condition     = output.security_group_id == aws_security_group.main.id
     error_message = "aws_security_group id is not as expected"
   }
 
