@@ -5,5 +5,5 @@ memory: 2048
 count: 1 
 
 image:
-  location: public.ecr.aws/uktrade-invalid-account/invalid/application:${IMAGE_TAG}
+  location: public.ecr.aws/uktrade-invalid-account/invalid/application
   port: 8080

@@ -30,19 +30,20 @@ variable "service_config" {
     type = string
 
     http = optional(object({
-      alias            = list(string)
-      stickiness       = optional(bool)
-      path             = string
-      target_container = string
+      alias                = list(string)
+      stickiness           = optional(bool)
+      path                 = string
+      target_container     = string
+      deregistration_delay = optional(number)
       healthcheck = optional(object({
         path                = optional(string)
         port                = optional(number)
         success_codes       = optional(string)
         healthy_threshold   = optional(number)
         unhealthy_threshold = optional(number)
-        interval            = optional(string)
-        timeout             = optional(string)
-        grace_period        = optional(string)
+        interval            = optional(number)
+        timeout             = optional(number)
+        grace_period        = optional(number)
       }))
     }))
 
@@ -52,12 +53,26 @@ variable "service_config" {
       essential = optional(bool)
       variables = optional(map(string))
       secrets   = optional(map(string))
+      healthcheck = optional(object({
+        command      = list(string)
+        interval     = optional(number)
+        retries      = optional(number)
+        timeout      = optional(number)
+        start_period = optional(number)
+      }))
     })))
 
     image = object({
       location   = string
       port       = optional(number)
       depends_on = optional(map(string))
+      healthcheck = optional(object({
+        command      = list(string)
+        interval     = optional(number)
+        retries      = optional(number)
+        timeout      = optional(number)
+        start_period = optional(number)
+      }))
     })
 
     cpu        = number

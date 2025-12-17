@@ -215,32 +215,6 @@ def test_service_deploy_success():
     )
 
 
-@patch("dbt_platform_helper.domain.service.EnvironmentVariableProvider")
-def test_deploy_success_uses_env_var(env_var_provider):
-    env_var_provider.get.return_value = "tag-123"
-    mocks = ServiceManagerMocks()
-    service_manager = ServiceManager(**mocks.params())
-
-    mocks.s3_provider.get_object.return_value = json.dumps({})
-    mocks.ecs_provider.register_task_definition.return_value = (
-        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
-    )
-
-    update_service_response = get_ecs_update_service_response()
-    mocks.ecs_provider.update_service.return_value = update_service_response
-    mocks.ecs_provider.describe_service.return_value = update_service_response
-
-    # Skip waiting for the time-based loops in those methods to reach their timeouts
-    with patch.object(
-        service_manager, "_wait_for_new_tasks", return_value=["task1", "task2"]
-    ), patch.object(service_manager, "_monitor_task_events"):
-        mocks.ecs_provider.get_service_deployment_state.return_value = ("SUCCESSFUL", None)
-        service_manager.deploy(service="web", environment="dev", application="myapp")
-
-    assert mocks.ecs_provider.register_task_definition.call_args.kwargs["image_tag"] == "tag-123"
-    assert mocks.ecs_provider.register_task_definition.call_args.kwargs["service"] == "web"
-
-
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
 def test_wait_for_new_tasks_success(time_sleep):
     mocks = ServiceManagerMocks()

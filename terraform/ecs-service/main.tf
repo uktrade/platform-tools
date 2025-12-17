@@ -86,7 +86,7 @@ resource "aws_ecs_service" "service" {
   task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
   desired_count                     = 1 # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by autoscaling.
-  health_check_grace_period_seconds = tonumber(trim(coalesce(try(var.service_config.http.healthcheck.grace_period, null), "30s"), "s"))
+  health_check_grace_period_seconds = try(var.service_config.http.healthcheck.grace_period, 30)
   tags                              = local.tags
 
   deployment_circuit_breaker {
@@ -145,7 +145,7 @@ resource "aws_ecs_service" "service" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
+    ignore_changes = [task_definition, desired_count]
   }
 
   depends_on = [aws_lambda_invocation.dummy_listener_rule]
@@ -177,7 +177,7 @@ resource "aws_lb_target_group" "target_group" {
   protocol             = "HTTPS"
   target_type          = "ip"
   vpc_id               = data.aws_vpc.vpc[count.index].id
-  deregistration_delay = 60
+  deregistration_delay = coalesce(var.service_config.http.deregistration_delay, 60)
   tags                 = local.tags
 
   health_check {
@@ -185,10 +185,10 @@ resource "aws_lb_target_group" "target_group" {
     path                = try(var.service_config.http.healthcheck.path, "/")
     protocol            = "HTTP"
     matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
-    healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
-    unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
-    interval            = tonumber(trim(coalesce(var.service_config.http.healthcheck.interval, "35s"), "s"))
-    timeout             = tonumber(trim(coalesce(var.service_config.http.healthcheck.timeout, "30s"), "s"))
+    healthy_threshold   = try(var.service_config.http.healthcheck.healthy_threshold, 3)
+    unhealthy_threshold = try(var.service_config.http.healthcheck.unhealthy_threshold, 3)
+    interval            = try(var.service_config.http.healthcheck.interval, 35)
+    timeout             = try(var.service_config.http.healthcheck.timeout, 30)
   }
 
   stickiness {
