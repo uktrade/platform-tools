@@ -140,7 +140,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => toset(block.cidr_blocks)
-      } == {
+    } == {
       "Egress rule 0" = toset(["172.65.64.208/30"])
       "Egress rule 1" = toset(["15.200.117.191/32", "172.65.64.208/30"])
     }
@@ -151,7 +151,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.protocol
-      } == {
+    } == {
       "Egress rule 0" = "tcp"
       "Egress rule 1" = "udp"
     }
@@ -162,7 +162,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.from_port
-      } == {
+    } == {
       "Egress rule 0" = 443
       "Egress rule 1" = 7000
     }
@@ -173,7 +173,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.to_port
-      } == {
+    } == {
       "Egress rule 0" = 443
       "Egress rule 1" = 7010
     }
