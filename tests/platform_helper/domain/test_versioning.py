@@ -32,7 +32,6 @@ class PlatformHelperVersioningMocks:
     def __init__(self, **kwargs):
         self.mock_io = kwargs.get("io", Mock(spec=ClickIOProvider))
         self.mock_config_provider = kwargs.get("config_provider", Mock(spec=ConfigProvider))
-        self.mock_config_provider.load_and_validate_platform_config.return_value = {}
         self.mock_platform_helper_version_override = "platform_helper_param_override"
         self.mock_latest_version_provider = kwargs.get(
             "latest_version_provider", Mock(spec=PyPiLatestVersionProvider)
@@ -65,7 +64,6 @@ def mocks():
     platform_config = {"default_versions": {"platform-helper": "1.0.0"}}
 
     mocks = PlatformHelperVersioningMocks()
-    mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
     mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
     return mocks
 
@@ -74,7 +72,6 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
     def test_is_auto(self, mocks):
         platform_config = {"default_versions": {"platform-helper": "auto"}}
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
         result = PlatformHelperVersioning(**mocks.params()).is_auto()
@@ -109,7 +106,6 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
     def test_shows_warning_when_auto_and_not_using_latest_platform_helper_release(self, mocks):
         platform_config = {"default_versions": {"platform-helper": "auto"}}
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
         mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
             2, 0, 0
@@ -128,7 +124,6 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         self, mocks
     ):
         platform_config = {"default_versions": {"platform-helper": "auto"}}
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
         mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
             2, 0, 0
@@ -168,7 +163,6 @@ class TestPlatformHelperVersioningGetDefaultVersion:
 
         assert str(result) == "1.0.0"
         mocks.mock_config_provider.load_unvalidated_config_file.assert_called_once()
-        mocks.mock_config_provider.load_and_validate_platform_config.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -396,9 +390,6 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
 
         mocks = PlatformHelperVersioningMocks()
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
-            platform_config_for_env_pipelines
-        )
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
             platform_config_for_env_pipelines
         )
         mocks.mock_platform_helper_version_override = None
