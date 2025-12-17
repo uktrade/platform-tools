@@ -19,9 +19,15 @@ resource "aws_vpc_endpoint" "main" {
   vpc_id             = data.aws_vpc.vpc.id
   subnet_ids         = data.aws_subnets.private-subnets.ids
   security_group_ids = [aws_security_group.main.id]
+  tags              = local.tags
 }
 
 resource "aws_security_group" "main" {
   name   = "${var.application}-${var.environment}-vpc-endpoints"
   vpc_id = data.aws_vpc.vpc.id
+  tags   = local.tags
+}
+
+output "security_group_id" {
+  value = aws_security_group.main.id
 }

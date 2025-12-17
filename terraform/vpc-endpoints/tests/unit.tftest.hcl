@@ -1,5 +1,13 @@
 mock_provider "aws" {}
 
+override_resource {
+  target = aws_security_group.main
+  values = {
+    id = "sg-0123456789abcdef0"
+  }
+  override_during = plan
+}
+
 override_data {
   target = data.aws_vpc.vpc
   values = {
@@ -30,6 +38,27 @@ run "test_create_vpc_endpoints" {
         service_name = "com.amazonaws.eu-west-2.s3"
       }
     }
+  }
+
+
+   assert {
+    condition     = aws_vpc_endpoint.main["ecr"].tags.application == "demodjango"
+    error_message = "application tag was not as expected"
+  }
+
+  assert {
+    condition     = aws_vpc_endpoint.main["ecr"].tags.environment == "dev"
+    error_message = "environment tag was not as expected"
+  }
+
+  assert {
+    condition     = aws_vpc_endpoint.main["ecr"].tags.managed-by == "DBT Platform - Environment Terraform"
+    error_message = "managed-by tag was not as expected"
+  }
+
+  assert {
+    condition = aws_vpc_endpoint.main["ecr"].security_group_ids == toset([aws_security_group.main.id])
+    error_message = "aws_vpc_endpoint security_group_ids are not as expected"
   }
 
   assert {
@@ -88,10 +117,29 @@ run "test_create_vpc_endpoints" {
   }
 
   assert {
+    condition = output.security_group_id == aws_security_group.main.id
+    error_message = "aws_security_group id is not as expected"
+  }
+
+  assert {
     condition     = aws_security_group.main.vpc_id == "vpc-00112233aabbccdef"
     error_message = "aws_security_group vpc_id is not as expected"
   }
 
-  # TODO: tags
-  # TODO: assigned IP address should be a module output
+  assert {
+    condition     = aws_security_group.main.tags.application == "demodjango"
+    error_message = "application tag was not as expected"
+  }
+
+  assert {
+    condition     = aws_security_group.main.tags.environment == "dev"
+    error_message = "environment tag was not as expected"
+  }
+
+  assert {
+    condition     = aws_security_group.main.tags.managed-by == "DBT Platform - Environment Terraform"
+    error_message = "managed-by tag was not as expected"
+  }
+
+
 }
