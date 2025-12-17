@@ -12,5 +12,5 @@ memory: 2048
 count: 1 
 
 image:
-  location: public.ecr.aws/uktrade-minimal-account/minimal/application:${IMAGE_TAG}
+  location: public.ecr.aws/uktrade-minimal-account/minimal/application
   port: 8080
