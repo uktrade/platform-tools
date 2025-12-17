@@ -84,3 +84,12 @@ resource "aws_security_group" "environment_security_group" {
     }
   }
 }
+
+resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
+  count = var.vpc_endpoints_security_group_id != null ? 1 : 0
+  security_group_id = var.vpc_endpoints_security_group_id
+  ip_protocol = "tcp"
+  from_port = 443
+  to_port = 443
+  referenced_security_group_id = aws_security_group.environment_security_group.id
+}

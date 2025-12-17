@@ -15,6 +15,11 @@ variable "alb_https_security_group_id" {
   default = null
 }
 
+variable "vpc_endpoints_security_group_id" {
+  type    = string
+  default = null
+}
+
 variable "egress_rules" {
   type = list(object({
     to = object({
