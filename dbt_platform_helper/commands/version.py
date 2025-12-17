@@ -27,7 +27,6 @@ def get_platform_helper_for_project(pipeline):
     """
     io = ClickIOProvider()
     try:
-        version = PlatformHelperVersioning().get_required_version()
-        io.info(version)
+        io.info(PlatformHelperVersioning().get_required_version())
     except PlatformException as err:
         io.abort_with_error(str(err))
