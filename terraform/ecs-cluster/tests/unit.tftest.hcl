@@ -189,6 +189,11 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition     = length(aws_vpc_security_group_ingress_rule.vpc_endpoints) == 1
     error_message = "expected aws_vpc_security_group_ingress_rule.vpc_endpoints to be created"
   }
+
+  assert {
+    condition     = aws_vpc_security_group_ingress_rule.vpc_endpoints[0].security_group_id == "vpce-security-group-id"
+    error_message = "aws_vpc_security_group_ingress_rule security_group_id is not as expected"
+  }
 }
 
 
@@ -211,5 +216,3 @@ run "test_create_ecs_cluster_without_an_alb" {
   }
 }
 
-
-# TODO: ingress rule attributes
