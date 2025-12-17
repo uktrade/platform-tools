@@ -219,8 +219,52 @@ run "test_create_ecs_cluster_with_egress_rules" {
   }
 }
 
+run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
+  command = plan
 
+  variables {
+    application                     = "demodjango"
+    environment                     = "dev"
+    vpc_name                        = "terraform-tests-vpc"
+    alb_https_security_group_id     = "security-group-id"
+    vpc_endpoints_security_group_id = "vpce-security-group-id"
+    egress_rules = [
+      {
+        to = {}
+        protocol  = "tcp"
+        from_port = 443
+        to_port   = 443
+      }
+    ]
+  }
 
+  expect_failures = [ var.egress_rules ]
+}
+
+run "test_create_ecs_cluster_with_egress_rule_with_multiple_destinations" {
+  command = plan
+
+  variables {
+    application                     = "demodjango"
+    environment                     = "dev"
+    vpc_name                        = "terraform-tests-vpc"
+    alb_https_security_group_id     = "security-group-id"
+    vpc_endpoints_security_group_id = "vpce-security-group-id"
+    egress_rules = [
+      {
+        to = {
+          cidr_blocks = ["15.200.117.191/32", "172.65.64.208/30"]
+          vpc_endpoints = true
+        }
+        protocol  = "tcp"
+        from_port = 443
+        to_port   = 443
+      }
+    ]
+  }
+
+  expect_failures = [ var.egress_rules ]
+}
 
 run "test_create_ecs_cluster_without_an_alb" {
   command = plan

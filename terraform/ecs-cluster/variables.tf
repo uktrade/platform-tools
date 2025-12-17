@@ -31,4 +31,15 @@ variable "egress_rules" {
     to_port   = number
   }))
   default = null
+  validation {
+    condition = var.egress_rules == null || alltrue([
+      for rule in var.egress_rules :
+      length([
+        for key, val in rule.to :
+        key
+        if val != null
+      ]) == 1
+    ])
+    error_message = "All egress rules must set exactly one of: to.cidr_blocks, to.vpc_endpoints."
+  }
 }
