@@ -78,7 +78,7 @@ class PlatformHelperVersioning:
         required_version = platform_config.get("default_versions", {}).get("platform-helper")
         return required_version
 
-    def get_project_version(self):
+    def get_required_version(self):
         version_status = self.get_version_status()
         if self.is_auto():
             return version_status.latest

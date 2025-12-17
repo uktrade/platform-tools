@@ -141,7 +141,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
 
 class TestPlatformHelperVersioningGetProjectVersion:
-    def test_platform_helper_get_project_version_auto(
+    def test_platform_helper_get_required_version_auto(
         self, mocks, platform_config_for_env_pipelines
     ):
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
@@ -152,7 +152,7 @@ class TestPlatformHelperVersioningGetProjectVersion:
             2, 0, 0
         )
 
-        result = PlatformHelperVersioning(**mocks.params()).get_project_version()
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
         assert str(result) == "2.0.0"
 
