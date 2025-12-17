@@ -272,6 +272,15 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
 
   statement {
     actions = [
+      "logs:GetLogEvents"
+    ]
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/platform/ecs/service/${var.args.application}/${var.environment}/*:log-stream:*"
+    ]
+  }
+
+  statement {
+    actions = [
       "ecs:DescribeClusters"
     ]
     resources = [
