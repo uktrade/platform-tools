@@ -130,21 +130,41 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "udp"
         from_port = 7000
         to_port   = 7010
+      },
+      {
+        to = {
+          vpc_endpoints = true
+        }
+        protocol  = "tcp"
+        from_port = 443
+        to_port   = 443
       }
-
     ]
 
   }
 
   assert {
-    condition = {
+    condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => toset(block.cidr_blocks)
-    } == {
+    }) == tomap({
       "Egress rule 0" = toset(["172.65.64.208/30"])
       "Egress rule 1" = toset(["15.200.117.191/32", "172.65.64.208/30"])
-    }
+      "Egress rule 2" = null
+    })
     error_message = "Egress cidr_blocks attributes are not as expected."
+  }
+
+  assert {
+    condition = tomap({
+      for block in aws_security_group.environment_security_group.egress :
+      block.description => toset(block.security_groups)
+    }) == tomap({
+      "Egress rule 0" = null
+      "Egress rule 1" = null
+      "Egress rule 2" = toset(["vpce-security-group-id"])
+    })
+    error_message = "Egress security_groups attributes are not as expected."
   }
 
   assert {
@@ -154,6 +174,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     } == {
       "Egress rule 0" = "tcp"
       "Egress rule 1" = "udp"
+      "Egress rule 2" = "tcp"
     }
     error_message = "Egress protocol attributes are not as expected."
   }
@@ -165,6 +186,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     } == {
       "Egress rule 0" = 443
       "Egress rule 1" = 7000
+      "Egress rule 2" = 443
     }
     error_message = "Egress from_port attributes are not as expected."
   }
@@ -176,13 +198,14 @@ run "test_create_ecs_cluster_with_egress_rules" {
     } == {
       "Egress rule 0" = 443
       "Egress rule 1" = 7010
+      "Egress rule 2" = 443
     }
     error_message = "Egress to_port attributes are not as expected."
   }
 
   assert {
-    condition     = length(aws_security_group.environment_security_group.egress) == 2
-    error_message = "Egress does not exist."
+    condition     = length(aws_security_group.environment_security_group.egress) == 3
+    error_message = "Wrong number of egress blocks."
   }
 
   assert {

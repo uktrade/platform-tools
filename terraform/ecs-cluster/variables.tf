@@ -23,7 +23,8 @@ variable "vpc_endpoints_security_group_id" {
 variable "egress_rules" {
   type = list(object({
     to = object({
-      cidr_blocks = set(string)
+      cidr_blocks   = optional(set(string))
+      vpc_endpoints = optional(bool)
     })
     protocol  = string
     from_port = number

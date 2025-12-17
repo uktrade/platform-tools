@@ -26,6 +26,8 @@ resource "aws_security_group" "main" {
   name   = "${var.application}-${var.environment}-vpc-endpoints"
   vpc_id = data.aws_vpc.vpc.id
   tags   = local.tags
+  # Rules are to be declared using aws_vpc_security_group_ingress_rule
+  # and aws_vpc_security_group_egress_rule resources.
 }
 
 output "security_group_id" {

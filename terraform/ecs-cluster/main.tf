@@ -69,6 +69,11 @@ resource "aws_security_group" "environment_security_group" {
       to_port     = egress.value.to_port
       protocol    = egress.value.protocol
       cidr_blocks = egress.value.to.cidr_blocks
+      security_groups = (
+        egress.value.to.vpc_endpoints != null
+        ? [var.vpc_endpoints_security_group_id]
+        : null
+      )
     }
   }
 
