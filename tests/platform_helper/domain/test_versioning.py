@@ -141,12 +141,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
 
 class TestPlatformHelperVersioningGetRequiredVersion:
-    def test_platform_helper_get_required_version(self, mocks, platform_config_for_env_pipelines):
-        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.0.0"}
-        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
-            platform_config_for_env_pipelines
-        )
-
+    def test_platform_helper_get_required_version(self, mocks):
         result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
         assert str(result) == "1.0.0"
