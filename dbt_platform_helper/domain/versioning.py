@@ -73,11 +73,6 @@ class PlatformHelperVersioning:
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
-    def get_default_version(self):
-        platform_config = self.config_provider.load_unvalidated_config_file()
-        required_version = platform_config.get("default_versions", {}).get("platform-helper")
-        return required_version
-
     def get_required_version(self):
         version_status = self.get_version_status()
         if self.is_auto():
@@ -162,6 +157,11 @@ class PlatformHelperVersioning:
         latest_release = self.latest_version_provider.get_semantic_version("dbt-platform-helper")
 
         return VersionStatus(installed=locally_installed_version, latest=latest_release)
+
+    def get_default_version(self):
+        platform_config = self.config_provider.load_unvalidated_config_file()
+        required_version = platform_config.get("default_versions", {}).get("platform-helper")
+        return required_version
 
     def get_template_version(self):
         if self.is_auto():
