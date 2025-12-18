@@ -15,11 +15,20 @@ override_data {
 }
 
 override_data {
-  target = data.aws_ip_ranges.service_ranges[0]
+  target = data.aws_ip_ranges.service_ranges["3"]
   values = {
     cidr_blocks = ["23.20.0.0/14", "23.24.0.0/14"]
     services   = ["CLOUDFRONT"]
     regions     = ["eu-west-2"]
+  }
+}
+
+override_data {
+  target = data.aws_ip_ranges.service_ranges["4"]
+  values = {
+    cidr_blocks = ["56.20.0.0/14", "56.24.0.0/14"]
+    services   = ["EC2"]
+    regions     = ["GLOBAL"]
   }
 }
 
@@ -150,7 +159,6 @@ run "test_create_ecs_cluster_with_egress_rules" {
       },
       {
         to = {
-          cidr_blocks = ["172.65.64.208/30"]
           aws_cidr_blocks = {
             services = ["CLOUDFRONT"]
             regions  = ["eu-west-2"]
@@ -159,6 +167,17 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
+      },
+      {
+        to = {
+          aws_cidr_blocks = {
+            services = ["EC2"]
+            regions  = ["GLOBAL"]
+          }
+        }
+        protocol  = "tcp"
+        from_port = 80
+        to_port   = 80
       }
     ]
 
@@ -172,7 +191,8 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 0" = toset(["172.65.64.208/30"])
       "Egress rule 1" = toset(["15.200.117.191/32", "172.65.64.208/30"])
       "Egress rule 2" = null
-      "Egress rule 3" = toset(["172.65.64.208/30"])
+      "Egress rule 3" = toset(["23.20.0.0/14", "23.24.0.0/14"])
+      "Egress rule 4" = toset(["56.20.0.0/14", "56.24.0.0/14"])
     })
     error_message = "Egress cidr_blocks attributes are not as expected."
   }
@@ -186,6 +206,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 1" = null
       "Egress rule 2" = toset(["vpce-security-group-id"])
       "Egress rule 3" = null
+      "Egress rule 4" = null
     })
     error_message = "Egress security_groups attributes are not as expected."
   }
@@ -199,6 +220,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 1" = "udp"
       "Egress rule 2" = "tcp"
       "Egress rule 3" = "tcp"
+      "Egress rule 4" = "tcp"
     }
     error_message = "Egress protocol attributes are not as expected."
   }
@@ -212,6 +234,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 1" = 7000
       "Egress rule 2" = 443
       "Egress rule 3" = 443
+      "Egress rule 4" = 80
     }
     error_message = "Egress from_port attributes are not as expected."
   }
@@ -225,12 +248,13 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 1" = 7010
       "Egress rule 2" = 443
       "Egress rule 3" = 443
+      "Egress rule 4" = 80
     }
     error_message = "Egress to_port attributes are not as expected."
   }
 
   assert {
-    condition     = length(aws_security_group.environment_security_group.egress) == 4
+    condition     = length(aws_security_group.environment_security_group.egress) == 5
     error_message = "Wrong number of egress blocks."
   }
 
@@ -245,22 +269,28 @@ run "test_create_ecs_cluster_with_egress_rules" {
   }
 
   assert {
-    condition = length(local.aws_cidr_blocks_config) == 1
-    error_message = "local.aws_cidr_blocks_config length is not as expected."
-  }
-
-  assert {
-    condition = length(data.aws_ip_ranges.service_ranges) == 1
+    condition = length(data.aws_ip_ranges.service_ranges) == 2
     error_message = "aws ip ranges data source should be created"
   }
 
   assert {
-    condition = contains(data.aws_ip_ranges.service_ranges[0].services, "CLOUDFRONT")
+    condition = contains(data.aws_ip_ranges.service_ranges["3"].services, "CLOUDFRONT")
     error_message = "Data source should include CLOUDFRONT service."
   }
+
   assert {
-    condition = contains(data.aws_ip_ranges.service_ranges[0].regions, "eu-west-2")
+    condition = contains(data.aws_ip_ranges.service_ranges["3"].regions, "eu-west-2")
     error_message = "Data source should include eu-west-2 region."
+  }
+
+  assert {
+    condition = contains(data.aws_ip_ranges.service_ranges["4"].services, "EC2")
+    error_message = "Data source should include EC2 service."
+  }
+
+  assert {
+    condition = contains(data.aws_ip_ranges.service_ranges["4"].regions, "GLOBAL")
+    error_message = "Data source should include GLOBAL region."
   }
 }
 
@@ -286,7 +316,7 @@ run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
   expect_failures = [ var.egress_rules ]
 }
 
-run "test_create_ecs_cluster_with_egress_rule_with_multiple_destinations" {
+run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_vpc_endpoints" {
   command = plan
 
   variables {
@@ -304,7 +334,35 @@ run "test_create_ecs_cluster_with_egress_rule_with_multiple_destinations" {
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
-      }
+      },
+    ]
+  }
+
+  expect_failures = [ var.egress_rules ]
+}
+
+run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_aws_cidr_blocks" {
+  command = plan
+
+  variables {
+    application                     = "demodjango"
+    environment                     = "dev"
+    vpc_name                        = "terraform-tests-vpc"
+    alb_https_security_group_id     = "security-group-id"
+    vpc_endpoints_security_group_id = "vpce-security-group-id"
+    egress_rules = [
+      {
+        to = {
+          cidr_blocks = ["15.200.117.191/32", "172.65.64.208/30"]
+          aws_cidr_blocks = {
+            services = ["CLOUDFRONT"]
+            regions  = ["eu-west-2"]
+          }
+        }
+        protocol  = "tcp"
+        from_port = 443
+        to_port   = 443
+      },
     ]
   }
 

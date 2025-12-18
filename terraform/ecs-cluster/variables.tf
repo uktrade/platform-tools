@@ -44,9 +44,9 @@ variable "egress_rules" {
       length([
         for key, val in rule.to :
         key
-        if val != null && key != "aws_cidr_blocks"
+        if val != null
       ]) == 1
     ])
-    error_message = "All egress rules must set exactly one of: to.cidr_blocks, to.vpc_endpoints."
+    error_message = "All egress rules must set exactly one of: to.cidr_blocks, to.vpc_endpoints, to.aws_cidr_blocks."
   }
 }

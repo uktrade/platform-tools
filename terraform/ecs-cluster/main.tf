@@ -2,10 +2,18 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_ip_ranges" "service_ranges" {
-  count = length(local.aws_services) > 0 && length(local.aws_regions) > 0 ? 1 : 0
+  # {
+  #    "3" = { services = [...], regions = [...] }
+  #    "4" = { services = [...], regions = [...] }
+  # }
+  for_each = {
+    for rule_num, rule in coalesce(var.egress_rules, []) :
+    rule_num => rule.to.aws_cidr_blocks
+    if try(rule.to.aws_cidr_blocks, null) != null
+  }
 
-  services = local.aws_services
-  regions  = local.aws_regions
+  services = each.value.services
+  regions  = each.value.regions
 }
 
 resource "aws_ecs_cluster" "cluster" {
@@ -80,7 +88,7 @@ resource "aws_security_group" "environment_security_group" {
         ? tolist(egress.value.to.cidr_blocks)
         : (
           egress.value.to.aws_cidr_blocks != null
-          ? data.aws_ip_ranges.service_ranges[0].cidr_blocks
+          ? data.aws_ip_ranges.service_ranges[egress.key].cidr_blocks
           : null
         )
       )
