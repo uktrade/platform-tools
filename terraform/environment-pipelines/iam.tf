@@ -306,7 +306,6 @@ data "aws_iam_policy_document" "load_balancer" {
       "elasticloadbalancing:CreateLoadBalancer",
       "elasticloadbalancing:AddTags",
       "elasticloadbalancing:ModifyLoadBalancerAttributes",
-      "elasticloadbalancing:DeleteLoadBalancer",
       "elasticloadbalancing:CreateListener",
       "elasticloadbalancing:ModifyListener",
       "elasticloadbalancing:SetWebACL"
@@ -355,7 +354,6 @@ data "aws_iam_policy_document" "certificate" {
       "acm:AddTagsToCertificate",
       "acm:DescribeCertificate",
       "acm:ListTagsForCertificate",
-      "acm:DeleteCertificate"
     ]
     resources = [
       "arn:aws:acm:${local.account_region}:certificate/*"
@@ -1046,7 +1044,6 @@ data "aws_iam_policy_document" "extensions" {
       "es:DescribeDomain",
       "es:DescribeDomainConfig",
       "es:ListTags",
-      "es:DeleteDomain",
       "es:UpdateDomainConfig",
       "es:UpgradeDomain",
       "es:GetUpgradeStatus"
