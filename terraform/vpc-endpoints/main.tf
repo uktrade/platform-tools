@@ -29,7 +29,3 @@ resource "aws_security_group" "main" {
   # Rules are to be declared using aws_vpc_security_group_ingress_rule
   # and aws_vpc_security_group_egress_rule resources.
 }
-
-output "security_group_id" {
-  value = aws_security_group.main.id
-}
