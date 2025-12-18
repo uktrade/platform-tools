@@ -113,7 +113,6 @@ class PlatformHelperVersioning:
             return
 
         if self.is_auto():
-            self.io.info("Checking auto versioning consistency")
             self._check_auto_environment()
             self._check_auto_installed_version()
 
