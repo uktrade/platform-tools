@@ -12,8 +12,21 @@ locals {
   )
 }
 
+# locals {
+#   aws_cidr_blocks_config = var.egress_rules != null ? (
+#     try(var.egress_rules[0].to.aws_cidr_blocks, null)
+#   ) : null
+# }
+
 locals {
-  aws_cidr_blocks_config = var.egress_rules != null ? (
-    try(var.egress_rules[0].to.aws_cidr_blocks, null)
-  ) : null
+  aws_cidr_blocks_config = var.egress_rules != null ? [
+    for rule in var.egress_rules : rule.to.aws_cidr_blocks
+    if try(rule.to.aws_cidr_blocks, null) != null
+  ] : []
+
+  aws_services = distinct(flatten([
+  for config in local.aws_cidr_blocks_config : config.services]))
+
+  aws_regions = distinct(flatten([
+  for config in local.aws_cidr_blocks_config : config.regions]))
 }

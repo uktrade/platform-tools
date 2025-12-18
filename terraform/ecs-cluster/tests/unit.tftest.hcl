@@ -243,6 +243,25 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition     = aws_vpc_security_group_ingress_rule.vpc_endpoints[0].security_group_id == "vpce-security-group-id"
     error_message = "aws_vpc_security_group_ingress_rule security_group_id is not as expected"
   }
+
+  assert {
+    condition = length(local.aws_cidr_blocks_config) == 1
+    error_message = "local.aws_cidr_blocks_config length is not as expected."
+  }
+
+  assert {
+    condition = length(data.aws_ip_ranges.service_ranges) == 1
+    error_message = "aws ip ranges data source should be created"
+  }
+
+  assert {
+    condition = contains(data.aws_ip_ranges.service_ranges[0].services, "CLOUDFRONT")
+    error_message = "Data source should include CLOUDFRONT service."
+  }
+  assert {
+    condition = contains(data.aws_ip_ranges.service_ranges[0].regions, "eu-west-2")
+    error_message = "Data source should include eu-west-2 region."
+  }
 }
 
 run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {

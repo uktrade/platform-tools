@@ -2,10 +2,10 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 data "aws_ip_ranges" "service_ranges" {
-  count = local.aws_cidr_blocks_config != null ? 1 : 0
+  count = length(local.aws_services) > 0 && length(local.aws_regions) > 0 ? 1 : 0
 
-  services = local.aws_cidr_blocks_config.services
-  regions  = local.aws_cidr_blocks_config.regions
+  services = local.aws_services
+  regions  = local.aws_regions
 }
 
 resource "aws_ecs_cluster" "cluster" {
