@@ -100,10 +100,12 @@ environments:
 
 
 @pytest.fixture()
-def no_skipping_version_checks():
-    with patch("dbt_platform_helper.domain.versioning.skip_version_checks") as skip_version_checks:
-        skip_version_checks.return_value = False
-        yield skip_version_checks
+def no_overriding_version_checks():
+    with patch(
+        "dbt_platform_helper.domain.versioning.allow_override_of_versioning_checks"
+    ) as allow_override_of_versioning_checks:
+        allow_override_of_versioning_checks.return_value = False
+        yield allow_override_of_versioning_checks
 
 
 @pytest.fixture(scope="function", autouse=True)

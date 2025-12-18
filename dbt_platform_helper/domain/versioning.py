@@ -38,7 +38,7 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def skip_version_checks():
+def allow_override_of_versioning_checks_fn():
     return not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
 
 
@@ -55,15 +55,17 @@ class PlatformHelperVersioning:
         environment_variable_provider: EnvironmentVariableProvider = EnvironmentVariableProvider(),
         latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
-        skip_versioning_checks: bool = None,
+        allow_override_of_versioning_checks: bool = None,
         platform_helper_version_override: str = None,
     ):
         self.io = io
         self.config_provider = config_provider
         self.latest_version_provider = latest_version_provider
         self.installed_version_provider = installed_version_provider
-        self.skip_versioning_checks = (
-            skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
+        self.allow_override_of_versioning_checks = (
+            allow_override_of_versioning_checks
+            if allow_override_of_versioning_checks is not None
+            else allow_override_of_versioning_checks_fn()
         )
         self.environment_variable_provider = environment_variable_provider
         self.platform_helper_version_override = platform_helper_version_override
@@ -73,9 +75,9 @@ class PlatformHelperVersioning:
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
-    def get_required_version(self):
+    def get_required_version(self) -> str:
         if self.is_auto():
-            return self.get_version_status().latest
+            return str(self.get_version_status().latest)
         else:
             return self.get_default_version()
 
@@ -98,41 +100,30 @@ class PlatformHelperVersioning:
             return
         else:
             message = "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
-            if self.skip_versioning_checks:
+            if self.allow_override_of_versioning_checks:
                 self.io.error(message)
             else:
                 self.io.abort_with_error(message)
 
-    def _check_auto_installed_version(self):
-        version_status = self.get_version_status()
-        if version_status.installed != version_status.latest:
-            message = f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v{version_status.installed}. Upgrade to v{version_status.latest}."
-            self.io.warn(message)
-
     def check_platform_helper_version_mismatch(self):
         if self.is_auto():
-            self._check_auto_installed_version()
             self._check_auto_environment()
 
-        elif self.skip_versioning_checks:
-            return
+        version_status = self.get_version_status()
+        required_version = self.get_required_version()
 
-        else:
-            version_status = self.get_version_status()
-            required_version = self.get_default_version()
+        if SemanticVersion.is_semantic_version(required_version):
+            required_version_semver = SemanticVersion.from_string(required_version)
 
-            if SemanticVersion.is_semantic_version(required_version):
-                required_version_semver = SemanticVersion.from_string(required_version)
-
-                if not version_status.installed == required_version_semver:
-                    message = (
-                        f"WARNING: You are running platform-helper v{version_status.installed} against "
-                        f"v{required_version_semver} specified for the project."
-                    )
-                    self.io.warn(message)
+            if not version_status.installed == required_version_semver:
+                message = (
+                    f"WARNING: You are running platform-helper v{version_status.installed} against "
+                    f"v{required_version_semver} required by the project. Running anything besides the version required by the project may result in unpredictable and destructive changes."
+                )
+                self.io.warn(message)
 
     def check_if_needs_update(self):
-        if self.skip_versioning_checks:
+        if self.allow_override_of_versioning_checks:
             return
 
         version_status = self.get_version_status()
