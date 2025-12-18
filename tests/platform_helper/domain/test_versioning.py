@@ -141,6 +141,23 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
             "You are on managed upgrades. Generate commands should only be running inside a pipeline environment.",
         )
 
+    def test_shows_warning_when_auto_and_skipping_versioning_checks(self, mocks):
+        platform_config = {"default_versions": {"platform-helper": "auto"}}
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
+            2, 0, 0
+        )
+        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.mock_skip_versioning_checks = True
+
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
+
+        mocks.mock_io.warn.assert_called_with(
+            f"WARNING: You are on managed upgrades. Running anything besides the latest version of platform-helper may result in unpredictable and destructive changes. Installed version is v1.0.0. Upgrade to v2.0.0.",
+        )
+
 
 class TestPlatformHelperVersioningGetRequiredVersion:
     def test_platform_helper_get_required_version(self, mocks):

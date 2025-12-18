@@ -97,9 +97,11 @@ class PlatformHelperVersioning:
         if platform_helper_version_is_set_in_environment and modules_override_is_set_in_environment:
             return
         else:
-            self.io.abort_with_error(
-                "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
-            )
+            message = "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
+            if self.skip_versioning_checks:
+                self.io.error(message)
+            else:
+                self.io.abort_with_error(message)
 
     def _check_auto_installed_version(self):
         version_status = self.get_version_status()
@@ -108,13 +110,12 @@ class PlatformHelperVersioning:
             self.io.warn(message)
 
     def check_platform_helper_version_mismatch(self):
-        if self.skip_versioning_checks:
-            self.io.info("Skipping versioning checks")
-            return
-
         if self.is_auto():
-            self._check_auto_environment()
             self._check_auto_installed_version()
+            self._check_auto_environment()
+
+        elif self.skip_versioning_checks:
+            return
 
         else:
             version_status = self.get_version_status()
