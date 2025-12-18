@@ -68,8 +68,7 @@ def mocks():
     return mocks
 
 
-class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
-
+class TestPlatformHelperVersioningIsAuto:
     def test_is_auto(self, mocks):
         platform_config = {"default_versions": {"platform-helper": "auto"}}
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
@@ -82,6 +81,9 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         result = PlatformHelperVersioning(**mocks.params()).is_auto()
 
         assert result == False
+
+
+class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
     def test_shows_warning_when_different_than_file_spec(self, mocks):
         mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
