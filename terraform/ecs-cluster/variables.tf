@@ -20,6 +20,7 @@ variable "vpc_endpoints_security_group_id" {
   default = null
 }
 
+
 variable "egress_rules" {
   type = list(object({
     to = object({
