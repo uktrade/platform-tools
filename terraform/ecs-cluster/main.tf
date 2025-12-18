@@ -1,10 +1,12 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
-data "aws_ip_ranges" "cloudfront" {
-  services = ["CLOUDFRONT"]
-  regions  = ["GLOBAL", "eu-west-2"]
-  }
+data "aws_ip_ranges" "service_ranges" {
+  count = local.aws_cidr_blocks_config != null ? 1 : 0
+
+  services = local.aws_cidr_blocks_config.services
+  regions  = local.aws_cidr_blocks_config.regions
+}
 
 resource "aws_ecs_cluster" "cluster" {
   name = local.cluster_name
@@ -73,7 +75,15 @@ resource "aws_security_group" "environment_security_group" {
       from_port   = egress.value.from_port
       to_port     = egress.value.to_port
       protocol    = egress.value.protocol
-      cidr_blocks = egress.value.to.cidr_blocks
+      cidr_blocks = (
+        egress.value.to.cidr_blocks != null
+        ? tolist(egress.value.to.cidr_blocks)
+        : (
+          egress.value.to.aws_cidr_blocks != null
+          ? data.aws_ip_ranges.service_ranges[0].cidr_blocks
+          : null
+        )
+      )
       security_groups = (
         egress.value.to.vpc_endpoints != null
         ? [var.vpc_endpoints_security_group_id]

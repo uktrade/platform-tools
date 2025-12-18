@@ -11,3 +11,9 @@ locals {
     }
   )
 }
+
+locals {
+  aws_cidr_blocks_config = var.egress_rules != null ? (
+    try(var.egress_rules[0].to.aws_cidr_blocks, null)
+  ) : null
+}

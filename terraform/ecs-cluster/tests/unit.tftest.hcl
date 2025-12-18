@@ -15,6 +15,15 @@ override_data {
 }
 
 override_data {
+  target = data.aws_ip_ranges.service_ranges[0]
+  values = {
+    cidr_blocks = ["23.20.0.0/14", "23.24.0.0/14"]
+    services   = ["CLOUDFRONT"]
+    regions     = ["eu-west-2"]
+  }
+}
+
+override_data {
   target = data.aws_vpc.vpc
   values = {
     id         = "vpc-00112233aabbccdef"
@@ -138,6 +147,18 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
+      },
+      {
+        to = {
+          cidr_blocks = ["172.65.64.208/30"]
+          aws_cidr_blocks = {
+            services = ["CLOUDFRONT"]
+            regions  = ["eu-west-2"]
+          }
+        }
+        protocol  = "tcp"
+        from_port = 443
+        to_port   = 443
       }
     ]
 
@@ -151,6 +172,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 0" = toset(["172.65.64.208/30"])
       "Egress rule 1" = toset(["15.200.117.191/32", "172.65.64.208/30"])
       "Egress rule 2" = null
+      "Egress rule 3" = toset(["172.65.64.208/30"])
     })
     error_message = "Egress cidr_blocks attributes are not as expected."
   }
@@ -163,6 +185,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 0" = null
       "Egress rule 1" = null
       "Egress rule 2" = toset(["vpce-security-group-id"])
+      "Egress rule 3" = null
     })
     error_message = "Egress security_groups attributes are not as expected."
   }
@@ -175,6 +198,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 0" = "tcp"
       "Egress rule 1" = "udp"
       "Egress rule 2" = "tcp"
+      "Egress rule 3" = "tcp"
     }
     error_message = "Egress protocol attributes are not as expected."
   }
@@ -187,6 +211,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 0" = 443
       "Egress rule 1" = 7000
       "Egress rule 2" = 443
+      "Egress rule 3" = 443
     }
     error_message = "Egress from_port attributes are not as expected."
   }
@@ -199,12 +224,13 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress rule 0" = 443
       "Egress rule 1" = 7010
       "Egress rule 2" = 443
+      "Egress rule 3" = 443
     }
     error_message = "Egress to_port attributes are not as expected."
   }
 
   assert {
-    condition     = length(aws_security_group.environment_security_group.egress) == 3
+    condition     = length(aws_security_group.environment_security_group.egress) == 4
     error_message = "Wrong number of egress blocks."
   }
 
