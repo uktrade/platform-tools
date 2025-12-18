@@ -201,7 +201,7 @@ class PlatformHelperVersioning:
         if platform_helper_env_override:
             return f"{pipeline_module_path}{platform_helper_env_override}"
 
-        return f"{pipeline_module_path}{self.get_default_version()}"
+        return f"{pipeline_module_path}{self.get_required_version()}"
 
     def get_environment_pipeline_modules_source(self):
         return self._get_pipeline_modules_source(
