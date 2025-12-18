@@ -1004,7 +1004,6 @@ data "aws_iam_policy_document" "extensions" {
       "elasticache:AddTagsToResource",
       "elasticache:CreateReplicationGroup",
       "elasticache:DecreaseReplicaCount",
-      "elasticache:DeleteReplicationGroup",
       "elasticache:DescribeReplicationGroups",
       "elasticache:IncreaseReplicaCount",
       "elasticache:ListTagsForResource",
