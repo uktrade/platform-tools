@@ -34,10 +34,10 @@ phases:
         PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
         ALLOWED_MODES=("dual-deploy-copilot-traffic" "dual-deploy-platform-traffic" "platform")
 
-        DEPLOY_MODE=$(yq eval ".environments.\"$ENVIRONMENT\".service-deployment-mode" "$PLATFORM_CONFIG_PATH")
+        DEPLOY_MODE=$(yq -r ".environments.\"$ENVIRONMENT\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
 
         if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
-          DEPLOY_MODE=$(yq -r '[.environments."*".service-deployment-mode | select(. != null)][0]' "$PLATFORM_CONFIG_PATH")
+          DEPLOY_MODE=$(yq -r ".environments.\"*\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
           if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
             echo "Property 'service-deployment-mode' not found in platform-config. No further action required, skipping pipeline stage ..."
             export SKIP_BUILD="true"

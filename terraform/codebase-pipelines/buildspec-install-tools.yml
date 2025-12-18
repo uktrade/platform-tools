@@ -16,17 +16,19 @@ phases:
       - mkdir -p ./build-tools/bin
       - mkdir -p ./build-tools/py
       - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      ## yq for yaml processing (The Go-based variant, not Python-based)
-      - curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o ./build-tools/bin/yq
-      - chmod +x ./build-tools/bin/yq
       ## regctl for listing images
       - curl -sL https://github.com/regclient/regclient/releases/latest/download/regctl-linux-amd64 -o ./build-tools/bin/regctl
       - chmod +x ./build-tools/bin/regctl
+      ## yq for yaml processing (Python-based variant)
+      - pip install --upgrade --target "${CODEBUILD_SRC_DIR}/build-tools/py" --quiet "yq"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/py/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/py:${PYTHONPATH}"
+
       ## Check for platform-helper version override
       - |
          if [ "${PLATFORM_HELPER_VERSION}" == "NONE" ]; then
            echo "Install platform-helper version from platform-config default version"
-           REQUIRED_VERSION=$(yq eval ".default_versions.platform-helper" platform-config.yml)
+           REQUIRED_VERSION=$(yq -r ".default_versions.\"platform-helper\"" platform-config.yml)
          else
            REQUIRED_VERSION="${PLATFORM_HELPER_VERSION}"
          fi
@@ -42,17 +44,15 @@ phases:
       - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
       - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
-      ## Install platform-helper
+      ## Install platform-helper and yq (yq needs to be installed again to be successfully included as an artifact)
       - cd platform-tools
       - pip install poetry --quiet
       - poetry build --no-interaction --format sdist --no-ansi | tee build-log.txt
       - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
       - 'echo "Package archive: $ARTIFACT"'
       - cd "${CODEBUILD_SRC_DIR}/build-tools"
-      - pip install --upgrade --target "${CODEBUILD_SRC_DIR}/build-tools/py" --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
+      - pip install --upgrade --target "${CODEBUILD_SRC_DIR}/build-tools/py" --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}" "yq"
       - VERSION_OUTPUT=""
-      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/py/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/py:${PYTHONPATH}"
       - platform-helper --version
       - cd bin
       - curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
@@ -64,6 +64,7 @@ phases:
       - if [ "${COMMIT_TYPE}" != "tag" ]; then VERSION_OUTPUT+=" (from git ref ${REQUIRED_VERSION})"; fi
       - VERSION_OUTPUT+="\n$(python3 --version)"
       - VERSION_OUTPUT+="\n$(pip --version)"
+      - VERSION_OUTPUT+="\n$(yq --version)"
       - echo -e "=============\nTool Versions\n-------------\n$VERSION_OUTPUT"
 artifacts:
   files:
