@@ -87,14 +87,40 @@ def test_pipeline_generate_with_auto_errors_when_expected_env_vars_are_not_set()
     mocks.mock_config_provider = mock_config_provider
     mocks.mock_platform_helper_versioning.config_provider = mock_config_provider
 
-    mock_env_var_provider = Mock()
-    mock_env_var_provider.get.return_value = None
+    mock_env_var_provider = {}
+
     mocks.mock_platform_helper_versioning.environment_variable_provider = mock_env_var_provider
 
     pipelines = Pipelines(**mocks.params())
 
     with pytest.raises(SystemExit):
         pipelines.generate(None)
+
+
+def test_pipeline_generate_with_auto_error_is_bypassed_if_versioning_check_override_is_allowed():
+    mock_config = {
+        "application": "anything",
+        "default_versions": {"platform-helper": "auto"},
+    }
+    mock_config_provider = Mock()
+    mock_config_provider.load_and_validate_platform_config.return_value = mock_config
+    mock_config_provider.load_unvalidated_config_file.return_value = mock_config
+    mocks = PipelineMocks("anything")
+    mocks.mock_config_provider = mock_config_provider
+    mocks.mock_platform_helper_versioning.config_provider = mock_config_provider
+
+    mock_env_var_provider = {}
+    mocks.mock_platform_helper_versioning.environment_variable_provider = mock_env_var_provider
+
+    mocks.mock_platform_helper_versioning.allow_override_of_versioning_checks = True
+
+    Pipelines(**mocks.params()).generate(None)
+
+    warn_calls = [call.args[0] for call in mocks.io.warn.mock_calls]
+    assert (
+        "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
+        in warn_calls
+    )
 
 
 def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outputs_warning():
