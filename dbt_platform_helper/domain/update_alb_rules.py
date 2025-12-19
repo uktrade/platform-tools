@@ -143,8 +143,12 @@ class UpdateALBRules:
             service_models = ServiceManager().get_service_models(application, environment)
             grouped = defaultdict(list)
 
+            service_mapped_tgs = self._get_tg_arns_for_platform_services(
+                application_name, environment
+            )
+
             for service in service_models:
-                if service.type not in HTTP_SERVICE_TYPES:
+                if service.type not in HTTP_SERVICE_TYPES or service.name not in service_mapped_tgs:
                     continue
 
                 additional_rules = getattr(service.http, "additional_rules", None)
@@ -191,10 +195,6 @@ class UpdateALBRules:
             rules.sort(
                 key=lambda r: (len([s for s in r["path"].split("/") if s]), r["aliases"]),
                 reverse=True,
-            )
-
-            service_mapped_tgs = self._get_tg_arns_for_platform_services(
-                application_name, environment
             )
 
             platform_rules = mapped_rules.get(RuleType.PLATFORM.value, [])
