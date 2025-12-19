@@ -81,7 +81,7 @@ class PlatformHelperVersioning:
         else:
             return self.get_default_version()
 
-    def _check_auto_environment(self):
+    def _check_environment_is_configured_for_auto_versioning_within_a_pipeline(self):
         platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         ) or self.environment_variable_provider.get("PLATFORM_HELPER_VERSION")
@@ -101,13 +101,14 @@ class PlatformHelperVersioning:
         else:
             message = "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
             if self.allow_override_of_versioning_checks:
-                self.io.error(message)
+                self.io.warn(message)
+                self.io.info("Bypassing versioning enforcement")
             else:
                 self.io.abort_with_error(message)
 
     def check_platform_helper_version_mismatch(self):
         if self.is_auto():
-            self._check_auto_environment()
+            self._check_environment_is_configured_for_auto_versioning_within_a_pipeline()
 
         version_status = self.get_version_status()
         required_version = self.get_required_version()
