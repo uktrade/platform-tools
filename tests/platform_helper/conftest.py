@@ -882,6 +882,8 @@ environment_pipelines:
        trigger_on_push: false
        environments:
          dev:
+         staging:
+         prod:
    another-pipeline-in-same-account:
        account: platform-sandbox-test
        branch: main

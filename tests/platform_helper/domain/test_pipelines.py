@@ -298,6 +298,31 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     )
 
 
+def test_get_pipelines_list_for_account_preserves_environment_order(
+    platform_config_for_env_pipelines,
+):
+    """Environment order in platform-config.yml must be preserved when
+    transforming environment pipelines for Terraform rendering."""
+
+    pipelines = Pipelines(
+        config_provider=Mock(),
+        terraform_manifest_provider=Mock(),
+        ecr_provider=Mock(),
+        get_git_remote=Mock(return_value="repo"),
+    )
+
+    result = pipelines._get_pipelines_list_for_account(
+        platform_config_for_env_pipelines,
+        aws_account="platform-sandbox-test",
+    )
+
+    assert "main" in result
+
+    environments = result["main"]["environments"]
+
+    assert [env["name"] for env in environments] == ["dev", "staging", "prod"]
+
+
 def assert_terraform(
     app_name,
     aws_account,

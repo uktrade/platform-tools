@@ -21,7 +21,15 @@ locals {
   account_map = { for account in local.extracted_account_names_and_ids : account["name"] => account["id"] }
 
   # Convert the env config into a list and add env name and vpc / requires_approval from the environments config.
-  environment_config = [for name, env in var.environments : merge(lookup(local.base_env_config, name, {}), env, { "name" = name })]
+  environment_config = [
+    for env_obj in var.environments :
+    merge(
+      lookup(local.base_env_config, env_obj.name, {}),
+      env_obj.config,
+      { name = env_obj.name }
+    )
+  ]
+
 
   triggers_another_pipeline         = var.pipeline_to_trigger != null
   triggered_pipeline_account_name   = local.triggers_another_pipeline ? var.all_pipelines[var.pipeline_to_trigger].account : null
