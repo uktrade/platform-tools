@@ -80,7 +80,7 @@ resource "aws_security_group" "environment_security_group" {
     for_each = var.egress_rules == null ? [] : [
       for rule in var.egress_rules :
       rule
-      if egress.value.to.cidr_blocks != null || egress.value.to.aws_cidr_blocks != null
+      if rule.to.cidr_blocks != null || rule.to.aws_cidr_blocks != null
     ]
     content {
       description = "Egress rule ${egress.key}"
@@ -99,7 +99,7 @@ resource "aws_security_group" "environment_security_group" {
     for_each = var.egress_rules == null ? [] : [
       for rule in var.egress_rules :
       rule
-      if egress.value.to.vpc_endpoints != null
+      if rule.to.vpc_endpoints != null
     ]
     content {
       description = "Egress rule ${egress.key}"
