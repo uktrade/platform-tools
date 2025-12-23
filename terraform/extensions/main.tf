@@ -123,11 +123,13 @@ module "ecs_cluster" {
 
   count = local.non_copilot_service_deployment_mode
 
-  application                 = var.args.application
-  environment                 = var.environment
-  vpc_name                    = local.vpc_name
-  alb_https_security_group_id = try(one(values(module.alb)).https_security_group_id, null)
-  egress_rules                = local.egress_rules
+  application                     = var.args.application
+  environment                     = var.environment
+  vpc_name                        = local.vpc_name
+  alb_https_security_group_id     = try(one(values(module.alb)).https_security_group_id, null)
+  has_vpc_endpoints               = local.vpc_endpoints != null
+  vpc_endpoints_security_group_id = try(one(module.vpc_endpoints).security_group_id, null)
+  egress_rules                    = local.egress_rules
 }
 
 module "datadog" {

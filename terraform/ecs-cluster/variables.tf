@@ -15,9 +15,18 @@ variable "alb_https_security_group_id" {
   default = null
 }
 
+variable "has_vpc_endpoints" {
+  type    = bool
+  default = false
+}
+
 variable "vpc_endpoints_security_group_id" {
   type    = string
   default = null
+  validation {
+    condition     = !var.has_vpc_endpoints || var.vpc_endpoints_security_group_id != null
+    error_message = "If has_vpc_endpoints is true, vpc_endpoints_security_group_id must be non-null"
+  }
 }
 
 

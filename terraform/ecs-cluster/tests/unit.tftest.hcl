@@ -48,6 +48,7 @@ run "test_create_ecs_cluster" {
     environment                     = "dev"
     vpc_name                        = "terraform-tests-vpc"
     alb_https_security_group_id     = "security-group-id"
+    has_vpc_endpoints               = false
     vpc_endpoints_security_group_id = null
     egress_rules                    = null
   }
@@ -131,6 +132,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     environment                     = "dev"
     vpc_name                        = "terraform-tests-vpc"
     alb_https_security_group_id     = "security-group-id"
+    has_vpc_endpoints               = true
     vpc_endpoints_security_group_id = "vpce-security-group-id"
     egress_rules = [
       {
@@ -302,6 +304,7 @@ run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
     environment                     = "dev"
     vpc_name                        = "terraform-tests-vpc"
     alb_https_security_group_id     = "security-group-id"
+    has_vpc_endpoints               = true
     vpc_endpoints_security_group_id = "vpce-security-group-id"
     egress_rules = [
       {
@@ -349,6 +352,7 @@ run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_aws_cidr_bloc
     environment                     = "dev"
     vpc_name                        = "terraform-tests-vpc"
     alb_https_security_group_id     = "security-group-id"
+    has_vpc_endpoints               = true
     vpc_endpoints_security_group_id = "vpce-security-group-id"
     egress_rules = [
       {
@@ -377,6 +381,7 @@ run "test_create_ecs_cluster_without_an_alb" {
     environment                     = "dev"
     vpc_name                        = "terraform-tests-vpc"
     alb_https_security_group_id     = null
+    has_vpc_endpoints               = false
     vpc_endpoints_security_group_id = null
   }
 

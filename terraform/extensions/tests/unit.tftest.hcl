@@ -1017,6 +1017,11 @@ run "test_unrestricted_egress" {
     condition     = length(module.vpc_endpoints) == 0
     error_message = "Expected no instances of module.vpc_endpoints"
   }
+
+  assert {
+    condition     = !module.ecs_cluster[0].has_vpc_endpoints
+    error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be false"
+  }
 }
 
 run "test_restricted_egress" {
@@ -1088,6 +1093,11 @@ run "test_restricted_egress" {
     condition     = length(module.vpc_endpoints) == 0
     error_message = "Expected no instances of module.vpc_endpoints"
   }
+
+  assert {
+    condition     = !module.ecs_cluster[0].has_vpc_endpoints
+    error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be false"
+  }
 }
 
 
@@ -1150,6 +1160,11 @@ run "test_create_vpc_endpoints" {
       }
     })
     error_message = "Expected vpc_endpoints service name to be "
+  }
+
+  assert {
+    condition     = module.ecs_cluster[0].has_vpc_endpoints
+    error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be true"
   }
 }
 
