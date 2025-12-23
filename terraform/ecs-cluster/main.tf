@@ -77,7 +77,11 @@ resource "aws_security_group" "environment_security_group" {
   }
 
   dynamic "egress" {
-    for_each = var.egress_rules == null ? [] : var.egress_rules
+    for_each = var.egress_rules == null ? [] : [
+      for rule in var.egress_rules :
+      rule
+      if egress.value.to.cidr_blocks != null || egress.value.to.aws_cidr_blocks != null
+    ]
     content {
       description = "Egress rule ${egress.key}"
       from_port   = egress.value.from_port
@@ -86,20 +90,25 @@ resource "aws_security_group" "environment_security_group" {
       cidr_blocks = (
         egress.value.to.cidr_blocks != null
         ? tolist(egress.value.to.cidr_blocks)
-        : (
-          egress.value.to.aws_cidr_blocks != null
-          ? data.aws_ip_ranges.service_ranges[egress.key].cidr_blocks
-          : null
-        )
-      )
-      security_groups = (
-        egress.value.to.vpc_endpoints != null
-        ? [var.vpc_endpoints_security_group_id]
-        : null
+        : data.aws_ip_ranges.service_ranges[egress.key].cidr_blocks
       )
     }
   }
 
+  dynamic "egress" {
+    for_each = var.egress_rules == null ? [] : [
+      for rule in var.egress_rules :
+      rule
+      if egress.value.to.vpc_endpoints != null
+    ]
+    content {
+      description = "Egress rule ${egress.key}"
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      security_groups = [var.vpc_endpoints_security_group_id]
+    }
+  }
 
   dynamic "egress" {
     for_each = var.egress_rules == null ? [1] : []
