@@ -77,7 +77,7 @@ resource "aws_security_group" "environment_security_group" {
   }
 
   dynamic "egress" {
-    for_each = var.egress_rules == null ? [] : {
+    for_each = var.egress_rules == null ? {} : {
       for rule_num, rule in var.egress_rules :
       rule_num => rule
       if rule.to.cidr_blocks != null || rule.to.aws_cidr_blocks != null
@@ -96,7 +96,7 @@ resource "aws_security_group" "environment_security_group" {
   }
 
   dynamic "egress" {
-    for_each = var.egress_rules == null ? [] : {
+    for_each = var.egress_rules == null ? {} : {
       for rule_num, rule in var.egress_rules :
       rule_num => rule
       if rule.to.vpc_endpoints != null
