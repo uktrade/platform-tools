@@ -26,7 +26,7 @@ locals {
     merge(
       lookup(local.base_env_config, env_obj.name, {}),
       env_obj.config,
-      { name = env_obj.name }
+      { "name" = env_obj.name }
     )
   ]
 
@@ -55,7 +55,7 @@ locals {
       type : "plan",
       stage_name : "Plan-${env.name}",
       env : env.name,
-      accounts : env.accounts,
+      accounts : lookup(env, "accounts", {})
       input_artifacts : ["build_output"],
       output_artifacts : ["${env.name}_terraform_plan"],
       configuration : {
@@ -92,7 +92,7 @@ locals {
       type : "apply",
       env : env.name,
       stage_name : "Apply-${env.name}",
-      accounts : env.accounts,
+      accounts : lookup(env, "accounts", {})
       input_artifacts : ["${env.name}_terraform_plan"],
       output_artifacts : [],
       configuration : {
