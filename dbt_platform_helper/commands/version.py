@@ -25,7 +25,8 @@ def get_platform_helper_for_project(pipeline):
 
     Version preferences removed, requires specifying platform-helper version in platform-config.yml
     """
+    io = ClickIOProvider()
     try:
-        PlatformHelperVersioning().get_required_version()
+        io.info(PlatformHelperVersioning().get_required_version())
     except PlatformException as err:
-        ClickIOProvider().abort_with_error(str(err))
+        io.abort_with_error(str(err))

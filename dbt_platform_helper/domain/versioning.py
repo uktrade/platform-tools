@@ -38,7 +38,7 @@ def running_as_installed_package():
     return "site-packages" in __file__
 
 
-def skip_version_checks():
+def allow_override_of_versioning_checks_fn():
     return not running_as_installed_package() or "PLATFORM_TOOLS_SKIP_VERSION_CHECK" in os.environ
 
 
@@ -55,34 +55,60 @@ class PlatformHelperVersioning:
         environment_variable_provider: EnvironmentVariableProvider = EnvironmentVariableProvider(),
         latest_version_provider: VersionProvider = PyPiLatestVersionProvider,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
-        skip_versioning_checks: bool = None,
+        allow_override_of_versioning_checks: bool = None,
         platform_helper_version_override: str = None,
     ):
         self.io = io
         self.config_provider = config_provider
         self.latest_version_provider = latest_version_provider
         self.installed_version_provider = installed_version_provider
-        self.skip_versioning_checks = (
-            skip_versioning_checks if skip_versioning_checks is not None else skip_version_checks()
+        self.allow_override_of_versioning_checks = (
+            allow_override_of_versioning_checks
+            if allow_override_of_versioning_checks is not None
+            else allow_override_of_versioning_checks_fn()
         )
         self.environment_variable_provider = environment_variable_provider
         self.platform_helper_version_override = platform_helper_version_override
 
-    def is_managed(self):
+    def is_auto(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
         default_version = platform_config.get("default_versions", {}).get("platform-helper")
         return default_version == "auto"
 
-    def get_required_version(self):
-        platform_config = self.config_provider.load_unvalidated_config_file()
-        required_version = platform_config.get("default_versions", {}).get("platform-helper")
-        self.io.info(required_version)
-        return required_version
+    def get_required_version(self) -> str:
+        if self.is_auto():
+            return str(self.get_version_status().latest)
+        else:
+            return self.get_default_version()
 
-    # Used in the generate command
-    def check_platform_helper_version_mismatch(self):
-        if self.skip_versioning_checks:
+    def _check_environment_is_configured_for_auto_versioning_within_a_pipeline(self):
+        platform_helper_version_is_set_in_environment = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        ) or self.environment_variable_provider.get("PLATFORM_HELPER_VERSION")
+        modules_override_is_set_in_environment = (
+            self.environment_variable_provider.get(
+                TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or self.environment_variable_provider.get(
+                TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+            or self.environment_variable_provider.get(
+                TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
+        )
+        if platform_helper_version_is_set_in_environment and modules_override_is_set_in_environment:
             return
+        else:
+            message = "You are on managed upgrades. Generate commands should only be running inside a pipeline environment."
+            if self.allow_override_of_versioning_checks:
+                self.io.warn(message)
+                self.io.info("Bypassing versioning enforcement")
+            else:
+                self.io.abort_with_error(message)
+
+    def check_platform_helper_version_mismatch(self):
+        if self.is_auto():
+            self._check_environment_is_configured_for_auto_versioning_within_a_pipeline()
 
         version_status = self.get_version_status()
         required_version = self.get_required_version()
@@ -93,12 +119,12 @@ class PlatformHelperVersioning:
             if not version_status.installed == required_version_semver:
                 message = (
                     f"WARNING: You are running platform-helper v{version_status.installed} against "
-                    f"v{required_version_semver} specified for the project."
+                    f"v{required_version_semver} required by the project. Running anything besides the version required by the project may result in unpredictable and destructive changes."
                 )
                 self.io.warn(message)
 
     def check_if_needs_update(self):
-        if self.skip_versioning_checks:
+        if self.allow_override_of_versioning_checks:
             return
 
         version_status = self.get_version_status()
@@ -127,13 +153,13 @@ class PlatformHelperVersioning:
 
     def get_default_version(self):
         return (
-            self.config_provider.load_and_validate_platform_config()
+            self.config_provider.load_unvalidated_config_file()
             .get("default_versions", {})
             .get("platform-helper")
         )
 
     def get_template_version(self):
-        if self.is_managed():
+        if self.is_auto():
             return self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
         if self.platform_helper_version_override:
             return self.platform_helper_version_override
@@ -146,7 +172,7 @@ class PlatformHelperVersioning:
         return self.get_default_version()
 
     def get_pinned_version(self):
-        if self.is_managed():
+        if self.is_auto():
             return self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
 
         return None
@@ -167,7 +193,7 @@ class PlatformHelperVersioning:
         if platform_helper_env_override:
             return f"{pipeline_module_path}{platform_helper_env_override}"
 
-        return f"{pipeline_module_path}{self.get_default_version()}"
+        return f"{pipeline_module_path}{self.get_required_version()}"
 
     def get_environment_pipeline_modules_source(self):
         return self._get_pipeline_modules_source(

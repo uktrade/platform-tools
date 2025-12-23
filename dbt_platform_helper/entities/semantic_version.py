@@ -77,5 +77,7 @@ class SemanticVersion:
 
     @staticmethod
     def is_semantic_version(version_string):
+        if not version_string:
+            return False
         valid_semantic_string_regex = r"(?i)^v?[0-9]+[.-][0-9]+[.-][0-9]+$"
         return re.match(valid_semantic_string_regex, version_string)
