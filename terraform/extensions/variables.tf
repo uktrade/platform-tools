@@ -3,6 +3,15 @@ variable "args" {
     application = string,
     services    = any,
     env_config  = any
+    # env_config = {
+    #.  staging = {
+    #.    network = {
+    #.      vpc_endpoints = { ... }
+    #.      egress_rules = { ... }
+    #.    }
+    #   },
+    #.  prod = { ... }
+    # }
   })
 }
 

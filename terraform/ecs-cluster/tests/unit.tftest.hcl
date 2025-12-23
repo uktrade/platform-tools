@@ -18,7 +18,7 @@ override_data {
   target = data.aws_ip_ranges.service_ranges["3"]
   values = {
     cidr_blocks = ["23.20.0.0/14", "23.24.0.0/14"]
-    services   = ["CLOUDFRONT"]
+    services    = ["CLOUDFRONT"]
     regions     = ["eu-west-2"]
   }
 }
@@ -27,7 +27,7 @@ override_data {
   target = data.aws_ip_ranges.service_ranges["4"]
   values = {
     cidr_blocks = ["56.20.0.0/14", "56.24.0.0/14"]
-    services   = ["EC2"]
+    services    = ["EC2"]
     regions     = ["GLOBAL"]
   }
 }
@@ -187,7 +187,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => toset(block.cidr_blocks)
-    }) == tomap({
+      }) == tomap({
       "Egress rule 0" = toset(["172.65.64.208/30"])
       "Egress rule 1" = toset(["15.200.117.191/32", "172.65.64.208/30"])
       "Egress rule 2" = null
@@ -201,7 +201,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => toset(block.security_groups)
-    }) == tomap({
+      }) == tomap({
       "Egress rule 0" = null
       "Egress rule 1" = null
       "Egress rule 2" = toset(["vpce-security-group-id"])
@@ -215,7 +215,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.protocol
-    } == {
+      } == {
       "Egress rule 0" = "tcp"
       "Egress rule 1" = "udp"
       "Egress rule 2" = "tcp"
@@ -229,7 +229,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.from_port
-    } == {
+      } == {
       "Egress rule 0" = 443
       "Egress rule 1" = 7000
       "Egress rule 2" = 443
@@ -243,7 +243,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = {
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.to_port
-    } == {
+      } == {
       "Egress rule 0" = 443
       "Egress rule 1" = 7010
       "Egress rule 2" = 443
@@ -269,27 +269,27 @@ run "test_create_ecs_cluster_with_egress_rules" {
   }
 
   assert {
-    condition = length(data.aws_ip_ranges.service_ranges) == 2
+    condition     = length(data.aws_ip_ranges.service_ranges) == 2
     error_message = "aws ip ranges data source should be created"
   }
 
   assert {
-    condition = contains(data.aws_ip_ranges.service_ranges["3"].services, "CLOUDFRONT")
+    condition     = contains(data.aws_ip_ranges.service_ranges["3"].services, "CLOUDFRONT")
     error_message = "Data source should include CLOUDFRONT service."
   }
 
   assert {
-    condition = contains(data.aws_ip_ranges.service_ranges["3"].regions, "eu-west-2")
+    condition     = contains(data.aws_ip_ranges.service_ranges["3"].regions, "eu-west-2")
     error_message = "Data source should include eu-west-2 region."
   }
 
   assert {
-    condition = contains(data.aws_ip_ranges.service_ranges["4"].services, "EC2")
+    condition     = contains(data.aws_ip_ranges.service_ranges["4"].services, "EC2")
     error_message = "Data source should include EC2 service."
   }
 
   assert {
-    condition = contains(data.aws_ip_ranges.service_ranges["4"].regions, "GLOBAL")
+    condition     = contains(data.aws_ip_ranges.service_ranges["4"].regions, "GLOBAL")
     error_message = "Data source should include GLOBAL region."
   }
 }
@@ -305,7 +305,7 @@ run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
     vpc_endpoints_security_group_id = "vpce-security-group-id"
     egress_rules = [
       {
-        to = {}
+        to        = {}
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
@@ -313,7 +313,7 @@ run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
     ]
   }
 
-  expect_failures = [ var.egress_rules ]
+  expect_failures = [var.egress_rules]
 }
 
 run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_vpc_endpoints" {
@@ -328,7 +328,7 @@ run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_vpc_endpoints
     egress_rules = [
       {
         to = {
-          cidr_blocks = ["15.200.117.191/32", "172.65.64.208/30"]
+          cidr_blocks   = ["15.200.117.191/32", "172.65.64.208/30"]
           vpc_endpoints = true
         }
         protocol  = "tcp"
@@ -338,7 +338,7 @@ run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_vpc_endpoints
     ]
   }
 
-  expect_failures = [ var.egress_rules ]
+  expect_failures = [var.egress_rules]
 }
 
 run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_aws_cidr_blocks" {
@@ -366,7 +366,7 @@ run "test_create_ecs_cluster_with_egress_rule_with_cidr_blocks_and_aws_cidr_bloc
     ]
   }
 
-  expect_failures = [ var.egress_rules ]
+  expect_failures = [var.egress_rules]
 }
 
 run "test_create_ecs_cluster_without_an_alb" {

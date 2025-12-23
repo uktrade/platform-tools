@@ -106,6 +106,18 @@ module "monitoring" {
   config = each.value
 }
 
+module "vpc_endpoints" {
+  source = "../vpc-endpoints"
+
+  count = local.vpc_endpoints != null ? 1 : 0
+
+  application = var.args.application
+  environment = var.environment
+  vpc_name    = local.vpc_name
+
+  instances = local.vpc_endpoints
+}
+
 module "ecs_cluster" {
   source = "../ecs-cluster"
 
@@ -115,6 +127,7 @@ module "ecs_cluster" {
   environment                 = var.environment
   vpc_name                    = local.vpc_name
   alb_https_security_group_id = try(one(values(module.alb)).https_security_group_id, null)
+  egress_rules                = local.egress_rules
 }
 
 module "datadog" {
