@@ -207,6 +207,34 @@ class PlatformConfigSchema:
                         "dual-deploy-platform-traffic",
                         "platform",
                     ),
+                    Optional("network"): {
+                        Optional("egress_rules"): [
+                            {
+                                "to": Or(
+                                    {
+                                        "cidr_blocks": [str],
+                                    },
+                                    {
+                                        "vpc_endpoints": bool,
+                                    },
+                                    {
+                                        "aws_cidr_blocks": {
+                                            "regions": [str],
+                                            "services": [str],
+                                        },
+                                    },
+                                ),
+                                "protocol": Or("tcp", "udp", "-1"), # "-1" means all protocols
+                                "from_port": int,
+                                "to_port": int,
+                            },
+                        ],
+                        Optional("vpc_endpoints"): {
+                            str: {
+                                "service_name": str,
+                            },
+                        },
+                    },
                 },
             )
         }
