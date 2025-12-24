@@ -3,7 +3,7 @@
 locals {
   platform_config    = yamldecode(file("../../../platform-config.yml"))
   all_pipelines      = local.platform_config["environment_pipelines"]
-  pipelines          = "{{ pipelines }}"
+  pipelines          = {{ pipelines }}
   environment_config = local.platform_config["environments"]
 }
 

@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from os import makedirs
 from pathlib import Path
@@ -141,7 +142,7 @@ class Pipelines:
 
                 envs_dict = pipeline_config.get("environments", {})
                 env_list = [
-                    {"name": name, "config": env_config or {}}
+                    {"name": name, "config": env_config or None}
                     for name, env_config in envs_dict.items()
                 ]
 
@@ -177,7 +178,7 @@ class Pipelines:
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
                 "deploy_account_id": aws_account_id,
                 "pinned_version": pinned_version,
-                "pipelines": pipelines,
+                "pipelines": json.dumps(pipelines),
             }
         )
 
