@@ -1,3 +1,4 @@
+# Pass-through so that parent modules can test the value provided for this variable.
 output "instances" {
   value = var.instances
 }

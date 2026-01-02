@@ -1100,7 +1100,6 @@ run "test_restricted_egress" {
   }
 }
 
-
 run "test_create_vpc_endpoints" {
   command = plan
 
@@ -1148,18 +1147,18 @@ run "test_create_vpc_endpoints" {
     }
   }
 
-
   assert {
     condition     = length(module.vpc_endpoints) == 1
-    error_message = " module.vpc_endpoints failed to create"
+    error_message = "Expected instance of module.vpc_endpoints"
   }
+
   assert {
     condition = module.vpc_endpoints[0].instances == tomap({
       ecr = {
         service_name = "com.amazonaws.eu-west-2.ecr.api"
       }
     })
-    error_message = "Expected vpc_endpoints service name to be "
+    error_message = "vpc_endpoints service name is not as expected"
   }
 
   assert {
@@ -1167,4 +1166,3 @@ run "test_create_vpc_endpoints" {
     error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be true"
   }
 }
-

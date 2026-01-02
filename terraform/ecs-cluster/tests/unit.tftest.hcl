@@ -53,7 +53,6 @@ run "test_create_ecs_cluster" {
     egress_rules                    = null
   }
 
-
   assert {
     condition     = aws_ecs_cluster.cluster.name == "demodjango-dev-cluster"
     error_message = "Cluster name should be: 'demodjango-dev-cluster'"
@@ -95,32 +94,32 @@ run "test_create_ecs_cluster" {
 
   assert {
     condition     = length(aws_security_group.environment_security_group.egress) == 1
-    error_message = "Egress does not exist."
+    error_message = "Security group should have precisely one egress block"
   }
 
   assert {
     condition     = toset(tolist(aws_security_group.environment_security_group.egress)[0].cidr_blocks) == toset(["0.0.0.0/0"])
-    error_message = "egress does not include the default cidr range."
+    error_message = "Egress block cidr range should be \"0.0.0.0/0\""
   }
 
   assert {
     condition     = tolist(aws_security_group.environment_security_group.egress)[0].protocol == "-1"
-    error_message = "egress protocol is not as expected."
+    error_message = "Egress block protocol should be \"-1\""
   }
 
   assert {
     condition     = tolist(aws_security_group.environment_security_group.egress)[0].to_port == 0
-    error_message = "egress to_port is not as expected."
+    error_message = "Egress block to_port should be 0"
   }
 
   assert {
     condition     = tolist(aws_security_group.environment_security_group.egress)[0].from_port == 0
-    error_message = "egress from_port is not as expected."
+    error_message = "Egress block from_port should be 0"
   }
 
   assert {
     condition     = length(aws_vpc_security_group_ingress_rule.vpc_endpoints) == 0
-    error_message = "expected aws_vpc_security_group_ingress_rule.vpc_endpoints not to be created"
+    error_message = "Expected aws_vpc_security_group_ingress_rule.vpc_endpoints not to be created"
   }
 }
 
@@ -142,7 +141,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
-      },
+      }
       cidrs2 = {
         destination = {
           cidr_blocks = ["15.200.117.191/32", "172.65.64.208/30"]
@@ -150,7 +149,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "udp"
         from_port = 7000
         to_port   = 7010
-      },
+      }
       vpce = {
         destination = {
           vpc_endpoints = true
@@ -158,7 +157,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
-      },
+      }
       aws1 = {
         destination = {
           aws_cidr_blocks = {
@@ -169,7 +168,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
         protocol  = "tcp"
         from_port = 443
         to_port   = 443
-      },
+      }
       aws2 = {
         destination = {
           aws_cidr_blocks = {
@@ -271,26 +270,26 @@ run "test_create_ecs_cluster_with_egress_rules" {
 
   assert {
     condition     = length(data.aws_ip_ranges.service_ranges) == 2
-    error_message = "aws ip ranges data source should be created"
+    error_message = "Expected two instances of data.aws_ip_ranges.service_ranges"
   }
 
   assert {
-    condition     = contains(data.aws_ip_ranges.service_ranges["aws1"].services, "CLOUDFRONT")
+    condition     = data.aws_ip_ranges.service_ranges["aws1"].services == toset(["CLOUDFRONT"])
     error_message = "Data source should include CLOUDFRONT service."
   }
 
   assert {
-    condition     = contains(data.aws_ip_ranges.service_ranges["aws1"].regions, "eu-west-2")
+    condition     = data.aws_ip_ranges.service_ranges["aws1"].regions == toset(["eu-west-2"])
     error_message = "Data source should include eu-west-2 region."
   }
 
   assert {
-    condition     = contains(data.aws_ip_ranges.service_ranges["aws2"].services, "EC2")
+    condition     = data.aws_ip_ranges.service_ranges["aws2"].services == toset(["EC2"])
     error_message = "Data source should include EC2 service."
   }
 
   assert {
-    condition     = contains(data.aws_ip_ranges.service_ranges["aws2"].regions, "GLOBAL")
+    condition     = data.aws_ip_ranges.service_ranges["aws2"].regions == toset(["GLOBAL"])
     error_message = "Data source should include GLOBAL region."
   }
 }
@@ -389,4 +388,3 @@ run "test_create_ecs_cluster_without_an_alb" {
     error_message = "Ingress includes more than containers in the same security group."
   }
 }
-

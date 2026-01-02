@@ -40,7 +40,6 @@ run "test_create_vpc_endpoints" {
     }
   }
 
-
   assert {
     condition     = aws_vpc_endpoint.main["ecr"].tags.application == "demodjango"
     error_message = "application tag was not as expected"
@@ -128,20 +127,21 @@ run "test_create_vpc_endpoints" {
 
   assert {
     condition     = aws_security_group.main.tags.application == "demodjango"
-    error_message = "application tag was not as expected"
+    error_message = "aws_security_group application tag was not as expected"
   }
 
   assert {
     condition     = aws_security_group.main.tags.environment == "dev"
-    error_message = "environment tag was not as expected"
+    error_message = "aws_security_group environment tag was not as expected"
   }
 
   assert {
     condition     = aws_security_group.main.tags.managed-by == "DBT Platform - Environment Terraform"
-    error_message = "managed-by tag was not as expected"
+    error_message = "aws_security_group managed-by tag was not as expected"
   }
 
-
+  assert {
+    condition     = aws_security_group.main.tags.Name == "platform-demodjango-dev-vpce-sg"
+    error_message = "aws_security_group Name tag was not as expected"
+  }
 }
-
-# TODO: ADD TEST FOR AWS VPC ENDPOINT SECURITY GROUP RULES WHEN EGRESS RULES ARE PASSED IN
