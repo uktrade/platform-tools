@@ -1059,14 +1059,14 @@ run "test_restricted_egress" {
           vpc : "test-vpc"
           service-deployment-mode : "platform"
           network = {
-            egress_rules = [
-              {
-                to        = { cidr_blocks = ["1.0.0.0/8"] }
+            egress_rules = {
+              myrule = {
+                destination        = { cidr_blocks = ["1.0.0.0/8"] }
                 protocol  = "tcp"
                 from_port = 443
                 to_port   = 443
-              },
-            ]
+              }
+            }
           }
         }
       }
@@ -1080,12 +1080,12 @@ run "test_restricted_egress" {
   }
 
   assert {
-    condition     = module.ecs_cluster[0].egress_rules[0].to.cidr_blocks == toset(["1.0.0.0/8"])
+    condition     = module.ecs_cluster[0].egress_rules["myrule"].destination.cidr_blocks == toset(["1.0.0.0/8"])
     error_message = "Expected module.ecs_cluster.egress_rules to match var.args.env_config.test-env.network.egress_rules"
   }
 
   assert {
-    condition     = module.ecs_cluster[0].egress_rules[0].protocol == "tcp"
+    condition     = module.ecs_cluster[0].egress_rules["myrule"].protocol == "tcp"
     error_message = "Expected module.ecs_cluster.egress_rules to match var.args.env_config.test-env.network.egress_rules"
   }
 

@@ -208,9 +208,9 @@ class PlatformConfigSchema:
                         "platform",
                     ),
                     Optional("network"): {
-                        Optional("egress_rules"): [
-                            {
-                                "to": Or(
+                        Optional("egress_rules"): {
+                            str: {
+                                "destination": Or(
                                     {
                                         "cidr_blocks": [str],
                                     },
@@ -228,7 +228,7 @@ class PlatformConfigSchema:
                                 "from_port": int,
                                 "to_port": int,
                             },
-                        ],
+                        },
                         Optional("vpc_endpoints"): {
                             str: {
                                 "service_name": str,

@@ -3,13 +3,13 @@ data "aws_region" "current" {}
 
 data "aws_ip_ranges" "service_ranges" {
   # {
-  #    "3" = { services = [...], regions = [...] }
-  #    "4" = { services = [...], regions = [...] }
+  #    "myrule" = { services = [...], regions = [...] }
+  #    "myotherrule" = { services = [...], regions = [...] }
   # }
   for_each = {
-    for rule_num, rule in coalesce(var.egress_rules, []) :
-    rule_num => rule.to.aws_cidr_blocks
-    if try(rule.to.aws_cidr_blocks, null) != null
+    for rule_name, rule in coalesce(var.egress_rules, {}) :
+    rule_name => rule.destination.aws_cidr_blocks
+    if try(rule.destination.aws_cidr_blocks, null) != null
   }
 
   services = each.value.services
@@ -77,30 +77,30 @@ resource "aws_security_group" "environment_security_group" {
   }
 
   dynamic "egress" {
-    for_each = var.egress_rules == null ? [] : var.egress_rules
+    for_each = coalesce(var.egress_rules, {})
     content {
-      description = "Egress rule ${egress.key}"
+      description = "Egress: ${egress.key}"
       from_port   = egress.value.from_port
       to_port     = egress.value.to_port
       protocol    = egress.value.protocol
       cidr_blocks = (
-        egress.value.to.cidr_blocks != null
-        ? tolist(egress.value.to.cidr_blocks)
+        egress.value.destination.cidr_blocks != null
+        ? tolist(egress.value.destination.cidr_blocks) # TODO: is tolist necessary?
         : (
-          egress.value.to.aws_cidr_blocks != null
+          egress.value.destination.aws_cidr_blocks != null
           ? data.aws_ip_ranges.service_ranges[egress.key].cidr_blocks
           : null
         )
       )
       security_groups = (
-        egress.value.to.vpc_endpoints != null
+        egress.value.destination.vpc_endpoints != null
         ? [var.vpc_endpoints_security_group_id]
         : null
       )
     }
   }
 
-
+  # If egress_rules is omitted, permit all egress (for backwards compatibility).
   dynamic "egress" {
     for_each = var.egress_rules == null ? [1] : []
     content {

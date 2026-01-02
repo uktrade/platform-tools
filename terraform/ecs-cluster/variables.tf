@@ -31,8 +31,8 @@ variable "vpc_endpoints_security_group_id" {
 
 
 variable "egress_rules" {
-  type = list(object({
-    to = object({
+  type = map(object({
+    destination = object({
       cidr_blocks   = optional(set(string))
       vpc_endpoints = optional(bool)
       aws_cidr_blocks = optional(object({
@@ -51,11 +51,11 @@ variable "egress_rules" {
     condition = var.egress_rules == null || alltrue([
       for rule in var.egress_rules :
       length([
-        for key, val in rule.to :
+        for key, val in rule.destination :
         key
         if val != null
       ]) == 1
     ])
-    error_message = "All egress rules must set exactly one of: to.cidr_blocks, to.vpc_endpoints, to.aws_cidr_blocks."
+    error_message = "All egress rules must set exactly one of: destination.cidr_blocks, destination.vpc_endpoints, destination.aws_cidr_blocks."
   }
 }
