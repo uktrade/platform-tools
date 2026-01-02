@@ -9,7 +9,7 @@ data "aws_ip_ranges" "service_ranges" {
   for_each = {
     for rule_name, rule in coalesce(var.egress_rules, {}) :
     rule_name => rule.destination.aws_cidr_blocks
-    if try(rule.destination.aws_cidr_blocks, null) != null
+    if rule.destination.aws_cidr_blocks != null
   }
 
   services = each.value.services
