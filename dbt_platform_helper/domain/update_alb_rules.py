@@ -91,10 +91,10 @@ class UpdateALBRules:
         except Exception as e:
             if operation_state.created_rules or operation_state.deleted_rules:
                 self.io.error(f"Error during rule update: {str(e)}")
-                self.io.warn("Rolling back")
                 self.io.info("Attempting to rollback changes ...")
                 try:
                     self._rollback_changes(operation_state)
+                    raise PlatformException(f"Rule update failed and rolled back")
                 except RollbackException as rollback_error:
                     raise PlatformException(f"Rollback failed: \n{str(rollback_error)}")
             else:
@@ -143,8 +143,12 @@ class UpdateALBRules:
             service_models = ServiceManager().get_service_models(application, environment)
             grouped = defaultdict(list)
 
+            service_mapped_tgs = self._get_tg_arns_for_platform_services(
+                application_name, environment
+            )
+
             for service in service_models:
-                if service.type not in HTTP_SERVICE_TYPES:
+                if service.type not in HTTP_SERVICE_TYPES or service.name not in service_mapped_tgs:
                     continue
 
                 additional_rules = getattr(service.http, "additional_rules", None)
@@ -191,10 +195,6 @@ class UpdateALBRules:
             rules.sort(
                 key=lambda r: (len([s for s in r["path"].split("/") if s]), r["aliases"]),
                 reverse=True,
-            )
-
-            service_mapped_tgs = self._get_tg_arns_for_platform_services(
-                application_name, environment
             )
 
             platform_rules = mapped_rules.get(RuleType.PLATFORM.value, [])
@@ -399,8 +399,8 @@ class UpdateALBRules:
                     elif condition["Field"] == "path-pattern":
                         paths.extend(condition["PathPatternConfig"]["Values"])
             elif isinstance(conditions, dict):
-                hosts.extend(conditions.get("host-header"))
-                paths.extend(conditions.get("path-pattern"))
+                hosts.extend(conditions.get("host-header", ""))
+                paths.extend(conditions.get("path-pattern", ""))
 
             rule_arn = rule["RuleArn"]
             priority = rule["Priority"]

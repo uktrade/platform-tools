@@ -436,7 +436,7 @@ def _client_error(operation="RegisterTaskDefinition"):
     )
 
 
-def test_register_task_definition_applies_image_tag_override():
+def test_register_task_definition_applies_image_tag():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.register_task_definition.return_value = {
@@ -449,7 +449,7 @@ def test_register_task_definition_applies_image_tag_override():
         "containerDefinitions": [
             {
                 "name": "web",
-                "image": "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:old-image-tag",
+                "image": "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web",
             },
             {"name": "sidecar", "image": "sidecar:v1.2.3"},
         ],

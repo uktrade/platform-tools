@@ -44,6 +44,17 @@ class GenerateTerraformMocks:
 
 
 class TestGenerateTerraform:
+    def test_exits_given_managed_versioning_and_versioning_mismatch(self):
+        mocks = GenerateTerraformMocks()
+        mocks.mock_platform_helper_versioning.is_auto.return_value = True
+        mocks.mock_platform_helper_versioning.check_platform_helper_version_mismatch.side_effect = (
+            SystemExit
+        )
+        terraform_environment = TerraformEnvironment(**mocks.params())
+
+        with pytest.raises(SystemExit):
+            terraform_environment.generate("test")
+
     def test_raises_a_platform_exception_if_environment_does_not_exist_in_config(self):
         mocks = GenerateTerraformMocks()
         terraform_environment = TerraformEnvironment(**mocks.params())

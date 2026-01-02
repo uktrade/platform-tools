@@ -10,7 +10,6 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
-from dbt_platform_helper.constants import IMAGE_TAG_ENV_VAR
 from dbt_platform_helper.constants import PLATFORM_HELPER_PACKAGE_NAME
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SERVICE_CONFIG_FILE
@@ -201,6 +200,110 @@ class ServiceManager:
                                 del env_config["http"]["alb"]
                             if isinstance(env_config["http"].get("alias", []), str):
                                 env_config["http"]["alias"] = [env_config["http"]["alias"]]
+                            if "healthcheck" in env_config["http"]:
+                                if "interval" in env_config["http"]["healthcheck"]:
+                                    interval = env_config["http"]["healthcheck"]["interval"]
+                                    env_config["http"]["healthcheck"]["interval"] = int(
+                                        interval.rstrip("s")
+                                    )
+                                if "timeout" in env_config["http"]["healthcheck"]:
+                                    timeout = env_config["http"]["healthcheck"]["timeout"]
+                                    env_config["http"]["healthcheck"]["timeout"] = int(
+                                        timeout.rstrip("s")
+                                    )
+                                if "grace_period" in env_config["http"]["healthcheck"]:
+                                    grace_period = env_config["http"]["healthcheck"]["grace_period"]
+                                    env_config["http"]["healthcheck"]["grace_period"] = int(
+                                        grace_period.rstrip("s")
+                                    )
+                        if "image" in env_config:
+                            image_without_tag = env_config["image"]["location"].rsplit(":", 1)[0]
+                            env_config["image"]["location"] = image_without_tag
+                            if "healthcheck" in env_config["image"]:
+                                if "interval" in env_config["image"]["healthcheck"]:
+                                    interval = env_config["image"]["healthcheck"]["interval"]
+                                    env_config["image"]["healthcheck"]["interval"] = int(
+                                        interval.rstrip("s")
+                                    )
+                                if "timeout" in env_config["image"]["healthcheck"]:
+                                    timeout = env_config["image"]["healthcheck"]["timeout"]
+                                    env_config["image"]["healthcheck"]["timeout"] = int(
+                                        timeout.rstrip("s")
+                                    )
+                                if "start_period" in env_config["image"]["healthcheck"]:
+                                    start_period = env_config["image"]["healthcheck"][
+                                        "start_period"
+                                    ]
+                                    env_config["image"]["healthcheck"]["start_period"] = int(
+                                        start_period.rstrip("s")
+                                    )
+                        if "count" in env_config:
+                            if "cooldown" in env_config["count"]:
+                                if "in" in env_config["count"]["cooldown"]:
+                                    scaling_in = env_config["count"]["cooldown"]["in"]
+                                    env_config["count"]["cooldown"]["in"] = int(
+                                        scaling_in.rstrip("s")
+                                    )
+                                if "out" in env_config["count"]["cooldown"]:
+                                    scaling_out = env_config["count"]["cooldown"]["out"]
+                                    env_config["count"]["cooldown"]["out"] = int(
+                                        scaling_out.rstrip("s")
+                                    )
+                        if "network" in env_config:
+                            del env_config["network"]
+                        if "observability" in env_config:
+                            del env_config["observability"]
+
+                if "healthcheck" in service_manifest.get("http", {}):
+                    if "interval" in service_manifest["http"]["healthcheck"]:
+                        interval = service_manifest["http"]["healthcheck"]["interval"]
+                        service_manifest["http"]["healthcheck"]["interval"] = int(
+                            interval.rstrip("s")
+                        )
+                    if "timeout" in service_manifest["http"]["healthcheck"]:
+                        timeout = service_manifest["http"]["healthcheck"]["timeout"]
+                        service_manifest["http"]["healthcheck"]["timeout"] = int(
+                            timeout.rstrip("s")
+                        )
+                    if "grace_period" in service_manifest["http"]["healthcheck"]:
+                        grace_period = service_manifest["http"]["healthcheck"]["grace_period"]
+                        service_manifest["http"]["healthcheck"]["grace_period"] = int(
+                            grace_period.rstrip("s")
+                        )
+
+                if "image" in service_manifest:
+                    if "location" in service_manifest["image"]:
+                        image_without_tag = service_manifest["image"]["location"].rsplit(":", 1)[0]
+                        service_manifest["image"]["location"] = image_without_tag
+                    if "healthcheck" in service_manifest["image"]:
+                        if "interval" in service_manifest["image"]["healthcheck"]:
+                            interval = service_manifest["image"]["healthcheck"]["interval"]
+                            service_manifest["image"]["healthcheck"]["interval"] = int(
+                                interval.rstrip("s")
+                            )
+                        if "timeout" in service_manifest["image"]["healthcheck"]:
+                            timeout = service_manifest["image"]["healthcheck"]["timeout"]
+                            service_manifest["image"]["healthcheck"]["timeout"] = int(
+                                timeout.rstrip("s")
+                            )
+                        if "start_period" in service_manifest["image"]["healthcheck"]:
+                            start_period = service_manifest["image"]["healthcheck"]["start_period"]
+                            service_manifest["image"]["healthcheck"]["start_period"] = int(
+                                start_period.rstrip("s")
+                            )
+
+                if "cooldown" in env_config.get("count", {}):
+                    if "in" in env_config["count"]["cooldown"]:
+                        scaling_in = env_config["count"]["cooldown"]["in"]
+                        env_config["count"]["cooldown"]["in"] = int(scaling_in.rstrip("s"))
+                    if "out" in env_config["count"]["cooldown"]:
+                        scaling_out = env_config["count"]["cooldown"]["out"]
+                        env_config["count"]["cooldown"]["out"] = int(scaling_out.rstrip("s"))
+
+                if "network" in service_manifest:
+                    del service_manifest["network"]
+                if "observability" in service_manifest:
+                    del service_manifest["observability"]
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
@@ -274,8 +377,6 @@ class ServiceManager:
         )
 
         task_definition = json.loads(s3_response)
-
-        image_tag = image_tag or EnvironmentVariableProvider.get(IMAGE_TAG_ENV_VAR)
 
         self.io.info(
             f"Deploying image tag '{image_tag}' to service '{ecs_service_name}' in environment '{environment}'.\n"
@@ -427,7 +528,7 @@ class ServiceManager:
     def _wait_for_new_tasks(self, cluster_name: str, deployment_id: str) -> list[str]:
         """Return first ECS task ID started by the PRIMARY ECS deployment."""
 
-        timeout_seconds = 180
+        timeout_seconds = 300
         deadline = time.monotonic() + timeout_seconds
 
         while time.monotonic() < deadline:

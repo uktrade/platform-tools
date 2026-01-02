@@ -3,7 +3,6 @@ import click
 
 from dbt_platform_helper.commands.copilot import make_addons
 from dbt_platform_helper.commands.pipeline import generate as pipeline_generate
-from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 
 
@@ -16,6 +15,5 @@ def generate(ctx: click.Context):
 
     Wraps pipeline generate and make-addons.
     """
-    PlatformHelperVersioning().check_platform_helper_version_mismatch()
     ctx.invoke(pipeline_generate)
     ctx.invoke(make_addons)

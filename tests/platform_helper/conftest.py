@@ -100,10 +100,12 @@ environments:
 
 
 @pytest.fixture()
-def no_skipping_version_checks():
-    with patch("dbt_platform_helper.domain.versioning.skip_version_checks") as skip_version_checks:
-        skip_version_checks.return_value = False
-        yield skip_version_checks
+def no_overriding_version_checks():
+    with patch(
+        "dbt_platform_helper.domain.versioning.allow_override_of_versioning_checks"
+    ) as allow_override_of_versioning_checks:
+        allow_override_of_versioning_checks.return_value = False
+        yield allow_override_of_versioning_checks
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -635,9 +637,9 @@ http:
     success_codes: '200'
     healthy_threshold: 3
     unhealthy_threshold: 3
-    interval: 35s
-    timeout: 30s
-    grace_period: 30s
+    interval: 35
+    timeout: 30
+    grace_period: 30
 
 sidecars:
   sidecar:
@@ -648,7 +650,7 @@ sidecars:
 
 # Configuration for your containers and service.
 image:
-  location: public.ecr.aws/non-prod-acc/test-app/application:${"{IMAGE_TAG}"}
+  location: public.ecr.aws/non-prod-acc/test-app/application
   # Port exposed through your container to route traffic to it.
   port: 8080
 
