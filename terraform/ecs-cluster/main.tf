@@ -85,7 +85,7 @@ resource "aws_security_group" "environment_security_group" {
       protocol    = egress.value.protocol
       cidr_blocks = (
         egress.value.destination.cidr_blocks != null
-        ? tolist(egress.value.destination.cidr_blocks) # TODO: is tolist necessary?
+        ? egress.value.destination.cidr_blocks
         : (
           egress.value.destination.aws_cidr_blocks != null
           ? data.aws_ip_ranges.service_ranges[egress.key].cidr_blocks
