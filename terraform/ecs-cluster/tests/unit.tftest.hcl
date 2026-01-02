@@ -191,9 +191,9 @@ run "test_create_ecs_cluster_with_egress_rules" {
     }) == tomap({
       "Egress: cidrs1" = toset(["172.65.64.208/30"])
       "Egress: cidrs2" = toset(["15.200.117.191/32", "172.65.64.208/30"])
-      "Egress: vpce" = null
-      "Egress: aws1" = toset(["23.20.0.0/14", "23.24.0.0/14"])
-      "Egress: aws2" = toset(["56.20.0.0/14", "56.24.0.0/14"])
+      "Egress: vpce"   = null
+      "Egress: aws1"   = toset(["23.20.0.0/14", "23.24.0.0/14"])
+      "Egress: aws2"   = toset(["56.20.0.0/14", "56.24.0.0/14"])
     })
     error_message = "Egress cidr_blocks attributes are not as expected."
   }
@@ -205,9 +205,9 @@ run "test_create_ecs_cluster_with_egress_rules" {
     }) == tomap({
       "Egress: cidrs1" = null
       "Egress: cidrs2" = null
-      "Egress: vpce" = toset(["vpce-security-group-id"])
-      "Egress: aws1" = null
-      "Egress: aws2" = null
+      "Egress: vpce"   = toset(["vpce-security-group-id"])
+      "Egress: aws1"   = null
+      "Egress: aws2"   = null
     })
     error_message = "Egress security_groups attributes are not as expected."
   }
@@ -219,9 +219,9 @@ run "test_create_ecs_cluster_with_egress_rules" {
     }) == tomap({
       "Egress: cidrs1" = "tcp"
       "Egress: cidrs2" = "udp"
-      "Egress: vpce" = "tcp"
-      "Egress: aws1" = "tcp"
-      "Egress: aws2" = "tcp"
+      "Egress: vpce"   = "tcp"
+      "Egress: aws1"   = "tcp"
+      "Egress: aws2"   = "tcp"
     })
     error_message = "Egress protocol attributes are not as expected."
   }
@@ -233,9 +233,9 @@ run "test_create_ecs_cluster_with_egress_rules" {
     }) == tomap({
       "Egress: cidrs1" = 443
       "Egress: cidrs2" = 7000
-      "Egress: vpce" = 443
-      "Egress: aws1" = 443
-      "Egress: aws2" = 80
+      "Egress: vpce"   = 443
+      "Egress: aws1"   = 443
+      "Egress: aws2"   = 80
     })
     error_message = "Egress from_port attributes are not as expected."
   }
@@ -247,9 +247,9 @@ run "test_create_ecs_cluster_with_egress_rules" {
     }) == tomap({
       "Egress: cidrs1" = 443
       "Egress: cidrs2" = 7010
-      "Egress: vpce" = 443
-      "Egress: aws1" = 443
-      "Egress: aws2" = 80
+      "Egress: vpce"   = 443
+      "Egress: aws1"   = 443
+      "Egress: aws2"   = 80
     })
     error_message = "Egress to_port attributes are not as expected."
   }
@@ -307,10 +307,10 @@ run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
     vpc_endpoints_security_group_id = "vpce-security-group-id"
     egress_rules = {
       myrule = {
-        destination        = {}
-        protocol  = "tcp"
-        from_port = 443
-        to_port   = 443
+        destination = {}
+        protocol    = "tcp"
+        from_port   = 443
+        to_port     = 443
       }
     }
   }

@@ -1061,10 +1061,10 @@ run "test_restricted_egress" {
           network = {
             egress_rules = {
               myrule = {
-                destination        = { cidr_blocks = ["1.0.0.0/8"] }
-                protocol  = "tcp"
-                from_port = 443
-                to_port   = 443
+                destination = { cidr_blocks = ["1.0.0.0/8"] }
+                protocol    = "tcp"
+                from_port   = 443
+                to_port     = 443
               }
             }
           }
