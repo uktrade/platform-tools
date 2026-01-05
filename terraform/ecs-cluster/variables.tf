@@ -29,7 +29,6 @@ variable "vpc_endpoints_security_group_id" {
   }
 }
 
-
 variable "egress_rules" {
   type = map(object({
     destination = object({
