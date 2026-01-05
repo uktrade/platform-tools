@@ -224,7 +224,7 @@ class PlatformConfigSchema:
                                         },
                                     },
                                 ),
-                                "protocol": Or("tcp", "udp", "-1"), # "-1" means all protocols
+                                "protocol": Or("tcp", "udp", "-1"),  # "-1" means all protocols
                                 "from_port": int,
                                 "to_port": int,
                             },
