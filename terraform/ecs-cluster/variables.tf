@@ -46,8 +46,8 @@ variable "egress_rules" {
   }))
   default = null
   validation {
-    condition = var.egress_rules == null || alltrue([
-      for rule in var.egress_rules :
+    condition = alltrue([
+      for _, rule in coalesce(var.egress_rules, {}) :
       length([
         for key, val in rule.destination :
         key
