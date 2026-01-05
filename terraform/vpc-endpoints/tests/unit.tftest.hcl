@@ -56,6 +56,11 @@ run "test_create_vpc_endpoints" {
   }
 
   assert {
+    condition     = aws_vpc_endpoint.main["ecr"].tags.Name == "demodjango-dev-ecr"
+    error_message = "Name tag was not as expected"
+  }
+
+  assert {
     condition     = aws_vpc_endpoint.main["ecr"].security_group_ids == toset([aws_security_group.main.id])
     error_message = "aws_vpc_endpoint security_group_ids are not as expected"
   }

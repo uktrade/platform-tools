@@ -20,7 +20,9 @@ resource "aws_vpc_endpoint" "main" {
   subnet_ids          = data.aws_subnets.private-subnets.ids
   private_dns_enabled = true
   security_group_ids  = [aws_security_group.main.id]
-  tags                = local.tags
+  tags = merge(local.tags, {
+    Name = "${var.application}-${var.environment}-${each.key}"
+  })
 }
 
 resource "aws_security_group" "main" {
