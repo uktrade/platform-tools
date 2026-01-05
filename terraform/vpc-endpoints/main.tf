@@ -13,13 +13,14 @@ data "aws_subnets" "private-subnets" {
 }
 
 resource "aws_vpc_endpoint" "main" {
-  for_each           = var.instances
-  service_name       = each.value.service_name
-  vpc_endpoint_type  = "Interface"
-  vpc_id             = data.aws_vpc.vpc.id
-  subnet_ids         = data.aws_subnets.private-subnets.ids
-  security_group_ids = [aws_security_group.main.id]
-  tags               = local.tags
+  for_each            = var.instances
+  service_name        = each.value.service_name
+  vpc_endpoint_type   = "Interface"
+  vpc_id              = data.aws_vpc.vpc.id
+  subnet_ids          = data.aws_subnets.private-subnets.ids
+  private_dns_enabled = true
+  security_group_ids  = [aws_security_group.main.id]
+  tags                = local.tags
 }
 
 resource "aws_security_group" "main" {
