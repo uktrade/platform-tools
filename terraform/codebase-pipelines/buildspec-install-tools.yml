@@ -11,7 +11,6 @@ env:
 phases:
   install:
     commands:
-      - set -e
       - cd "${CODEBUILD_SRC_DIR}"
       - mkdir -p ./build-tools/bin
       - mkdir -p ./build-tools/py
