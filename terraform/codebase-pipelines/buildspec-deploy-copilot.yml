@@ -140,7 +140,7 @@ phases:
           aws cloudformation get-template --stack-name "${APPLICATION}-${ENVIRONMENT}-${SERVICE}" --output json --query TemplateBody | jq -r . | yq .Metadata.Manifest | jq -r . | yq 'del(.image.location)' > current.yml
 
           # Compare deployed copilot manifest with incoming deployment
-          diff new.yml current.yml; DIFF_EXIT_CODE=$?
+          diff new.yml current.yml || DIFF_EXIT_CODE=$?
           echo "DIFF EXIT CODE IS ${DIFF_EXIT_CODE}"
 
           # If there are differences in the copilot manifest use a copilot deployment
