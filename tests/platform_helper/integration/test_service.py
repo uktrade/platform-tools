@@ -142,7 +142,7 @@ def test_generate_no_service_dir(
     service_manager.generate(environment="development", services=[])
 
     io.abort_with_error.assert_called_with(
-        "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
+        "Failed extracting services with exception, [Errno 2] No such file or directory: '/services'"
     )
 
 
