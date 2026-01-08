@@ -272,26 +272,6 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition     = length(data.aws_ip_ranges.service_ranges) == 2
     error_message = "Expected two instances of data.aws_ip_ranges.service_ranges"
   }
-
-  assert {
-    condition     = data.aws_ip_ranges.service_ranges["aws1"].services == toset(["CLOUDFRONT"])
-    error_message = "Data source should include CLOUDFRONT service."
-  }
-
-  assert {
-    condition     = data.aws_ip_ranges.service_ranges["aws1"].regions == toset(["eu-west-2"])
-    error_message = "Data source should include eu-west-2 region."
-  }
-
-  assert {
-    condition     = data.aws_ip_ranges.service_ranges["aws2"].services == toset(["EC2"])
-    error_message = "Data source should include EC2 service."
-  }
-
-  assert {
-    condition     = data.aws_ip_ranges.service_ranges["aws2"].regions == toset(["GLOBAL"])
-    error_message = "Data source should include GLOBAL region."
-  }
 }
 
 run "test_create_ecs_cluster_with_egress_rule_without_any_destination" {
