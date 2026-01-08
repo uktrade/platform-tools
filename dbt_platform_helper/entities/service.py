@@ -58,7 +58,7 @@ class Http(BaseModel):
     stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=False)
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
-    healthcheck: Optional[HealthCheck] = Field(default=None)
+    healthcheck: HealthCheck = Field(default_factory=HealthCheck)
     additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
     deregistration_delay: Optional[int] = Field(
         default=60,
@@ -320,7 +320,7 @@ class ServiceConfig(BaseModel):
         description="Whether the main container is marked essential; The entire ECS task stops if it exits.",
         default=True,
     )
-    storage: Optional[Storage] = Field(default=None)
+    storage: Storage = Field(default_factory=Storage)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the main application container.",
         default=None,
