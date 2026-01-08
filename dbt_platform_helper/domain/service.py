@@ -295,7 +295,7 @@ class ServiceManager:
 
                 if "count" in service_manifest:
                     if not isinstance(service_manifest.get("count"), int):
-                        if "cooldown" in service_manifest.get("count", {}):
+                        if "cooldown" in service_manifest.get("count"):
                             if "in" in service_manifest["count"]["cooldown"]:
                                 scaling_in = service_manifest["count"]["cooldown"]["in"]
                                 service_manifest["count"]["cooldown"]["in"] = int(
