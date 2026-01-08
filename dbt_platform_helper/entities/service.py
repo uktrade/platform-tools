@@ -96,7 +96,7 @@ class ContainerHealthCheck(BaseModel):
         default=2, description="Number of times to retry before container is deemed unhealthy."
     )
     timeout: Optional[int] = Field(
-        default=2,
+        default=5,
         description="How long to wait before considering the health check failed, in seconds.",
     )
     start_period: Optional[int] = Field(
