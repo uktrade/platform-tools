@@ -14,4 +14,4 @@ Addresses https://uktrade.atlassian.net/browse/DBTP-<ticket>.
 - [ ] Includes link(s) to any applicable changes to the documentation in the [DBT Platform Documentation](https://platform.readme.trade.gov.uk/) (can be to a pull request)
 
 ### Tasks:
-- [ ] [Run the end to end tests for this branch]([https://github.com/uktrade/platform-tools?tab=readme-ov-file#regression-tests](https://github.com/uktrade/platform-end-to-end-tests?tab=readme-ov-file#running-the-tests)) and confirm that they are passing
+- [ ] [Run the end to end tests for this branch](https://github.com/uktrade/platform-end-to-end-tests?tab=readme-ov-file#running-the-tests) and confirm that they are passing
