@@ -238,7 +238,7 @@ class ServiceManager:
                                         start_period.rstrip("s")
                                     )
                         if "count" in env_config:
-                            if not isinstance(service_manifest.get("count"), int):
+                            if not isinstance(env_config.get("count"), int):
                                 if "cooldown" in env_config["count"]:
                                     if "in" in env_config["count"]["cooldown"]:
                                         scaling_in = env_config["count"]["cooldown"]["in"]
