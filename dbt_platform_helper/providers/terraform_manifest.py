@@ -3,6 +3,8 @@ from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
+from dbtp_inspector.constants import PLATFORM_CONFIG_FILE
+
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
@@ -93,6 +95,7 @@ class TerraformManifestProvider:
         ecr_imports: dict[str, str],
         deploy_repository: str,
         module_source: str,
+        workspace: str = None,
     ):
         default_account = self._get_account_for_env("*", platform_config)
         deploy_to_account_id = self._get_account_id_for_account(default_account, platform_config)
@@ -100,7 +103,11 @@ class TerraformManifestProvider:
 
         terraform = {}
         self._add_header(terraform)
-        self._add_codebase_pipeline_locals(terraform)
+
+        platform_config_file_name = (
+            f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
+        )
+        self._add_codebase_pipeline_locals(terraform, platform_config_file_name)
         self._add_provider(terraform, default_account, deploy_to_account_id)
         self._add_backend(
             terraform,
@@ -169,9 +176,10 @@ class TerraformManifestProvider:
         terraform["//"] = f"{version_header} {warning}"
 
     @staticmethod
-    def _add_codebase_pipeline_locals(terraform: dict):
+    def _add_codebase_pipeline_locals(terraform: dict, file_name: str):
+        decode_statement = f'${{yamldecode(file("../../{file_name}"))}}'
         terraform["locals"] = {
-            "platform_config": '${yamldecode(file("../../platform-config.yml"))}',
+            "platform_config": decode_statement,
             "application": '${local.platform_config["application"]}',
             "all_codebases": '${local.platform_config["codebase_pipelines"]}',
             "environments": '${local.platform_config["environments"]}',

@@ -3,6 +3,8 @@ from os import makedirs
 from pathlib import Path
 from shutil import rmtree
 
+from dbtp_inspector.constants import PLATFORM_CONFIG_FILE
+
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
@@ -13,6 +15,7 @@ from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
+from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.template import setup_templates
 
 
@@ -20,9 +23,9 @@ class Pipelines:
     def __init__(
         self,
         config_provider: ConfigProvider,
-        terraform_manifest_provider: TerraformManifestProvider,
-        ecr_provider: ECRProvider,
-        get_git_remote: Callable[[], str],
+        terraform_manifest_provider: TerraformManifestProvider = TerraformManifestProvider(),
+        ecr_provider: ECRProvider = ECRProvider(),
+        get_git_remote: Callable[[], str] = git_remote,
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         platform_helper_versioning: PlatformHelperVersioning = None,
@@ -54,13 +57,15 @@ class Pipelines:
 
         return list(accounts)
 
-    def generate(
-        self,
-        deploy_branch: str,
-    ):
+    def generate(self, deploy_branch: str, workspace: str = None):
         self.platform_helper_versioning.check_platform_helper_version_mismatch()
 
-        platform_config = self.config_provider.load_and_validate_platform_config()
+        platform_config_file_name = (
+            f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
+        )
+        platform_config = self.config_provider.load_and_validate_platform_config(
+            path=platform_config_file_name
+        )
 
         has_codebase_pipelines = CODEBASE_PIPELINES_KEY in platform_config
         has_environment_pipelines = ENVIRONMENT_PIPELINES_KEY in platform_config
@@ -100,6 +105,7 @@ class Pipelines:
                     deploy_branch,
                     account_id,
                     self.platform_helper_versioning.get_pinned_version(),
+                    workspace,
                 )
 
         if has_codebase_pipelines:
@@ -121,6 +127,7 @@ class Pipelines:
                 ecrs_that_need_importing,
                 deploy_repository,
                 self.platform_helper_versioning.get_codebase_pipeline_modules_source(),
+                workspace,
             )
 
     def _clean_pipeline_config(self, pipelines_dir: Path):
@@ -137,9 +144,13 @@ class Pipelines:
         deploy_branch: str,
         aws_account_id: str,
         pinned_version: str,
+        workspace: str = None,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
 
+        platform_config_file_name = (
+            f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
+        )
         contents = env_pipeline_template.render(
             {
                 "application": application,
@@ -151,6 +162,7 @@ class Pipelines:
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
                 "deploy_account_id": aws_account_id,
                 "pinned_version": pinned_version,
+                "platform_config_file_name": platform_config_file_name,
             }
         )
 
