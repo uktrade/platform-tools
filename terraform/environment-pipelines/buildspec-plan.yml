@@ -9,11 +9,10 @@ env:
 phases:
   install:
     commands:
-      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${PYTHONPATH}"
   build:
     commands:
-      - set -e
       # Cancel pending approvals
       - echo "Cancelling any pending approvals for ${APPLICATION}-${ENVIRONMENT}-environment-pipeline"
       - PIPELINE_STATE=$(aws codepipeline get-pipeline-state --name "${APPLICATION}-${PIPELINE_NAME}-environment-pipeline")
@@ -28,6 +27,7 @@ phases:
       # Generate environment manifest
       - local_extensions_path=../../../platform-tools/terraform/extensions
       - TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE=${local_extensions_path} platform-helper environment generate-terraform --name "${ENVIRONMENT}"
+      
       # Run plan
       - cd terraform/environments/${ENVIRONMENT}
       - terraform init
