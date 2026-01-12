@@ -38,12 +38,14 @@ phases:
       - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
       - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
+      
       ## Install platform-helper
       - cd platform-tools
       - pip install poetry --quiet
       - poetry build --no-interaction --format sdist --no-ansi | tee build-log.txt
       - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
       - 'echo "Package archive: $ARTIFACT"'
+      
       - cd "${CODEBUILD_SRC_DIR}/build-tools"
       - pip install --target ./platform-helper --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
       - VERSION_OUTPUT=""
@@ -60,6 +62,7 @@ phases:
             export SLACK_REF="${SLACK_THREAD_ID}"
           fi
       - echo "Build SLACK_REF is - ${SLACK_REF}"
+      
       - cd bin
       - curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
       - unzip terraform_install.zip

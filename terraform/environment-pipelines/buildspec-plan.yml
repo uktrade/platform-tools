@@ -27,6 +27,7 @@ phases:
       # Generate environment manifest
       - local_extensions_path=../../../platform-tools/terraform/extensions
       - TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE=${local_extensions_path} platform-helper environment generate-terraform --name "${ENVIRONMENT}"
+      
       # Run plan
       - cd terraform/environments/${ENVIRONMENT}
       - terraform init

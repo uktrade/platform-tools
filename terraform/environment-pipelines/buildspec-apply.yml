@@ -22,6 +22,7 @@ phases:
             exit 1
           fi
           COPILOT_VERSION=`cat .copilot-version`
+          
           cd "${CODEBUILD_SRC_DIR}/build-tools/bin"
           curl -s -qL -o copilot https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v"$COPILOT_VERSION"
           chmod +x copilot
@@ -35,6 +36,7 @@ phases:
       - echo -e "\nTerraform Apply Phase"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting terraform apply phase for the ${ENVIRONMENT} environment."
       - echo -e "\nWorking on environment ${ENVIRONMENT}"
+      
       - cd "${CODEBUILD_SRC_DIR}/terraform/environments/${ENVIRONMENT}"
       - terraform apply plan.tfplan
       - |
@@ -42,6 +44,7 @@ phases:
           echo -e "\nDeployment mode is 'platform', skipping copilot environment deploy"
         else
           echo -e "\nGenerating manifests and deploying AWS Copilot environment resources"
+          
           cd "${CODEBUILD_SRC_DIR}"
           codebuild_assumed_role=$(aws sts assume-role --role-arn "${CURRENT_CODEBUILD_ROLE}" --role-session-name "environment-pipeline-platform-helper-generate-$(date +%s)")
           AWS_ACCESS_KEY_ID=$(echo $codebuild_assumed_role | jq -r .Credentials.AccessKeyId)
