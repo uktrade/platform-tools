@@ -7,8 +7,8 @@ env:
 phases:
   install:
     commands:
-      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/yq/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${CODEBUILD_SRC_DIR}/build-tools/yq:${PYTHONPATH}"
       - PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
       - |
         DEPLOY_MODE=$(yq -r ".environments.\"$ENVIRONMENT\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
@@ -28,6 +28,7 @@ phases:
         fi
         
         export DEPLOY_MODE="$DEPLOY_MODE"
+        echo $DEPLOY_MODE
 
   build:
     commands:

@@ -11,9 +11,14 @@ env:
 phases:
   install:
     commands:
-      - pip install yq --quiet
-      - echo "Deploying ${APPLICATION} environments"
       - cd "${CODEBUILD_SRC_DIR}"
+      - mkdir -p ./build-tools/yq
+      - mkdir -p ./build-tools/platform-helper
+      - mkdir -p ./build-tools/bin
+      - pip install --target ./build-tools/yq --quiet "yq"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/yq/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${CODEBUILD_SRC_DIR}/build-tools/yq:${PYTHONPATH}"
+      - echo "Deploying ${APPLICATION} environments"
       - |
          if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
            echo "Install platform-helper version from platform-config default version"
@@ -23,7 +28,6 @@ phases:
          fi
       - COMMIT_TYPE=$(python -c "import re, sys; print('tag' if re.match(r'\\d+\\.\\d+\\.\\d+', '${REQUIRED_VERSION}') else 'commit')")
       - echo "Installing build tools"
-      - mkdir ./build-tools
 
       # Install platform-helper
       - echo "Installing platform-helper from reference ${REQUIRED_VERSION}"
@@ -41,10 +45,8 @@ phases:
       - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
       - 'echo "Package archive: $ARTIFACT"'
       - cd "${CODEBUILD_SRC_DIR}/build-tools"
-      - pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}" "yq"
+      - pip install --target ./platform-helper --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
       - VERSION_OUTPUT=""
-      - export "PATH=$(pwd)/bin:$PATH"
-      - export PYTHONPATH=$(pwd)
       - platform-helper --version
       - |
           if [ "${SLACK_THREAD_ID}" == "NONE" ]

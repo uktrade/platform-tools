@@ -9,8 +9,8 @@ env:
 phases:
   install:
     commands:
-      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${PYTHONPATH}"
   build:
     commands:
       # Cancel pending approvals

@@ -7,8 +7,8 @@ env:
 phases:
   install:
     commands:
-      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${PYTHONPATH}"
       - echo -e "\nAssume triggered account role to trigger ${TRIGGERED_PIPELINE_NAME} pipeline"
 
       - assumed_role=$(aws sts assume-role --role-arn "${TRIGGERED_ACCOUNT_ROLE_ARN}" --role-session-name "trigger-prod-pipeline-$(date +%s)")
