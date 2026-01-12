@@ -29,7 +29,7 @@ phases:
         fi
         
         export DEPLOY_MODE="$DEPLOY_MODE"
-        echo $DEPLOY_MODE
+        echo DEPLOY_MODE: $DEPLOY_MODE
 
   build:
     commands:
