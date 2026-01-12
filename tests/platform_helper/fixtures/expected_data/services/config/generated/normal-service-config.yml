@@ -5,6 +5,7 @@ type: Load Balanced Web Service
 http:
   alias:
   - web.test-app.dev.uktrade.digital
+  stickiness: false
   path: /
   target_container: nginx
   healthcheck:
@@ -16,15 +17,18 @@ http:
     interval: 35
     timeout: 30
     grace_period: 30
+  deregistration_delay: 60
 sidecars:
   sidecar:
     port: 443
     image: public.ecr.aws/sidecar:latest
+    essential: true
     variables:
       SERVER: localhost:8000
   ipfilter:
     port: 443
     image: public.ecr.aws/uktrade/ip-filter:tag-latest
+    essential: true
 image:
   location: public.ecr.aws/non-prod-acc/test-app/application
   port: 8080
@@ -32,6 +36,7 @@ cpu: 512
 memory: 2048
 count: 1
 exec: true
+essential: true
 storage:
   readonly_fs: false
 variables:

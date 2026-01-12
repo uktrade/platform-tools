@@ -238,17 +238,18 @@ class ServiceManager:
                                         start_period.rstrip("s")
                                     )
                         if "count" in env_config:
-                            if "cooldown" in env_config["count"]:
-                                if "in" in env_config["count"]["cooldown"]:
-                                    scaling_in = env_config["count"]["cooldown"]["in"]
-                                    env_config["count"]["cooldown"]["in"] = int(
-                                        scaling_in.rstrip("s")
-                                    )
-                                if "out" in env_config["count"]["cooldown"]:
-                                    scaling_out = env_config["count"]["cooldown"]["out"]
-                                    env_config["count"]["cooldown"]["out"] = int(
-                                        scaling_out.rstrip("s")
-                                    )
+                            if not isinstance(env_config.get("count"), int):
+                                if "cooldown" in env_config["count"]:
+                                    if "in" in env_config["count"]["cooldown"]:
+                                        scaling_in = env_config["count"]["cooldown"]["in"]
+                                        env_config["count"]["cooldown"]["in"] = int(
+                                            scaling_in.rstrip("s")
+                                        )
+                                    if "out" in env_config["count"]["cooldown"]:
+                                        scaling_out = env_config["count"]["cooldown"]["out"]
+                                        env_config["count"]["cooldown"]["out"] = int(
+                                            scaling_out.rstrip("s")
+                                        )
                         if "network" in env_config:
                             del env_config["network"]
                         if "observability" in env_config:
@@ -292,13 +293,19 @@ class ServiceManager:
                                 start_period.rstrip("s")
                             )
 
-                if "cooldown" in env_config.get("count", {}):
-                    if "in" in env_config["count"]["cooldown"]:
-                        scaling_in = env_config["count"]["cooldown"]["in"]
-                        env_config["count"]["cooldown"]["in"] = int(scaling_in.rstrip("s"))
-                    if "out" in env_config["count"]["cooldown"]:
-                        scaling_out = env_config["count"]["cooldown"]["out"]
-                        env_config["count"]["cooldown"]["out"] = int(scaling_out.rstrip("s"))
+                if "count" in service_manifest:
+                    if not isinstance(service_manifest.get("count"), int):
+                        if "cooldown" in service_manifest.get("count"):
+                            if "in" in service_manifest["count"]["cooldown"]:
+                                scaling_in = service_manifest["count"]["cooldown"]["in"]
+                                service_manifest["count"]["cooldown"]["in"] = int(
+                                    scaling_in.rstrip("s")
+                                )
+                            if "out" in service_manifest["count"]["cooldown"]:
+                                scaling_out = service_manifest["count"]["cooldown"]["out"]
+                                service_manifest["count"]["cooldown"]["out"] = int(
+                                    scaling_out.rstrip("s")
+                                )
 
                 if "network" in service_manifest:
                     del service_manifest["network"]
