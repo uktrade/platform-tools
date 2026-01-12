@@ -13,7 +13,6 @@ phases:
       - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
   build:
     commands:
-      - set -e
       # Cancel pending approvals
       - echo "Cancelling any pending approvals for ${APPLICATION}-${ENVIRONMENT}-environment-pipeline"
       - PIPELINE_STATE=$(aws codepipeline get-pipeline-state --name "${APPLICATION}-${PIPELINE_NAME}-environment-pipeline")

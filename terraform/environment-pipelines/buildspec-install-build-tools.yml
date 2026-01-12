@@ -11,7 +11,6 @@ env:
 phases:
   install:
     commands:
-      - set -e
       - pip install yq --quiet
       - echo "Deploying ${APPLICATION} environments"
       - cd "${CODEBUILD_SRC_DIR}"
@@ -42,7 +41,7 @@ phases:
       - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
       - 'echo "Package archive: $ARTIFACT"'
       - cd "${CODEBUILD_SRC_DIR}/build-tools"
-      - pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
+      - pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}" "yq"
       - VERSION_OUTPUT=""
       - export "PATH=$(pwd)/bin:$PATH"
       - export PYTHONPATH=$(pwd)
@@ -70,6 +69,7 @@ phases:
       - if [ "${COMMIT_TYPE}" != "tag" ]; then VERSION_OUTPUT+=" (from git ref ${REQUIRED_VERSION})"; fi
       - VERSION_OUTPUT+="\n$(python3 --version)"
       - VERSION_OUTPUT+="\n$(pip --version)"
+      - VERSION_OUTPUT+="\n$(yq --version)"
       - echo -e "=============\nTool Versions\n-------------\n$VERSION_OUTPUT"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Install phase complete"
 artifacts:
