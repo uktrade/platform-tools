@@ -16,8 +16,10 @@ phases:
       - mkdir -p ./build-tools/platform-helper
       - mkdir -p ./build-tools/bin
       - pip install --target ./build-tools/yq --quiet "yq"
+      
       - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/yq/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
       - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${CODEBUILD_SRC_DIR}/build-tools/yq:${PYTHONPATH}"
+      
       - echo "Deploying ${APPLICATION} environments"
       - |
          if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
