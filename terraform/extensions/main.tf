@@ -115,7 +115,7 @@ module "vpc_endpoints" {
   environment = var.environment
   vpc_name    = local.vpc_name
 
-  instances = local.vpc_endpoints
+  endpoint_definitions = local.vpc_endpoints
 }
 
 module "ecs_cluster" {

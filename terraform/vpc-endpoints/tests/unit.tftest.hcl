@@ -30,7 +30,7 @@ run "test_create_vpc_endpoints" {
     application = "demodjango"
     environment = "dev"
     vpc_name    = "terraform-tests-vpc"
-    instances = {
+    endpoint_definitions = {
       ecr = {
         service_name = "com.amazonaws.eu-west-2.ecr.api"
       }

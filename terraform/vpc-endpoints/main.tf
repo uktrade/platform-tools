@@ -13,7 +13,7 @@ data "aws_subnets" "private-subnets" {
 }
 
 resource "aws_vpc_endpoint" "main" {
-  for_each            = var.instances
+  for_each            = var.endpoint_definitions
   service_name        = each.value.service_name
   vpc_endpoint_type   = "Interface"
   vpc_id              = data.aws_vpc.vpc.id

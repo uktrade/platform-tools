@@ -1153,7 +1153,7 @@ run "test_create_vpc_endpoints" {
   }
 
   assert {
-    condition = module.vpc_endpoints[0].instances == tomap({
+    condition = module.vpc_endpoints[0].endpoint_definitions == tomap({
       ecr = {
         service_name = "com.amazonaws.eu-west-2.ecr.api"
       }

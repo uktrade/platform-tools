@@ -10,7 +10,7 @@ variable "vpc_name" {
   type = string
 }
 
-variable "instances" {
+variable "endpoint_definitions" {
   type = map(object({
     service_name = string
   }))
