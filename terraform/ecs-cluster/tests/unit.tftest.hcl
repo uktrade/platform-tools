@@ -176,7 +176,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
             regions  = ["GLOBAL"]
           }
         }
-        protocol  = "tcp"
+        protocol  = "all"
         from_port = 80
         to_port   = 80
       }
@@ -220,7 +220,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
       "Egress: cidrs2" = "udp"
       "Egress: vpce"   = "tcp"
       "Egress: aws1"   = "tcp"
-      "Egress: aws2"   = "tcp"
+      "Egress: aws2"   = "-1"
     })
     error_message = "Egress protocol attributes are not as expected."
   }
