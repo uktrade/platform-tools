@@ -1,5 +1,17 @@
 # Changelog
 
+## [15.16.1](https://github.com/uktrade/platform-tools/compare/15.16.0...15.16.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* Install yq in artifact directory to be used in later stages (off-ticket) ([#1206](https://github.com/uktrade/platform-tools/issues/1206)) ([ae1f363](https://github.com/uktrade/platform-tools/commit/ae1f363bca54f0769f19e61d08c15dc6c351a5d8))
+
+
+### Dependencies
+
+* Bump schema from 0.7.5 to 0.7.8 ([#1176](https://github.com/uktrade/platform-tools/issues/1176)) ([099f820](https://github.com/uktrade/platform-tools/commit/099f8202d66994dba04a4bdd4eb7658e39c90150))
+
 ## [15.16.0](https://github.com/uktrade/platform-tools/compare/15.15.0...15.16.0) (2026-01-09)
 
 
