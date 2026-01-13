@@ -82,7 +82,7 @@ resource "aws_security_group" "environment_security_group" {
       description = "Egress: ${egress.key}"
       from_port   = egress.value.from_port
       to_port     = egress.value.to_port
-      protocol    = (
+      protocol = (
         egress.value.protocol == "all"
         ? "-1"
         : egress.value.protocol

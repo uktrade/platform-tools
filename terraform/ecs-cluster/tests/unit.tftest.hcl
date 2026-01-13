@@ -187,7 +187,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => toset(block.cidr_blocks)
-    }) == tomap({
+      }) == tomap({
       "Egress: cidrs1" = toset(["172.65.64.208/30"])
       "Egress: cidrs2" = toset(["15.200.117.191/32", "172.65.64.208/30"])
       "Egress: vpce"   = null
@@ -201,7 +201,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => toset(block.security_groups)
-    }) == tomap({
+      }) == tomap({
       "Egress: cidrs1" = null
       "Egress: cidrs2" = null
       "Egress: vpce"   = toset(["vpce-security-group-id"])
@@ -215,7 +215,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.protocol
-    }) == tomap({
+      }) == tomap({
       "Egress: cidrs1" = "tcp"
       "Egress: cidrs2" = "udp"
       "Egress: vpce"   = "tcp"
@@ -229,7 +229,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.from_port
-    }) == tomap({
+      }) == tomap({
       "Egress: cidrs1" = 443
       "Egress: cidrs2" = 7000
       "Egress: vpce"   = 443
@@ -243,7 +243,7 @@ run "test_create_ecs_cluster_with_egress_rules" {
     condition = tomap({
       for block in aws_security_group.environment_security_group.egress :
       block.description => block.to_port
-    }) == tomap({
+      }) == tomap({
       "Egress: cidrs1" = 443
       "Egress: cidrs2" = 7010
       "Egress: vpce"   = 443
