@@ -13,11 +13,15 @@ variable "branch" {
 }
 
 variable "environments" {
-  type = map(
+  type = list(
     object(
-      {
-        vpc               = optional(string)
-        requires_approval = optional(bool)
+      { name = string,
+        config = optional(
+          object(
+            { vpc = optional(string),
+            requires_approval = optional(bool) }
+          )
+        )
       }
     )
   )
