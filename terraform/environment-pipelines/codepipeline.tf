@@ -127,7 +127,7 @@ resource "aws_codepipeline" "environment_pipeline" {
   tags = merge(
     local.tags,
     {
-      platform-version = var.pinned_version
+      platform-version = var.pinned_version ? var.pinned_version : "See default_version in platform-config.yml"
     }
   )
 }
