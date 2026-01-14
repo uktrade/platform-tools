@@ -293,6 +293,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
         {},
         "uktrade/my-app-deploy",
         module_source,
+        None,  # workspace
     )
 
 
@@ -345,6 +346,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
         "uktrade/my-app-deploy",
         module_source,
+        None,  # workspace
     )
 
 
