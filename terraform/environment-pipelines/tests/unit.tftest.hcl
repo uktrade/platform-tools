@@ -240,7 +240,7 @@ variables {
     application         = "my-app"
     copilot-application = "my-app"
     managed-by          = "DBT Platform - Terraform"
-    platform-version    = null
+    platform-version    = "Not pinned"
   }
   expected_centralised_pipeline_tags = {
     application         = "my-app"
