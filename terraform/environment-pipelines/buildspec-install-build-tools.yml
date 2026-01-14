@@ -11,10 +11,14 @@ env:
 phases:
   install:
     commands:
-      - set -e
-      - pip install yq --quiet
-      - echo "Deploying ${APPLICATION} environments"
       - cd "${CODEBUILD_SRC_DIR}"
+      - mkdir -p ./build-tools/yq
+      - mkdir -p ./build-tools/platform-helper
+      - mkdir -p ./build-tools/bin
+      - pip install --target ./build-tools/yq --quiet "yq"
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/yq/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${CODEBUILD_SRC_DIR}/build-tools/yq:${PYTHONPATH}"
+      - echo "Deploying ${APPLICATION} environments"
       - |
          if [ "${PLATFORM_HELPER_VERSION_OVERRIDE}" == "NONE" ]; then
            echo "Install platform-helper version from platform-config default version"
@@ -24,7 +28,6 @@ phases:
          fi
       - COMMIT_TYPE=$(python -c "import re, sys; print('tag' if re.match(r'\\d+\\.\\d+\\.\\d+', '${REQUIRED_VERSION}') else 'commit')")
       - echo "Installing build tools"
-      - mkdir ./build-tools
 
       # Install platform-helper
       - echo "Installing platform-helper from reference ${REQUIRED_VERSION}"
@@ -35,17 +38,17 @@ phases:
       - codestar_connection_id=$(echo "${CODESTAR_CONNECTION_ARN##*/}")
       - export GIT_CLONE_BASE_URL="https://codestar-connections.${AWS_REGION}.amazonaws.com/git-http/${AWS_ACCOUNT_ID}/${AWS_REGION}/$codestar_connection_id/uktrade"
       - git clone "${GIT_CLONE_BASE_URL}/platform-tools.git" --branch "${REQUIRED_VERSION}" --depth 1 platform-tools
+      
       ## Install platform-helper
       - cd platform-tools
       - pip install poetry --quiet
       - poetry build --no-interaction --format sdist --no-ansi | tee build-log.txt
       - ARTIFACT=$(grep "Built dbt_platform_helper-.*tar.gz" build-log.txt | sed "s/.*Built //")
       - 'echo "Package archive: $ARTIFACT"'
+      
       - cd "${CODEBUILD_SRC_DIR}/build-tools"
-      - pip install --target . --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
+      - pip install --target ./platform-helper --quiet "${CODEBUILD_SRC_DIR}/platform-tools/dist/${ARTIFACT}"
       - VERSION_OUTPUT=""
-      - export "PATH=$(pwd)/bin:$PATH"
-      - export PYTHONPATH=$(pwd)
       - platform-helper --version
       - |
           if [ "${SLACK_THREAD_ID}" == "NONE" ]
@@ -59,6 +62,7 @@ phases:
             export SLACK_REF="${SLACK_THREAD_ID}"
           fi
       - echo "Build SLACK_REF is - ${SLACK_REF}"
+      
       - cd bin
       - curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
       - unzip terraform_install.zip
@@ -70,6 +74,7 @@ phases:
       - if [ "${COMMIT_TYPE}" != "tag" ]; then VERSION_OUTPUT+=" (from git ref ${REQUIRED_VERSION})"; fi
       - VERSION_OUTPUT+="\n$(python3 --version)"
       - VERSION_OUTPUT+="\n$(pip --version)"
+      - VERSION_OUTPUT+="\n$(yq --version)"
       - echo -e "=============\nTool Versions\n-------------\n$VERSION_OUTPUT"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Install phase complete"
 artifacts:

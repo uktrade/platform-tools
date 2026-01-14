@@ -15,34 +15,34 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 class HealthCheck(BaseModel):
     path: Optional[str] = Field(
-        description="The destination that the health check requests are sent to.", default=None
+        description="The destination that the health check requests are sent to.", default="/"
     )
     port: Optional[int] = Field(
-        description="The port that the health check requests are sent to.", default=None
+        description="The port that the health check requests are sent to.", default=8080
     )
     success_codes: Optional[str] = Field(
         description="A comma-separated list of HTTP status codes that healthy targets must use when responding to a HTTP health check.",
-        default=None,
+        default="200",
     )
     healthy_threshold: Optional[int] = Field(
         description="The number of consecutive health check successes required before considering an unhealthy target healthy.",
-        default=None,
+        default=3,
     )
     unhealthy_threshold: Optional[int] = Field(
         description="The number of consecutive health check failures required before considering a target unhealthy.",
-        default=None,
+        default=3,
     )
     interval: Optional[int] = Field(
         description="The approximate amount of time, in seconds, between health checks of an individual target.",
-        default=None,
+        default=35,
     )
     timeout: Optional[int] = Field(
         description="The amount of time, in seconds, during which no response from a target means a failed health check.",
-        default=None,
+        default=30,
     )
     grace_period: Optional[int] = Field(
         description="The amount of time to ignore failing target group healthchecks on container start.",
-        default=None,
+        default=30,
     )
 
 
@@ -55,13 +55,13 @@ class Http(BaseModel):
     alias: list[str] = Field(
         description="List of HTTPS domain alias(es) of your service.", default=None
     )
-    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=None)
+    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=False)
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
-    healthcheck: Optional[HealthCheck] = Field(default=None)
+    healthcheck: HealthCheck = Field(default_factory=HealthCheck)
     additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
     deregistration_delay: Optional[int] = Field(
-        default=None,
+        default=60,
         description="The amount of time to wait for targets to drain connections during deregistration.",
     )
 
@@ -90,17 +90,17 @@ class ContainerHealthCheck(BaseModel):
         description="The command to run to determine if the container is healthy."
     )
     interval: Optional[int] = Field(
-        default=None, description="Time period between health checks, in seconds."
+        default=10, description="Time period between health checks, in seconds."
     )
     retries: Optional[int] = Field(
-        default=None, description="Number of times to retry before container is deemed unhealthy."
+        default=2, description="Number of times to retry before container is deemed unhealthy."
     )
     timeout: Optional[int] = Field(
-        default=None,
+        default=5,
         description="How long to wait before considering the health check failed, in seconds.",
     )
     start_period: Optional[int] = Field(
-        default=None,
+        default=0,
         description="Length of grace period for containers to bootstrap before failed health checks count towards the maximum number of retries.",
     )
 
@@ -110,7 +110,7 @@ class Sidecar(BaseModel):
     image: str = Field(description="Container image URI for the sidecar (e.g. 'repo/image:tag').")
     essential: Optional[bool] = Field(
         description="Whether the ECS task should stop if this sidecar container exits.",
-        default=None,
+        default=True,
     )
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the sidecar container.", default=None
@@ -155,7 +155,7 @@ class Image(BaseModel):
 class Storage(BaseModel):
     readonly_fs: Optional[bool] = Field(
         description="Specify true to give your container read-only access to its root file system.",
-        default=None,
+        default=False,
     )
     writable_directories: Optional[list[str]] = Field(
         description="List of directories with read/write access.", default=None
@@ -177,9 +177,11 @@ class Cooldown(BaseModel):
     in_: Optional[int] = Field(
         alias="in",
         description="Number of seconds to wait before scaling in (down) after a drop in load.",
+        default=60,
     )  # Can't use 'in' because it's a reserved keyword
     out: Optional[int] = Field(
-        description="Number of seconds to wait before scaling out (up) after a spike in load."
+        description="Number of seconds to wait before scaling out (up) after a spike in load.",
+        default=60,
     )
 
     @field_validator("in_", "out", mode="before")
@@ -309,16 +311,16 @@ class ServiceConfig(BaseModel):
     )
     exec: Optional[bool] = Field(
         description="Enable ECS Exec (remote command execution) for running ECS tasks.",
-        default=None,
+        default=False,
     )
     entrypoint: Optional[list[str]] = Field(
         description="Overrides the default entrypoint in the image.", default=None
     )
     essential: Optional[bool] = Field(
         description="Whether the main container is marked essential; The entire ECS task stops if it exits.",
-        default=None,
+        default=True,
     )
-    storage: Optional[Storage] = Field(default=None)
+    storage: Storage = Field(default_factory=Storage)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the main application container.",
         default=None,
