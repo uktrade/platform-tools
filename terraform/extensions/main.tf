@@ -106,15 +106,30 @@ module "monitoring" {
   config = each.value
 }
 
+module "vpc_endpoints" {
+  source = "../vpc-endpoints"
+
+  count = local.vpc_endpoints != null ? 1 : 0
+
+  application = var.args.application
+  environment = var.environment
+  vpc_name    = local.vpc_name
+
+  endpoint_definitions = local.vpc_endpoints
+}
+
 module "ecs_cluster" {
   source = "../ecs-cluster"
 
   count = local.non_copilot_service_deployment_mode
 
-  application                 = var.args.application
-  environment                 = var.environment
-  vpc_name                    = local.vpc_name
-  alb_https_security_group_id = try(one(values(module.alb)).https_security_group_id, null)
+  application                     = var.args.application
+  environment                     = var.environment
+  vpc_name                        = local.vpc_name
+  alb_https_security_group_id     = try(one(values(module.alb)).https_security_group_id, null)
+  has_vpc_endpoints               = local.vpc_endpoints != null
+  vpc_endpoints_security_group_id = try(one(module.vpc_endpoints).security_group_id, null)
+  egress_rules                    = local.egress_rules
 }
 
 module "datadog" {
