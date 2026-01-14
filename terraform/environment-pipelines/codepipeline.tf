@@ -124,5 +124,10 @@ resource "aws_codepipeline" "environment_pipeline" {
     }
   }
 
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      platform-version = var.pinned_version
+    }
+  )
 }
