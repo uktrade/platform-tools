@@ -236,7 +236,18 @@ variables {
     copilot-application = "my-app"
     managed-by          = "DBT Platform - Terraform"
   }
-
+  expected_pipeline_tags = {
+    application         = "my-app"
+    copilot-application = "my-app"
+    managed-by          = "DBT Platform - Terraform"
+    platform-version    = "Not pinned"
+  }
+  expected_centralised_pipeline_tags = {
+    application         = "my-app"
+    copilot-application = "my-app"
+    managed-by          = "DBT Platform - Terraform"
+    platform-version    = "1.2.3"
+  }
   all_pipelines = {
     my-pipeline = {
       account             = "sandbox"
@@ -464,8 +475,22 @@ run "test_code_pipeline" {
 
   # Tags
   assert {
-    condition     = jsonencode(aws_codepipeline.environment_pipeline.tags) == jsonencode(var.expected_tags)
-    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+    condition     = jsonencode(aws_codepipeline.environment_pipeline.tags) == jsonencode(var.expected_pipeline_tags)
+    error_message = "Should be: ${jsonencode(var.expected_pipeline_tags)}"
+  }
+}
+
+run "test_pipeline_tags_for_centralised_service" {
+  command = plan
+
+  variables {
+    pinned_version = "1.2.3"
+  }
+
+  # Tags
+  assert {
+    condition     = jsonencode(aws_codepipeline.environment_pipeline.tags) == jsonencode(var.expected_centralised_pipeline_tags)
+    error_message = "Should be: ${jsonencode(var.expected_centralised_pipeline_tags)}"
   }
 }
 
