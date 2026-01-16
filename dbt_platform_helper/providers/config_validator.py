@@ -303,10 +303,10 @@ class ConfigValidator:
                     )
 
             for pipeline_name, pipeline in environment_pipelines.items():
-                for env_name, env_config in pipeline.get("environments", {}).items():
+                for env, env_config in pipeline.get("environments", {}).items():
                     if isinstance(env_config, dict) and env_config.get("requires_approval"):
                         errors.append(
-                            f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
+                            f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env}' "
                             "cannot have manual approval when platform-helper is 'auto'."
                         )
 
