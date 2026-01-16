@@ -310,5 +310,5 @@ class ConfigValidator:
                             "cannot have manual approval when platform-helper is 'auto'."
                         )
 
-        if errors:
-            raise ConfigValidatorError("\n".join(errors))
+            if errors:
+                raise ConfigValidatorError("\n".join(errors))
