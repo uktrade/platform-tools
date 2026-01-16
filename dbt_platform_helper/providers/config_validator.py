@@ -274,7 +274,6 @@ class ConfigValidator:
             - If any pipeline contains manual approvals when platform-helper is "auto".
             - If platform-config.yml is missing environment_pipelines or codebase_pipelines configuration.
         """
-        errors = []
 
         def find_pipeline_for_env(env_pipelines, env: str):
             for name, config in env_pipelines.items():
@@ -289,6 +288,14 @@ class ConfigValidator:
             pipelines = {}
             environments = [env for env in config.get("environments").keys() if env != "*"]
             environment_pipelines = config.get("environment_pipelines", {})
+
+            if not environment_pipelines:
+                raise ConfigValidatorError(
+                    f"For auto default platform-helper version, environment pipelines must be configured in platform-config.yml."
+                )
+
+            errors = []
+
             for env in environments:
                 pipeline = find_pipeline_for_env(environment_pipelines, env)
                 if not pipeline:
@@ -298,12 +305,6 @@ class ConfigValidator:
 
             for pipeline_section in ["environment_pipelines", "codebase_pipelines"]:
                 pipelines = config.get(pipeline_section, {})
-
-                if not pipelines:
-                    errors.append(
-                        f"For auto default platform-helper version, environment and codebase pipelines must be configured in platform-config.yml. {pipeline_section} is not configured."
-                    )
-                    continue
 
                 for pipeline_name, pipeline in pipelines.items():
                     if pipeline_section == "environment_pipelines":
