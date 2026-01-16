@@ -303,8 +303,7 @@ class ConfigValidator:
                     )
 
             for pipeline_name, pipeline in environment_pipelines.items():
-                pipeline_deploy_to_environments = pipeline.get("environments", {})
-                for env_name, env_config in pipeline_deploy_to_environments.items():
+                for env_name, env_config in pipeline.get("environments", {}).items():
                     if isinstance(env_config, dict) and env_config.get("requires_approval"):
                         errors.append(
                             f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
