@@ -99,4 +99,7 @@ locals {
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log_destination_arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
+
+  egress_rules  = try(var.args.env_config[var.environment].network.egress_rules, null)
+  vpc_endpoints = try(var.args.env_config[var.environment].network.vpc_endpoints, null)
 }

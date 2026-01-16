@@ -1,5 +1,42 @@
 # Changelog
 
+## [15.16.1](https://github.com/uktrade/platform-tools/compare/15.16.0...15.16.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* Install yq in artifact directory to be used in later stages (off-ticket) ([#1206](https://github.com/uktrade/platform-tools/issues/1206)) ([ae1f363](https://github.com/uktrade/platform-tools/commit/ae1f363bca54f0769f19e61d08c15dc6c351a5d8))
+
+
+### Dependencies
+
+* Bump schema from 0.7.5 to 0.7.8 ([#1176](https://github.com/uktrade/platform-tools/issues/1176)) ([099f820](https://github.com/uktrade/platform-tools/commit/099f8202d66994dba04a4bdd4eb7658e39c90150))
+
+## [15.16.0](https://github.com/uktrade/platform-tools/compare/15.15.0...15.16.0) (2026-01-09)
+
+
+### Features
+
+* Move default values into service model (DBTP-2575) ([#1196](https://github.com/uktrade/platform-tools/issues/1196)) ([da4eac9](https://github.com/uktrade/platform-tools/commit/da4eac9d01c3d184c6529b6eb29f5e777cc10676))
+* Prevent environment resources being deleted by env pipeline (DBTP-2430) ([#1189](https://github.com/uktrade/platform-tools/issues/1189)) ([532be9c](https://github.com/uktrade/platform-tools/commit/532be9cc4d4666a72a7a6eb018938af1dc224a04))
+* Versioning checks for auto (DBTP-2568) ([#1167](https://github.com/uktrade/platform-tools/issues/1167)) ([fd7b5ab](https://github.com/uktrade/platform-tools/commit/fd7b5ab83078c532ff9506aa77e88be19ccce0b3))
+
+
+### Bug Fixes
+
+* Accept deploy remote URL without .git suffix (off-ticket) ([#1197](https://github.com/uktrade/platform-tools/issues/1197)) ([59c5b02](https://github.com/uktrade/platform-tools/commit/59c5b027bf266651c63aefd3b8df7b916375e83f))
+* Diff exit code causes copilot deploy to fail (DBTP-2603) ([#1194](https://github.com/uktrade/platform-tools/issues/1194)) ([fefbb6f](https://github.com/uktrade/platform-tools/commit/fefbb6fa50ee603183dea13cdc0f9a24f3c42fe1))
+* Error when creating listener rules for an environment if not all services are deployed (off-ticket) ([#1190](https://github.com/uktrade/platform-tools/issues/1190)) ([8713626](https://github.com/uktrade/platform-tools/commit/8713626bf62cd113d40edd7b25ab299ef3d12399))
+* Update CodeBuild to only use Python-based yq (DBTP-2574) ([#1187](https://github.com/uktrade/platform-tools/issues/1187)) ([991e8c8](https://github.com/uktrade/platform-tools/commit/991e8c81ce786c6c707b8e1a1ceb00ec1fa7de15))
+* Update references to latest lambda layer version (DBTP-2500) ([#1200](https://github.com/uktrade/platform-tools/issues/1200)) ([8df3f74](https://github.com/uktrade/platform-tools/commit/8df3f748f50eb97e03e94f648be58b72e07569e5))
+* We need to check types before trying to process the data (off-ticket) ([#1199](https://github.com/uktrade/platform-tools/issues/1199)) ([19831f6](https://github.com/uktrade/platform-tools/commit/19831f67070b244bd3e26f7104cb4b751591c2de))
+
+
+### Dependencies
+
+* Bump DataDog/datadog from 3.57.0 to 3.84.0 in /terraform/datadog ([#1152](https://github.com/uktrade/platform-tools/issues/1152)) ([e378c95](https://github.com/uktrade/platform-tools/commit/e378c953ca914e7afd7399249513dce26cb872ff))
+* Bump slack-sdk from 3.34.0 to 3.39.0 ([#1177](https://github.com/uktrade/platform-tools/issues/1177)) ([f4105d8](https://github.com/uktrade/platform-tools/commit/f4105d842e5576f1f3f27cc337cd649c38a46d4d))
+
 ## [15.15.0](https://github.com/uktrade/platform-tools/compare/15.14.1...15.15.0) (2025-12-17)
 
 

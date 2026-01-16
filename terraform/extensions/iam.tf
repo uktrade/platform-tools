@@ -261,7 +261,8 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
     actions = [
       "logs:DescribeLogGroups",
       "logs:DescribeSubscriptionFilters",
-      "logs:PutSubscriptionFilter"
+      "logs:PutSubscriptionFilter",
+      "logs:DeleteSubscriptionFilter"
     ]
     resources = [
       "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:",

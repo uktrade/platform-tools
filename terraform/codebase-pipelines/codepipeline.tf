@@ -103,7 +103,12 @@ resource "aws_codepipeline" "codebase_pipeline" {
     }
   }
 
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      platform-version = var.platform_tools_version
+    }
+  )
 }
 
 
@@ -209,5 +214,10 @@ resource "aws_codepipeline" "manual_release_pipeline" {
     }
   }
 
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      platform-version = var.platform_tools_version
+    }
+  )
 }
