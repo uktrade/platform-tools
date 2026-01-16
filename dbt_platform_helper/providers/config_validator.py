@@ -285,7 +285,6 @@ class ConfigValidator:
 
         if config.get("default_versions", {}).get("platform-helper") == "auto":
 
-            pipelines = {}
             environments = [env for env in config.get("environments").keys() if env != "*"]
             environment_pipelines = config.get("environment_pipelines", {})
 
@@ -303,18 +302,14 @@ class ConfigValidator:
                         f"For auto default platform-helper version, all environments {environments} must be deployed in an environment pipeline. Missing: {env}"
                     )
 
-            for pipeline_section in ["environment_pipelines", "codebase_pipelines"]:
-                pipelines = config.get(pipeline_section, {})
-
-                for pipeline_name, pipeline in pipelines.items():
-                    if pipeline_section == "environment_pipelines":
-                        pipeline_deploy_to_environments = pipeline.get("environments", {})
-                        for env_name, env_config in pipeline_deploy_to_environments.items():
-                            if isinstance(env_config, dict) and env_config.get("requires_approval"):
-                                errors.append(
-                                    f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
-                                    "cannot have manual approval when platform-helper is 'auto'."
-                                )
+            for pipeline_name, pipeline in environment_pipelines.items():
+                pipeline_deploy_to_environments = pipeline.get("environments", {})
+                for env_name, env_config in pipeline_deploy_to_environments.items():
+                    if isinstance(env_config, dict) and env_config.get("requires_approval"):
+                        errors.append(
+                            f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
+                            "cannot have manual approval when platform-helper is 'auto'."
+                        )
 
         if errors:
             raise ConfigValidatorError("\n".join(errors))
