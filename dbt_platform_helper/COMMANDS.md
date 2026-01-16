@@ -107,9 +107,9 @@ platform-helper application container-stats --env <environment> --app <applicati
 
 ## Options
 
-- `--env <text>` _Defaults to Sentinel.UNSET._
+- `--env <text>`
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
 
 - `--storage <boolean>` _Defaults to False._
 
@@ -133,9 +133,9 @@ platform-helper application task-stats --env <environment> --app <application> [
 
 ## Options
 
-- `--env <text>` _Defaults to Sentinel.UNSET._
+- `--env <text>`
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
 
 - `--disk <boolean>` _Defaults to False._
 
@@ -201,7 +201,7 @@ platform-helper codebase list --app <application> [--with-images]
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - AWS application name
 - `--with-images <boolean>` _Defaults to False._
   - List up to the last 10 images tagged for this codebase
@@ -223,11 +223,11 @@ platform-helper codebase build --app <application> --codebase <codebase>
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - AWS application name
-- `--codebase <text>` _Defaults to Sentinel.UNSET._
+- `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This must be run from your codebase repository directory.
-- `--commit <text>` _Defaults to Sentinel.UNSET._
+- `--commit <text>`
   - GitHub commit hash
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -246,17 +246,17 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - AWS application name
-- `--env <text>` _Defaults to Sentinel.UNSET._
+- `--env <text>`
   - AWS Copilot environment
-- `--codebase <text>` _Defaults to Sentinel.UNSET._
+- `--codebase <text>`
   - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
-- `--tag <text>` _Defaults to Sentinel.UNSET._
+- `--tag <text>`
   - Git tag that has been built into an image. Typically a semantic version of the form 1.2.3 or v1.2.3.
-- `--branch <text>` _Defaults to Sentinel.UNSET._
+- `--branch <text>`
   - Git branch that has been built into an image.
-- `--commit <text>` _Defaults to Sentinel.UNSET._
+- `--commit <text>`
   - Git sha hash that has been built into an image.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -281,9 +281,9 @@ platform-helper conduit <addon_name>
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - Application name
-- `--env <text>` _Defaults to Sentinel.UNSET._
+- `--env <text>`
   - Environment name
 - `--access <choice>` _Defaults to read._
   - Allow read, write or admin access to the database addons.
@@ -446,15 +446,15 @@ platform-helper environment offline --app <application> --env <environment> --sv
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
 
-- `--env <text>` _Defaults to Sentinel.UNSET._
+- `--env <text>`
 
 - `--svc <text>` _Defaults to ['web']._
 
 - `--template <choice>` _Defaults to default._
   - The maintenance page you wish to put up.
-- `--vpc <text>` _Defaults to Sentinel.UNSET._
+- `--vpc <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -473,9 +473,9 @@ platform-helper environment online --app <application> --env <environment>
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
 
-- `--env <text>` _Defaults to Sentinel.UNSET._
+- `--env <text>`
 
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -496,7 +496,7 @@ platform-helper environment generate --name <name>
 ## Options
 
 - `--name
--n <text>` _Defaults to Sentinel.UNSET._
+-n <text>`
   - The name of the environment to generate a copilot manifest for.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -516,7 +516,7 @@ platform-helper environment generate-terraform --name <name>
 ## Options
 
 - `--name
--n <text>` _Defaults to Sentinel.UNSET._
+-n <text>`
   - The name of the environment to generate a manifest for.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -631,9 +631,9 @@ platform-helper secrets create --app <application> --name <name> [--overwrite]
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - Application name.
-- `--name <text>` _Defaults to Sentinel.UNSET._
+- `--name <text>`
   - Secret name (automatically uppercased).
 - `--overwrite <boolean>` _Defaults to False._
   - Allows overwriting the value of secrets if they already exist.
@@ -654,11 +654,11 @@ platform-helper secrets copy --app <application> --source <source> --target <tar
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - Application name.
-- `--source <text>` _Defaults to Sentinel.UNSET._
+- `--source <text>`
   - Source environment where to copy secrets from.
-- `--target <text>` _Defaults to Sentinel.UNSET._
+- `--target <text>`
   - Destination environment where to copy secrets to.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -733,13 +733,13 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
 
 ## Options
 
-- `--build-arn <text>` _Defaults to Sentinel.UNSET._
+- `--build-arn <text>`
 
-- `--repository <text>` _Defaults to Sentinel.UNSET._
+- `--repository <text>`
 
-- `--commit-sha <text>` _Defaults to Sentinel.UNSET._
+- `--commit-sha <text>`
 
-- `--slack-ref <text>` _Defaults to Sentinel.UNSET._
+- `--slack-ref <text>`
   - Slack message reference of the message to update
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -768,13 +768,13 @@ platform-helper notify post-message <slack_channel_id> <slack_token>
 
 ## Options
 
-- `--build-arn <text>` _Defaults to Sentinel.UNSET._
+- `--build-arn <text>`
 
-- `--repository <text>` _Defaults to Sentinel.UNSET._
+- `--repository <text>`
 
-- `--commit-sha <text>` _Defaults to Sentinel.UNSET._
+- `--commit-sha <text>`
 
-- `--slack-ref <text>` _Defaults to Sentinel.UNSET._
+- `--slack-ref <text>`
   - Slack message reference of the message to update
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -848,15 +848,15 @@ platform-helper database dump --from <from_env> --database <database>
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
-- `--from <text>` _Defaults to Sentinel.UNSET._
+- `--from <text>`
   - The environment you are dumping data from
-- `--database <text>` _Defaults to Sentinel.UNSET._
+- `--database <text>`
   - The name of the database you are dumping data from
-- `--from-vpc <text>` _Defaults to Sentinel.UNSET._
+- `--from-vpc <text>`
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
-- `--filename <text>` _Defaults to Sentinel.UNSET._
+- `--filename <text>`
   - Specify a name for the database dump file. Recommended if the same dump database is being used for multiple load environments
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -877,17 +877,17 @@ platform-helper database load --to <to_env> --database <database>
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
-- `--to <text>` _Defaults to Sentinel.UNSET._
+- `--to <text>`
   - The environment you are loading data into
-- `--database <text>` _Defaults to Sentinel.UNSET._
+- `--database <text>`
   - The name of the database you are loading data into
-- `--to-vpc <text>` _Defaults to Sentinel.UNSET._
+- `--to-vpc <text>`
   - The vpc the specified environment is running in. Required unless you are running the command from your deploy repo
 - `--auto-approve <boolean>` _Defaults to False._
 
-- `--filename <text>` _Defaults to Sentinel.UNSET._
+- `--filename <text>`
   - Specify a name for the database dump file. Recommended if the same dump database is being used for multiple load environments
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
@@ -909,17 +909,17 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 
 ## Options
 
-- `--app <text>` _Defaults to Sentinel.UNSET._
+- `--app <text>`
   - The application name. Required unless you are running the command from your deploy repo
-- `--from <text>` _Defaults to Sentinel.UNSET._
+- `--from <text>`
   - The environment you are copying data from
-- `--to <text>` _Defaults to Sentinel.UNSET._
+- `--to <text>`
   - The environment you are copying data into
-- `--database <text>` _Defaults to Sentinel.UNSET._
+- `--database <text>`
   - The name of the database you are copying
-- `--from-vpc <text>` _Defaults to Sentinel.UNSET._
+- `--from-vpc <text>`
   - The vpc the environment you are copying from is running in. Required unless you are running the command from your deploy repo
-- `--to-vpc <text>` _Defaults to Sentinel.UNSET._
+- `--to-vpc <text>`
   - The vpc the environment you are copying into is running in. Required unless you are running the command from your deploy repo
 - `--auto-approve <boolean>` _Defaults to False._
 
@@ -968,7 +968,7 @@ platform-helper version get-platform-helper-for-project [--pipeline <pipeline>]
 
 ## Options
 
-- `--pipeline <text>` _Defaults to Sentinel.UNSET._
+- `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
