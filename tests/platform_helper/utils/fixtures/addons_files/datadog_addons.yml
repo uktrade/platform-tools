@@ -4,14 +4,14 @@ demodjango-datadog:
     default:
       team_name: dbt-platform-team
       contact_name: David Smith
-      contact_email: david.smith@digital.trade.gov.uk
+      contact_email: testuser@example.test
       contacts:
         - name: DBT Platform Engineers
           type: email
-          contact: dbt-platform-engineers@digital.trade.gov.uk
+          contact: test-team@example.test
         - name: David Smith
           type: email
-          contact: david.smith@digital.trade.gov.uk
+          contact: testuser@example.test
         - name: platform-squad-3
           type: slack
           contact: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
