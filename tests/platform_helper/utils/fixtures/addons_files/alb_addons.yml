@@ -43,7 +43,7 @@ my-alb:
         cdn_compress: true
         cdn_domains_list:
             dev.application.uktrade.digital: ["internal", "<application>.uktrade.digital"]
-        cdn_geo_locations: ["YY", "XX"]
+        cdn_geo_locations: ["GB", "US"]
         cdn_geo_restriction_type: "whitelist"
         cdn_logging_bucket: "bucket-name"
         cdn_logging_bucket_prefix: "myprefix"

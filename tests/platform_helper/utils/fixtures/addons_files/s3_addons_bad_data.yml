@@ -296,7 +296,7 @@ my-s3-external-access-bucket-invalid-email:
           role_arn: arn:aws:iam::123456789012:role/test-role
           write: True
           read: True
-          cyber_sign_off_by: somebody@dodgy-domain.test
+          cyber_sign_off_by: somebody@dodgy-domain.com
 
 my-s3-cross-environment-service-access-bucket-invalid-environment:
   type: s3

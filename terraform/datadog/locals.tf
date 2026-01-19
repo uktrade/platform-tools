@@ -25,8 +25,8 @@ EOF
 
   ## Contact details 
   ## The 'old' way of setting email contact in platform-config.yml is like this:
-  #     contact_name: DBT Platform Engineers, Test User
-  #     contact_email: test-team@example.test, test.user@example.test
+  #     contact_name: DBT Platform Engineers, Dave Glover
+  #     contact_email: dbt-platform-engineers@digital.trade.gov.uk, david.glover@digital.trade.gov.uk
   ## Both name and email are required for this format, so check for them in platform-config.yml
   contact_name  = var.config.contact_name != null ? split(",", var.config.contact_name) : null
   contact_email = var.config.contact_email != null ? split(",", var.config.contact_email) : null
@@ -36,10 +36,10 @@ EOF
   #  contacts:
   #  - name: DBT Platform Engineers
   #    type: email
-  #    contact: test-team@example.test
+  #    contact: dbt-platform-engineers@digital.trade.gov.uk
   #  - name: Dave Glover
   #    type: email
-  #    contact: test.user@digital.trade.gov.uk
+  #    contact: david.glover@digital.trade.gov.uk
   #  - name: platform-squad-3
   #    type: slack
   #    contact: https://ditdigitalteam.slack.com/archives/C08FASZ72LS

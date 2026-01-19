@@ -355,7 +355,7 @@ run "cross_env_s3_policy" {
                 service           = "web"
                 read              = true
                 write             = true
-                cyber_sign_off_by = "testuser@example.test"
+                cyber_sign_off_by = "somebody@businessandtrade.gov.uk"
               }
             }
           }
