@@ -1,0 +1,9 @@
+.pre-commit-config.yaml
+personal-data-exclusions.txt
+/src/extensions-example.yml
+/src/terraform/elasticache-redis/plans.yml
+/src/tests/platform_helper/fixtures/plans/expected/expected_plans.yml
+/src/tests/platform_helper/utils/fixtures/addons_files/alb_addons.yml
+/src/tests/platform_helper/utils/fixtures/addons_files/datadog_addons.yml
+/src/tests/platform_helper/utils/fixtures/addons_files/s3_addons.yml
+/src/tests/platform_helper/utils/fixtures/addons_files/s3_addons_bad_data.yml
