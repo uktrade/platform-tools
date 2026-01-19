@@ -70,6 +70,107 @@ def test_migrate_copilot_manifests_generates_expected_service_config(tmp_path, c
     assert service_config == expected_service_config
 
 
+def test_migrate_service_configs_writable_dirs(tmp_path):
+
+    copilot_dir = tmp_path / "copilot" / "my-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+    manifest_content = {
+        "name": "my-service",
+        "type": "Load Balanced Web Service",
+        "environments": {
+            "dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}},
+            "prod": {"http": {"alb": "alb-arn", "alias": ["test.alias.com", "test2.alias.com"]}},
+        },
+        "sidecars": {
+            "permissions_side": {"command": ["chown"], "mount_points": [{"path": "/write/dir"}]}
+        },
+        "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
+    }
+    with open(manifest_path, "w") as f:
+        yaml.safe_dump(manifest_content, f)
+
+    expected_service_config = {
+        "name": "my-service",
+        "type": "Load Balanced Web Service",
+        "environments": {
+            "dev": {"http": {"alias": ["test.alias.com"]}},
+            "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
+        },
+        "sidecars": {},
+        "storage": {"readonly_fs": False, "writable_directories": ["/write/dir"]},
+        "variables": {
+            "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
+        },
+    }
+
+    os.chdir(tmp_path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(tmp_path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_service_configs_no_writable_dirs(tmp_path):
+
+    copilot_dir = tmp_path / "copilot" / "my-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+    manifest_content = {
+        "name": "my-service",
+        "type": "Load Balanced Web Service",
+        "environments": {
+            "dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}},
+            "prod": {"http": {"alb": "alb-arn", "alias": ["test.alias.com", "test2.alias.com"]}},
+        },
+        "sidecars": {
+            "not-real": {
+                "port": 2772,
+                "image": "not-real-image",
+                "essential": True,
+            }
+        },
+        "storage": {
+            "readonly_fs": False,
+        },
+        "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
+    }
+    with open(manifest_path, "w") as f:
+        yaml.safe_dump(manifest_content, f)
+
+    expected_service_config = {
+        "name": "my-service",
+        "type": "Load Balanced Web Service",
+        "environments": {
+            "dev": {"http": {"alias": ["test.alias.com"]}},
+            "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
+        },
+        "sidecars": {
+            "not-real": {
+                "port": 2772,
+                "image": "not-real-image",
+                "essential": True,
+            }
+        },
+        "storage": {"readonly_fs": False, "writable_directories": []},
+        "variables": {
+            "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
+        },
+    }
+
+    os.chdir(tmp_path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(tmp_path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
 def test_migrate_copilot_manifests_skips_unwanted_service_types(tmp_path):
     copilot_dir = tmp_path / "copilot" / "my-service"
     copilot_dir.mkdir(parents=True)

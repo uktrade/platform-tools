@@ -344,6 +344,11 @@ class ServiceManager:
                     service_manifest["sidecars"] = new_sidecars
                     if "storage" in service_manifest:
                         service_manifest["storage"]["writable_directories"] = writable_directories
+                    elif writable_directories:
+                        service_manifest["storage"] = {
+                            "readonly_fs": False,
+                            "writable_directories": writable_directories,
+                        }
 
                 service_path = service_directory / service_manifest["name"]
 
