@@ -150,6 +150,9 @@ resource "aws_route53_record" "validation-record-san" {
   type    = tolist(aws_acm_certificate.certificate.domain_validation_options)[count.index].resource_record_type
   records = [tolist(aws_acm_certificate.certificate.domain_validation_options)[count.index].resource_record_value]
   ttl     = 300
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Add ALB DNS name to application internal DNS record.
@@ -167,6 +170,9 @@ resource "aws_route53_record" "alb-record" {
   type    = "CNAME"
   records = [aws_lb.this.dns_name]
   ttl     = 300
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # This is only run if there are additional application domains (not to be confused with CDN domains).
@@ -180,6 +186,9 @@ resource "aws_route53_record" "additional-address" {
   type    = "CNAME"
   records = [aws_lb.this.dns_name]
   ttl     = 300
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 
