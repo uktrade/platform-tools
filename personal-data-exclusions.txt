@@ -1,0 +1,2 @@
+./platform_helper/utils/fixtures/addons_files/s3_addons_bad_data.yml
+./platform_helper/utils/fixtures/addons_files/s3_addons.yml

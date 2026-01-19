@@ -14,7 +14,7 @@ demodjango-datadog:
           contact: testuser@example.test
         - name: platform-squad-3
           type: slack
-          contact: https://ditdigitalteam.slack.com/archives/C08FASZ72LS
+          contact: https://ditdigitalteam.slack.com/archives/XXXXXXXXXXX
         - name: DBT Platform Team Intranet Page
           type: link
           contact: https://workspace.trade.gov.uk/teams/dbt-platform-team/?sub_view=people
