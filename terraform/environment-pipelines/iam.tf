@@ -1063,6 +1063,17 @@ data "aws_iam_policy_document" "extensions" {
     sid = "AllowOpensearchListVersions"
   }
 
+  statement {
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during OpenSearch domain creation
+    ]
+    effect = "Allow"
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService"
+    ]
+    sid = "AllowCreateServiceLinkedRole"
+  }
+
   # S3
   statement {
     actions = [
