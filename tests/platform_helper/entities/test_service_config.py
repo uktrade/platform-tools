@@ -128,12 +128,13 @@ def test_service_config_accepts_int_count():
     assert ServiceConfig.model_validate(service_config)
 
 
-def test_count_autoscaling_minimal():
+@pytest.mark.parametrize("range_value", ["1-2", "2-10"])
+def test_count_autoscaling_minimal(range_value):
     count = Count.model_validate(
-        {"range": "1-3", "cpu_percentage": 70}
+        {"range": range_value, "cpu_percentage": 70}
     )  # Could've been memory_percentage or requests_per_minute too
     assert count.cpu_percentage == 70
-    assert count.range == "1-3"
+    assert count.range == range_value
 
 
 def test_count_autoscaling_all_the_things():
