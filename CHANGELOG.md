@@ -14,7 +14,7 @@
 
 ### Bug Fixes
 
-* Add permission to replace log subscription filter in codebase pipeline (DBTP-2631) ([#1212](https://github.com/uktrade/platform-tools/issues/1212)) ([0009807](https://github.com/uktrade/platform-tools/commit/00098070aa25069bd1bbb1d5f80f9c0a984be271))
+* Add permission to replace log subscription filter in codebase pipeline (DBTP-2631) ([#1212](https://github.com/uktrade/platform-tools/issues/1212)) ([0009807](https://github.com/uktrade/platform-tools/commit/00098070aa25069bd1bbb1d5f80f9c0a984be271)) 
 * Remove managed upgrades requirement for codebase pipelines (DBTP-2633) ([#1213](https://github.com/uktrade/platform-tools/issues/1213)) ([aaa1cbd](https://github.com/uktrade/platform-tools/commit/aaa1cbdc3f5d09c5a33532bde8e4a85ebe862fa4))
 * Service migrate command dropping writable dirs (DBTP-2638) ([#1217](https://github.com/uktrade/platform-tools/issues/1217)) ([013be45](https://github.com/uktrade/platform-tools/commit/013be459afdb895aa061b7b84c7a99b45983748b))
 * Service Schema Autoscaling range (off-ticket) ([#1218](https://github.com/uktrade/platform-tools/issues/1218)) ([23dd69a](https://github.com/uktrade/platform-tools/commit/23dd69a6ae54bbe41c0487e46946a75c857f8421))
