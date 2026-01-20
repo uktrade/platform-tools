@@ -437,10 +437,8 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
             {},
             {},
             {},
-            "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. environment_pipelines is not configured.\n"
-            "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. codebase_pipelines is not configured.",
+            "For auto default platform-helper version, environment pipelines "
+            "must be configured in platform-config.yml.",
         ),
         (
             {"dev": {}, "staging": {}},
@@ -456,21 +454,7 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
                 }
             },
             {},
-            "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. codebase_pipelines is not configured.",
-        ),
-        (
-            {"dev": {}},
-            {},
-            {
-                "application": {
-                    "repository": "uktrade/demodjango",
-                    "pipelines": [{"name": "main", "environments": [{"name": "dev"}]}],
-                }
-            },
-            "For auto default platform-helper version, all environments ['dev'] must be deployed in an environment pipeline. Missing: dev\n"
-            "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. environment_pipelines is not configured.",
+            None,
         ),
         (
             {"dev": {}},
@@ -547,9 +531,8 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
                     ],
                 }
             },
-            "For auto default platform-helper version, all environments ['prod'] must be deployed in an environment pipeline. Missing: prod\n"
-            "For auto default platform-helper version, environment and codebase pipelines "
-            "must be configured in platform-config.yml. environment_pipelines is not configured.",
+            "For auto default platform-helper version, environment pipelines "
+            "must be configured in platform-config.yml.",
         ),
         (
             {"dev": {}, "prod": {}},

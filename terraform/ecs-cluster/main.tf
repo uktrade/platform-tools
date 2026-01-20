@@ -1,6 +1,21 @@
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
+data "aws_ip_ranges" "service_ranges" {
+  # {
+  #    "myrule" = { services = [...], regions = [...] }
+  #    "myotherrule" = { services = [...], regions = [...] }
+  # }
+  for_each = {
+    for rule_name, rule in coalesce(var.egress_rules, {}) :
+    rule_name => rule.destination.aws_cidr_blocks
+    if rule.destination.aws_cidr_blocks != null
+  }
+
+  services = each.value.services
+  regions  = each.value.regions
+}
+
 resource "aws_ecs_cluster" "cluster" {
   name = local.cluster_name
 
@@ -61,11 +76,52 @@ resource "aws_security_group" "environment_security_group" {
     self        = true
   }
 
-  egress {
-    description = "Allow traffic out"
-    protocol    = "-1"
-    from_port   = 0
-    to_port     = 0
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "egress" {
+    for_each = coalesce(var.egress_rules, {})
+    content {
+      description = "Egress: ${egress.key}"
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol = (
+        egress.value.protocol == "all"
+        ? "-1"
+        : egress.value.protocol
+      )
+      cidr_blocks = (
+        egress.value.destination.cidr_blocks != null
+        ? egress.value.destination.cidr_blocks
+        : (
+          egress.value.destination.aws_cidr_blocks != null
+          ? data.aws_ip_ranges.service_ranges[egress.key].cidr_blocks
+          : null
+        )
+      )
+      security_groups = (
+        egress.value.destination.vpc_endpoints != null
+        ? [var.vpc_endpoints_security_group_id]
+        : null
+      )
+    }
   }
+
+  # If egress_rules is omitted, permit all egress (for backwards compatibility).
+  dynamic "egress" {
+    for_each = var.egress_rules == null ? [1] : []
+    content {
+      description = "Allow traffic out"
+      protocol    = "-1"
+      from_port   = 0
+      to_port     = 0
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
+  count                        = var.has_vpc_endpoints ? 1 : 0
+  security_group_id            = var.vpc_endpoints_security_group_id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+  referenced_security_group_id = aws_security_group.environment_security_group.id
 }
