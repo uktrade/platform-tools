@@ -393,9 +393,16 @@ data "aws_iam_policy_document" "vpc_endpoints" {
       "ec2:DescribeVpcEndpoints",
     ]
     resources = [
-      "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
+      "*"
     ]
   }
+  #statement {
+  #  actions = [
+  #  ]
+  #  resources = [
+  #    "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
+  #  ]
+  #}
 }
 
 data "aws_iam_policy_document" "ssm_parameter" {
