@@ -1,5 +1,25 @@
 # Changelog
 
+## [15.17.0](https://github.com/uktrade/platform-tools/compare/15.16.1...15.17.0) (2026-01-20)
+
+
+### Features
+
+* Bump minimum Python 3.9 → 3.10 (off-ticket) ([#1062](https://github.com/uktrade/platform-tools/issues/1062)) ([47ceff0](https://github.com/uktrade/platform-tools/commit/47ceff06308a348a6e9683b56c33b20888c2ce92))
+* Complete security checklist (SR-4372) ([#1214](https://github.com/uktrade/platform-tools/issues/1214)) ([9150d2a](https://github.com/uktrade/platform-tools/commit/9150d2ad0c623bf10d1bbdb965f1b0f637271638))
+* Ensure deployment order of environment-pipeline environments is preserved (DBTP-1854) ([#1192](https://github.com/uktrade/platform-tools/issues/1192)) ([a4900f5](https://github.com/uktrade/platform-tools/commit/a4900f595758386bd8058e6a4a46e063594c7f31))
+* Security group egress rules (DBTP-2588) ([#1195](https://github.com/uktrade/platform-tools/issues/1195)) ([1fee673](https://github.com/uktrade/platform-tools/commit/1fee673e0858be0b9f855bffc9392d6c3edfb284))
+* Tag pipelines with platform version (DBTP-2494) ([#1210](https://github.com/uktrade/platform-tools/issues/1210)) ([5aba937](https://github.com/uktrade/platform-tools/commit/5aba93720b6ad253e76d62dc8dad4ee277810e57))
+
+
+### Bug Fixes
+
+* Add permission to replace log subscription filter in codebase pipeline (DBTP-2631) ([#1212](https://github.com/uktrade/platform-tools/issues/1212)) ([0009807](https://github.com/uktrade/platform-tools/commit/00098070aa25069bd1bbb1d5f80f9c0a984be271)) 
+* Remove managed upgrades requirement for codebase pipelines (DBTP-2633) ([#1213](https://github.com/uktrade/platform-tools/issues/1213)) ([aaa1cbd](https://github.com/uktrade/platform-tools/commit/aaa1cbdc3f5d09c5a33532bde8e4a85ebe862fa4))
+* Service migrate command dropping writable dirs (DBTP-2638) ([#1217](https://github.com/uktrade/platform-tools/issues/1217)) ([013be45](https://github.com/uktrade/platform-tools/commit/013be459afdb895aa061b7b84c7a99b45983748b))
+* Service Schema Autoscaling range (off-ticket) ([#1218](https://github.com/uktrade/platform-tools/issues/1218)) ([23dd69a](https://github.com/uktrade/platform-tools/commit/23dd69a6ae54bbe41c0487e46946a75c857f8421))
+* Set depends_on values only for new sidecars (DBTP-2632) ([#1216](https://github.com/uktrade/platform-tools/issues/1216)) ([506e80f](https://github.com/uktrade/platform-tools/commit/506e80f0a3167f47e2ed1d3571c67c02b7d572de))
+
 ## [15.16.1](https://github.com/uktrade/platform-tools/compare/15.16.0...15.16.1) (2026-01-13)
 
 
