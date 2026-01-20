@@ -1525,22 +1525,23 @@ files = [
 
 [[package]]
 name = "moto"
-version = "5.1.18"
+version = "5.1.19"
 description = "A library that allows you to easily mock out tests based on AWS infrastructure"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "moto-5.1.18-py3-none-any.whl", hash = "sha256:b65aa8fc9032c5c574415451e14fd7da4e43fd50b8bdcb5f10289ad382c25bcf"},
-    {file = "moto-5.1.18.tar.gz", hash = "sha256:45298ef7b88561b839f6fe3e9da2a6e2ecd10283c7bf3daf43a07a97465885f9"},
+    {file = "moto-5.1.19-py3-none-any.whl", hash = "sha256:7adb0caacf0e2d0dbb09550bcb49a7f158ee7c460a09cb54d4599a9a94cfef70"},
+    {file = "moto-5.1.19.tar.gz", hash = "sha256:a13423e402366b6affab07ed28e1df5f3fcc54ef68fc8d83dc9f824da7a4024e"},
 ]
 
 [package.dependencies]
 antlr4-python3-runtime = {version = "*", optional = true, markers = "extra == \"all\""}
+aws-sam-translator = {version = "<=1.103.0", optional = true, markers = "extra == \"all\""}
 aws-xray-sdk = {version = ">=0.93,<0.96 || >0.96", optional = true, markers = "extra == \"all\""}
 boto3 = ">=1.9.201"
 botocore = ">=1.20.88,<1.35.45 || >1.35.45,<1.35.46 || >1.35.46"
-cfn-lint = {version = ">=0.40.0", optional = true, markers = "extra == \"all\""}
+cfn-lint = {version = ">=0.40.0,<=1.41.0", optional = true, markers = "extra == \"all\""}
 cryptography = ">=35.0.0"
 docker = {version = ">=3.0.0", optional = true, markers = "extra == \"all\""}
 graphql-core = {version = "*", optional = true, markers = "extra == \"all\""}
@@ -1551,6 +1552,7 @@ jsonschema = {version = "*", optional = true, markers = "extra == \"all\""}
 multipart = {version = "*", optional = true, markers = "extra == \"all\""}
 openapi-spec-validator = {version = ">=0.5.0", optional = true, markers = "extra == \"all\""}
 py-partiql-parser = {version = "0.6.3", optional = true, markers = "extra == \"all\""}
+pydantic = {version = "<=2.12.4", optional = true, markers = "extra == \"all\""}
 pyparsing = {version = ">=3.0.7", optional = true, markers = "extra == \"all\""}
 python-dateutil = ">=2.1,<3.0.0"
 PyYAML = {version = ">=5.1", optional = true, markers = "extra == \"all\""}
@@ -1561,24 +1563,24 @@ werkzeug = ">=0.5,<2.2.0 || >2.2.0,<2.2.1 || >2.2.1"
 xmltodict = "*"
 
 [package.extras]
-all = ["PyYAML (>=5.1)", "antlr4-python3-runtime", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0)", "docker (>=3.0.0)", "graphql-core", "joserfc (>=0.9.0)", "jsonpath_ng", "jsonschema", "multipart", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)", "setuptools"]
+all = ["PyYAML (>=5.1)", "antlr4-python3-runtime", "aws-sam-translator (<=1.103.0)", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0,<=1.41.0)", "docker (>=3.0.0)", "graphql-core", "joserfc (>=0.9.0)", "jsonpath_ng", "jsonschema", "multipart", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pydantic (<=2.12.4)", "pyparsing (>=3.0.7)", "setuptools"]
 apigateway = ["PyYAML (>=5.1)", "joserfc (>=0.9.0)", "openapi-spec-validator (>=0.5.0)"]
 apigatewayv2 = ["PyYAML (>=5.1)", "openapi-spec-validator (>=0.5.0)"]
 appsync = ["graphql-core"]
 awslambda = ["docker (>=3.0.0)"]
 batch = ["docker (>=3.0.0)"]
-cloudformation = ["PyYAML (>=5.1)", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0)", "docker (>=3.0.0)", "graphql-core", "joserfc (>=0.9.0)", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)", "setuptools"]
+cloudformation = ["PyYAML (>=5.1)", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0,<=1.41.0)", "docker (>=3.0.0)", "graphql-core", "joserfc (>=0.9.0)", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)", "setuptools"]
 cognitoidp = ["joserfc (>=0.9.0)"]
 dynamodb = ["docker (>=3.0.0)", "py-partiql-parser (==0.6.3)"]
 dynamodbstreams = ["docker (>=3.0.0)", "py-partiql-parser (==0.6.3)"]
 events = ["jsonpath_ng"]
 glue = ["pyparsing (>=3.0.7)"]
-proxy = ["PyYAML (>=5.1)", "antlr4-python3-runtime", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0)", "docker (>=2.5.1)", "graphql-core", "joserfc (>=0.9.0)", "jsonpath_ng", "multipart", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)", "setuptools"]
+proxy = ["PyYAML (>=5.1)", "antlr4-python3-runtime", "aws-sam-translator (<=1.103.0)", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0,<=1.41.0)", "docker (>=2.5.1)", "graphql-core", "joserfc (>=0.9.0)", "jsonpath_ng", "multipart", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pydantic (<=2.12.4)", "pyparsing (>=3.0.7)", "setuptools"]
 quicksight = ["jsonschema"]
-resourcegroupstaggingapi = ["PyYAML (>=5.1)", "cfn-lint (>=0.40.0)", "docker (>=3.0.0)", "graphql-core", "joserfc (>=0.9.0)", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)"]
+resourcegroupstaggingapi = ["PyYAML (>=5.1)", "cfn-lint (>=0.40.0,<=1.41.0)", "docker (>=3.0.0)", "graphql-core", "joserfc (>=0.9.0)", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)"]
 s3 = ["PyYAML (>=5.1)", "py-partiql-parser (==0.6.3)"]
 s3crc32c = ["PyYAML (>=5.1)", "crc32c", "py-partiql-parser (==0.6.3)"]
-server = ["PyYAML (>=5.1)", "antlr4-python3-runtime", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0)", "docker (>=3.0.0)", "flask (!=2.2.0,!=2.2.1)", "flask-cors", "graphql-core", "joserfc (>=0.9.0)", "jsonpath_ng", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pyparsing (>=3.0.7)", "setuptools"]
+server = ["PyYAML (>=5.1)", "antlr4-python3-runtime", "aws-sam-translator (<=1.103.0)", "aws-xray-sdk (>=0.93,!=0.96)", "cfn-lint (>=0.40.0,<=1.41.0)", "docker (>=3.0.0)", "flask (!=2.2.0,!=2.2.1)", "flask-cors", "graphql-core", "joserfc (>=0.9.0)", "jsonpath_ng", "openapi-spec-validator (>=0.5.0)", "py-partiql-parser (==0.6.3)", "pydantic (<=2.12.4)", "pyparsing (>=3.0.7)", "setuptools"]
 ssm = ["PyYAML (>=5.1)"]
 stepfunctions = ["antlr4-python3-runtime", "jsonpath_ng"]
 xray = ["aws-xray-sdk (>=0.93,!=0.96)", "setuptools"]
@@ -1619,14 +1621,14 @@ docs = ["sphinx (>=8,<9)", "sphinx-autobuild"]
 
 [[package]]
 name = "mypy-boto3-codebuild"
-version = "1.40.8"
-description = "Type annotations for boto3 CodeBuild 1.40.8 service generated with mypy-boto3-builder 8.11.0"
+version = "1.42.3"
+description = "Type annotations for boto3 CodeBuild 1.42.3 service generated with mypy-boto3-builder 8.12.0"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "mypy_boto3_codebuild-1.40.8-py3-none-any.whl", hash = "sha256:96f0922d6f9ba4aee9b34fc9602254180f9b569bab6d8b24311380ddb40a0fe5"},
-    {file = "mypy_boto3_codebuild-1.40.8.tar.gz", hash = "sha256:0f7b8d7692b8e566097f07f59abd76f9efbbbb0d1d8fb0a10a64837a5d1c370e"},
+    {file = "mypy_boto3_codebuild-1.42.3-py3-none-any.whl", hash = "sha256:32e9be350a5dcaa9d764cd9b92d23038f433adbd32c7198c704278da3db98392"},
+    {file = "mypy_boto3_codebuild-1.42.3.tar.gz", hash = "sha256:c9a7084b01e306eb55d8a6377180f6432be719a345b7ada5863a6c2e1f3938f7"},
 ]
 
 [package.dependencies]
