@@ -224,7 +224,9 @@ data "aws_iam_policy_document" "ec2_read_access" {
       "ec2:DescribeVpcs",
       "ec2:DescribeSubnets",
       "ec2:DescribeSecurityGroups",
-      "ec2:DescribeNetworkInterfaces"
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DescribePrefixLists",
+      "ec2:DescribeVpcEndpoints",
     ]
     resources = [
       "*"
@@ -387,23 +389,15 @@ data "aws_iam_policy_document" "security_group" {
   }
 }
 
-data "aws_iam_policy_document" "vpc_endpoints" {
-  statement {
-    actions = [
-      "ec2:DescribeVpcEndpoints",
-    ]
-    resources = [
-      "*"
-    ]
-  }
-  #statement {
-  #  actions = [
-  #  ]
-  #  resources = [
-  #    "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
-  #  ]
-  #}
-}
+#data "aws_iam_policy_document" "vpc_endpoints" {
+#  statement {
+#    actions = [
+#    ]
+#    resources = [
+#      "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
+#    ]
+#  }
+#}
 
 data "aws_iam_policy_document" "ssm_parameter" {
   statement {
@@ -1335,11 +1329,11 @@ resource "aws_iam_role_policy" "security_group_for_environment_codebuild" {
   policy = data.aws_iam_policy_document.security_group.json
 }
 
-resource "aws_iam_role_policy" "vpc_endpoints_for_environment_codebuild" {
-  name   = "${var.application}-${var.pipeline_name}-vpc-endpoints-for-environment-codebuild"
-  role   = aws_iam_role.environment_pipeline_codebuild.name
-  policy = data.aws_iam_policy_document.vpc_endpoints.json
-}
+#resource "aws_iam_role_policy" "vpc_endpoints_for_environment_codebuild" {
+#  name   = "${var.application}-${var.pipeline_name}-vpc-endpoints-for-environment-codebuild"
+#  role   = aws_iam_role.environment_pipeline_codebuild.name
+#  policy = data.aws_iam_policy_document.vpc_endpoints.json
+#}
 
 resource "aws_iam_role_policy" "ssm_parameter_for_environment_codebuild" {
   name   = "${var.application}-${var.pipeline_name}-ssm-parameter-for-environment-codebuild"
