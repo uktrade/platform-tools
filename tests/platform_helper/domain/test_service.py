@@ -88,6 +88,46 @@ def test_migrate_copilot_manifests_skips_unwanted_service_types(tmp_path):
     assert not file_path.exists()
 
 
+def test_migrate_copilot_manifests_sets_depends_on_for_remaining_sidecars(
+    tmp_path,
+):
+    copilot_dir = tmp_path / "copilot" / "my-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+
+    manifest_content = {
+        "name": "my-service",
+        "type": "Load Balanced Web Service",
+        "image": {"location": "myrepo/myimage:latest"},
+        "sidecars": {
+            "permissions": {
+                "command": "chown -R 1000:1000 /tmp",
+                "mount_points": [{"path": "/tmp"}],
+            },
+            "hello-world": {
+                "command": 'echo "Hello World"',
+            },
+        },
+    }
+
+    with open(manifest_path, "w") as f:
+        yaml.safe_dump(manifest_content, f)
+
+    os.chdir(tmp_path)
+    service_manager = ServiceManager()
+
+    service_manager.migrate_copilot_manifests()
+
+    with open(tmp_path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert "sidecars" in service_config
+    assert "permissions" not in service_config["sidecars"]
+    assert "hello-world" in service_config["sidecars"]
+
+    assert service_config["image"]["depends_on"] == {"hello-world": "start"}
+
+
 class ServiceManagerMocks:
     def __init__(self, app_name="myapp", env_name="dev", account_id="111122223333"):
         self.ecs_provider = Mock()

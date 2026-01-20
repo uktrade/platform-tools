@@ -72,3 +72,12 @@ repos:
           fi'
         language: system
         stages: ["pre-commit", "pre-push"]
+  - repo: https://github.com/uktrade/github-standards
+    rev: v1.3.0 # This should be the latest github released tag, see https://github.com/uktrade/github-standards/releases for the latest tag
+    hooks:
+      - id: validate-security-scan
+        verbose: false # This is helpful for debugging initial setup, it can be removed when the hooks are verified as working in your repository
+        args: [-v] # This is helpful for debugging the hook logic, the output is shown in the git output
+      - id: run-security-scan
+        verbose: false
+        args: [--verbose]
