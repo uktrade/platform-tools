@@ -78,12 +78,16 @@ def test_migrate_service_configs_writable_dirs(tmp_path):
     manifest_content = {
         "name": "my-service",
         "type": "Load Balanced Web Service",
+        "image": {"depends_on": {"permissions_side": "success"}},
         "environments": {
             "dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}},
             "prod": {"http": {"alb": "alb-arn", "alias": ["test.alias.com", "test2.alias.com"]}},
         },
         "sidecars": {
-            "permissions_side": {"command": ["chown"], "mount_points": [{"path": "/write/dir"}]}
+            "permissions_side": {
+                "command": ["chown"],
+                "mount_points": [{"path": "/write/dir"}],
+            }
         },
         "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
     }
@@ -97,6 +101,7 @@ def test_migrate_service_configs_writable_dirs(tmp_path):
             "dev": {"http": {"alias": ["test.alias.com"]}},
             "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
         },
+        "image": {},
         "sidecars": {},
         "storage": {"readonly_fs": False, "writable_directories": ["/write/dir"]},
         "variables": {
