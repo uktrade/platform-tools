@@ -228,6 +228,12 @@ variables {
     copilot-pipeline    = "my-codebase"
     copilot-application = "my-app"
   }
+  expected_pipeline_tags = {
+    application         = "my-app"
+    copilot-application = "my-app"
+    managed-by          = "DBT Platform - Terraform"
+    platform-version    = "1.2.3"
+  }
   platform_tools_version = "1.2.3"
   slack_channel          = "/fake/slack/channel"
 }
@@ -1395,8 +1401,8 @@ run "test_main_pipeline" {
     error_message = "Should use encryption"
   }
   assert {
-    condition     = jsonencode(aws_codepipeline.codebase_pipeline[0].tags) == jsonencode(var.expected_tags)
-    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+    condition     = jsonencode(aws_codepipeline.codebase_pipeline[0].tags) == jsonencode(var.expected_pipeline_tags)
+    error_message = "Should be: ${jsonencode(var.expected_pipeline_tags)}"
   }
   assert {
     condition     = length(aws_codepipeline.codebase_pipeline[0].stage) == 2
@@ -1697,8 +1703,8 @@ run "test_manual_release_pipeline" {
     error_message = "Should use encryption"
   }
   assert {
-    condition     = jsonencode(aws_codepipeline.manual_release_pipeline.tags) == jsonencode(var.expected_tags)
-    error_message = "Should be: ${jsonencode(var.expected_tags)}"
+    condition     = jsonencode(aws_codepipeline.manual_release_pipeline.tags) == jsonencode(var.expected_pipeline_tags)
+    error_message = "Should be: ${jsonencode(var.expected_pipeline_tags)}"
   }
   assert {
     condition     = length(aws_codepipeline.manual_release_pipeline.stage) == 2

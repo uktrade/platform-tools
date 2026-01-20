@@ -967,3 +967,202 @@ run "codebase_deploy_iam_test" {
     error_message = "Unexpected resources"
   }
 }
+
+run "test_unrestricted_egress" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application"
+      services    = {}
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "test-env" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "platform"
+        }
+      }
+    }
+    environment = "test-env"
+  }
+
+  assert {
+    condition     = module.ecs_cluster[0].egress_rules == null
+    error_message = "Expected module.ecs_cluster.egress_rules to be null"
+  }
+
+  assert {
+    condition     = length(module.vpc_endpoints) == 0
+    error_message = "Expected no instances of module.vpc_endpoints"
+  }
+
+  assert {
+    condition     = !module.ecs_cluster[0].has_vpc_endpoints
+    error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be false"
+  }
+}
+
+run "test_restricted_egress" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application"
+      services    = {}
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "test-env" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "platform"
+          network = {
+            egress_rules = {
+              myrule = {
+                destination = { cidr_blocks = ["1.0.0.0/8"] }
+                protocol    = "tcp"
+                from_port   = 443
+                to_port     = 443
+              }
+            }
+          }
+        }
+      }
+    }
+    environment = "test-env"
+  }
+
+  assert {
+    condition     = length(module.ecs_cluster[0].egress_rules) == 1
+    error_message = "Expected module.ecs_cluster.egress_rules to match var.args.env_config.test-env.network.egress_rules"
+  }
+
+  assert {
+    condition     = module.ecs_cluster[0].egress_rules["myrule"].destination.cidr_blocks == toset(["1.0.0.0/8"])
+    error_message = "Expected module.ecs_cluster.egress_rules to match var.args.env_config.test-env.network.egress_rules"
+  }
+
+  assert {
+    condition     = module.ecs_cluster[0].egress_rules["myrule"].protocol == "tcp"
+    error_message = "Expected module.ecs_cluster.egress_rules to match var.args.env_config.test-env.network.egress_rules"
+  }
+
+  assert {
+    condition     = length(module.vpc_endpoints) == 0
+    error_message = "Expected no instances of module.vpc_endpoints"
+  }
+
+  assert {
+    condition     = !module.ecs_cluster[0].has_vpc_endpoints
+    error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be false"
+  }
+}
+
+run "test_create_vpc_endpoints" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application"
+      services    = {}
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "test-env" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "platform"
+          network = {
+            vpc_endpoints = {
+              ecr = {
+                service_name = "com.amazonaws.eu-west-2.ecr.api"
+              }
+            }
+          }
+        }
+      }
+      environment = "test-env"
+    }
+  }
+
+  assert {
+    condition     = length(module.vpc_endpoints) == 1
+    error_message = "Expected instance of module.vpc_endpoints"
+  }
+
+  assert {
+    condition = module.vpc_endpoints[0].endpoint_definitions == tomap({
+      ecr = {
+        service_name = "com.amazonaws.eu-west-2.ecr.api"
+      }
+    })
+    error_message = "vpc_endpoints service name is not as expected"
+  }
+
+  assert {
+    condition     = module.ecs_cluster[0].has_vpc_endpoints
+    error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be true"
+  }
+}

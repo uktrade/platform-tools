@@ -15,3 +15,7 @@ Addresses https://uktrade.atlassian.net/browse/DBTP-<ticket>.
 
 ### Tasks:
 - [ ] [Run the end to end tests for this branch](https://github.com/uktrade/platform-end-to-end-tests?tab=readme-ov-file#running-the-tests) and confirm that they are passing
+
+## Reviewer Checklist
+
+- [ ] I have reviewed the PR and ensured no secret values are present

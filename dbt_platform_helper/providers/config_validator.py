@@ -274,7 +274,6 @@ class ConfigValidator:
             - If any pipeline contains manual approvals when platform-helper is "auto".
             - If platform-config.yml is missing environment_pipelines or codebase_pipelines configuration.
         """
-        errors = []
 
         def find_pipeline_for_env(env_pipelines, env: str):
             for name, config in env_pipelines.items():
@@ -286,9 +285,16 @@ class ConfigValidator:
 
         if config.get("default_versions", {}).get("platform-helper") == "auto":
 
-            pipelines = {}
             environments = [env for env in config.get("environments").keys() if env != "*"]
             environment_pipelines = config.get("environment_pipelines", {})
+
+            if not environment_pipelines:
+                raise ConfigValidatorError(
+                    f"For auto default platform-helper version, environment pipelines must be configured in platform-config.yml."
+                )
+
+            errors = []
+
             for env in environments:
                 pipeline = find_pipeline_for_env(environment_pipelines, env)
                 if not pipeline:
@@ -296,24 +302,13 @@ class ConfigValidator:
                         f"For auto default platform-helper version, all environments {environments} must be deployed in an environment pipeline. Missing: {env}"
                     )
 
-            for pipeline_section in ["environment_pipelines", "codebase_pipelines"]:
-                pipelines = config.get(pipeline_section, {})
+            for pipeline_name, pipeline in environment_pipelines.items():
+                for env, env_config in pipeline.get("environments", {}).items():
+                    if isinstance(env_config, dict) and env_config.get("requires_approval"):
+                        errors.append(
+                            f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env}' "
+                            "cannot have manual approval when platform-helper is 'auto'."
+                        )
 
-                if not pipelines:
-                    errors.append(
-                        f"For auto default platform-helper version, environment and codebase pipelines must be configured in platform-config.yml. {pipeline_section} is not configured."
-                    )
-                    continue
-
-                for pipeline_name, pipeline in pipelines.items():
-                    if pipeline_section == "environment_pipelines":
-                        pipeline_deploy_to_environments = pipeline.get("environments", {})
-                        for env_name, env_config in pipeline_deploy_to_environments.items():
-                            if isinstance(env_config, dict) and env_config.get("requires_approval"):
-                                errors.append(
-                                    f"Managed upgrades enabled: (environment_pipelines) Pipeline '{pipeline_name}' environment '{env_name}' "
-                                    "cannot have manual approval when platform-helper is 'auto'."
-                                )
-
-        if errors:
-            raise ConfigValidatorError("\n".join(errors))
+            if errors:
+                raise ConfigValidatorError("\n".join(errors))
