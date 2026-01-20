@@ -393,7 +393,7 @@ data "aws_iam_policy_document" "vpc_endpoints" {
       "ec2:DescribeVpcEndpoints",
     ]
     resources = [
-      "arn:aws:ec2:${local.account_region}:*" # TODO: limit to VPC Endpoint resources, but what is the ARN format?
+      "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
     ]
   }
 }
