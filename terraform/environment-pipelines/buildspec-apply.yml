@@ -7,15 +7,13 @@ env:
 phases:
   install:
     commands:
-      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/bin:$PATH"
-      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools"
-      ## yq for yaml processing (The Go-based variant, not Python-based)
-      - curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
-      - chmod +x /usr/local/bin/yq
+      - export PATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper/bin:${CODEBUILD_SRC_DIR}/build-tools/yq/bin:${CODEBUILD_SRC_DIR}/build-tools/bin:${PATH}"
+      - export PYTHONPATH="${CODEBUILD_SRC_DIR}/build-tools/platform-helper:${CODEBUILD_SRC_DIR}/build-tools/yq:${PYTHONPATH}"
+      - PLATFORM_CONFIG_PATH="${CODEBUILD_SRC_DIR}/platform-config.yml"
       - |
-        DEPLOY_MODE=$(yq eval ".environments.\"${ENVIRONMENT}\".service-deployment-mode" "${CODEBUILD_SRC_DIR}/platform-config.yml")
+        DEPLOY_MODE=$(yq -r ".environments.\"$ENVIRONMENT\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
         if [ "$DEPLOY_MODE" == "null" ] || [ -z "$DEPLOY_MODE" ]; then
-          DEPLOY_MODE=$(yq eval ".environments."*".service-deployment-mode" "${CODEBUILD_SRC_DIR}/platform-config.yml")
+          DEPLOY_MODE=$(yq -r ".environments.\"*\".\"service-deployment-mode\"" "$PLATFORM_CONFIG_PATH")
         fi
         
         if [ "$DEPLOY_MODE" != "platform" ]; then
@@ -24,19 +22,21 @@ phases:
             exit 1
           fi
           COPILOT_VERSION=`cat .copilot-version`
+          
           cd "${CODEBUILD_SRC_DIR}/build-tools/bin"
           curl -s -qL -o copilot https://ecs-cli-v2-release.s3.amazonaws.com/copilot-linux-v"$COPILOT_VERSION"
           chmod +x copilot
         fi
         
         export DEPLOY_MODE="$DEPLOY_MODE"
+        echo DEPLOY_MODE: $DEPLOY_MODE
 
   build:
     commands:
-      - set -e
       - echo -e "\nTerraform Apply Phase"
       - platform-helper notify add-comment "${SLACK_CHANNEL_ID}" "${SLACK_TOKEN}" "${SLACK_REF}" "Starting terraform apply phase for the ${ENVIRONMENT} environment."
       - echo -e "\nWorking on environment ${ENVIRONMENT}"
+      
       - cd "${CODEBUILD_SRC_DIR}/terraform/environments/${ENVIRONMENT}"
       - terraform apply plan.tfplan
       - |
@@ -44,6 +44,7 @@ phases:
           echo -e "\nDeployment mode is 'platform', skipping copilot environment deploy"
         else
           echo -e "\nGenerating manifests and deploying AWS Copilot environment resources"
+          
           cd "${CODEBUILD_SRC_DIR}"
           codebuild_assumed_role=$(aws sts assume-role --role-arn "${CURRENT_CODEBUILD_ROLE}" --role-session-name "environment-pipeline-platform-helper-generate-$(date +%s)")
           AWS_ACCESS_KEY_ID=$(echo $codebuild_assumed_role | jq -r .Credentials.AccessKeyId)

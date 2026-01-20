@@ -19,7 +19,7 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
-from dbt_platform_helper.domain.versioning import skip_version_checks
+from dbt_platform_helper.domain.versioning import allow_override_of_versioning_checks_fn
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -32,7 +32,6 @@ class PlatformHelperVersioningMocks:
     def __init__(self, **kwargs):
         self.mock_io = kwargs.get("io", Mock(spec=ClickIOProvider))
         self.mock_config_provider = kwargs.get("config_provider", Mock(spec=ConfigProvider))
-        self.mock_config_provider.load_and_validate_platform_config.return_value = {}
         self.mock_platform_helper_version_override = "platform_helper_param_override"
         self.mock_latest_version_provider = kwargs.get(
             "latest_version_provider", Mock(spec=PyPiLatestVersionProvider)
@@ -40,7 +39,9 @@ class PlatformHelperVersioningMocks:
         self.mock_installed_version_provider = kwargs.get(
             "installed_version_provider", Mock(spec=InstalledVersionProvider)
         )
-        self.mock_skip_versioning_checks = kwargs.get("skip_versioning_checks", False)
+        self.mock_allow_override_of_versioning_checks = kwargs.get(
+            "allow_override_of_versioning_checks", False
+        )
         self.mock_environment_variable_provider = {
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR: "env_override",
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR: "extensions_env_override",
@@ -54,7 +55,7 @@ class PlatformHelperVersioningMocks:
             "config_provider": self.mock_config_provider,
             "latest_version_provider": self.mock_latest_version_provider,
             "installed_version_provider": self.mock_installed_version_provider,
-            "skip_versioning_checks": self.mock_skip_versioning_checks,
+            "allow_override_of_versioning_checks": self.mock_allow_override_of_versioning_checks,
             "platform_helper_version_override": self.mock_platform_helper_version_override,
             "environment_variable_provider": self.mock_environment_variable_provider,
         }
@@ -65,26 +66,26 @@ def mocks():
     platform_config = {"default_versions": {"platform-helper": "1.0.0"}}
 
     mocks = PlatformHelperVersioningMocks()
-    mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
     mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
     return mocks
 
 
-class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
-
-    def test_is_managed(self, mocks):
+class TestPlatformHelperVersioningIsAuto:
+    def test_is_auto(self, mocks):
         platform_config = {"default_versions": {"platform-helper": "auto"}}
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = platform_config
         mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
 
-        result = PlatformHelperVersioning(**mocks.params()).is_managed()
+        result = PlatformHelperVersioning(**mocks.params()).is_auto()
 
         assert result == True
 
-    def test_not_is_managed(self, mocks):
-        result = PlatformHelperVersioning(**mocks.params()).is_managed()
+    def test_not_is_auto(self, mocks):
+        result = PlatformHelperVersioning(**mocks.params()).is_auto()
 
         assert result == False
+
+
+class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
 
     def test_shows_warning_when_different_than_file_spec(self, mocks):
         mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
@@ -94,7 +95,7 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
 
         mocks.mock_io.warn.assert_called_with(
-            f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 specified for the project.",
+            f"WARNING: You are running platform-helper v1.0.1 against v1.0.0 required by the project. Running anything besides the version required by the project may result in unpredictable and destructive changes.",
         )
 
     def test_shows_no_warning_when_same_as_file_spec(self, mocks):
@@ -107,14 +108,93 @@ class TestPlatformHelperVersioningCheckPlatformHelperMismatch:
         mocks.mock_io.warn.assert_not_called
         mocks.mock_io.error.assert_not_called
 
+    def test_shows_warning_when_auto_and_not_using_latest_platform_helper_release(self, mocks):
+        platform_config = {"default_versions": {"platform-helper": "auto"}}
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
+            2, 0, 0
+        )
+        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
+
+        expected_message = (
+            f"WARNING: You are running platform-helper v1.0.0 against "
+            f"v2.0.0 required by the project. Running anything besides the version required by the project may result in unpredictable and destructive changes."
+        )
+
+        mocks.mock_io.warn.assert_called_with(expected_message)
+
+    def test_errors_when_auto_and_not_in_correct_environment_for_running_generate_commands(
+        self, mocks
+    ):
+        platform_config = {"default_versions": {"platform-helper": "auto"}}
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
+            2, 0, 0
+        )
+        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.mock_environment_variable_provider = {}
+
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
+
+        mocks.mock_io.abort_with_error.assert_called_with(
+            "You are on managed upgrades. Generate commands should only be running inside a pipeline environment.",
+        )
+
+    def test_shows_warning_when_auto_and_skipping_versioning_checks(self, mocks):
+        platform_config = {"default_versions": {"platform-helper": "auto"}}
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = platform_config
+        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
+            2, 0, 0
+        )
+        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 0
+        )
+        mocks.mock_allow_override_of_versioning_checks = True
+
+        PlatformHelperVersioning(**mocks.params()).check_platform_helper_version_mismatch()
+
+        expected_message = (
+            f"WARNING: You are running platform-helper v1.0.0 against "
+            f"v2.0.0 required by the project. Running anything besides the version required by the project may result in unpredictable and destructive changes."
+        )
+
+        mocks.mock_io.warn.assert_called_with(expected_message)
+
 
 class TestPlatformHelperVersioningGetRequiredVersion:
     def test_platform_helper_get_required_version(self, mocks):
         result = PlatformHelperVersioning(**mocks.params()).get_required_version()
 
         assert str(result) == "1.0.0"
+
+    def test_platform_helper_get_required_version_auto(
+        self, mocks, platform_config_for_env_pipelines
+    ):
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_latest_version_provider.get_semantic_version.return_value = SemanticVersion(
+            2, 0, 0
+        )
+
+        result = PlatformHelperVersioning(**mocks.params()).get_required_version()
+
+        assert str(result) == "2.0.0"
+
+
+class TestPlatformHelperVersioningGetDefaultVersion:
+    def test_platform_helper_get_default_version(self, mocks):
+        result = PlatformHelperVersioning(**mocks.params()).get_default_version()
+
+        assert str(result) == "1.0.0"
         mocks.mock_config_provider.load_unvalidated_config_file.assert_called_once()
-        mocks.mock_config_provider.load_and_validate_platform_config.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -145,13 +225,13 @@ class TestPlatformHelperVersioningGetRequiredVersion:
 @patch(
     "dbt_platform_helper.domain.versioning.running_as_installed_package",
 )
-def test_skip_version_checks(
+def test_allow_override_of_versioning_checks(
     mock_running_as_installed_package, mock_env_var, mock_installed, expected
 ):
     mock_running_as_installed_package.return_value = mock_installed
     mock_env = {"PLATFORM_TOOLS_SKIP_VERSION_CHECK": mock_env_var} if mock_env_var else {}
     with patch.dict(os.environ, mock_env):
-        assert skip_version_checks() == expected
+        assert allow_override_of_versioning_checks_fn() == expected
 
 
 class TestPlatformHelperVersioningCheckIfNeedsUpdate:
@@ -191,8 +271,8 @@ class TestPlatformHelperVersioningCheckIfNeedsUpdate:
             "--upgrade dbt-platform-helper`."
         )
 
-    def test_no_version_warnings_or_errors_given_skip_version_checks(self, mocks):
-        mocks.mock_skip_versioning_checks = True
+    def test_no_version_warnings_or_errors_given_allow_override_of_versioning_checks(self, mocks):
+        mocks.mock_allow_override_of_versioning_checks = True
 
         PlatformHelperVersioning(**mocks.params()).check_if_needs_update()
 
@@ -257,7 +337,7 @@ class TestPlatformHelperVersioningEnvironmentPipelinesVersioning:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
         mocks = PlatformHelperVersioningMocks()
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
         mocks.mock_environment_variable_provider[
@@ -304,7 +384,7 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
         mocks = PlatformHelperVersioningMocks()
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
         mocks.mock_environment_variable_provider[
@@ -341,7 +421,7 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
         mocks = PlatformHelperVersioningMocks()
-        mocks.mock_config_provider.load_and_validate_platform_config.return_value = (
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
             platform_config_for_env_pipelines
         )
         mocks.mock_platform_helper_version_override = None

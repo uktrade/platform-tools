@@ -100,10 +100,12 @@ environments:
 
 
 @pytest.fixture()
-def no_skipping_version_checks():
-    with patch("dbt_platform_helper.domain.versioning.skip_version_checks") as skip_version_checks:
-        skip_version_checks.return_value = False
-        yield skip_version_checks
+def no_overriding_version_checks():
+    with patch(
+        "dbt_platform_helper.domain.versioning.allow_override_of_versioning_checks"
+    ) as allow_override_of_versioning_checks:
+        allow_override_of_versioning_checks.return_value = False
+        yield allow_override_of_versioning_checks
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -627,6 +629,7 @@ http:
   alias:
   - web.${"{PLATFORM_ENVIRONMENT_NAME}"}.${"{PLATFORM_APPLICATION_NAME}"}.uktrade.digital
   path: '/'
+  # You can specify a custom health check path. The default is "/".
   target_container: nginx
   healthcheck:
     path: '/'
@@ -634,9 +637,9 @@ http:
     success_codes: '200'
     healthy_threshold: 3
     unhealthy_threshold: 3
-    interval: 35s
-    timeout: 30s
-    grace_period: 30s
+    interval: 35
+    timeout: 30
+    grace_period: 30
 
 sidecars:
   sidecar:
@@ -647,7 +650,7 @@ sidecars:
 
 # Configuration for your containers and service.
 image:
-  location: public.ecr.aws/non-prod-acc/test-app/application:${"{IMAGE_TAG}"}
+  location: public.ecr.aws/non-prod-acc/test-app/application
   # Port exposed through your container to route traffic to it.
   port: 8080
 
@@ -689,6 +692,7 @@ environments:
     sidecars:
       ipfilter:
         image: public.ecr.aws/uktrade/ip-filter:tag-latest
+        port: 443
     variables:
       SETTING: only in dev 
     secrets:
@@ -880,6 +884,8 @@ environment_pipelines:
        trigger_on_push: false
        environments:
          dev:
+         staging:
+         prod:
    another-pipeline-in-same-account:
        account: platform-sandbox-test
        branch: main
@@ -922,6 +928,25 @@ def create_valid_service_config_file(fakefs, valid_service_config):
         Path(f"{SERVICE_DIRECTORY}/web/{SERVICE_CONFIG_FILE}"),
         contents=yaml.dump(valid_service_config),
     )
+
+
+@pytest.fixture
+def create_valid_multiple_service_config_files(fakefs, valid_service_config):
+    services = ["api", "web"]
+
+    for service in services:
+        valid_service_config["name"] = service
+        valid_service_config["http"]["alias"] = [f"{service}.dev.test-app.uktrade.digital"]
+        valid_service_config["http"]["path"] = "/"
+        valid_service_config["environments"]["prod"][
+            "alias"
+        ] = f"{service}.prod.test-app.uktrade.digital"
+        valid_service_config["environments"]["prod"]["path"] = "/"
+
+        fakefs.create_file(
+            Path(f"{SERVICE_DIRECTORY}/{service}/{SERVICE_CONFIG_FILE}"),
+            contents=yaml.dump(valid_service_config),
+        )
 
 
 # TODO: DBTP-1969: - stop gap until validation.py is refactored into a class, then it will be an easier job of just passing in a mock_redis_provider into the constructor for the config_provider. For now autouse is needed.

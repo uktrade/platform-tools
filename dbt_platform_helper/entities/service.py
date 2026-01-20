@@ -15,45 +15,55 @@ from dbt_platform_helper.platform_exception import PlatformException
 
 class HealthCheck(BaseModel):
     path: Optional[str] = Field(
-        description="The destination that the health check requests are sent to.", default=None
+        description="The destination that the health check requests are sent to.", default="/"
     )
     port: Optional[int] = Field(
-        description="The port that the health check requests are sent to.", default=None
+        description="The port that the health check requests are sent to.", default=8080
     )
     success_codes: Optional[str] = Field(
-        description="The HTTP status codes that healthy targets must use when responding to a HTTP health check.",
-        default=None,
+        description="A comma-separated list of HTTP status codes that healthy targets must use when responding to a HTTP health check.",
+        default="200",
     )
     healthy_threshold: Optional[int] = Field(
         description="The number of consecutive health check successes required before considering an unhealthy target healthy.",
-        default=None,
+        default=3,
     )
     unhealthy_threshold: Optional[int] = Field(
         description="The number of consecutive health check failures required before considering a target unhealthy.",
-        default=None,
+        default=3,
     )
-    interval: Optional[str] = Field(
+    interval: Optional[int] = Field(
         description="The approximate amount of time, in seconds, between health checks of an individual target.",
-        default=None,
+        default=35,
     )
-    timeout: Optional[str] = Field(
-        description="The amount of time, in seconds, during which no response from a target means a failed health check. ",
-        default=None,
+    timeout: Optional[int] = Field(
+        description="The amount of time, in seconds, during which no response from a target means a failed health check.",
+        default=30,
     )
-    grace_period: Optional[str] = Field(
+    grace_period: Optional[int] = Field(
         description="The amount of time to ignore failing target group healthchecks on container start.",
-        default=None,
+        default=30,
     )
+
+
+class AdditionalRules(BaseModel):
+    path: str = Field(description="""Requests to this path will be forwarded to your service.""")
+    alias: list[str] = Field(description="""The HTTP domain alias of the service.""")
 
 
 class Http(BaseModel):
     alias: list[str] = Field(
         description="List of HTTPS domain alias(es) of your service.", default=None
     )
-    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=None)
+    stickiness: Optional[bool] = Field(description="Enable sticky sessions.", default=False)
     path: str = Field(description="Requests to this path will be forwarded to your service.")
     target_container: str = Field(description="Target container for the requests.")
-    healthcheck: Optional[HealthCheck] = Field(default=None)
+    healthcheck: HealthCheck = Field(default_factory=HealthCheck)
+    additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
+    deregistration_delay: Optional[int] = Field(
+        default=60,
+        description="The amount of time to wait for targets to drain connections during deregistration.",
+    )
 
 
 class HttpOverride(BaseModel):
@@ -68,14 +78,39 @@ class HttpOverride(BaseModel):
         description="Target container for the requests", default=None
     )
     healthcheck: Optional[HealthCheck] = Field(default=None)
+    additional_rules: Optional[list[AdditionalRules]] = Field(default=None)
+    deregistration_delay: Optional[int] = Field(
+        default=None,
+        description="The amount of time to wait for targets to drain connections during deregistration.",
+    )
+
+
+class ContainerHealthCheck(BaseModel):
+    command: list[str] = Field(
+        description="The command to run to determine if the container is healthy."
+    )
+    interval: Optional[int] = Field(
+        default=10, description="Time period between health checks, in seconds."
+    )
+    retries: Optional[int] = Field(
+        default=2, description="Number of times to retry before container is deemed unhealthy."
+    )
+    timeout: Optional[int] = Field(
+        default=5,
+        description="How long to wait before considering the health check failed, in seconds.",
+    )
+    start_period: Optional[int] = Field(
+        default=0,
+        description="Length of grace period for containers to bootstrap before failed health checks count towards the maximum number of retries.",
+    )
 
 
 class Sidecar(BaseModel):
-    port: int = Field(description="Container port exposed by the sidecar.")
+    port: int = Field(description="Container port exposed by the sidecar to receive traffic.")
     image: str = Field(description="Container image URI for the sidecar (e.g. 'repo/image:tag').")
     essential: Optional[bool] = Field(
         description="Whether the ECS task should stop if this sidecar container exits.",
-        default=None,
+        default=True,
     )
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the sidecar container.", default=None
@@ -83,6 +118,7 @@ class Sidecar(BaseModel):
     secrets: Optional[Dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the sidecar.", default=None
     )
+    healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
 class SidecarOverride(BaseModel):
@@ -91,10 +127,11 @@ class SidecarOverride(BaseModel):
     essential: Optional[bool] = Field(default=None)
     variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
     secrets: Optional[Dict[str, str]] = Field(default=None)
+    healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
 class Image(BaseModel):
-    location: str = Field(description="Main container image URI.")
+    location: str = Field(description="Main container image location.")
     port: Optional[int] = Field(
         description="Port exposed by the main ECS task container (used by the load balancer/Service Connect).",
         default=None,
@@ -102,36 +139,23 @@ class Image(BaseModel):
     depends_on: Optional[dict[str, str]] = Field(
         description="Container dependency conditions.", default=None
     )
+    healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
-
-class VPC(BaseModel):
-    placement: Optional[str] = Field(default=None)
-
-    @model_validator(mode="after")
-    def check_for_correct_network_properties(self):
-        if self.placement != "private":
-            raise PlatformException(f"Property 'placement' must always be set to 'private'.")
-        return self
-
-
-class Network(BaseModel):
-    connect: Optional[bool] = Field(
-        description="Enable ECS Service Connect for intra-environment traffic between services.",
-        default=None,
-    )
-    vpc: Optional[VPC] = Field(default=None)
-
-    @model_validator(mode="after")
-    def check_for_correct_network_properties(self):
-        if not self.connect:
-            raise PlatformException(f"Property 'connect' must always be set to 'true'.")
-        return self
+    @field_validator("location", mode="after")
+    @classmethod
+    def is_image_untagged(cls, value: str) -> str:
+        image_name = value.split("/")[-1]
+        if ":" in image_name:
+            raise PlatformException(
+                f"Image location cannot contain a tag '{value}'\nPlease remove the tag from your image location. The image tag is automatically added during deployment."
+            )
+        return value
 
 
 class Storage(BaseModel):
     readonly_fs: Optional[bool] = Field(
         description="Specify true to give your container read-only access to its root file system.",
-        default=None,
+        default=False,
     )
     writable_directories: Optional[list[str]] = Field(
         description="List of directories with read/write access.", default=None
@@ -150,12 +174,14 @@ class Storage(BaseModel):
 
 
 class Cooldown(BaseModel):
-    in_: int = Field(
+    in_: Optional[int] = Field(
         alias="in",
         description="Number of seconds to wait before scaling in (down) after a drop in load.",
+        default=60,
     )  # Can't use 'in' because it's a reserved keyword
-    out: int = Field(
-        description="Number of seconds to wait before scaling out (up) after a spike in load."
+    out: Optional[int] = Field(
+        description="Number of seconds to wait before scaling out (up) after a spike in load.",
+        default=60,
     )
 
     @field_validator("in_", "out", mode="before")
@@ -245,7 +271,6 @@ class ServiceConfigEnvironmentOverride(BaseModel):
     exec: Optional[bool] = Field(default=None)
     entrypoint: Optional[list[str]] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
-    network: Optional[Network] = Field(default=None)
 
     storage: Optional[Storage] = Field(default=None)
 
@@ -263,7 +288,6 @@ class ServiceConfig(BaseModel):
     type: ServiceType = Field(
         description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
     )
-
     http: Optional[Http] = Field(default=None)
 
     @model_validator(mode="after")
@@ -276,7 +300,6 @@ class ServiceConfig(BaseModel):
 
     sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
-
     cpu: int = Field(
         description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
     )
@@ -288,28 +311,27 @@ class ServiceConfig(BaseModel):
     )
     exec: Optional[bool] = Field(
         description="Enable ECS Exec (remote command execution) for running ECS tasks.",
-        default=None,
+        default=False,
     )
     entrypoint: Optional[list[str]] = Field(
-        description="Container entrypoint array (overrides default ENTRYPOINT).", default=None
+        description="Overrides the default entrypoint in the image.", default=None
     )
     essential: Optional[bool] = Field(
-        description="Whether the main container is marked essential; task stops if it exits.",
+        description="Whether the main container is marked essential; The entire ECS task stops if it exits.",
+        default=True,
+    )
+    storage: Storage = Field(default_factory=Storage)
+    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+        description="Environment variables to inject into the main application container.",
         default=None,
     )
-    network: Optional[Network] = Field(default=None)
-
-    storage: Optional[Storage] = Field(default=None)
-
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
-        description="Environment variables to inject into the sidecar container.", default=None
-    )
     secrets: Optional[Dict[str, str]] = Field(
-        description="Parameter Store secrets to inject into the sidecar.", default=None
+        description="Parameter Store secrets to inject into the main application container.",
+        default=None,
     )
     # Environment overrides can override almost the full config
     environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
-        description="Allows you to override any service config property for specific environments (e.g. a higher ECS task count in prod than for your other environments).",
+        description="Allows you to override most service config properties for specific environments.",
         default=None,
     )
 

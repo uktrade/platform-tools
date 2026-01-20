@@ -149,12 +149,14 @@ locals {
     k => upper(v)
   }
 
+  writable_directories = coalesce(try(var.service_config.storage.writable_directories, null), [])
+
   main_container = merge(
     local.default_container_config,
     {
       name      = var.service_config.name
       image     = var.service_config.image.location
-      essential = true
+      essential = var.service_config.essential
       environment = [
         for k, v in merge(try(var.service_config.variables, {}), local.required_env_vars) :
         { name = k, value = tostring(v) }
@@ -163,13 +165,15 @@ locals {
         for k, v in coalesce(var.service_config.secrets, {}) :
         { name = k, valueFrom = v }
       ]
-      readonlyRootFilesystem = try(var.service_config.storage.readonly_fs, false)
+      readonlyRootFilesystem = var.service_config.storage.readonly_fs
       portMappings           = local.main_port_mappings
       mountPoints = concat([
         { sourceVolume = "path-tmp", containerPath = "/tmp" }
         ], [
-        for path in try(var.service_config.storage.writable_directories, []) :
-        { sourceVolume = "path${replace(path, "/", "-")}", containerPath = path }
+        for path in local.writable_directories : {
+          sourceVolume  = "path${replace(path, "/", "-")}"
+          containerPath = path
+        }
       ])
       # Ensure main container always starts last
       dependsOn = concat([
@@ -185,8 +189,19 @@ locals {
         ]
       )
     },
-    var.service_config.type == "Backend Service" && try(var.service_config.entrypoint, null) != null ?
+    try(var.service_config.entrypoint, null) != null ?
     { entryPoint = var.service_config.entrypoint } : {},
+
+    try(var.service_config.image.healthcheck, null) != null ?
+    {
+      healthCheck = {
+        command     = var.service_config.image.healthcheck.command
+        interval    = var.service_config.image.healthcheck.interval
+        retries     = var.service_config.image.healthcheck.retries
+        timeout     = var.service_config.image.healthcheck.timeout
+        startPeriod = var.service_config.image.healthcheck.start_period
+      }
+    } : {},
   )
 
   permissions_container = merge(local.default_container_config, {
@@ -196,12 +211,12 @@ locals {
     command = [
       "/bin/sh",
       "-c",
-      "chmod -R a+w /tmp ${length(try(var.service_config.storage.writable_directories, [])) > 0 ? "&& chown -R 1002:1000 ${join(" ", try(var.service_config.storage.writable_directories, []))}" : ""}"
+      "chmod -R a+w /tmp ${length(local.writable_directories) > 0 ? "&& chown -R 1002:1000 ${join(" ", local.writable_directories)}" : ""}"
     ]
     mountPoints = concat([
       { sourceVolume = "path-tmp", readOnly = false, containerPath = "/tmp" }
       ], [
-      for path in try(var.service_config.storage.writable_directories, []) :
+      for path in local.writable_directories :
       { sourceVolume = "path${replace(path, "/", "-")}", readOnly = false, containerPath = path }
     ])
   })
@@ -212,7 +227,7 @@ locals {
       {
         name      = sidecar_name
         image     = sidecar.image
-        essential = coalesce(sidecar.essential, true)
+        essential = sidecar.essential
         environment = [
           for k, v in merge(coalesce(sidecar.variables, {}), local.required_env_vars) :
           { name = k, value = tostring(v) }
@@ -233,6 +248,16 @@ locals {
           )
         ] : []
       },
+      try(sidecar.healthcheck, null) != null ?
+      {
+        healthCheck = {
+          command     = sidecar.healthcheck.command
+          interval    = sidecar.healthcheck.interval
+          retries     = sidecar.healthcheck.retries
+          timeout     = sidecar.healthcheck.timeout
+          startPeriod = sidecar.healthcheck.start_period
+        }
+      } : {},
     )
   ]
 
@@ -243,8 +268,8 @@ locals {
   )
 
   writable_volumes = [
-    for path in try(var.service_config.storage.writable_directories, []) :
-    { "name" : "path${replace(path, "/", "-")}", "host" : {} }
+    for path in local.writable_directories :
+    { name = "path${replace(path, "/", "-")}", host = {} }
   ]
 
   task_definition_json = jsonencode({
@@ -284,7 +309,7 @@ locals {
     tonumber(var.service_config.count) # default (without autoscaling)
   )
 
-  # Defaults for cooldowns
+  # Default cooldown values. Can be overridden. Fallback set to 60 seconds. Autoscaling is always enabled, even when 'count: 1'.
   default_cool_in  = try(var.service_config.count.cooldown.in, 60)
   default_cool_out = try(var.service_config.count.cooldown.out, 60)
 
@@ -307,4 +332,6 @@ locals {
   enable_cpu = local.cpu_value != null
   enable_mem = local.mem_value != null
   enable_req = local.req_value != null && local.web_service_required == 1
+
+  service_deployment_mode = lookup(var.env_config[var.environment], "service-deployment-mode", "copilot")
 }

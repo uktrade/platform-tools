@@ -1,5 +1,93 @@
 # Changelog
 
+## [15.16.1](https://github.com/uktrade/platform-tools/compare/15.16.0...15.16.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* Install yq in artifact directory to be used in later stages (off-ticket) ([#1206](https://github.com/uktrade/platform-tools/issues/1206)) ([ae1f363](https://github.com/uktrade/platform-tools/commit/ae1f363bca54f0769f19e61d08c15dc6c351a5d8))
+
+
+### Dependencies
+
+* Bump schema from 0.7.5 to 0.7.8 ([#1176](https://github.com/uktrade/platform-tools/issues/1176)) ([099f820](https://github.com/uktrade/platform-tools/commit/099f8202d66994dba04a4bdd4eb7658e39c90150))
+
+## [15.16.0](https://github.com/uktrade/platform-tools/compare/15.15.0...15.16.0) (2026-01-09)
+
+
+### Features
+
+* Move default values into service model (DBTP-2575) ([#1196](https://github.com/uktrade/platform-tools/issues/1196)) ([da4eac9](https://github.com/uktrade/platform-tools/commit/da4eac9d01c3d184c6529b6eb29f5e777cc10676))
+* Prevent environment resources being deleted by env pipeline (DBTP-2430) ([#1189](https://github.com/uktrade/platform-tools/issues/1189)) ([532be9c](https://github.com/uktrade/platform-tools/commit/532be9cc4d4666a72a7a6eb018938af1dc224a04))
+* Versioning checks for auto (DBTP-2568) ([#1167](https://github.com/uktrade/platform-tools/issues/1167)) ([fd7b5ab](https://github.com/uktrade/platform-tools/commit/fd7b5ab83078c532ff9506aa77e88be19ccce0b3))
+
+
+### Bug Fixes
+
+* Accept deploy remote URL without .git suffix (off-ticket) ([#1197](https://github.com/uktrade/platform-tools/issues/1197)) ([59c5b02](https://github.com/uktrade/platform-tools/commit/59c5b027bf266651c63aefd3b8df7b916375e83f))
+* Diff exit code causes copilot deploy to fail (DBTP-2603) ([#1194](https://github.com/uktrade/platform-tools/issues/1194)) ([fefbb6f](https://github.com/uktrade/platform-tools/commit/fefbb6fa50ee603183dea13cdc0f9a24f3c42fe1))
+* Error when creating listener rules for an environment if not all services are deployed (off-ticket) ([#1190](https://github.com/uktrade/platform-tools/issues/1190)) ([8713626](https://github.com/uktrade/platform-tools/commit/8713626bf62cd113d40edd7b25ab299ef3d12399))
+* Update CodeBuild to only use Python-based yq (DBTP-2574) ([#1187](https://github.com/uktrade/platform-tools/issues/1187)) ([991e8c8](https://github.com/uktrade/platform-tools/commit/991e8c81ce786c6c707b8e1a1ceb00ec1fa7de15))
+* Update references to latest lambda layer version (DBTP-2500) ([#1200](https://github.com/uktrade/platform-tools/issues/1200)) ([8df3f74](https://github.com/uktrade/platform-tools/commit/8df3f748f50eb97e03e94f648be58b72e07569e5))
+* We need to check types before trying to process the data (off-ticket) ([#1199](https://github.com/uktrade/platform-tools/issues/1199)) ([19831f6](https://github.com/uktrade/platform-tools/commit/19831f67070b244bd3e26f7104cb4b751591c2de))
+
+
+### Dependencies
+
+* Bump DataDog/datadog from 3.57.0 to 3.84.0 in /terraform/datadog ([#1152](https://github.com/uktrade/platform-tools/issues/1152)) ([e378c95](https://github.com/uktrade/platform-tools/commit/e378c953ca914e7afd7399249513dce26cb872ff))
+* Bump slack-sdk from 3.34.0 to 3.39.0 ([#1177](https://github.com/uktrade/platform-tools/issues/1177)) ([f4105d8](https://github.com/uktrade/platform-tools/commit/f4105d842e5576f1f3f27cc337cd649c38a46d4d))
+
+## [15.15.0](https://github.com/uktrade/platform-tools/compare/15.14.1...15.15.0) (2025-12-17)
+
+
+### Features
+
+* **Centralised services only** - Remove platform-helper version parameter from environment pipeline(s).
+  Once a service has been centralised their environment pipelines are pinned to the latest version and cannot be overriden (off-ticket) 
+  ([#1184](https://github.com/uktrade/platform-tools/issues/1184)) ([8771971](https://github.com/uktrade/platform-tools/commit/877197184036734db88b22f0398551af909c029a))
+
+* **Decopiloted services only** - Added missing properties to service model and changed some datatypes. (DBTP-2507) ([#1178](https://github.com/uktrade/platform-tools/issues/1178)) ([b4fb99a](https://github.com/uktrade/platform-tools/commit/b4fb99a9cf14c758c681ef12a06fb679823bf810))
+
+
+### Bug Fixes
+
+* **Decopiloted services only** - Ensure Codebase pipeline fails when ALB rule update fails (DBTP-2583) ([#1181](https://github.com/uktrade/platform-tools/issues/1181)) ([8bec744](https://github.com/uktrade/platform-tools/commit/8bec744300d36c4580836ce69d6fb557ce79e230))
+* Increase Codebase pipeline artefact bucket lifecycle from 10 to 60 days (DBTP-2556) ([#1188](https://github.com/uktrade/platform-tools/issues/1188)) ([48fa726](https://github.com/uktrade/platform-tools/commit/48fa72682f82639649cb8755d0ba22895e6dacd4))
+* Resolve git command error in Codebase pipeline (off-ticket) ([#1185](https://github.com/uktrade/platform-tools/issues/1185)) ([d4b57db](https://github.com/uktrade/platform-tools/commit/d4b57db00307217809af627b815d12596b5f3b45))
+
+## [15.14.1](https://github.com/uktrade/platform-tools/compare/15.14.0...15.14.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* Do not deploy update-alb-rules for copilot mode (off-ticket) ([#1179](https://github.com/uktrade/platform-tools/issues/1179)) ([741ec5a](https://github.com/uktrade/platform-tools/commit/741ec5a6524ae20c146e8b0d2d5809533fdf0bb8))
+
+## [15.14.0](https://github.com/uktrade/platform-tools/compare/15.13.1...15.14.0) (2025-12-10)
+
+
+### Features
+
+* Add back update ALB rules to pipeline (DBTP-2535) ([#1165](https://github.com/uktrade/platform-tools/issues/1165)) ([fd66281](https://github.com/uktrade/platform-tools/commit/fd66281b4263f9b5cee9673bbe92b75bfdf81165))
+* Create new platform ALB rules (DBTP-2402) ([#1142](https://github.com/uktrade/platform-tools/issues/1142)) ([4e3104f](https://github.com/uktrade/platform-tools/commit/4e3104f4ec452092457dc4d3219a553cdd7e71a1))
+* Pin modules and helper version for auto (DBTP-2493) ([#1162](https://github.com/uktrade/platform-tools/issues/1162)) ([af94f48](https://github.com/uktrade/platform-tools/commit/af94f48a195601cb729f082796984ad01e913c2a))
+* Post-nopilot load balancer rules (DBTP-2402) ([#1136](https://github.com/uktrade/platform-tools/issues/1136)) ([989d28b](https://github.com/uktrade/platform-tools/commit/989d28b5c80e7236504cc151aa11a41c78bfd008))
+* Validations for `auto` platform-helper default-version (DBTP-2493) ([#1164](https://github.com/uktrade/platform-tools/issues/1164)) ([03a1826](https://github.com/uktrade/platform-tools/commit/03a18269c9678a58320145a87c46b748eecdf222))
+
+
+### Bug Fixes
+
+* Add missing pipeline input artifact (off-ticket) ([#1160](https://github.com/uktrade/platform-tools/issues/1160)) ([94f8674](https://github.com/uktrade/platform-tools/commit/94f8674652a949342b4de8436e38577c94d50162))
+* Allows manual approvals in codebase pipelines with auto (DBTP-2498) ([#1169](https://github.com/uktrade/platform-tools/issues/1169)) ([63ebcda](https://github.com/uktrade/platform-tools/commit/63ebcdadaa8fba603b09ed56bbf693858b451157))
+* Pipeline domain tests do not need to validate config test data (off-ticket) ([#1168](https://github.com/uktrade/platform-tools/issues/1168)) ([cb70a2e](https://github.com/uktrade/platform-tools/commit/cb70a2e2105f90421fddab772217381b393dccf2))
+* Remove failing codestar connection validation (DBTP-2550) ([#1163](https://github.com/uktrade/platform-tools/issues/1163)) ([7f88e7d](https://github.com/uktrade/platform-tools/commit/7f88e7d07bf5a3024ddacee1f0ee4d23e4acebb4))
+* Send deployment failure notifications to Slack channel (DBTP-2512) ([#1159](https://github.com/uktrade/platform-tools/issues/1159)) ([30a829e](https://github.com/uktrade/platform-tools/commit/30a829e1c963487cd14a2889bd761323d9f620e3))
+
+
+### Dependencies
+
+* Bump boto3 from 1.35.49 to 1.35.99 ([#1063](https://github.com/uktrade/platform-tools/issues/1063)) ([857450c](https://github.com/uktrade/platform-tools/commit/857450c62945f42e689636e5068cbc163ac70753))
+* Bump psycopg2-binary from 2.9.10 to 2.9.11 ([#1093](https://github.com/uktrade/platform-tools/issues/1093)) ([4958c9c](https://github.com/uktrade/platform-tools/commit/4958c9c37122e54a123f402c687c3646b74f1419))
+
 ## [15.13.1](https://github.com/uktrade/platform-tools/compare/15.13.0...15.13.1) (2025-11-26)
 
 

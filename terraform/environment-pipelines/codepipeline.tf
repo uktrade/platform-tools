@@ -21,10 +21,13 @@ resource "aws_codepipeline" "environment_pipeline" {
     description   = "This can be set by a triggering pipeline to continue an existing message thread"
   }
 
-  variable {
-    name          = "PLATFORM_HELPER_VERSION_OVERRIDE"
-    default_value = "NONE"
-    description   = "Override the platform-helper default version specified in platform-config"
+  dynamic "variable" {
+    for_each = var.pinned_version == null ? [1] : []
+    content {
+      name          = "PLATFORM_HELPER_VERSION_OVERRIDE"
+      default_value = "NONE"
+      description   = "Override the platform-helper default version specified in platform-config"
+    }
   }
 
   artifact_store {
@@ -121,5 +124,10 @@ resource "aws_codepipeline" "environment_pipeline" {
     }
   }
 
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      platform-version = var.pinned_version != null ? var.pinned_version : "Not pinned"
+    }
+  )
 }

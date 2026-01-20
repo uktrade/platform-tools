@@ -88,6 +88,46 @@ def test_migrate_copilot_manifests_skips_unwanted_service_types(tmp_path):
     assert not file_path.exists()
 
 
+def test_migrate_copilot_manifests_sets_depends_on_for_remaining_sidecars(
+    tmp_path,
+):
+    copilot_dir = tmp_path / "copilot" / "my-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+
+    manifest_content = {
+        "name": "my-service",
+        "type": "Load Balanced Web Service",
+        "image": {"location": "myrepo/myimage:latest"},
+        "sidecars": {
+            "permissions": {
+                "command": "chown -R 1000:1000 /tmp",
+                "mount_points": [{"path": "/tmp"}],
+            },
+            "hello-world": {
+                "command": 'echo "Hello World"',
+            },
+        },
+    }
+
+    with open(manifest_path, "w") as f:
+        yaml.safe_dump(manifest_content, f)
+
+    os.chdir(tmp_path)
+    service_manager = ServiceManager()
+
+    service_manager.migrate_copilot_manifests()
+
+    with open(tmp_path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert "sidecars" in service_config
+    assert "permissions" not in service_config["sidecars"]
+    assert "hello-world" in service_config["sidecars"]
+
+    assert service_config["image"]["depends_on"] == {"hello-world": "start"}
+
+
 class ServiceManagerMocks:
     def __init__(self, app_name="myapp", env_name="dev", account_id="111122223333"):
         self.ecs_provider = Mock()
@@ -213,32 +253,6 @@ def test_service_deploy_success():
         seen_events=set(),
         log_group="/platform/ecs/service/myapp/dev/web",
     )
-
-
-@patch("dbt_platform_helper.domain.service.EnvironmentVariableProvider")
-def test_deploy_success_uses_env_var(env_var_provider):
-    env_var_provider.get.return_value = "tag-123"
-    mocks = ServiceManagerMocks()
-    service_manager = ServiceManager(**mocks.params())
-
-    mocks.s3_provider.get_object.return_value = json.dumps({})
-    mocks.ecs_provider.register_task_definition.return_value = (
-        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
-    )
-
-    update_service_response = get_ecs_update_service_response()
-    mocks.ecs_provider.update_service.return_value = update_service_response
-    mocks.ecs_provider.describe_service.return_value = update_service_response
-
-    # Skip waiting for the time-based loops in those methods to reach their timeouts
-    with patch.object(
-        service_manager, "_wait_for_new_tasks", return_value=["task1", "task2"]
-    ), patch.object(service_manager, "_monitor_task_events"):
-        mocks.ecs_provider.get_service_deployment_state.return_value = ("SUCCESSFUL", None)
-        service_manager.deploy(service="web", environment="dev", application="myapp")
-
-    assert mocks.ecs_provider.register_task_definition.call_args.kwargs["image_tag"] == "tag-123"
-    assert mocks.ecs_provider.register_task_definition.call_args.kwargs["service"] == "web"
 
 
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)

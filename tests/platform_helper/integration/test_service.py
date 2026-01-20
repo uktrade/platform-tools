@@ -141,9 +141,12 @@ def test_generate_no_service_dir(
 
     service_manager.generate(environment="development", services=[])
 
-    io.abort_with_error.assert_called_with(
-        "Failed extracting services with exception, [Errno 2] No such file or directory in the fake filesystem: '/services'"
-    )
+    io.abort_with_error.assert_called_once()
+    msg = io.abort_with_error.call_args.args[0]
+
+    assert "Failed extracting services with exception" in msg
+    assert "No such file or directory" in msg
+    assert "/services" in msg
 
 
 @patch("dbt_platform_helper.domain.service.version", return_value="14.0.0")

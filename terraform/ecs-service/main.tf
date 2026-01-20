@@ -73,17 +73,20 @@ resource "aws_lambda_invocation" "dummy_listener_rule" {
     ServiceName = var.service_config.name
     TargetGroup = aws_lb_target_group.target_group[0].arn
   })
+  triggers = {
+    service_deployment_mode = local.service_deployment_mode
+  }
 }
 
 resource "aws_ecs_service" "service" {
   name                              = "${var.application}-${var.environment}-${var.service_config.name}"
   cluster                           = data.aws_ecs_cluster.cluster.id
   launch_type                       = "FARGATE"
-  enable_execute_command            = try(var.service_config.exec, false)
+  enable_execute_command            = var.service_config.exec
   task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
-  desired_count                     = 1 # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by autoscaling.
-  health_check_grace_period_seconds = tonumber(trim(coalesce(try(var.service_config.http.healthcheck.grace_period, null), "30s"), "s"))
+  desired_count                     = 1                                                         # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by ECS autoscaling.
+  health_check_grace_period_seconds = try(var.service_config.http.healthcheck.grace_period, 30) # NOTE: This is problematic for Backend Services because `http` is LB-specific. Long term, `grace_period` should be moved out of `http.healthcheck` into a service-level setting so this fallback is not required.
   tags                              = local.tags
 
   deployment_circuit_breaker {
@@ -142,7 +145,7 @@ resource "aws_ecs_service" "service" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count, health_check_grace_period_seconds]
+    ignore_changes = [task_definition, desired_count]
   }
 
   depends_on = [aws_lambda_invocation.dummy_listener_rule]
@@ -174,24 +177,24 @@ resource "aws_lb_target_group" "target_group" {
   protocol             = "HTTPS"
   target_type          = "ip"
   vpc_id               = data.aws_vpc.vpc[count.index].id
-  deregistration_delay = 60
+  deregistration_delay = var.service_config.http.deregistration_delay
   tags                 = local.tags
 
   health_check {
-    port                = try(var.service_config.http.healthcheck.port, 8080)
-    path                = try(var.service_config.http.healthcheck.path, "/")
+    port                = var.service_config.http.healthcheck.port
+    path                = var.service_config.http.healthcheck.path
     protocol            = "HTTP"
-    matcher             = try(var.service_config.http.healthcheck.success_codes, "200")
-    healthy_threshold   = tonumber(try(var.service_config.http.healthcheck.healthy_threshold, 3))
-    unhealthy_threshold = tonumber(try(var.service_config.http.healthcheck.unhealthy_threshold, 3))
-    interval            = tonumber(trim(coalesce(var.service_config.http.healthcheck.interval, "35s"), "s"))
-    timeout             = tonumber(trim(coalesce(var.service_config.http.healthcheck.timeout, "30s"), "s"))
+    matcher             = var.service_config.http.healthcheck.success_codes
+    healthy_threshold   = var.service_config.http.healthcheck.healthy_threshold
+    unhealthy_threshold = var.service_config.http.healthcheck.unhealthy_threshold
+    interval            = var.service_config.http.healthcheck.interval
+    timeout             = var.service_config.http.healthcheck.timeout
   }
 
   stickiness {
-    enabled         = coalesce(var.service_config.http.stickiness, false)
+    enabled         = var.service_config.http.stickiness
     type            = "lb_cookie"
-    cookie_duration = 86400 # default value, 1 day in seconds
+    cookie_duration = 86400 # default AWS value, 1 day in seconds
   }
 }
 

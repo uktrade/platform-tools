@@ -8,10 +8,7 @@ phases:
 
   build:
     commands:
-      - set -e
-
       # Assume environment role
-
       - account_id=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_id)
       - account_name=$(echo ${ENV_CONFIG} | jq -c -r .${ENVIRONMENT}.account_name)
       - assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${account_id}:role/${APPLICATION}-${ENVIRONMENT}-codebase-pipeline-deploy" --role-session-name "${ENVIRONMENT}-codebase-pipeline-deploy")
@@ -20,7 +17,6 @@ phases:
       - export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)
 
       # Set an AWS profile for Terraform
-
       - PROFILE_NAME="${account_name}"
       - aws configure set aws_access_key_id "${AWS_ACCESS_KEY_ID}" --profile "${PROFILE_NAME}"
       - aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}" --profile "${PROFILE_NAME}"
@@ -30,6 +26,5 @@ phases:
       - export AWS_PROFILE="${PROFILE_NAME}"
 
       # Perform ALB traffic switch
-
       - cd "${CODEBUILD_SRC_DIR}"
       - platform-helper internal alb update-rules --env "${ENVIRONMENT}"

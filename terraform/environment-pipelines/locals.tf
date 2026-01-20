@@ -20,8 +20,15 @@ locals {
 
   account_map = { for account in local.extracted_account_names_and_ids : account["name"] => account["id"] }
 
-  # Convert the env config into a list and add env name and vpc / requires_approval from the environments config.
-  environment_config = [for name, env in var.environments : merge(lookup(local.base_env_config, name, {}), env, { "name" = name })]
+  environment_config = [
+    for env_obj in var.environments :
+    merge(
+      lookup(local.base_env_config, env_obj.name, {}),
+      coalesce(env_obj.config, {}),
+      { "name" = env_obj.name }
+    )
+  ]
+
 
   triggers_another_pipeline         = var.pipeline_to_trigger != null
   triggered_pipeline_account_name   = local.triggers_another_pipeline ? var.all_pipelines[var.pipeline_to_trigger].account : null
@@ -47,7 +54,7 @@ locals {
       type : "plan",
       stage_name : "Plan-${env.name}",
       env : env.name,
-      accounts : env.accounts,
+      accounts : lookup(env, "accounts", {})
       input_artifacts : ["build_output"],
       output_artifacts : ["${env.name}_terraform_plan"],
       configuration : {
@@ -84,7 +91,7 @@ locals {
       type : "apply",
       env : env.name,
       stage_name : "Apply-${env.name}",
-      accounts : env.accounts,
+      accounts : lookup(env, "accounts", {})
       input_artifacts : ["${env.name}_terraform_plan"],
       output_artifacts : [],
       configuration : {
@@ -142,5 +149,5 @@ locals {
   account_region = "${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}"
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
-  lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:8"
+  lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:9"
 }

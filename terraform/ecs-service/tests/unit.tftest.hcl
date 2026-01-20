@@ -119,9 +119,9 @@ variables {
         success_codes       = "200,302"
         healthy_threshold   = 9
         unhealthy_threshold = 9
-        interval            = "99s"
-        timeout             = "99s"
-        grace_period        = "99s"
+        interval            = "99"
+        timeout             = "99"
+        grace_period        = "99"
       }
     }
 

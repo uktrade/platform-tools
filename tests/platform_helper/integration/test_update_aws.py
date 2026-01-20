@@ -571,7 +571,7 @@ class MockALBService:
 
 
 @pytest.mark.parametrize(
-    "input_args, expected_logs, create_platform_rules, assert_created_rules,assert_deleted_rules",
+    "input_args, expected_logs, create_platform_rules, assert_created_rules, assert_deleted_rules",
     [
         (
             {
@@ -580,8 +580,33 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: copilot",
-                    "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
+                    "Deleted rules: 3",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
                 ],
+                "warn": ["Platform rules will be deleted"],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
@@ -601,8 +626,33 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: dual-deploy-copilot-traffic",
-                    "Deleted rules: ['listener-rule-arn-doesnt-matter-8', 'listener-rule-arn-doesnt-matter-9', 'listener-rule-arn-doesnt-matter-10']",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
+                    "Deleted rules: 3",
+                    "ARN: listener-rule-arn-doesnt-matter-8",
+                    "Priority: 10000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /secondary-service/*,/secondary-service\n",
+                    "ARN: listener-rule-arn-doesnt-matter-9",
+                    "Priority: 10100",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
+                    "ARN: listener-rule-arn-doesnt-matter-10",
+                    "Priority: 11000",
+                    "Hosts: api.doesnt-matter",
+                    "Paths: /*\n",
                 ],
+                "warn": ["Platform rules will be deleted"],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
@@ -622,42 +672,23 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: dual-deploy-platform-traffic",
-                    "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
+                    "Created rules: 2",
+                    "ARN: platform-new-web-arn",
+                    "Priority: 10000",
+                    "Hosts: web.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
+                    "ARN: platform-new-api-arn",
+                    "Priority: 11000",
+                    "Hosts: api.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
                 ],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                    "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                    "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                    "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
                 ],
             },
             False,
             True,
-            False,
-        ),
-        (
-            {
-                "environment": "test",
-            },
-            {
-                "info": [
-                    "Deployment Mode: dual-deploy-platform-traffic",
-                    "Platform rules already exist, skipping creation",
-                ],
-                "debug": [
-                    "Load Balancer ARN: alb-arn-doesnt-matter",
-                    "Listener ARN: listener-arn-doesnt-matter",
-                ],
-            },
-            True,  # platform rules exist
-            False,
             False,
         ),
         (
@@ -667,20 +698,25 @@ class MockALBService:
             {
                 "info": [
                     "Deployment Mode: platform",
-                    "Created rules: ['platform-new-web-path-arn', 'platform-new-web-arn', 'platform-new-api-arn']",
+                    "Created rules: 2",
+                    "ARN: platform-new-web-arn",
+                    "Priority: 10000",
+                    "Hosts: web.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
+                    "ARN: platform-new-api-arn",
+                    "Priority: 11000",
+                    "Hosts: api.dev.test-app.uktrade.digital",
+                    "Paths: /*\n",
+                    "Deleted rules: 1",
+                    "ARN: listener-rule-arn-doesnt-matter-12",
+                    "Priority: 1000",
+                    "Hosts: web.doesnt-matter",
+                    "Paths: /*\n",
                 ],
                 "debug": [
                     "Load Balancer ARN: alb-arn-doesnt-matter",
                     "Listener ARN: listener-arn-doesnt-matter",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                    "Updated forward action for service web-path to use: tg-arn-doesnt-matter-8",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
-                    "Updated forward action for service api to use: tg-arn-doesnt-matter-10",
-                    "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                    "Updated forward action for service web to use: tg-arn-doesnt-matter-9",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6",
-                    "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5",
+                    "Deleted existing rule: listener-rule-arn-doesnt-matter-12",
                 ],
             },
             False,
@@ -692,6 +728,7 @@ class MockALBService:
 def test_alb_rules(
     fakefs,
     create_valid_platform_config_file,
+    create_valid_multiple_service_config_files,
     mock_application,
     input_args,
     expected_logs,
@@ -709,8 +746,6 @@ def test_alb_rules(
         mock_config_validator, installed_version_provider=mock_installed_version_provider
     )
 
-    mock_session = mock_application.environments[input_args["environment"]].session
-
     mock_alb = MockALBService(
         environment=input_args["environment"], create_platform_rules=create_platform_rules
     )
@@ -719,9 +754,30 @@ def test_alb_rules(
     if assert_created_rules:
         mock_boto_elbv2_client.create_rule = Mock(
             side_effect=[
-                {"Rules": [{"RuleArn": "platform-new-web-path-arn"}]},
-                {"Rules": [{"RuleArn": "platform-new-web-arn"}]},
-                {"Rules": [{"RuleArn": "platform-new-api-arn"}]},
+                {
+                    "Rules": [
+                        {
+                            "RuleArn": "platform-new-web-arn",
+                            "Priority": 10000,
+                            "Conditions": {
+                                "host-header": ["web.dev.test-app.uktrade.digital"],
+                                "path-pattern": ["/*"],
+                            },
+                        }
+                    ]
+                },
+                {
+                    "Rules": [
+                        {
+                            "RuleArn": "platform-new-api-arn",
+                            "Priority": 11000,
+                            "Conditions": {
+                                "host-header": ["api.dev.test-app.uktrade.digital"],
+                                "path-pattern": ["/*"],
+                            },
+                        }
+                    ]
+                },
             ]
         )
 
@@ -760,49 +816,19 @@ def test_alb_rules(
                     ListenerArn="listener-arn-doesnt-matter",
                     Priority=10000,
                     Conditions=[
-                        {"Field": "host-header", "Values": ["web.doesnt-matter"]},
+                        {
+                            "Field": "host-header",
+                            "HostHeaderConfig": {"Values": ["web.dev.test-app.uktrade.digital"]},
+                        },
                         {
                             "Field": "path-pattern",
-                            "Values": ["/secondary-service/*", "/secondary-service"],
+                            "PathPatternConfig": {"Values": ["/*"]},
                         },
                     ],
                     Actions=[
                         {
                             "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
-                                ],
-                                "TargetGroupStickiness": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    Tags=[
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": input_args["environment"]},
-                        {"Key": "service", "Value": "web-path"},
-                        {"Key": "reason", "Value": "service"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ],
-                ),
-                call(
-                    ListenerArn="listener-arn-doesnt-matter",
-                    Priority=10100,
-                    Conditions=[
-                        {"Field": "host-header", "Values": ["web.doesnt-matter"]},
-                        {"Field": "path-pattern", "Values": ["/*"]},
-                    ],
-                    Actions=[
-                        {
-                            "Type": "forward",
                             "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-9", "Weight": 1}
-                                ],
-                                "TargetGroupStickiness": {"Enabled": False},
-                            },
                         }
                     ],
                     Tags=[
@@ -812,34 +838,7 @@ def test_alb_rules(
                         {"Key": "reason", "Value": "service"},
                         {"Key": "managed-by", "Value": "DBT Platform"},
                     ],
-                ),
-                call(
-                    ListenerArn="listener-arn-doesnt-matter",
-                    Priority=11000,
-                    Conditions=[
-                        {"Field": "host-header", "Values": ["api.doesnt-matter"]},
-                        {"Field": "path-pattern", "Values": ["/*"]},
-                    ],
-                    Actions=[
-                        {
-                            "Type": "forward",
-                            "TargetGroupArn": "tg-arn-doesnt-matter-10",
-                            "ForwardConfig": {
-                                "TargetGroups": [
-                                    {"TargetGroupArn": "tg-arn-doesnt-matter-10", "Weight": 1}
-                                ],
-                                "TargetGroupStickiness": {"Enabled": False},
-                            },
-                        }
-                    ],
-                    Tags=[
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": input_args["environment"]},
-                        {"Key": "service", "Value": "api"},
-                        {"Key": "reason", "Value": "service"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ],
-                ),
+                )
             ]
         )
 
@@ -856,6 +855,7 @@ def test_alb_rules(
 def test_alb_rules_create_with_rollback(
     fakefs,
     create_valid_platform_config_file,
+    create_valid_multiple_service_config_files,
     mock_application,
 ):
     load_application = Mock()
@@ -866,8 +866,6 @@ def test_alb_rules_create_with_rollback(
     mock_config_provider = ConfigProvider(
         mock_config_validator, installed_version_provider=mock_installed_version_provider
     )
-
-    mock_session = mock_application.environments["test"].session
 
     mock_alb = MockALBService(
         environment="test",
@@ -902,16 +900,20 @@ def test_alb_rules_create_with_rollback(
         load_application=load_application,
     )
 
-    update_aws.update_alb_rules(
-        environment="test",
-    )
+    with pytest.raises(
+        PlatformException,
+        match="Rule update failed and rolled back",
+    ):
+        update_aws.update_alb_rules(
+            environment="test",
+        )
 
     mock_io.info.assert_has_calls(
         [
             call("Deployment Mode: dual-deploy-platform-traffic"),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
-            call("Rolledback rules by creating: [] \n and deleting ['platform-new-web-path-arn']"),
+            call("Rolled back rules by creating: [] \n and deleting ['platform-new-web-path-arn']"),
         ]
     )
 
@@ -923,60 +925,31 @@ def test_alb_rules_create_with_rollback(
         ]
     )
 
-    mock_io.warn.assert_has_calls([call("Rolling back")])
-
-    mock_io.debug.assert_has_calls(
-        [
-            call("Listener ARN: listener-arn-doesnt-matter"),
-            call(
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4"
-            ),
-            call("Updated forward action for service web-path to use: tg-arn-doesnt-matter-8"),
-            call(
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-5"
-            ),
-            call("Updated forward action for service api to use: tg-arn-doesnt-matter-10"),
-            call(
-                "Building platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6"
-            ),
-            call("Updated forward action for service web to use: tg-arn-doesnt-matter-9"),
-            call(
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-4"
-            ),
-            call(
-                "Creating platform rule for corresponding copilot rule: listener-rule-arn-doesnt-matter-6"
-            ),
-        ]
-    )
-
     mock_boto_elbv2_client.create_rule.assert_has_calls(
         [
             call(
                 ListenerArn="listener-arn-doesnt-matter",
                 Priority=10000,
                 Conditions=[
-                    {"Field": "host-header", "Values": ["web.doesnt-matter"]},
+                    {
+                        "Field": "host-header",
+                        "HostHeaderConfig": {"Values": ["web.dev.test-app.uktrade.digital"]},
+                    },
                     {
                         "Field": "path-pattern",
-                        "Values": ["/secondary-service/*", "/secondary-service"],
+                        "PathPatternConfig": {"Values": ["/*"]},
                     },
                 ],
                 Actions=[
                     {
                         "Type": "forward",
-                        "TargetGroupArn": "tg-arn-doesnt-matter-8",
-                        "ForwardConfig": {
-                            "TargetGroups": [
-                                {"TargetGroupArn": "tg-arn-doesnt-matter-8", "Weight": 1}
-                            ],
-                            "TargetGroupStickiness": {"Enabled": False},
-                        },
+                        "TargetGroupArn": "tg-arn-doesnt-matter-9",
                     }
                 ],
                 Tags=[
                     {"Key": "application", "Value": "test-application"},
                     {"Key": "environment", "Value": "test"},
-                    {"Key": "service", "Value": "web-path"},
+                    {"Key": "service", "Value": "web"},
                     {"Key": "reason", "Value": "service"},
                     {"Key": "managed-by", "Value": "DBT Platform"},
                 ],
@@ -985,25 +958,25 @@ def test_alb_rules_create_with_rollback(
                 ListenerArn="listener-arn-doesnt-matter",
                 Priority=10100,
                 Conditions=[
-                    {"Field": "host-header", "Values": ["web.doesnt-matter"]},
-                    {"Field": "path-pattern", "Values": ["/*"]},
+                    {
+                        "Field": "host-header",
+                        "HostHeaderConfig": {"Values": ["api.dev.test-app.uktrade.digital"]},
+                    },
+                    {
+                        "Field": "path-pattern",
+                        "PathPatternConfig": {"Values": ["/*"]},
+                    },
                 ],
                 Actions=[
                     {
                         "Type": "forward",
-                        "TargetGroupArn": "tg-arn-doesnt-matter-9",
-                        "ForwardConfig": {
-                            "TargetGroups": [
-                                {"TargetGroupArn": "tg-arn-doesnt-matter-9", "Weight": 1}
-                            ],
-                            "TargetGroupStickiness": {"Enabled": False},
-                        },
+                        "TargetGroupArn": "tg-arn-doesnt-matter-10",
                     }
                 ],
                 Tags=[
                     {"Key": "application", "Value": "test-application"},
                     {"Key": "environment", "Value": "test"},
-                    {"Key": "service", "Value": "web"},
+                    {"Key": "service", "Value": "api"},
                     {"Key": "reason", "Value": "service"},
                     {"Key": "managed-by", "Value": "DBT Platform"},
                 ],
@@ -1031,8 +1004,6 @@ def test_alb_rules_delete_with_rollback(
     mock_config_provider = ConfigProvider(
         mock_config_validator, installed_version_provider=mock_installed_version_provider
     )
-
-    mock_session = mock_application.environments["production"].session
 
     mock_alb = MockALBService(environment="production", create_platform_rules=True)
     mock_boto_elbv2_client = mock_alb.create_elbv2_client_mock()
@@ -1065,13 +1036,29 @@ def test_alb_rules_delete_with_rollback(
         load_application=load_application,
     )
 
-    update_aws.update_alb_rules(
-        environment="production",
-    )
+    with pytest.raises(
+        PlatformException,
+        match="Rule update failed and rolled back",
+    ):
+        update_aws.update_alb_rules(
+            environment="production",
+        )
 
     mock_io.info.assert_has_calls(
         [
             call("Deployment Mode: copilot"),
+            call("ARN: listener-rule-arn-doesnt-matter-8"),
+            call("Priority: 10000"),
+            call("Hosts: web.doesnt-matter"),
+            call("Paths: /secondary-service/*,/secondary-service\n"),
+            call("ARN: listener-rule-arn-doesnt-matter-9"),
+            call("Priority: 10100"),
+            call("Hosts: web.doesnt-matter"),
+            call("Paths: /*\n"),
+            call("ARN: listener-rule-arn-doesnt-matter-10"),
+            call("Priority: 11000"),
+            call("Hosts: api.doesnt-matter"),
+            call("Paths: /*\n"),
             call("Attempting to rollback changes ..."),
             call("Rollback completed successfully"),
         ]
@@ -1084,8 +1071,6 @@ def test_alb_rules_delete_with_rollback(
             )
         ]
     )
-
-    mock_io.warn.assert_has_calls([call("Rolling back")])
 
     mock_io.debug.assert_has_calls(
         [
@@ -1151,8 +1136,6 @@ def test_alb_rules_with_manual(
     mock_config_provider = ConfigProvider(
         mock_config_validator, installed_version_provider=mock_installed_version_provider
     )
-
-    mock_session = mock_application.environments["test"].session
 
     mock_alb = MockALBService(environment="test", manual_rule=True)
     mock_boto_elbv2_client = mock_alb.create_elbv2_client_mock()
