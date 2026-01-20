@@ -346,7 +346,7 @@ class ServiceManager:
                         service_manifest["storage"]["writable_directories"] = writable_directories
 
                     depends_on = {name: "start" for name in new_sidecars}
-                    if depends_on:
+                    if depends_on and "image" in service_manifest:
                         service_manifest["image"]["depends_on"] = depends_on
                     else:
                         service_manifest.get("image", {}).pop("depends_on", None)
