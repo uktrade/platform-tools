@@ -405,6 +405,7 @@ data "aws_iam_policy_document" "vpc_endpoints" {
       "ec2:CreateVpcEndpoint",
     ]
     resources = [
+      "arn:aws:ec2:${local.account_region}:subnet/*",
       "arn:aws:ec2:${local.account_region}:vpc/*",
       "arn:aws:ec2:${local.account_region}:vpc-endpoint/*",
     ]
