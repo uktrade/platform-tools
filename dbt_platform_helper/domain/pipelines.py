@@ -174,9 +174,6 @@ class Pipelines:
 
         pipelines = self._get_pipelines_list_for_account(config, aws_account)
 
-        platform_config_file_name = (
-            f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
-        )
         contents = env_pipeline_template.render(
             {
                 "application": application,
@@ -189,7 +186,7 @@ class Pipelines:
                 "deploy_account_id": aws_account_id,
                 "pinned_version": pinned_version,
                 "pipelines": json.dumps(pipelines),
-                "platform_config_file_name": platform_config_file_name,
+                "workspace": workspace,
             }
         )
 

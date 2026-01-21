@@ -118,6 +118,7 @@ class TerraformManifestProvider:
             terraform, platform_helper_version, deploy_repository, module_source
         )
         self._add_imports(terraform, ecr_imports)
+        self._add_checks(terraform, workspace)
         self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
     def generate_environment_config(
@@ -259,6 +260,22 @@ class TerraformManifestProvider:
                 "for_each": "${%s}" % json.dumps(ecr_imports),
                 "id": "${each.value}",
                 "to": "module.codebase-pipelines[each.key].aws_ecr_repository.this",
+            }
+
+    @staticmethod
+    def _add_checks(terraform: dict, workspace: str):
+        if workspace:
+            terraform["resource"] = {
+                "terraform_data": {
+                    "workspace_check": {
+                        "lifecycle": {
+                            "precondition": {
+                                "condition": f'${{terraform.workspace == "{workspace}"}}',
+                                "error_message": f"Must be in {workspace} workspace",
+                            }
+                        }
+                    }
+                }
             }
 
     @staticmethod

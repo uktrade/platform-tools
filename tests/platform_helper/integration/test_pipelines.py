@@ -232,7 +232,7 @@ def test_pipelines_generate_workspaced(
     assert expected_env_np_file_path.exists()
     assert expected_env_p_file_path.exists()
 
-    def check_platform_config_path(file_path, plat_path):
+    def check_platform_config_path(file_path, plat_path, cb=False):
 
         if file_path.suffix == ".json":
             content = file_path.read_text()
@@ -246,6 +246,40 @@ def test_pipelines_generate_workspaced(
 
         assert local["platform_config"] == f'${{yamldecode(file("{plat_path}"))}}'
 
-    check_platform_config_path(expected_cb_file_path, "../../platform-config.workspace.yml")
+        print(json_content["resource"])
+        if cb:
+            assert json_content["resource"] == {
+                "terraform_data": {
+                    "workspace_check": {
+                        "lifecycle": {
+                            "precondition": {
+                                "condition": '${terraform.workspace == "workspace"}',
+                                "error_message": "Must be in workspace workspace",
+                            }
+                        }
+                    }
+                }
+            }
+        else:
+            assert json_content["resource"] == [
+                {
+                    "terraform_data": {
+                        "workspace_check": {
+                            "lifecycle": [
+                                {
+                                    "precondition": [
+                                        {
+                                            "condition": '${terraform.workspace == "workspace"}',
+                                            "error_message": "Must be in workspace workspace",
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+
+    check_platform_config_path(expected_cb_file_path, "../../platform-config.workspace.yml", True)
     check_platform_config_path(expected_env_np_file_path, "../../../platform-config.workspace.yml")
     check_platform_config_path(expected_env_p_file_path, "../../../platform-config.workspace.yml")
