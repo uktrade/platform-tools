@@ -1,3 +1,4 @@
+import json
 from collections.abc import Callable
 from os import makedirs
 from pathlib import Path
@@ -104,6 +105,7 @@ class Pipelines:
                     deploy_branch,
                     account_id,
                     self.platform_helper_versioning.get_pinned_version(),
+                    platform_config,
                     workspace,
                 )
 
@@ -134,6 +136,28 @@ class Pipelines:
             self.io.info("Deleting copilot/pipelines directory.")
             rmtree(pipelines_dir)
 
+    def _get_pipelines_list_for_account(self, config: dict, aws_account: str) -> dict:
+        """Transform environment pipelines so that 'environments' becomes a
+        list, preserves all other pipeline keys and ordering."""
+        environment_pipelines = config.get("environment_pipelines", {})
+
+        pipelines_dict = {}
+
+        for pipeline_name, pipeline_config in environment_pipelines.items():
+            if pipeline_config.get("account") == aws_account:
+
+                envs_dict = pipeline_config.get("environments", {})
+                env_list = [
+                    {"name": name, "config": env_config or None}
+                    for name, env_config in envs_dict.items()
+                ]
+
+                pipeline_copy = pipeline_config.copy()
+                pipeline_copy["environments"] = env_list
+
+                pipelines_dict[pipeline_name] = pipeline_copy
+        return pipelines_dict
+
     def _generate_terraform_environment_pipeline_manifest(
         self,
         application: str,
@@ -143,9 +167,12 @@ class Pipelines:
         deploy_branch: str,
         aws_account_id: str,
         pinned_version: str,
+        config: dict,
         workspace: str = None,
     ):
         env_pipeline_template = setup_templates().get_template("environment-pipelines/main.tf")
+
+        pipelines = self._get_pipelines_list_for_account(config, aws_account)
 
         platform_config_file_name = (
             f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
@@ -161,6 +188,7 @@ class Pipelines:
                 "aws_provider_version": SUPPORTED_AWS_PROVIDER_VERSION,
                 "deploy_account_id": aws_account_id,
                 "pinned_version": pinned_version,
+                "pipelines": json.dumps(pipelines),
                 "platform_config_file_name": platform_config_file_name,
             }
         )

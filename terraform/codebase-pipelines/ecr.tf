@@ -40,4 +40,38 @@ data "aws_iam_policy_document" "ecr_policy" {
       ]
     }
   }
+
+  statement {
+    sid    = "PreventRepoDelete"
+    effect = "Deny"
+
+    actions = [
+      "ecr:DeleteRepository"
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+  }
+
+  statement {
+    sid    = "PreventImageDelete"
+    effect = "Deny"
+
+    actions = [
+      "ecr:BatchDeleteImage"
+    ]
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "ArnNotLike"
+      variable = "aws:PrincipalArn"
+      values   = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role"]
+    }
+  }
 }
