@@ -282,8 +282,11 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
         Action   = "s3:GetObject"
         Resource = ["${aws_s3_bucket.this.arn}/*", aws_s3_bucket.this.arn]
         Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = aws_cloudfront_distribution.s3_distribution[0].arn
+          # We trust any CDN in the relevant AWS account (dev or live).
+          # TODO(DBTP-2714): Restrict access so that only the CDN that points
+          # at this bucket is trusted.
+          StringLike = {
+            "AWS:SourceArn" = "arn:aws:cloudfront::${var.cdn_account_id}:distribution/*"
           }
         }
       }
@@ -299,7 +302,7 @@ resource "aws_acm_certificate" "certificate" {
   validation_method = "DNS"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy       = true
     create_before_destroy = true
   }
 
