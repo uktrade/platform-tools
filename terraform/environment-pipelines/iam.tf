@@ -394,11 +394,18 @@ data "aws_iam_policy_document" "vpc_endpoints" {
   statement {
     actions = [
       "ec2:CreateTags",
-      "ec2:CreateVpcEndpoint",
       "ec2:DeleteVpcEndpoints",
     ]
     resources = [
       "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
+    ]
+  }
+  statement {
+    actions = [
+      "ec2:CreateVpcEndpoint",
+    ]
+    resources = [
+      "arn:aws:ec2:${local.account_region}:vpc/*"
     ]
   }
 }
