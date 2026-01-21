@@ -578,14 +578,14 @@ botocore = ["botocore"]
 
 [[package]]
 name = "cachetools"
-version = "6.2.2"
+version = "6.2.4"
 description = "Extensible memoizing collections and decorators"
 optional = false
 python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "cachetools-6.2.2-py3-none-any.whl", hash = "sha256:6c09c98183bf58560c97b2abfcedcbaf6a896a490f534b031b661d3723b45ace"},
-    {file = "cachetools-6.2.2.tar.gz", hash = "sha256:8e6d266b25e539df852251cfd6f990b4bc3a141db73b939058d809ebd2590fc6"},
+    {file = "cachetools-6.2.4-py3-none-any.whl", hash = "sha256:69a7a52634fed8b8bf6e24a050fb60bff1c9bd8f6d24572b99c32d4e71e62a51"},
+    {file = "cachetools-6.2.4.tar.gz", hash = "sha256:82c5c05585e70b6ba2d3ae09ea60b79548872185d2f24ae1f2709d37299fd607"},
 ]
 
 [[package]]
@@ -2821,28 +2821,28 @@ files = [
 
 [[package]]
 name = "tox"
-version = "4.32.0"
+version = "4.34.1"
 description = "tox is a generic virtualenv management and test command line tool"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "tox-4.32.0-py3-none-any.whl", hash = "sha256:451e81dc02ba8d1ed20efd52ee409641ae4b5d5830e008af10fe8823ef1bd551"},
-    {file = "tox-4.32.0.tar.gz", hash = "sha256:1ad476b5f4d3679455b89a992849ffc3367560bbc7e9495ee8a3963542e7c8ff"},
+    {file = "tox-4.34.1-py3-none-any.whl", hash = "sha256:5610d69708bab578d618959b023f8d7d5d3386ed14a2392aeebf9c583615af60"},
+    {file = "tox-4.34.1.tar.gz", hash = "sha256:ef1e82974c2f5ea02954d590ee0b967fad500c3879b264ea19efb9a554f3cc60"},
 ]
 
 [package.dependencies]
-cachetools = ">=6.2"
+cachetools = ">=6.2.4"
 chardet = ">=5.2"
 colorama = ">=0.4.6"
-filelock = ">=3.20"
+filelock = ">=3.20.2"
 packaging = ">=25"
-platformdirs = ">=4.5"
+platformdirs = ">=4.5.1"
 pluggy = ">=1.6"
-pyproject-api = ">=1.9.1"
+pyproject-api = ">=1.10"
 tomli = {version = ">=2.3", markers = "python_version < \"3.11\""}
 typing-extensions = {version = ">=4.15", markers = "python_version < \"3.11\""}
-virtualenv = ">=20.34"
+virtualenv = ">=20.35.4"
 
 [[package]]
 name = "types-awscrt"
