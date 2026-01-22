@@ -279,9 +279,13 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
         Action   = "s3:GetObject"
         Resource = ["${aws_s3_bucket.this.arn}/*", aws_s3_bucket.this.arn]
         Condition = {
-          # We implicitly trust the dev or live accounts as they're managed by SRE.
+          # We trust any CDN in the relevant AWS account with the same tags as the bucket.
           StringLike = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${var.cdn_account_id}:distribution/*"
+          }
+          StringEquals = {
+            "AWS:PrincipalTag/application" = var.application
+            "AWS:PrincipalTag/environment" = var.environment
           }
         }
       }
