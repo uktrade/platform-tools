@@ -229,6 +229,24 @@ override_data {
   }
 }
 
+override_data {
+  target = module.alb["test-alb"].data.aws_vpc.vpc
+  values = {
+    id         = "vpc-00112233aabbccdef"
+    cidr_block = "10.0.0.0/16"
+    tags = {
+      Name = "test"
+    }
+  }
+}
+
+override_data {
+  target = module.alb["test-alb"].data.aws_iam_policy_document.listener-rule-organiser-role-assume
+  values = {
+    json = "{\"Sid\": \"AllowAssumeECSTaskRole\"}"
+  }
+}
+
 override_module {
   target = module.alb[0]
   outputs = {
@@ -1164,5 +1182,122 @@ run "test_create_vpc_endpoints" {
   assert {
     condition     = module.ecs_cluster[0].has_vpc_endpoints
     error_message = "Expected module.ecs_cluster[0].has_vpc_endpoints to be true"
+  }
+}
+
+
+run "test_cdn_without_managed_ingress" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application"
+      services = {
+        test-alb = {
+          type = "alb"
+          environments = {
+            test-env = {}
+          }
+        }
+        test-alb = {
+          type = "alb"
+          environments = {
+            test-env = {}
+          }
+        }
+      }
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "test-env" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "platform"
+        }
+      }
+    }
+    environment = "test-env"
+
+  }
+
+  assert {
+    condition     = length(module.cdn) == 1
+    error_message = "should be a single instance of module.cdn"
+  }
+}
+
+run "test_cdn_with_managed_ingress" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application"
+      services = {
+        test-alb = {
+          type = "alb"
+          environments = {
+            test-env = {
+              managed_ingress = true
+            }
+          }
+        }
+      }
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "test-env" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "platform"
+        }
+      }
+    }
+    environment = "test-env"
+
+  }
+
+  assert {
+    condition     = length(module.cdn) == 0
+    error_message = "there should be no instance of module.cdn created"
   }
 }
