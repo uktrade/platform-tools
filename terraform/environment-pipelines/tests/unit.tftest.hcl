@@ -662,7 +662,16 @@ run "test_iam" {
     error_message = "Should be: {\"Sid\": \"AssumeCodebuildRole\"}"
   }
 
-  # Todo: We should be testing the contents of data.aws_iam_policy_document.iam
+  # Todo: Add further testing of data.aws_iam_policy_document.<object-name> contents
+  assert {
+    condition     = contains(data.aws_iam_policy_document.extensions.statement[6].actions, "iam:CreateServiceLinkedRole")
+    error_message = "The statement should allow iam:CreateServiceLinkedRole action"
+  }
+
+  assert {
+    condition     = contains(data.aws_iam_policy_document.extensions.statement[6].resources, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService")
+    error_message = "The statement the action on the following resource: arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService"
+  }
 
   # Can't test managed_policy_arns of the environment_pipeline_codebuild role at plan time.
   assert {
