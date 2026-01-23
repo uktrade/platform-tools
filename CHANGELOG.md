@@ -1,5 +1,19 @@
 # Changelog
 
+## [15.17.1](https://github.com/uktrade/platform-tools/compare/15.17.0...15.17.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* Add statements to ECR policy to prevent accidental deletion (DBTP-2622) ([#1215](https://github.com/uktrade/platform-tools/issues/1215)) ([bf7e02e](https://github.com/uktrade/platform-tools/commit/bf7e02ee7596eb27f7eb92269d8105ed7a59f40a))
+* Allow Environment Pipelines to create OpenSearch domains ([3fa5e47](https://github.com/uktrade/platform-tools/commit/3fa5e47c4d8030c6f5ca3cd51ccfe48a7aef35a8))
+
+
+### Dependencies
+
+* bump prettytable from 3.16.0 to 3.17.0 ([#1231](https://github.com/uktrade/platform-tools/issues/1231)) ([6ddd277](https://github.com/uktrade/platform-tools/commit/6ddd277413931f1511538f9372173286922d93eb))
+* bump yamllint from 1.37.1 to 1.38.0 ([#1220](https://github.com/uktrade/platform-tools/issues/1220)) ([a9e80e2](https://github.com/uktrade/platform-tools/commit/a9e80e2b799062a8f1c4921750893b2883484518))
+
 ## [15.17.0](https://github.com/uktrade/platform-tools/compare/15.16.1...15.17.0) (2026-01-20)
 
 
