@@ -88,6 +88,13 @@ override_data {
 }
 
 override_data {
+  target = data.aws_iam_policy_document.vpc_endpoints
+  values = {
+    json = "{\"Sid\": \"VpcEndpoints\"}"
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.ssm_parameter
   values = {
     json = "{\"Sid\": \"SSMParameter\"}"
@@ -795,6 +802,15 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
   }
   # aws_iam_role_policy.security_group_for_environment_codebuild.policy cannot be tested on a plan
+  assert {
+    condition     = aws_iam_role_policy.vpc_endpoints_for_environment_codebuild.name == "my-app-my-pipeline-vpc-endpoints-for-environment-codebuild"
+    error_message = "Should be: 'my-app-vpc-endpoints-for-environment-codebuild'"
+  }
+  assert {
+    condition     = aws_iam_role_policy.vpc_endpoints_for_environment_codebuild.role == "my-app-my-pipeline-environment-pipeline-codebuild"
+    error_message = "Should be: 'my-app-my-pipeline-environment-pipeline-codebuild'"
+  }
+  # aws_iam_role_policy.vpc_endpoints_for_environment_codebuild.policy cannot be tested on a plan
   assert {
     condition     = aws_iam_role_policy.ssm_parameter_for_environment_codebuild.name == "my-app-my-pipeline-ssm-parameter-for-environment-codebuild"
     error_message = "Should be: 'my-app-ssm-parameter-for-environment-codebuild'"

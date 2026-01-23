@@ -23,6 +23,9 @@ resource "aws_vpc_endpoint" "main" {
   tags = merge(local.tags, {
     Name = "${var.application}-${var.environment}-${each.key}"
   })
+  dns_options {
+    private_dns_only_for_inbound_resolver_endpoint = false
+  }
 }
 
 resource "aws_security_group" "main" {
