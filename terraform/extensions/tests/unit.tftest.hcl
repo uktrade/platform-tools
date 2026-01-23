@@ -1256,8 +1256,14 @@ run "test_cdn_with_managed_ingress" {
         test-alb = {
           type = "alb"
           environments = {
+            "*" = {
+              default_waf = "waf_test"
+            }
             test-env = {
               managed_ingress = true
+            }
+            test1-env = {
+              test_config = "123456"
             }
           }
         }
@@ -1298,64 +1304,21 @@ run "test_cdn_with_managed_ingress" {
 
   assert {
     condition     = length(module.cdn) == 0
-    error_message = "there should be no instance of module.cdn created"
-  }
-}
-
-run "test_extensions_config_for_the_all_environment_is_expanded" {
-  command = plan
-  variables {
-    args = {
-      application = "test-application"
-      services = {
-        test-alb = {
-          type = "alb"
-          environments = {
-            "*" = {
-              default_waf = "waf_test"
-            }
-            test-env = {
-            }
-            blah = {
-
-            }
-          }
-        }
-      }
-      env_config = {
-        "*" = {
-          accounts = {
-            deploy = {
-              name = "sandbox"
-              id   = "000123456789"
-            }
-            dns = {
-              name = "dev"
-              id   = "123456"
-            }
-          }
-          vpc : "test-vpc"
-        },
-        "test-env" = {
-          accounts = {
-            deploy = {
-              name = "sandbox"
-              id   = "000123456789"
-            }
-            dns = {
-              name = "dev"
-              id   = "123456"
-            }
-          }
-          vpc : "test-vpc"
-          service-deployment-mode : "platform"
-        }
-      }
-    }
+    error_message = "Should be no instance of module.cdn created"
   }
 
   assert {
     condition = local.extensions_with_default_and_environment_settings_merged.test-alb.default_waf == "waf_test"
-    error_message = "Extension environment config for '*' environment is not moved to the top level" 
+    error_message = "Extension environment config for '*' environment expected at the top level" 
+  }
+
+  assert {
+    condition = local.extensions_with_default_and_environment_settings_merged.test-alb.managed_ingress
+    error_message = "Extension individual environment config for the selected environment expected at the top level"
+  }
+
+  assert {
+    condition = !lookup(local.extensions_with_default_and_environment_settings_merged.test-alb, "test_config", false)
+    error_message = "Extension individual environment config not expected at the top level for a different environment"
   }
 }
