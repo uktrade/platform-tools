@@ -10,7 +10,7 @@ locals {
   vpc_name                     = var.env_config[var.environment]["vpc"]
   secrets                      = values(coalesce(var.service_config.secrets, {}))
   web_service_required         = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
-  ecs_service_connect_required = (local.web_service_required || try(var.service_config.image.port, null) != null) ? 1 : 0
+  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) ? 1 : 0
   target_container             = try(var.service_config.http.target_container, "")
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
@@ -136,7 +136,7 @@ locals {
   }
 
   main_port_mappings = (
-    local.web_service_required && try(var.service_config.image.port, null) != null
+    var.service_config.type == "Load Balanced Web Service" && try(var.service_config.image.port, null) != null
     ) ? [
     merge(
       { containerPort = var.service_config.image.port, protocol = "tcp" },
