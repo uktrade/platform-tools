@@ -1,7 +1,7 @@
 # {% extra_header %}
 # {% version_info %}
 locals {
-  platform_config    = yamldecode(file("../../../platform-config.yml"))
+  platform_config    = yamldecode(file("../../../{% if workspace %}platform-config.{{workspace}}.yml{% else %}platform-config.yml{% endif %}"))
   all_pipelines      = local.platform_config["environment_pipelines"]
   pipelines          = {{ pipelines }}
   environment_config = local.platform_config["environments"]
@@ -51,3 +51,14 @@ module "environment-pipelines" {
   pipeline_to_trigger = lookup(each.value, "pipeline_to_trigger", null)
   pinned_version      = {% if pinned_version  %}"{{ pinned_version }}"{% else %}null{% endif %}
 }
+
+{% if workspace %}
+resource "terraform_data" "workspace_check" {
+  lifecycle {
+    precondition {
+      condition = terraform.workspace == "{{workspace}}"
+      error_message = "Must be in {{workspace}} workspace"
+    }
+  }
+}
+{% endif %}
