@@ -1,5 +1,17 @@
 # Changelog
 
+## [15.18.0](https://github.com/uktrade/platform-tools/compare/15.17.1...15.18.0) (2026-01-27)
+
+
+### Features
+
+* Rename codebase pipeline deploy action (off-ticket) ([#1240](https://github.com/uktrade/platform-tools/issues/1240)) ([c98b273](https://github.com/uktrade/platform-tools/commit/c98b273f5eb21972944aacd743709b896f05ac7e))
+
+
+### Bug Fixes
+
+* Authorise environment pipelines to manipulate egress policy resources (DBTP-2588) ([#1234](https://github.com/uktrade/platform-tools/issues/1234)) ([1eee28d](https://github.com/uktrade/platform-tools/commit/1eee28d80011c0f41ef736f6a3fc5d2769826e0a))
+
 ## [15.17.1](https://github.com/uktrade/platform-tools/compare/15.17.0...15.17.1) (2026-01-23)
 
 
