@@ -123,8 +123,9 @@ resource "aws_cloudfront_distribution" "standard" {
     }
 
     # If the variable paths/{domain}/default/[cache/request] are set.
-    cache_policy_id          = try(data.aws_cloudfront_cache_policy.policy-name[var.config.paths[each.key].default.cache].id, "")
-    origin_request_policy_id = try(data.aws_cloudfront_origin_request_policy.request-policy-name[var.config.paths[each.key].default.request].id, "")
+    cache_policy_id            = try(data.aws_cloudfront_cache_policy.policy-name[var.config.paths[each.key].default.cache].id, "")
+    origin_request_policy_id   = try(data.aws_cloudfront_origin_request_policy.request-policy-name[var.config.paths[each.key].default.request].id, "")
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.strip_server_header.id
   }
 
   # If path based routing is set in platform-config.yml then this is run per path, you will always attach a policy to a path.
@@ -132,13 +133,14 @@ resource "aws_cloudfront_distribution" "standard" {
     for_each = try(var.config.paths[each.key] != null ? [for k in var.config.paths[each.key].additional : k] : [], [])
 
     content {
-      path_pattern             = ordered_cache_behavior.value.path
-      target_origin_id         = "${each.value[0]}.${local.domain_suffix}"
-      cache_policy_id          = data.aws_cloudfront_cache_policy.policy-name[ordered_cache_behavior.value.cache].id
-      origin_request_policy_id = data.aws_cloudfront_origin_request_policy.request-policy-name[ordered_cache_behavior.value.request].id
-      viewer_protocol_policy   = "redirect-to-https"
-      allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
-      cached_methods           = ["GET", "HEAD"]
+      path_pattern               = ordered_cache_behavior.value.path
+      target_origin_id           = "${each.value[0]}.${local.domain_suffix}"
+      cache_policy_id            = data.aws_cloudfront_cache_policy.policy-name[ordered_cache_behavior.value.cache].id
+      origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.request-policy-name[ordered_cache_behavior.value.request].id
+      viewer_protocol_policy     = "redirect-to-https"
+      allowed_methods            = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+      cached_methods             = ["GET", "HEAD"]
+      response_headers_policy_id = data.aws_cloudfront_response_headers_policy.strip_server_header.id
     }
   }
 
@@ -282,4 +284,9 @@ resource "aws_cloudfront_monitoring_subscription" "additional_metrics" {
       realtime_metrics_subscription_status = "Enabled"
     }
   }
+}
+
+data "aws_cloudfront_response_headers_policy" "strip_server_header" {
+  provider = aws.domain-cdn
+  name     = "StripServerHeader"
 }
