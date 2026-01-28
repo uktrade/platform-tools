@@ -136,7 +136,7 @@ locals {
   }
 
   main_port_mappings = (
-    var.service_config.type == "Load Balanced Web Service" && try(var.service_config.image.port, null) != null
+    try(var.service_config.image.port, null) != null
     ) ? [
     merge(
       { containerPort = var.service_config.image.port, protocol = "tcp" },
