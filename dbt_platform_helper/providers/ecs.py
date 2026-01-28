@@ -2,12 +2,15 @@ import random
 import string
 import subprocess
 from typing import Any
+from typing import List
 from typing import Optional
 
 from botocore.exceptions import ClientError
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.platform_exception import ValidationException
+from dbt_platform_helper.ports.deployed import DeployedService
+from dbt_platform_helper.ports.deployed import DeploymentPort
 from dbt_platform_helper.providers.vpc import Vpc
 from dbt_platform_helper.utilities.decorators import retry
 from dbt_platform_helper.utilities.decorators import wait_until
@@ -29,7 +32,7 @@ class NoClusterException(ECSException):
         )
 
 
-class ECS:
+class ECS(DeploymentPort):
     def __init__(self, ecs_client, ssm_client, application_name: str, env: str):
         self.ecs_client = ecs_client
         self.ssm_client = ssm_client
@@ -292,3 +295,59 @@ class ECS:
             return response["tasks"]
         except ClientError as err:
             raise PlatformException(f"Error retrieving ECS tasks: {err}")
+
+    def get_deployed_services(self, application: str, environment: str, platform: bool = True):
+        cluster_name = f"{application}-{environment}"
+        if platform:
+            cluster_name += "-cluster"
+
+        services = []
+
+        service_arns = self._list_services(cluster_name)
+
+        for i in range(0, len(service_arns), 10):
+            service_batch = service_arns[i : i + 10]
+
+            response = self.ecs_client.describe_services(
+                cluster=cluster_name, services=service_batch
+            )
+
+            for service in response["services"]:
+                service_name = service["serviceName"].split("-")[
+                    2
+                ]  # index 0 is application & 1 is env
+                task_def_arn = service["taskDefinition"]
+                tag = self._get_deployed_tag(service_name, task_def_arn)
+
+                if tag:
+                    services.append(
+                        DeployedService(name=service_name, tag=tag, environment=environment)
+                    )
+        return services
+
+    def _list_services(self, cluster: str) -> List[str]:
+        arns = []
+        paginator = self.ecs_client.get_paginator("list_services")
+
+        for page in paginator.paginate(cluster=cluster):
+            arns.extend(page.get("serviceArns", []))
+        return arns
+
+    def _get_deployed_tag(self, service_name: str, task_def_arn: str) -> Optional[str]:
+
+        response = self.ecs_client.describe_task_definition(taskDefinition=task_def_arn)
+
+        task_def = response["taskDefinition"]
+
+        container_def = {}
+        for container in task_def["containerDefinitions"]:
+            if container["name"] == service_name:
+                container_def = container
+
+        if container_def:
+            image = container_def["image"]
+            if ":" in image:
+                tag = image.split(":")[-1]
+                return tag
+
+        return None

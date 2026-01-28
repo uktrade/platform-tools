@@ -1,8 +1,15 @@
 import json
 import stat
 import subprocess
+import time
+from abc import ABC
+from collections import defaultdict
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
+from typing import List
+from typing import Optional
+from typing import Set
 from typing import Tuple
 
 import requests
@@ -10,6 +17,10 @@ import yaml
 from boto3 import Session
 
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.ports.config import ConfigPort
+from dbt_platform_helper.ports.deployed import DeploymentPort
+from dbt_platform_helper.ports.deployed import PipelineDetails
+from dbt_platform_helper.ports.deployed import PipelinePort
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -28,6 +39,24 @@ from dbt_platform_helper.utils.aws import list_latest_images
 from dbt_platform_helper.utils.aws import start_build_extraction
 from dbt_platform_helper.utils.aws import start_pipeline_and_return_execution_id
 from dbt_platform_helper.utils.template import setup_templates
+
+
+@dataclass
+class Deployment(ABC):
+    codebase: str
+    pipeline: str
+    tag: str
+    execution_id: str
+
+
+@dataclass
+class RedployResult(ABC):
+    codebase: str
+    pipeline: str
+    execution_id: Optional[str]
+    status: str
+    tag: Optional[str]
+    error: Optional[str] = None
 
 
 class Codebase:
@@ -50,6 +79,9 @@ class Codebase:
             [str], str
         ] = start_pipeline_and_return_execution_id,
         run_subprocess: Callable[[str], str] = subprocess.run,
+        config: ConfigPort = None,
+        deployment: DeploymentPort = None,
+        pipeline: PipelinePort = None,
     ):
         self.parameter_provider = parameter_provider
         self.io = io
@@ -64,6 +96,9 @@ class Codebase:
         self.start_build_extraction = start_build_extraction
         self.start_pipeline_and_return_execution_id = start_pipeline_and_return_execution_id
         self.run_subprocess = run_subprocess
+        self.config = config
+        self.deployment = deployment
+        self.pipeline = pipeline
 
     def prepare(self):
         """Sets up an application codebase for use within a DBT platform
@@ -292,6 +327,158 @@ class Codebase:
             self.io.abort_with_error(
                 "Your commit reference is too short. Commit sha hashes specified by '--commit' must be at least 7 characters long."
             )
+
+    def redeploy(
+        self,
+        app: str,
+        env: str,
+        codebases: List[str],
+        wait: bool = True,
+        poll_interval: int = 60,
+        wait_timeout: int = 1800,
+    ) -> List[RedployResult]:
+
+        cwd = Path.cwd()
+        if not codebases and "-deploy" not in cwd.parts[-1]:
+            raise PlatformException("Not in deploy repo")
+
+        config = self.config.load_and_validate_platform_config()
+        codebase_pipelines = config.get("codebase_pipelines", {})
+
+        if not codebases:
+            codebases = codebase_pipelines.keys()
+
+        service_to_codebase = {}
+        for codebase in codebases:
+            codebase_config = codebase_pipelines.get(codebase, {})
+            for run_group in codebase_config["services"]:
+                for _, services in run_group.items():
+                    for service in services:
+                        service_to_codebase[service] = codebase
+
+        services = self.deployment.get_deployed_services(app, env)
+
+        codebase_tags = defaultdict(set)
+        for service in services:
+            codebase = service_to_codebase.get(service.name, "")
+            if codebase:
+                codebase_tags[codebase].add(service.tag)
+
+        mismatched_commits = []
+        for codebase, deployed_commits in codebase_tags.items():
+            if len(deployed_commits) > 1:
+                mismatched_commits.append((codebase, deployed_commits))
+
+        if mismatched_commits:
+            message = "Commit mistmatch on deployed services for the following codebases:\n"
+            for codebase in mismatched_commits:
+                message += f"- {codebase[0]}\n"
+            raise PlatformException(message)
+
+        deployments: List[Deployment] = []
+        for codebase, deployed_tags in codebase_tags.items():
+            tag = deployed_tags.pop()
+
+            pipeline_name = f"{app}-{codebase}-manual-release"
+            # TODO can be removed when no one has copilot pipelines
+            if not self.pipeline.pipeline_exists(pipeline_name):
+                pipeline_name += "-pipeline"
+
+            confirmation_message = f'\nYou are about to redeploy "{app}" for "{codebase}" with image reference "{tag}" (corresponding to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+
+            if self.io.confirm(confirmation_message):
+                execution_id = self.pipeline.trigger_deployment(
+                    PipelineDetails(
+                        name=pipeline_name,
+                        image_tag=tag,
+                        environment=env,
+                    )
+                )
+
+                deployments.append(
+                    Deployment(
+                        codebase=codebase,
+                        pipeline=pipeline_name,
+                        execution_id=execution_id,
+                        tag=tag,
+                    )
+                )
+
+        results = []
+        if deployments and wait:
+            completed_results = self._wait_for_all_pipelines(
+                deployments, poll_interval, wait_timeout
+            )
+            results.extend(completed_results)
+        else:
+            for deployment in deployments:
+                results.append(
+                    RedployResult(
+                        codebase=deployment.codebase,
+                        pipeline=deployment.pipeline,
+                        execution_id=deployment.execution_id,
+                        status="triggered",
+                        tag=deployment.tag,
+                    )
+                )
+        return results
+
+    def _wait_for_all_pipelines(
+        self, deployments: List[Deployment], poll_interval: int, wait_timeout: int
+    ) -> List[RedployResult]:
+        start_time = time.time()
+        pending: Set[str] = {deployment.pipeline for deployment in deployments}
+        pipeline_map = {deployment.pipeline: deployment for deployment in deployments}
+        results = []
+
+        while pending:
+            elapsed = time.time() - start_time
+            if elapsed > wait_timeout:
+                for pipeline in list(pending):
+                    deployment = pipeline_map[pipeline]
+                    execution = self.pipeline.get_execution_status(
+                        pipeline, execution_id=deployment.execution_id
+                    )
+                    if execution:
+                        status = execution.status.value.lower()
+                        error = "Timeout" if not execution.is_complete else None
+                    else:
+                        status = "Unknown"
+                        error = "Failed to get status"
+
+                    results.append(
+                        RedployResult(
+                            codebase=deployment.codebase,
+                            pipeline=deployment.pipeline,
+                            execution_id=deployment.execution_id,
+                            status=status,
+                            tag=deployment.tag,
+                            error=error,
+                        )
+                    )
+            for pipeline in list(pending):
+                deployment = pipeline_map[pipeline]
+                execution = self.pipeline.get_execution_status(
+                    pipeline, execution_id=deployment.execution_id
+                )
+                if execution and execution.is_complete:
+                    results.append(
+                        RedployResult(
+                            codebase=deployment.codebase,
+                            pipeline=deployment.pipeline,
+                            execution_id=deployment.execution_id,
+                            status=execution.status.value.lower(),
+                            tag=deployment.tag,
+                            error=None if execution.is_successful else "Pipeline failed",
+                        )
+                    )
+                    pending.remove(pipeline)
+
+                if pending:
+                    self.io.info(f"Executions for {pending} still pending ...")
+                    time.sleep(poll_interval)
+
+        return results
 
 
 class ApplicationDeploymentNotTriggered(PlatformException):
