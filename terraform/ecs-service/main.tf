@@ -114,7 +114,7 @@ resource "aws_ecs_service" "service" {
 
     content {
       registry_arn = aws_service_discovery_service.service_discovery_service[0].arn
-      port         = local.web_service_required == 1 ? 443 : 8080
+      port         = local.web_service_required == 1 ? 443 : try(var.service_config.image.port, 8080)
     }
   }
 
@@ -130,7 +130,7 @@ resource "aws_ecs_service" "service" {
         port_name      = "target"
         client_alias {
           dns_name = var.service_config.name
-          port     = local.web_service_required == 1 ? 443 : 8080
+          port     = local.web_service_required == 1 ? 443 : try(var.service_config.image.port, 8080)
         }
       }
       log_configuration {
