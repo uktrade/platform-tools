@@ -110,16 +110,16 @@ resource "aws_ecs_service" "service" {
 
   # TODO - See if discovery service can be removed once de-copiloting is complete, because we already use Service Connect for the same purposes. Verify that no team uses Service Discovery before any removal.
   dynamic "service_registries" {
-    for_each = local.web_service_required == 1 ? [""] : []
+    for_each = local.ecs_service_connect_required == 1 ? [""] : []
 
     content {
       registry_arn = aws_service_discovery_service.service_discovery_service[0].arn
-      port         = 443
+      port         = local.web_service_required == 1 ? 443 : try(var.service_config.image.port, 8080)
     }
   }
 
   dynamic "service_connect_configuration" {
-    for_each = local.web_service_required == 1 ? [""] : []
+    for_each = local.ecs_service_connect_required == 1 ? [""] : []
 
     content {
       enabled   = true
@@ -130,7 +130,7 @@ resource "aws_ecs_service" "service" {
         port_name      = "target"
         client_alias {
           dns_name = var.service_config.name
-          port     = 443
+          port     = local.web_service_required == 1 ? 443 : try(var.service_config.image.port, 8080)
         }
       }
       log_configuration {
@@ -199,14 +199,14 @@ resource "aws_lb_target_group" "target_group" {
 }
 
 data "aws_service_discovery_dns_namespace" "private_dns_namespace" {
-  count = local.web_service_required
+  count = local.ecs_service_connect_required
 
   name = "${var.environment}.${var.application}.services.local"
   type = "DNS_PRIVATE"
 }
 
 resource "aws_service_discovery_service" "service_discovery_service" {
-  count = local.web_service_required
+  count = local.ecs_service_connect_required
 
   name = var.service_config.name
   tags = local.tags
