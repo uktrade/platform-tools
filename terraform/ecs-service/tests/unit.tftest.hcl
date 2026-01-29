@@ -386,3 +386,124 @@ run "cross_env_s3_policy" {
     error_message = "Policy for a static bucket should not include a KMS statements."
   }
 }
+
+
+run "backend_service_ecs_service_connect" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Backend Service"
+
+      sidecars = {
+        nginx = {
+          port  = 443
+          image = "public.ecr.aws/example/nginx:latest"
+        }
+      }
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+      count  = 1
+      exec   = true
+
+      network = {
+        connect = true
+        vpc = {
+          placement = "private"
+        }
+      }
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+
+      variables = {
+        LOG_LEVEL = "DEBUG"
+        DEBUG     = false
+        PORT      = 8080
+      }
+
+      secrets = {
+        DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+      }
+    }
+  }
+
+  assert {
+    condition     = aws_ecs_service.service.service_connect_configuration[0].enabled == true
+    error_message = "Should be: true"
+  }
+
+  assert {
+    condition     = aws_ecs_service.service.service_registries[0].port == 8080
+    error_message = "Should be: 8080"
+  }
+}
+
+
+run "backend_service_no_ecs_service_connect" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Backend Service"
+
+      sidecars = {
+        nginx = {
+          port  = 443
+          image = "public.ecr.aws/example/nginx:latest"
+        }
+      }
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+      }
+
+      cpu    = 256
+      memory = 512
+      count  = 1
+      exec   = true
+
+      network = {
+        connect = true
+        vpc = {
+          placement = "private"
+        }
+      }
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+
+      variables = {
+        LOG_LEVEL = "DEBUG"
+        DEBUG     = false
+        PORT      = 8080
+      }
+
+      secrets = {
+        DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_ecs_service.service.service_connect_configuration) == 0
+    error_message = "Should be: 0"
+  }
+
+  assert {
+    condition     = length(aws_ecs_service.service.service_registries) == 0
+    error_message = "Should be: 0"
+  }
+}
