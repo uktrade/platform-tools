@@ -102,7 +102,7 @@ locals {
                 }
               }] : [],
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
-                name : "platform-deploy-${svc.name}",
+                name : "ecs-deploy-${svc.name}",
                 order : svc.order + 1,
                 input_artifacts : ["tools_output"],
                 configuration = {
@@ -176,7 +176,7 @@ locals {
         }
       }] : [],
       local.platform_deployment_enabled ? [{
-        name : "platform-deploy-${svc.name}",
+        name : "ecs-deploy-${svc.name}",
         order : svc.order + 1,
         input_artifacts : ["tools_output"],
         configuration = {
