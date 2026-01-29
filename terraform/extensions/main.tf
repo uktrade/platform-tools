@@ -80,21 +80,6 @@ module "alb" {
   config = each.value
 }
 
-module "cdn" {
-  source = "../cdn"
-
-  for_each = local.cdn
-  providers = {
-    aws.domain-cdn = aws.domain-cdn
-  }
-  application = var.args.application
-  environment = var.environment
-
-  origin_verify_secret_id = one(values(module.alb)).origin_verify_secret_id
-
-  config = each.value
-}
-
 module "monitoring" {
   source = "../monitoring"
 
