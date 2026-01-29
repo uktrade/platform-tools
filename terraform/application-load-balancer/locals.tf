@@ -21,7 +21,7 @@ locals {
   }
 
   # The primary domain for every application follows these naming standard.  See README.md 
-  domain_prefix             = coalesce(var.config.domain_prefix, "internal")
+  domain_prefix             = "internal"
   domain_suffix             = var.environment == "prod" ? "prod.uktrade.digital" : "uktrade.digital"
   domain_name               = var.environment == "prod" ? "${local.domain_prefix}.${var.application}.${local.domain_suffix}" : "${local.domain_prefix}.${var.environment}.${var.application}.${local.domain_suffix}"
   additional_address_domain = try(var.environment == "prod" ? "${var.application}.${local.domain_suffix}" : "${var.environment}.${var.application}.${local.domain_suffix}")
