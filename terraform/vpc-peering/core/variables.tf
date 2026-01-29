@@ -22,8 +22,9 @@ variable "source_vpc_id" {
   type = string
 }
 
+# List is used to support new and old hosted zones simultaneously during the AWS Copilot removal
 variable "target_hosted_zone_id" {
-  type = string
+  type = list(string)
 }
 
 variable "accept_remote_dns" {

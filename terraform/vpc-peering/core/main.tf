@@ -39,17 +39,17 @@ resource "aws_security_group_rule" "peer-access" {
 # Also, vpc peering must be complete before these are run see docs
 resource "aws_route53_vpc_association_authorization" "create-dns-association" {
   # If source_vpc is not defined as a VAR then this will NOT run.
-  count   = can(var.source_vpc_id) && var.source_vpc_id != null && var.accept_remote_dns == null ? 1 : 0
-  vpc_id  = var.source_vpc_id
-  zone_id = var.target_hosted_zone_id
+  for_each = local.authorise_route53_vpc_association ? toset(var.target_hosted_zone_id) : toset([])
+  vpc_id   = var.source_vpc_id
+  zone_id  = each.value
 }
 
 resource "aws_route53_zone_association" "authorize-dns-association" {
   # If bool accept_remote_dns is not defined or set to true then this will NOT run.
-  count = can(var.accept_remote_dns) && var.accept_remote_dns != null ? 1 : 0
+  for_each = local.accept_route53_zone_association ? toset(var.target_hosted_zone_id) : toset([])
 
   vpc_id  = var.source_vpc_id
-  zone_id = var.target_hosted_zone_id
+  zone_id = each.value
 
   depends_on = [aws_route53_vpc_association_authorization.create-dns-association]
 }
