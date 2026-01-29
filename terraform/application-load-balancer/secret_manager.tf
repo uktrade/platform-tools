@@ -87,12 +87,6 @@ resource "aws_secretsmanager_secret_rotation" "origin-verify-rotate-schedule" {
   }
 }
 
-# Output used in CDN module
-output "origin_verify_secret_id" {
-  value       = local.cdn_enabled ? aws_secretsmanager_secret.origin-verify-secret[""].id : null
-  description = "The secret ID for origin verification header."
-}
-
 # These moved blocks are to prevent resources being recreated
 moved {
   from = aws_secretsmanager_secret.origin-verify-secret

@@ -282,10 +282,6 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
   })
 }
 
-data "aws_cloudfront_cache_policy" "example" {
-  name = "Managed-CachingOptimized"
-}
-
 resource "aws_kms_key" "s3-ssm-kms-key" {
   count               = var.config.serve_static_content ? 1 : 0
   description         = "KMS Key for ${var.application}-${var.environment} S3 module SSM parameter encryption"

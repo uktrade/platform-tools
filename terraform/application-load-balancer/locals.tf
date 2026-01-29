@@ -34,11 +34,7 @@ locals {
   culled_san_list = try({ for k, v in var.config.cdn_domains_list : k => v[1] }, {})
   san_list        = merge(local.additional_address_fqdn, local.culled_san_list)
 
-  # Create a complete domain list, primary domain plus all CDN/SAN domains.
-  full_list = merge({ (local.domain_name) = "${var.application}.${local.domain_suffix}" }, local.san_list)
-
   # Count total number of domains.
-  number_of_domains = length(local.full_list)
   domain_list       = lookup(var.config, "cdn_domains_list", null) != null ? join(",", keys(var.config.cdn_domains_list)) : ""
 
   config_with_defaults = { slack_alert_channel_alb_secret_rotation = coalesce(try(var.config.slack_alert_channel_alb_secret_rotation, null), "C31KW7NLE") } # Slack ID for P2 alerts channel
