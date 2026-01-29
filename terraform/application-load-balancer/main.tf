@@ -426,6 +426,16 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
   }
 
   statement {
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter",
+    ]
+    resources = [
+      "arn:aws:ssm:eu-west-2:${data.aws_caller_identity.current.account_id}:parameter/platform/${var.application}/environments/${var.environment}/cdn_domains_list"
+    ]
+  }
+
+  statement {
     effect    = "Allow"
     actions   = ["secretsmanager:GetRandomPassword"]
     resources = ["*"]

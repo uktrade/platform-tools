@@ -45,6 +45,16 @@ class SecretRotator:
             kwargs.get("waf_sleep_duration", os.environ.get("WAF_SLEEP_DURATION", 75))
         )
 
+    def get_cloudfront_distribution_domains(self):
+        ssm = boto3.client("ssm")
+
+        ssm_parameter =  ssm.get_parameter(
+                Name=f'/platform/applications/${self.application}/environments/${self.environment}/cdn_domains_list',
+                WithDecryption=True|False
+        ).value
+
+        return ssm_parameter
+
     def get_cloudfront_client(self) -> boto3.client:
         sts = boto3.client("sts")
         credentials = sts.assume_role(RoleArn=self.role_arn, RoleSessionName="rotation_session")[
@@ -65,7 +75,7 @@ class SecretRotator:
         for page in paginator.paginate():
             for distribution in page.get("DistributionList", {}).get("Items", []):
                 aliases = distribution.get("Aliases", {}).get("Items", [])
-                if any(domain in aliases for domain in self.distro_list.split(",")):
+                if any(domain in aliases for domain in self.get_cloudfront_distribution_domains().split(",")):
                     matching_distributions.append(
                         {
                             "Id": distribution["Id"],

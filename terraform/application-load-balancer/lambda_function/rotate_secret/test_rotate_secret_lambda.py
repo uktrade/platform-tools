@@ -107,6 +107,9 @@ class TestDistributionDiscovery:
             {"Id": "DIST2", "Origin": "origin2.example.com", "Domain": "example2.com"},
         ]
 
+        rotator.get_cloudfront_distribution_domains = MagicMock()
+        rotator.get_cloudfront_distribution_domains.return_value = "example.com,example2.com"
+
         rotator.get_cloudfront_client = MagicMock()
         mock_client = MagicMock()
         mock_paginator = MagicMock()

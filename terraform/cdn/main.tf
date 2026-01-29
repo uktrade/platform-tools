@@ -283,3 +283,12 @@ resource "aws_cloudfront_monitoring_subscription" "additional_metrics" {
     }
   }
 }
+
+resource "aws_ssm_parameter" "cdn_domains_list" {
+  # checkov:skip=CKV2_AWS_34: This AWS SSM Parameter doesn't need to be encrypted
+  name = "/platform/applications/${var.application}/environments/${var.environment}/cdn_domains_list"
+  tier = "Intelligent-Tiering"
+  type = "String"
+  value = local.full_domain_list
+  tags = local.tags
+}
