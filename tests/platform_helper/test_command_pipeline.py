@@ -13,8 +13,9 @@ from tests.platform_helper.conftest import FIXTURES_DIR
 @pytest.mark.parametrize(
     "cli_args, expected_pipeline_args",
     [
-        ([], [None]),
-        (["--deploy-branch", "my-branch"], ["my-branch"]),
+        ([], [None, None]),
+        (["--deploy-branch", "my-branch"], ["my-branch", None]),
+        (["--workspace", "my-ws"], [None, "my-ws"]),
     ],
 )
 @patch("dbt_platform_helper.commands.pipeline.Pipelines", return_value="uktrade/test-app-deploy")
