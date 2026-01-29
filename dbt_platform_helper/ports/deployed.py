@@ -64,9 +64,15 @@ class PipelinePort(ABC):
 
     # def get_pipeline_url():
     @abstractmethod
-    def get_execution_status(self, pipeline_name, execution_id) -> Optional[PipelineExecution]:
+    def get_execution_status(
+        self, pipeline_name: str, execution_id: str
+    ) -> Optional[PipelineExecution]:
         pass
 
     @abstractmethod
     def pipeline_exists(self, pipeline_name: str) -> bool:
+        pass
+
+    @abstractmethod
+    def get_pipeline_url(self, pipeline_name: str, execution_id: str) -> str:
         pass

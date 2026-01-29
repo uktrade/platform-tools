@@ -21,6 +21,7 @@ from dbt_platform_helper.ports.config import ConfigPort
 from dbt_platform_helper.ports.deployed import DeploymentPort
 from dbt_platform_helper.ports.deployed import PipelineDetails
 from dbt_platform_helper.ports.deployed import PipelinePort
+from dbt_platform_helper.ports.file_system import FileSystemPort
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -57,6 +58,7 @@ class RedployResult(ABC):
     status: str
     tag: Optional[str]
     error: Optional[str] = None
+    url: Optional[str] = None
 
 
 class Codebase:
@@ -82,6 +84,7 @@ class Codebase:
         config: ConfigPort = None,
         deployment: DeploymentPort = None,
         pipeline: PipelinePort = None,
+        file_system: FileSystemPort = None,
     ):
         self.parameter_provider = parameter_provider
         self.io = io
@@ -99,6 +102,7 @@ class Codebase:
         self.config = config
         self.deployment = deployment
         self.pipeline = pipeline
+        self.file_system = file_system
 
     def prepare(self):
         """Sets up an application codebase for use within a DBT platform
@@ -338,7 +342,7 @@ class Codebase:
         wait_timeout: int = 1800,
     ) -> List[RedployResult]:
 
-        cwd = Path.cwd()
+        cwd = self.file_system.get_current_directory()
         if not codebases and "-deploy" not in cwd.parts[-1]:
             raise PlatformException("Not in deploy repo")
 
@@ -419,6 +423,9 @@ class Codebase:
                         execution_id=deployment.execution_id,
                         status="triggered",
                         tag=deployment.tag,
+                        url=self.pipeline.get_pipeline_url(
+                            deployment.pipeline, deployment.execution_id
+                        ),
                     )
                 )
         return results

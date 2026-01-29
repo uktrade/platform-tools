@@ -46,3 +46,6 @@ class CodePipeline(PipelinePort):
         except Exception:
             self.io.debug(f"Pipeline {pipeline_name} not found")
         return False
+
+    def get_pipeline_url(self, pipeline_name, execution_id):
+        return f"https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/{pipeline_name}/executions/{execution_id}"

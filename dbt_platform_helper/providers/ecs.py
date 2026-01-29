@@ -313,11 +313,9 @@ class ECS(DeploymentPort):
             )
 
             for service in response["services"]:
-                service_name = service["serviceName"].split("-")[
-                    2
-                ]  # index 0 is application & 1 is env
+                ecs_service_name = service["serviceName"]
                 task_def_arn = service["taskDefinition"]
-                tag = self._get_deployed_tag(service_name, task_def_arn)
+                service_name, tag = self._get_deployed_tag(ecs_service_name, task_def_arn)
 
                 if tag:
                     services.append(
@@ -328,26 +326,27 @@ class ECS(DeploymentPort):
     def _list_services(self, cluster: str) -> List[str]:
         arns = []
         paginator = self.ecs_client.get_paginator("list_services")
-
         for page in paginator.paginate(cluster=cluster):
             arns.extend(page.get("serviceArns", []))
         return arns
 
-    def _get_deployed_tag(self, service_name: str, task_def_arn: str) -> Optional[str]:
+    def _get_deployed_tag(self, ecs_service_name: str, task_def_arn: str) -> Optional[str]:
 
         response = self.ecs_client.describe_task_definition(taskDefinition=task_def_arn)
 
         task_def = response["taskDefinition"]
 
+        service_name = None
         container_def = {}
         for container in task_def["containerDefinitions"]:
-            if container["name"] == service_name:
+            if container["name"] in ecs_service_name:
                 container_def = container
+                service_name = container["name"]
 
         if container_def:
             image = container_def["image"]
             if ":" in image:
                 tag = image.split(":")[-1]
-                return tag
+                return service_name, tag
 
-        return None
+        return service_name, None

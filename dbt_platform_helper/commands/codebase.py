@@ -9,6 +9,7 @@ from dbt_platform_helper.providers.aws.codepipeline import CodePipeline
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.files import LocalFileSystem
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
@@ -131,6 +132,7 @@ def redeploy(app: str, env: str, codebases: List[str], wait: bool):
             deployment=ECS(
                 session.client("ecs"), session.client("ssm"), application_name=app, env=env
             ),
+            file_system=LocalFileSystem(),
         ).redeploy(app, env, codebases, wait=wait)
         ClickIOProvider().info(results)
 
