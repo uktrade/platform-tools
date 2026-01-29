@@ -251,17 +251,6 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 
 // Cloudfront resources for serving static content
 
-resource "aws_cloudfront_origin_access_control" "oac" {
-  count = var.config.serve_static_content ? 1 : 0
-
-  name                              = "${var.config.bucket_name}.${var.environment}.${var.application}-oac"
-  provider                          = aws.domain-cdn
-  description                       = "Origin access control for Cloudfront distribution and ${local.serve_static_domain} static s3 bucket."
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
-}
-
 # # Attach a bucket policy to allow CloudFront to access the bucket
 resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
   count = var.config.serve_static_content ? 1 : 0
@@ -293,119 +282,8 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
   })
 }
 
-resource "aws_acm_certificate" "certificate" {
-  count = var.config.serve_static_content ? 1 : 0
-
-  provider          = aws.domain-cdn
-  domain_name       = local.serve_static_domain
-  validation_method = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
-  tags = local.tags
-}
-
-data "aws_route53_zone" "selected" {
-  count = var.config.serve_static_content ? 1 : 0
-
-  provider     = aws.domain-cdn
-  name         = var.environment == "prod" ? "${var.application}.prod.uktrade.digital" : "${var.application}.uktrade.digital"
-  private_zone = false
-}
-
-resource "aws_route53_record" "cert_validation" {
-  count = var.config.serve_static_content ? 1 : 0
-
-  provider = aws.domain-cdn
-
-  name            = element(aws_acm_certificate.certificate[0].domain_validation_options[*].resource_record_name, 0)
-  type            = element(aws_acm_certificate.certificate[0].domain_validation_options[*].resource_record_type, 0)
-  zone_id         = data.aws_route53_zone.selected[0].id
-  records         = [element(aws_acm_certificate.certificate[0].domain_validation_options[*].resource_record_value, 0)]
-  ttl             = 60
-  depends_on      = [aws_acm_certificate.certificate]
-  allow_overwrite = true
-}
-
-resource "aws_acm_certificate_validation" "certificate_validation" {
-  count = var.config.serve_static_content ? 1 : 0
-
-  provider                = aws.domain-cdn
-  certificate_arn         = aws_acm_certificate.certificate[0].arn
-  validation_record_fqdns = [aws_route53_record.cert_validation[0].fqdn]
-  depends_on              = [aws_route53_record.cert_validation]
-}
-
-resource "aws_route53_record" "cloudfront_domain" {
-  count = var.config.serve_static_content ? 1 : 0
-
-  provider = aws.domain-cdn
-  name     = aws_s3_bucket.this.bucket
-  type     = "A"
-  zone_id  = data.aws_route53_zone.selected[0].id
-  alias {
-    name                   = aws_cloudfront_distribution.s3_distribution[0].domain_name
-    zone_id                = aws_cloudfront_distribution.s3_distribution[0].hosted_zone_id
-    evaluate_target_health = false
-  }
-}
-
 data "aws_cloudfront_cache_policy" "example" {
   name = "Managed-CachingOptimized"
-}
-
-resource "aws_cloudfront_distribution" "s3_distribution" {
-  # checkov:skip=CKV2_AWS_32: Ensure CloudFront distribution has a response headers policy attached
-  # not required now
-  # checkov:skip=CKV2_AWS_47: Ensure AWS CloudFront attached WAFv2 WebACL is configured with AMR for Log4j Vulnerability
-  # checkov:skip=CKV_AWS_68: CloudFront Distribution should have WAF enabled
-  # No WAF rules for S3 endpoints set up by Cyber yet
-  # checkov:skip=CKV_AWS_86: Ensure CloudFront distribution has Access Logging enabled
-  # we don't enable access logging for s3 buckets and it means maintaining another bucket for logs
-  # checkov:skip=CKV_AWS_305: Ensure CloudFront distribution has a default root object configured
-  # we want individual service teams to decide what objects each bucket contains
-  # checkov:skip=CKV_AWS_310: Ensure CloudFront distributions should have origin failover configured
-  # we don't enable origin failover for s3 buckets and it means maintaining another bucket
-  # checkov:skip=CKV_AWS_374: Global access required for static content via S3
-
-  count = var.config.serve_static_content ? 1 : 0
-
-  provider = aws.domain-cdn
-  aliases  = [local.serve_static_domain]
-
-  origin {
-    domain_name = aws_s3_bucket.this.bucket_regional_domain_name
-    origin_id   = "S3-${aws_s3_bucket.this.bucket}"
-
-    origin_access_control_id = aws_cloudfront_origin_access_control.oac[0].id
-  }
-
-  default_cache_behavior {
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "S3-${aws_s3_bucket.this.bucket}"
-
-    viewer_protocol_policy = "redirect-to-https"
-    cache_policy_id        = data.aws_cloudfront_cache_policy.example.id
-  }
-
-  viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate.certificate[0].arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
-  }
-
-  restrictions {
-    geo_restriction {
-      restriction_type = "none"
-    }
-  }
-
-  enabled = true
-
-  tags = local.tags
 }
 
 resource "aws_kms_key" "s3-ssm-kms-key" {

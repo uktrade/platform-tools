@@ -127,56 +127,6 @@ resource "aws_acm_certificate" "certificate" {
 
 ## Start of section that updates AWS R53 records in either the Dev or Prod AWS account, dependant on the provider aws.domain.
 
-# This makes sure the correct root domain is selected for each of the certificate fqdn.
-data "aws_route53_zone" "domain-root" {
-  provider = aws.domain
-
-  count = local.number_of_domains
-  name  = local.full_list[tolist(aws_acm_certificate.certificate.domain_validation_options)[count.index].domain_name]
-}
-
-resource "aws_route53_record" "validation-record-san" {
-  provider = aws.domain
-
-  count   = local.number_of_domains
-  zone_id = data.aws_route53_zone.domain-root[count.index].zone_id
-  name    = tolist(aws_acm_certificate.certificate.domain_validation_options)[count.index].resource_record_name
-  type    = tolist(aws_acm_certificate.certificate.domain_validation_options)[count.index].resource_record_type
-  records = [tolist(aws_acm_certificate.certificate.domain_validation_options)[count.index].resource_record_value]
-  ttl     = 300
-}
-
-# Add ALB DNS name to application internal DNS record.
-data "aws_route53_zone" "domain-alb" {
-  provider = aws.domain
-
-  name = "${var.application}.${local.domain_suffix}"
-}
-
-resource "aws_route53_record" "alb-record" {
-  provider = aws.domain
-
-  zone_id = data.aws_route53_zone.domain-alb.zone_id
-  name    = local.domain_name
-  type    = "CNAME"
-  records = [aws_lb.this.dns_name]
-  ttl     = 300
-}
-
-# This is only run if there are additional application domains (not to be confused with CDN domains).
-# Add ALB DNS name to applications additional domain.
-resource "aws_route53_record" "additional-address" {
-  provider = aws.domain
-
-  count   = var.config.additional_address_list == null ? 0 : length(var.config.additional_address_list)
-  zone_id = data.aws_route53_zone.domain-alb.zone_id
-  name    = "${var.config.additional_address_list[count.index]}.${local.additional_address_domain}"
-  type    = "CNAME"
-  records = [aws_lb.this.dns_name]
-  ttl     = 300
-}
-
-
 output "cert-arn" {
   value = aws_acm_certificate.certificate.arn
 }
