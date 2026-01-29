@@ -1,10 +1,10 @@
 import boto3
-from dbtp_inspector.providers.click import ClickIOProvider
 
 from dbt_platform_helper.ports.deployed import PipelineDetails
 from dbt_platform_helper.ports.deployed import PipelineExecution
 from dbt_platform_helper.ports.deployed import PipelinePort
 from dbt_platform_helper.ports.deployed import PipelineStatus
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 class CodePipeline(PipelinePort):
