@@ -388,6 +388,83 @@ run "cross_env_s3_policy" {
 }
 
 
+run "web_service_ecs_service_connect" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Load Balanced Web Service"
+
+      http = {
+        alias            = ["web.dev.myapp.uktrade.digital"]
+        path             = "/"
+        target_container = "nginx"
+        healthcheck = {
+          path                = "/test"
+          port                = 8081
+          success_codes       = "200,302"
+          healthy_threshold   = 9
+          unhealthy_threshold = 9
+          interval            = "99"
+          timeout             = "99"
+          grace_period        = "99"
+        }
+      }
+
+      sidecars = {
+        nginx = {
+          port  = 443
+          image = "public.ecr.aws/example/nginx:latest"
+        }
+      }
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+      count  = 1
+      exec   = true
+
+      network = {
+        connect = true
+        vpc = {
+          placement = "private"
+        }
+      }
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+
+      variables = {
+        LOG_LEVEL = "DEBUG"
+        DEBUG     = false
+        PORT      = 8080
+      }
+
+      secrets = {
+        DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+      }
+    }
+  }
+
+  assert {
+    condition     = aws_ecs_service.service.service_connect_configuration[0].enabled == true
+    error_message = "Should be: true"
+  }
+
+  assert {
+    condition     = aws_ecs_service.service.service_registries[0].port == 443
+    error_message = "Should be: 8080"
+  }
+}
+
+
 run "backend_service_ecs_service_connect" {
   command = plan
 
