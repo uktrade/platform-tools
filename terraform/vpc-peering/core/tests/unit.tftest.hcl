@@ -3,7 +3,7 @@ mock_provider "aws" {}
 variables {
   vpc_peering_connection_id = "123456"
   accept_remote_dns         = null
-  target_hosted_zone_id     = "Z12345"
+  target_hosted_zone_id     = ["Z12345"]
   source_vpc_id             = "vpc-12345"
   security_group_map        = {}
   vpc_name                  = "my-vpc"
@@ -34,7 +34,7 @@ run "is_source_vpc_service_to_service" {
 
   assert {
     # Check if able to create DNS association if a source_vpc is set as a VAR.
-    condition     = aws_route53_vpc_association_authorization.create-dns-association[0].vpc_id == "vpc-12345"
+    condition     = aws_route53_vpc_association_authorization.create-dns-association["Z12345"].vpc_id == "vpc-12345"
     error_message = "Incorrect vpc id"
   }
 }
@@ -48,7 +48,7 @@ run "is_accept_dns_service_to_service" {
 
   assert {
     # Check to see if association is authorized if accept_remote_dns is true
-    condition     = aws_route53_zone_association.authorize-dns-association[0].zone_id == "Z12345"
+    condition     = aws_route53_zone_association.authorize-dns-association["Z12345"].zone_id == "Z12345"
     error_message = "Incorrect zone id"
   }
 }
