@@ -162,6 +162,7 @@ data "aws_route53_zone" "domain-alb" {
 resource "aws_route53_record" "alb-record" {
   provider = aws.domain
 
+  count   = var.config.managed_ingress != null && var.config.managed_ingress ? 0 : 1
   zone_id = data.aws_route53_zone.domain-alb.zone_id
   name    = local.domain_name
   type    = "CNAME"
@@ -174,7 +175,7 @@ resource "aws_route53_record" "alb-record" {
 resource "aws_route53_record" "additional-address" {
   provider = aws.domain
 
-  count   = var.config.additional_address_list == null ? 0 : length(var.config.additional_address_list)
+  count   = (var.config.managed_ingress != null && var.config.managed_ingress) || var.config.additional_address_list == null ? 0 : length(var.config.additional_address_list)
   zone_id = data.aws_route53_zone.domain-alb.zone_id
   name    = "${var.config.additional_address_list[count.index]}.${local.additional_address_domain}"
   type    = "CNAME"

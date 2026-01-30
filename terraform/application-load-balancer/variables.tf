@@ -20,6 +20,7 @@ variable "config" {
     cdn_domains_list                        = optional(map(list(string)))
     additional_address_list                 = optional(list(string))
     slack_alert_channel_alb_secret_rotation = optional(string)
+    managed_ingress                         = optional(bool)
   })
 
   default = {}
