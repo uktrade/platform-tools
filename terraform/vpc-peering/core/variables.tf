@@ -22,7 +22,7 @@ variable "source_vpc_id" {
   type = string
 }
 
-# List is used to support new and old hosted zones simultaneously during the AWS Copilot removal
+# A list is needed to simultaneously support new and old CloudMap hosted zones during the AWS Copilot removal
 variable "target_hosted_zone_id" {
   type = list(string)
 }
