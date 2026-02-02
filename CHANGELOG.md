@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.19.0](https://github.com/uktrade/platform-tools/compare/15.18.0...15.19.0) (2026-02-02)
+
+
+### Features
+
+* Allow multiple hosted zones for VPC peering (DBTP-2660) ([#1246](https://github.com/uktrade/platform-tools/issues/1246)) ([23ef9d4](https://github.com/uktrade/platform-tools/commit/23ef9d4c3d0d1e075aa472a2f153d770691f5856))
+
 ## [15.18.0](https://github.com/uktrade/platform-tools/compare/15.17.1...15.18.0) (2026-01-29)
 
 
