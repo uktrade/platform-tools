@@ -12,6 +12,6 @@ variable "config" {
     security_group_map        = optional(map(string))
     source_vpc_id             = optional(string)
     target_hosted_zone_id     = optional(list(string))
-    accept_remote_dns         = optional(bool)
+    accept_remote_dns         = bool
   })
 }

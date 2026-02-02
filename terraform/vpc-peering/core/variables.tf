@@ -28,5 +28,6 @@ variable "target_hosted_zone_id" {
 }
 
 variable "accept_remote_dns" {
-  type = bool
+  type     = bool
+  nullable = false
 }
