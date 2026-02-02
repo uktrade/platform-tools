@@ -22,10 +22,12 @@ variable "source_vpc_id" {
   type = string
 }
 
-variable "target_hosted_zone_id" {
-  type = string
+# A list is needed to simultaneously support new and old CloudMap hosted zones during the AWS Copilot removal
+variable "target_hosted_zone_ids" {
+  type = list(string)
 }
 
 variable "accept_remote_dns" {
-  type = bool
+  type     = bool
+  nullable = false
 }
