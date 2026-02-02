@@ -3,7 +3,7 @@ mock_provider "aws" {}
 variables {
   vpc_peering_connection_id = "123456"
   accept_remote_dns         = false
-  target_hosted_zone_id     = ["Z12345"]
+  target_hosted_zone_ids    = ["Z12345"]
   source_vpc_id             = "vpc-12345"
   security_group_map        = {}
   vpc_name                  = "my-vpc"

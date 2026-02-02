@@ -38,13 +38,13 @@ resource "aws_security_group_rule" "peer-access" {
 # Note: These next two resources are only run if you need to allow communication between ECS services.
 # Also, vpc peering must be complete before these are run see docs
 resource "aws_route53_vpc_association_authorization" "create-dns-association" {
-  for_each = (var.source_vpc_id != null && var.accept_remote_dns == false) ? toset(var.target_hosted_zone_id) : toset([])
+  for_each = (var.source_vpc_id != null && var.accept_remote_dns == false) ? toset(var.target_hosted_zone_ids) : toset([])
   vpc_id   = var.source_vpc_id
   zone_id  = each.value
 }
 
 resource "aws_route53_zone_association" "authorize-dns-association" {
-  for_each = var.accept_remote_dns == true ? toset(var.target_hosted_zone_id) : toset([])
+  for_each = var.accept_remote_dns == true ? toset(var.target_hosted_zone_ids) : toset([])
 
   vpc_id  = var.source_vpc_id
   zone_id = each.value
