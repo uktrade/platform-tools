@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+    - ./custom-build/post-build.sh
+
+  post_build:
+    commands:
+    - echo "Done"

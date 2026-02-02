@@ -88,10 +88,22 @@ locals {
           name : "Deploy-${env.name}",
           actions : concat(
             flatten([for svc in local.service_order_list : concat(
+              local.has_custom_pre_build ? [{
+                name : "custom-pre-build-${env.name}",
+                order : svc.order,
+                configuration = {
+                  ProjectName = aws_codebuild_project.custom_pre_build[""].name
+                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                    { name : "APPLICATION", value : var.application },
+                    { name : "ENVIRONMENT", value : env.name },
+                    { name : "SERVICE", value : svc.name },
+                  ]))
+                }
+              }] : [],
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
                 name : "terraform-apply-${svc.name}",
                 input_artifacts : ["tools_output"],
-                order : svc.order,
+                order : svc.order + 1,
                 configuration = {
                   ProjectName   = aws_codebuild_project.codebase_service_terraform[""].name
                   PrimarySource = "tools_output"
@@ -103,7 +115,7 @@ locals {
               }] : [],
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
                 name : "ecs-deploy-${svc.name}",
-                order : svc.order + 1,
+                order : svc.order + 2,
                 input_artifacts : ["tools_output"],
                 configuration = {
                   ProjectName   = aws_codebuild_project.codebase_deploy_platform[""].name
@@ -116,7 +128,7 @@ locals {
               }] : [],
               local.base_env_config[env.name].service_deployment_mode != "platform" ? [{
                 name : "copilot-deploy-${svc.name}",
-                order : svc.order + 1,
+                order : svc.order + 2,
                 configuration = {
                   ProjectName = aws_codebuild_project.codebase_deploy[""].name
                   EnvironmentVariables : jsonencode(concat(local.default_variables, [
@@ -129,7 +141,7 @@ locals {
             local.base_env_config[env.name].service_deployment_mode != "copilot" ?
             [{
               name : "update-alb-rules",
-              order : max([for svc in local.service_order_list : svc.order]...) + 2,
+              order : max([for svc in local.service_order_list : svc.order]...) + 3,
               input_artifacts : ["tools_output"],
               configuration = {
                 ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
@@ -144,7 +156,7 @@ locals {
             }] : [],
             contains(local.environments_requiring_cache_invalidation, env.name) ? [{
               name : "invalidate-cache",
-              order : max([for svc in local.service_order_list : svc.order]...) + 2,
+              order : max([for svc in local.service_order_list : svc.order]...) + 3,
               configuration = {
                 ProjectName = aws_codebuild_project.invalidate_cache[""].name
                 EnvironmentVariables : jsonencode([
@@ -152,6 +164,18 @@ locals {
                   { name : "APPLICATION", value : var.application },
                   { name : "ENVIRONMENT", value : env.name },
                 ])
+              }
+            }] : [],
+            local.has_custom_post_build ? [{
+              name : "custom-post-build-${env.name}",
+              order : max([for svc in local.service_order_list : svc.order]...) + 4,
+              configuration = {
+                ProjectName = aws_codebuild_project.custom_post_build[""].name
+                EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                  { name : "APPLICATION", value : var.application },
+                  { name : "ENVIRONMENT", value : env.name },
+                  { name : "SERVICE", value : svc.name },
+                ]))
               }
             }] : [],
           )
@@ -258,4 +282,7 @@ locals {
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
+  # Determine if a custom pre-build and post-build steps are required
+  has_custom_pre_build  = fileexists("../../../../../../../../../custom-build/pre-build.sh")
+  has_custom_post_build = fileexists("../../../../../../../../../custom-build/post-build.sh")
 }
