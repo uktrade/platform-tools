@@ -1,9 +1,8 @@
 resource "aws_codebuild_project" "custom_pre_build" {
-  for_each      = toset(local.has_custom_pre_build ? [""] : [])
-  name          = "${var.application}-${var.codebase}-custom-pre-build"
-  description   = "Custom pre-build step for ${var.application} ${var.codebase}"
-  build_timeout = 10
-  #service_role   = aws_iam_role.custom_pre_build[""].arn
+  for_each       = toset(local.has_custom_pre_build ? [""] : [])
+  name           = "${var.application}-${var.codebase}-custom-pre-build"
+  description    = "Custom pre-build step for ${var.application} ${var.codebase}"
+  build_timeout  = 10
   service_role   = aws_iam_role.codebase_deploy.arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
 
@@ -60,11 +59,10 @@ resource "aws_cloudwatch_log_stream" "custom_pre_build" {
 # POST BUILD
 
 resource "aws_codebuild_project" "custom_post_build" {
-  for_each      = toset(local.has_custom_post_build ? [""] : [])
-  name          = "${var.application}-${var.codebase}-custom-post-build"
-  description   = "Custom post-build step for ${var.application} ${var.codebase}"
-  build_timeout = 10
-  #service_role   = aws_iam_role.custom_post_build[""].arn
+  for_each       = toset(local.has_custom_post_build ? [""] : [])
+  name           = "${var.application}-${var.codebase}-custom-post-build"
+  description    = "Custom post-build step for ${var.application} ${var.codebase}"
+  build_timeout  = 10
   service_role   = aws_iam_role.codebase_deploy.arn
   encryption_key = aws_kms_key.artifact_store_kms_key.arn
 
