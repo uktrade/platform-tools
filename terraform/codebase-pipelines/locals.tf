@@ -285,6 +285,6 @@ locals {
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
   # Determine if a custom pre-build and post-build steps are required
-  has_custom_pre_build  = fileexists("../../../../../../../../../custom-build/pre-build.sh")
-  has_custom_post_build = fileexists("../../../../../../../../../custom-build/post-build.sh")
+  has_custom_pre_build  = fileexists("${path.root}/../../custom-build/pre-build.sh")
+  has_custom_post_build  = fileexists("${path.root}/../../custom-build/post-build.sh")
 }
