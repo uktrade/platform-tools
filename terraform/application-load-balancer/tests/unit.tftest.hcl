@@ -297,17 +297,17 @@ run "aws_route53_record_unit_test" {
   }
 
   assert {
-    condition     = aws_route53_record.alb-record[0].name == "dom-prefix.env.app.uktrade.digital"
+    condition     = aws_route53_record.alb-record.name == "dom-prefix.env.app.uktrade.digital"
     error_message = "Should be: dom-prefix.env.app.uktrade.digital"
   }
 
   assert {
-    condition     = aws_route53_record.alb-record[0].ttl == 300
+    condition     = aws_route53_record.alb-record.ttl == 300
     error_message = "Should be: 300"
   }
 
   assert {
-    condition     = aws_route53_record.alb-record[0].type == "CNAME"
+    condition     = aws_route53_record.alb-record.type == "CNAME"
     error_message = "Should be: CNAME"
   }
 }
@@ -1124,55 +1124,5 @@ run "dummy_listener_rule_manager" {
   assert {
     condition     = aws_lambda_function.listener-rule-organiser-function[0].reserved_concurrent_executions == 1
     error_message = "Invalid reserved concurrency, must be one to avoid race conditions when creating dummy rules for multiple services"
-  }
-}
-
-run "no_additional_address_records" {
-  command = plan
-
-  assert {
-    condition = length(aws_route53_record.additional-address) == 0
-    error_message = "Should not be: created"
-  }
-}
-
-run "additional_address_records" {
-  command = plan
-
-  variables {
-    config = {
-      additional_address_list = ["internal.backend", "internal.backend2"]
-    }
-  }
-
-  assert {
-    condition = length(aws_route53_record.additional-address) == 2
-    error_message = "Should be: created"
-  }
-
-  assert {
-    condition     = aws_route53_record.additional-address[0].name == "internal.backend.env.app.uktrade.digital"
-    error_message = "Should be: internal.backend.env.app.uktrade.digital"
-  }
-}
-
-run "managed_ingress_resources_not_created" {
-  command = plan
-
-  variables {
-    config = {
-      managed_ingress = true
-      additional_address_list = ["internal.backend"]
-    }
-  }
-
-  assert {
-    condition = length(aws_route53_record.alb-record) == 0
-    error_message = "Should not create ALB record when managed_ingress is enabled"
-  }
-
-  assert {
-    condition = length(aws_route53_record.additional-address) == 0
-    error_message = "Should not create record for additional addresses when managed_ingress is enabled"
   }
 }
