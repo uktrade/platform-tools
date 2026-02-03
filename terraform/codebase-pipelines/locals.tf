@@ -166,18 +166,20 @@ locals {
                 ])
               }
             }] : [],
-            local.has_custom_post_build ? [{
-              name : "custom-post-build-${env.name}",
-              order : max([for svc in local.service_order_list : svc.order]...) + 4,
-              configuration = {
-                ProjectName = aws_codebuild_project.custom_post_build[""].name
-                EnvironmentVariables : jsonencode(concat(local.default_variables, [
-                  { name : "APPLICATION", value : var.application },
-                  { name : "ENVIRONMENT", value : env.name },
-                  { name : "SERVICE", value : svc.name },
-                ]))
-              }
-            }] : [],
+            flatten([for svc in local.service_order_list : concat(
+              local.has_custom_post_build ? [{
+                name : "custom-post-build-${env.name}",
+                order : max([for svc in local.service_order_list : svc.order]...) + 4,
+                configuration = {
+                  ProjectName = aws_codebuild_project.custom_post_build[""].name
+                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                    { name : "APPLICATION", value : var.application },
+                    { name : "ENVIRONMENT", value : env.name },
+                    { name : "SERVICE", value : svc.name },
+                  ]))
+                }
+              }] : [],
+            )]),
           )
         }]
       )])
