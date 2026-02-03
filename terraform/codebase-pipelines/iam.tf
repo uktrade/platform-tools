@@ -29,7 +29,9 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-service-terraform-plan",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-update-alb-rules",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy-platform",
-        var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null
+        var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null,
+        local.has_custom_post_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-custom-post-build" : null,
+        local.has_custom_pre_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-custom-pre-build" : null,
       ])
     }
   }
@@ -334,6 +336,54 @@ data "aws_iam_policy_document" "log_access_for_codebuild_deploy" {
       "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-codebase-install-tools/log-group:*",
     ]
   }
+}
+
+data "aws_iam_policy_document" "log_access_for_custom_pre_build" {
+  for_each = toset(local.has_custom_pre_build ? [""] : [])
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:TagLogGroup"
+    ]
+    resources = [
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-pre-build/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-pre-build/log-group:*",
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "log_access_for_custom_post_build" {
+  for_each = toset(local.has_custom_post_build ? [""] : [])
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:TagLogGroup"
+    ]
+    resources = [
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-post-build/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-post-build/log-group:*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "log_access_for_custom_post_build" {
+  for_each = toset(local.has_custom_post_build ? [""] : [])
+  name   = "custom-post-build-log-access"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.log_access_for_custom_post_build[""].json
+}
+
+resource "aws_iam_role_policy" "log_access_for_custom_pre_build" {
+  for_each = toset(local.has_custom_pre_build ? [""] : [])
+  name   = "custom-pre-build-log-access"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.log_access_for_custom_pre_build[""].json
 }
 
 resource "aws_iam_role_policy" "ecr_access_for_codebuild_deploy" {
