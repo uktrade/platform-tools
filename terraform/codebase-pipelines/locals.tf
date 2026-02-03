@@ -87,19 +87,18 @@ locals {
         [{
           name : "Deploy-${env.name}",
           actions : concat(
+            local.has_custom_pre_build ? [{
+              name : "custom-pre-build-${env.name}",
+              order : 1,
+              configuration = {
+                ProjectName = aws_codebuild_project.custom_pre_build[""].name
+                EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                  { name : "APPLICATION", value : var.application },
+                  { name : "ENVIRONMENT", value : env.name },
+                ]))
+              }
+            }] : [],
             flatten([for svc in local.service_order_list : concat(
-              local.has_custom_pre_build ? [{
-                name : "custom-pre-build-${svc.name}-${env.name}",
-                order : svc.order,
-                configuration = {
-                  ProjectName = aws_codebuild_project.custom_pre_build[""].name
-                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
-                    { name : "APPLICATION", value : var.application },
-                    { name : "ENVIRONMENT", value : env.name },
-                    { name : "SERVICE", value : svc.name },
-                  ]))
-                }
-              }] : [],
               local.base_env_config[env.name].service_deployment_mode != "copilot" ? [{
                 name : "terraform-apply-${svc.name}",
                 input_artifacts : ["tools_output"],
@@ -166,20 +165,17 @@ locals {
                 ])
               }
             }] : [],
-            flatten([for svc in local.service_order_list : concat(
-              local.has_custom_post_build ? [{
-                name : "custom-post-build-${svc.name}-${env.name}",
-                order : max([for svc in local.service_order_list : svc.order]...) + 4,
-                configuration = {
-                  ProjectName = aws_codebuild_project.custom_post_build[""].name
-                  EnvironmentVariables : jsonencode(concat(local.default_variables, [
-                    { name : "APPLICATION", value : var.application },
-                    { name : "ENVIRONMENT", value : env.name },
-                    { name : "SERVICE", value : svc.name },
-                  ]))
-                }
-              }] : [],
-            )]),
+            local.has_custom_post_build ? [{
+              name : "custom-post-build-${env.name}",
+              order : max([for svc in local.service_order_list : svc.order]...) + 4,
+              configuration = {
+                ProjectName = aws_codebuild_project.custom_post_build[""].name
+                EnvironmentVariables : jsonencode(concat(local.default_variables, [
+                  { name : "APPLICATION", value : var.application },
+                  { name : "ENVIRONMENT", value : env.name },
+                ]))
+              }
+            }] : [],
           )
         }]
       )])
