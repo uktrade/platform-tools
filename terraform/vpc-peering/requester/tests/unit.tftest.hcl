@@ -8,6 +8,7 @@ variables {
     accepter_vpc        = "vpc-22222222"
     accepter_vpc_name   = "vpc-accepter"
     requester_vpc       = "vpc-11111111"
+    accept_remote_dns   = false
   }
 }
 

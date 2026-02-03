@@ -612,6 +612,7 @@ platform-helper pipeline generate
 
 ```
 platform-helper pipeline generate [--deploy-branch <deploy_branch>] 
+                                  [--workspace <workspace>] 
 ```
 
 ## Options
@@ -621,6 +622,10 @@ platform-helper pipeline generate [--deploy-branch <deploy_branch>]
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
 (Default <application>-deploy branch is specified in 
 <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
+- `--workspace
+-w <text>`
+  - Specify a terraform workspace to use. 
+This will load it's own platform-config.<workspace>.yml file
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
