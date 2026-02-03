@@ -3,7 +3,10 @@ version: 0.2
 phases:
   build:
     commands:
-    - ./custom-build/pre-build.sh
+    - >
+        if [ -f ./custom-build/pre-build.sh ]; then 
+          bash ./custom-build/pre-build.sh; 
+        fi
 
   post_build:
     commands:
