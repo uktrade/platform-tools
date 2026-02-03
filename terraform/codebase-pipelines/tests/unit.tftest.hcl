@@ -652,6 +652,24 @@ run "test_additional_private_ecr_repository" {
   }
 }
 
+# run "test_custom_pre_build" {
+#   command = plan
+
+#   variables {
+#     has_custom_pre_build = true
+#   }
+# }
+
+
+# run "test_custom_post_build" {
+#   command = plan
+
+#   variables {
+#     has_custom_post_build = true
+#   }
+# }
+
+
 run "test_additional_ecr_repository_public" {
   command = plan
 

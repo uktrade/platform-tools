@@ -89,7 +89,7 @@ locals {
           actions : concat(
             flatten([for svc in local.service_order_list : concat(
               local.has_custom_pre_build ? [{
-                name : "custom-pre-build-${env.name}",
+                name : "custom-pre-build-${svc.name}-${env.name}",
                 order : svc.order,
                 configuration = {
                   ProjectName = aws_codebuild_project.custom_pre_build[""].name
@@ -168,7 +168,7 @@ locals {
             }] : [],
             flatten([for svc in local.service_order_list : concat(
               local.has_custom_post_build ? [{
-                name : "custom-post-build-${env.name}",
+                name : "custom-post-build-${svc.name}-${env.name}",
                 order : max([for svc in local.service_order_list : svc.order]...) + 4,
                 configuration = {
                   ProjectName = aws_codebuild_project.custom_post_build[""].name
@@ -285,6 +285,6 @@ locals {
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
   # Determine if a custom pre-build and post-build steps are required
-  has_custom_pre_build  = fileexists("${path.root}/../../custom-build/pre-build.sh")
-  has_custom_post_build  = fileexists("${path.root}/../../custom-build/post-build.sh")
+  has_custom_pre_build  = var.has_custom_pre_build ? true : fileexists("${path.root}/../../custom-build/pre-build.sh")
+  has_custom_post_build  = var.has_custom_post_build ? true : fileexists("${path.root}/../../custom-build/post-build.sh")
 }
