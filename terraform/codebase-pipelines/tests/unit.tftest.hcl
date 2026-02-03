@@ -682,6 +682,11 @@ run "test_custom_pre_build" {
     condition     = length(aws_codepipeline.codebase_pipeline[0].stage[1].action) == 4
     error_message = "Should be: 4"
   }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "custom-pre-build-dev"
+    error_message = "Should be: my-app-my-codebase-custom-post-build"
+  }
 }
 
 
@@ -696,6 +701,18 @@ run "test_custom_post_build" {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-build"
     error_message = "Should be: my-app-my-codebase-custom-post-build"
   }
+
+  assert {
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "custom-post-build-dev"
+    error_message = "Should be: my-app-my-codebase-custom-post-build"
+  }
+
+
 }
 
 
