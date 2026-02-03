@@ -16,6 +16,6 @@ module "core" {
   security_group_map        = coalesce(var.config.security_group_map, {})
   vpc_name                  = var.config.accepter_vpc_name
   source_vpc_id             = var.config.source_vpc_id
-  target_hosted_zone_id     = var.config.target_hosted_zone_id
+  target_hosted_zone_ids    = var.config.target_hosted_zone_ids
   accept_remote_dns         = var.config.accept_remote_dns
 }

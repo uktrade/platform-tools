@@ -344,6 +344,17 @@ class ServiceManager:
                     service_manifest["sidecars"] = new_sidecars
                     if "storage" in service_manifest:
                         service_manifest["storage"]["writable_directories"] = writable_directories
+                    elif writable_directories:
+                        service_manifest["storage"] = {
+                            "readonly_fs": False,
+                            "writable_directories": writable_directories,
+                        }
+
+                    depends_on = {name: "start" for name in new_sidecars}
+                    if depends_on and "image" in service_manifest:
+                        service_manifest["image"]["depends_on"] = depends_on
+                    else:
+                        service_manifest.get("image", {}).pop("depends_on", None)
 
                 service_path = service_directory / service_manifest["name"]
 

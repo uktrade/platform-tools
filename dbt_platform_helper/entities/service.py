@@ -254,7 +254,7 @@ class Count(BaseModel):
             raise PlatformException("Range must be in the format 'int-int' e.g. '1-2'")
 
         range_split = self.range.split("-")
-        if range_split[0] >= range_split[1]:
+        if int(range_split[0]) >= int(range_split[1]):
             raise PlatformException("Range minimum value must be less than the maximum value.")
 
         return self
