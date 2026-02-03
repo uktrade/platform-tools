@@ -77,10 +77,6 @@ resource "aws_codebuild_project" "custom_post_build" {
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
 
-    # environment_variable {
-    #   name  = "ENV_CONFIG"
-    #   value = jsonencode(local.base_env_config)
-    # }
   }
 
   logs_config {
