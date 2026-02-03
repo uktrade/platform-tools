@@ -1,5 +1,25 @@
 # Changelog
 
+## [15.19.0](https://github.com/uktrade/platform-tools/compare/15.18.0...15.19.0) (2026-02-02)
+
+
+### Features
+
+* Allow multiple hosted zones for VPC peering (DBTP-2660) ([#1246](https://github.com/uktrade/platform-tools/issues/1246)) ([23ef9d4](https://github.com/uktrade/platform-tools/commit/23ef9d4c3d0d1e075aa472a2f153d770691f5856))
+
+## [15.18.0](https://github.com/uktrade/platform-tools/compare/15.17.1...15.18.0) (2026-01-29)
+
+
+### Features
+
+* Rename codebase pipeline deploy action (off-ticket) ([#1240](https://github.com/uktrade/platform-tools/issues/1240)) ([c98b273](https://github.com/uktrade/platform-tools/commit/c98b273f5eb21972944aacd743709b896f05ac7e))
+
+
+### Bug Fixes
+
+* Authorise environment pipelines to manipulate egress policy resources (DBTP-2588) ([#1234](https://github.com/uktrade/platform-tools/issues/1234)) ([1eee28d](https://github.com/uktrade/platform-tools/commit/1eee28d80011c0f41ef736f6a3fc5d2769826e0a))
+* Enable service connect for non web services (DBTP-2656) ([#1241](https://github.com/uktrade/platform-tools/issues/1241)) ([baf13a6](https://github.com/uktrade/platform-tools/commit/baf13a60ebce8be75210b6d0dd09147e2594a915))
+
 ## [15.17.1](https://github.com/uktrade/platform-tools/compare/15.17.0...15.17.1) (2026-01-23)
 
 
