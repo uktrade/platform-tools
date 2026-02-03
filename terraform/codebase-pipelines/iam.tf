@@ -374,16 +374,16 @@ data "aws_iam_policy_document" "log_access_for_custom_post_build" {
 
 resource "aws_iam_role_policy" "log_access_for_custom_post_build" {
   for_each = toset(local.has_custom_post_build ? [""] : [])
-  name   = "custom-post-build-log-access"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.log_access_for_custom_post_build[""].json
+  name     = "custom-post-build-log-access"
+  role     = aws_iam_role.codebase_deploy.name
+  policy   = data.aws_iam_policy_document.log_access_for_custom_post_build[""].json
 }
 
 resource "aws_iam_role_policy" "log_access_for_custom_pre_build" {
   for_each = toset(local.has_custom_pre_build ? [""] : [])
-  name   = "custom-pre-build-log-access"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.log_access_for_custom_pre_build[""].json
+  name     = "custom-pre-build-log-access"
+  role     = aws_iam_role.codebase_deploy.name
+  policy   = data.aws_iam_policy_document.log_access_for_custom_pre_build[""].json
 }
 
 resource "aws_iam_role_policy" "ecr_access_for_codebuild_deploy" {

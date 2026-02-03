@@ -286,5 +286,5 @@ locals {
 
   # Determine if a custom pre-build and post-build steps are required
   has_custom_pre_build  = var.has_custom_pre_build ? true : fileexists("${path.root}/../../custom-build/pre-build.sh")
-  has_custom_post_build  = var.has_custom_post_build ? true : fileexists("${path.root}/../../custom-build/post-build.sh")
+  has_custom_post_build = var.has_custom_post_build ? true : fileexists("${path.root}/../../custom-build/post-build.sh")
 }
