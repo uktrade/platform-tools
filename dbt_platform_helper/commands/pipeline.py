@@ -31,7 +31,14 @@ def pipeline():
     <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).""",
     default=None,
 )
-def generate(deploy_branch: str):
+@click.option(
+    "--workspace",
+    "-w",
+    help="""Specify a terraform workspace to use. 
+    This will load it's own platform-config.<workspace>.yml file""",
+    default=None,
+)
+def generate(deploy_branch: str, workspace: str):
     """
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
@@ -65,6 +72,6 @@ def generate(deploy_branch: str):
             FileProvider(),
             platform_helper_versioning,
         )
-        pipelines.generate(deploy_branch)
+        pipelines.generate(deploy_branch, workspace)
     except Exception as exc:
         io.abort_with_error(str(exc))
