@@ -93,7 +93,6 @@ locals {
               configuration = {
                 ProjectName = aws_codebuild_project.custom_pre_build[""].name
                 EnvironmentVariables : jsonencode(concat(local.default_variables, [
-                  { name : "APPLICATION", value : var.application },
                   { name : "ENVIRONMENT", value : env.name },
                 ]))
               }
@@ -171,7 +170,6 @@ locals {
               configuration = {
                 ProjectName = aws_codebuild_project.custom_post_build[""].name
                 EnvironmentVariables : jsonencode(concat(local.default_variables, [
-                  { name : "APPLICATION", value : var.application },
                   { name : "ENVIRONMENT", value : env.name },
                 ]))
               }
