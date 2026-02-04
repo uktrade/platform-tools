@@ -16,7 +16,7 @@
 {% endif %}
 
 {%- if meta.description +%}
-    {{ meta.description.strip() }}
+    {{ meta.description.strip() | indent(4) }}
 {% endif -%}
 
 {% if meta.usage +%}
