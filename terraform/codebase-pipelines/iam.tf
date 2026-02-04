@@ -30,8 +30,8 @@ data "aws_iam_policy_document" "assume_codebuild_role" {
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-update-alb-rules",
         "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-deploy-platform",
         var.requires_image_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-codebase-image-build" : null,
-        local.has_custom_post_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-custom-post-build" : null,
-        local.has_custom_pre_build ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-custom-pre-build" : null,
+        local.has_custom_post_deploy ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-custom-post-deploy" : null,
+        local.has_custom_pre_deploy ? "arn:aws:codebuild:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:project/${var.application}-${var.codebase}-custom-pre-deploy" : null,
       ])
     }
   }
@@ -338,8 +338,8 @@ data "aws_iam_policy_document" "log_access_for_codebuild_deploy" {
   }
 }
 
-data "aws_iam_policy_document" "log_access_for_custom_pre_build" {
-  for_each = toset(local.has_custom_pre_build ? [""] : [])
+data "aws_iam_policy_document" "log_access_for_custom_pre_deploy" {
+  for_each = toset(local.has_custom_pre_deploy ? [""] : [])
   statement {
     effect = "Allow"
     actions = [
@@ -349,14 +349,14 @@ data "aws_iam_policy_document" "log_access_for_custom_pre_build" {
       "logs:TagLogGroup"
     ]
     resources = [
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-pre-build/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-pre-build/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-pre-deploy/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-pre-deploy/log-group:*",
     ]
   }
 }
 
-data "aws_iam_policy_document" "log_access_for_custom_post_build" {
-  for_each = toset(local.has_custom_post_build ? [""] : [])
+data "aws_iam_policy_document" "log_access_for_custom_post_deploy" {
+  for_each = toset(local.has_custom_post_deploy ? [""] : [])
   statement {
     effect = "Allow"
     actions = [
@@ -366,24 +366,24 @@ data "aws_iam_policy_document" "log_access_for_custom_post_build" {
       "logs:TagLogGroup"
     ]
     resources = [
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-post-build/log-group",
-      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-post-build/log-group:*",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-post-deploy/log-group",
+      "arn:aws:logs:${local.account_region}:log-group:codebuild/${var.application}-${var.codebase}-custom-post-deploy/log-group:*",
     ]
   }
 }
 
-resource "aws_iam_role_policy" "log_access_for_custom_post_build" {
-  for_each = toset(local.has_custom_post_build ? [""] : [])
-  name     = "custom-post-build-log-access"
+resource "aws_iam_role_policy" "log_access_for_custom_post_deploy" {
+  for_each = toset(local.has_custom_post_deploy ? [""] : [])
+  name     = "custom-post-deploy-log-access"
   role     = aws_iam_role.codebase_deploy.name
-  policy   = data.aws_iam_policy_document.log_access_for_custom_post_build[""].json
+  policy   = data.aws_iam_policy_document.log_access_for_custom_post_deploy[""].json
 }
 
-resource "aws_iam_role_policy" "log_access_for_custom_pre_build" {
-  for_each = toset(local.has_custom_pre_build ? [""] : [])
-  name     = "custom-pre-build-log-access"
+resource "aws_iam_role_policy" "log_access_for_custom_pre_deploy" {
+  for_each = toset(local.has_custom_pre_deploy ? [""] : [])
+  name     = "custom-pre-deploy-log-access"
   role     = aws_iam_role.codebase_deploy.name
-  policy   = data.aws_iam_policy_document.log_access_for_custom_pre_build[""].json
+  policy   = data.aws_iam_policy_document.log_access_for_custom_pre_deploy[""].json
 }
 
 resource "aws_iam_role_policy" "ecr_access_for_codebuild_deploy" {

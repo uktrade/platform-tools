@@ -4,8 +4,8 @@ phases:
   build:
     commands:
     - >
-        if [ -f ./custom-build/pre-build.sh ]; then 
-          bash ./custom-build/pre-build.sh; 
+        if [ -f ./custom-build/pre-deploy.sh ]; then 
+          bash ./custom-build/pre-deploy.sh; 
         fi
 
   post_build:

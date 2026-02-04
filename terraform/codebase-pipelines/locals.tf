@@ -87,11 +87,11 @@ locals {
         [{
           name : "Deploy-${env.name}",
           actions : concat(
-            local.has_custom_pre_build ? [{
-              name : "custom-pre-build-${env.name}",
+            local.has_custom_pre_deploy ? [{
+              name : "custom-pre-deploy-${env.name}",
               order : 1,
               configuration = {
-                ProjectName = aws_codebuild_project.custom_pre_build[""].name
+                ProjectName = aws_codebuild_project.custom_pre_deploy[""].name
                 EnvironmentVariables : jsonencode(concat(local.default_variables, [
                   { name : "ENVIRONMENT", value : env.name },
                 ]))
@@ -164,11 +164,11 @@ locals {
                 ])
               }
             }] : [],
-            local.has_custom_post_build ? [{
-              name : "custom-post-build-${env.name}",
+            local.has_custom_post_deploy ? [{
+              name : "custom-post-deploy-${env.name}",
               order : max([for svc in local.service_order_list : svc.order]...) + 4,
               configuration = {
-                ProjectName = aws_codebuild_project.custom_post_build[""].name
+                ProjectName = aws_codebuild_project.custom_post_deploy[""].name
                 EnvironmentVariables : jsonencode(concat(local.default_variables, [
                   { name : "ENVIRONMENT", value : env.name },
                 ]))
@@ -278,7 +278,7 @@ locals {
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
   copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
-  # Determine if a custom pre-build and post-build steps are required
-  has_custom_pre_build  = var.has_custom_pre_build ? true : fileexists("${path.root}/../../custom-build/pre-build.sh")
-  has_custom_post_build = var.has_custom_post_build ? true : fileexists("${path.root}/../../custom-build/post-build.sh")
+  # Determine if a custom pre-deploy and post-deploy steps are required
+  has_custom_pre_deploy  = var.has_custom_pre_deploy ? true : fileexists("${path.root}/../../custom-build/pre-deploy.sh")
+  has_custom_post_deploy = var.has_custom_post_deploy ? true : fileexists("${path.root}/../../custom-build/post-deploy.sh")
 }

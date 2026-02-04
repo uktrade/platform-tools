@@ -45,14 +45,14 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.log_access_for_custom_pre_build
+  target = data.aws_iam_policy_document.log_access_for_custom_pre_deploy
   values = {
     json = "{\"Sid\": \"CodeBuildLogs\"}"
   }
 }
 
 override_data {
-  target = data.aws_iam_policy_document.log_access_for_custom_post_build
+  target = data.aws_iam_policy_document.log_access_for_custom_post_deploy
   values = {
     json = "{\"Sid\": \"CodeBuildLogs\"}"
   }
@@ -666,16 +666,16 @@ run "test_additional_private_ecr_repository" {
   }
 }
 
-run "test_custom_pre_build" {
+run "test_custom_pre_deploy" {
   command = plan
 
   variables {
-    has_custom_pre_build = true
+    has_custom_pre_deploy = true
   }
 
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-build"
-    error_message = "Should be: my-app-my-codebase-custom-pre-build"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-pre-deploy"
   }
 
   assert {
@@ -684,22 +684,22 @@ run "test_custom_pre_build" {
   }
 
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "custom-pre-build-dev"
-    error_message = "Should be: my-app-my-codebase-custom-post-build"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "custom-pre-deploy-dev"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
   }
 }
 
 
-run "test_custom_post_build" {
+run "test_custom_post_deploy" {
   command = plan
 
   variables {
-    has_custom_post_build = true
+    has_custom_post_deploy = true
   }
 
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-build"
-    error_message = "Should be: my-app-my-codebase-custom-post-build"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
   }
 
   assert {
@@ -708,8 +708,8 @@ run "test_custom_post_build" {
   }
 
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "custom-post-build-dev"
-    error_message = "Should be: my-app-my-codebase-custom-post-build"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "custom-post-deploy-dev"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
   }
 
 
