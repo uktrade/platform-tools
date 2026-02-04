@@ -127,12 +127,12 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
 }
 
 data "aws_ssm_parameters_by_path" "vpc_peering" {
-  path      = "/platform/vpc-peering/security-group/"
+  path      = "/platform/vpc-peering/"
   recursive = true
 }
 
 resource "aws_vpc_security_group_ingress_rule" "vpc_peering" {
-  for_each          = local.vpc_peering_for_this_sg
+  for_each          = nonsensitive(local.vpc_peering_for_this_sg)
   security_group_id = aws_security_group.environment_security_group.id
   ip_protocol       = "tcp"
   from_port         = each.value["port"]
