@@ -21,7 +21,7 @@ locals {
   # Only keep those meant for this environment's security group
   vpc_peering_for_this_sg = {
     for name, value in local.vpc_peering_by_name :
-    name => value
+    "${value["source-vpc-name"]}/${value["security-group-id"]}" => value
     if value["security-group-id"] == aws_security_group.environment_security_group.id
   }
 }
