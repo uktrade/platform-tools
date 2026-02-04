@@ -54,7 +54,7 @@ resource "aws_route53_zone_association" "authorize-dns-association" {
 
 resource "aws_ssm_parameter" "vpc_peering" {
   for_each = var.security_groups_allowed
-  name     = "/platform/vpc-peering/security-group/${each.key}"
+  name     = "/platform/vpc-peering/${var.vpc_name}/security-group/${each.key}"
   type     = "String"
   value = jsonencode({
     "security-group-id" = each.key

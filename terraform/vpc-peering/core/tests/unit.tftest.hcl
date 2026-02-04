@@ -54,15 +54,20 @@ run "is_accept_dns_service_to_service" {
   }
 }
 
-run "is_ssm_parameter_being_created" {
+run "is_ssm_parameter_created" {
   command = plan
 
   variables {
-    security_groups_allowed = { sg-abc1234 = "8080" }
+    security_groups_allowed = { sg-abc1234 = "8080", sg-def5678 = "443" }
   }
 
   assert {
-    condition     = aws_ssm_parameter.vpc_peering["sg-abc1234"].name == "/platform/vpc-peering/security-group/sg-abc1234"
-    error_message = "SSM parameter either doesn't exist, or it's name does not match with the value of var.security_groups_allowed"
+    condition     = aws_ssm_parameter.vpc_peering["sg-abc1234"].name == "/platform/vpc-peering/my-vpc/security-group/sg-abc1234"
+    error_message = "SSM parameter either doesn't exist, or its name does not match with the value in var.security_groups_allowed"
+  }
+
+  assert {
+    condition     = aws_ssm_parameter.vpc_peering["sg-def5678"].name == "/platform/vpc-peering/my-vpc/security-group/sg-def5678"
+    error_message = "SSM parameter either doesn't exist, or its name does not match with the value in var.security_groups_allowed"
   }
 }
