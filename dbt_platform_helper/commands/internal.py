@@ -138,3 +138,14 @@ def update_rules(env: str):
         update_aws.update_alb_rules(environment=env)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
+
+
+@internal.group(cls=ClickDocOptGroup)
+def cdn():
+    """CloudFront related commands."""
+
+
+@cdn.command(help="Remove CDN resources from terraform state.")
+def detach():
+    """Removes CloudFront distributions and their supporting resources from the
+    terraform state for a specified environment."""
