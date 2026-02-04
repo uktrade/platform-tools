@@ -181,10 +181,20 @@ locals {
   }
 
   manual_pipeline_actions_map = concat(
+    local.has_custom_pre_deploy ? [{
+      name : "custom-pre-deploy",
+      order : 1,
+      configuration = {
+        ProjectName = aws_codebuild_project.custom_pre_deploy[""].name
+        EnvironmentVariables : jsonencode(concat(local.default_variables, [
+          { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+        ]))
+      }
+    }] : [],
     flatten([for svc in local.service_order_list : concat(
       local.platform_deployment_enabled ? [{
         name : "terraform-apply-${svc.name}",
-        order : svc.order,
+        order : svc.order + 1,
         input_artifacts : ["tools_output"],
         configuration = {
           ProjectName   = aws_codebuild_project.codebase_service_terraform[""].name
@@ -197,7 +207,7 @@ locals {
       }] : [],
       local.platform_deployment_enabled ? [{
         name : "ecs-deploy-${svc.name}",
-        order : svc.order + 1,
+        order : svc.order + 2,
         input_artifacts : ["tools_output"],
         configuration = {
           ProjectName   = aws_codebuild_project.codebase_deploy_platform[""].name
@@ -210,7 +220,7 @@ locals {
       }] : [],
       local.copilot_deployment_enabled ? [{
         name : "copilot-deploy-${svc.name}",
-        order : svc.order + 1,
+        order : svc.order + 2,
         configuration = {
           ProjectName = aws_codebuild_project.codebase_deploy[""].name
           EnvironmentVariables : jsonencode(concat(local.default_variables, [
@@ -222,7 +232,7 @@ locals {
     )]),
     local.platform_deployment_enabled ? [{
       name : "update-alb-rules",
-      order : max([for svc in local.service_order_list : svc.order]...) + 2,
+      order : max([for svc in local.service_order_list : svc.order]...) + 3,
       input_artifacts : ["tools_output"],
       configuration = {
         ProjectName   = aws_codebuild_project.codebase_update_alb_rules[""].name
@@ -237,7 +247,7 @@ locals {
     }] : [],
     local.cache_invalidation_enabled ? [{
       name : "invalidate-cache",
-      order : max([for svc in local.service_order_list : svc.order]...) + 2,
+      order : max([for svc in local.service_order_list : svc.order]...) + 3,
       configuration = {
         ProjectName = aws_codebuild_project.invalidate_cache[""].name
         EnvironmentVariables : jsonencode([
@@ -245,6 +255,16 @@ locals {
           { name : "APPLICATION", value : var.application },
           { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
         ])
+      }
+    }] : [],
+    local.has_custom_post_deploy ? [{
+      name : "custom-post-deploy",
+      order : max([for svc in local.service_order_list : svc.order]...) + 4,
+      configuration = {
+        ProjectName = aws_codebuild_project.custom_post_deploy[""].name
+        EnvironmentVariables : jsonencode(concat(local.default_variables, [
+          { name : "ENVIRONMENT", value : "#{variables.ENVIRONMENT}" },
+        ]))
       }
     }] : [],
   )

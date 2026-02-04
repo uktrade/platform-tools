@@ -687,6 +687,21 @@ run "test_custom_pre_deploy" {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "custom-pre-deploy-dev"
     error_message = "Should be: my-app-my-codebase-custom-post-deploy"
   }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-pre-deploy"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.manual_release_pipeline.stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "custom-pre-deploy"
+    error_message = "Should be: custom-pre-deploy"
+  }
 }
 
 
@@ -712,6 +727,20 @@ run "test_custom_post_deploy" {
     error_message = "Should be: my-app-my-codebase-custom-post-deploy"
   }
 
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.manual_release_pipeline.stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].name == "custom-post-deploy"
+    error_message = "Should be: custom-post-deploy"
+  }
 
 }
 
@@ -1859,7 +1888,7 @@ run "test_manual_release_pipeline" {
     error_message = "SLACK_CHANNEL_ID environment variable type is incorrect"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].run_order == 2
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1883,7 +1912,7 @@ run "test_manual_release_pipeline" {
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].run_order == 3
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 }
