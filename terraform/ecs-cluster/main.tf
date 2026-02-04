@@ -49,7 +49,7 @@ data "aws_vpc" "vpc" {
 
 resource "aws_security_group" "environment_security_group" {
   # checkov:skip=CKV_AWS_382: Required for general internet access
-  # checkov:skip=CKV2_AWS_5: TODO - This will be used by service Terraform in the future
+  # checkov:skip=CKV2_AWS_5: Not applicable
   name        = "${var.application}-${var.environment}-environment"
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
@@ -124,4 +124,19 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
   from_port                    = 443
   to_port                      = 443
   referenced_security_group_id = aws_security_group.environment_security_group.id
+}
+
+data "aws_ssm_parameters_by_path" "vpc_peering" {
+  path      = "/platform/vpc-peering/security-group/"
+  recursive = true
+}
+
+resource "aws_vpc_security_group_ingress_rule" "vpc_peering" {
+  for_each          = local.vpc_peering_for_this_sg
+  security_group_id = aws_security_group.environment_security_group.id
+  ip_protocol       = "tcp"
+  from_port         = each.value["port"]
+  to_port           = each.value["port"]
+  cidr_ipv4         = each.value["source-vpc-cidr"]
+  description       = "VPC peering traffic from VPC '${each.value["source-vpc-name"]}'"
 }
