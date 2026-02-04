@@ -12,6 +12,7 @@ module "core" {
   subnet                    = var.config.requester_subnet
   vpc_peering_connection_id = aws_vpc_peering_connection_accepter.this.id
   security_group_map        = coalesce(var.config.security_group_map, {})
+  security_groups_allowed   = coalesce(var.config.security_groups_allowed, {})
   vpc_name                  = var.config.requester_vpc_name
   source_vpc_id             = var.config.source_vpc_id
   target_hosted_zone_ids    = var.config.target_hosted_zone_ids

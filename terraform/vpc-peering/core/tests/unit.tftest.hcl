@@ -6,6 +6,7 @@ variables {
   target_hosted_zone_ids    = ["Z12345"]
   source_vpc_id             = "vpc-12345"
   security_group_map        = {}
+  security_groups_allowed   = {}
   vpc_name                  = "my-vpc"
   subnet                    = "10.10.10.0/24"
   vpc_id                    = "vpc-12345"
@@ -50,5 +51,18 @@ run "is_accept_dns_service_to_service" {
     # Check to see if association is authorized if accept_remote_dns is true
     condition     = aws_route53_zone_association.authorize-dns-association["Z12345"].zone_id == "Z12345"
     error_message = "Incorrect zone id"
+  }
+}
+
+run "is_ssm_parameter_being_created" {
+  command = plan
+
+  variables {
+    security_groups_allowed = { sg-abc1234 = "8080" }
+  }
+
+  assert {
+    condition     = aws_ssm_parameter.vpc_peering["sg-abc1234"].name == "/platform/vpc-peering/security-group/sg-abc1234"
+    error_message = "SSM parameter either doesn't exist, or it's name does not match with the value of var.security_groups_allowed"
   }
 }

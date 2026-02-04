@@ -140,3 +140,4 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_peering" {
   cidr_ipv4         = each.value["source-vpc-cidr"]
   description       = "VPC peering traffic from VPC '${each.value["source-vpc-name"]}'"
 }
+

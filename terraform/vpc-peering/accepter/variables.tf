@@ -10,6 +10,7 @@ variable "config" {
     accepter_vpc              = string
     requester_subnet          = string
     security_group_map        = optional(map(string))
+    security_groups_allowed   = optional(map(string))
     source_vpc_id             = optional(string)
     target_hosted_zone_ids    = optional(list(string))
     accept_remote_dns         = bool
