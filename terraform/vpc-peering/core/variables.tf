@@ -17,7 +17,11 @@ variable "security_group_map" {
 
 # Only for applications that are not deployed using AWS Copilot.
 variable "security_groups_allowed" {
-  type = map(string)
+  type = map(object({
+    port        = string
+    application = string
+    environment = string
+  }))
 }
 
 variable "vpc_name" {

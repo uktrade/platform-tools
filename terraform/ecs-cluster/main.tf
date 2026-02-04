@@ -127,7 +127,7 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
 }
 
 data "aws_ssm_parameters_by_path" "vpc_peering" {
-  path      = "/platform/vpc-peering/"
+  path      = "/platform/vpc-peering/${var.application}/${var.environment}/"
   recursive = true
 }
 
@@ -139,5 +139,6 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_peering" {
   to_port           = each.value["port"]
   cidr_ipv4         = each.value["source-vpc-cidr"]
   description       = "VPC peering traffic from VPC '${each.value["source-vpc-name"]}'"
+  depends_on        = [data.aws_ssm_parameters_by_path.vpc_peering]
 }
 

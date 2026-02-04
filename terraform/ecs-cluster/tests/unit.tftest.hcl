@@ -378,33 +378,25 @@ run "test_create_vpc_peering_ingress_rule_if_param_is_present" {
     vpc_name    = "terraform-tests-vpc"
   }
 
-  # Override security group ID so that it's predictable in the test
-  override_resource {
-    target = aws_security_group.environment_security_group
-    values = {
-      id = "sg-abc123"
-    }
-  }
-
   override_data {
     target = data.aws_ssm_parameters_by_path.vpc_peering
 
     values = {
       names = [
-        "/platform/vpc-peering/application-a-vpc/security-group/sg-abc123",
-        "/platform/vpc-peering/application-b-vpc/security-group/sg-abc123",
-        "/platform/vpc-peering/application-b-vpc/security-group/sg-def456" # Not this environment's security group
+        "/platform/vpc-peering/demodjango/dev/source-vpc/application-a-vpc/security-group/sg-abc123",
+        "/platform/vpc-peering/demodjango/dev/source-vpc/application-b-vpc/security-group/sg-abc123",
+        "/platform/vpc-peering/demodjango/staging/source-vpc/application-b-vpc/security-group/sg-def456" # Not this environment's security group
       ]
       values = [
-        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"source-vpc-name\":\"application-a-vpc\",\"source-vpc-cidr\":\"10.0.0.0/16\"}",
-        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"source-vpc-name\":\"application-b-vpc\",\"source-vpc-cidr\":\"10.1.0.0/16\"}",
-        "{\"security-group-id\":\"sg-def456\",\"port\":443,\"source-vpc-name\":\"application-c-vpc\",\"source-vpc-cidr\":\"10.2.0.0/16\"}",
+        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-a-vpc\",\"source-vpc-cidr\":\"10.0.0.0/16\"}",
+        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-b-vpc\",\"source-vpc-cidr\":\"10.1.0.0/16\"}",
+        "{\"security-group-id\":\"sg-def456\",\"port\":443,\"application\":\"demodjango\",\"environment\":\"staging\",\"source-vpc-name\":\"application-c-vpc\",\"source-vpc-cidr\":\"10.2.0.0/16\"}",
       ]
     }
   }
 
   assert {
     condition     = length(aws_vpc_security_group_ingress_rule.vpc_peering) == 2
-    error_message = "Expected 2 ingress rules."
+    error_message = "Expected 2 ingress rules, didn't get that."
   }
 }
