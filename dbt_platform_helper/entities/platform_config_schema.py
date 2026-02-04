@@ -126,6 +126,7 @@ class PlatformConfigSchema:
                         Optional("cache_policy"): dict({str: _valid_alb_cache_policy}),
                         Optional("origin_request_policy"): dict({str: {}}),
                         Optional("paths"): dict({str: _valid_alb_paths_definition}),
+                        Optional("managed_ingress"): bool,
                     },
                     None,
                 )
@@ -538,6 +539,7 @@ class PlatformConfigSchema:
                                 ),
                             }
                         },
+                        Optional("managed_ingress"): bool,
                     },
                 },
             }
