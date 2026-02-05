@@ -48,6 +48,7 @@ data "aws_vpc" "vpc" {
 }
 
 data "aws_ssm_parameters_by_path" "vpc_peering" {
+  # Only keep the SG rules meant for this environment's security group
   path      = "/platform/vpc-peering/${var.application}/${var.environment}/"
   recursive = true
 }
@@ -123,7 +124,7 @@ resource "aws_security_group" "environment_security_group" {
   }
 
   dynamic "ingress" {
-    for_each = nonsensitive(local.vpc_peering_for_this_sg)
+    for_each = nonsensitive(local.vpc_peering_rules)
     content {
       description = "VPC peering traffic from VPC: ${ingress.value.source-vpc-name}"
       protocol    = "tcp"

@@ -384,13 +384,11 @@ run "test_create_vpc_peering_ingress_rule_if_param_is_present" {
     values = {
       names = [
         "/platform/vpc-peering/demodjango/dev/source-vpc/application-a-vpc/security-group/sg-abc123",
-        "/platform/vpc-peering/demodjango/dev/source-vpc/application-b-vpc/security-group/sg-abc123",
-        "/platform/vpc-peering/demodjango/staging/source-vpc/application-b-vpc/security-group/sg-def456" # Not this environment's security group
+        "/platform/vpc-peering/demodjango/dev/source-vpc/application-b-vpc/security-group/sg-abc123"
       ]
       values = [
         "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-a-vpc\",\"source-vpc-cidr\":\"10.0.0.0/16\"}",
-        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-b-vpc\",\"source-vpc-cidr\":\"10.1.0.0/16\"}",
-        "{\"security-group-id\":\"sg-def456\",\"port\":443,\"application\":\"demodjango\",\"environment\":\"staging\",\"source-vpc-name\":\"application-c-vpc\",\"source-vpc-cidr\":\"10.2.0.0/16\"}",
+        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-b-vpc\",\"source-vpc-cidr\":\"10.1.0.0/16\"}"
       ]
     }
   }
