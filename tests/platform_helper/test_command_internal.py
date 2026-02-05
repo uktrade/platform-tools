@@ -202,3 +202,11 @@ class TestInternalCdnDetach:
         )
 
         assert result.exit_code == 0
+
+    def test_missing_env(self):
+        result = CliRunner().invoke(
+            internal,
+            ["cdn", "detach"],
+        )
+
+        assert result.exit_code == 2
