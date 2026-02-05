@@ -260,6 +260,9 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # # Attach a bucket policy to allow CloudFront to access the bucket
@@ -296,6 +299,7 @@ resource "aws_acm_certificate" "certificate" {
   validation_method = "DNS"
 
   lifecycle {
+    prevent_destroy = true
     create_before_destroy = true
   }
 
@@ -322,6 +326,9 @@ resource "aws_route53_record" "cert_validation" {
   ttl             = 60
   depends_on      = [aws_acm_certificate.certificate]
   allow_overwrite = true
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_acm_certificate_validation" "certificate_validation" {
@@ -331,6 +338,9 @@ resource "aws_acm_certificate_validation" "certificate_validation" {
   certificate_arn         = aws_acm_certificate.certificate[0].arn
   validation_record_fqdns = [aws_route53_record.cert_validation[0].fqdn]
   depends_on              = [aws_route53_record.cert_validation]
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_route53_record" "cloudfront_domain" {
@@ -344,6 +354,9 @@ resource "aws_route53_record" "cloudfront_domain" {
     name                   = aws_cloudfront_distribution.s3_distribution[0].domain_name
     zone_id                = aws_cloudfront_distribution.s3_distribution[0].hosted_zone_id
     evaluate_target_health = false
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -401,6 +414,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled = true
 
   tags = local.tags
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_kms_key" "s3-ssm-kms-key" {

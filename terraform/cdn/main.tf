@@ -14,6 +14,7 @@ resource "aws_acm_certificate" "certificate" {
   tags              = local.tags
   lifecycle {
     create_before_destroy = true
+    prevent_destroy       = true
   }
 }
 
@@ -22,6 +23,9 @@ resource "aws_acm_certificate_validation" "cert-validate" {
   for_each                = local.cdn_domains_list
   certificate_arn         = aws_acm_certificate.certificate[each.key].arn
   validation_record_fqdns = [for record in aws_route53_record.validation-record : record.fqdn]
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 data "aws_route53_zone" "domain-root" {
@@ -38,6 +42,9 @@ resource "aws_route53_record" "validation-record" {
   type     = tolist(aws_acm_certificate.certificate[each.key].domain_validation_options)[0].resource_record_type
   records  = [tolist(aws_acm_certificate.certificate[each.key].domain_validation_options)[0].resource_record_value]
   ttl      = 300
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # These data exports are only run if there is a cache policy configured in platform-config.yml
@@ -166,6 +173,9 @@ resource "aws_cloudfront_distribution" "standard" {
   }
 
   tags = local.tags
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # This is only run if enable_cdn_record is set to true.
@@ -182,6 +192,9 @@ resource "aws_route53_record" "cdn-address" {
     name                   = aws_cloudfront_distribution.standard[each.key].domain_name
     zone_id                = aws_cloudfront_distribution.standard[each.key].hosted_zone_id
     evaluate_target_health = false
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -250,6 +263,9 @@ resource "aws_cloudfront_cache_policy" "cache_policy" {
     enable_accept_encoding_brotli = true
     enable_accept_encoding_gzip   = true
   }
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # We do not cache origin requests, so leaving all config as default.
@@ -268,6 +284,9 @@ resource "aws_cloudfront_origin_request_policy" "origin_request_policy" {
   }
   query_strings_config {
     query_string_behavior = "all"
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
