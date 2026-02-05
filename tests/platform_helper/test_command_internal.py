@@ -196,7 +196,7 @@ class TestInternal:
     def test_cdn_detach_success(self):
         result = CliRunner().invoke(
             internal,
-            ["cdn", "detach"],
+            ["cdn", "detach", "--env", "dev"],
         )
 
         assert result.exit_code == 0

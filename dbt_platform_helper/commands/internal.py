@@ -146,6 +146,7 @@ def cdn():
 
 
 @cdn.command(help="Remove CDN resources from terraform state.")
-def detach():
+@click.option("--env", type=str, required=True)
+def detach(env):
     """Removes CloudFront distributions and their supporting resources from the
     terraform state for a specified environment."""
