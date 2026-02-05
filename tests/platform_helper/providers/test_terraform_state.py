@@ -2,6 +2,9 @@ import json
 import subprocess
 from unittest.mock import patch
 
+import pytest
+
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.terraform_state import pull_terraform_state
 
 MOCK_STATE = {
@@ -30,3 +33,17 @@ class TestPull:
             stdout=subprocess.PIPE,
             check=True,
         )
+
+    @patch("dbt_platform_helper.providers.terraform_state.subprocess.run", spec=True)
+    def test_subprocess_exits_nonzero(self, mock_subprocess_run, tmp_path):
+        mock_subprocess_run.side_effect = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["terraform", "state", "pull"],
+            output=b"",
+            stderr=None,
+        )
+
+        with pytest.raises(PlatformException) as e:
+            pull_terraform_state(tmp_path)
+
+        assert "Failed to pull a copy of the terraform state" in str(e.value)
