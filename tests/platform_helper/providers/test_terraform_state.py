@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.terraform_state import pull_terraform_state
+from dbt_platform_helper.providers.terraform_state import TerraformStateProvider
 
 MOCK_STATE = {
     "version": 4,
@@ -24,7 +24,7 @@ class TestPull:
             stderr=None,
         )
 
-        result = pull_terraform_state(tmp_path)
+        result = TerraformStateProvider().pull(tmp_path)
 
         assert result == MOCK_STATE
         mock_subprocess_run.assert_called_once_with(
@@ -44,6 +44,6 @@ class TestPull:
         )
 
         with pytest.raises(PlatformException) as e:
-            pull_terraform_state(tmp_path)
+            TerraformStateProvider().pull(tmp_path)
 
         assert "Failed to pull a copy of the terraform state" in str(e.value)
