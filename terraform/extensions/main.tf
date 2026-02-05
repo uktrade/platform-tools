@@ -15,10 +15,11 @@ module "s3" {
     aws.domain-cdn = aws.domain-cdn
   }
 
-  application = var.args.application
-  environment = var.environment
-  name        = each.key
-  vpc_name    = local.vpc_name
+  application    = var.args.application
+  environment    = var.environment
+  name           = each.key
+  vpc_name       = local.vpc_name
+  cdn_account_id = local.dns_account_id
 
   config = each.value
 }
