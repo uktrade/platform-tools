@@ -1,2 +1,3 @@
 class CDNDetach:
-    pass
+    def execute(self, environment_name):
+        pass
