@@ -195,13 +195,17 @@ class TestInternal:
 
 
 class TestInternalCDNDetach:
-    def test_success(self):
+    @patch("dbt_platform_helper.commands.internal.CDNDetach")
+    def test_success(self, mock_cdn_detach):
+        mock_cdn_detach_instance = mock_cdn_detach.return_value
+
         result = CliRunner().invoke(
             internal,
             ["cdn", "detach", "--env", "dev"],
         )
 
         assert result.exit_code == 0
+        mock_cdn_detach_instance.execute.assert_called_once_with("dev")
 
     def test_missing_env(self):
         result = CliRunner().invoke(

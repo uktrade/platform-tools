@@ -1,5 +1,6 @@
 import click
 
+from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
@@ -150,3 +151,8 @@ def cdn():
 def detach(env):
     """Removes CloudFront distributions and their supporting resources from the
     terraform state for a specified environment."""
+    click_io = ClickIOProvider()
+    try:
+        CDNDetach().execute(env)
+    except PlatformException as err:
+        click_io.abort_with_error(str(err))
