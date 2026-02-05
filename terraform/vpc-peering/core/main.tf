@@ -53,7 +53,7 @@ resource "aws_route53_zone_association" "authorize-dns-association" {
 }
 
 resource "aws_ssm_parameter" "vpc_peering" {
-  for_each = var.security_groups_allowed
+  for_each = var.ecs_security_groups
   name     = "/platform/vpc-peering/${each.value.application}/${each.value.environment}/source-vpc/${var.vpc_name}/security-group/${each.key}"
   type     = "String"
   value = jsonencode({

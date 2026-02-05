@@ -10,13 +10,13 @@ variable "vpc_peering_connection_id" {
   type = string
 }
 
-# Only for applications deployed using AWS Copilot. Otherwise, use var.security_groups_allowed below.
+# Only for applications deployed using AWS Copilot. Otherwise, use var.ecs_security_groups below.
 variable "security_group_map" {
   type = map(string)
 }
 
 # Only for applications that are not deployed using AWS Copilot.
-variable "security_groups_allowed" {
+variable "ecs_security_groups" {
   type = map(object({
     port        = string
     application = string
