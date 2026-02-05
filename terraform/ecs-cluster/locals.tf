@@ -18,10 +18,11 @@ locals {
     ) : name => jsondecode(value)
   }
 
-  # Only keep those meant for this environment's security group
+  # Only keep the SG rules meant for this environment's security group
   vpc_peering_for_this_sg = {
     for name, value in local.vpc_peering_by_name :
     "${value.source-vpc-name}/${value.security-group-id}" => value
+    # Using application and environment to match each rule, as we don't know the ID of the environment SG until after apply
     if value.application == var.application && value.environment == var.environment
   }
 }
