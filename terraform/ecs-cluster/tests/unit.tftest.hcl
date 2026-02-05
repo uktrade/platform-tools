@@ -395,8 +395,33 @@ run "test_create_vpc_peering_ingress_rule_if_param_is_present" {
     }
   }
 
+  # 3 ingress rules should be present: other containers in same SG, VPC peering "application-a-vpc", VPC peering "application-b-vpc"
   assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.vpc_peering) == 2
-    error_message = "Expected 2 ingress rules, didn't get that."
+    condition     = length(aws_security_group.environment_security_group.ingress) == 3
+    error_message = "Expected 3 ingress rules, didn't get that."
+  }
+
+  assert {
+    condition = anytrue([
+      for rule in aws_security_group.environment_security_group.ingress :
+      (rule.from_port == 8080 && rule.to_port == 8080 && rule.protocol == "tcp" && rule.cidr_blocks == tolist(["10.0.0.0/16"]) && rule.description == "VPC peering traffic from VPC: application-a-vpc")
+    ])
+    error_message = "Did not find the ingress rule properties expected."
+  }
+
+  assert {
+    condition = anytrue([
+      for rule in aws_security_group.environment_security_group.ingress :
+      (rule.from_port == 8080 && rule.to_port == 8080 && rule.protocol == "tcp" && rule.cidr_blocks == tolist(["10.1.0.0/16"]) && rule.description == "VPC peering traffic from VPC: application-b-vpc")
+    ])
+    error_message = "Did not find the ingress rule properties expected."
+  }
+
+  assert {
+    condition = anytrue([
+      for rule in aws_security_group.environment_security_group.ingress :
+      (rule.from_port == 0 && rule.to_port == 0 && rule.self == true && rule.protocol == "-1" && rule.description == "Ingress from other containers in the same security group")
+    ])
+    error_message = "Did not find the ingress rule properties expected."
   }
 }

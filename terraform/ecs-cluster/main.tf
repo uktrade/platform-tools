@@ -47,6 +47,11 @@ data "aws_vpc" "vpc" {
   }
 }
 
+data "aws_ssm_parameters_by_path" "vpc_peering" {
+  path      = "/platform/vpc-peering/${var.application}/${var.environment}/"
+  recursive = true
+}
+
 resource "aws_security_group" "environment_security_group" {
   # checkov:skip=CKV_AWS_382: Required for general internet access
   # checkov:skip=CKV2_AWS_5: Not applicable
@@ -54,6 +59,7 @@ resource "aws_security_group" "environment_security_group" {
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
   tags        = local.sg_env_tags
+  depends_on  = [data.aws_ssm_parameters_by_path.vpc_peering]
 
   dynamic "ingress" {
     for_each = var.alb_https_security_group_id == null ? [] : [var.alb_https_security_group_id]
@@ -115,6 +121,17 @@ resource "aws_security_group" "environment_security_group" {
       cidr_blocks = ["0.0.0.0/0"]
     }
   }
+
+  dynamic "ingress" {
+    for_each = nonsensitive(local.vpc_peering_for_this_sg)
+    content {
+      description = "VPC peering traffic from VPC: ${ingress.value.source-vpc-name}"
+      protocol    = "tcp"
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      cidr_blocks = [ingress.value.source-vpc-cidr]
+    }
+  }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
@@ -125,20 +142,3 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
   to_port                      = 443
   referenced_security_group_id = aws_security_group.environment_security_group.id
 }
-
-data "aws_ssm_parameters_by_path" "vpc_peering" {
-  path      = "/platform/vpc-peering/${var.application}/${var.environment}/"
-  recursive = true
-}
-
-resource "aws_vpc_security_group_ingress_rule" "vpc_peering" {
-  for_each          = nonsensitive(local.vpc_peering_for_this_sg)
-  security_group_id = aws_security_group.environment_security_group.id
-  ip_protocol       = "tcp"
-  from_port         = each.value["port"]
-  to_port           = each.value["port"]
-  cidr_ipv4         = each.value["source-vpc-cidr"]
-  description       = "VPC peering traffic from VPC: ${each.value["source-vpc-name"]}"
-  depends_on        = [data.aws_ssm_parameters_by_path.vpc_peering]
-}
-
