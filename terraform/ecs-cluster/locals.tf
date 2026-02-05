@@ -10,4 +10,16 @@ locals {
     Name = "platform-${var.application}-${var.environment}-env-sg"
     }
   )
+
+  vpc_peering_by_name = {
+    for name, value in zipmap(
+      data.aws_ssm_parameters_by_path.vpc_peering.names,
+      data.aws_ssm_parameters_by_path.vpc_peering.values
+    ) : name => jsondecode(value)
+  }
+
+  vpc_peering_rules = {
+    for name, value in local.vpc_peering_by_name :
+    "${value.source-vpc-name}/${value.security-group-id}" => value
+  }
 }

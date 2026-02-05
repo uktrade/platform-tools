@@ -368,3 +368,58 @@ run "test_create_ecs_cluster_without_an_alb" {
     error_message = "Ingress includes more than containers in the same security group."
   }
 }
+
+run "test_create_vpc_peering_ingress_rule_if_param_is_present" {
+  command = plan
+
+  variables {
+    application = "demodjango"
+    environment = "dev"
+    vpc_name    = "terraform-tests-vpc"
+  }
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.vpc_peering
+
+    values = {
+      names = [
+        "/platform/vpc-peering/demodjango/dev/source-vpc/application-a-vpc/security-group/sg-abc123",
+        "/platform/vpc-peering/demodjango/dev/source-vpc/application-b-vpc/security-group/sg-abc123"
+      ]
+      values = [
+        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-a-vpc\",\"source-vpc-cidr\":\"10.0.0.0/16\"}",
+        "{\"security-group-id\":\"sg-abc123\",\"port\":8080,\"application\":\"demodjango\",\"environment\":\"dev\",\"source-vpc-name\":\"application-b-vpc\",\"source-vpc-cidr\":\"10.1.0.0/16\"}"
+      ]
+    }
+  }
+
+  # 3 ingress rules should be present: other containers in same SG, VPC peering "application-a-vpc", VPC peering "application-b-vpc"
+  assert {
+    condition     = length(aws_security_group.environment_security_group.ingress) == 3
+    error_message = "Expected 3 ingress rules, didn't get that."
+  }
+
+  assert {
+    condition = anytrue([
+      for rule in aws_security_group.environment_security_group.ingress :
+      (rule.from_port == 8080 && rule.to_port == 8080 && rule.protocol == "tcp" && rule.cidr_blocks == tolist(["10.0.0.0/16"]) && rule.description == "VPC peering traffic from VPC: application-a-vpc")
+    ])
+    error_message = "Did not find the ingress rule properties expected."
+  }
+
+  assert {
+    condition = anytrue([
+      for rule in aws_security_group.environment_security_group.ingress :
+      (rule.from_port == 8080 && rule.to_port == 8080 && rule.protocol == "tcp" && rule.cidr_blocks == tolist(["10.1.0.0/16"]) && rule.description == "VPC peering traffic from VPC: application-b-vpc")
+    ])
+    error_message = "Did not find the ingress rule properties expected."
+  }
+
+  assert {
+    condition = anytrue([
+      for rule in aws_security_group.environment_security_group.ingress :
+      (rule.from_port == 0 && rule.to_port == 0 && rule.self == true && rule.protocol == "-1" && rule.description == "Ingress from other containers in the same security group")
+    ])
+    error_message = "Did not find the ingress rule properties expected."
+  }
+}

@@ -72,3 +72,14 @@ variable "requires_image_build" {
   type    = bool
   default = true
 }
+
+variable "has_custom_pre_deploy" {
+  type    = bool
+  default = false
+}
+
+variable "has_custom_post_deploy" {
+  type    = bool
+  default = false
+}
+
