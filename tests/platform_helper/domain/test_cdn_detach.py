@@ -19,14 +19,12 @@ class CDNDetachMocks:
 
 class TestCDNDetach:
     def test_success(self):
-        environment_name = "test"
-
         mocks = CDNDetachMocks()
 
         cdn_detach = CDNDetach(**mocks.params())
-        cdn_detach.execute(environment_name)
+        cdn_detach.execute("staging")
 
-        mocks.mock_terraform_environment.generate.assert_called_once_with(environment_name)
+        mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
         mocks.mock_terraform_state_provider.pull.assert_called_once_with(
-            f"terraform/environments/{environment_name}"
+            "terraform/environments/staging"
         )
