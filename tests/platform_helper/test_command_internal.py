@@ -194,7 +194,7 @@ class TestInternal:
         mock_click.assert_called_with("Error: bad env", err=True, fg="red")
 
 
-class TestInternalCdnDetach:
+class TestInternalCDNDetach:
     def test_success(self):
         result = CliRunner().invoke(
             internal,
