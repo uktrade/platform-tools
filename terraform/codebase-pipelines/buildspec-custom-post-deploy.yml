@@ -1,5 +1,9 @@
 version: 0.2
 
+env:
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
 phases:
   build:
     commands:
