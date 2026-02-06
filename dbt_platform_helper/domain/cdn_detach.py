@@ -23,4 +23,10 @@ class CDNDetach:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
     def filter_resources_to_detach(self, terraform_state):
-        pass
+        return [
+            r
+            for r in terraform_state["resources"]
+            if r["mode"] == "managed"
+            and r["provider"].endswith((".domain", ".domain-cdn"))
+            and "module.extensions.module.alb" not in r["module"]
+        ]

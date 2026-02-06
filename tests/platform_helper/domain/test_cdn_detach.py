@@ -2,10 +2,12 @@ import json
 from unittest.mock import Mock
 
 import pytest
+import yaml
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.providers.terraform import TerraformProvider
+from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
 
@@ -47,7 +49,15 @@ class TestCDNDetach:
         ) as f:
             mock_terraform_state = json.load(f)
 
+        with open(EXPECTED_DATA_DIR / "cdn_detach/filtered_resources.yaml") as f:
+            expected_resource_addrs = {
+                (x["module"], x["mode"], x["type"], x["name"]) for x in yaml.safe_load(f)
+            }
+
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
-        cdn_detach.filter_resources_to_detach(mock_terraform_state)
+        resources = cdn_detach.filter_resources_to_detach(mock_terraform_state)
+        resource_addrs = {(r["module"], r["mode"], r["type"], r["name"]) for r in resources}
+
+        assert resource_addrs == expected_resource_addrs
