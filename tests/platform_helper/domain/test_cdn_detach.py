@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 
 import pytest
@@ -5,6 +6,7 @@ import pytest
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.providers.terraform import TerraformProvider
+from tests.platform_helper.conftest import INPUT_DATA_DIR
 
 
 class CDNDetachMocks:
@@ -38,3 +40,14 @@ class TestCDNDetach:
 
         with pytest.raises(NotImplementedError):
             cdn_detach.execute(environment_name="staging", dry_run=False)
+
+    def test_filter_resources_to_detach(self):
+        with open(
+            INPUT_DATA_DIR / "terraform_state/cdn_detach/typical_environment.tfstate.json"
+        ) as f:
+            mock_terraform_state = json.load(f)
+
+        mocks = CDNDetachMocks()
+        cdn_detach = CDNDetach(**mocks.params())
+
+        cdn_detach.filter_resources_to_detach(mock_terraform_state)

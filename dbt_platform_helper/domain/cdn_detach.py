@@ -21,3 +21,6 @@ class CDNDetach:
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
+
+    def filter_resources_to_detach(self, terraform_state):
+        pass

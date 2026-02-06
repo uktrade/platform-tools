@@ -1,0 +1,1036 @@
+{
+  "version": 4,
+  "terraform_version": "1.12.2",
+  "serial": 422,
+  "lineage": "01234567-89ab-cdef-0123-456789abcdef",
+  "outputs": {},
+  "resources": [
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "archive_file",
+      "name": "origin-secret-rotate-code",
+      "provider": "provider[\"registry.terraform.io/hashicorp/archive\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_caller_identity",
+      "name": "current",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "origin_verify_rotate_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": ""
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "secret_manager_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": ""
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_partition",
+      "name": "current",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_region",
+      "name": "current",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_route53_zone",
+      "name": "domain-alb",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_route53_zone",
+      "name": "domain-root",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain",
+      "instances": [
+        {
+          "index_key": 0
+        },
+        {
+          "index_key": 1
+        },
+        {
+          "index_key": 2
+        },
+        {
+          "index_key": 3
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_security_group",
+      "name": "vpc_base_sg",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_ssm_parameter",
+      "name": "slack_token",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_subnets",
+      "name": "private-subnets",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_subnets",
+      "name": "public-subnets",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_vpc",
+      "name": "vpc",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_acm_certificate",
+      "name": "certificate",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "identity": {
+            "arn": "arn:aws:acm:eu-west-2:112233445566:certificate/12345678-9abc-def0-1234-56789abcdef0"
+          },
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_acm_certificate_validation",
+      "name": "cert_validate",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_iam_role",
+      "name": "origin-secret-rotate-execution-role",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "account_id": "112233445566",
+            "name": "demodjango-dev-origin-secret-rotate-role"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_iam_role_policy",
+      "name": "origin_secret_rotate_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "account_id": "112233445566",
+            "name": "OriginVerifyRotatePolicy",
+            "role": "demodjango-dev-origin-secret-rotate-role"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_kms_alias",
+      "name": "origin_verify_secret_key_alias",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "account_id": "112233445566",
+            "name": "alias/demodjango-dev-origin-verify-header-secret-key",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_kms_key",
+      "name": "origin_verify_secret_key",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "account_id": "112233445566",
+            "id": "23456789-abcd-ef01-2345-6789abcdef01",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_lambda_function",
+      "name": "origin-secret-rotate-function",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "account_id": "112233445566",
+            "function_name": "demodjango-dev-origin-secret-rotate",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_lambda_permission",
+      "name": "rotate-function-invoke-permission",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "account_id": "112233445566",
+            "function_name": "demodjango-dev-origin-secret-rotate",
+            "qualifier": null,
+            "region": "eu-west-2",
+            "statement_id": "AllowSecretsManagerInvocation"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_lb",
+      "name": "this",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "identity": {
+            "arn": "arn:aws:elasticloadbalancing:eu-west-2:112233445566:loadbalancer/app/demodjango-dev/0123456789abcdef"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_lb_listener",
+      "name": "alb-listener",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "http",
+          "identity": {
+            "arn": "arn:aws:elasticloadbalancing:eu-west-2:112233445566:listener/app/demodjango-dev/0123456789abcdef/123456789abcdef0"
+          }
+        },
+        {
+          "index_key": "https",
+          "identity": {
+            "arn": "arn:aws:elasticloadbalancing:eu-west-2:112233445566:listener/app/demodjango-dev/0123456789abcdef/23456789abcdef01"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_lb_target_group",
+      "name": "http-target-group",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "identity": {
+            "arn": "arn:aws:elasticloadbalancing:eu-west-2:112233445566:targetgroup/demodjango-dev-http/3456789abcdef012"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "alb-record",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain",
+      "instances": [
+        {
+          "identity": {
+            "account_id": "223344556677",
+            "name": "internal.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "validation-record-san",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_0123456789abcdef0123456789abcdef.api.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": 1,
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_123456789abcdef0123456789abcdef0.internal.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": 2,
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_23456789abcdef0123456789abcdef01.ip-filter-test.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": 3,
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_3456789abcdef0123456789abcdef012.web.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_secretsmanager_secret",
+      "name": "origin-verify-secret",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "arn": "arn:aws:secretsmanager:eu-west-2:112233445566:secret:demodjango-dev-origin-verify-header-secret-ABCDEF"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_secretsmanager_secret_policy",
+      "name": "secret_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "secret_arn": "arn:aws:secretsmanager:eu-west-2:112233445566:secret:demodjango-dev-origin-verify-header-secret-ABCDEF"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_secretsmanager_secret_rotation",
+      "name": "origin-verify-rotate-schedule",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "",
+          "identity": {
+            "secret_id": "arn:aws:secretsmanager:eu-west-2:112233445566:secret:demodjango-dev-origin-verify-header-secret-ABCDEF"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "alb-security-group",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "http",
+          "identity": {
+            "account_id": "112233445566",
+            "id": "sg-00123456789abcdef",
+            "region": "eu-west-2"
+          }
+        },
+        {
+          "index_key": "https",
+          "identity": {
+            "account_id": "112233445566",
+            "id": "sg-0123456789abcdef0",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_wafv2_web_acl",
+      "name": "waf-acl",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": ""
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_wafv2_web_acl_association",
+      "name": "waf-alb-association",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": ""
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.alb[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "random_password",
+      "name": "origin-secret",
+      "provider": "provider[\"registry.terraform.io/hashicorp/random\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_cloudfront_cache_policy",
+      "name": "policy-name",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "demodjango-cache-policy"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_cloudfront_origin_request_policy",
+      "name": "request-policy-name",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "demodjango-origin-request-policy"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_route53_zone",
+      "name": "domain-root",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_secretsmanager_secret_version",
+      "name": "origin_verify_secret_version",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": ""
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "data",
+      "type": "aws_wafv2_web_acl",
+      "name": "waf-default",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_acm_certificate",
+      "name": "certificate",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital",
+          "identity": {
+            "arn": "arn:aws:acm:us-east-1:223344556677:certificate/3456789a-bcde-f012-3456-789abcdef012"
+          },
+          "create_before_destroy": true
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital",
+          "identity": {
+            "arn": "arn:aws:acm:us-east-1:223344556677:certificate/456789ab-cdef-0123-4567-89abcdef0123"
+          },
+          "create_before_destroy": true
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital",
+          "identity": {
+            "arn": "arn:aws:acm:us-east-1:223344556677:certificate/56789abc-def0-1234-5678-9abcdef01234"
+          },
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_acm_certificate_validation",
+      "name": "cert-validate",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_cache_policy",
+      "name": "cache_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "demodjango-cache-policy"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_distribution",
+      "name": "standard",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_monitoring_subscription",
+      "name": "additional_metrics",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital"
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_origin_request_policy",
+      "name": "origin_request_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "demodjango-origin-request-policy"
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "cdn-address",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital",
+          "identity": {
+            "account_id": "223344556677",
+            "name": "api.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "A",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital",
+          "identity": {
+            "account_id": "223344556677",
+            "name": "ip-filter-test.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "A",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital",
+          "identity": {
+            "account_id": "223344556677",
+            "name": "web.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "A",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.cdn[\"demodjango-alb\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "validation-record",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": "api.dev.demodjango.uktrade.digital",
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_456789abcdef0123456789abcdef0123.api.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": "ip-filter-test.dev.demodjango.uktrade.digital",
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_56789abcdef0123456789abcdef01234.ip-filter-test.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        },
+        {
+          "index_key": "web.dev.demodjango.uktrade.digital",
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_6789abcdef0123456789abcdef012345.web.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "data",
+      "type": "aws_caller_identity",
+      "name": "current",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "data",
+      "type": "aws_cloudfront_cache_policy",
+      "name": "example",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "bucket-policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "data",
+      "type": "aws_iam_policy_document",
+      "name": "s3-ssm-kms-key-policy-document",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "data",
+      "type": "aws_region",
+      "name": "current",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {}
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "data",
+      "type": "aws_route53_zone",
+      "name": "selected",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_acm_certificate",
+      "name": "certificate",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "arn": "arn:aws:acm:us-east-1:223344556677:certificate/6789abcd-ef01-2345-6789-abcdef012345"
+          },
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_acm_certificate_validation",
+      "name": "certificate_validation",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_distribution",
+      "name": "s3_distribution",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_origin_access_control",
+      "name": "oac",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_kms_key",
+      "name": "s3-ssm-kms-key",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "account_id": "112233445566",
+            "id": "789abcde-f012-3456-789a-bcdef0123456",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_kms_key_policy",
+      "name": "s3-ssm-kms-key-policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "cert_validation",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_789abcdef0123456789abcdef0123456.demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "cloudfront_domain",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"].domain-cdn",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "account_id": "223344556677",
+            "name": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "A",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "this",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "identity": {
+            "account_id": "112233445566",
+            "bucket": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_s3_bucket_policy",
+      "name": "cloudfront_bucket_policy",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "account_id": "112233445566",
+            "bucket": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_s3_bucket_public_access_block",
+      "name": "public_access_block",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "identity": {
+            "account_id": "112233445566",
+            "bucket": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_s3_bucket_versioning",
+      "name": "this-versioning",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "identity": {
+            "account_id": "112233445566",
+            "bucket": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "expected_bucket_owner": null,
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_s3_object",
+      "name": "object",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "test.html",
+          "identity": {
+            "account_id": "112233445566",
+            "bucket": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "key": "test.html",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.extensions.module.s3[\"demodjango-s3-bucket-static\"]",
+      "mode": "managed",
+      "type": "aws_ssm_parameter",
+      "name": "cloudfront_alias",
+      "provider": "module.extensions.provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "identity": {
+            "account_id": "112233445566",
+            "name": "/copilot/demodjango/dev/secrets/STATIC_S3_ENDPOINT",
+            "region": "eu-west-2"
+          }
+        }
+      ]
+    }
+  ]
+}
