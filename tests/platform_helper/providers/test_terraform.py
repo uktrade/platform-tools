@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.terraform_state import TerraformStateProvider
+from dbt_platform_helper.providers.terraform import TerraformStateProvider
 
 MOCK_STATE = {
     "version": 4,
@@ -15,7 +15,7 @@ MOCK_STATE = {
 
 
 class TestPull:
-    @patch("dbt_platform_helper.providers.terraform_state.subprocess.run", spec=True)
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
     def test_success(self, mock_subprocess_run, tmp_path):
         mock_subprocess_run.return_value = subprocess.CompletedProcess(
             args=["terraform", "state", "pull"],
@@ -34,7 +34,7 @@ class TestPull:
             check=True,
         )
 
-    @patch("dbt_platform_helper.providers.terraform_state.subprocess.run", spec=True)
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
     def test_subprocess_exits_nonzero(self, mock_subprocess_run, tmp_path):
         mock_subprocess_run.side_effect = subprocess.CalledProcessError(
             returncode=1,

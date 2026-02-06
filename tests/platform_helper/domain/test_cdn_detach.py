@@ -4,7 +4,7 @@ import pytest
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
-from dbt_platform_helper.providers.terraform_state import TerraformStateProvider
+from dbt_platform_helper.providers.terraform import TerraformStateProvider
 
 
 class CDNDetachMocks:
