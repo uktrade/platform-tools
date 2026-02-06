@@ -197,7 +197,7 @@ class TestInternal:
 class TestInternalCDNDetach:
     @mock_aws
     @patch("dbt_platform_helper.commands.internal.CDNDetach", spec=True)
-    def test_success(self, mock_cdn_detach):
+    def test_dry_run_success(self, mock_cdn_detach):
         mock_cdn_detach_instance = mock_cdn_detach.return_value
 
         result = CliRunner().invoke(
@@ -206,7 +206,26 @@ class TestInternalCDNDetach:
         )
 
         assert result.exit_code == 0, result.output
-        mock_cdn_detach_instance.execute.assert_called_once_with("dev")
+        mock_cdn_detach_instance.execute.assert_called_once_with(
+            environment_name="dev",
+            dry_run=True,
+        )
+
+    @mock_aws
+    @patch("dbt_platform_helper.commands.internal.CDNDetach", spec=True)
+    def test_real_run_success(self, mock_cdn_detach):
+        mock_cdn_detach_instance = mock_cdn_detach.return_value
+
+        result = CliRunner().invoke(
+            internal,
+            ["cdn", "detach", "--env", "dev", "--no-dry-run"],
+        )
+
+        assert result.exit_code == 0, result.output
+        mock_cdn_detach_instance.execute.assert_called_once_with(
+            environment_name="dev",
+            dry_run=False,
+        )
 
     def test_missing_env(self):
         result = CliRunner().invoke(
