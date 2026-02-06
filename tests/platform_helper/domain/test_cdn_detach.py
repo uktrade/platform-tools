@@ -1,5 +1,7 @@
 from unittest.mock import Mock
 
+import pytest
+
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.providers.terraform_state import TerraformStateProvider
@@ -18,13 +20,20 @@ class CDNDetachMocks:
 
 
 class TestCDNDetach:
-    def test_success(self):
+    def test_dry_run_success(self):
         mocks = CDNDetachMocks()
-
         cdn_detach = CDNDetach(**mocks.params())
-        cdn_detach.execute("staging")
+
+        cdn_detach.execute(environment_name="staging", dry_run=True)
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
         mocks.mock_terraform_state_provider.pull.assert_called_once_with(
             "terraform/environments/staging"
         )
+
+    def test_real_run_not_implemented(self):
+        mocks = CDNDetachMocks()
+        cdn_detach = CDNDetach(**mocks.params())
+
+        with pytest.raises(NotImplementedError):
+            cdn_detach.execute(environment_name="staging", dry_run=False)
