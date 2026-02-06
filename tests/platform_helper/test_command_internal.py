@@ -195,6 +195,7 @@ class TestInternal:
 
 
 class TestInternalCDNDetach:
+    @mock_aws
     @patch("dbt_platform_helper.commands.internal.CDNDetach", spec=True)
     def test_success(self, mock_cdn_detach):
         mock_cdn_detach_instance = mock_cdn_detach.return_value
