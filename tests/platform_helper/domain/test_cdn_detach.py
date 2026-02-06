@@ -4,18 +4,18 @@ import pytest
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
-from dbt_platform_helper.providers.terraform import TerraformStateProvider
+from dbt_platform_helper.providers.terraform import TerraformProvider
 
 
 class CDNDetachMocks:
     def __init__(self):
         self.mock_terraform_environment = Mock(spec=TerraformEnvironment)
-        self.mock_terraform_state_provider = Mock(spec=TerraformStateProvider)
+        self.mock_terraform_provider = Mock(spec=TerraformProvider)
 
     def params(self):
         return {
             "terraform_environment": self.mock_terraform_environment,
-            "terraform_state_provider": self.mock_terraform_state_provider,
+            "terraform_provider": self.mock_terraform_provider,
         }
 
 
@@ -27,7 +27,7 @@ class TestCDNDetach:
         cdn_detach.execute(environment_name="staging", dry_run=True)
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
-        mocks.mock_terraform_state_provider.pull.assert_called_once_with(
+        mocks.mock_terraform_provider.pull_state.assert_called_once_with(
             "terraform/environments/staging"
         )
 

@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from dbt_platform_helper.platform_exception import PlatformException
-from dbt_platform_helper.providers.terraform import TerraformStateProvider
+from dbt_platform_helper.providers.terraform import TerraformProvider
 
 MOCK_STATE = {
     "version": 4,
@@ -14,7 +14,7 @@ MOCK_STATE = {
 }
 
 
-class TestPull:
+class TestPullState:
     @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
     def test_success(self, mock_subprocess_run, tmp_path):
         mock_subprocess_run.return_value = subprocess.CompletedProcess(
@@ -24,7 +24,7 @@ class TestPull:
             stderr=None,
         )
 
-        result = TerraformStateProvider().pull(tmp_path)
+        result = TerraformProvider().pull_state(tmp_path)
 
         assert result == MOCK_STATE
         mock_subprocess_run.assert_called_once_with(
@@ -44,6 +44,6 @@ class TestPull:
         )
 
         with pytest.raises(PlatformException) as e:
-            TerraformStateProvider().pull(tmp_path)
+            TerraformProvider().pull_state(tmp_path)
 
         assert "Failed to pull a copy of the terraform state" in str(e.value)

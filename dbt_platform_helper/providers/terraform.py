@@ -4,8 +4,8 @@ import subprocess
 from dbt_platform_helper.platform_exception import PlatformException
 
 
-class TerraformStateProvider:
-    def pull(self, config_dir):
+class TerraformProvider:
+    def pull_state(self, config_dir):
         try:
             result = subprocess.run(
                 ["terraform", "state", "pull"],
