@@ -46,7 +46,6 @@ class TestCDNDetach:
     def test_filter_resources_to_detach(self):
         with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
             mock_terraform_state = json.load(f)
-
         with open(EXPECTED_DATA_DIR / "cdn_detach/filtered_resources/typical.yaml") as f:
             expected_resource_addrs = {
                 (x["module"], x["mode"], x["type"], x["name"]) for x in yaml.safe_load(f)
