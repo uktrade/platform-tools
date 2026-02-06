@@ -205,7 +205,7 @@ class TestInternalCDNDetach:
             ["cdn", "detach", "--env", "dev"],
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 0, result.output
         mock_cdn_detach_instance.execute.assert_called_once_with("dev")
 
     def test_missing_env(self):
@@ -214,5 +214,5 @@ class TestInternalCDNDetach:
             ["cdn", "detach"],
         )
 
-        assert result.exit_code == 2
+        assert result.exit_code == 2, result.output
         assert "Missing option '--env'" in result.output
