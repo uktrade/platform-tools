@@ -14,6 +14,39 @@ MOCK_STATE = {
 }
 
 
+class TestInit:
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
+    def test_success(self, mock_subprocess_run, tmp_path):
+        mock_subprocess_run.return_value = subprocess.CompletedProcess(
+            args=["terraform", "init"],
+            returncode=0,
+            stdout=None,
+            stderr=None,
+        )
+
+        TerraformProvider().init(tmp_path)
+
+        mock_subprocess_run.assert_called_once_with(
+            ["terraform", "init"],
+            cwd=tmp_path,
+            check=True,
+        )
+
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
+    def test_subprocess_exits_nonzero(self, mock_subprocess_run, tmp_path):
+        mock_subprocess_run.side_effect = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["terraform", "init"],
+            output=None,
+            stderr=None,
+        )
+
+        with pytest.raises(PlatformException) as e:
+            TerraformProvider().init(tmp_path)
+
+        assert "Failed to init terraform" in str(e.value)
+
+
 class TestPullState:
     @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
     def test_success(self, mock_subprocess_run, tmp_path):
