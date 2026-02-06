@@ -17,7 +17,8 @@ class CDNDetach:
         terraform_config_dir = f"terraform/environments/{environment_name}"
 
         self.terraform_provider.init(terraform_config_dir)
-        self.terraform_provider.pull_state(terraform_config_dir)
+        state = self.terraform_provider.pull_state(terraform_config_dir)
+        self.filter_resources_to_detach(state)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")

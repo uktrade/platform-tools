@@ -1,5 +1,6 @@
 import json
 from unittest.mock import Mock
+from unittest.mock import patch
 
 import pytest
 import yaml
@@ -24,7 +25,8 @@ class CDNDetachMocks:
 
 
 class TestCDNDetach:
-    def test_dry_run_success(self):
+    @patch("dbt_platform_helper.domain.cdn_detach.CDNDetach.filter_resources_to_detach", spec=True)
+    def test_dry_run_success(self, mock_filter):
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
@@ -35,8 +37,10 @@ class TestCDNDetach:
         mocks.mock_terraform_provider.pull_state.assert_called_once_with(
             "terraform/environments/staging"
         )
+        mock_filter.assert_called_once()
 
-    def test_real_run_not_implemented(self):
+    @patch("dbt_platform_helper.domain.cdn_detach.CDNDetach.filter_resources_to_detach", spec=True)
+    def test_real_run_not_implemented(self, mock_filter):
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
