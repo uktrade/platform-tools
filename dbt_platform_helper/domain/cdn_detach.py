@@ -12,7 +12,7 @@ class CDNDetach:
         self.terraform_state_provider = terraform_state_provider or TerraformStateProvider()
 
     def execute(self, environment_name):
-        # Writes to terraform/environments/{environment_name}
+        # Populates ./terraform/environments/{environment_name}
         self.terraform_environment.generate(environment_name)
 
         self.terraform_state_provider.pull(f"terraform/environments/{environment_name}")
