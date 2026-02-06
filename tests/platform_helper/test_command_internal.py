@@ -215,3 +215,4 @@ class TestInternalCDNDetach:
         )
 
         assert result.exit_code == 2
+        assert "Missing option '--env'" in result.output
