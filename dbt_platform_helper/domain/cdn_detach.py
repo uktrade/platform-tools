@@ -14,8 +14,10 @@ class CDNDetach:
     def execute(self, environment_name, dry_run=True):
         # Populates ./terraform/environments/{environment_name}
         self.terraform_environment.generate(environment_name)
+        terraform_config_dir = f"terraform/environments/{environment_name}"
 
-        self.terraform_provider.pull_state(f"terraform/environments/{environment_name}")
+        self.terraform_provider.init(terraform_config_dir)
+        self.terraform_provider.pull_state(terraform_config_dir)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
