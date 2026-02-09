@@ -108,6 +108,31 @@ class TestCDNDetach:
             ]
         )
 
+    @patch(
+        "dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach",
+        return_value=[],
+    )
+    def test_dry_run_success_with_no_resources_to_remove(self, mock_get_resources_to_detach):
+        mocks = CDNDetachMocks()
+        cdn_detach = CDNDetach(**mocks.params())
+
+        cdn_detach.execute(environment_name="staging", dry_run=True)
+
+        mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
+        mocks.mock_terraform_provider.init.assert_called_once_with("terraform/environments/staging")
+        mocks.mock_terraform_provider.pull_state.assert_called_once_with(
+            "terraform/environments/staging"
+        )
+        mock_get_resources_to_detach.assert_called_once()
+
+        mocks.mock_io.info.assert_has_calls(
+            [
+                call(
+                    "Will not remove any resources from the staging environment's terraform state."
+                ),
+            ]
+        )
+
     @patch("dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach", spec=True)
     def test_real_run_not_implemented(self, mock_get_resources_to_detach):
         mocks = CDNDetachMocks()

@@ -52,11 +52,16 @@ class CDNDetach:
 
     def log_resources_to_detach(self, resources, environment_name):
         self.io.info("")
-        self.io.info(
-            f"Will remove the following resources from the {environment_name} environment's terraform state:"
-        )
-        for address in sorted(self.iter_addresses_for_resources(resources)):
-            self.io.info(f"  {address}")
+        if resources:
+            self.io.info(
+                f"Will remove the following resources from the {environment_name} environment's terraform state:"
+            )
+            for address in sorted(self.iter_addresses_for_resources(resources)):
+                self.io.info(f"  {address}")
+        else:
+            self.io.info(
+                f"Will not remove any resources from the {environment_name} environment's terraform state."
+            )
 
     def iter_addresses_for_resources(self, resources):
         for resource in resources:
