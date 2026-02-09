@@ -169,7 +169,10 @@ def detach(env, dry_run):
         terraform_environment = TerraformEnvironment(
             config_provider, TerraformManifestProvider(), click_io, platform_helper_versioning
         )
-        cdn_detach = CDNDetach(terraform_environment=terraform_environment)
+        cdn_detach = CDNDetach(
+            config_provider=config_provider,
+            terraform_environment=terraform_environment,
+        )
         cdn_detach.execute(environment_name=env, dry_run=dry_run)
     except PlatformException as err:
         click_io.abort_with_error(str(err))
