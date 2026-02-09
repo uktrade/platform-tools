@@ -33,7 +33,9 @@ class TestInit:
         )
 
     @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
-    def test_subprocess_exits_nonzero(self, mock_subprocess_run, tmp_path):
+    def test_platform_exception_raised_if_subprocess_exits_nonzero(
+        self, mock_subprocess_run, tmp_path
+    ):
         mock_subprocess_run.side_effect = subprocess.CalledProcessError(
             returncode=1,
             cmd=["terraform", "init"],
@@ -68,7 +70,9 @@ class TestPullState:
         )
 
     @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
-    def test_subprocess_exits_nonzero(self, mock_subprocess_run, tmp_path):
+    def test_platform_exception_raised_if_subprocess_exits_nonzero(
+        self, mock_subprocess_run, tmp_path
+    ):
         mock_subprocess_run.side_effect = subprocess.CalledProcessError(
             returncode=1,
             cmd=["terraform", "state", "pull"],
