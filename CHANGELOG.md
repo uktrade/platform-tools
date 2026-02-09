@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.20.1](https://github.com/uktrade/platform-tools/compare/15.20.0...15.20.1) (2026-02-06)
+
+
+### Bug Fixes
+
+* Pass missing environment variables into custom build projects (DBTP-2659) ([#1260](https://github.com/uktrade/platform-tools/issues/1260)) ([a2331ae](https://github.com/uktrade/platform-tools/commit/a2331aed091c20bbb7952898914fb8c03f6221d9))
+
 ## [15.20.0](https://github.com/uktrade/platform-tools/compare/15.19.0...15.20.0) (2026-02-05)
 
 
