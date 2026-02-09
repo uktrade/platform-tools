@@ -170,6 +170,7 @@ def detach(env, dry_run):
             config_provider, TerraformManifestProvider(), click_io, platform_helper_versioning
         )
         cdn_detach = CDNDetach(
+            io=click_io,
             config_provider=config_provider,
             terraform_environment=terraform_environment,
         )
