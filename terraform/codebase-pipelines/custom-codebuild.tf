@@ -21,6 +21,21 @@ resource "aws_codebuild_project" "custom_pre_deploy" {
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
 
+    environment_variable {
+      name  = "ENV_CONFIG"
+      value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "CODESTAR_CONNECTION_ARN"
+      value = data.external.codestar_connections.result["ConnectionArn"]
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
+
   }
 
   logs_config {
@@ -76,6 +91,21 @@ resource "aws_codebuild_project" "custom_post_deploy" {
     image                       = "aws/codebuild/amazonlinux2-x86_64-standard:5.0"
     type                        = "LINUX_CONTAINER"
     image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "ENV_CONFIG"
+      value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "CODESTAR_CONNECTION_ARN"
+      value = data.external.codestar_connections.result["ConnectionArn"]
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION"
+      value = var.platform_tools_version
+    }
 
   }
 
