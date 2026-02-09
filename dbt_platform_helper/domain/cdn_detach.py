@@ -55,10 +55,10 @@ class CDNDetach:
         self.io.info(
             f"Will remove the following resources from the {environment_name} environment's terraform state:"
         )
-        for address in sorted(self.to_tfstate_addresses(resources)):
+        for address in sorted(self.iter_addresses_for_resources(resources)):
             self.io.info(f"  {address}")
 
-    def to_tfstate_addresses(self, resources):
+    def iter_addresses_for_resources(self, resources):
         for resource in resources:
             base = ".".join((resource["module"], resource["type"], resource["name"]))
             instances = resource["instances"]
