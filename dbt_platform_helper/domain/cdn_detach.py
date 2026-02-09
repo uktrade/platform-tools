@@ -31,8 +31,10 @@ class CDNDetach:
         self.terraform_environment.generate(environment_name)
         terraform_config_dir = f"terraform/environments/{environment_name}"
 
+        self.io.info(f"Fetching a copy of the {environment_name} environment's terraform state...")
         self.terraform_provider.init(terraform_config_dir)
         state = self.terraform_provider.pull_state(terraform_config_dir)
+
         resources = self.filter_resources_to_detach(state)
         self.log_resources_to_detach(resources, environment_name)
 
@@ -49,6 +51,7 @@ class CDNDetach:
         ]
 
     def log_resources_to_detach(self, resources, environment_name):
+        self.io.info("")
         self.io.info(
             f"Will remove the following resources from the {environment_name} environment's terraform state:"
         )
