@@ -24,7 +24,9 @@ class TestInit:
             stderr=None,
         )
 
-        TerraformProvider().init(tmp_path)
+        provider = TerraformProvider()
+
+        provider.init(tmp_path)
 
         mock_subprocess_run.assert_called_once_with(
             ["terraform", "init"],
@@ -43,8 +45,10 @@ class TestInit:
             stderr=None,
         )
 
+        provider = TerraformProvider()
+
         with pytest.raises(PlatformException) as e:
-            TerraformProvider().init(tmp_path)
+            provider.init(tmp_path)
 
         assert "Failed to init terraform" in str(e.value)
 
@@ -59,7 +63,9 @@ class TestPullState:
             stderr=None,
         )
 
-        result = TerraformProvider().pull_state(tmp_path)
+        provider = TerraformProvider()
+
+        result = provider.pull_state(tmp_path)
 
         assert result == MOCK_STATE
         mock_subprocess_run.assert_called_once_with(
@@ -80,7 +86,9 @@ class TestPullState:
             stderr=None,
         )
 
+        provider = TerraformProvider()
+
         with pytest.raises(PlatformException) as e:
-            TerraformProvider().pull_state(tmp_path)
+            provider.pull_state(tmp_path)
 
         assert "Failed to pull a copy of the terraform state" in str(e.value)
