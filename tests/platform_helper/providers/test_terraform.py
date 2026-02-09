@@ -20,7 +20,7 @@ class TestInit:
         mock_subprocess_run.return_value = subprocess.CompletedProcess(
             args=["terraform", "init"],
             returncode=0,
-            stdout=None,
+            stdout="terraform init logs\n",
             stderr=None,
         )
 
@@ -31,6 +31,9 @@ class TestInit:
         mock_subprocess_run.assert_called_once_with(
             ["terraform", "init"],
             cwd=tmp_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
             check=True,
         )
 
@@ -41,7 +44,7 @@ class TestInit:
         mock_subprocess_run.side_effect = subprocess.CalledProcessError(
             returncode=1,
             cmd=["terraform", "init"],
-            output=None,
+            output="terraform init logs\n",
             stderr=None,
         )
 
@@ -50,7 +53,10 @@ class TestInit:
         with pytest.raises(PlatformException) as e:
             provider.init(tmp_path)
 
-        assert "Failed to init terraform" in str(e.value)
+        assert (
+            str(e.value)
+            == "Failed to init terraform: subprocess exited with status 1. Subprocess output:\nterraform init logs\n"
+        )
 
 
 class TestPullState:

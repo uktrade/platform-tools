@@ -10,10 +10,15 @@ class TerraformProvider:
             subprocess.run(
                 ["terraform", "init"],
                 cwd=config_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
                 check=True,
             )
         except subprocess.CalledProcessError as e:
-            raise PlatformException(f"Failed to init terraform: {e}") from e
+            raise PlatformException(
+                f"Failed to init terraform: subprocess exited with status {e.returncode}. Subprocess output:\n{e.output}"
+            ) from e
 
     def pull_state(self, config_dir):
         try:
