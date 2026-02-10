@@ -45,10 +45,10 @@ class CDNDetach:
     def get_resources_to_detach(self, terraform_state, environment_name):
         managed_ingress_extensions = self.get_extensions_with_managed_ingress(environment_name)
         return [
-            resource
-            for resource in terraform_state["resources"]
-            if self.is_resource_detachable(resource)
-            and self.extension_name_for_resource(resource) in managed_ingress_extensions
+            r
+            for r in terraform_state["resources"]
+            if self.is_resource_detachable(r)
+            and self.extension_name_for_resource(r) in managed_ingress_extensions
         ]
 
     def get_extensions_with_managed_ingress(self, environment_name):
