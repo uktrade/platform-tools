@@ -1,0 +1,6 @@
+- 'module.extensions.module.s3["demodjango-s3-bucket-static"].aws_acm_certificate.certificate'
+- 'module.extensions.module.s3["demodjango-s3-bucket-static"].aws_acm_certificate_validation.certificate_validation'
+- 'module.extensions.module.s3["demodjango-s3-bucket-static"].aws_cloudfront_distribution.s3_distribution'
+- 'module.extensions.module.s3["demodjango-s3-bucket-static"].aws_cloudfront_origin_access_control.oac'
+- 'module.extensions.module.s3["demodjango-s3-bucket-static"].aws_route53_record.cert_validation'
+- 'module.extensions.module.s3["demodjango-s3-bucket-static"].aws_route53_record.cloudfront_domain'

@@ -1,0 +1,8 @@
+- 'module.extensions.module.cdn["demodjango-alb"].aws_acm_certificate.certificate'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_acm_certificate_validation.cert-validate'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_cache_policy.cache_policy'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_distribution.standard'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_monitoring_subscription.additional_metrics'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_origin_request_policy.origin_request_policy'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_route53_record.cdn-address'
+- 'module.extensions.module.cdn["demodjango-alb"].aws_route53_record.validation-record'

@@ -1,4 +1,5 @@
 import json
+import re
 
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
@@ -35,28 +36,59 @@ class CDNDetach:
         self.terraform_provider.init(terraform_config_dir)
         state = self.terraform_provider.pull_state(terraform_config_dir)
 
-        resources = self.filter_resources_to_detach(state)
+        resources = self.get_resources_to_detach(state, environment_name)
         self.log_resources_to_detach(resources, environment_name)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
-    def filter_resources_to_detach(self, terraform_state):
+    def get_resources_to_detach(self, terraform_state, environment_name):
+        managed_ingress_extensions = self.get_extensions_with_managed_ingress(environment_name)
         return [
             r
             for r in terraform_state["resources"]
-            if r["mode"] == "managed"
-            and r["provider"].endswith((".domain", ".domain-cdn"))
-            and "module.extensions.module.alb" not in r["module"]
+            if self.is_resource_detachable(r)
+            and self.extension_name_for_resource(r) in managed_ingress_extensions
         ]
+
+    def get_extensions_with_managed_ingress(self, environment_name):
+        config = self.config_provider.get_enriched_config()
+        result = set()
+        for ext_name, ext_config in config.get("extensions", {}).items():
+            flattened_ext_config = {
+                **ext_config,
+                **(ext_config.get("environments", {}).get("*") or {}),
+                **(ext_config.get("environments", {}).get(environment_name) or {}),
+            }
+            if flattened_ext_config.get("managed_ingress", False):
+                result.add(ext_name)
+        return result
+
+    @staticmethod
+    def is_resource_detachable(resource):
+        return (
+            resource["mode"] == "managed"
+            and resource["provider"].endswith((".domain", ".domain-cdn"))
+            and "module.extensions.module.alb" not in resource["module"]
+        )
+
+    @staticmethod
+    def extension_name_for_resource(resource):
+        m = re.match(r'^module\.extensions\.module\.\w+\["([^"]+)"\]', resource["module"])
+        return m.group(1)
 
     def log_resources_to_detach(self, resources, environment_name):
         self.io.info("")
-        self.io.info(
-            f"Will remove the following resources from the {environment_name} environment's terraform state:"
-        )
-        for address in sorted(self.iter_addresses_for_resources(resources)):
-            self.io.info(f"  {address}")
+        if resources:
+            self.io.info(
+                f"Will remove the following resources from the {environment_name} environment's terraform state:"
+            )
+            for address in sorted(self.iter_addresses_for_resources(resources)):
+                self.io.info(f"  {address}")
+        else:
+            self.io.info(
+                f"Will not remove any resources from the {environment_name} environment's terraform state."
+            )
 
     def iter_addresses_for_resources(self, resources):
         for resource in resources:
