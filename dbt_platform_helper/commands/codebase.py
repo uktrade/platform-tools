@@ -102,10 +102,10 @@ def deploy(
 
 
 @codebase.command()
-@click.option("--app", help="AWS application name", required=True)
+@click.option("--app", help="Application name", required=True)
 @click.option(
     "--env",
-    help="AWS Copilot environment",
+    help="Environment to redeploy",
     type=str,
 )
 @click.option(
@@ -116,10 +116,12 @@ def deploy(
     default=[],
     help="The codebase name as specified in the platform-config.yml file. This can be run from any directory.",
 )
-@click.option("--wait", type=bool, default=True, help="Wait on pipelines completing")
+@click.option(
+    "--wait", type=bool, default=True, help="Wait on pipelines completing before returning results"
+)
 def redeploy(app: str, env: str, codebases: List[str], wait: bool):
-    """Get the current deployed image and redeploy it for a list of codebase or
-    all in platform-config.yml."""
+    """Get the current deployed image, extract the deployed image and redeploy
+    it for a list of codebases or all in platform-config.yml."""
     try:
         session = get_aws_session_or_abort()
         param_store = ParameterStore(session.client("ssm"))
@@ -134,7 +136,7 @@ def redeploy(app: str, env: str, codebases: List[str], wait: bool):
                 session.client("ecs"), session.client("ssm"), application_name=app, env=env
             ),
             file_system=LocalFileSystem(),
-        ).redeploy(app, env, codebases, wait=wait)
+        ).redeploy(app, env, codebase, wait=wait)
 
         display = RedeployDisplay()
 
