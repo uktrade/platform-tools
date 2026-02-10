@@ -35,13 +35,13 @@ class CDNDetach:
         self.terraform_provider.init(terraform_config_dir)
         state = self.terraform_provider.pull_state(terraform_config_dir)
 
-        resources = self.filter_resources_to_detach(state)
+        resources = self.get_resources_to_detach(state)
         self.log_resources_to_detach(resources, environment_name)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
-    def filter_resources_to_detach(self, terraform_state):
+    def get_resources_to_detach(self, terraform_state):
         return [
             r
             for r in terraform_state["resources"]

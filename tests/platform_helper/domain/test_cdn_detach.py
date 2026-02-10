@@ -29,7 +29,7 @@ MOCK_ENRICHED_CONFIG = {
     },
 }
 
-MOCK_FILTERED_RESOURCES = [
+MOCK_RESOURCES_TO_DETACH = [
     {
         "module": 'module.extensions.module.cdn["demodjango-alb"]',
         "mode": "managed",
@@ -72,10 +72,10 @@ class CDNDetachMocks:
 
 class TestCDNDetach:
     @patch(
-        "dbt_platform_helper.domain.cdn_detach.CDNDetach.filter_resources_to_detach",
-        return_value=MOCK_FILTERED_RESOURCES,
+        "dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach",
+        return_value=MOCK_RESOURCES_TO_DETACH,
     )
-    def test_dry_run_success(self, mock_filter):
+    def test_dry_run_success(self, mock_get_resources_to_detach):
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
@@ -86,7 +86,7 @@ class TestCDNDetach:
         mocks.mock_terraform_provider.pull_state.assert_called_once_with(
             "terraform/environments/staging"
         )
-        mock_filter.assert_called_once()
+        mock_get_resources_to_detach.assert_called_once()
 
         mocks.mock_io.info.assert_has_calls(
             [
@@ -108,8 +108,8 @@ class TestCDNDetach:
             ]
         )
 
-    @patch("dbt_platform_helper.domain.cdn_detach.CDNDetach.filter_resources_to_detach", spec=True)
-    def test_real_run_not_implemented(self, mock_filter):
+    @patch("dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach", spec=True)
+    def test_real_run_not_implemented(self, mock_get_resources_to_detach):
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
@@ -126,7 +126,7 @@ class TestCDNDetach:
         ):
             cdn_detach.execute(environment_name="not-an-environment", dry_run=True)
 
-    def test_filter_resources_to_detach(self):
+    def test_get_resources_to_detach(self):
         with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
             mock_terraform_state = json.load(f)
         with open(EXPECTED_DATA_DIR / "cdn_detach/filtered_resources/typical.yaml") as f:
@@ -137,7 +137,7 @@ class TestCDNDetach:
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
-        resources = cdn_detach.filter_resources_to_detach(mock_terraform_state)
+        resources = cdn_detach.get_resources_to_detach(mock_terraform_state)
         resource_addrs = {(r["module"], r["mode"], r["type"], r["name"]) for r in resources}
 
         assert resource_addrs == expected_resource_addrs
