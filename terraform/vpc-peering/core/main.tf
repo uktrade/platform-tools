@@ -38,18 +38,31 @@ resource "aws_security_group_rule" "peer-access" {
 # Note: These next two resources are only run if you need to allow communication between ECS services.
 # Also, vpc peering must be complete before these are run see docs
 resource "aws_route53_vpc_association_authorization" "create-dns-association" {
-  # If source_vpc is not defined as a VAR then this will NOT run.
-  count   = can(var.source_vpc_id) && var.source_vpc_id != null && var.accept_remote_dns == null ? 1 : 0
-  vpc_id  = var.source_vpc_id
-  zone_id = var.target_hosted_zone_id
+  for_each = (var.source_vpc_id != null && var.accept_remote_dns == false) ? toset(var.target_hosted_zone_ids) : toset([])
+  vpc_id   = var.source_vpc_id
+  zone_id  = each.value
 }
 
 resource "aws_route53_zone_association" "authorize-dns-association" {
-  # If bool accept_remote_dns is not defined or set to true then this will NOT run.
-  count = can(var.accept_remote_dns) && var.accept_remote_dns != null ? 1 : 0
+  for_each = var.accept_remote_dns == true ? toset(var.target_hosted_zone_ids) : toset([])
 
   vpc_id  = var.source_vpc_id
-  zone_id = var.target_hosted_zone_id
+  zone_id = each.value
 
   depends_on = [aws_route53_vpc_association_authorization.create-dns-association]
+}
+
+resource "aws_ssm_parameter" "vpc_peering" {
+  for_each = var.ecs_security_groups
+  name     = "/platform/vpc-peering/${each.value.application}/${each.value.environment}/source-vpc/${var.vpc_name}/security-group/${each.key}"
+  type     = "String"
+  value = jsonencode({
+    "security-group-id" = each.key
+    "port"              = each.value.port
+    "application"       = each.value.application
+    "environment"       = each.value.environment
+    "source-vpc-name"   = var.vpc_name
+    "source-vpc-cidr"   = var.subnet
+  })
+  description = "An SSM parameter used by the environment Terraform to determine whether to add an ingress security group rule allowing VPC-peering traffic from the source VPC '${var.vpc_name}'"
 }

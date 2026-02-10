@@ -1,5 +1,55 @@
 # Changelog
 
+## [15.20.1](https://github.com/uktrade/platform-tools/compare/15.20.0...15.20.1) (2026-02-06)
+
+
+### Bug Fixes
+
+* Pass missing environment variables into custom build projects (DBTP-2659) ([#1260](https://github.com/uktrade/platform-tools/issues/1260)) ([a2331ae](https://github.com/uktrade/platform-tools/commit/a2331aed091c20bbb7952898914fb8c03f6221d9))
+
+## [15.20.0](https://github.com/uktrade/platform-tools/compare/15.19.0...15.20.0) (2026-02-05)
+
+
+### Features
+
+* Add workspace support and config (DBTP-2578) ([#1204](https://github.com/uktrade/platform-tools/issues/1204)) ([0c8ef0a](https://github.com/uktrade/platform-tools/commit/0c8ef0a0593f8325a3912616e43b7c2a35c63510))
+* Ingress security group rules for VPC peering (DBTP-2666) ([#1254](https://github.com/uktrade/platform-tools/issues/1254)) ([1e98525](https://github.com/uktrade/platform-tools/commit/1e985257049378b46719849b235e06fd48d78901))
+* Internal - support PSD SCPN custom build steps (DBTP-2659) ([#1251](https://github.com/uktrade/platform-tools/issues/1251)) ([d25865d](https://github.com/uktrade/platform-tools/commit/d25865dedc80cbb018fc2c67dd8655295c41acc8))
+
+## [15.19.0](https://github.com/uktrade/platform-tools/compare/15.18.0...15.19.0) (2026-02-02)
+
+
+### Features
+
+* Allow multiple hosted zones for VPC peering (DBTP-2660) ([#1246](https://github.com/uktrade/platform-tools/issues/1246)) ([23ef9d4](https://github.com/uktrade/platform-tools/commit/23ef9d4c3d0d1e075aa472a2f153d770691f5856))
+
+## [15.18.0](https://github.com/uktrade/platform-tools/compare/15.17.1...15.18.0) (2026-01-29)
+
+
+### Features
+
+* Rename codebase pipeline deploy action (off-ticket) ([#1240](https://github.com/uktrade/platform-tools/issues/1240)) ([c98b273](https://github.com/uktrade/platform-tools/commit/c98b273f5eb21972944aacd743709b896f05ac7e))
+
+
+### Bug Fixes
+
+* Authorise environment pipelines to manipulate egress policy resources (DBTP-2588) ([#1234](https://github.com/uktrade/platform-tools/issues/1234)) ([1eee28d](https://github.com/uktrade/platform-tools/commit/1eee28d80011c0f41ef736f6a3fc5d2769826e0a))
+* Enable service connect for non web services (DBTP-2656) ([#1241](https://github.com/uktrade/platform-tools/issues/1241)) ([baf13a6](https://github.com/uktrade/platform-tools/commit/baf13a60ebce8be75210b6d0dd09147e2594a915))
+
+## [15.17.1](https://github.com/uktrade/platform-tools/compare/15.17.0...15.17.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* Add statements to ECR policy to prevent accidental deletion (DBTP-2622) ([#1215](https://github.com/uktrade/platform-tools/issues/1215)) ([bf7e02e](https://github.com/uktrade/platform-tools/commit/bf7e02ee7596eb27f7eb92269d8105ed7a59f40a))
+* Allow Environment Pipelines to create OpenSearch domains ([3fa5e47](https://github.com/uktrade/platform-tools/commit/3fa5e47c4d8030c6f5ca3cd51ccfe48a7aef35a8))
+
+
+### Dependencies
+
+* bump prettytable from 3.16.0 to 3.17.0 ([#1231](https://github.com/uktrade/platform-tools/issues/1231)) ([6ddd277](https://github.com/uktrade/platform-tools/commit/6ddd277413931f1511538f9372173286922d93eb))
+* bump yamllint from 1.37.1 to 1.38.0 ([#1220](https://github.com/uktrade/platform-tools/issues/1220)) ([a9e80e2](https://github.com/uktrade/platform-tools/commit/a9e80e2b799062a8f1c4921750893b2883484518))
+
 ## [15.17.0](https://github.com/uktrade/platform-tools/compare/15.16.1...15.17.0) (2026-01-20)
 
 

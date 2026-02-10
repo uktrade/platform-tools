@@ -243,6 +243,29 @@ If found, it indicates that the new package version exists in PyPI.
 7. Ensure the release notes contain an upgrade path for any breaking changes
 8. Check PyPI for the new published version
 
+## Working with platform-helper
+
+### Workspacing infrastructure
+
+Pipelines created for a project share a state file. 
+When working with multiple pipelines and updating them, for example within end to end tests, you may experience failures when you fail to assume the lock. In this case we can workspace the terraform.
+
+#### Setup
+
+- create a new `platform-config.<workspace>.yml` file with the name of the workspace in the file name
+   - ensure to include the environments your pipelines support within the config, these are not workspaced but the terraform requires information about the environments. Currently including them within the config is how we support this.
+- run the `platform-helper pipeline generate` with the `-w/--workspace <workspace>` argument to generate the terraform pointing to the workspace
+   - this adds validation to ensure that you can only run terraform apply within the specific `workspace` supplied
+- cd into your terraform folder and run `terraform workspace <select/new> <workspace>` before running `terraform apply`
+
+#### Supported 
+- codebase pipelines
+- environment pipelines
+
+#### Not supported 
+- environment infrastrucutre
+- extensions
+
 ## Contributing
 
 Please check out [Contributing to Platform Tools](./CONTRUBUTING.md).

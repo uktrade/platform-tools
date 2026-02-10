@@ -224,7 +224,10 @@ data "aws_iam_policy_document" "ec2_read_access" {
       "ec2:DescribeVpcs",
       "ec2:DescribeSubnets",
       "ec2:DescribeSecurityGroups",
-      "ec2:DescribeNetworkInterfaces"
+      "ec2:DescribeSecurityGroupRules",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DescribePrefixLists",
+      "ec2:DescribeVpcEndpoints",
     ]
     resources = [
       "*"
@@ -383,6 +386,29 @@ data "aws_iam_policy_document" "security_group" {
     ]
     resources = [
       "arn:aws:ec2:${local.account_region}:security-group/*"
+    ]
+  }
+}
+
+data "aws_iam_policy_document" "vpc_endpoints" {
+  statement {
+    actions = [
+      "ec2:CreateTags",
+      "ec2:DeleteVpcEndpoints",
+    ]
+    resources = [
+      "arn:aws:ec2:${local.account_region}:vpc-endpoint/*"
+    ]
+  }
+  statement {
+    actions = [
+      "ec2:CreateVpcEndpoint",
+    ]
+    resources = [
+      "arn:aws:ec2:${local.account_region}:security-group/*",
+      "arn:aws:ec2:${local.account_region}:subnet/*",
+      "arn:aws:ec2:${local.account_region}:vpc/*",
+      "arn:aws:ec2:${local.account_region}:vpc-endpoint/*",
     ]
   }
 }
@@ -1063,6 +1089,17 @@ data "aws_iam_policy_document" "extensions" {
     sid = "AllowOpensearchListVersions"
   }
 
+  statement {
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during OpenSearch domain creation
+    ]
+    effect = "Allow"
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService"
+    ]
+    sid = "AllowCreateServiceLinkedRole"
+  }
+
   # S3
   statement {
     actions = [
@@ -1315,6 +1352,12 @@ resource "aws_iam_role_policy" "security_group_for_environment_codebuild" {
   name   = "${var.application}-${var.pipeline_name}-security-group-for-environment-codebuild"
   role   = aws_iam_role.environment_pipeline_codebuild.name
   policy = data.aws_iam_policy_document.security_group.json
+}
+
+resource "aws_iam_role_policy" "vpc_endpoints_for_environment_codebuild" {
+  name   = "${var.application}-${var.pipeline_name}-vpc-endpoints-for-environment-codebuild"
+  role   = aws_iam_role.environment_pipeline_codebuild.name
+  policy = data.aws_iam_policy_document.vpc_endpoints.json
 }
 
 resource "aws_iam_role_policy" "ssm_parameter_for_environment_codebuild" {

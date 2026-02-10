@@ -45,6 +45,20 @@ override_data {
 }
 
 override_data {
+  target = data.aws_iam_policy_document.log_access_for_custom_pre_deploy
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.log_access_for_custom_post_deploy
+  values = {
+    json = "{\"Sid\": \"CodeBuildLogs\"}"
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.dns_account_assume_role
   values = {
     json = "{\"Sid\": \"AllowDNSAccountAccess\"}"
@@ -651,6 +665,85 @@ run "test_additional_private_ecr_repository" {
     error_message = "Unexpected resources"
   }
 }
+
+run "test_custom_pre_deploy" {
+  command = plan
+
+  variables {
+    has_custom_pre_deploy = true
+  }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-pre-deploy"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].name == "custom-pre-deploy-dev"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-pre-deploy"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.manual_release_pipeline.stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "custom-pre-deploy"
+    error_message = "Should be: custom-pre-deploy"
+  }
+}
+
+
+run "test_custom_post_deploy" {
+  command = plan
+
+  variables {
+    has_custom_post_deploy = true
+  }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.codebase_pipeline[0].stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].name == "custom-post-deploy-dev"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-deploy"
+    error_message = "Should be: my-app-my-codebase-custom-post-deploy"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.manual_release_pipeline.stage[1].action) == 4
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].name == "custom-post-deploy"
+    error_message = "Should be: custom-post-deploy"
+  }
+
+}
+
 
 run "test_additional_ecr_repository_public" {
   command = plan
@@ -1507,7 +1600,7 @@ run "test_main_pipeline" {
 
   # local.service_order_list has order = index + 1
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1541,7 +1634,7 @@ run "test_main_pipeline" {
 
   # local.service_order_list has order = index + 1
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 3
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 }
@@ -1588,7 +1681,7 @@ run "test_tagged_pipeline" {
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[0].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1608,7 +1701,7 @@ run "test_tagged_pipeline" {
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[1].run_order == 3
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[1].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 
@@ -1654,7 +1747,7 @@ run "test_tagged_pipeline" {
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[0].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1674,7 +1767,7 @@ run "test_tagged_pipeline" {
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[1].run_order == 3
+    condition     = aws_codepipeline.codebase_pipeline[1].stage[3].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 }
@@ -1795,7 +1888,7 @@ run "test_manual_release_pipeline" {
     error_message = "SLACK_CHANNEL_ID environment variable type is incorrect"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].run_order == 2
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1819,7 +1912,7 @@ run "test_manual_release_pipeline" {
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].run_order == 3
+    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 }
@@ -1965,7 +2058,7 @@ run "test_pipeline_single_run_group" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1975,7 +2068,7 @@ run "test_pipeline_single_run_group" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1985,7 +2078,7 @@ run "test_pipeline_single_run_group" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -1995,7 +2088,7 @@ run "test_pipeline_single_run_group" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].run_order == 3
     error_message = "Run order incorrect"
   }
 }
@@ -2037,7 +2130,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 2
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
@@ -2047,7 +2140,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 3
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 
@@ -2057,7 +2150,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].run_order == 3
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[2].run_order == 4
     error_message = "Run order incorrect"
   }
 
@@ -2067,7 +2160,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].run_order == 4
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[3].run_order == 5
     error_message = "Run order incorrect"
   }
 
@@ -2077,7 +2170,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].run_order == 5
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[4].run_order == 6
     error_message = "Run order incorrect"
   }
 
@@ -2087,7 +2180,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].run_order == 5
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[5].run_order == 6
     error_message = "Run order incorrect"
   }
 
@@ -2097,7 +2190,7 @@ run "test_pipeline_multiple_run_groups" {
     error_message = "Action name incorrect"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].run_order == 5
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[1].action[6].run_order == 6
     error_message = "Run order incorrect"
   }
 }

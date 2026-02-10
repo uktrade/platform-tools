@@ -9,9 +9,14 @@ variable "config" {
     requester_vpc_name        = string
     accepter_vpc              = string
     requester_subnet          = string
-    security_group_map        = optional(map(string))
     source_vpc_id             = optional(string)
-    target_hosted_zone_id     = optional(string)
-    accept_remote_dns         = optional(bool)
+    target_hosted_zone_ids    = optional(list(string))
+    accept_remote_dns         = bool
+    security_group_map        = optional(map(string))
+    ecs_security_groups = optional(map(object({
+      port        = string
+      application = string
+      environment = string
+    })))
   })
 }
