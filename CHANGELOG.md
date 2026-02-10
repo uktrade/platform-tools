@@ -1,5 +1,21 @@
 # Changelog
 
+## [15.20.1](https://github.com/uktrade/platform-tools/compare/15.20.0...15.20.1) (2026-02-06)
+
+
+### Bug Fixes
+
+* Pass missing environment variables into custom build projects (DBTP-2659) ([#1260](https://github.com/uktrade/platform-tools/issues/1260)) ([a2331ae](https://github.com/uktrade/platform-tools/commit/a2331aed091c20bbb7952898914fb8c03f6221d9))
+
+## [15.20.0](https://github.com/uktrade/platform-tools/compare/15.19.0...15.20.0) (2026-02-05)
+
+
+### Features
+
+* Add workspace support and config (DBTP-2578) ([#1204](https://github.com/uktrade/platform-tools/issues/1204)) ([0c8ef0a](https://github.com/uktrade/platform-tools/commit/0c8ef0a0593f8325a3912616e43b7c2a35c63510))
+* Ingress security group rules for VPC peering (DBTP-2666) ([#1254](https://github.com/uktrade/platform-tools/issues/1254)) ([1e98525](https://github.com/uktrade/platform-tools/commit/1e985257049378b46719849b235e06fd48d78901))
+* Internal - support PSD SCPN custom build steps (DBTP-2659) ([#1251](https://github.com/uktrade/platform-tools/issues/1251)) ([d25865d](https://github.com/uktrade/platform-tools/commit/d25865dedc80cbb018fc2c67dd8655295c41acc8))
+
 ## [15.19.0](https://github.com/uktrade/platform-tools/compare/15.18.0...15.19.0) (2026-02-02)
 
 

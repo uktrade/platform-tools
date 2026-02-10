@@ -6,6 +6,7 @@ variables {
   target_hosted_zone_ids    = ["Z12345"]
   source_vpc_id             = "vpc-12345"
   security_group_map        = {}
+  ecs_security_groups       = {}
   vpc_name                  = "my-vpc"
   subnet                    = "10.10.10.0/24"
   vpc_id                    = "vpc-12345"
@@ -50,5 +51,26 @@ run "is_accept_dns_service_to_service" {
     # Check to see if association is authorized if accept_remote_dns is true
     condition     = aws_route53_zone_association.authorize-dns-association["Z12345"].zone_id == "Z12345"
     error_message = "Incorrect zone id"
+  }
+}
+
+run "is_ssm_parameter_created" {
+  command = plan
+
+  variables {
+    ecs_security_groups = {
+      sg-abc1234 = { application : "application-a", environment : "dev", port : "8080" },
+      sg-def5678 = { application : "application-b", environment : "staging", port : "443" }
+    }
+  }
+
+  assert {
+    condition     = aws_ssm_parameter.vpc_peering["sg-abc1234"].name == "/platform/vpc-peering/application-a/dev/source-vpc/my-vpc/security-group/sg-abc1234"
+    error_message = "SSM parameter either doesn't exist, or its name does not match with the value in var.ecs_security_groups"
+  }
+
+  assert {
+    condition     = aws_ssm_parameter.vpc_peering["sg-def5678"].name == "/platform/vpc-peering/application-b/staging/source-vpc/my-vpc/security-group/sg-def5678"
+    error_message = "SSM parameter either doesn't exist, or its name does not match with the value in var.ecs_security_groups"
   }
 }
