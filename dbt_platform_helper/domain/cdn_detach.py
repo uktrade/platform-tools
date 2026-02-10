@@ -45,26 +45,24 @@ class CDNDetach:
     def get_resources_to_detach(self, terraform_state, environment_name):
         result = []
         for resource in terraform_state["resources"]:
-            if resource["mode"] != "managed":
-                # This is a data block - skip it.
+            if not self.resource_is_detachable(resource):
                 continue
-            if not resource["provider"].endswith((".domain", ".domain-cdn")):
-                # This resource resides in the application account, not the CDN account - skip it.
-                continue
-            m = re.match(r'^module\.extensions\.module\.(\w+)\["([^"]+)"\]', resource["module"])
-            module_name, extension_name = m.groups()
-            if module_name == "alb":
-                # This module contains resources that reside in the CDN account but should not be detached.
-                # These are the "internal" DNS records that point at the ALB, and the DNS records used for
-                # validating the ALB's certificate. Both of these are expected to be decommissioned in the near
-                # future rather than being repossessed by platform-public-ingress.
-                continue
+            m = re.match(r'^module\.extensions\.module\.\w+\["([^"]+)"\]', resource["module"])
+            extension_name = m.group(1)
             if not self.extension_has_managed_ingress(extension_name, environment_name):
                 # This resource is due for detach, but it will not actually be detached until the
                 # managed_ingress option of the extension that owns it gets set to true.
                 continue
             result.append(resource)
         return result
+
+    @staticmethod
+    def resource_is_detachable(resource):
+        return (
+            resource["mode"] == "managed"
+            and resource["provider"].endswith((".domain", ".domain-cdn"))
+            and "module.extensions.module.alb" not in resource["module"]
+        )
 
     def extension_has_managed_ingress(self, extension_name, environment_name):
         config = self.config_provider.get_enriched_config()
