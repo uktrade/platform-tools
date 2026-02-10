@@ -43,41 +43,39 @@ class CDNDetach:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
     def get_resources_to_detach(self, terraform_state, environment_name):
+        managed_ingress_extensions = self.get_extensions_with_managed_ingress(environment_name)
         return [
             resource
             for resource in terraform_state["resources"]
-            if self.resource_is_detachable(resource)
-            and self.resource_extension_has_managed_ingress(resource, environment_name)
+            if self.is_resource_detachable(resource)
+            and self.extension_name_for_resource(resource) in managed_ingress_extensions
         ]
 
+    def get_extensions_with_managed_ingress(self, environment_name):
+        config = self.config_provider.get_enriched_config()
+        result = set()
+        for ext_name, ext_config in config.get("extensions", {}).items():
+            flattened_ext_config = {
+                **ext_config,
+                **(ext_config.get("environments", {}).get("*") or {}),
+                **(ext_config.get("environments", {}).get(environment_name) or {}),
+            }
+            if flattened_ext_config.get("managed_ingress", False):
+                result.add(ext_name)
+        return result
+
     @staticmethod
-    def resource_is_detachable(resource):
+    def is_resource_detachable(resource):
         return (
             resource["mode"] == "managed"
             and resource["provider"].endswith((".domain", ".domain-cdn"))
             and "module.extensions.module.alb" not in resource["module"]
         )
 
-    def resource_extension_has_managed_ingress(self, resource, environment_name):
-        return self.extension_has_managed_ingress(
-            self.get_extension_name_for_resource(resource),
-            environment_name,
-        )
-
     @staticmethod
-    def get_extension_name_for_resource(resource):
+    def extension_name_for_resource(resource):
         m = re.match(r'^module\.extensions\.module\.\w+\["([^"]+)"\]', resource["module"])
         return m.group(1)
-
-    def extension_has_managed_ingress(self, extension_name, environment_name):
-        config = self.config_provider.get_enriched_config()
-        ext_config = config["extensions"][extension_name]
-        flattened_ext_config = {
-            **ext_config,
-            **(ext_config.get("environments", {}).get("*") or {}),
-            **(ext_config.get("environments", {}).get(environment_name) or {}),
-        }
-        return flattened_ext_config.get("managed_ingress", False)
 
     def log_resources_to_detach(self, resources, environment_name):
         self.io.info("")
