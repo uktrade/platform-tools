@@ -1,12 +1,12 @@
 import json
 from unittest.mock import Mock
 from unittest.mock import call
-from unittest.mock import patch
 
 import pytest
 import yaml
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
+from dbt_platform_helper.domain.cdn_detach import CDNDetachLogic
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -51,7 +51,7 @@ def create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=Tru
     }
 
 
-MOCK_RESOURCES_TO_DETACH = [
+MOCK_RESOURCE_BLOCKS_TO_DETACH = [
     {
         "module": 'module.extensions.module.cdn["demodjango-alb"]',
         "mode": "managed",
@@ -76,12 +76,13 @@ MOCK_RESOURCES_TO_DETACH = [
 
 
 class CDNDetachMocks:
-    def __init__(self, platform_config=create_mock_platform_config()):
+    def __init__(self, **mock_logic_result_attrs):
         self.mock_io = Mock(spec=ClickIOProvider)
         self.mock_config_provider = Mock(spec=ConfigProvider)
-        self.mock_config_provider.get_enriched_config.return_value = platform_config
+        self.mock_config_provider.get_enriched_config.return_value = create_mock_platform_config()
         self.mock_terraform_environment = Mock(spec=TerraformEnvironment)
         self.mock_terraform_provider = Mock(spec=TerraformProvider)
+        self.mock_logic_constructor = Mock(return_value=Mock(**mock_logic_result_attrs))
 
     def params(self):
         return {
@@ -89,18 +90,17 @@ class CDNDetachMocks:
             "config_provider": self.mock_config_provider,
             "terraform_environment": self.mock_terraform_environment,
             "terraform_provider": self.mock_terraform_provider,
+            "logic_constructor": self.mock_logic_constructor,
         }
 
 
 class TestCDNDetach:
-    @patch(
-        "dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach",
-        return_value=MOCK_RESOURCES_TO_DETACH,
-    )
-    def test_dry_run_success(self, mock_get_resources_to_detach):
-        mocks = CDNDetachMocks()
-        cdn_detach = CDNDetach(**mocks.params())
+    def test_dry_run_success(self):
+        mocks = CDNDetachMocks(
+            resource_blocks_to_detach=MOCK_RESOURCE_BLOCKS_TO_DETACH,
+        )
 
+        cdn_detach = CDNDetach(**mocks.params())
         cdn_detach.execute(environment_name="staging", dry_run=True)
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
@@ -108,7 +108,7 @@ class TestCDNDetach:
         mocks.mock_terraform_provider.pull_state.assert_called_once_with(
             "terraform/environments/staging"
         )
-        mock_get_resources_to_detach.assert_called_once()
+        mocks.mock_logic_constructor.assert_called_once()
 
         mocks.mock_io.info.assert_has_calls(
             [
@@ -130,14 +130,12 @@ class TestCDNDetach:
             ]
         )
 
-    @patch(
-        "dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach",
-        return_value=[],
-    )
-    def test_dry_run_success_with_no_resources_to_detach(self, mock_get_resources_to_detach):
-        mocks = CDNDetachMocks()
-        cdn_detach = CDNDetach(**mocks.params())
+    def test_dry_run_success_with_no_resources_to_detach(self):
+        mocks = CDNDetachMocks(
+            resource_blocks_to_detach=[],
+        )
 
+        cdn_detach = CDNDetach(**mocks.params())
         cdn_detach.execute(environment_name="staging", dry_run=True)
 
         mocks.mock_io.info.assert_has_calls(
@@ -148,24 +146,27 @@ class TestCDNDetach:
             ]
         )
 
-    @patch("dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach", spec=True)
-    def test_real_run_not_implemented(self, mock_get_resources_to_detach):
-        mocks = CDNDetachMocks()
-        cdn_detach = CDNDetach(**mocks.params())
+    def test_real_run_not_implemented(self):
+        mocks = CDNDetachMocks(
+            resource_blocks_to_detach=MOCK_RESOURCE_BLOCKS_TO_DETACH,
+        )
 
+        cdn_detach = CDNDetach(**mocks.params())
         with pytest.raises(NotImplementedError):
             cdn_detach.execute(environment_name="staging", dry_run=False)
 
     def test_exception_raised_if_env_not_in_config(self):
         mocks = CDNDetachMocks()
-        cdn_detach = CDNDetach(**mocks.params())
 
+        cdn_detach = CDNDetach(**mocks.params())
         with pytest.raises(
             PlatformException,
             match="cannot detach CDN resources for environment not-an-environment. It does not exist in your configuration",
         ):
             cdn_detach.execute(environment_name="not-an-environment", dry_run=True)
 
+
+class TestCDNDetachLogic:
     @pytest.mark.parametrize(
         "platform_config,expected_data_filename",
         [
@@ -184,18 +185,22 @@ class TestCDNDetach:
         ],
         ids=["alb", "s3", "alb+s3"],
     )
-    def test_get_resources_to_detach(self, platform_config, expected_data_filename):
+    def test_resource_blocks_to_detach(self, platform_config, expected_data_filename):
         with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
-            mock_terraform_state = json.load(f)
+            environment_tfstate = json.load(f)
         with open(
             EXPECTED_DATA_DIR / "cdn_detach/resource_addrs_to_detach" / expected_data_filename
         ) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
-        mocks = CDNDetachMocks(platform_config)
-        cdn_detach = CDNDetach(**mocks.params())
+        logic_result = CDNDetachLogic(
+            platform_config=platform_config,
+            environment_name="staging",
+            environment_tfstate=environment_tfstate,
+        )
 
-        resources = cdn_detach.get_resources_to_detach(mock_terraform_state, "staging")
-        resource_addrs = {r["module"] + "." + r["type"] + "." + r["name"] for r in resources}
-
+        resource_addrs = {
+            rb["module"] + "." + rb["type"] + "." + rb["name"]
+            for rb in logic_result.resource_blocks_to_detach
+        }
         assert resource_addrs == expected_resource_addrs
