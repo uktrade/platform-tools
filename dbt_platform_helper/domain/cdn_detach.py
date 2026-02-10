@@ -18,11 +18,11 @@ class CDNDetachLogic:
 
     @cached_property
     def environment_tfstate_resources(self):
-        result = []
-        for resource_block in self.environment_tfstate["resources"]:
-            for inst in resource_block["instances"]:
-                result.append({**resource_block, **inst})
-        return result
+        return [
+            {**resource_block, **instance}
+            for resource_block in self.environment_tfstate["resources"]
+            for instance in resource_block["instances"]
+        ]
 
     @staticmethod
     def is_resource_detachable(res):
