@@ -7,6 +7,7 @@ import yaml
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.cdn_detach import CDNDetachLogic
+from dbt_platform_helper.domain.cdn_detach import address_for_tfstate_resource
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -51,18 +52,30 @@ def create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=Tru
     }
 
 
-MOCK_RESOURCE_BLOCKS_TO_DETACH = [
+MOCK_RESOURCES_TO_DETACH = [
     {
         "module": 'module.extensions.module.cdn["demodjango-alb"]',
         "mode": "managed",
         "type": "aws_cloudfront_distribution",
         "name": "standard",
         "provider": 'module.extensions.provider["registry.terraform.io/hashicorp/aws"].domain-cdn',
-        "instances": [
-            {"index_key": "api.dev.demodjango.uktrade.digital"},
-            {"index_key": "ip-filter-test.dev.demodjango.uktrade.digital"},
-            {"index_key": "web.dev.demodjango.uktrade.digital"},
-        ],
+        "index_key": "api.dev.demodjango.uktrade.digital",
+    },
+    {
+        "module": 'module.extensions.module.cdn["demodjango-alb"]',
+        "mode": "managed",
+        "type": "aws_cloudfront_distribution",
+        "name": "standard",
+        "provider": 'module.extensions.provider["registry.terraform.io/hashicorp/aws"].domain-cdn',
+        "index_key": "ip-filter-test.dev.demodjango.uktrade.digital",
+    },
+    {
+        "module": 'module.extensions.module.cdn["demodjango-alb"]',
+        "mode": "managed",
+        "type": "aws_cloudfront_distribution",
+        "name": "standard",
+        "provider": 'module.extensions.provider["registry.terraform.io/hashicorp/aws"].domain-cdn',
+        "index_key": "web.dev.demodjango.uktrade.digital",
     },
     {
         "module": 'module.extensions.module.cdn["demodjango-alb"]',
@@ -70,7 +83,6 @@ MOCK_RESOURCE_BLOCKS_TO_DETACH = [
         "type": "aws_cloudfront_cache_policy",
         "name": "cache_policy",
         "provider": 'module.extensions.provider["registry.terraform.io/hashicorp/aws"].domain-cdn',
-        "instances": [{}],
     },
 ]
 
@@ -97,7 +109,7 @@ class CDNDetachMocks:
 class TestCDNDetach:
     def test_dry_run_success(self):
         mocks = CDNDetachMocks(
-            resource_blocks_to_detach=MOCK_RESOURCE_BLOCKS_TO_DETACH,
+            resources_to_detach=MOCK_RESOURCES_TO_DETACH,
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -132,7 +144,7 @@ class TestCDNDetach:
 
     def test_dry_run_success_with_no_resources_to_detach(self):
         mocks = CDNDetachMocks(
-            resource_blocks_to_detach=[],
+            resources_to_detach=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -148,7 +160,7 @@ class TestCDNDetach:
 
     def test_real_run_not_implemented(self):
         mocks = CDNDetachMocks(
-            resource_blocks_to_detach=MOCK_RESOURCE_BLOCKS_TO_DETACH,
+            resources_to_detach=MOCK_RESOURCES_TO_DETACH,
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -199,8 +211,45 @@ class TestCDNDetachLogic:
             environment_tfstate=environment_tfstate,
         )
 
-        resource_addrs = {
-            rb["module"] + "." + rb["type"] + "." + rb["name"]
-            for rb in logic_result.resource_blocks_to_detach
-        }
+        resource_addrs = {address_for_tfstate_resource(r) for r in logic_result.resources_to_detach}
         assert resource_addrs == expected_resource_addrs
+
+
+class TestAddressForTerraformResource:
+    def test_no_index_key(self):
+        resource = {
+            "module": 'module.s3["my-ext"]',
+            "mode": "managed",
+            "type": "aws_s3_bucket_versioning",
+            "name": "this-versioning",
+        }
+
+        address = address_for_tfstate_resource(resource)
+
+        assert address == 'module.s3["my-ext"].aws_s3_bucket_versioning.this-versioning'
+
+    def test_string_index_key(self):
+        resource = {
+            "module": 'module.s3["my-ext"]',
+            "mode": "managed",
+            "type": "aws_s3_object",
+            "name": "object",
+            "index_key": "test.html",
+        }
+
+        address = address_for_tfstate_resource(resource)
+
+        assert address == 'module.s3["my-ext"].aws_s3_object.object["test.html"]'
+
+    def test_integer_index_key(self):
+        resource = {
+            "module": 'module.s3["my-ext"]',
+            "mode": "managed",
+            "type": "aws_ssm_parameter",
+            "name": "cloudfront_alias",
+            "index_key": 0,
+        }
+
+        address = address_for_tfstate_resource(resource)
+
+        assert address == 'module.s3["my-ext"].aws_ssm_parameter.cloudfront_alias[0]'
