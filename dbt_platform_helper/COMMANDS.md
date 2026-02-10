@@ -9,6 +9,7 @@
         - [platform-helper codebase list](#platform-helper-codebase-list)
         - [platform-helper codebase build](#platform-helper-codebase-build)
         - [platform-helper codebase deploy](#platform-helper-codebase-deploy)
+        - [platform-helper codebase redeploy](#platform-helper-codebase-redeploy)
     - [platform-helper conduit](#platform-helper-conduit)
     - [platform-helper config](#platform-helper-config)
         - [platform-helper config validate](#platform-helper-config-validate)
@@ -155,7 +156,7 @@ platform-helper application task-stats --env <environment> --app <application> [
 ## Usage
 
 ```
-platform-helper codebase (prepare|list|build|deploy) 
+platform-helper codebase <command> 
 ```
 
 ## Options
@@ -169,6 +170,7 @@ platform-helper codebase (prepare|list|build|deploy)
 - [`deploy` ↪](#platform-helper-codebase-deploy)
 - [`list` ↪](#platform-helper-codebase-list)
 - [`prepare` ↪](#platform-helper-codebase-prepare)
+- [`redeploy` ↪](#platform-helper-codebase-redeploy)
 
 # platform-helper codebase prepare
 
@@ -258,6 +260,33 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
   - Git branch that has been built into an image.
 - `--commit <text>`
   - Git sha hash that has been built into an image.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper codebase redeploy
+
+[↩ Parent](#platform-helper-codebase)
+
+    Get the current deployed image, extract the deployed image and redeploy
+    it for a list of codebases or all in platform-config.yml.
+
+## Usage
+
+```
+platform-helper codebase redeploy --app <application> [--env <environment>] [--codebases <codebases>] 
+                                  [--wait <wait>] 
+```
+
+## Options
+
+- `--app <text>`
+  - Application name
+- `--env <text>`
+  - Environment to redeploy
+- `--codebases <text>` _Defaults to []._
+  - The codebase name as specified in the platform-config.yml file. This can be run from any directory.
+- `--wait <boolean>` _Defaults to True._
+  - Wait on pipelines completing before returning results
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -583,6 +612,7 @@ platform-helper pipeline generate
 
 ```
 platform-helper pipeline generate [--deploy-branch <deploy_branch>] 
+                                  [--workspace <workspace>] 
 ```
 
 ## Options
@@ -592,6 +622,10 @@ platform-helper pipeline generate [--deploy-branch <deploy_branch>]
 This is generated from the terraform/environments-pipeline/<aws_account>/main.tf file. 
 (Default <application>-deploy branch is specified in 
 <application>-deploy/platform-config.yml/environment_pipelines/<environment-pipeline>/branch).
+- `--workspace
+-w <text>`
+  - Specify a terraform workspace to use. 
+This will load it's own platform-config.<workspace>.yml file
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
