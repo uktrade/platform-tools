@@ -28,19 +28,20 @@ class CDNDetach:
                 f"cannot detach CDN resources for environment {environment_name}. It does not exist in your configuration"
             )
 
-        # Populates ./terraform/environments/{environment_name}
-        self.terraform_environment.generate(environment_name)
-        terraform_config_dir = f"terraform/environments/{environment_name}"
-
-        self.io.info(f"Fetching a copy of the {environment_name} environment's terraform state...")
-        self.terraform_provider.init(terraform_config_dir)
-        environment_tfstate = self.terraform_provider.pull_state(terraform_config_dir)
-
+        environment_tfstate = self.fetch_environment_tfstate(environment_name)
         resources = self.get_resources_to_detach(environment_tfstate, environment_name)
         self.log_resources_to_detach(resources, environment_name)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
+
+    def fetch_environment_tfstate(self, environment_name):
+        self.terraform_environment.generate(environment_name)
+        terraform_config_dir = f"terraform/environments/{environment_name}"
+
+        self.io.info(f"Fetching a copy of the {environment_name} environment's terraform state...")
+        self.terraform_provider.init(terraform_config_dir)
+        return self.terraform_provider.pull_state(terraform_config_dir)
 
     def get_resources_to_detach(self, environment_tfstate, environment_name):
         managed_ingress_extensions = self.get_extensions_with_managed_ingress(environment_name)
