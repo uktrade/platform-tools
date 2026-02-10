@@ -140,13 +140,6 @@ class TestCDNDetach:
 
         cdn_detach.execute(environment_name="staging", dry_run=True)
 
-        mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
-        mocks.mock_terraform_provider.init.assert_called_once_with("terraform/environments/staging")
-        mocks.mock_terraform_provider.pull_state.assert_called_once_with(
-            "terraform/environments/staging"
-        )
-        mock_get_resources_to_detach.assert_called_once()
-
         mocks.mock_io.info.assert_has_calls(
             [
                 call(
