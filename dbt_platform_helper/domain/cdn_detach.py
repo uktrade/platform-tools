@@ -45,15 +45,10 @@ class CDNDetach:
     def get_resources_to_detach(self, terraform_state, environment_name):
         result = []
         for resource in terraform_state["resources"]:
-            if not self.resource_is_detachable(resource):
-                continue
-            m = re.match(r'^module\.extensions\.module\.\w+\["([^"]+)"\]', resource["module"])
-            extension_name = m.group(1)
-            if not self.extension_has_managed_ingress(extension_name, environment_name):
-                # This resource is due for detach, but it will not actually be detached until the
-                # managed_ingress option of the extension that owns it gets set to true.
-                continue
-            result.append(resource)
+            if self.resource_is_detachable(resource):
+                extension_name = self.get_extension_name_for_resource(resource)
+                if self.extension_has_managed_ingress(extension_name, environment_name):
+                    result.append(resource)
         return result
 
     @staticmethod
@@ -63,6 +58,11 @@ class CDNDetach:
             and resource["provider"].endswith((".domain", ".domain-cdn"))
             and "module.extensions.module.alb" not in resource["module"]
         )
+
+    @staticmethod
+    def get_extension_name_for_resource(resource):
+        m = re.match(r'^module\.extensions\.module\.\w+\["([^"]+)"\]', resource["module"])
+        return m.group(1)
 
     def extension_has_managed_ingress(self, extension_name, environment_name):
         config = self.config_provider.get_enriched_config()
