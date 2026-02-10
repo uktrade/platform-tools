@@ -154,15 +154,13 @@ class TestCDNDetach:
     def test_get_resources_to_detach(self):
         with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
             mock_terraform_state = json.load(f)
-        with open(EXPECTED_DATA_DIR / "cdn_detach/filtered_resources/typical.yaml") as f:
-            expected_resource_addrs = {
-                (x["module"], x["mode"], x["type"], x["name"]) for x in yaml.safe_load(f)
-            }
+        with open(EXPECTED_DATA_DIR / "cdn_detach/resource_addrs_to_detach/typical.yaml") as f:
+            expected_resource_addrs = set(yaml.safe_load(f))
 
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
         resources = cdn_detach.get_resources_to_detach(mock_terraform_state)
-        resource_addrs = {(r["module"], r["mode"], r["type"], r["name"]) for r in resources}
+        resource_addrs = {r["module"] + "." + r["type"] + "." + r["name"] for r in resources}
 
         assert resource_addrs == expected_resource_addrs
