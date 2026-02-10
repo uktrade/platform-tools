@@ -15,19 +15,41 @@ from dbt_platform_helper.providers.terraform import TerraformProvider
 from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
-MOCK_ENRICHED_CONFIG = {
-    "application": "test-app",
-    "default_versions": {"platform-helper": "14.0.0"},
-    "environments": {
-        "staging": {
-            "vpc": "vpc3",
-            "accounts": {
-                "deploy": {"name": "non-prod-acc", "id": "1122334455"},
-                "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+
+def create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=True):
+    return {
+        "application": "test-app",
+        "default_versions": {"platform-helper": "14.0.0"},
+        "environments": {
+            "staging": {
+                "vpc": "vpc3",
+                "accounts": {
+                    "deploy": {"name": "non-prod-acc", "id": "1122334455"},
+                    "dns": {"name": "non-prod-dns-acc", "id": "6677889900"},
+                },
             },
         },
-    },
-}
+        "extensions": {
+            "demodjango-alb": {
+                "type": "alb",
+                "environments": {
+                    "staging": {
+                        "managed_ingress": alb_managed_ingress,
+                    },
+                },
+            },
+            "demodjango-s3-bucket-static": {
+                "type": "s3",
+                "serve_static_content": True,
+                "environments": {
+                    "staging": {
+                        "managed_ingress": s3_managed_ingress,
+                    },
+                },
+            },
+        },
+    }
+
 
 MOCK_RESOURCES_TO_DETACH = [
     {
@@ -54,10 +76,10 @@ MOCK_RESOURCES_TO_DETACH = [
 
 
 class CDNDetachMocks:
-    def __init__(self):
+    def __init__(self, platform_config=create_mock_platform_config()):
         self.mock_io = Mock(spec=ClickIOProvider)
         self.mock_config_provider = Mock(spec=ConfigProvider)
-        self.mock_config_provider.get_enriched_config.return_value = MOCK_ENRICHED_CONFIG
+        self.mock_config_provider.get_enriched_config.return_value = platform_config
         self.mock_terraform_environment = Mock(spec=TerraformEnvironment)
         self.mock_terraform_provider = Mock(spec=TerraformProvider)
 
@@ -151,16 +173,36 @@ class TestCDNDetach:
         ):
             cdn_detach.execute(environment_name="not-an-environment", dry_run=True)
 
-    def test_get_resources_to_detach(self):
+    @pytest.mark.parametrize(
+        "platform_config,expected_data_filename",
+        [
+            (
+                create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=False),
+                "alb.yaml",
+            ),
+            (
+                create_mock_platform_config(alb_managed_ingress=False, s3_managed_ingress=True),
+                "s3.yaml",
+            ),
+            (
+                create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=True),
+                "alb_and_s3.yaml",
+            ),
+        ],
+        ids=["alb", "s3", "alb+s3"],
+    )
+    def test_get_resources_to_detach(self, platform_config, expected_data_filename):
         with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
             mock_terraform_state = json.load(f)
-        with open(EXPECTED_DATA_DIR / "cdn_detach/resource_addrs_to_detach/typical.yaml") as f:
+        with open(
+            EXPECTED_DATA_DIR / "cdn_detach/resource_addrs_to_detach" / expected_data_filename
+        ) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
-        mocks = CDNDetachMocks()
+        mocks = CDNDetachMocks(platform_config)
         cdn_detach = CDNDetach(**mocks.params())
 
-        resources = cdn_detach.get_resources_to_detach(mock_terraform_state)
+        resources = cdn_detach.get_resources_to_detach(mock_terraform_state, "staging")
         resource_addrs = {r["module"] + "." + r["type"] + "." + r["name"] for r in resources}
 
         assert resource_addrs == expected_resource_addrs

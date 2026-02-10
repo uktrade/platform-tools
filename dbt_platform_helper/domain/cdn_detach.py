@@ -1,4 +1,5 @@
 import json
+import re
 
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
@@ -35,20 +36,45 @@ class CDNDetach:
         self.terraform_provider.init(terraform_config_dir)
         state = self.terraform_provider.pull_state(terraform_config_dir)
 
-        resources = self.get_resources_to_detach(state)
+        resources = self.get_resources_to_detach(state, environment_name)
         self.log_resources_to_detach(resources, environment_name)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
-    def get_resources_to_detach(self, terraform_state):
-        return [
-            r
-            for r in terraform_state["resources"]
-            if r["mode"] == "managed"
-            and r["provider"].endswith((".domain", ".domain-cdn"))
-            and "module.extensions.module.alb" not in r["module"]
-        ]
+    def get_resources_to_detach(self, terraform_state, environment_name):
+        result = []
+        for resource in terraform_state["resources"]:
+            if resource["mode"] != "managed":
+                # This is a data block - skip it.
+                continue
+            if not resource["provider"].endswith((".domain", ".domain-cdn")):
+                # This resource resides in the application account, not the CDN account - skip it.
+                continue
+            m = re.match(r'^module\.extensions\.module\.(\w+)\["([^"]+)"\]', resource["module"])
+            module_name, extension_name = m.groups()
+            if module_name == "alb":
+                # This module contains resources that reside in the CDN account but should not be detached.
+                # These are the "internal" DNS records that point at the ALB, and the DNS records used for
+                # validating the ALB's certificate. Both of these are expected to be decommissioned in the near
+                # future rather than being repossessed by platform-public-ingress.
+                continue
+            if not self.extension_has_managed_ingress(extension_name, environment_name):
+                # This resource is due for detach, but it will not actually be detached until the
+                # managed_ingress option of the extension that owns it gets set to true.
+                continue
+            result.append(resource)
+        return result
+
+    def extension_has_managed_ingress(self, extension_name, environment_name):
+        config = self.config_provider.get_enriched_config()
+        ext_config = config["extensions"][extension_name]
+        flattened_ext_config = {
+            **ext_config,
+            **(ext_config.get("environments", {}).get("*") or {}),
+            **(ext_config.get("environments", {}).get(environment_name) or {}),
+        }
+        return flattened_ext_config.get("managed_ingress", False)
 
     def log_resources_to_detach(self, resources, environment_name):
         self.io.info("")
