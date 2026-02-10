@@ -20,9 +20,13 @@ class CodePipeline(PipelinePort):
         if details.environment:
             variables.append({"name": "ENVIRONMENT", "value": details.environment})
         build_options = {"name": details.name, "variables": variables}
-        execution_id = self.codepipeline_client.start_pipeline_execution(**build_options)[
-            "pipelineExecutionId"
-        ]
+        try:
+            execution_id = self.codepipeline_client.start_pipeline_execution(**build_options)[
+                "pipelineExecutionId"
+            ]
+        except Exception as e:
+            self.io.error("Pipeline trigger failed with: " + str(e))
+            execution_id = None
         return execution_id
 
     def get_execution_status(self, pipeline_name: str, execution_id: str):

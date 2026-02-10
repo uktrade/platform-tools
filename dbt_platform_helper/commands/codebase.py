@@ -3,6 +3,7 @@ from typing import List
 import click
 
 from dbt_platform_helper.domain.codebase import Codebase
+from dbt_platform_helper.domain.codebase import RedeployDisplay
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.codepipeline import CodePipeline
@@ -134,7 +135,11 @@ def redeploy(app: str, env: str, codebases: List[str], wait: bool):
             ),
             file_system=LocalFileSystem(),
         ).redeploy(app, env, codebases, wait=wait)
-        ClickIOProvider().info(results)
+
+        display = RedeployDisplay()
+
+        ClickIOProvider().info(display.format_results(results, wait))
+        ClickIOProvider().info(display.format_summary(results, wait))
 
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

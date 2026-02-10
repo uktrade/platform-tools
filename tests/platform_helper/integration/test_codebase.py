@@ -182,22 +182,3 @@ def test_redeploy(mock_application, fakefs, create_valid_platform_config_file, i
             result[0].url
             == "https://eu-west-2.console.aws.amazon.com/codesuite/codepipeline/pipelines/test-application-application-manual-release/executions/doesnt-matter-id"
         )
-
-
-"""
-Tests: 
-- unit
-    - no codebases and not in deploy repo
-    - no deployed services
-    - no codebase_tags
-    - deployed tag mismatch
-    - no to triggering pipeline
-    - trigger deployment exception
-    - waiting time exceeded
-        - execution status always None
-        - execution returned
-        - execution is not complete
-    - execution 
-        - successful
-        - failed
-"""

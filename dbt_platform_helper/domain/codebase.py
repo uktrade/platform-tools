@@ -15,12 +15,14 @@ from typing import Tuple
 import requests
 import yaml
 from boto3 import Session
+from prettytable import PrettyTable
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.ports.config import ConfigPort
 from dbt_platform_helper.ports.deployed import DeploymentPort
 from dbt_platform_helper.ports.deployed import PipelineDetails
 from dbt_platform_helper.ports.deployed import PipelinePort
+from dbt_platform_helper.ports.deployed import PipelineStatus
 from dbt_platform_helper.ports.file_system import FileSystemPort
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -342,44 +344,45 @@ class Codebase:
         wait_timeout: int = 1800,
     ) -> List[RedployResult]:
 
+        service_to_codebase = {}
+        codebase_tags = defaultdict(set)
+        mismatched_commits = []
+        deployments: List[Deployment] = []
+        results = []
+
         cwd = self.file_system.get_current_directory()
         if not codebases and "-deploy" not in cwd.parts[-1]:
             raise PlatformException("Not in deploy repo")
 
         config = self.config.load_and_validate_platform_config()
         codebase_pipelines = config.get("codebase_pipelines", {})
-
         if not codebases:
             codebases = codebase_pipelines.keys()
 
-        service_to_codebase = {}
         for codebase in codebases:
             codebase_config = codebase_pipelines.get(codebase, {})
-            for run_group in codebase_config["services"]:
+            for run_group in codebase_config.get("services", []):
                 for _, services in run_group.items():
                     for service in services:
                         service_to_codebase[service] = codebase
 
         services = self.deployment.get_deployed_services(app, env)
 
-        codebase_tags = defaultdict(set)
         for service in services:
             codebase = service_to_codebase.get(service.name, "")
             if codebase:
                 codebase_tags[codebase].add(service.tag)
 
-        mismatched_commits = []
         for codebase, deployed_commits in codebase_tags.items():
             if len(deployed_commits) > 1:
                 mismatched_commits.append((codebase, deployed_commits))
 
         if mismatched_commits:
-            message = "Commit mistmatch on deployed services for the following codebases:\n"
+            message = "Commit mismatch on deployed services for the following codebases:\n"
             for codebase in mismatched_commits:
                 message += f"- {codebase[0]}\n"
             raise PlatformException(message)
 
-        deployments: List[Deployment] = []
         for codebase, deployed_tags in codebase_tags.items():
             tag = deployed_tags.pop()
 
@@ -388,7 +391,7 @@ class Codebase:
             if not self.pipeline.pipeline_exists(pipeline_name):
                 pipeline_name += "-pipeline"
 
-            confirmation_message = f'\nYou are about to redeploy "{app}" for "{codebase}" with image reference "{tag}" (corresponding to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
+            confirmation_message = f'\nFor the application "{app}", you are about to redeploy the codebase "{codebase}" with image reference "{tag}" (corresponding to the "{env}" environment using the "{pipeline_name}" deployment pipeline. Do you want to continue?'
 
             if self.io.confirm(confirmation_message):
                 execution_id = self.pipeline.trigger_deployment(
@@ -399,16 +402,27 @@ class Codebase:
                     )
                 )
 
-                deployments.append(
-                    Deployment(
-                        codebase=codebase,
-                        pipeline=pipeline_name,
-                        execution_id=execution_id,
-                        tag=tag,
+                if execution_id:
+                    deployments.append(
+                        Deployment(
+                            codebase=codebase,
+                            pipeline=pipeline_name,
+                            execution_id=execution_id,
+                            tag=tag,
+                        )
                     )
-                )
+                else:
+                    results.append(
+                        RedployResult(
+                            codebase=codebase,
+                            pipeline=pipeline_name,
+                            execution_id=None,
+                            status="not triggered",
+                            tag=tag,
+                            error="Pipeline trigger failed",
+                        )
+                    )
 
-        results = []
         if deployments and wait:
             completed_results = self._wait_for_all_pipelines(
                 deployments, poll_interval, wait_timeout
@@ -463,6 +477,7 @@ class Codebase:
                             error=error,
                         )
                     )
+                break
             for pipeline in list(pending):
                 deployment = pipeline_map[pipeline]
                 execution = self.pipeline.get_execution_status(
@@ -498,3 +513,90 @@ class NotInCodeBaseRepositoryException(PlatformException):
         super().__init__(
             "You are in the deploy repository; make sure you are in the application codebase repository.",
         )
+
+
+class RedeployDisplay:
+
+    def format_results(self, results: List[RedployResult], waiting: bool) -> str:
+        if waiting:
+            return self._format_with_status(results)
+        else:
+            return self._format_with_url(results)
+
+    def _format_with_status(self, results: List[RedployResult]):
+        table = PrettyTable()
+        field_names = ["Codebase", "Tag", "Status", "Exec ID", "Error"]
+        table.field_names = field_names
+
+        for name in field_names:
+            table.align[name] = "l"
+
+        for result in results:
+            table.add_row(
+                [
+                    result.codebase,
+                    result.tag,
+                    result.status,
+                    self._format_execution_id(result.execution_id),
+                    self._format_error(result.error),
+                ]
+            )
+        return str(table)
+
+    def _format_with_url(self, results: List[RedployResult]):
+        table = PrettyTable()
+        field_names = ["Codebase", "Tag", "Exec ID", "Url"]
+        table.field_names = field_names
+
+        for name in field_names:
+            table.align[name] = "l"
+        table.max_width["Url"] = 125
+        for result in results:
+            table.add_row(
+                [
+                    result.codebase,
+                    result.tag,
+                    self._format_execution_id(result.execution_id),
+                    result.url,
+                ]
+            )
+
+        return str(table)
+
+    def format_summary(self, results: List[RedployResult], waiting: bool) -> str:
+        if waiting:
+            succeeded = sum(
+                1 for result in results if result.status == PipelineStatus.SUCCEEDED.value
+            )
+            failed = sum(
+                1
+                for result in results
+                if result.status in [PipelineStatus.FAILED.value, "not triggered"]
+            )
+            in_progress = sum(
+                1 for result in results if result.status == PipelineStatus.IN_PROGRESS.value
+            )
+            return (
+                "\nSummary: "
+                f"{succeeded} succeeded, "
+                f"{failed} failed, "
+                f"{in_progress} in_progress, "
+            )
+        else:
+            triggered = sum(1 for result in results if result.execution_id)
+            not_triggered = len(results) - triggered
+
+            return "\nSummary: " f"{triggered} triggered, " f"{not_triggered} failed to trigger"
+
+    def _format_execution_id(self, execution_id: str) -> str:
+        return execution_id[:8] + "..." if len(execution_id) > 8 else execution_id
+
+    def _format_error(self, error: Optional[str]) -> str:
+
+        if not error:
+            return "-"
+
+        if len(error) > 40:
+            return error[: 40 - 3] + "..."
+
+        return error

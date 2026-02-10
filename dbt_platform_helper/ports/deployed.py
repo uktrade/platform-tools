@@ -62,7 +62,6 @@ class PipelinePort(ABC):
     def trigger_deployment(self, details: PipelineDetails) -> Optional[str]:
         pass
 
-    # def get_pipeline_url():
     @abstractmethod
     def get_execution_status(
         self, pipeline_name: str, execution_id: str
