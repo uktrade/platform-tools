@@ -34,19 +34,19 @@ class CDNDetach:
 
         self.io.info(f"Fetching a copy of the {environment_name} environment's terraform state...")
         self.terraform_provider.init(terraform_config_dir)
-        state = self.terraform_provider.pull_state(terraform_config_dir)
+        environment_tfstate = self.terraform_provider.pull_state(terraform_config_dir)
 
-        resources = self.get_resources_to_detach(state, environment_name)
+        resources = self.get_resources_to_detach(environment_tfstate, environment_name)
         self.log_resources_to_detach(resources, environment_name)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
-    def get_resources_to_detach(self, terraform_state, environment_name):
+    def get_resources_to_detach(self, environment_tfstate, environment_name):
         managed_ingress_extensions = self.get_extensions_with_managed_ingress(environment_name)
         return [
             r
-            for r in terraform_state["resources"]
+            for r in environment_tfstate["resources"]
             if self.is_resource_detachable(r)
             and self.extension_name_for_resource(r) in managed_ingress_extensions
         ]
