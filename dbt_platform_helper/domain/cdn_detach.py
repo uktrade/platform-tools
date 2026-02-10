@@ -43,13 +43,12 @@ class CDNDetach:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
 
     def get_resources_to_detach(self, terraform_state, environment_name):
-        result = []
-        for resource in terraform_state["resources"]:
-            if self.resource_is_detachable(resource):
-                extension_name = self.get_extension_name_for_resource(resource)
-                if self.extension_has_managed_ingress(extension_name, environment_name):
-                    result.append(resource)
-        return result
+        return [
+            resource
+            for resource in terraform_state["resources"]
+            if self.resource_is_detachable(resource)
+            and self.resource_extension_has_managed_ingress(resource, environment_name)
+        ]
 
     @staticmethod
     def resource_is_detachable(resource):
@@ -57,6 +56,12 @@ class CDNDetach:
             resource["mode"] == "managed"
             and resource["provider"].endswith((".domain", ".domain-cdn"))
             and "module.extensions.module.alb" not in resource["module"]
+        )
+
+    def resource_extension_has_managed_ingress(self, resource, environment_name):
+        return self.extension_has_managed_ingress(
+            self.get_extension_name_for_resource(resource),
+            environment_name,
         )
 
     @staticmethod
