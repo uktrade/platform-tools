@@ -1308,17 +1308,17 @@ run "test_cdn_with_managed_ingress" {
   }
 
   assert {
-    condition = local.extensions_with_default_and_environment_settings_merged.test-alb.default_waf == "waf_test"
-    error_message = "Extension environment config for '*' environment expected at the top level" 
+    condition     = local.extensions_with_default_and_environment_settings_merged.test-alb.default_waf == "waf_test"
+    error_message = "Extension environment config for '*' environment expected at the top level"
   }
 
   assert {
-    condition = local.extensions_with_default_and_environment_settings_merged.test-alb.managed_ingress
+    condition     = local.extensions_with_default_and_environment_settings_merged.test-alb.managed_ingress
     error_message = "Extension individual environment config for the selected environment expected at the top level"
   }
 
   assert {
-    condition = !lookup(local.extensions_with_default_and_environment_settings_merged.test-alb, "test_config", false)
+    condition     = !lookup(local.extensions_with_default_and_environment_settings_merged.test-alb, "test_config", false)
     error_message = "Extension individual environment config not expected at the top level for a different environment"
   }
 }
