@@ -134,7 +134,7 @@ class TestCDNDetach:
         "dbt_platform_helper.domain.cdn_detach.CDNDetach.get_resources_to_detach",
         return_value=[],
     )
-    def test_dry_run_success_with_no_resources_to_remove(self, mock_get_resources_to_detach):
+    def test_dry_run_success_with_no_resources_to_detach(self, mock_get_resources_to_detach):
         mocks = CDNDetachMocks()
         cdn_detach = CDNDetach(**mocks.params())
 
