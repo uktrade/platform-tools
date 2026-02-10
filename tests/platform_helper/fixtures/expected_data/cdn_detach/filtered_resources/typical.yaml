@@ -1,0 +1,69 @@
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_acm_certificate
+  name: certificate
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_acm_certificate_validation
+  name: cert-validate
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_cloudfront_cache_policy
+  name: cache_policy
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_cloudfront_distribution
+  name: standard
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_cloudfront_monitoring_subscription
+  name: additional_metrics
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_cloudfront_origin_request_policy
+  name: origin_request_policy
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_route53_record
+  name: cdn-address
+
+- module: 'module.extensions.module.cdn["demodjango-alb"]'
+  mode: managed
+  type: aws_route53_record
+  name: validation-record
+
+- module: 'module.extensions.module.s3["demodjango-s3-bucket-static"]'
+  mode: managed
+  type: aws_acm_certificate
+  name: certificate
+
+- module: 'module.extensions.module.s3["demodjango-s3-bucket-static"]'
+  mode: managed
+  type: aws_acm_certificate_validation
+  name: certificate_validation
+
+- module: 'module.extensions.module.s3["demodjango-s3-bucket-static"]'
+  mode: managed
+  type: aws_cloudfront_distribution
+  name: s3_distribution
+
+- module: 'module.extensions.module.s3["demodjango-s3-bucket-static"]'
+  mode: managed
+  type: aws_cloudfront_origin_access_control
+  name: oac
+
+- module: 'module.extensions.module.s3["demodjango-s3-bucket-static"]'
+  mode: managed
+  type: aws_route53_record
+  name: cert_validation
+
+- module: 'module.extensions.module.s3["demodjango-s3-bucket-static"]'
+  mode: managed
+  type: aws_route53_record
+  name: cloudfront_domain

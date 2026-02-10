@@ -1,6 +1,8 @@
 import click
 
+from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.service import ServiceManager
+from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
@@ -8,9 +10,13 @@ from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.logs import LogsProvider
 from dbt_platform_helper.providers.s3 import S3Provider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
@@ -138,3 +144,36 @@ def update_rules(env: str):
         update_aws.update_alb_rules(environment=env)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
+
+
+@internal.group(cls=ClickDocOptGroup)
+def cdn():
+    """CloudFront related commands."""
+
+
+@cdn.command(help="Remove CDN resources from terraform state.")
+@click.option("--env", type=str, required=True)
+@click.option("--dry-run/--no-dry-run", default=True)
+def detach(env, dry_run):
+    """Removes CloudFront distributions and their supporting resources from the
+    terraform state for a specified environment."""
+    click_io = ClickIOProvider()
+    try:
+        session = get_aws_session_or_abort()
+        config_provider = ConfigProvider(ConfigValidator(session=session))
+        platform_helper_versioning = PlatformHelperVersioning(
+            click_io,
+            config_provider,
+            EnvironmentVariableProvider(),
+        )
+        terraform_environment = TerraformEnvironment(
+            config_provider, TerraformManifestProvider(), click_io, platform_helper_versioning
+        )
+        cdn_detach = CDNDetach(
+            io=click_io,
+            config_provider=config_provider,
+            terraform_environment=terraform_environment,
+        )
+        cdn_detach.execute(environment_name=env, dry_run=dry_run)
+    except PlatformException as err:
+        click_io.abort_with_error(str(err))
