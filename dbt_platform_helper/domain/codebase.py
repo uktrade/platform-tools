@@ -566,15 +566,15 @@ class RedeployDisplay:
     def format_summary(self, results: List[RedployResult], waiting: bool) -> str:
         if waiting:
             succeeded = sum(
-                1 for result in results if result.status == PipelineStatus.SUCCEEDED.value
+                1 for result in results if result.status == PipelineStatus.SUCCEEDED.value.lower()
             )
             failed = sum(
                 1
                 for result in results
-                if result.status in [PipelineStatus.FAILED.value, "not triggered"]
+                if result.status in [PipelineStatus.FAILED.value.lower(), "not triggered"]
             )
             in_progress = sum(
-                1 for result in results if result.status == PipelineStatus.IN_PROGRESS.value
+                1 for result in results if result.status == PipelineStatus.IN_PROGRESS.value.lower()
             )
             return (
                 "\nSummary: "

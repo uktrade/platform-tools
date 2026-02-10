@@ -136,7 +136,7 @@ def redeploy(app: str, env: str, codebases: List[str], wait: bool):
                 session.client("ecs"), session.client("ssm"), application_name=app, env=env
             ),
             file_system=LocalFileSystem(),
-        ).redeploy(app, env, codebase, wait=wait)
+        ).redeploy(app, env, codebases, wait=wait)
 
         display = RedeployDisplay()
 
