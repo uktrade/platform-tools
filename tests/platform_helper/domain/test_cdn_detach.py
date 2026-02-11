@@ -178,6 +178,12 @@ class TestCDNDetach:
             cdn_detach.execute(environment_name="not-an-environment", dry_run=True)
 
 
+@pytest.fixture
+def mock_environment_tfstate():
+    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/environment.tfstate.json") as f:
+        return json.load(f)
+
+
 class TestCDNDetachLogic:
     @pytest.mark.parametrize(
         "platform_config,expected_data_filename",
@@ -197,16 +203,16 @@ class TestCDNDetachLogic:
         ],
         ids=["alb", "s3", "alb+s3"],
     )
-    def test_resources_to_detach(self, platform_config, expected_data_filename):
-        with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/environment.tfstate.json") as f:
-            environment_tfstate = json.load(f)
+    def test_resources_to_detach(
+        self, mock_environment_tfstate, platform_config, expected_data_filename
+    ):
         with open(EXPECTED_DATA_DIR / "cdn_detach/resource_addrs" / expected_data_filename) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
         logic_result = CDNDetachLogic(
             platform_config=platform_config,
             environment_name="staging",
-            environment_tfstate=environment_tfstate,
+            environment_tfstate=mock_environment_tfstate,
         )
 
         resource_addrs = {address_for_tfstate_resource(r) for r in logic_result.resources_to_detach}
