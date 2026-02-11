@@ -15,14 +15,23 @@ class CDNDetachLogic:
     platform_config: dict
     environment_name: str
     environment_tfstate: dict
+    ingress_tfstate: dict
+
+    @staticmethod
+    def tfstate_resources(tfstate):
+        return [
+            {**resource_block, **instance}
+            for resource_block in tfstate["resources"]
+            for instance in resource_block["instances"]
+        ]
 
     @cached_property
     def environment_tfstate_resources(self):
-        return [
-            {**resource_block, **instance}
-            for resource_block in self.environment_tfstate["resources"]
-            for instance in resource_block["instances"]
-        ]
+        return self.tfstate_resources(self.environment_tfstate)
+
+    @cached_property
+    def ingress_tfstate_resources(self):
+        return self.tfstate_resources(self.ingress_tfstate)
 
     @staticmethod
     def is_resource_detachable(res):
@@ -60,6 +69,37 @@ class CDNDetachLogic:
             for res in self.environment_tfstate_resources
             if self.is_resource_detachable(res)
             and self.extension_name_for_resource(res) in self.extensions_to_detach
+        ]
+
+    @staticmethod
+    def is_resource_importable(res):
+        return res["type"] != "aws_acm_certificate_validation"
+
+    @staticmethod
+    def is_same_resource(res1, res2):
+        if res1["type"] != res2["type"]:
+            return False
+        try:
+            return res1["identity"] == res2["identity"]
+        except KeyError:
+            pass
+        try:
+            return res1["attributes"]["arn"] == res2["attributes"]["arn"]
+        except KeyError:
+            pass
+        raise NotImplementedError(f"don't know how to compare resources of type {typ}")
+
+    def is_resource_in_ingress_tfstate(self, res):
+        return any(
+            self.is_same_resource(res, other_res) for other_res in self.ingress_tfstate_resources
+        )
+
+    @cached_property
+    def resources_not_in_ingress_tfstate(self):
+        return [
+            res
+            for res in self.resources_to_detach
+            if self.is_resource_importable(res) and not self.is_resource_in_ingress_tfstate(res)
         ]
 
 
