@@ -122,7 +122,9 @@ class TestCDNDetach:
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
         mocks.mock_manifest_provider.generate_platform_public_ingress_config.assert_called_once_with(
-            "test-app", "staging"
+            "test-app",
+            "staging",
+            "non-prod-dns-acc",
         )
         mocks.mock_terraform_provider.init.assert_has_calls(
             [

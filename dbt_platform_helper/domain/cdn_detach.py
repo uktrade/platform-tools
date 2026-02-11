@@ -167,9 +167,14 @@ class CDNDetach:
         return self.terraform_provider.pull_state(terraform_config_dir)
 
     def fetch_ingress_tfstate(self, environment_name):
-        application_name = self.config_provider.get_enriched_config()["application"]
+        config = self.config_provider.get_enriched_config()
+        application_name = config["application"]
+        dns_account_name = config["environments"][environment_name]["accounts"]["dns"]["name"]
+
         self.manifest_provider.generate_platform_public_ingress_config(
-            application_name, environment_name
+            application_name,
+            environment_name,
+            dns_account_name,
         )
         terraform_config_dir = (
             f"terraform/platform-public-ingress/{application_name}/{environment_name}"
