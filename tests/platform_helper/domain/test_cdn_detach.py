@@ -197,7 +197,7 @@ class TestCDNDetachLogic:
         ],
         ids=["alb", "s3", "alb+s3"],
     )
-    def test_resource_blocks_to_detach(self, platform_config, expected_data_filename):
+    def test_resources_to_detach(self, platform_config, expected_data_filename):
         with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
             environment_tfstate = json.load(f)
         with open(
