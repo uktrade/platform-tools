@@ -184,25 +184,23 @@ class TestCDNDetachLogic:
         [
             (
                 create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=False),
-                "alb.yaml",
+                "to_detach.alb.yaml",
             ),
             (
                 create_mock_platform_config(alb_managed_ingress=False, s3_managed_ingress=True),
-                "s3.yaml",
+                "to_detach.s3.yaml",
             ),
             (
                 create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=True),
-                "alb_and_s3.yaml",
+                "to_detach.alb_and_s3.yaml",
             ),
         ],
         ids=["alb", "s3", "alb+s3"],
     )
     def test_resources_to_detach(self, platform_config, expected_data_filename):
-        with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
+        with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/environment.tfstate.json") as f:
             environment_tfstate = json.load(f)
-        with open(
-            EXPECTED_DATA_DIR / "cdn_detach/resource_addrs_to_detach" / expected_data_filename
-        ) as f:
+        with open(EXPECTED_DATA_DIR / "cdn_detach/resource_addrs" / expected_data_filename) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
         logic_result = CDNDetachLogic(
