@@ -365,10 +365,14 @@ class Codebase:
                 for _, services in run_group.items():
                     for service in services:
                         service_to_codebase[service] = codebase
-        
+
         env_object = config.get("environments", {}).get(env, {})
         default_env_object = config.get("environments", {}).get("*", {})
-        deployment_mode = env_object.get("service-deployment-mode", "copilot") if env_object else default_env_object.get("service-deployment-mode", "copilot")
+        deployment_mode = (
+            env_object.get("service-deployment-mode", "copilot")
+            if env_object
+            else default_env_object.get("service-deployment-mode", "copilot")
+        )
         platformed = deployment_mode in ["dual-traffic-platform-mode", "platform"]
         services = self.deployment.get_deployed_services(app, env, platformed)
         for service in services:
