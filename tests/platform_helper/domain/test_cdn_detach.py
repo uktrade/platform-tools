@@ -121,6 +121,7 @@ class TestCDNDetach:
             "terraform/environments/staging"
         )
         mocks.mock_logic_constructor.assert_called_once()
+        mocks.mock_terraform_provider.remove_from_state.assert_not_called()
 
         mocks.mock_io.info.assert_has_calls(
             [
@@ -158,14 +159,23 @@ class TestCDNDetach:
             ]
         )
 
-    def test_real_run_not_implemented(self):
+    def test_real_run_success(self):
         mocks = CDNDetachMocks(
             resources_to_detach=MOCK_RESOURCES_TO_DETACH,
         )
 
         cdn_detach = CDNDetach(**mocks.params())
-        with pytest.raises(NotImplementedError):
-            cdn_detach.execute(environment_name="staging", dry_run=False)
+        cdn_detach.execute(environment_name="staging", dry_run=False)
+
+        mocks.mock_terraform_provider.remove_from_state.assert_called_once_with(
+            "terraform/environments/staging",
+            {
+                'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_distribution.standard["api.dev.demodjango.uktrade.digital"]',
+                'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_distribution.standard["ip-filter-test.dev.demodjango.uktrade.digital"]',
+                'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_distribution.standard["web.dev.demodjango.uktrade.digital"]',
+                'module.extensions.module.cdn["demodjango-alb"].aws_cloudfront_cache_policy.cache_policy',
+            },
+        )
 
     def test_exception_raised_if_env_not_in_config(self):
         mocks = CDNDetachMocks()
