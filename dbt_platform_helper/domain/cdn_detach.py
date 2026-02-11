@@ -10,6 +10,18 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform import TerraformProvider
 
 
+class CDNResourcesNotImportedException(PlatformException):
+    def __init__(self, resources):
+        self.resources = resources
+
+    def __str__(self):
+        msg = "The folowing resource(s) have not yet been imported into platform-public-ingress:"
+        addresses = sorted(address_for_tfstate_resource(res) for res in self.resources)
+        for address in addresses:
+            msg += f"\n  {address}"
+        return msg
+
+
 @dataclass(frozen=True)
 class CDNDetachLogic:
     platform_config: dict
@@ -134,6 +146,9 @@ class CDNDetach:
         )
 
         self.log_resources_to_detach(logic_result.resources_to_detach, environment_name)
+
+        if logic_result.resources_not_in_ingress_tfstate:
+            raise CDNResourcesNotImportedException(logic_result.resources_not_in_ingress_tfstate)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")

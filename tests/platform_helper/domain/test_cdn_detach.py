@@ -7,6 +7,7 @@ import yaml
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.cdn_detach import CDNDetachLogic
+from dbt_platform_helper.domain.cdn_detach import CDNResourcesNotImportedException
 from dbt_platform_helper.domain.cdn_detach import address_for_tfstate_resource
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
@@ -110,6 +111,7 @@ class TestCDNDetach:
     def test_dry_run_success(self):
         mocks = CDNDetachMocks(
             resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -145,6 +147,7 @@ class TestCDNDetach:
     def test_dry_run_success_with_no_resources_to_detach(self):
         mocks = CDNDetachMocks(
             resources_to_detach=[],
+            resources_not_in_ingress_tfstate=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -158,9 +161,22 @@ class TestCDNDetach:
             ]
         )
 
+    def test_dry_run_failure_if_resources_missing_from_ingress_tfstate(self):
+        mocks = CDNDetachMocks(
+            resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=MOCK_RESOURCES_TO_DETACH[:2],
+        )
+
+        cdn_detach = CDNDetach(**mocks.params())
+        with pytest.raises(CDNResourcesNotImportedException) as e:
+            cdn_detach.execute(environment_name="staging", dry_run=True)
+
+        assert e.value.resources == MOCK_RESOURCES_TO_DETACH[:2]
+
     def test_real_run_not_implemented(self):
         mocks = CDNDetachMocks(
             resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
