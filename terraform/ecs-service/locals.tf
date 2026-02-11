@@ -285,7 +285,7 @@ locals {
     requiresCompatibilities = ["FARGATE"]
     cpu                     = tostring(var.service_config.cpu)
     memory                  = tostring(var.service_config.memory)
-    pid_mode                = "task"
+    pidMode                 = "task"
     tags = [
       { "key" : "application", "value" : var.application },
       { "key" : "environment", "value" : var.environment },
