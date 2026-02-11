@@ -14,6 +14,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform import TerraformProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
@@ -94,6 +95,7 @@ class CDNDetachMocks:
         self.mock_config_provider = Mock(spec=ConfigProvider)
         self.mock_config_provider.get_enriched_config.return_value = create_mock_platform_config()
         self.mock_terraform_environment = Mock(spec=TerraformEnvironment)
+        self.mock_manifest_provider = Mock(spec=TerraformManifestProvider)
         self.mock_terraform_provider = Mock(spec=TerraformProvider)
         self.mock_logic_constructor = Mock(return_value=Mock(**mock_logic_result_attrs))
 
@@ -102,6 +104,7 @@ class CDNDetachMocks:
             "io": self.mock_io,
             "config_provider": self.mock_config_provider,
             "terraform_environment": self.mock_terraform_environment,
+            "manifest_provider": self.mock_manifest_provider,
             "terraform_provider": self.mock_terraform_provider,
             "logic_constructor": self.mock_logic_constructor,
         }
@@ -118,14 +121,31 @@ class TestCDNDetach:
         cdn_detach.execute(environment_name="staging", dry_run=True)
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
-        mocks.mock_terraform_provider.init.assert_called_once_with("terraform/environments/staging")
-        mocks.mock_terraform_provider.pull_state.assert_called_once_with(
-            "terraform/environments/staging"
+        mocks.mock_manifest_provider.generate_platform_public_ingress_config.assert_called_once_with(
+            "test-app", "staging"
         )
+        mocks.mock_terraform_provider.init.assert_has_calls(
+            [
+                call("terraform/environments/staging"),
+                call("terraform/platform-public-ingress/test-app/staging"),
+            ]
+        )
+        mocks.mock_terraform_provider.pull_state.assert_has_calls(
+            [
+                call("terraform/environments/staging"),
+                call("terraform/platform-public-ingress/test-app/staging"),
+            ]
+        )
+
         mocks.mock_logic_constructor.assert_called_once()
 
         mocks.mock_io.info.assert_has_calls(
             [
+                call("Fetching a copy of the staging environment's terraform state..."),
+                call(
+                    "Fetching a copy of the platform-public-ingress terraform state for test-app/staging..."
+                ),
+                call(""),
                 call(
                     "Will remove the following resources from the staging environment's terraform state:"
                 ),

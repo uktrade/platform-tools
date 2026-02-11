@@ -8,6 +8,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform import TerraformProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
 
 class CDNResourcesNotImportedException(PlatformException):
@@ -121,12 +122,14 @@ class CDNDetach:
         io: ClickIOProvider,
         config_provider: ConfigProvider,
         terraform_environment: TerraformEnvironment,
+        manifest_provider: TerraformManifestProvider = None,
         terraform_provider: TerraformProvider = None,
         logic_constructor=CDNDetachLogic,
     ):
         self.io = io
         self.config_provider = config_provider
         self.terraform_environment = terraform_environment
+        self.manifest_provider = manifest_provider or self.terraform_environment.manifest_provider
         self.terraform_provider = terraform_provider or TerraformProvider()
         self.logic_constructor = logic_constructor
 
@@ -138,11 +141,13 @@ class CDNDetach:
             )
 
         environment_tfstate = self.fetch_environment_tfstate(environment_name)
+        ingress_tfstate = self.fetch_ingress_tfstate(environment_name)
 
         logic_result = self.logic_constructor(
             platform_config=platform_config,
             environment_name=environment_name,
             environment_tfstate=environment_tfstate,
+            ingress_tfstate=ingress_tfstate,
         )
 
         self.log_resources_to_detach(logic_result.resources_to_detach, environment_name)
@@ -158,6 +163,21 @@ class CDNDetach:
         terraform_config_dir = f"terraform/environments/{environment_name}"
 
         self.io.info(f"Fetching a copy of the {environment_name} environment's terraform state...")
+        self.terraform_provider.init(terraform_config_dir)
+        return self.terraform_provider.pull_state(terraform_config_dir)
+
+    def fetch_ingress_tfstate(self, environment_name):
+        application_name = self.config_provider.get_enriched_config()["application"]
+        self.manifest_provider.generate_platform_public_ingress_config(
+            application_name, environment_name
+        )
+        terraform_config_dir = (
+            f"terraform/platform-public-ingress/{application_name}/{environment_name}"
+        )
+
+        self.io.info(
+            f"Fetching a copy of the platform-public-ingress terraform state for {application_name}/{environment_name}..."
+        )
         self.terraform_provider.init(terraform_config_dir)
         return self.terraform_provider.pull_state(terraform_config_dir)
 

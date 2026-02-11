@@ -146,6 +146,13 @@ class TerraformManifestProvider:
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
 
+    def generate_platform_public_ingress_config(
+        self,
+        application_name,
+        environment_name,
+    ):
+        raise NotImplementedError
+
     @staticmethod
     def _get_account_for_env(env, platform_config):
         account = (
