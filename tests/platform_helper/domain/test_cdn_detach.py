@@ -177,6 +177,16 @@ class TestCDNDetach:
             },
         )
 
+    def test_real_run_success_with_no_resources_to_detach(self):
+        mocks = CDNDetachMocks(
+            resources_to_detach=[],
+        )
+
+        cdn_detach = CDNDetach(**mocks.params())
+        cdn_detach.execute(environment_name="staging", dry_run=False)
+
+        mocks.mock_terraform_provider.remove_from_state.assert_not_called()
+
     def test_exception_raised_if_env_not_in_config(self):
         mocks = CDNDetachMocks()
 
