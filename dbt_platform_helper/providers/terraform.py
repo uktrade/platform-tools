@@ -31,3 +31,18 @@ class TerraformProvider:
         except subprocess.CalledProcessError as e:
             raise PlatformException(f"Failed to pull a copy of the terraform state: {e}") from e
         return json.loads(result.stdout)
+
+    def remove_from_state(self, config_dir, resource_addrs):
+        try:
+            subprocess.run(
+                ["terraform", "state", "rm"] + list(resource_addrs),
+                cwd=config_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise PlatformException(
+                f"Failed to remove resources from terraform state: subprocess exited with status {e.returncode}. Subprocess output:\n{e.output}"
+            ) from e
