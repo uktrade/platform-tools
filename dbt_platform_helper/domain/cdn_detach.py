@@ -34,7 +34,7 @@ class CDNDetachLogic:
     def tfstate_resources(tfstate):
         return [
             {**resource_block, **instance}
-            for resource_block in tfstate["resources"]
+            for resource_block in tfstate.get("resources", [])
             for instance in resource_block["instances"]
         ]
 

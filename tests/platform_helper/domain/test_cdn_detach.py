@@ -270,6 +270,7 @@ class TestCDNDetachLogic:
     @pytest.mark.parametrize(
         "ingress_tfstate_filename,expected_data_filename",
         [
+            ("empty.tfstate.json", "empty_tfstate.yaml"),
             ("partial.tfstate.json", "partial_tfstate.yaml"),
         ],
     )
