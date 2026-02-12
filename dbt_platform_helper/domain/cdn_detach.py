@@ -199,6 +199,7 @@ class CDNDetach:
             self.io.info(
                 f"Will not remove any resources from the {environment_name} environment's terraform state."
             )
+        self.io.info("")
 
 
 def address_for_tfstate_resource(res):
