@@ -224,7 +224,7 @@ def mock_environment_tfstate():
 
 @pytest.fixture
 def mock_ingress_tfstate():
-    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/ingress.tfstate.json") as f:
+    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/ingress/partial.tfstate.json") as f:
         return json.load(f)
 
 
@@ -267,8 +267,24 @@ class TestCDNDetachLogic:
         resource_addrs = {address_for_tfstate_resource(r) for r in logic_result.resources_to_detach}
         assert resource_addrs == expected_resource_addrs
 
-    def test_resources_not_in_ingress_tfstate(self, mock_environment_tfstate, mock_ingress_tfstate):
-        with open(EXPECTED_DATA_DIR / "cdn_detach/resource_addrs/not_in_ingress_tfstate.yaml") as f:
+    @pytest.mark.parametrize(
+        "ingress_tfstate_filename,expected_data_filename",
+        [
+            ("partial.tfstate.json", "partial_tfstate.yaml"),
+        ],
+    )
+    def test_resources_not_in_ingress_tfstate(
+        self, mock_environment_tfstate, ingress_tfstate_filename, expected_data_filename
+    ):
+        with open(
+            INPUT_DATA_DIR / "cdn_detach/terraform_state/ingress" / ingress_tfstate_filename
+        ) as f:
+            mock_ingress_tfstate = json.load(f)
+        with open(
+            EXPECTED_DATA_DIR
+            / "cdn_detach/resource_addrs/not_in_ingress_tfstate"
+            / expected_data_filename
+        ) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
         logic_result = CDNDetachLogic(
