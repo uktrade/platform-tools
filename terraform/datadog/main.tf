@@ -35,8 +35,6 @@ spec:
   lifecycle: production
   tier: "1"
   type: ${contains(local.db_list, each.key) ? "db" : "web"}
-  languages:
-    - python
   componentOf: 
     - system:${var.application}
 ${local.fingerprint}
@@ -62,8 +60,6 @@ spec:
   lifecycle: production
   tier: "1"
   type: ${contains(local.db_list, each.value.front_service) ? "db" : "web"}
-  languages:
-    - python
   componentOf: 
     - system:${var.application}
   dependsOn:
