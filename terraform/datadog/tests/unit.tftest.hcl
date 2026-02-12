@@ -44,7 +44,7 @@ run "datadog_service_entity_test_name" {
 run "datadog_service_entity_test_parent" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service-back["test-web-postgres"].entity).spec.componentOf[0] == "system:test-app-test-web"
-    error_message = "Should be: spec.componentOf = system:test-app-test-web"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-service-back["test-web-postgres"].entity).spec.componentOf[0] == "system:test-app"
+    error_message = "Should be: spec.componentOf = system:test-app"
   }
 }
