@@ -6,7 +6,7 @@ resource "datadog_software_catalog" "datadog-software-catalog-system" {
 ${local.api}
 kind: system
 metadata:
-  name: ${var.application}-${each.key}
+  name: ${var.application}
 ${local.team}
 ${local.description}
   links:
@@ -38,7 +38,7 @@ spec:
   languages:
     - python
   componentOf: 
-    - system:${var.application}-${each.key}
+    - system:${var.application}
 ${local.fingerprint}
 EOF
 }
@@ -65,7 +65,7 @@ spec:
   languages:
     - python
   componentOf: 
-    - system:${var.application}-${each.value.front_service}
+    - system:${var.application}
   dependsOn:
     - service:${var.application}-${each.value.front_service}
 ${local.fingerprint}
