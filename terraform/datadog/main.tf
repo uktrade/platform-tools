@@ -1,7 +1,6 @@
 // Create the System (parent) component in DataDog Software Catalog
 resource "datadog_software_catalog" "datadog-software-catalog-system" {
   provider = datadog.ddog
-  for_each = var.config.services_to_monitor
   entity   = <<EOF
 ${local.api}
 kind: system
@@ -61,7 +60,7 @@ spec:
   tier: "1"
   type: ${contains(local.db_list, each.value.front_service) ? "db" : "web"}
   componentOf: 
-    - system:${var.application}
+    - system:${var.application}-${each.value.front_service}
   dependsOn:
     - service:${var.application}-${each.value.front_service}
 ${local.fingerprint}

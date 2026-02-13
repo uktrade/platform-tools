@@ -20,7 +20,7 @@ variables {
 run "datadog_system_entity_test_application" {
   command = plan
   assert {
-    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-system["test-web"].entity).metadata.name == "${var.application}-test-web"
+    condition     = yamldecode(datadog_software_catalog.datadog-software-catalog-system["test-web"].entity).metadata.name == "${var.application}"
     error_message = "Should be: metadata.name = ${var.application}"
   }
 }
