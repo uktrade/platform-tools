@@ -73,7 +73,7 @@ locals {
   }
   cdn = {
     for extension_name, extension_config in local.extensions :
-    extension_name => extension_config if extension_config.type == "alb"
+    extension_name => extension_config if extension_config.type == "alb" && !lookup(extension_config, "managed_ingress", false)
   }
   datadog = {
     for extension_name, extension_config in local.extensions :
