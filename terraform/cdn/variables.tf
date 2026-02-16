@@ -50,3 +50,12 @@ variable "origin_verify_secret_id" {
   description = "The ID of the secret used for origin verification"
   type        = string
 }
+
+variable "vpc_origin_id" {
+  description = "the cloudfront shared vpc origin id"
+  type = string
+}
+
+variable "vpc_origin_domain_name" {
+  type = string
+}

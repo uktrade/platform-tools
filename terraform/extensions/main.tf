@@ -69,6 +69,7 @@ module "alb" {
   for_each = local.alb
   providers = {
     aws.domain = aws.domain
+    aws.ram-cdn = aws.ram-cdn
   }
   application             = var.args.application
   environment             = var.environment
@@ -90,6 +91,9 @@ module "cdn" {
   environment = var.environment
 
   origin_verify_secret_id = one(values(module.alb)).origin_verify_secret_id
+
+  vpc_origin_id = module.alb[each.key].cloudfront-vpc-origin-id
+  vpc_origin_domain_name = module.alb[each.key].cloudfront-vpc-origin-domain-name
 
   config = each.value
 }

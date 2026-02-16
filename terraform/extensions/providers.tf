@@ -17,6 +17,11 @@ provider "aws" {
   }
 }
 
+provider "aws" {
+  region = "us-east-1"
+  alias  = "ram-cdn"
+}
+
 # The default provider configuration prevents deployment to the wrong aws account
 provider "aws" {
   allowed_account_ids = [local.deploy_account_id]

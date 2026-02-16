@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 data "aws_wafv2_web_acl" "waf-default" {
   provider = aws.domain-cdn
   name     = local.cdn_defaults.default_waf
@@ -97,10 +99,22 @@ resource "aws_cloudfront_distribution" "standard" {
     }
   }
 
+  dynamic "origin" {
+    for_each = var.vpc_origin_id != null ? [1]:[0]
+    content {
+      domain_name = var.vpc_origin_domain_name
+      origin_id   = "${each.value[0]}.${local.domain_suffix}-private"
+      vpc_origin_config {
+        vpc_origin_id = var.vpc_origin_id
+        owner_account_id = data.aws_caller_identity.current.account_id
+      }
+    }
+  }
+
   default_cache_behavior {
     allowed_methods        = local.cdn_defaults.allowed_methods
     cached_methods         = local.cdn_defaults.cached_methods
-    target_origin_id       = "${each.value[0]}.${local.domain_suffix}"
+    target_origin_id       = var.vpc_origin_id != null ? "${each.value[0]}.${local.domain_suffix}-private" : "${each.value[0]}.${local.domain_suffix}"
     viewer_protocol_policy = local.cdn_defaults.viewer_protocol_policy
     compress               = local.cdn_defaults.compress
 
@@ -133,7 +147,7 @@ resource "aws_cloudfront_distribution" "standard" {
 
     content {
       path_pattern             = ordered_cache_behavior.value.path
-      target_origin_id         = "${each.value[0]}.${local.domain_suffix}"
+      target_origin_id         = var.vpc_origin_id != null ? "${each.value[0]}.${local.domain_suffix}-private" : "${each.value[0]}.${local.domain_suffix}"
       cache_policy_id          = data.aws_cloudfront_cache_policy.policy-name[ordered_cache_behavior.value.cache].id
       origin_request_policy_id = data.aws_cloudfront_origin_request_policy.request-policy-name[ordered_cache_behavior.value.request].id
       viewer_protocol_policy   = "redirect-to-https"
