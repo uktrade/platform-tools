@@ -1139,3 +1139,54 @@ run "aws_ssm_parameter_cloudfront_alias_prod_domain_name_unit_test" {
     error_message = "Invalid value for aws_ssm_parameter cloudfront alias."
   }
 }
+
+run "managed_ingress_remove_resources" {
+  command = plan
+  variables {
+    config = {
+      bucket_name          = "test",
+      serve_static_content = true,
+      managed_ingress      = true
+    }
+  }
+
+  assert {
+    condition     = length(aws_cloudfront_origin_access_control.oac) == 0
+    error_message = "aws_cloudfront_origin_access_control oac should not be created"
+  }
+
+  assert {
+    condition     = length(aws_cloudfront_distribution.s3_distribution) == 0
+    error_message = "aws_cloudfront_distribution s3_distribution should not be created"
+  }
+
+  assert {
+    condition     = length(aws_s3_bucket_policy.cloudfront_bucket_policy) == 0
+    error_message = "aws_s3_bucket_policy cloudfront_bucket_policy should not be created"
+  }
+
+  assert {
+    condition     = length(aws_route53_record.cloudfront_domain) == 0
+    error_message = "aws_route53_record cloudfront_domain should not be created"
+  }
+
+  assert {
+    condition     = length(aws_acm_certificate.certificate) == 0
+    error_message = "aws_acm_certificate certificate should not be created"
+  }
+
+  assert {
+    condition     = length(aws_route53_record.cert_validation) == 0
+    error_message = "aws_route53_record cert_validation should not be created"
+  }
+
+  assert {
+    condition     = length(aws_acm_certificate_validation.certificate_validation) == 0
+    error_message = "aws_acm_certificate_validation certificate_validation should not be created"
+  }
+
+  assert {
+    condition     = length(data.aws_route53_zone.selected) == 0
+    error_message = "aws_route53_zone selected should not be created"
+  }
+}
