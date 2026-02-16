@@ -234,15 +234,15 @@ class TestCDNDetachLogic:
         [
             (
                 create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=False),
-                "to_detach.alb.yaml",
+                "alb.yaml",
             ),
             (
                 create_mock_platform_config(alb_managed_ingress=False, s3_managed_ingress=True),
-                "to_detach.s3.yaml",
+                "s3.yaml",
             ),
             (
                 create_mock_platform_config(alb_managed_ingress=True, s3_managed_ingress=True),
-                "to_detach.alb_and_s3.yaml",
+                "alb_and_s3.yaml",
             ),
         ],
         ids=["alb", "s3", "alb+s3"],
@@ -254,7 +254,9 @@ class TestCDNDetachLogic:
         platform_config,
         expected_data_filename,
     ):
-        with open(EXPECTED_DATA_DIR / "cdn_detach/resource_addrs" / expected_data_filename) as f:
+        with open(
+            EXPECTED_DATA_DIR / "cdn_detach/resource_addrs/to_detach" / expected_data_filename
+        ) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
         logic_result = CDNDetachLogic(
