@@ -60,9 +60,7 @@ spec:
   tier: "1"
   type: ${contains(local.db_list, each.value.front_service) ? "db" : "web"}
   componentOf: 
-    - system:${var.application}-${each.value.front_service}
-  dependsOn:
-    - service:${var.application}-${each.value.front_service}
+    - system:${var.application}
 ${local.fingerprint}
 EOF
 }
