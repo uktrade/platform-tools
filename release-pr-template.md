@@ -1,11 +1,9 @@
 ### Summary
 <!-- One or two sentences explaining what’s in this release (plain English, user-facing). -->
 
-<!-- TODO - remove once there's no more applications on Self-Managed Platform -->
 > **Upgrade status:** <!-- Choose an option and delete the others. --> Optional | Recommended | Required
 > **Impacted areas:** <!-- List impacted areas. --> Platform-Helper | Codebase pipelines | Datadog | Environment Pipelines | Environment Terraform
 
-<!-- TODO - remove once there's no more applications on Self-Managed Platform -->
 ### Why should you upgrade?
 <!-- List benefits of upgrading, and what component they apply to. -->
 
