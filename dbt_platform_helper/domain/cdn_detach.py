@@ -157,11 +157,15 @@ class CDNDetach:
 
         if not dry_run:
             if logic_result.resources_to_detach:
+                self.io.info(
+                    f"Removing resources from the {environment_name} environment's terraform state..."
+                )
                 terraform_config_dir = f"terraform/environments/{environment_name}"
                 self.terraform_provider.remove_from_state(
                     terraform_config_dir,
                     {address_for_tfstate_resource(res) for res in logic_result.resources_to_detach},
                 )
+            self.io.info("Success.")
 
     def fetch_environment_tfstate(self, environment_name):
         self.terraform_environment.generate(environment_name)
