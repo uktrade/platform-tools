@@ -220,6 +220,58 @@ class RequestsPerMinute(BaseModel):
     )
 
 
+def validate_range(range: str):
+    if not re.match(r"^(\d+)-(\d+)$", range):
+        raise PlatformException("Range must be in the format 'int-int' e.g. '1-2'")
+
+    range_split = range.split("-")
+    if int(range_split[0]) >= int(range_split[1]):
+        raise PlatformException("Range minimum value must be less than the maximum value.")
+
+
+import re
+
+CRON_REGEX = re.compile(
+    r"^"
+    r"([0-9*,\-/]+)\s+"  # min
+    r"([0-9*,\-/]+)\s+"  # hour
+    r"([0-9*,\-/?]+)\s+"  # day of month
+    r"([0-9*,\-/A-Z]+)\s+"  # month
+    r"([0-9*,\-/A-Z?]+)\s+"  # day of week
+    r"([0-9*,\-/]+)"  # year
+    r"$"
+)
+
+
+class CronSchedule(BaseModel):
+    schedule: str = Field(
+        description="The cron schedule to carry out the scaling action to the given range."
+    )
+    range: str = Field(
+        description="Minimum and maximum number of ECS tasks to maintain e.g. '1-2'."
+    )
+
+    @model_validator(mode="after")
+    def validate_fields(self):
+
+        if not CRON_REGEX.match(self.schedule):
+            raise PlatformException(
+                f"Invalid cron expression: '{self.schedule}'. "
+                "Excepted format: 'MIN HOUR DOM MONTH DOW YEAR' e.g. '0 06 * * MON-FRI *'"
+            )
+
+        if not re.match(r"^(\d+)-(\d+)$", self.range):
+            raise PlatformException("Range must be in the format 'int-int' e.g. '1-2'")
+
+        range_split = self.range.split("-")
+        if int(range_split[0]) > int(range_split[1]):
+            raise PlatformException(
+                "Range minimum value must be less or equal to the maximum value."
+            )
+
+        return self
+
+
 class Count(BaseModel):
     range: str = Field(
         description="Minimum and maximum number of ECS tasks to maintain e.g. '1-2'."
@@ -239,6 +291,11 @@ class Count(BaseModel):
     requests_per_minute: Optional[Union[int, RequestsPerMinute]] = Field(
         default=None,
         description="Request-rate threshold. Either a plain integer or a map with 'value' and 'cooldown'.",
+    )
+
+    cron: Optional[list[CronSchedule]] = Field(
+        default=None,
+        description="Scheduled cron scaling actions",
     )
 
     @model_validator(mode="after")

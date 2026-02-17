@@ -584,3 +584,116 @@ run "backend_service_no_ecs_service_connect" {
     error_message = "Should be: 0"
   }
 }
+
+run "service_scheduled_auto_scaling" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Load Balanced Web Service"
+
+      http = {
+        alias            = ["web.dev.myapp.uktrade.digital"]
+        path             = "/"
+        target_container = "nginx"
+        healthcheck = {
+          path                = "/test"
+          port                = 8081
+          success_codes       = "200,302"
+          healthy_threshold   = 9
+          unhealthy_threshold = 9
+          interval            = "99"
+          timeout             = "99"
+          grace_period        = "99"
+        }
+      }
+
+      sidecars = {
+        nginx = {
+          port  = 443
+          image = "public.ecr.aws/example/nginx:latest"
+        }
+      }
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+      count = {
+        range = "2-8"
+        cron = [
+          {
+            schedule = "0 06 ? * MON-FRI *"
+            range    = "2-4"
+          },
+          {
+            schedule = "0 18 ? * MON-FRI *"
+            range    = "0-0"
+          },
+        ]
+      }
+      exec = true
+
+      network = {
+        connect = true
+        vpc = {
+          placement = "private"
+        }
+      }
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+
+      variables = {
+        LOG_LEVEL = "DEBUG"
+        DEBUG     = false
+        PORT      = 8080
+      }
+
+      secrets = {
+        DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_scheduled_action.scheduled_autoscaling) == 2
+    error_message = "Should be: 2"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-0"].schedule == "cron(0 06 ? * MON-FRI *)"
+    error_message = "Should be: cron(0 06 ? * MON-FRI *)"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-0"].scalable_target_action[0].min_capacity == "2"
+    error_message = "Should be: 2"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-0"].scalable_target_action[0].max_capacity == "4"
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-1"].schedule == "cron(0 18 ? * MON-FRI *)"
+    error_message = "Should be: cron(0 18 ? * MON-FRI *)"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-1"].scalable_target_action[0].min_capacity == "0"
+    error_message = "Should be: 0"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-1"].scalable_target_action[0].max_capacity == "0"
+    error_message = "Should be: 0"
+  }
+}
