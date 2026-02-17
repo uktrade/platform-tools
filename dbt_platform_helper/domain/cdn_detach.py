@@ -16,7 +16,7 @@ class CDNResourcesNotImportedException(PlatformException):
         self.resources = resources
 
     def __str__(self):
-        msg = "The folowing resource(s) have not yet been imported into platform-public-ingress:"
+        msg = "The following resource(s) have not yet been imported into platform-public-ingress:"
         addresses = sorted(address_for_tfstate_resource(res) for res in self.resources)
         for address in addresses:
             msg += f"\n  {address}"
