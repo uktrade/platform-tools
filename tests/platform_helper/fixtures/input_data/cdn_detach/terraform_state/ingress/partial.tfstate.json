@@ -1,0 +1,145 @@
+{
+  "version": 4,
+  "terraform_version": "1.14.3",
+  "serial": 6,
+  "lineage": "01234567-89ab-cdef-0123-456789abcdef",
+  "outputs": {},
+  "resources": [
+    {
+      "module": "module.cache_policies[\"demodjango-cache-policy\"]",
+      "mode": "data",
+      "type": "aws_cloudfront_cache_policy",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": []
+    },
+    {
+      "module": "module.cache_policies[\"demodjango-cache-policy\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_cache_policy",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": 0,
+          "attributes": {
+            "arn": "arn:aws:cloudfront::223344556677:cache-policy/abcdef01-2345-6789-abcd-ef0123456789"
+          },
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"]",
+      "mode": "data",
+      "type": "aws_cloudfront_cache_policy",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "arn": "arn:aws:cloudfront::223344556677:cache-policy/def01234-5678-9abc-def0-123456789abc"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"]",
+      "mode": "data",
+      "type": "aws_route53_zone",
+      "name": "selected",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "arn": "arn:aws:route53:::hostedzone/Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_distribution",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "arn": "arn:aws:cloudfront::223344556677:distribution/E3456789ABC012"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"]",
+      "mode": "managed",
+      "type": "aws_cloudfront_origin_access_control",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "arn": "arn:aws:cloudfront::223344556677:origin-access-control/EABCDEFGHIJKL"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"]",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {},
+          "identity": {
+            "account_id": "223344556677",
+            "name": "demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "A",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"].module.ssl_certificate",
+      "mode": "managed",
+      "type": "aws_acm_certificate",
+      "name": "this",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {
+            "arn": "arn:aws:acm:us-east-1:223344556677:certificate/6789abcd-ef01-2345-6789-abcdef012345"
+          },
+          "identity": {
+            "arn": "arn:aws:acm:us-east-1:223344556677:certificate/6789abcd-ef01-2345-6789-abcdef012345"
+          },
+          "create_before_destroy": true
+        }
+      ]
+    },
+    {
+      "module": "module.s3_static_sites[\"demodjango-dev-static.dev.demodjango.uktrade.digital\"].module.ssl_certificate",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "certificate_validation",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "attributes": {},
+          "identity": {
+            "account_id": "223344556677",
+            "name": "_789abcdef0123456789abcdef0123456.demodjango-dev-static.dev.demodjango.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z0123456789ABCDEFGHIJ"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -99,6 +99,21 @@ class TestPullState:
 
         assert "Failed to pull a copy of the terraform state" in str(e.value)
 
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
+    def test_success_if_state_is_empty(self, mock_subprocess_run, tmp_path):
+        mock_subprocess_run.return_value = subprocess.CompletedProcess(
+            args=["terraform", "state", "pull"],
+            returncode=0,
+            stdout=b"",
+            stderr=None,
+        )
+
+        provider = TerraformProvider()
+
+        result = provider.pull_state(tmp_path)
+
+        assert result == {}
+
 
 class TestRemoveFromState:
     @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)

@@ -30,7 +30,14 @@ class TerraformProvider:
             )
         except subprocess.CalledProcessError as e:
             raise PlatformException(f"Failed to pull a copy of the terraform state: {e}") from e
-        return json.loads(result.stdout)
+        if result.stdout:
+            return json.loads(result.stdout)
+        else:
+            # If the given terraform config has never been applied (and thus the state file doesn't
+            # yet exist), `terraform state pull` exits 0 with empty output. We should ensure we
+            # handle this case. I think the sensible thing to do is to successfully return an
+            # empty dict.
+            return {}
 
     def remove_from_state(self, config_dir, resource_addrs):
         try:
