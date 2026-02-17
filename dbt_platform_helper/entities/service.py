@@ -12,6 +12,17 @@ from pydantic import model_validator
 
 from dbt_platform_helper.platform_exception import PlatformException
 
+CRON_REGEX = re.compile(
+    r"^"
+    r"([0-9*,\-/]+)\s+"  # min
+    r"([0-9*,\-/]+)\s+"  # hour
+    r"([0-9*,\-/?]+)\s+"  # day of month
+    r"([0-9*,\-/A-Z]+)\s+"  # month
+    r"([0-9*,\-/A-Z?]+)\s+"  # day of week
+    r"([0-9*,\-/]+)"  # year
+    r"$"
+)
+
 
 class HealthCheck(BaseModel):
     path: Optional[str] = Field(
@@ -218,29 +229,6 @@ class RequestsPerMinute(BaseModel):
         default=None,
         description="Optional requests cooldown that overrides the global cooldown policy.",
     )
-
-
-def validate_range(range: str):
-    if not re.match(r"^(\d+)-(\d+)$", range):
-        raise PlatformException("Range must be in the format 'int-int' e.g. '1-2'")
-
-    range_split = range.split("-")
-    if int(range_split[0]) >= int(range_split[1]):
-        raise PlatformException("Range minimum value must be less than the maximum value.")
-
-
-import re
-
-CRON_REGEX = re.compile(
-    r"^"
-    r"([0-9*,\-/]+)\s+"  # min
-    r"([0-9*,\-/]+)\s+"  # hour
-    r"([0-9*,\-/?]+)\s+"  # day of month
-    r"([0-9*,\-/A-Z]+)\s+"  # month
-    r"([0-9*,\-/A-Z?]+)\s+"  # day of week
-    r"([0-9*,\-/]+)"  # year
-    r"$"
-)
 
 
 class CronSchedule(BaseModel):
