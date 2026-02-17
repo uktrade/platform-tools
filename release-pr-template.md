@@ -8,5 +8,9 @@
 <!-- List benefits of upgrading, and what component they apply to. -->
 
 ### How to upgrade
-Please follow our [upgrade process](https://platform.readme.trade.gov.uk/reference/upgrading-platform-helper/).  
+
+Your application will be automatically upgraded shortly. Please ensure you also have the latest version of **Platform Helper** installed locally. More details are available in the [Managed Platform upgrade documentation](https://platform.readme.trade.gov.uk/managed/guides/upgrading-platform-helper/).
+
+If you are on Self-Managed Platform, please follow the [upgrade process](https://platform.readme.trade.gov.uk/self-managed/guides/upgrading-platform-helper/).
+
 <!-- Add any special upgrade steps below. -->
