@@ -7,12 +7,14 @@ import yaml
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.cdn_detach import CDNDetachLogic
+from dbt_platform_helper.domain.cdn_detach import CDNResourcesNotImportedException
 from dbt_platform_helper.domain.cdn_detach import address_for_tfstate_resource
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform import TerraformProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from tests.platform_helper.conftest import EXPECTED_DATA_DIR
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
@@ -93,6 +95,7 @@ class CDNDetachMocks:
         self.mock_config_provider = Mock(spec=ConfigProvider)
         self.mock_config_provider.get_enriched_config.return_value = create_mock_platform_config()
         self.mock_terraform_environment = Mock(spec=TerraformEnvironment)
+        self.mock_manifest_provider = Mock(spec=TerraformManifestProvider)
         self.mock_terraform_provider = Mock(spec=TerraformProvider)
         self.mock_logic_constructor = Mock(return_value=Mock(**mock_logic_result_attrs))
 
@@ -101,6 +104,7 @@ class CDNDetachMocks:
             "io": self.mock_io,
             "config_provider": self.mock_config_provider,
             "terraform_environment": self.mock_terraform_environment,
+            "manifest_provider": self.mock_manifest_provider,
             "terraform_provider": self.mock_terraform_provider,
             "logic_constructor": self.mock_logic_constructor,
         }
@@ -110,20 +114,40 @@ class TestCDNDetach:
     def test_dry_run_success(self):
         mocks = CDNDetachMocks(
             resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
         cdn_detach.execute(environment_name="staging", dry_run=True)
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
-        mocks.mock_terraform_provider.init.assert_called_once_with("terraform/environments/staging")
-        mocks.mock_terraform_provider.pull_state.assert_called_once_with(
-            "terraform/environments/staging"
+        mocks.mock_manifest_provider.generate_platform_public_ingress_config.assert_called_once_with(
+            "test-app",
+            "staging",
+            "non-prod-dns-acc",
         )
+        mocks.mock_terraform_provider.init.assert_has_calls(
+            [
+                call("terraform/environments/staging"),
+                call("terraform/platform-public-ingress/test-app/staging"),
+            ]
+        )
+        mocks.mock_terraform_provider.pull_state.assert_has_calls(
+            [
+                call("terraform/environments/staging"),
+                call("terraform/platform-public-ingress/test-app/staging"),
+            ]
+        )
+
         mocks.mock_logic_constructor.assert_called_once()
 
         mocks.mock_io.info.assert_has_calls(
             [
+                call("Fetching a copy of the staging environment's terraform state..."),
+                call(
+                    "Fetching a copy of the platform-public-ingress terraform state for test-app/staging..."
+                ),
+                call(""),
                 call(
                     "Will remove the following resources from the staging environment's terraform state:"
                 ),
@@ -145,6 +169,7 @@ class TestCDNDetach:
     def test_dry_run_success_with_no_resources_to_detach(self):
         mocks = CDNDetachMocks(
             resources_to_detach=[],
+            resources_not_in_ingress_tfstate=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -158,9 +183,22 @@ class TestCDNDetach:
             ]
         )
 
+    def test_dry_run_failure_if_resources_missing_from_ingress_tfstate(self):
+        mocks = CDNDetachMocks(
+            resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=MOCK_RESOURCES_TO_DETACH[:2],
+        )
+
+        cdn_detach = CDNDetach(**mocks.params())
+        with pytest.raises(CDNResourcesNotImportedException) as e:
+            cdn_detach.execute(environment_name="staging", dry_run=True)
+
+        assert e.value.resources == MOCK_RESOURCES_TO_DETACH[:2]
+
     def test_real_run_not_implemented(self):
         mocks = CDNDetachMocks(
             resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=[],
         )
 
         cdn_detach = CDNDetach(**mocks.params())
@@ -176,6 +214,18 @@ class TestCDNDetach:
             match="cannot detach CDN resources for environment not-an-environment. It does not exist in your configuration",
         ):
             cdn_detach.execute(environment_name="not-an-environment", dry_run=True)
+
+
+@pytest.fixture
+def mock_environment_tfstate():
+    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/environment.tfstate.json") as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def mock_ingress_tfstate():
+    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/ingress/partial.tfstate.json") as f:
+        return json.load(f)
 
 
 class TestCDNDetachLogic:
@@ -197,21 +247,59 @@ class TestCDNDetachLogic:
         ],
         ids=["alb", "s3", "alb+s3"],
     )
-    def test_resource_blocks_to_detach(self, platform_config, expected_data_filename):
-        with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/typical.tfstate.json") as f:
-            environment_tfstate = json.load(f)
+    def test_resources_to_detach(
+        self,
+        mock_environment_tfstate,
+        mock_ingress_tfstate,
+        platform_config,
+        expected_data_filename,
+    ):
         with open(
-            EXPECTED_DATA_DIR / "cdn_detach/resource_addrs_to_detach" / expected_data_filename
+            EXPECTED_DATA_DIR / "cdn_detach/resource_addrs/to_detach" / expected_data_filename
         ) as f:
             expected_resource_addrs = set(yaml.safe_load(f))
 
         logic_result = CDNDetachLogic(
             platform_config=platform_config,
             environment_name="staging",
-            environment_tfstate=environment_tfstate,
+            environment_tfstate=mock_environment_tfstate,
+            ingress_tfstate=mock_ingress_tfstate,
         )
 
         resource_addrs = {address_for_tfstate_resource(r) for r in logic_result.resources_to_detach}
+        assert resource_addrs == expected_resource_addrs
+
+    @pytest.mark.parametrize(
+        "ingress_tfstate_filename,expected_data_filename",
+        [
+            ("empty.tfstate.json", "empty_tfstate.yaml"),
+            ("partial.tfstate.json", "partial_tfstate.yaml"),
+        ],
+    )
+    def test_resources_not_in_ingress_tfstate(
+        self, mock_environment_tfstate, ingress_tfstate_filename, expected_data_filename
+    ):
+        with open(
+            INPUT_DATA_DIR / "cdn_detach/terraform_state/ingress" / ingress_tfstate_filename
+        ) as f:
+            mock_ingress_tfstate = json.load(f)
+        with open(
+            EXPECTED_DATA_DIR
+            / "cdn_detach/resource_addrs/not_in_ingress_tfstate"
+            / expected_data_filename
+        ) as f:
+            expected_resource_addrs = set(yaml.safe_load(f))
+
+        logic_result = CDNDetachLogic(
+            platform_config=create_mock_platform_config(),
+            environment_name="staging",
+            environment_tfstate=mock_environment_tfstate,
+            ingress_tfstate=mock_ingress_tfstate,
+        )
+
+        resource_addrs = {
+            address_for_tfstate_resource(r) for r in logic_result.resources_not_in_ingress_tfstate
+        }
         assert resource_addrs == expected_resource_addrs
 
 

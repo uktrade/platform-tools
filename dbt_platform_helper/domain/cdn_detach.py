@@ -8,6 +8,19 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform import TerraformProvider
+from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
+
+
+class CDNResourcesNotImportedException(PlatformException):
+    def __init__(self, resources):
+        self.resources = resources
+
+    def __str__(self):
+        msg = "The following resource(s) have not yet been imported into platform-public-ingress:"
+        addresses = sorted(address_for_tfstate_resource(res) for res in self.resources)
+        for address in addresses:
+            msg += f"\n  {address}"
+        return msg
 
 
 @dataclass(frozen=True)
@@ -15,14 +28,23 @@ class CDNDetachLogic:
     platform_config: dict
     environment_name: str
     environment_tfstate: dict
+    ingress_tfstate: dict
+
+    @staticmethod
+    def tfstate_resources(tfstate):
+        return [
+            {**resource_block, **instance}
+            for resource_block in tfstate.get("resources", [])
+            for instance in resource_block["instances"]
+        ]
 
     @cached_property
     def environment_tfstate_resources(self):
-        return [
-            {**resource_block, **instance}
-            for resource_block in self.environment_tfstate["resources"]
-            for instance in resource_block["instances"]
-        ]
+        return self.tfstate_resources(self.environment_tfstate)
+
+    @cached_property
+    def ingress_tfstate_resources(self):
+        return self.tfstate_resources(self.ingress_tfstate)
 
     @staticmethod
     def is_resource_detachable(res):
@@ -62,6 +84,37 @@ class CDNDetachLogic:
             and self.extension_name_for_resource(res) in self.extensions_to_detach
         ]
 
+    @staticmethod
+    def is_resource_importable(res):
+        return res["type"] != "aws_acm_certificate_validation"
+
+    @staticmethod
+    def is_same_resource(res1, res2):
+        if res1["type"] != res2["type"]:
+            return False
+        try:
+            return res1["identity"] == res2["identity"]
+        except KeyError:
+            pass
+        try:
+            return res1["attributes"]["arn"] == res2["attributes"]["arn"]
+        except KeyError:
+            pass
+        raise NotImplementedError(f"don't know how to compare resources of type {typ}")
+
+    def is_resource_in_ingress_tfstate(self, res):
+        return any(
+            self.is_same_resource(res, other_res) for other_res in self.ingress_tfstate_resources
+        )
+
+    @cached_property
+    def resources_not_in_ingress_tfstate(self):
+        return [
+            res
+            for res in self.resources_to_detach
+            if self.is_resource_importable(res) and not self.is_resource_in_ingress_tfstate(res)
+        ]
+
 
 class CDNDetach:
     def __init__(
@@ -69,12 +122,14 @@ class CDNDetach:
         io: ClickIOProvider,
         config_provider: ConfigProvider,
         terraform_environment: TerraformEnvironment,
+        manifest_provider: TerraformManifestProvider = None,
         terraform_provider: TerraformProvider = None,
         logic_constructor=CDNDetachLogic,
     ):
         self.io = io
         self.config_provider = config_provider
         self.terraform_environment = terraform_environment
+        self.manifest_provider = manifest_provider or self.terraform_environment.manifest_provider
         self.terraform_provider = terraform_provider or TerraformProvider()
         self.logic_constructor = logic_constructor
 
@@ -86,14 +141,19 @@ class CDNDetach:
             )
 
         environment_tfstate = self.fetch_environment_tfstate(environment_name)
+        ingress_tfstate = self.fetch_ingress_tfstate(environment_name)
 
         logic_result = self.logic_constructor(
             platform_config=platform_config,
             environment_name=environment_name,
             environment_tfstate=environment_tfstate,
+            ingress_tfstate=ingress_tfstate,
         )
 
         self.log_resources_to_detach(logic_result.resources_to_detach, environment_name)
+
+        if logic_result.resources_not_in_ingress_tfstate:
+            raise CDNResourcesNotImportedException(logic_result.resources_not_in_ingress_tfstate)
 
         if not dry_run:
             raise NotImplementedError("--no-dry-run mode is not yet implemented")
@@ -103,6 +163,26 @@ class CDNDetach:
         terraform_config_dir = f"terraform/environments/{environment_name}"
 
         self.io.info(f"Fetching a copy of the {environment_name} environment's terraform state...")
+        self.terraform_provider.init(terraform_config_dir)
+        return self.terraform_provider.pull_state(terraform_config_dir)
+
+    def fetch_ingress_tfstate(self, environment_name):
+        config = self.config_provider.get_enriched_config()
+        application_name = config["application"]
+        dns_account_name = config["environments"][environment_name]["accounts"]["dns"]["name"]
+
+        self.manifest_provider.generate_platform_public_ingress_config(
+            application_name,
+            environment_name,
+            dns_account_name,
+        )
+        terraform_config_dir = (
+            f"terraform/platform-public-ingress/{application_name}/{environment_name}"
+        )
+
+        self.io.info(
+            f"Fetching a copy of the platform-public-ingress terraform state for {application_name}/{environment_name}..."
+        )
         self.terraform_provider.init(terraform_config_dir)
         return self.terraform_provider.pull_state(terraform_config_dir)
 
@@ -119,6 +199,7 @@ class CDNDetach:
             self.io.info(
                 f"Will not remove any resources from the {environment_name} environment's terraform state."
             )
+        self.io.info("")
 
 
 def address_for_tfstate_resource(res):
