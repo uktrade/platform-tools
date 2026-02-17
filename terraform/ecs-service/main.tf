@@ -309,6 +309,24 @@ resource "aws_appautoscaling_target" "ecs_autoscaling" {
   ]
 }
 
+resource "aws_appautoscaling_scheduled_action" "scheduled_autoscaling" {
+  for_each = local.scheduled_actions
+
+  name               = each.key
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+
+  schedule = "cron(${each.value.schedule})"
+  timezone = "Europe/London"
+
+
+  scalable_target_action {
+    min_capacity = each.value.min
+    max_capacity = each.value.max
+  }
+}
+
 resource "aws_appautoscaling_policy" "cpu_autoscaling_policy" {
   count = local.enable_cpu ? 1 : 0
 
