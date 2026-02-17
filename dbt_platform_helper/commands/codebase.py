@@ -13,6 +13,7 @@ from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.files import LocalFileSystem
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -123,17 +124,24 @@ def redeploy(app: str, env: str, codebases: List[str], wait: bool):
     """Get the current deployed image, extract the deployed image and redeploy
     it for a list of codebases or all in platform-config.yml."""
     try:
+        # currently logged in account (one with pipelines)
         session = get_aws_session_or_abort()
-        param_store = ParameterStore(session.client("ssm"))
 
-        config_provider = ConfigProvider(ConfigValidator(session=session))
+        application = load_application(app)
+        if env not in application.environments:
+            raise PlatformException(f"Environment '{env}' not found in application {app}.")
+        # account where env exists
+        env_session = application.environments[env].session
+        param_store = ParameterStore(env_session.client("ssm"))
+
+        config_provider = ConfigProvider(ConfigValidator(session=env_session))
 
         results = Codebase(
             param_store,
             config=config_provider,
             pipeline=CodePipeline(session),
             deployment=ECS(
-                session.client("ecs"), session.client("ssm"), application_name=app, env=env
+                env_session.client("ecs"), env_session.client("ssm"), application_name=app, env=env
             ),
             file_system=LocalFileSystem(),
         ).redeploy(app, env, codebases, wait=wait)
