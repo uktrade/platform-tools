@@ -248,8 +248,6 @@ class TerraformManifestProvider:
                 "bucket": f"platform-public-ingress-{dns_account_name}-tfstate",
                 "key": f"{application_name}/{environment_name}.tfstate",
                 "region": "eu-west-2",
-                "encrypt": True,
-                "kms_key_id": "TODO",  # Depends on outcome of DBTP-2647
                 "dynamodb_table": "TODO",  # Depends on outcome of DBTP-2647
             }
         }
