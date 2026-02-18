@@ -245,7 +245,7 @@ class TerraformManifestProvider:
     ):
         terraform.setdefault("terraform", {})["backend"] = {
             "s3": {
-                "bucket": f"platform-public-ingress-{dns_account_name}-tfstate",
+                "bucket": f"terraform-platform-state-platform-public-ingress-{dns_account_name}",
                 "key": f"{application_name}/{environment_name}.tfstate",
                 "region": "eu-west-2",
                 "use_lockfile": True,

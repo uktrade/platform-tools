@@ -385,7 +385,7 @@ def test_generate_platform_public_ingress_config_creates_file():
 
     backend = terraform["backend"]
     s3_backend = backend["s3"]
-    assert s3_backend["bucket"] == f"platform-public-ingress-mydnsacct-tfstate"
+    assert s3_backend["bucket"] == f"terraform-platform-state-platform-public-ingress-mydnsacct"
     assert s3_backend["key"] == f"myapp/myenv.tfstate"
     assert s3_backend["region"] == "eu-west-2"
     assert s3_backend["use_lockfile"] is True
