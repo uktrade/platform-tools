@@ -248,7 +248,7 @@ def test_generate_environment_config_creates_file(
     assert module["environment"] == env
     assert (
         module["repos"]
-        == "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}"
+        == "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, [local.config.deploy_repository])}"
     )
 
     moved = json_content["moved"]
