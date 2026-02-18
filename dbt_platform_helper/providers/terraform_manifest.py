@@ -158,12 +158,11 @@ class TerraformManifestProvider:
         terraform = {}
         self._add_header(terraform)
         self._add_required_versions(terraform)
-        self._add_backend(
+        self._add_platform_public_ingress_backend(
             terraform,
-            bucket=f"platform-public-ingress-{dns_account_name}-tfstate",
-            key=f"{application_name}/{environment_name}.tfstate",
-            kms_key_id="TODO",  # Depends on outcome of DBTP-2647
-            dynamodb_table="TODO",  # Depends on outcome of DBTP-2647
+            application_name=application_name,
+            environment_name=environment_name,
+            dns_account_name=dns_account_name,
         )
         self._write_terraform_json(
             terraform, f"terraform/platform-public-ingress/{application_name}/{environment_name}"
@@ -225,26 +224,33 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_platform_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
-        TerraformManifestProvider._add_backend(
-            terraform,
-            bucket=f"terraform-platform-state-{account}",
-            key=state_key,
-            kms_key_id=f"alias/terraform-platform-state-s3-key-{account}",
-            dynamodb_table=f"terraform-platform-lockdb-{account}",
-        )
+        terraform.setdefault("terraform", {})["backend"] = {
+            "s3": {
+                "bucket": f"terraform-platform-state-{account}",
+                "key": state_key,
+                "region": "eu-west-2",
+                "encrypt": True,
+                "kms_key_id": f"alias/terraform-platform-state-s3-key-{account}",
+                "dynamodb_table": f"terraform-platform-lockdb-{account}",
+            }
+        }
 
     @staticmethod
-    def _add_backend(
-        terraform: dict, *, bucket: str, key: str, kms_key_id: str, dynamodb_table: str
+    def _add_platform_public_ingress_backend(
+        terraform: dict,
+        *,
+        application_name: str,
+        environment_name: str,
+        dns_account_name: str,
     ):
         terraform.setdefault("terraform", {})["backend"] = {
             "s3": {
-                "bucket": bucket,
-                "key": key,
+                "bucket": f"platform-public-ingress-{dns_account_name}-tfstate",
+                "key": f"{application_name}/{environment_name}.tfstate",
                 "region": "eu-west-2",
                 "encrypt": True,
-                "kms_key_id": kms_key_id,
-                "dynamodb_table": dynamodb_table,
+                "kms_key_id": "TODO",  # Depends on outcome of DBTP-2647
+                "dynamodb_table": "TODO",  # Depends on outcome of DBTP-2647
             }
         }
 
