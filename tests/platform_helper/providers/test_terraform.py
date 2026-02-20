@@ -113,3 +113,66 @@ class TestPullState:
         result = provider.pull_state(tmp_path)
 
         assert result == {}
+
+
+class TestRemoveFromState:
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
+    def test_success(self, mock_subprocess_run, tmp_path):
+        mock_subprocess_run.return_value = subprocess.CompletedProcess(
+            args=["terraform", "state", "rm", "<snip>"],
+            returncode=0,
+            stdout="terraform state rm logs\n",
+            stderr=None,
+        )
+
+        provider = TerraformProvider()
+
+        provider.remove_from_state(
+            tmp_path,
+            [
+                'aws_acm_certificate.foo["bar"]',
+                'aws_acm_certificate_validation.foo["bar"]',
+            ],
+        )
+
+        mock_subprocess_run.assert_called_once_with(
+            [
+                "terraform",
+                "state",
+                "rm",
+                'aws_acm_certificate.foo["bar"]',
+                'aws_acm_certificate_validation.foo["bar"]',
+            ],
+            cwd=tmp_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding="utf-8",
+            check=True,
+        )
+
+    @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
+    def test_platform_exception_raised_if_subprocess_exits_nonzero(
+        self, mock_subprocess_run, tmp_path
+    ):
+        mock_subprocess_run.side_effect = subprocess.CalledProcessError(
+            returncode=1,
+            cmd=["terraform", "state", "rm", "<snip>"],
+            output="terraform state rm logs\n",
+            stderr=None,
+        )
+
+        provider = TerraformProvider()
+
+        with pytest.raises(PlatformException) as e:
+            provider.remove_from_state(
+                tmp_path,
+                [
+                    'aws_acm_certificate.foo["bar"]',
+                    'aws_acm_certificate_validation.foo["bar"]',
+                ],
+            )
+
+        assert (
+            str(e.value)
+            == "Failed to remove resources from terraform state: subprocess exited with status 1. Subprocess output:\nterraform state rm logs\n"
+        )
