@@ -1,5 +1,25 @@
 # Changelog
 
+## [15.21.0](https://github.com/uktrade/platform-tools/compare/15.20.1...15.21.0) (2026-02-20)
+
+
+### Features
+
+* Ability to remove CDN related resources from platform_config.yml (DBTP-2650) ([#1258](https://github.com/uktrade/platform-tools/issues/1258)) ([364b08a](https://github.com/uktrade/platform-tools/commit/364b08a5512a6dac6bede5524396ca6924d52da4))
+* Get deploy repo from platform-config to add to Datadog metadata (off-ticket) ([#1288](https://github.com/uktrade/platform-tools/issues/1288)) ([246d2a4](https://github.com/uktrade/platform-tools/commit/246d2a452233d4c89872b15685ec8884bd6fb003))
+* Prevent destroy for CloudFront and domain related resources (DBTP-2665) ([#1257](https://github.com/uktrade/platform-tools/issues/1257)) ([8e3a1b6](https://github.com/uktrade/platform-tools/commit/8e3a1b6b2b7fdb1e1f162711f9c753c0d3809fe8))
+* Simplify the system entity in Datadog to group by application rather than service (off-ticket) ([#1283](https://github.com/uktrade/platform-tools/issues/1283)) ([2d94144](https://github.com/uktrade/platform-tools/commit/2d94144a9c5b99757c357f93f2f97a4f865f12cf))
+
+
+### Bug Fixes
+
+* Set pid_mode for all task definitions (DBTP-2681) ([#1271](https://github.com/uktrade/platform-tools/issues/1271)) ([bff161d](https://github.com/uktrade/platform-tools/commit/bff161dfda22fb6f0b320d10ac1ca12646e8f24f))
+
+
+### Dependencies
+
+* bump slack-sdk from 3.39.0 to 3.40.0 ([#1274](https://github.com/uktrade/platform-tools/issues/1274)) ([f794d42](https://github.com/uktrade/platform-tools/commit/f794d42a87ca302b279798cf2686c2c0291f87d7))
+
 ## [15.20.1](https://github.com/uktrade/platform-tools/compare/15.20.0...15.20.1) (2026-02-06)
 
 
