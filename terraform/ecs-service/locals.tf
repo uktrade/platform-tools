@@ -316,6 +316,16 @@ locals {
   default_cool_in  = try(var.service_config.count.cooldown.in, 60)
   default_cool_out = try(var.service_config.count.cooldown.out, 60)
 
+  # Scheduled Actions
+
+  scheduled_actions = {
+    for idx, schedule in try(var.service_config.count.cron, []) :
+    "${local.full_service_name}-schedule-${idx}" => {
+      schedule = schedule.schedule
+      min      = tonumber(split("-", schedule.range)[0])
+      max      = tonumber(split("-", schedule.range)[1])
+    }
+  }
   # CPU properties
   cpu_value    = try(var.service_config.count.cpu_percentage.value, var.service_config.count.cpu_percentage, null)
   cpu_cool_in  = try(var.service_config.count.cpu_percentage.cooldown.in, local.default_cool_in)
