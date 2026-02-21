@@ -389,6 +389,7 @@ def test_generate_platform_public_ingress_config_creates_file():
     assert s3_backend["key"] == f"myapp/myenv.tfstate"
     assert s3_backend["region"] == "eu-west-2"
     assert s3_backend["use_lockfile"] is True
+    assert s3_backend["profile"] == "mydnsacct"
     assert "encrypt" not in s3_backend
     assert "kms_key_id" not in s3_backend
     assert "dynamodb_table" not in s3_backend
