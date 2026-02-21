@@ -38,3 +38,18 @@ class TerraformProvider:
             # handle this case. I think the sensible thing to do is to successfully return an
             # empty dict.
             return {}
+
+    def remove_from_state(self, config_dir, resource_addrs):
+        try:
+            subprocess.run(
+                ["terraform", "state", "rm"] + list(resource_addrs),
+                cwd=config_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding="utf-8",
+                check=True,
+            )
+        except subprocess.CalledProcessError as e:
+            raise PlatformException(
+                f"Failed to remove resources from terraform state: subprocess exited with status {e.returncode}. Subprocess output:\n{e.output}"
+            ) from e
