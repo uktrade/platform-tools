@@ -20,6 +20,10 @@ variable "vpc_name" {
   default = "not-used"
 }
 
+variable "cdn_account_id" {
+  type = string
+}
+
 variable "config" {
   type = object({
     bucket_name = string
