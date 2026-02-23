@@ -1,12 +1,11 @@
 // Create the System (parent) component in DataDog Software Catalog
 resource "datadog_software_catalog" "datadog-software-catalog-system" {
   provider = datadog.ddog
-  for_each = var.config.services_to_monitor
   entity   = <<EOF
 ${local.api}
 kind: system
 metadata:
-  name: ${var.application}-${each.key}
+  name: ${var.application}
 ${local.team}
 ${local.description}
   links:
@@ -35,10 +34,8 @@ spec:
   lifecycle: production
   tier: "1"
   type: ${contains(local.db_list, each.key) ? "db" : "web"}
-  languages:
-    - python
   componentOf: 
-    - system:${var.application}-${each.key}
+    - system:${var.application}
 ${local.fingerprint}
 EOF
 }
@@ -62,13 +59,8 @@ spec:
   lifecycle: production
   tier: "1"
   type: ${contains(local.db_list, each.value.front_service) ? "db" : "web"}
-  languages:
-    - python
   componentOf: 
-    - system:${var.application}-${each.value.front_service}
-  dependsOn:
-    - service:${var.application}-${each.value.front_service}
+    - system:${var.application}
 ${local.fingerprint}
 EOF
 }
-
