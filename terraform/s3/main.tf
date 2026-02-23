@@ -283,8 +283,8 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
         Resource = ["${aws_s3_bucket.this.arn}/*", aws_s3_bucket.this.arn]
         Condition = {
           # We trust any CDN in the relevant AWS account (dev or live).
-          # TODO(DBTP-2714): Restrict access so that only the CDN belonging to
-          # this application + environment + bucket name is trusted.
+          # TODO(DBTP-2714): Restrict access so that only the CDN that points
+          # at this bucket is trusted.
           StringLike = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${var.cdn_account_id}:distribution/*"
           }
