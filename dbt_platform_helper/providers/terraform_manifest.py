@@ -40,6 +40,7 @@ class TerraformManifestProvider:
         self._add_service_locals(terraform, environment)
 
         self._add_provider(terraform, account, deploy_to_account_id)
+        self._add_required_versions(terraform)
         self._add_platform_backend(
             terraform,
             platform_config,
@@ -108,6 +109,7 @@ class TerraformManifestProvider:
         )
         self._add_codebase_pipeline_locals(terraform, platform_config_file_name)
         self._add_provider(terraform, default_account, deploy_to_account_id)
+        self._add_required_versions(terraform)
         self._add_platform_backend(
             terraform,
             platform_config,
@@ -138,6 +140,7 @@ class TerraformManifestProvider:
         terraform = {}
         self._add_header(terraform)
         self._add_environment_locals(terraform, application_name)
+        self._add_required_versions(terraform)
         self._add_platform_backend(
             terraform, platform_config, account, f"tfstate/application/{state_key_suffix}.tfstate"
         )
@@ -154,12 +157,12 @@ class TerraformManifestProvider:
     ):
         terraform = {}
         self._add_header(terraform)
-        self._add_backend(
+        self._add_required_versions(terraform)
+        self._add_platform_public_ingress_backend(
             terraform,
-            bucket=f"platform-public-ingress-{dns_account_name}-tfstate",
-            key=f"{application_name}/{environment_name}.tfstate",
-            kms_key_id="TODO",  # Depends on outcome of DBTP-2647
-            dynamodb_table="TODO",  # Depends on outcome of DBTP-2647
+            application_name=application_name,
+            environment_name=environment_name,
+            dns_account_name=dns_account_name,
         )
         self._write_terraform_json(
             terraform, f"terraform/platform-public-ingress/{application_name}/{environment_name}"
@@ -212,34 +215,42 @@ class TerraformManifestProvider:
         terraform["provider"]["aws"]["allowed_account_ids"] = [deploy_to_account_id]
 
     @staticmethod
-    def _add_platform_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
-        TerraformManifestProvider._add_backend(
-            terraform,
-            bucket=f"terraform-platform-state-{account}",
-            key=state_key,
-            kms_key_id=f"alias/terraform-platform-state-s3-key-{account}",
-            dynamodb_table=f"terraform-platform-lockdb-{account}",
-        )
+    def _add_required_versions(terraform: dict):
+        terraform_cfg = terraform.setdefault("terraform", {})
+        terraform_cfg["required_version"] = SUPPORTED_TERRAFORM_VERSION
+        aws = terraform_cfg.setdefault("required_providers", {}).setdefault("aws", {})
+        aws["source"] = "hashicorp/aws"
+        aws["version"] = SUPPORTED_AWS_PROVIDER_VERSION
 
     @staticmethod
-    def _add_backend(
-        terraform: dict, *, bucket: str, key: str, kms_key_id: str, dynamodb_table: str
+    def _add_platform_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
+        terraform.setdefault("terraform", {})["backend"] = {
+            "s3": {
+                "bucket": f"terraform-platform-state-{account}",
+                "key": state_key,
+                "region": "eu-west-2",
+                "encrypt": True,
+                "kms_key_id": f"alias/terraform-platform-state-s3-key-{account}",
+                "dynamodb_table": f"terraform-platform-lockdb-{account}",
+            }
+        }
+
+    @staticmethod
+    def _add_platform_public_ingress_backend(
+        terraform: dict,
+        *,
+        application_name: str,
+        environment_name: str,
+        dns_account_name: str,
     ):
-        terraform["terraform"] = {
-            "required_version": SUPPORTED_TERRAFORM_VERSION,
-            "backend": {
-                "s3": {
-                    "bucket": bucket,
-                    "key": key,
-                    "region": "eu-west-2",
-                    "encrypt": True,
-                    "kms_key_id": kms_key_id,
-                    "dynamodb_table": dynamodb_table,
-                }
-            },
-            "required_providers": {
-                "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION}
-            },
+        terraform.setdefault("terraform", {})["backend"] = {
+            "s3": {
+                "bucket": f"terraform-platform-state-platform-public-ingress-{dns_account_name}",
+                "key": f"{application_name}/{environment_name}.tfstate",
+                "region": "eu-west-2",
+                "use_lockfile": True,
+                "profile": dns_account_name,
+            }
         }
 
     @staticmethod

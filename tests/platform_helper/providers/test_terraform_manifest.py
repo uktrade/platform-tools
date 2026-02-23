@@ -385,12 +385,11 @@ def test_generate_platform_public_ingress_config_creates_file():
 
     backend = terraform["backend"]
     s3_backend = backend["s3"]
-    assert s3_backend["bucket"] == f"platform-public-ingress-mydnsacct-tfstate"
+    assert s3_backend["bucket"] == f"terraform-platform-state-platform-public-ingress-mydnsacct"
     assert s3_backend["key"] == f"myapp/myenv.tfstate"
     assert s3_backend["region"] == "eu-west-2"
-    # TODO: The following depends on the outcome of DBTP-2647 (creation of platform-public-ingress state buckets).
-    # assert s3_backend["encrypt"] is True
-    # assert (
-    #     s3_backend["kms_key_id"] == f"alias/terraform-platform-state-s3-key-{expected_aws_account}"
-    # )
-    # assert s3_backend["dynamodb_table"] == f"terraform-platform-lockdb-{expected_aws_account}"
+    assert s3_backend["use_lockfile"] is True
+    assert s3_backend["profile"] == "mydnsacct"
+    assert "encrypt" not in s3_backend
+    assert "kms_key_id" not in s3_backend
+    assert "dynamodb_table" not in s3_backend
