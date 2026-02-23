@@ -6,10 +6,12 @@ locals {
     managed-by  = "DBT Platform - Service Terraform"
   }
 
-  full_service_name    = "${var.application}-${var.environment}-${var.service_config.name}"
-  vpc_name             = var.env_config[var.environment]["vpc"]
-  secrets              = values(coalesce(var.service_config.secrets, {}))
-  web_service_required = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
+  full_service_name            = "${var.application}-${var.environment}-${var.service_config.name}"
+  vpc_name                     = var.env_config[var.environment]["vpc"]
+  secrets                      = values(coalesce(var.service_config.secrets, {}))
+  web_service_required         = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
+  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) ? 1 : 0
+  target_container             = try(var.service_config.http.target_container, "")
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
@@ -134,12 +136,12 @@ locals {
   }
 
   main_port_mappings = (
-    var.service_config.type == "Load Balanced Web Service" && try(var.service_config.image.port, null) != null
+    try(var.service_config.image.port, null) != null
     ) ? [
     merge(
       { containerPort = var.service_config.image.port, protocol = "tcp" },
       (
-        try(var.service_config.http.target_container, "") == var.service_config.name
+        local.target_container == var.service_config.name || local.target_container == ""
       ) ? { name = "target" } : {}
     )
   ] : []
@@ -241,7 +243,7 @@ locals {
             # Add Service Connect target port name when this sidecar is the declared target
             (
               var.service_config.type == "Load Balanced Web Service" &&
-              try(var.service_config.http.target_container, "") == sidecar_name
+              local.target_container == sidecar_name
             )
             ? { name = "target" }
             : {}
@@ -283,6 +285,7 @@ locals {
     requiresCompatibilities = ["FARGATE"]
     cpu                     = tostring(var.service_config.cpu)
     memory                  = tostring(var.service_config.memory)
+    pidMode                 = "task"
     tags = [
       { "key" : "application", "value" : var.application },
       { "key" : "environment", "value" : var.environment },

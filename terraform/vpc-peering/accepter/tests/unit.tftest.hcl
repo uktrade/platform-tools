@@ -11,6 +11,7 @@ variables {
     requester_vpc             = "vpc-11111111"
     vpc_peering_connection_id = "pcx-12345"
     requester_vpc_name        = "vpc-11111111"
+    accept_remote_dns         = false
   }
 }
 

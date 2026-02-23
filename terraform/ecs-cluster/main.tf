@@ -47,13 +47,20 @@ data "aws_vpc" "vpc" {
   }
 }
 
+data "aws_ssm_parameters_by_path" "vpc_peering" {
+  # Only keep the SG rules meant for this environment's security group
+  path      = "/platform/vpc-peering/${var.application}/${var.environment}/"
+  recursive = true
+}
+
 resource "aws_security_group" "environment_security_group" {
   # checkov:skip=CKV_AWS_382: Required for general internet access
-  # checkov:skip=CKV2_AWS_5: TODO - This will be used by service Terraform in the future
+  # checkov:skip=CKV2_AWS_5: Not applicable
   name        = "${var.application}-${var.environment}-environment"
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
   tags        = local.sg_env_tags
+  depends_on  = [data.aws_ssm_parameters_by_path.vpc_peering]
 
   dynamic "ingress" {
     for_each = var.alb_https_security_group_id == null ? [] : [var.alb_https_security_group_id]
@@ -113,6 +120,17 @@ resource "aws_security_group" "environment_security_group" {
       from_port   = 0
       to_port     = 0
       cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = nonsensitive(local.vpc_peering_rules)
+    content {
+      description = "VPC peering traffic from VPC: ${ingress.value.source-vpc-name}"
+      protocol    = "tcp"
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      cidr_blocks = [ingress.value.source-vpc-cidr]
     }
   }
 }

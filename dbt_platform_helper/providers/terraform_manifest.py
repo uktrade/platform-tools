@@ -4,6 +4,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
+from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -93,6 +94,7 @@ class TerraformManifestProvider:
         ecr_imports: dict[str, str],
         deploy_repository: str,
         module_source: str,
+        workspace: str = None,
     ):
         default_account = self._get_account_for_env("*", platform_config)
         deploy_to_account_id = self._get_account_id_for_account(default_account, platform_config)
@@ -100,7 +102,11 @@ class TerraformManifestProvider:
 
         terraform = {}
         self._add_header(terraform)
-        self._add_codebase_pipeline_locals(terraform)
+
+        platform_config_file_name = (
+            f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
+        )
+        self._add_codebase_pipeline_locals(terraform, platform_config_file_name)
         self._add_provider(terraform, default_account, deploy_to_account_id)
         self._add_backend(
             terraform,
@@ -112,6 +118,7 @@ class TerraformManifestProvider:
             terraform, platform_helper_version, deploy_repository, module_source
         )
         self._add_imports(terraform, ecr_imports)
+        self._add_checks(terraform, workspace)
         self._write_terraform_json(terraform, "terraform/codebase-pipelines")
 
     def generate_environment_config(
@@ -169,9 +176,10 @@ class TerraformManifestProvider:
         terraform["//"] = f"{version_header} {warning}"
 
     @staticmethod
-    def _add_codebase_pipeline_locals(terraform: dict):
+    def _add_codebase_pipeline_locals(terraform: dict, file_name: str):
+        decode_statement = f'${{yamldecode(file("../../{file_name}"))}}'
         terraform["locals"] = {
-            "platform_config": '${yamldecode(file("../../platform-config.yml"))}',
+            "platform_config": decode_statement,
             "application": '${local.platform_config["application"]}',
             "all_codebases": '${local.platform_config["codebase_pipelines"]}',
             "environments": '${local.platform_config["environments"]}',
@@ -241,7 +249,7 @@ class TerraformManifestProvider:
                 "source": source,
                 "args": "${local.args}",
                 "environment": env,
-                "repos": "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}",
+                "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, [local.config.deploy_repository])}",
             }
         }
 
@@ -252,6 +260,22 @@ class TerraformManifestProvider:
                 "for_each": "${%s}" % json.dumps(ecr_imports),
                 "id": "${each.value}",
                 "to": "module.codebase-pipelines[each.key].aws_ecr_repository.this",
+            }
+
+    @staticmethod
+    def _add_checks(terraform: dict, workspace: str):
+        if workspace:
+            terraform["resource"] = {
+                "terraform_data": {
+                    "workspace_check": {
+                        "lifecycle": {
+                            "precondition": {
+                                "condition": f'${{terraform.workspace == "{workspace}"}}',
+                                "error_message": f"Must be in {workspace} workspace",
+                            }
+                        }
+                    }
+                }
             }
 
     @staticmethod

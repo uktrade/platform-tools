@@ -1,0 +1,17 @@
+version: 0.2
+
+env:
+  parameter-store:
+    SLACK_TOKEN: /codebuild/slack_oauth_token
+
+phases:
+  build:
+    commands:
+    - >
+        if [ -f ./custom-build/pre-deploy.sh ]; then 
+          bash ./custom-build/pre-deploy.sh; 
+        fi
+
+  post_build:
+    commands:
+    - echo "Done"

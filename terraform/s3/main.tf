@@ -252,7 +252,7 @@ resource "aws_s3_bucket_public_access_block" "public_access_block" {
 // Cloudfront resources for serving static content
 
 resource "aws_cloudfront_origin_access_control" "oac" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   name                              = "${var.config.bucket_name}.${var.environment}.${var.application}-oac"
   provider                          = aws.domain-cdn
@@ -260,11 +260,14 @@ resource "aws_cloudfront_origin_access_control" "oac" {
   origin_access_control_origin_type = "s3"
   signing_behavior                  = "always"
   signing_protocol                  = "sigv4"
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # # Attach a bucket policy to allow CloudFront to access the bucket
 resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   bucket = aws_s3_bucket.this.id
 
@@ -292,13 +295,14 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
 }
 
 resource "aws_acm_certificate" "certificate" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   provider          = aws.domain-cdn
   domain_name       = local.serve_static_domain
   validation_method = "DNS"
 
   lifecycle {
+    prevent_destroy = true
     create_before_destroy = true
   }
 
@@ -306,7 +310,7 @@ resource "aws_acm_certificate" "certificate" {
 }
 
 data "aws_route53_zone" "selected" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   provider     = aws.domain-cdn
   name         = var.environment == "prod" ? "${var.application}.prod.uktrade.digital" : "${var.application}.uktrade.digital"
@@ -314,7 +318,7 @@ data "aws_route53_zone" "selected" {
 }
 
 resource "aws_route53_record" "cert_validation" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   provider = aws.domain-cdn
 
@@ -325,19 +329,25 @@ resource "aws_route53_record" "cert_validation" {
   ttl             = 60
   depends_on      = [aws_acm_certificate.certificate]
   allow_overwrite = true
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_acm_certificate_validation" "certificate_validation" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   provider                = aws.domain-cdn
   certificate_arn         = aws_acm_certificate.certificate[0].arn
   validation_record_fqdns = [aws_route53_record.cert_validation[0].fqdn]
   depends_on              = [aws_route53_record.cert_validation]
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_route53_record" "cloudfront_domain" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   provider = aws.domain-cdn
   name     = aws_s3_bucket.this.bucket
@@ -347,6 +357,9 @@ resource "aws_route53_record" "cloudfront_domain" {
     name                   = aws_cloudfront_distribution.s3_distribution[0].domain_name
     zone_id                = aws_cloudfront_distribution.s3_distribution[0].hosted_zone_id
     evaluate_target_health = false
+  }
+  lifecycle {
+    prevent_destroy = true
   }
 }
 
@@ -368,7 +381,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   # we don't enable origin failover for s3 buckets and it means maintaining another bucket
   # checkov:skip=CKV_AWS_374: Global access required for static content via S3
 
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   provider = aws.domain-cdn
   aliases  = [local.serve_static_domain]
@@ -404,6 +417,9 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   enabled = true
 
   tags = local.tags
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_kms_key" "s3-ssm-kms-key" {
