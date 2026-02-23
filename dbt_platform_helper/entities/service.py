@@ -293,8 +293,8 @@ class Count(BaseModel):
             [self.cpu_percentage, self.memory_percentage, self.requests_per_minute, self.cron]
         ):
             raise PlatformException(
-                "If autoscaling is enabled, you must define at least one metric: "
-                "cpu_percentage, memory_percentage, or requests_per_minute"
+                "If autoscaling is enabled, you must define at least one metric or a cron schedule: "
+                "cpu_percentage, memory_percentage, requests_per_minute, or cron."
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
