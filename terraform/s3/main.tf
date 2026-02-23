@@ -279,13 +279,11 @@ resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
         Action   = "s3:GetObject"
         Resource = ["${aws_s3_bucket.this.arn}/*", aws_s3_bucket.this.arn]
         Condition = {
-          # We trust any CDN in the relevant AWS account with the same tags as the bucket.
+          # We trust any CDN in the relevant AWS account (dev or live).
+          # TODO(DBTP-2714): Restrict access so that CDNs belonging to other
+          # applications/environments can't access this bucket.
           StringLike = {
             "AWS:SourceArn" = "arn:aws:cloudfront::${var.cdn_account_id}:distribution/*"
-          }
-          StringEquals = {
-            "AWS:PrincipalTag/application" = var.application
-            "AWS:PrincipalTag/environment" = var.environment
           }
         }
       }
