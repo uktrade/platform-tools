@@ -12,6 +12,7 @@ from dbt_platform_helper.entities.service import Image
 from dbt_platform_helper.entities.service import MemoryPercentage
 from dbt_platform_helper.entities.service import RequestsPerMinute
 from dbt_platform_helper.entities.service import ServiceConfig
+from dbt_platform_helper.entities.service import Storage
 from dbt_platform_helper.platform_exception import PlatformException
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
@@ -176,3 +177,14 @@ def test_count_autoscaling_all_the_things():
 def test_tagged_image_raises_exception():
     with pytest.raises(PlatformException, match="Image location cannot contain a tag"):
         Image.model_validate({"location": "public.ecr.aws/docker/library/alpine:latest"})
+
+
+@pytest.mark.parametrize("storage_size", ["20", "201"])
+def test_ephemeral_storage_is_within_allowed_range(storage_size):
+    with pytest.raises(
+        PlatformException,
+        match=re.escape(
+            """The minimum supported ephemeral storage value is 21 (GiB) and the maximum supported value is 200 (GiB)."""
+        ),
+    ):
+        Storage.model_validate({"ephemeral": storage_size})

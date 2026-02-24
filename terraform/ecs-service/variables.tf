@@ -92,6 +92,7 @@ variable "service_config" {
     storage = optional(object({
       readonly_fs          = optional(bool)
       writable_directories = optional(list(string))
+      ephemeral            = optional(number)
     }))
 
     variables = optional(map(any))
