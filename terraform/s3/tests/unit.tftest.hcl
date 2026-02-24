@@ -1162,8 +1162,8 @@ run "managed_ingress_remove_resources" {
   }
 
   assert {
-    condition     = length(aws_s3_bucket_policy.cloudfront_bucket_policy) == 0
-    error_message = "aws_s3_bucket_policy cloudfront_bucket_policy should not be created"
+    condition     = length(aws_s3_bucket_policy.cloudfront_bucket_policy) == 1
+    error_message = "aws_s3_bucket_policy cloudfront_bucket_policy should be created"
   }
 
   assert {
