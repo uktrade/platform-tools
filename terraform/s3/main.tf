@@ -299,7 +299,7 @@ resource "aws_acm_certificate" "certificate" {
   validation_method = "DNS"
 
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy       = true
     create_before_destroy = true
   }
 
