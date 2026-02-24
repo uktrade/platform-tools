@@ -267,7 +267,7 @@ resource "aws_cloudfront_origin_access_control" "oac" {
 
 # # Attach a bucket policy to allow CloudFront to access the bucket
 resource "aws_s3_bucket_policy" "cloudfront_bucket_policy" {
-  count = var.config.serve_static_content ? 1 : 0
+  count = !var.config.managed_ingress && var.config.serve_static_content ? 1 : 0
 
   bucket = aws_s3_bucket.this.id
 
