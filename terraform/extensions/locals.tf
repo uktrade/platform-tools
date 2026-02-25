@@ -1,7 +1,7 @@
 locals {
   plans = {
     opensearch = yamldecode(file("${path.module}/../opensearch/plans.yml"))
-    postgres   = yamldecode(file("${path.module}/../postgres/plans.yml"))
+    postgres   = var.environment != "prod" && var.environment != "hotfix" ? yamldecode(file("${path.module}/../postgres/plans.yml")) : yamldecode(file("${path.module}/../postgres/non-graviton-plans.yml"))
     redis      = yamldecode(file("${path.module}/../elasticache-redis/plans.yml"))
   }
 
