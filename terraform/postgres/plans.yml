@@ -5,7 +5,7 @@
 tiny:
   volume_size: 100
   multi_az: false
-  instance: db.t3.micro
+  instance: db.t4g.micro
 
 # 2v CPU, 2GB RAM, 100GB Storage
 small:
