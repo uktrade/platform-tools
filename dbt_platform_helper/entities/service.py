@@ -281,16 +281,16 @@ class Count(BaseModel):
         description="Request-rate threshold. Either a plain integer or a map with 'value' and 'cooldown'.",
     )
 
-    cron: Optional[list[CronSchedule]] = Field(
+    schedules: Optional[list[CronSchedule]] = Field(
         default=None,
-        description="Scheduled cron scaling actions",
+        description="Scheduled scaling actions",
     )
 
     @model_validator(mode="after")
     def at_least_one_autoscaling_metric(self):
 
         if not any(
-            [self.cpu_percentage, self.memory_percentage, self.requests_per_minute, self.cron]
+            [self.cpu_percentage, self.memory_percentage, self.requests_per_minute, self.schedules]
         ):
             raise PlatformException(
                 "If autoscaling is enabled, you must define at least one metric or a cron schedule: "

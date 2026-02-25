@@ -625,7 +625,7 @@ run "service_scheduled_auto_scaling" {
       memory = 512
       count = {
         range = "2-8"
-        cron = [
+        schedules = [
           {
             schedule = "0 06 ? * MON-FRI *"
             range    = "2-4"

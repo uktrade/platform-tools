@@ -319,7 +319,7 @@ locals {
   # Scheduled Actions
 
   scheduled_actions = {
-    for idx, schedule in try(var.service_config.count.cron, []) :
+    for idx, schedule in try(var.service_config.count.schedules, []) :
     "${local.full_service_name}-schedule-${idx}" => {
       schedule = schedule.schedule
       min      = tonumber(split("-", schedule.range)[0])
