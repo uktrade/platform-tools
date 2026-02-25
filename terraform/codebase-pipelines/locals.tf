@@ -54,14 +54,13 @@ locals {
       name : val.name,
       branch : val.branch,
 
-      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : 
-      coalesce(val.tag, false) ? "tag-latest" : "latest"
-      
+      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : coalesce(val.tag, false) ? "tag-latest" : "latest"
+
       # if requires_image build:
       #   image_tag = "tag-latest" for a TAGGED pipeline or "branch-<branch-name>" for a normal pipeline
       # else:
       #   image_tag = "tag-latest" for a TAGGED pipeline or "latest" for a normal pipeline
-      
+
       stages : flatten([for env in val.environments : concat(
         # Approval
         coalesce(env.requires_approval, false) ?
