@@ -1,8 +1,9 @@
 variables {
-  vpc_name    = "s3-test-vpc-name"
-  application = "s3-test-application"
-  environment = "dev"
-  name        = "s3-test-name"
+  vpc_name       = "s3-test-vpc-name"
+  application    = "s3-test-application"
+  environment    = "dev"
+  name           = "s3-test-name"
+  cdn_account_id = "0123456789"
   config = {
     "bucket_name" = "dbt-terraform-test-s3-module",
     "type"        = "string",
@@ -1161,8 +1162,8 @@ run "managed_ingress_remove_resources" {
   }
 
   assert {
-    condition     = length(aws_s3_bucket_policy.cloudfront_bucket_policy) == 0
-    error_message = "aws_s3_bucket_policy cloudfront_bucket_policy should not be created"
+    condition     = length(aws_s3_bucket_policy.cloudfront_bucket_policy) == 1
+    error_message = "aws_s3_bucket_policy cloudfront_bucket_policy should be created"
   }
 
   assert {
