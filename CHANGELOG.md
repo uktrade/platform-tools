@@ -5,10 +5,8 @@
 
 ### Features
 
-* Ability to remove CDN related resources from platform_config.yml (DBTP-2650) ([#1258](https://github.com/uktrade/platform-tools/issues/1258)) ([364b08a](https://github.com/uktrade/platform-tools/commit/364b08a5512a6dac6bede5524396ca6924d52da4))
-* Get deploy repo from platform-config to add to Datadog metadata (off-ticket) ([#1288](https://github.com/uktrade/platform-tools/issues/1288)) ([246d2a4](https://github.com/uktrade/platform-tools/commit/246d2a452233d4c89872b15685ec8884bd6fb003))
-* Prevent destroy for CloudFront and domain related resources (DBTP-2665) ([#1257](https://github.com/uktrade/platform-tools/issues/1257)) ([8e3a1b6](https://github.com/uktrade/platform-tools/commit/8e3a1b6b2b7fdb1e1f162711f9c753c0d3809fe8))
-* Relax CDN access to S3 origins (DBTP-2625) ([#1235](https://github.com/uktrade/platform-tools/issues/1235)) ([f243187](https://github.com/uktrade/platform-tools/commit/f2431871b3bb18d6f784267000553a2f8a852f97))
+* Prevent terraform from destroying CloudFront and domain related resources (DBTP-2665) ([#1257](https://github.com/uktrade/platform-tools/issues/1257)) ([8e3a1b6](https://github.com/uktrade/platform-tools/commit/8e3a1b6b2b7fdb1e1f162711f9c753c0d3809fe8))
+* Add deploy repo to Datadog system metadata (off-ticket) ([#1288](https://github.com/uktrade/platform-tools/issues/1288)) ([246d2a4](https://github.com/uktrade/platform-tools/commit/246d2a452233d4c89872b15685ec8884bd6fb003))
 * Simplify the system entity in Datadog to group by application rather than service (off-ticket) ([#1283](https://github.com/uktrade/platform-tools/issues/1283)) ([2d94144](https://github.com/uktrade/platform-tools/commit/2d94144a9c5b99757c357f93f2f97a4f865f12cf))
 * Support tags for custom image build (off-ticket) ([#1307](https://github.com/uktrade/platform-tools/issues/1307)) ([fb4e436](https://github.com/uktrade/platform-tools/commit/fb4e4360f2049f5edcbaea129f73439f30364308))
 
@@ -16,10 +14,19 @@
 ### Bug Fixes
 
 * Permission for environment pipeline to create RDS service linked role (off-ticket) ([#1308](https://github.com/uktrade/platform-tools/issues/1308)) ([819b8e1](https://github.com/uktrade/platform-tools/commit/819b8e177ae834218e606dcb19a3b7eb030f9e21))
-* S3 bucket policy shouldn't be gated by managed_ingress (DBTP-2625) ([#1303](https://github.com/uktrade/platform-tools/issues/1303)) ([95132a5](https://github.com/uktrade/platform-tools/commit/95132a582d4737c468bcb2c864ca5955575c7bba))
-* Set pid_mode for all task definitions (DBTP-2681) ([#1271](https://github.com/uktrade/platform-tools/issues/1271)) ([bff161d](https://github.com/uktrade/platform-tools/commit/bff161dfda22fb6f0b320d10ac1ca12646e8f24f))
+* Set pid_mode for all task definitions to allow Datadog to collect process metrics (DBTP-2681) ([#1271](https://github.com/uktrade/platform-tools/issues/1271)) ([bff161d](https://github.com/uktrade/platform-tools/commit/bff161dfda22fb6f0b320d10ac1ca12646e8f24f))
 * Support for ephemeral ECS task storage overrides (off-ticket) ([#1304](https://github.com/uktrade/platform-tools/issues/1304)) ([578ff81](https://github.com/uktrade/platform-tools/commit/578ff814fdb806257ca39a18d7334c7c234ec9cc))
 
+### Internal
+
+#### Features
+
+* Ability to transfer management of CDN-related resources away from environment terraform (DBTP-2650) ([#1258](https://github.com/uktrade/platform-tools/issues/1258)) ([364b08a](https://github.com/uktrade/platform-tools/commit/364b08a5512a6dac6bede5524396ca6924d52da4))
+* Relax CDN access to S3 origins (DBTP-2625) ([#1235](https://github.com/uktrade/platform-tools/issues/1235)) ([f243187](https://github.com/uktrade/platform-tools/commit/f2431871b3bb18d6f784267000553a2f8a852f97))
+
+### Bug Fixes
+
+* S3 bucket policy shouldn't be gated by managed_ingress (DBTP-2625) ([#1303](https://github.com/uktrade/platform-tools/issues/1303)) ([95132a5](https://github.com/uktrade/platform-tools/commit/95132a582d4737c468bcb2c864ca5955575c7bba))
 
 ### Dependencies
 
