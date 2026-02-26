@@ -194,6 +194,42 @@ class TestInternal:
         mock_click.assert_called_with("Error: bad env", err=True, fg="red")
 
 
+class TestInternalCDNMarkManaged:
+    @patch("dbt_platform_helper.commands.internal.Config", spec=True)
+    def test_success(self, mock_config):
+        mock_config_instance = mock_config.return_value
+
+        result = CliRunner().invoke(
+            internal,
+            ["cdn", "mark-managed", "--env", "dev"],
+        )
+
+        assert result.exit_code == 0, result.output
+        mock_config_instance.mark_cdns_managed.assert_called_once_with({"dev"})
+
+    @patch("dbt_platform_helper.commands.internal.Config", spec=True)
+    def test_success_with_multiple_environments(self, mock_config):
+        mock_config_instance = mock_config.return_value
+
+        result = CliRunner().invoke(
+            internal,
+            ["cdn", "mark-managed", "--env", "dev", "--env", "staging", "--env", "hotfix"],
+        )
+
+        assert result.exit_code == 0, result.output
+        mock_config_instance.mark_cdns_managed.assert_called_once_with({"dev", "staging", "hotfix"})
+
+    @patch("dbt_platform_helper.commands.internal.Config", spec=True)
+    def test_failure_if_no_environment_specified(self, mock_config):
+        result = CliRunner().invoke(
+            internal,
+            ["cdn", "mark-managed"],
+        )
+
+        assert result.exit_code == 2, result.output
+        assert "Missing option '--env'" in result.output
+
+
 class TestInternalCDNDetach:
     @mock_aws
     @patch("dbt_platform_helper.commands.internal.CDNDetach", spec=True)

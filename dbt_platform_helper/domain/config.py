@@ -118,6 +118,9 @@ class Config:
         new_platform_config = self.migrator.migrate(platform_config)
         self.config_provider.write_platform_config(new_platform_config)
 
+    def mark_cdns_managed(self, environment_names):
+        raise NotImplementedError
+
     def generate_aws(self, file_path):
         self.oidc_app = self._create_oidc_application()
         verification_url, device_code = self._get_device_code(self.oidc_app)
