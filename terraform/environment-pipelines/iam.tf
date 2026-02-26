@@ -602,6 +602,25 @@ data "aws_iam_policy_document" "postgres" {
       "arn:aws:secretsmanager:${local.account_region}:secret:rds*"
     ]
   }
+
+  statement {
+    sid    = "AllowCreateServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during RDS DB instance creation
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["rds.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+  }
 }
 
 resource "aws_iam_policy" "postgres" {
