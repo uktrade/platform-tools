@@ -8,6 +8,7 @@ from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
+from dbt_platform_helper.providers.aws.sso_auth import NullSSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
@@ -156,7 +157,7 @@ def cdn():
 @click.option("--env", type=str, multiple=True, required=True)
 def mark_managed(env):
     try:
-        Config().mark_cdns_managed(set(env))
+        Config(sso=NullSSOAuthProvider()).mark_cdns_managed(set(env))
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
 
