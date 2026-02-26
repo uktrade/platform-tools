@@ -18,6 +18,7 @@ from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
@@ -553,6 +554,7 @@ class TestConfigMigrate:
 class TestConfigMarkCDNsManaged:
     def test_doesnt_add_managed_ingress_to_alb_extension_yet(self):
         input = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {"type": "alb"},
             },
@@ -570,11 +572,13 @@ class TestConfigMarkCDNsManaged:
 
     def test_adds_managed_ingress_to_static_site_s3_extension(self):
         input = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {"type": "s3", "serve_static_content": True},
             },
         }
         expected_output = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {
                     "type": "s3",
@@ -597,6 +601,7 @@ class TestConfigMarkCDNsManaged:
 
     def test_doesnt_add_managed_ingress_to_non_static_site_s3_extension(self):
         input = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {"type": "s3"},
             },
@@ -614,6 +619,7 @@ class TestConfigMarkCDNsManaged:
 
     def test_doesnt_add_managed_ingress_to_extensions_that_arent_alb_or_s3(self):
         input = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {"type": "redis"},
             },
@@ -631,6 +637,7 @@ class TestConfigMarkCDNsManaged:
 
     def test_multiple_extensions(self):
         input = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-alb-ext": {"type": "alb"},
                 "my-s3-ext": {"type": "s3"},
@@ -638,6 +645,7 @@ class TestConfigMarkCDNsManaged:
             },
         }
         expected_output = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-alb-ext": {"type": "alb"},
                 "my-s3-ext": {"type": "s3"},
@@ -662,11 +670,13 @@ class TestConfigMarkCDNsManaged:
 
     def test_multiple_environments(self):
         input = {
+            "environments": {"my-env-1": {}, "my-env-2": {}, "my-env-3": {}},
             "extensions": {
                 "my-ext": {"type": "s3", "serve_static_content": True},
             },
         }
         expected_output = {
+            "environments": {"my-env-1": {}, "my-env-2": {}, "my-env-3": {}},
             "extensions": {
                 "my-ext": {
                     "type": "s3",
@@ -674,7 +684,6 @@ class TestConfigMarkCDNsManaged:
                     "environments": {
                         "my-env-1": {"managed_ingress": True},
                         "my-env-2": {"managed_ingress": True},
-                        "my-env-3": {"managed_ingress": True},
                     },
                 },
             },
@@ -684,13 +693,14 @@ class TestConfigMarkCDNsManaged:
         config_domain = Config(**config_mocks.params())
         config_domain.config_provider.load_unvalidated_config_file.return_value = input
 
-        config_domain.mark_cdns_managed({"my-env-1", "my-env-2", "my-env-3"})
+        config_domain.mark_cdns_managed({"my-env-1", "my-env-2"})
 
         config_domain.config_provider.load_unvalidated_config_file.assert_called_once()
         config_domain.config_provider.write_platform_config.assert_called_once_with(expected_output)
 
     def test_doesnt_override_existing_config_for_environment(self):
         input = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {
                     "type": "s3",
@@ -702,6 +712,7 @@ class TestConfigMarkCDNsManaged:
             },
         }
         expected_output = {
+            "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {
                     "type": "s3",
@@ -725,4 +736,19 @@ class TestConfigMarkCDNsManaged:
         config_domain.config_provider.load_unvalidated_config_file.assert_called_once()
         config_domain.config_provider.write_platform_config.assert_called_once_with(expected_output)
 
-    # TODO: invalid environment name
+    def test_invalid_environment_name_is_rejected(self):
+        input = {
+            "environments": {"my-env-1": {}, "my-env-2": {}, "my-env-3": {}},
+            "extensions": {
+                "my-ext": {"type": "s3", "serve_static_content": True},
+            },
+        }
+
+        config_mocks = ConfigMocks()
+        config_domain = Config(**config_mocks.params())
+        config_domain.config_provider.load_unvalidated_config_file.return_value = input
+
+        with pytest.raises(
+            PlatformException, match="Environment my-env-4 does not exist in your configuration"
+        ):
+            config_domain.mark_cdns_managed({"my-env-1", "my-env-4", "my-env-3"})

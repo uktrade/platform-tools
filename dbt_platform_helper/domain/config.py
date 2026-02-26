@@ -120,6 +120,11 @@ class Config:
 
     def mark_cdns_managed(self, environment_names):
         platform_config = self.config_provider.load_unvalidated_config_file()
+        for environment_name in environment_names:
+            if environment_name not in platform_config.get("environments", {}):
+                raise PlatformException(
+                    f"Environment {environment_name} does not exist in your configuration"
+                )
         for extension_config in platform_config.get("extensions", {}).values():
             has_cdns = extension_config.get("type") == "s3" and extension_config.get(
                 "serve_static_content", False
