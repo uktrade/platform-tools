@@ -53,7 +53,9 @@ locals {
     for id, val in var.pipelines : id => {
       name : val.name,
       branch : val.branch,
-      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest",
+
+      image_tag : coalesce(val.tag, false) ? "tag-latest" : var.requires_image_build ? "branch-${replace(val.branch, "/", "-")}" : "latest"
+
       stages : flatten([for env in val.environments : concat(
         # Approval
         coalesce(env.requires_approval, false) ?

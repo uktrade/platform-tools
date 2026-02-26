@@ -611,7 +611,7 @@ run "test_codebuild_images_not_required" {
     error_message = "Event pattern is incorrect"
   }
   assert {
-    condition     = aws_cloudwatch_event_rule.ecr_image_publish[1].event_pattern == "{\"detail\":{\"action-type\":[\"PUSH\"],\"image-tag\":[\"latest\"],\"repository-name\":[\"my-app/my-codebase\"],\"result\":[\"SUCCESS\"]},\"detail-type\":[\"ECR Image Action\"],\"source\":[\"aws.ecr\"]}"
+    condition     = aws_cloudwatch_event_rule.ecr_image_publish[1].event_pattern == "{\"detail\":{\"action-type\":[\"PUSH\"],\"image-tag\":[\"tag-latest\"],\"repository-name\":[\"my-app/my-codebase\"],\"result\":[\"SUCCESS\"]},\"detail-type\":[\"ECR Image Action\"],\"source\":[\"aws.ecr\"]}"
     error_message = "Event pattern is incorrect"
   }
 }
@@ -917,6 +917,30 @@ run "test_tagged_branch_filter" {
       0
     ] == true
     error_message = "Should be: type = 'HEAD_REF' and pattern = '^refs/tags/.*'"
+  }
+}
+
+run "test_tagged_pipeline_with_image_build_image_tag" {
+  command = plan
+
+  variables {
+    requires_image_build = true
+
+    pipelines = [
+      {
+        name = "tagged",
+        tag  = true,
+        environments = [
+          { name = "staging" },
+          { name = "prod", requires_approval = true }
+        ]
+      }
+    ]
+  }
+
+  assert {
+    condition     = aws_cloudwatch_event_rule.ecr_image_publish[0].event_pattern == "{\"detail\":{\"action-type\":[\"PUSH\"],\"image-tag\":[\"tag-latest\"],\"repository-name\":[\"my-app/my-codebase\"],\"result\":[\"SUCCESS\"]},\"detail-type\":[\"ECR Image Action\"],\"source\":[\"aws.ecr\"]}"
+    error_message = "Event pattern is incorrect"
   }
 }
 
