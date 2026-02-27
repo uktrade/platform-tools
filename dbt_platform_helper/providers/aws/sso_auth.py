@@ -73,3 +73,8 @@ class SSOAuthProvider:
         if not self.session:
             self.session = get_aws_session_or_abort()
         return self.session.client(client)
+
+
+class NullSSOAuthProvider:
+    def __init__(self, session: Session = None):
+        pass

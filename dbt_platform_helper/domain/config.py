@@ -118,6 +118,24 @@ class Config:
         new_platform_config = self.migrator.migrate(platform_config)
         self.config_provider.write_platform_config(new_platform_config)
 
+    def mark_cdns_managed(self, environment_names):
+        platform_config = self.config_provider.load_unvalidated_config_file()
+        for environment_name in environment_names:
+            if environment_name not in platform_config.get("environments", {}):
+                raise PlatformException(
+                    f"Environment {environment_name} does not exist in your configuration"
+                )
+        for extension_config in platform_config.get("extensions", {}).values():
+            has_cdns = extension_config.get("type") == "s3" and extension_config.get(
+                "serve_static_content", False
+            )
+            if has_cdns:
+                for environment_name in environment_names:
+                    extension_config.setdefault("environments", {}).setdefault(
+                        environment_name, {}
+                    )["managed_ingress"] = True
+        self.config_provider.write_platform_config(platform_config)
+
     def generate_aws(self, file_path):
         self.oidc_app = self._create_oidc_application()
         verification_url, device_code = self._get_device_code(self.oidc_app)

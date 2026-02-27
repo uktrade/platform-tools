@@ -1,12 +1,14 @@
 import click
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
+from dbt_platform_helper.domain.config import Config
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
+from dbt_platform_helper.providers.aws.sso_auth import NullSSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
@@ -149,6 +151,15 @@ def update_rules(env: str):
 @internal.group(cls=ClickDocOptGroup)
 def cdn():
     """CloudFront related commands."""
+
+
+@cdn.command(help="Mark ALB & S3 extensions as due for having their CDNs detached.")
+@click.option("--env", type=str, multiple=True, required=True)
+def mark_managed(env):
+    try:
+        Config(sso=NullSSOAuthProvider()).mark_cdns_managed(set(env))
+    except PlatformException as err:
+        ClickIOProvider().abort_with_error(str(err))
 
 
 @cdn.command(help="Remove CDN resources from terraform state.")
