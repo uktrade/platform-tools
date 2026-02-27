@@ -122,9 +122,10 @@ class TestCDNDetach:
 
         mocks.mock_terraform_environment.generate.assert_called_once_with("staging")
         mocks.mock_manifest_provider.generate_platform_public_ingress_config.assert_called_once_with(
-            "test-app",
-            "staging",
-            "non-prod-dns-acc",
+            application_name="test-app",
+            environment_name="staging",
+            cdn_account_name="non-prod-dns-acc",
+            cdn_account_profile="non-prod-dns-acc",
         )
         mocks.mock_terraform_provider.init.assert_has_calls(
             [
@@ -234,6 +235,24 @@ class TestCDNDetach:
         mocks.mock_terraform_provider.remove_from_state.assert_not_called()
 
         mocks.mock_io.info.assert_has_calls([call("Success.")])
+
+    def test_overriding_cdn_account_profile(self):
+        mocks = CDNDetachMocks(
+            resources_to_detach=[],
+            resources_not_in_ingress_tfstate=[],
+        )
+
+        cdn_detach = CDNDetach(**mocks.params())
+        cdn_detach.execute(
+            environment_name="staging", dry_run=True, cdn_account_profile="non-prod-dns-acc-admin"
+        )
+
+        mocks.mock_manifest_provider.generate_platform_public_ingress_config.assert_called_once_with(
+            application_name="test-app",
+            environment_name="staging",
+            cdn_account_name="non-prod-dns-acc",
+            cdn_account_profile="non-prod-dns-acc-admin",
+        )
 
     def test_exception_raised_if_env_not_in_config(self):
         mocks = CDNDetachMocks()
