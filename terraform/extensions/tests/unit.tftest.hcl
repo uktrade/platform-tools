@@ -1322,3 +1322,174 @@ run "test_cdn_with_managed_ingress" {
     error_message = "Extension individual environment config not expected at the top level for a different environment"
   }
 }
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_iam_policy_document.assume_ecstask_role
+  values = {
+    json = "{\"Sid\": \"ConduitRole\"}"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_iam_policy_document.conduit_task_role_access
+  values = {
+    json = "{\"Sid\": \"ConduitRole\"}"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_iam_policy_document.lambda-assume-role-policy
+  values = {
+    json = "{\"Sid\": \"ConduitRole\"}"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_iam_policy_document.lambda-execution-policy
+  values = {
+    json = "{\"Sid\": \"ConduitRole\"}"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_ssm_parameter.log-destination-arn
+  values = {
+    value = "{\"dev\":\"arn:aws:logs:eu-west-2:763451185160:log-group:/copilot/tools/central_log_groups_dev\"}"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_iam_policy_document.enhanced-monitoring
+  values = {
+    json = "{\"Sid\": \"ConduitRole\"}"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_caller_identity.current
+  values = {
+    account_id = "001122334455"
+  }
+}
+
+override_data {
+  target = module.postgres["test-postgres"].data.aws_vpc.vpc
+  values = {
+    id         = "vpc-00112233aabbccdef"
+    cidr_block = "10.0.0.0/16"
+  }
+}
+
+run "postgres_plan_nonprod_tiny_service_test" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application",
+      services = {
+        "test-postgres" : {
+          "type" : "postgres",
+          "name" : "tiny",
+          "environments" : {
+            "test-env" : {
+              "version" : "16",
+              "plan" : "tiny"
+            }
+          }
+        }
+      },
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "test-env" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
+        }
+      }
+    }
+    environment = "test-env"
+  }
+
+  assert {
+    condition     = output.resolved_config.test-postgres.instance == "db.t4g.micro"
+    error_message = "Should be: cache.m6g.large"
+  }
+}
+
+run "postgres_plan_prod_tiny_service_test" {
+  command = plan
+
+  variables {
+    args = {
+      application = "test-application",
+      services = {
+        "test-postgres" : {
+          "type" : "postgres",
+          "name" : "tiny",
+          "environments" : {
+            "hotfix" : {
+              "version" : "16",
+              "plan" : "tiny"
+            }
+          }
+        }
+      },
+      env_config = {
+        "*" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+        },
+        "hotfix" = {
+          accounts = {
+            deploy = {
+              name = "sandbox"
+              id   = "000123456789"
+            }
+            dns = {
+              name = "dev"
+              id   = "123456"
+            }
+          }
+          vpc : "test-vpc"
+          service-deployment-mode : "doesn't matter"
+        }
+      }
+    }
+    environment = "hotfix"
+  }
+
+  assert {
+    condition     = output.resolved_config.test-postgres.instance == "db.t3.micro"
+    error_message = "Should be: db.t3.micro"
+  }
+}
