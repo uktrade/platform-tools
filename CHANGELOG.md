@@ -1,5 +1,13 @@
 # Changelog
 
+## [15.21.1](https://github.com/uktrade/platform-tools/compare/15.21.0...15.21.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* Add Docker labels for DataDog metadata (off-ticket) ([#1312](https://github.com/uktrade/platform-tools/issues/1312)) ([09e5562](https://github.com/uktrade/platform-tools/commit/09e5562322982941a1d23e597beba274f6032aee))
+* Deploy_repository may be omitted (off-ticket) ([#1313](https://github.com/uktrade/platform-tools/issues/1313)) ([e5e9b62](https://github.com/uktrade/platform-tools/commit/e5e9b62c40992656de82ffabf73199bbe34428f7))
+
 ## [15.21.0](https://github.com/uktrade/platform-tools/compare/15.20.1...15.21.0) (2026-02-26)
 
 
