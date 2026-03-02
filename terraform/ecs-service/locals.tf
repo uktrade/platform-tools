@@ -27,6 +27,29 @@ locals {
     if try(ext.type, "") == "s3" || try(ext.type, "") == "s3-policy"
   }
 
+  ### Written for testing purposes in terraform console
+  ## Should not be merged
+  # temp_local_s3-policy = {
+  #   clamav-s3-bucket = {
+  #     type = "s3-policy"
+  #     services = "__all__" # Will error because Call to function "contains" failed: argument must be list, tuple, or set.
+  #     # services = "__all__" # Works with current logic in temp_s3_extensions_for_service/s3_extensions_for_service
+  #     environments = {
+  #       staging = {
+  #         bucket_name = "clamav-s3.staging.clamav.uktrade.digital"
+  #       }
+  #       prod = {
+  #         bucket_name = "clamav-s3.clamav.prod.uktrade.digital"
+  #       }
+  #     }
+  #   }
+  # }
+  # temp_s3_extensions_for_service = {
+  #   for name, ext in local.temp_local_s3-policy :
+  #   name => ext
+  #   if contains(try(ext.services, []), "__all__") || contains(try(ext.services, []), var.service_config.name)
+  # }
+
   # 2) Keep only S3 extensions that apply to this service
   s3_extensions_for_service = {
     for name, ext in local.s3_extensions_all :
