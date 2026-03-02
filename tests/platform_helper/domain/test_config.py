@@ -468,9 +468,13 @@ class TestConfigGenerateAWS:
 
         config_mocks.sso.list_accounts.return_value = [
             {
-                "accountName": "TEST_AWS_ACCOUNT",
-                "accountId": "TEST_AWS_ACCOUNT_ID",
-            }
+                "accountName": "TEST_AWS_ACCOUNT_2",
+                "accountId": "TEST_AWS_ACCOUNT_2_ID",
+            },
+            {
+                "accountName": "TEST_AWS_ACCOUNT_1",
+                "accountId": "TEST_AWS_ACCOUNT_1_ID",
+            },
         ]
 
         config_mocks.sso.list_account_roles.return_value = [
@@ -521,9 +525,16 @@ class TestConfigGenerateAWS:
 
         mock_open.return_value.__enter__().write.assert_has_calls(
             [
-                call("[profile TEST_AWS_ACCOUNT]\n"),
+                call("[profile TEST_AWS_ACCOUNT_1]\n"),
                 call("sso_session = uktrade\n"),
-                call("sso_account_id = TEST_AWS_ACCOUNT_ID\n"),
+                call("sso_account_id = TEST_AWS_ACCOUNT_1_ID\n"),
+                call("sso_role_name = DBTPlatformDeveloperWrite\n"),
+                call("region = eu-west-2\n"),
+                call("output = json\n"),
+                call("\n"),
+                call("[profile TEST_AWS_ACCOUNT_2]\n"),
+                call("sso_session = uktrade\n"),
+                call("sso_account_id = TEST_AWS_ACCOUNT_2_ID\n"),
                 call("sso_role_name = DBTPlatformDeveloperWrite\n"),
                 call("region = eu-west-2\n"),
                 call("output = json\n"),
