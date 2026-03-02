@@ -1433,7 +1433,7 @@ run "postgres_plan_nonprod_tiny_service_test" {
 
   assert {
     condition     = output.resolved_config.test-postgres.instance == "db.t4g.micro"
-    error_message = "Should be: cache.m6g.large"
+    error_message = "Should be: cache.t4g.large"
   }
 }
 
