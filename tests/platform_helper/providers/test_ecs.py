@@ -457,6 +457,8 @@ def test_register_task_definition_applies_image_tag():
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
     arn = ecs.register_task_definition(
+        application="myapp",
+        environment="dev",
         service="web",
         task_definition=task_definition,
         image_tag="new-image-tag",
@@ -493,6 +495,8 @@ def test_register_task_definition_raises_exception():
 
     with pytest.raises(PlatformException) as e:
         ecs.register_task_definition(
+            application="myapp",
+            environment="dev",
             service="web",
             task_definition=task_definition,
             image_tag="tag",
