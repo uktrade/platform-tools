@@ -231,6 +231,8 @@ class ECS:
 
     def register_task_definition(
         self,
+        application: str,
+        environment: str,
         service: str,
         task_definition: dict,
         image_tag: Optional[str] = None,
@@ -240,7 +242,16 @@ class ECS:
 
         for container in task_definition["containerDefinitions"]:
             if container["name"] == service:
+
+                # Append tag to the image URI
                 container["image"] = f"{container['image']}:{image_tag}"
+
+                # Add DataDog Docker labels https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/?tab=ecs#partial-configuration
+                container["dockerLabels"] = {
+                    "com.datadoghq.tags.env": environment,
+                    "com.datadoghq.tags.service": f"{application}-{service}",
+                    "com.datadoghq.tags.version": image_tag,
+                }
                 break
 
         try:
