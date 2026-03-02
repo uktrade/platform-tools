@@ -436,7 +436,7 @@ def _client_error(operation="RegisterTaskDefinition"):
     )
 
 
-def test_register_task_definition_adds_image_tag_and_docker_labels():
+def test_register_task_definition_appends_image_tag():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.register_task_definition.return_value = {
@@ -474,15 +474,42 @@ def test_register_task_definition_adds_image_tag_and_docker_labels():
         task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
     )  # Sidecar image tag remains unchanged
 
+    ecs_client.register_task_definition.assert_called_once()
+    kwargs = ecs_client.register_task_definition.call_args.kwargs
+    assert kwargs["containerDefinitions"] is task_definition["containerDefinitions"]
+
+
+def test_register_task_definition_adds_docker_labels():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+
+    task_definition = {
+        "family": "doesn't matter",
+        "other parameters...": "they also don't matter",
+        "containerDefinitions": [
+            {
+                "name": "web",
+                "image": "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web",
+            },
+            {"name": "sidecar", "image": "sidecar:v1.2.3"},
+        ],
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    ecs.register_task_definition(
+        application="myapp",
+        environment="dev",
+        service="web",
+        task_definition=task_definition,
+        image_tag="commit-abc123",
+    )
+
     assert task_definition["containerDefinitions"][0]["dockerLabels"] == {
         "com.datadoghq.tags.env": "dev",
         "com.datadoghq.tags.service": "myapp-web",
         "com.datadoghq.tags.version": "commit-abc123",
     }
-
-    ecs_client.register_task_definition.assert_called_once()
-    kwargs = ecs_client.register_task_definition.call_args.kwargs
-    assert kwargs["containerDefinitions"] is task_definition["containerDefinitions"]
+    assert "dockerLabels" not in task_definition["containerDefinitions"][1]
 
 
 def test_register_task_definition_raises_exception():
