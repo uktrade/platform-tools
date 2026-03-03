@@ -291,7 +291,7 @@ class TerraformManifestProvider:
                 "source": source,
                 "args": "${local.args}",
                 "environment": env,
-                "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, [local.config.deploy_repository])}",
+                "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}",
             }
         }
 
