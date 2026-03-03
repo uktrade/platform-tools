@@ -8,11 +8,13 @@ import yaml
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.cdn_detach import CDNDetachLogic
 from dbt_platform_helper.domain.cdn_detach import CDNResourcesNotImportedException
+from dbt_platform_helper.domain.cdn_detach import TerraformStateBackup
 from dbt_platform_helper.domain.cdn_detach import address_for_tfstate_resource
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.s3 import S3Provider
 from dbt_platform_helper.providers.terraform import TerraformProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from tests.platform_helper.conftest import EXPECTED_DATA_DIR
@@ -371,3 +373,41 @@ class TestAddressForTerraformResource:
         address = address_for_tfstate_resource(resource)
 
         assert address == 'module.s3["my-ext"].aws_ssm_parameter.cloudfront_alias[0]'
+
+
+class TestTerraformStateBackup:
+    def test_creates_a_backup(self):
+        mock_s3_provider = Mock(spec=S3Provider)
+        state_backup = TerraformStateBackup(
+            s3_provider=mock_s3_provider, bucket_name="mockbucket", key="mockkey"
+        )
+
+        state_backup.create_if_not_exists()
+
+        mock_s3_provider.copy_object.assert_called_once_with(
+            source_bucket_name="mockbucket",
+            source_key="mockkey",
+            dest_bucket_name="mockbucket",
+            dest_key="mockkey.backup",
+        )
+
+    def test_creates_a_backup_with_different_params(self):
+        mock_s3_provider = Mock(spec=S3Provider)
+        state_backup = TerraformStateBackup(
+            s3_provider=mock_s3_provider, bucket_name="mockbucket2", key="mockkey2"
+        )
+
+        state_backup.create_if_not_exists()
+
+        mock_s3_provider.copy_object.assert_called_once_with(
+            source_bucket_name="mockbucket2",
+            source_key="mockkey2",
+            dest_bucket_name="mockbucket2",
+            dest_key="mockkey2.backup",
+        )
+
+
+# compute bucket/key from app name + env name
+# only create if it doesn't already exist
+# real suffix
+# logging

@@ -7,6 +7,7 @@ from dbt_platform_helper.domain.terraform_environment import TerraformEnvironmen
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.s3 import S3Provider
 from dbt_platform_helper.providers.terraform import TerraformProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
@@ -219,3 +220,18 @@ def address_for_tfstate_resource(res):
     except KeyError:
         pass
     return s
+
+
+class TerraformStateBackup:
+    def __init__(self, s3_provider: S3Provider, bucket_name: str, key: str):
+        self.s3_provider = s3_provider
+        self.bucket_name = bucket_name
+        self.key = key
+
+    def create_if_not_exists(self):
+        self.s3_provider.copy_object(
+            source_bucket_name=self.bucket_name,
+            source_key=self.key,
+            dest_bucket_name=self.bucket_name,
+            dest_key=f"{self.key}.backup",
+        )

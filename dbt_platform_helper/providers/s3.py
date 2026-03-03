@@ -19,3 +19,8 @@ class S3Provider:
             raise PlatformException(
                 f"Failed to get '{object_key}' from '{bucket_name}'. Error: {e}"
             )
+
+    def copy_object(
+        self, source_bucket_name: str, source_key: str, dest_bucket_name: str, dest_key: str
+    ):
+        raise NotImplementedError("TODO")
