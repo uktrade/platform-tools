@@ -274,25 +274,34 @@ locals {
     { name = "path${replace(path, "/", "-")}", host = {} }
   ]
 
-  task_definition_json = jsonencode({
-    family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
-    taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task"
-    executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-exec"
-    networkMode             = "awsvpc"
-    containerDefinitions    = local.container_definitions_list
-    volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
-    placementConstraints    = []
-    requiresCompatibilities = ["FARGATE"]
-    cpu                     = tostring(var.service_config.cpu)
-    memory                  = tostring(var.service_config.memory)
-    pidMode                 = "task"
-    tags = [
-      { "key" : "application", "value" : var.application },
-      { "key" : "environment", "value" : var.environment },
-      { "key" : "service", "value" : var.service_config.name },
-      { "key" : "managed-by", "value" : "DBT Platform" },
-    ]
-  })
+  task_definition_json = jsonencode(
+    merge(
+      {
+        family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
+        taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task"
+        executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-exec"
+        networkMode             = "awsvpc"
+        containerDefinitions    = local.container_definitions_list
+        volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
+        placementConstraints    = []
+        requiresCompatibilities = ["FARGATE"]
+        cpu                     = tostring(var.service_config.cpu)
+        memory                  = tostring(var.service_config.memory)
+        pidMode                 = "task"
+        tags = [
+          { "key" : "application", "value" : var.application },
+          { "key" : "environment", "value" : var.environment },
+          { "key" : "service", "value" : var.service_config.name },
+          { "key" : "managed-by", "value" : "DBT Platform" },
+        ]
+      },
+      var.service_config.storage.ephemeral != null ? {
+        ephemeralStorage = {
+          sizeInGiB = var.service_config.storage.ephemeral
+        }
+      } : {}
+    )
+  )
 
   ##################
   # ECS AUTO-SCALING

@@ -160,6 +160,10 @@ class Storage(BaseModel):
     writable_directories: Optional[list[str]] = Field(
         description="List of directories with read/write access.", default=None
     )
+    ephemeral: Optional[int] = Field(
+        description="The total amount, in GiB, of ephemeral storage to set for the ECS task.",
+        default=None,
+    )
 
     @field_validator("writable_directories", mode="after")
     @classmethod
@@ -171,6 +175,15 @@ class Storage(BaseModel):
                         "All writable directory paths must be absolute (starts with a /)"
                     )
         return value
+
+    @model_validator(mode="after")
+    def is_within_allowed_range(self):
+        if self.ephemeral:
+            if self.ephemeral < 21 or self.ephemeral > 200:
+                raise PlatformException(
+                    "The minimum supported ephemeral storage value is 21 (GiB) and the maximum supported value is 200 (GiB)."
+                )
+        return self
 
 
 class Cooldown(BaseModel):
