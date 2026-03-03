@@ -100,7 +100,7 @@ class CDNDetachLogic:
             return res1["attributes"]["arn"] == res2["attributes"]["arn"]
         except KeyError:
             pass
-        raise NotImplementedError(f"don't know how to compare resources of type {typ}")
+        raise NotImplementedError(f"don't know how to compare resources of type {res1['type']}")
 
     def is_resource_in_ingress_tfstate(self, res):
         return any(
