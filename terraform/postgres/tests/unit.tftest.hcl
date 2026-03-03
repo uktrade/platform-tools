@@ -929,3 +929,42 @@ run "aws_db_instance_database_copy_pipeline" {
     error_message = "database-copy-pipeline module should be created"
   }
 }
+
+run "aws_db_instance_unit_test_defaults" {
+  command = plan
+
+  assert {
+    condition     = aws_db_instance.default.apply_immediately == false
+    error_message = "Should be: false"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.engine_version == "14"
+    error_message = "Should be: 14"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.deletion_protection == true
+    error_message = "Should be: false"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.multi_az == false
+    error_message = "Should be: true"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.skip_final_snapshot == false
+    error_message = "Should be: true"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.allocated_storage == 100
+    error_message = "Should be: 100"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.storage_type == "gp3"
+    error_message = "Should be: gp3"
+  }
+}
