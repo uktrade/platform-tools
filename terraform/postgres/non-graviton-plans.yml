@@ -2,6 +2,12 @@
 # Aligned with the instance types from https://aws.amazon.com/rds/instance-types/
 
 # 2v CPU, 1GB RAM, 100GB Storage
+NO-PLAN:
+  volume_size: 100
+  multi_az: false
+  instance: db.t3.micro
+
+# 2v CPU, 1GB RAM, 100GB Storage
 tiny:
   volume_size: 100
   multi_az: false

@@ -205,6 +205,7 @@ variables {
   vpc_name    = "sandbox-postgres"
   config = {
     version             = 14,
+    instance            = "db.t4g.miniscule",
     deletion_protection = true,
     multi_az            = false,
     database_copy = [
@@ -472,7 +473,8 @@ run "aws_db_instance_unit_test_database_dump_created" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.petite",
       database_copy = [
         {
           from = "test-env"
@@ -498,7 +500,8 @@ run "aws_db_instance_unit_test_database_dump_multiple_source" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.fun-size",
       database_copy = [
         {
           from = "test-env"
@@ -553,7 +556,8 @@ run "aws_db_instance_unit_test_database_dump_not_created_if_to_env_is_prod" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.miniature",
       database_copy = [
         {
           from = "test-env"
@@ -579,7 +583,8 @@ run "aws_db_instance_unit_test_database_load_created" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.nanoscopic",
       database_copy = [
         {
           from = "other-env"
@@ -605,7 +610,8 @@ run "aws_db_instance_unit_test_database_load_not_created_if_to_env_is_prod" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.mini",
       database_copy = [
         {
           from = "other-env"
@@ -904,7 +910,8 @@ run "aws_db_instance_database_copy_pipeline" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.teensy",
       database_copy = [
         {
           from = "test-env"

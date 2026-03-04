@@ -1380,7 +1380,7 @@ override_data {
   }
 }
 
-run "postgres_plan_nonprod_tiny_service_test" {
+run "postgres_plan_nonprod_no_plan_service_test" {
   command = plan
 
   variables {
@@ -1392,8 +1392,7 @@ run "postgres_plan_nonprod_tiny_service_test" {
           "name" : "tiny",
           "environments" : {
             "test-env" : {
-              "version" : "16",
-              "plan" : "tiny"
+              "version" : "16"
             }
           }
         }
@@ -1433,11 +1432,11 @@ run "postgres_plan_nonprod_tiny_service_test" {
 
   assert {
     condition     = output.resolved_config.test-postgres.instance == "db.t4g.micro"
-    error_message = "Should be: cache.t4g.large"
+    error_message = "Should be: db.t4g.micro"
   }
 }
 
-run "postgres_plan_prod_tiny_service_test" {
+run "postgres_plan_prod_no_plan_service_test" {
   command = plan
 
   variables {
@@ -1449,8 +1448,7 @@ run "postgres_plan_prod_tiny_service_test" {
           "name" : "tiny",
           "environments" : {
             "hotfix" : {
-              "version" : "16",
-              "plan" : "tiny"
+              "version" : "16"
             }
           }
         }

@@ -26,7 +26,7 @@ locals {
   deletion_protection       = coalesce(var.config.deletion_protection, true)
   backup_retention_days     = var.environment == "prod" ? 35 : 7
 
-  instance_class = coalesce(var.config.instance, "db.t4g.micro")
+  instance_class = var.config.instance
   storage_type   = coalesce(var.config.storage_type, "gp3")
   iops           = var.config.iops != null && local.storage_type != "gp3" ? var.config.iops : null
 
