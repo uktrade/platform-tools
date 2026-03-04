@@ -41,7 +41,7 @@ terraform {
     }
     datadog = {
       source                = "DataDog/datadog"
-      version               = "3.84.0"
+      version               = "3.91.0"
       configuration_aliases = [datadog.ddog]
     }
   }
