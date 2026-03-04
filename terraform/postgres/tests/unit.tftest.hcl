@@ -445,8 +445,8 @@ run "aws_db_instance_unit_test" {
   }
 
   assert {
-    condition     = aws_db_instance.default.maintenance_window == "Mon:00:00-Mon:03:00"
-    error_message = "Should be: Mon:00:00-Mon:03:00"
+    condition     = aws_db_instance.default.maintenance_window == "Wed:00:00-Wed:03:00"
+    error_message = "Should be: Wed:00:00-Wed:03:00"
   }
 
   assert {
