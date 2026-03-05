@@ -81,9 +81,7 @@ class DatabaseCopy:
 
     def get_cluster_for_env(self, env):
         config = self.config_provider.load_and_validate_platform_config()
-        if self._is_managed(config):
-            return f"{self.app}-{env}-cluster"
-        elif self._is_env_traffic_switched(env, config):
+        if self._is_managed(config) or self._is_env_traffic_switched(env, config):
             return f"{self.app}-{env}-cluster"
         else:
             return f"{self.app}-{env}"
