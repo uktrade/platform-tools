@@ -558,6 +558,93 @@ def test_update_application_from_platform_config_if_application_not_specified(fs
     assert db_copy.app == "test-app"
 
 
+def test_cluster_name_for_managed_service(fs):
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "auto"},
+                "application": "test-app",
+            }
+        ),
+    )
+
+    config_validator = Mock()
+    config_validator.run_validations.return_value = None
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
+
+    mocks = DataCopyMocks(config_provider=config_provider)
+
+    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
+
+    assert db_copy.get_cluster_for_env("test-env") == "test-app-test-env-cluster"
+
+
+def test_cluster_name_for_different_deployment_modes(fs):
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "10.10.10"},
+                "application": "test-app",
+                "environments": {
+                    "*": {"service-deployment-mode": "platform"},
+                    "switched": {"service-deployment-mode": "platform"},
+                    "not-switched": {"service-deployment-mode": "copilot"},
+                    "defaulted-env": {},
+                },
+            }
+        ),
+    )
+
+    config_validator = Mock()
+    config_validator.run_validations.return_value = None
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
+
+    mocks = DataCopyMocks(config_provider=config_provider)
+
+    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
+
+    assert db_copy.get_cluster_for_env("switched") == "test-app-switched-cluster"
+    assert db_copy.get_cluster_for_env("not-switched") == "test-app-not-switched"
+    assert db_copy.get_cluster_for_env("defaulted-env") == "test-app-defaulted-env-cluster"
+
+
+def test_cluster_name_for_pre_decopilotted_service(fs):
+    fs.create_file(
+        PLATFORM_CONFIG_FILE,
+        contents=yaml.dump(
+            {
+                "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+                "default_versions": {"platform-helper": "10.10.10"},
+                "application": "test-app",
+                "environments": {
+                    "*": {},
+                    "test-env": {},
+                },
+            }
+        ),
+    )
+
+    config_validator = Mock()
+    config_validator.run_validations.return_value = None
+    config_provider = ConfigProvider(
+        config_validator, installed_version_provider=mock_installed_version_provider()
+    )
+
+    mocks = DataCopyMocks(config_provider=config_provider)
+
+    db_copy = DatabaseCopy(None, "test-db", **mocks.params())
+
+    assert db_copy.get_cluster_for_env("test-env") == "test-app-test-env"
+
+
 def test_error_if_neither_platform_config_or_application_supplied(fs):
     # fakefs used here to ensure the platform-config.yml isn't picked up from the filesystem
     mocks = DataCopyMocks()

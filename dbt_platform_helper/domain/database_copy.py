@@ -61,6 +61,33 @@ class DatabaseCopy:
 
         self.maintenance_page = maintenance_page(self.application)
 
+    def _is_managed(self, config):
+        return config.get("default_versions", {}).get("platform-helper") == "auto"
+
+    def _is_env_traffic_switched(self, env, config):
+        env_deployment_mode = config.get("environments").get(env, {}).get("service-deployment-mode")
+        if isinstance(env_deployment_mode, str) and "platform" in env_deployment_mode:
+            return True
+        default_deployment_mode = (
+            config.get("environments").get("*", {}).get("service-deployment-mode")
+        )
+        if (
+            not env_deployment_mode
+            and isinstance(default_deployment_mode, str)
+            and "platform" in default_deployment_mode
+        ):
+            return True
+        return False
+
+    def get_cluster_for_env(self, env):
+        config = self.config_provider.load_and_validate_platform_config()
+        if self._is_managed(config):
+            return f"{self.app}-{env}-cluster"
+        elif self._is_env_traffic_switched(env, config):
+            return f"{self.app}-{env}-cluster"
+        else:
+            return f"{self.app}-{env}"
+
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, filename: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
 
@@ -132,6 +159,7 @@ class DatabaseCopy:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
         dump_file_name = filename if filename else "data_dump"
+        cluster_name = self.get_cluster_for_env(env)
         env_vars = [
             {"name": "DATA_COPY_OPERATION", "value": action.upper()},
             {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
@@ -142,7 +170,7 @@ class DatabaseCopy:
 
         response = client.run_task(
             taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id(env)}:task-definition/{self.app}-{env}-{self.database}-{action}",
-            cluster=f"{self.app}-{env}",
+            cluster=cluster_name,
             capacityProviderStrategy=[
                 {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
             ],
