@@ -245,6 +245,7 @@ class TestInternalCDNDetach:
         mock_cdn_detach_instance.execute.assert_called_once_with(
             environment_name="dev",
             dry_run=True,
+            cdn_account_profile=None,
         )
 
     @mock_aws
@@ -261,6 +262,24 @@ class TestInternalCDNDetach:
         mock_cdn_detach_instance.execute.assert_called_once_with(
             environment_name="dev",
             dry_run=False,
+            cdn_account_profile=None,
+        )
+
+    @mock_aws
+    @patch("dbt_platform_helper.commands.internal.CDNDetach", spec=True)
+    def test_overriding_cdn_account_profile(self, mock_cdn_detach):
+        mock_cdn_detach_instance = mock_cdn_detach.return_value
+
+        result = CliRunner().invoke(
+            internal,
+            ["cdn", "detach", "--env", "dev", "--cdn-account-profile", "dev-admin"],
+        )
+
+        assert result.exit_code == 0, result.output
+        mock_cdn_detach_instance.execute.assert_called_once_with(
+            environment_name="dev",
+            dry_run=True,
+            cdn_account_profile="dev-admin",
         )
 
     def test_missing_env(self):

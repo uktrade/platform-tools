@@ -153,7 +153,8 @@ class TerraformManifestProvider:
         self,
         application_name,
         environment_name,
-        dns_account_name,
+        cdn_account_name,
+        cdn_account_profile,
     ):
         terraform = {}
         self._add_header(terraform)
@@ -162,7 +163,8 @@ class TerraformManifestProvider:
             terraform,
             application_name=application_name,
             environment_name=environment_name,
-            dns_account_name=dns_account_name,
+            cdn_account_name=cdn_account_name,
+            cdn_account_profile=cdn_account_profile,
         )
         self._write_terraform_json(
             terraform, f"terraform/platform-public-ingress/{application_name}/{environment_name}"
@@ -241,15 +243,16 @@ class TerraformManifestProvider:
         *,
         application_name: str,
         environment_name: str,
-        dns_account_name: str,
+        cdn_account_name: str,
+        cdn_account_profile: str,
     ):
         terraform.setdefault("terraform", {})["backend"] = {
             "s3": {
-                "bucket": f"terraform-platform-state-platform-public-ingress-{dns_account_name}",
+                "bucket": f"terraform-platform-state-platform-public-ingress-{cdn_account_name}",
                 "key": f"{application_name}/{environment_name}.tfstate",
                 "region": "eu-west-2",
                 "use_lockfile": True,
-                "profile": dns_account_name,
+                "profile": cdn_account_profile,
             }
         }
 

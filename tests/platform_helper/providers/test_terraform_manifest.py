@@ -363,7 +363,12 @@ def test_generate_platform_public_ingress_config_creates_file():
     mock_io = Mock()
     template_provider = TerraformManifestProvider(mock_file_provider, mock_io)
 
-    template_provider.generate_platform_public_ingress_config("myapp", "myenv", "mydnsacct")
+    template_provider.generate_platform_public_ingress_config(
+        application_name="myapp",
+        environment_name="myenv",
+        cdn_account_name="mydnsacct",
+        cdn_account_profile="mydnsacct-admin",
+    )
 
     mock_file_provider.mkfile.assert_called_once()
     base_path, file_path, contents, overwrite = mock_file_provider.mkfile.call_args.args
@@ -389,7 +394,7 @@ def test_generate_platform_public_ingress_config_creates_file():
     assert s3_backend["key"] == f"myapp/myenv.tfstate"
     assert s3_backend["region"] == "eu-west-2"
     assert s3_backend["use_lockfile"] is True
-    assert s3_backend["profile"] == "mydnsacct"
+    assert s3_backend["profile"] == "mydnsacct-admin"
     assert "encrypt" not in s3_backend
     assert "kms_key_id" not in s3_backend
     assert "dynamodb_table" not in s3_backend

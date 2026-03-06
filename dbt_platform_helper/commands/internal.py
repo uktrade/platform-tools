@@ -165,7 +165,8 @@ def mark_managed(env):
 @cdn.command(help="Remove CDN resources from terraform state.")
 @click.option("--env", type=str, required=True)
 @click.option("--dry-run/--no-dry-run", default=True)
-def detach(env, dry_run):
+@click.option("--cdn-account-profile", type=str)
+def detach(env, dry_run, cdn_account_profile):
     """Removes CloudFront distributions and their supporting resources from the
     terraform state for a specified environment."""
     click_io = ClickIOProvider()
@@ -185,6 +186,8 @@ def detach(env, dry_run):
             config_provider=config_provider,
             terraform_environment=terraform_environment,
         )
-        cdn_detach.execute(environment_name=env, dry_run=dry_run)
+        cdn_detach.execute(
+            environment_name=env, dry_run=dry_run, cdn_account_profile=cdn_account_profile
+        )
     except PlatformException as err:
         click_io.abort_with_error(str(err))

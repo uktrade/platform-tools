@@ -133,7 +133,7 @@ class CDNDetach:
         self.terraform_provider = terraform_provider or TerraformProvider()
         self.logic_constructor = logic_constructor
 
-    def execute(self, environment_name, dry_run=True):
+    def execute(self, environment_name, dry_run=True, cdn_account_profile=None):
         platform_config = self.config_provider.get_enriched_config()
         if environment_name not in platform_config.get("environments", {}):
             raise PlatformException(
@@ -141,7 +141,7 @@ class CDNDetach:
             )
 
         environment_tfstate = self.fetch_environment_tfstate(environment_name)
-        ingress_tfstate = self.fetch_ingress_tfstate(environment_name)
+        ingress_tfstate = self.fetch_ingress_tfstate(environment_name, cdn_account_profile)
 
         logic_result = self.logic_constructor(
             platform_config=platform_config,
@@ -175,15 +175,16 @@ class CDNDetach:
         self.terraform_provider.init(terraform_config_dir)
         return self.terraform_provider.pull_state(terraform_config_dir)
 
-    def fetch_ingress_tfstate(self, environment_name):
+    def fetch_ingress_tfstate(self, environment_name, cdn_account_profile=None):
         config = self.config_provider.get_enriched_config()
         application_name = config["application"]
-        dns_account_name = config["environments"][environment_name]["accounts"]["dns"]["name"]
+        cdn_account_name = config["environments"][environment_name]["accounts"]["dns"]["name"]
 
         self.manifest_provider.generate_platform_public_ingress_config(
-            application_name,
-            environment_name,
-            dns_account_name,
+            application_name=application_name,
+            environment_name=environment_name,
+            cdn_account_name=cdn_account_name,
+            cdn_account_profile=cdn_account_profile or cdn_account_name,
         )
         terraform_config_dir = (
             f"terraform/platform-public-ingress/{application_name}/{environment_name}"
