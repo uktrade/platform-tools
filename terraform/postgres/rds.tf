@@ -71,7 +71,7 @@ resource "aws_db_instance" "default" {
   allow_major_version_upgrade = true
   auto_minor_version_upgrade  = true
   apply_immediately           = coalesce(var.config.apply_immediately, false)
-  maintenance_window          = "Mon:00:00-Mon:03:00"
+  maintenance_window          = "Wed:00:00-Wed:03:00"
 
   # storage
   allocated_storage = local.volume_size
