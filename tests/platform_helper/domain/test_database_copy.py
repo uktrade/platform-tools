@@ -96,7 +96,7 @@ def test_run_database_copy_task_on_copilot_cluster(is_dump, exp_operation):
 
     mock_client.run_task.assert_called_once_with(
         taskDefinition=f"arn:aws:ecs:eu-west-2:12345:task-definition/test-app-test-env-test-postgres-{exp_operation}",
-        cluster="test-app-test-env",
+        cluster="test-app-test-env-cluster",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
         ],
