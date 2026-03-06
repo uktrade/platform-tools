@@ -534,7 +534,9 @@ class TestConfigGenerateAWS:
     @mock.patch.object(builtins, "open", new_callable=mock_open())
     @mock.patch.object(os.path, "expanduser")
     @mock.patch.object(webbrowser, "open")
-    def test_aws_with_default_file_path(self, mock_webbrowser_open, mock_expanduser, mock_open):
+    def test_aws_profiles_are_sorted_by_account_name(
+        self, mock_webbrowser_open, mock_expanduser, mock_open
+    ):
         config_mocks = ConfigMocks()
         config_mocks.io.confirm.return_value = True
         mock_expanduser.return_value = "/test/aws/config"
