@@ -1,5 +1,13 @@
 # Changelog
 
+## [15.22.0](https://github.com/uktrade/platform-tools/compare/15.21.1...15.22.0) (2026-03-06)
+
+
+### Features
+
+* Move postgres maint window for graviton change (DBTP-2707) ([#1318](https://github.com/uktrade/platform-tools/issues/1318)) ([22e88ff](https://github.com/uktrade/platform-tools/commit/22e88ff0ce1b343ef23e87268148aa0ae8da5611))
+* Sort aws config profiles by name (off-ticket) ([#1315](https://github.com/uktrade/platform-tools/issues/1315)) ([151d0e5](https://github.com/uktrade/platform-tools/commit/151d0e5b009daf64a7c7d5194272d71baa3cd51b))
+
 ## [15.21.1](https://github.com/uktrade/platform-tools/compare/15.21.0...15.21.1) (2026-03-02)
 
 
