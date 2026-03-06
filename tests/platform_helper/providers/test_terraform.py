@@ -18,7 +18,7 @@ class TestInit:
     @patch("dbt_platform_helper.providers.terraform.subprocess.run", spec=True)
     def test_success(self, mock_subprocess_run, tmp_path):
         mock_subprocess_run.return_value = subprocess.CompletedProcess(
-            args=["terraform", "init"],
+            args=["terraform", "init", "-reconfigure"],
             returncode=0,
             stdout="terraform init logs\n",
             stderr=None,
@@ -29,7 +29,7 @@ class TestInit:
         provider.init(tmp_path)
 
         mock_subprocess_run.assert_called_once_with(
-            ["terraform", "init"],
+            ["terraform", "init", "-reconfigure"],
             cwd=tmp_path,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -43,7 +43,7 @@ class TestInit:
     ):
         mock_subprocess_run.side_effect = subprocess.CalledProcessError(
             returncode=1,
-            cmd=["terraform", "init"],
+            cmd=["terraform", "init", "-reconfigure"],
             output="terraform init logs\n",
             stderr=None,
         )

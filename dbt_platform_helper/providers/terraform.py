@@ -8,7 +8,7 @@ class TerraformProvider:
     def init(self, config_dir):
         try:
             subprocess.run(
-                ["terraform", "init"],
+                ["terraform", "init", "-reconfigure"],
                 cwd=config_dir,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
