@@ -223,15 +223,24 @@ def address_for_tfstate_resource(res):
 
 
 class TerraformStateBackup:
-    def __init__(self, s3_provider: S3Provider, bucket_name: str, key: str):
+    def __init__(
+        self,
+        s3_provider: S3Provider,
+        application: str,
+        environment: str,
+        aws_account_name: str,
+    ):
         self.s3_provider = s3_provider
-        self.bucket_name = bucket_name
-        self.key = key
+        self.application = application
+        self.environment = environment
+        self.aws_account_name = aws_account_name
 
     def create_if_not_exists(self):
+        bucket_name = f"terraform-platform-state-{self.aws_account_name}"
+        source_key = f"tfstate/application/{self.application}-{self.environment}.tfstate"
         self.s3_provider.copy_object(
-            source_bucket_name=self.bucket_name,
-            source_key=self.key,
-            dest_bucket_name=self.bucket_name,
-            dest_key=f"{self.key}.backup",
+            source_bucket_name=bucket_name,
+            source_key=source_key,
+            dest_bucket_name=bucket_name,
+            dest_key=f"{source_key}.backup",
         )

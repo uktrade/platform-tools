@@ -379,35 +379,40 @@ class TestTerraformStateBackup:
     def test_creates_a_backup(self):
         mock_s3_provider = Mock(spec=S3Provider)
         state_backup = TerraformStateBackup(
-            s3_provider=mock_s3_provider, bucket_name="mockbucket", key="mockkey"
+            s3_provider=mock_s3_provider,
+            application="mockapplication",
+            environment="mockenv",
+            aws_account_name="mockaccount",
         )
 
         state_backup.create_if_not_exists()
 
         mock_s3_provider.copy_object.assert_called_once_with(
-            source_bucket_name="mockbucket",
-            source_key="mockkey",
-            dest_bucket_name="mockbucket",
-            dest_key="mockkey.backup",
+            source_bucket_name="terraform-platform-state-mockaccount",
+            source_key="tfstate/application/mockapplication-mockenv.tfstate",
+            dest_bucket_name="terraform-platform-state-mockaccount",
+            dest_key="tfstate/application/mockapplication-mockenv.tfstate.backup",
         )
 
     def test_creates_a_backup_with_different_params(self):
         mock_s3_provider = Mock(spec=S3Provider)
         state_backup = TerraformStateBackup(
-            s3_provider=mock_s3_provider, bucket_name="mockbucket2", key="mockkey2"
+            s3_provider=mock_s3_provider,
+            application="mockapplication2",
+            environment="mockenv2",
+            aws_account_name="mockaccount2",
         )
 
         state_backup.create_if_not_exists()
 
         mock_s3_provider.copy_object.assert_called_once_with(
-            source_bucket_name="mockbucket2",
-            source_key="mockkey2",
-            dest_bucket_name="mockbucket2",
-            dest_key="mockkey2.backup",
+            source_bucket_name="terraform-platform-state-mockaccount2",
+            source_key="tfstate/application/mockapplication2-mockenv2.tfstate",
+            dest_bucket_name="terraform-platform-state-mockaccount2",
+            dest_key="tfstate/application/mockapplication2-mockenv2.tfstate.backup",
         )
 
 
-# compute bucket/key from app name + env name
 # only create if it doesn't already exist
 # real suffix
 # logging
