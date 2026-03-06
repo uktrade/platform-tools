@@ -200,6 +200,7 @@ class Config:
             access_token=aws_sso_token,
             max_results=100,
         )
+        accounts_list.sort(key=lambda acct: acct["accountName"])
         return accounts_list
 
     def _retrieve_role_for_aws_account(self, aws_sso_token, account_id):

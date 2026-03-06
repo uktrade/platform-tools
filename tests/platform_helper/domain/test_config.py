@@ -87,6 +87,28 @@ class ConfigMocks:
         }
 
 
+class ConfigGenerateAWSMocks(ConfigMocks):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.io.confirm.return_value = True
+        self.sso.register.return_value = CLIENT_ID, CLIENT_SECRET
+        self.sso.start_device_authorization.return_value = (
+            VERIFICATION_URI,
+            "TEST_DEVICE_CODE",
+        )
+        self.sso.create_access_token.return_value = "TEST_ACCESS_TOKEN"
+        self.sso.list_accounts.return_value = [
+            {
+                "accountName": "TEST_AWS_ACCOUNT",
+                "accountId": "TEST_AWS_ACCOUNT_ID",
+            }
+        ]
+        self.sso.list_account_roles.return_value = [
+            {"roleName": "DBTPlatformDeveloperWrite"},
+            {"roleName": "DBTPlatformDeveloperRead"},
+        ]
+
+
 class TestConfigValidate:
 
     def test_validate(self, fakefs, create_valid_platform_config_file):
@@ -454,31 +476,9 @@ class TestConfigGenerateAWS:
     @mock.patch.object(os.path, "expanduser")
     @mock.patch.object(webbrowser, "open")
     def test_aws_with_default_file_path(self, mock_webbrowser_open, mock_expanduser, mock_open):
-        config_mocks = ConfigMocks()
-        config_mocks.io.confirm.return_value = True
+        config_mocks = ConfigGenerateAWSMocks()
         mock_expanduser.return_value = "/test/aws/config"
         config_domain = Config(**config_mocks.params())
-
-        config_mocks.sso.register.return_value = CLIENT_ID, CLIENT_SECRET
-
-        config_mocks.sso.start_device_authorization.return_value = (
-            VERIFICATION_URI,
-            "TEST_DEVICE_CODE",
-        )
-
-        config_mocks.sso.create_access_token.return_value = "TEST_ACCESS_TOKEN"
-
-        config_mocks.sso.list_accounts.return_value = [
-            {
-                "accountName": "TEST_AWS_ACCOUNT",
-                "accountId": "TEST_AWS_ACCOUNT_ID",
-            }
-        ]
-
-        config_mocks.sso.list_account_roles.return_value = [
-            {"roleName": "DBTPlatformDeveloperWrite"},
-            {"roleName": "DBTPlatformDeveloperRead"},
-        ]
 
         config_domain.generate_aws("/test/aws/config")
 
@@ -526,6 +526,59 @@ class TestConfigGenerateAWS:
                 call("[profile TEST_AWS_ACCOUNT]\n"),
                 call("sso_session = uktrade\n"),
                 call("sso_account_id = TEST_AWS_ACCOUNT_ID\n"),
+                call("sso_role_name = DBTPlatformDeveloperWrite\n"),
+                call("region = eu-west-2\n"),
+                call("output = json\n"),
+                call("\n"),
+            ]
+        )
+
+    @mock.patch.object(builtins, "open", new_callable=mock_open())
+    @mock.patch.object(os.path, "expanduser")
+    @mock.patch.object(webbrowser, "open")
+    def test_aws_profiles_are_sorted_by_account_name(
+        self, mock_webbrowser_open, mock_expanduser, mock_open
+    ):
+        config_mocks = ConfigGenerateAWSMocks()
+        mock_expanduser.return_value = "/test/aws/config"
+        config_domain = Config(**config_mocks.params())
+
+        config_mocks.sso.list_accounts.return_value = [
+            {
+                "accountName": "TEST_AWS_ACCOUNT_C",
+                "accountId": "TEST_AWS_ACCOUNT_ID_1",
+            },
+            {
+                "accountName": "TEST_AWS_ACCOUNT_A",
+                "accountId": "TEST_AWS_ACCOUNT_ID_2",
+            },
+            {
+                "accountName": "TEST_AWS_ACCOUNT_B",
+                "accountId": "TEST_AWS_ACCOUNT_ID_3",
+            },
+        ]
+
+        config_domain.generate_aws("/test/aws/config")
+
+        mock_open.return_value.__enter__().write.assert_has_calls(
+            [
+                call("[profile TEST_AWS_ACCOUNT_A]\n"),
+                call("sso_session = uktrade\n"),
+                call("sso_account_id = TEST_AWS_ACCOUNT_ID_2\n"),
+                call("sso_role_name = DBTPlatformDeveloperWrite\n"),
+                call("region = eu-west-2\n"),
+                call("output = json\n"),
+                call("\n"),
+                call("[profile TEST_AWS_ACCOUNT_B]\n"),
+                call("sso_session = uktrade\n"),
+                call("sso_account_id = TEST_AWS_ACCOUNT_ID_3\n"),
+                call("sso_role_name = DBTPlatformDeveloperWrite\n"),
+                call("region = eu-west-2\n"),
+                call("output = json\n"),
+                call("\n"),
+                call("[profile TEST_AWS_ACCOUNT_C]\n"),
+                call("sso_session = uktrade\n"),
+                call("sso_account_id = TEST_AWS_ACCOUNT_ID_1\n"),
                 call("sso_role_name = DBTPlatformDeveloperWrite\n"),
                 call("region = eu-west-2\n"),
                 call("output = json\n"),
