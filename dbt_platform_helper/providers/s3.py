@@ -19,3 +19,17 @@ class S3Provider:
             raise PlatformException(
                 f"Failed to get '{object_key}' from '{bucket_name}'. Error: {e}"
             )
+
+    def put_object(self, bucket_name: str, object_key: str, body: str):
+        """Writes an object to an S3 bucket."""
+
+        raise NotImplementedError
+
+    def copy_object(
+        self,
+        source_bucket_name: str,
+        source_object_key: str,
+        dest_bucket_name: str,
+        dest_object_key: str,
+    ):
+        raise NotImplementedError
