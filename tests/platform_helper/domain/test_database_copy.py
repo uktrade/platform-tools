@@ -77,13 +77,6 @@ def test_run_database_copy_task_on_copilot_cluster(is_dump, exp_operation):
     mock_client.describe_clusters.return_value = {"failures": []}
     mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
-    actual_task_arn = db_copy.run_database_copy_task(
-        mock_session, "test-env", mocks.vpc, is_dump, db_connection_string, "test-dump-file"
-    )
-
-    assert actual_task_arn == "arn:aws:ecs:test-task-arn"
-
-    mock_session.client.assert_called_once_with("ecs")
     expected_env_vars = [
         {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
         {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
@@ -94,9 +87,13 @@ def test_run_database_copy_task_on_copilot_cluster(is_dump, exp_operation):
             {"name": "ECS_CLUSTER", "value": "test-app-test-env"},
         )
 
+    db_copy.run_database_copy_task(
+        mock_session, "test-env", mocks.vpc, is_dump, db_connection_string, "test-dump-file"
+    )
+
     mock_client.run_task.assert_called_once_with(
         taskDefinition=f"arn:aws:ecs:eu-west-2:12345:task-definition/test-app-test-env-test-postgres-{exp_operation}",
-        cluster="test-app-test-env-cluster",
+        cluster="test-app-test-env",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
         ],
