@@ -19,3 +19,24 @@ class S3Provider:
             raise PlatformException(
                 f"Failed to get '{object_key}' from '{bucket_name}'. Error: {e}"
             )
+
+    def put_object(self, bucket_name: str, object_key: str, body: str):
+        """Writes an object to an S3 bucket."""
+
+        self.client.put_object(Bucket=bucket_name, Key=object_key, Body=body.encode("utf-8"))
+
+    def copy_object(
+        self,
+        source_bucket_name: str,
+        source_object_key: str,
+        dest_bucket_name: str,
+        dest_object_key: str,
+    ):
+        self.client.copy_object(
+            CopySource={
+                "Bucket": source_bucket_name,
+                "Key": source_object_key,
+            },
+            Bucket=dest_bucket_name,
+            Key=dest_object_key,
+        )

@@ -4,6 +4,7 @@ from unittest.mock import call
 
 import pytest
 import yaml
+from freezegun import freeze_time
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.cdn_detach import CDNDetachLogic
@@ -13,6 +14,7 @@ from dbt_platform_helper.domain.terraform_environment import TerraformEnvironmen
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.s3 import S3Provider
 from dbt_platform_helper.providers.terraform import TerraformProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from tests.platform_helper.conftest import EXPECTED_DATA_DIR
@@ -94,6 +96,7 @@ class CDNDetachMocks:
         self.mock_io = Mock(spec=ClickIOProvider)
         self.mock_config_provider = Mock(spec=ConfigProvider)
         self.mock_config_provider.get_enriched_config.return_value = create_mock_platform_config()
+        self.mock_s3_provider = Mock(spec=S3Provider)
         self.mock_terraform_environment = Mock(spec=TerraformEnvironment)
         self.mock_manifest_provider = Mock(spec=TerraformManifestProvider)
         self.mock_terraform_provider = Mock(spec=TerraformProvider)
@@ -103,6 +106,7 @@ class CDNDetachMocks:
         return {
             "io": self.mock_io,
             "config_provider": self.mock_config_provider,
+            "s3_provider": self.mock_s3_provider,
             "terraform_environment": self.mock_terraform_environment,
             "manifest_provider": self.mock_manifest_provider,
             "terraform_provider": self.mock_terraform_provider,
@@ -167,6 +171,9 @@ class TestCDNDetach:
                 ),
             ]
         )
+
+        mocks.mock_s3_provider.copy_object.assert_not_called()
+        mocks.mock_s3_provider.put_object.assert_not_called()
 
     def test_dry_run_success_with_no_resources_to_detach(self):
         mocks = CDNDetachMocks(
@@ -263,6 +270,74 @@ class TestCDNDetach:
             match="cannot detach CDN resources for environment not-an-environment. It does not exist in your configuration",
         ):
             cdn_detach.execute(environment_name="not-an-environment", dry_run=True)
+
+    @freeze_time("2001-02-03 04:05:06")
+    def test_audit_record(self):
+        mocks = CDNDetachMocks(
+            resources_to_detach=MOCK_RESOURCES_TO_DETACH,
+            resources_not_in_ingress_tfstate=[],
+        )
+
+        cdn_detach = CDNDetach(**mocks.params())
+        cdn_detach.execute(environment_name="staging", dry_run=False)
+
+        mocks.mock_s3_provider.copy_object.assert_has_calls(
+            [
+                call(
+                    source_bucket_name="terraform-platform-state-non-prod-acc",
+                    source_object_key="tfstate/application/test-app-staging.tfstate",
+                    dest_bucket_name="platform-cdn-detach-audit",
+                    dest_object_key="test-app/staging/2001-02-03/04:05:06/before.tfstate",
+                ),
+                call(
+                    source_bucket_name="terraform-platform-state-non-prod-acc",
+                    source_object_key="tfstate/application/test-app-staging.tfstate",
+                    dest_bucket_name="platform-cdn-detach-audit",
+                    dest_object_key="test-app/staging/2001-02-03/04:05:06/after.tfstate",
+                ),
+            ]
+        )
+
+        mocks.mock_s3_provider.put_object.assert_called_once_with(
+            bucket_name="platform-cdn-detach-audit",
+            object_key="test-app/staging/2001-02-03/04:05:06/resources_removed.json",
+            body=(EXPECTED_DATA_DIR / "cdn_detach/audit/resources_removed.json")
+            .read_text()
+            .rstrip("\n"),
+        )
+
+    @freeze_time("2001-02-03 04:05:06")
+    def test_audit_record_with_no_resources_to_detach(self):
+        mocks = CDNDetachMocks(
+            resources_to_detach=[],
+            resources_not_in_ingress_tfstate=[],
+        )
+
+        cdn_detach = CDNDetach(**mocks.params())
+        cdn_detach.execute(environment_name="staging", dry_run=False)
+
+        mocks.mock_s3_provider.copy_object.assert_has_calls(
+            [
+                call(
+                    source_bucket_name="terraform-platform-state-non-prod-acc",
+                    source_object_key="tfstate/application/test-app-staging.tfstate",
+                    dest_bucket_name="platform-cdn-detach-audit",
+                    dest_object_key="test-app/staging/2001-02-03/04:05:06/before.tfstate",
+                ),
+                call(
+                    source_bucket_name="terraform-platform-state-non-prod-acc",
+                    source_object_key="tfstate/application/test-app-staging.tfstate",
+                    dest_bucket_name="platform-cdn-detach-audit",
+                    dest_object_key="test-app/staging/2001-02-03/04:05:06/after.tfstate",
+                ),
+            ]
+        )
+
+        mocks.mock_s3_provider.put_object.assert_called_once_with(
+            bucket_name="platform-cdn-detach-audit",
+            object_key="test-app/staging/2001-02-03/04:05:06/resources_removed.json",
+            body="[]",
+        )
 
 
 @pytest.fixture
