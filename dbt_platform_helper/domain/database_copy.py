@@ -61,6 +61,14 @@ class DatabaseCopy:
 
         self.maintenance_page = maintenance_page(self.application)
 
+    def get_cluster_for_env(self, ecs_client, env):
+        platform_cluster = f"{self.app}-{env}-cluster"
+        response = ecs_client.describe_clusters(clusters=[platform_cluster])
+        if response.get("clusters"):
+            return platform_cluster
+        else:
+            return f"{self.app}-{env}"
+
     def _execute_operation(self, is_dump: bool, env: str, vpc_name: str, filename: str):
         vpc_name = self.enrich_vpc_name(env, vpc_name)
 
@@ -132,6 +140,7 @@ class DatabaseCopy:
         client = session.client("ecs")
         action = "dump" if is_dump else "load"
         dump_file_name = filename if filename else "data_dump"
+        cluster_name = self.get_cluster_for_env(client, env)
         env_vars = [
             {"name": "DATA_COPY_OPERATION", "value": action.upper()},
             {"name": "DB_CONNECTION_STRING", "value": db_connection_string},
@@ -142,7 +151,7 @@ class DatabaseCopy:
 
         response = client.run_task(
             taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id(env)}:task-definition/{self.app}-{env}-{self.database}-{action}",
-            cluster=f"{self.app}-{env}",
+            cluster=cluster_name,
             capacityProviderStrategy=[
                 {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
             ],

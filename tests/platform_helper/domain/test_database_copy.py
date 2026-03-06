@@ -74,6 +74,9 @@ def test_run_database_copy_task(is_dump, exp_operation):
     mock_client = Mock()
     mock_session = Mock()
     mock_session.client.return_value = mock_client
+    mock_client.describe_clusters.return_value = {
+        "clusters": [{"clusterName": "test-app-test-env-cluster"}]
+    }
     mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
 
     actual_task_arn = db_copy.run_database_copy_task(
@@ -95,7 +98,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
 
     mock_client.run_task.assert_called_once_with(
         taskDefinition=f"arn:aws:ecs:eu-west-2:12345:task-definition/test-app-test-env-test-postgres-{exp_operation}",
-        cluster="test-app-test-env",
+        cluster="test-app-test-env-cluster",
         capacityProviderStrategy=[
             {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
         ],
@@ -117,6 +120,26 @@ def test_run_database_copy_task(is_dump, exp_operation):
             ]
         },
     )
+
+
+def test_get_cluster_name_for_platform_mode_environment():
+    db_copy = DatabaseCopy("test-app", "test-postgres", **DataCopyMocks().params())
+
+    mock_client = Mock()
+    mock_client.describe_clusters.return_value = {
+        "clusters": [{"clusterName": "test-app-test-env-cluster"}]
+    }
+
+    assert db_copy.get_cluster_for_env(mock_client, "test-env") == "test-app-test-env-cluster"
+
+
+def test_get_cluster_name_for_copilot_environment():
+    db_copy = DatabaseCopy("test-app", "test-postgres", **DataCopyMocks().params())
+
+    mock_client = Mock()
+    mock_client.describe_clusters.return_value = {}
+
+    assert db_copy.get_cluster_for_env(mock_client, "test-env") == "test-app-test-env"
 
 
 def test_database_dump():
