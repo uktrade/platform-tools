@@ -65,6 +65,59 @@ class DataCopyMocks:
 
 
 @pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
+def test_run_database_copy_task_on_copilot_cluster(is_dump, exp_operation):
+    mocks = DataCopyMocks()
+    db_connection_string = "connection_string"
+
+    db_copy = DatabaseCopy("test-app", "test-postgres", **mocks.params())
+
+    mock_client = Mock()
+    mock_session = Mock()
+    mock_session.client.return_value = mock_client
+    mock_client.describe_clusters.return_value = {"failures": []}
+    mock_client.run_task.return_value = {"tasks": [{"taskArn": "arn:aws:ecs:test-task-arn"}]}
+
+    expected_env_vars = [
+        {"name": "DATA_COPY_OPERATION", "value": exp_operation.upper()},
+        {"name": "DB_CONNECTION_STRING", "value": "connection_string"},
+        {"name": "DUMP_FILE_NAME", "value": "test-dump-file"},
+    ]
+    if not is_dump:
+        expected_env_vars.append(
+            {"name": "ECS_CLUSTER", "value": "test-app-test-env"},
+        )
+
+    db_copy.run_database_copy_task(
+        mock_session, "test-env", mocks.vpc, is_dump, db_connection_string, "test-dump-file"
+    )
+
+    mock_client.run_task.assert_called_once_with(
+        taskDefinition=f"arn:aws:ecs:eu-west-2:12345:task-definition/test-app-test-env-test-postgres-{exp_operation}",
+        cluster="test-app-test-env",
+        capacityProviderStrategy=[
+            {"capacityProvider": "FARGATE", "weight": 1, "base": 0},
+        ],
+        networkConfiguration={
+            "awsvpcConfiguration": {
+                "subnets": ["subnet_1", "subnet_2"],
+                "securityGroups": [
+                    "sec_group_1",
+                ],
+                "assignPublicIp": "DISABLED",
+            }
+        },
+        overrides={
+            "containerOverrides": [
+                {
+                    "name": f"test-app-test-env-test-postgres-{exp_operation}",
+                    "environment": expected_env_vars,
+                }
+            ]
+        },
+    )
+
+
+@pytest.mark.parametrize("is_dump, exp_operation", [(True, "dump"), (False, "load")])
 def test_run_database_copy_task(is_dump, exp_operation):
     mocks = DataCopyMocks()
     db_connection_string = "connection_string"
