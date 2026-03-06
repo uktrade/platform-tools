@@ -134,17 +134,13 @@ class CDNDetach:
         self.logic_constructor = logic_constructor
 
     def execute(self, environment_name, dry_run=True, cdn_account_profile=None):
-        platform_config = self.config_provider.get_enriched_config()
-        if environment_name not in platform_config.get("environments", {}):
-            raise PlatformException(
-                f"cannot detach CDN resources for environment {environment_name}. It does not exist in your configuration"
-            )
+        self.validate_environment_name(environment_name)
 
         environment_tfstate = self.fetch_environment_tfstate(environment_name)
         ingress_tfstate = self.fetch_ingress_tfstate(environment_name, cdn_account_profile)
 
         logic_result = self.logic_constructor(
-            platform_config=platform_config,
+            platform_config=self.config_provider.get_enriched_config(),
             environment_name=environment_name,
             environment_tfstate=environment_tfstate,
             ingress_tfstate=ingress_tfstate,
@@ -166,6 +162,13 @@ class CDNDetach:
                     {address_for_tfstate_resource(res) for res in logic_result.resources_to_detach},
                 )
             self.io.info("Success.")
+
+    def validate_environment_name(self, environment_name):
+        platform_config = self.config_provider.get_enriched_config()
+        if environment_name not in platform_config.get("environments", {}):
+            raise PlatformException(
+                f"cannot detach CDN resources for environment {environment_name}. It does not exist in your configuration"
+            )
 
     def fetch_environment_tfstate(self, environment_name):
         self.terraform_environment.generate(environment_name)
