@@ -126,9 +126,9 @@ class Config:
                     f"Environment {environment_name} does not exist in your configuration"
                 )
         for extension_config in platform_config.get("extensions", {}).values():
-            has_cdns = extension_config.get("type") == "s3" and extension_config.get(
-                "serve_static_content", False
-            )
+            extension_type = extension_config.get("type")
+            serve_static_content = extension_config.get("serve_static_content", False)
+            has_cdns = extension_type == "alb" or (extension_type == "s3" and serve_static_content)
             if has_cdns:
                 for environment_name in environment_names:
                     extension_config.setdefault("environments", {}).setdefault(
