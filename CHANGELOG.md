@@ -12,6 +12,9 @@
 ### Bug Fixes
 
 * Scale down services in the correct cluster during DB copy (DBTP-2740) ([#1328](https://github.com/uktrade/platform-tools/issues/1328)) ([632e304](https://github.com/uktrade/platform-tools/commit/632e304a50d9e165b4d55f7d6eac968b6776a928))
+* Fix db copy cluster name for decopilotted services (DBTP-2740)(https://github.com/uktrade/platform-tools/pull/1322)([83bc27e](https://github.com/uktrade/platform-tools/commit/83bc27eac9d6f331a1a70dffcc4db23630ed8121)) 
+
+
 
 ## [15.21.1](https://github.com/uktrade/platform-tools/compare/15.21.0...15.21.1) (2026-03-02)
 
