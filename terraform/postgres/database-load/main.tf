@@ -102,7 +102,8 @@ data "aws_iam_policy_document" "data_load" {
     ]
     resources = [
       "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/default/*",
-      "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/${var.application}-${var.environment}/*"
+      "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/${var.application}-${var.environment}/*",
+      "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/${var.application}-${var.environment}-cluster/*"
     ]
   }
 
