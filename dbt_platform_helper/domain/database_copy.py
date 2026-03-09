@@ -147,7 +147,7 @@ class DatabaseCopy:
             {"name": "DUMP_FILE_NAME", "value": dump_file_name},
         ]
         if not is_dump:
-            env_vars.append({"name": "ECS_CLUSTER", "value": f"{self.app}-{env}"})
+            env_vars.append({"name": "ECS_CLUSTER", "value": cluster_name})
 
         response = client.run_task(
             taskDefinition=f"arn:aws:ecs:eu-west-2:{self.account_id(env)}:task-definition/{self.app}-{env}-{self.database}-{action}",
