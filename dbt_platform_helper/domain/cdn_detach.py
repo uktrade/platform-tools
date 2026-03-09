@@ -100,6 +100,8 @@ class CDNDetachLogic:
             return res1["attributes"]["arn"] == res2["attributes"]["arn"]
         except KeyError:
             pass
+        if res1["type"] == "aws_cloudfront_monitoring_subscription":
+            return res1["attributes"]["id"] == res2["attributes"]["id"]
         raise NotImplementedError(f"don't know how to compare resources of type {res1['type']}")
 
     def is_resource_in_ingress_tfstate(self, res):
