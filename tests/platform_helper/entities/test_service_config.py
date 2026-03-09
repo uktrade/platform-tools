@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from dbt_platform_helper.entities.service import Cooldown
 from dbt_platform_helper.entities.service import Count
 from dbt_platform_helper.entities.service import CpuPercentage
+from dbt_platform_helper.entities.service import CronSchedule
 from dbt_platform_helper.entities.service import Image
 from dbt_platform_helper.entities.service import MemoryPercentage
 from dbt_platform_helper.entities.service import RequestsPerMinute
@@ -115,6 +116,39 @@ def test_count_rejects_min_less_than_max(range_value):
         PlatformException, match="Range minimum value must be less than the maximum value."
     ):
         Count.model_validate({"range": range_value, "cpu_percentage": 50})
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"range": "1-2", "schedule": "0 06 ? * MON-FRI *"},
+        {"range": "0-0", "schedule": "0 06 ? * MON-FRI *"},
+    ],
+)
+def test_cron_schedule_valid(config):
+    CronSchedule.model_validate(config)
+
+
+@pytest.mark.parametrize(
+    "config, exception_message",
+    [
+        (
+            {"range": "2-1", "schedule": "0 06 ? * MON-FRI *"},
+            "Range minimum value must be less or equal to the maximum value.",
+        ),
+        (
+            {"range": "1 to 2", "schedule": "0 06 ? * MON-FRI *"},
+            "Range must be in the format 'int-int' e.g. '1-2'",
+        ),
+        (
+            {"range": "1-2", "schedule": "invalid"},
+            "Invalid cron expression: 'invalid'. Excepted format: 'MIN HOUR DOM MONTH DOW YEAR' e.g. '0 06 * * MON-FRI *'",
+        ),
+    ],
+)
+def test_cron_schedule_errors(config, exception_message):
+    with pytest.raises(PlatformException, match=re.escape(exception_message)):
+        CronSchedule.model_validate(config)
 
 
 def test_service_config_accepts_int_count():
