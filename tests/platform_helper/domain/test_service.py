@@ -567,7 +567,7 @@ def test_monitor_task_events_outputs_events():
 
 def test_service_exec_selects_running_task_and_executes_command():
     mocks = ServiceManagerMocks()
-    mocks.ecs_provider.get_cluster.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
     mocks.ecs_provider.describe_tasks.return_value = [{"containers": [{"name": "test-service"}]}]
     service_manager = ServiceManager(**mocks.params())
