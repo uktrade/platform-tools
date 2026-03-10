@@ -14,10 +14,25 @@ def service():
 
 
 @service.command()
-@click.option("--app", help="Application name", required=True)
-@click.option("--env", help="Environment name", required=True)
-@click.option("--service", help="Service name", required=True)
-def exec(app: str, env: str, service: str):
+@click.option("--app", "-a", help="Application name", required=True)
+@click.option("--env", "-e", help="Environment name", required=True)
+@click.option("--name", "-n", help="Name of the service", required=True)
+@click.option(
+    "--command",
+    "-c",
+    help="Optional. The command that is passed to a running container. (default '/bin/bash')",
+    required=False,
+)
+@click.option(
+    "--container",
+    "-n",
+    help="Optional. The specific container you want to exec in. By default the first essential container will be used.",
+    required=False,
+)
+@click.option(
+    "--task-id", "-n", help="Optional. ID of the task you want to exec in.", required=False
+)
+def exec(app: str, env: str, name: str, command: str, container: str, task_id: str):
     """Opens a shell for a given container."""
     application = load_application(app=app, env=env)
 
@@ -29,6 +44,6 @@ def exec(app: str, env: str, service: str):
             env,
         )
 
-        ServiceManager(ecs_provider=ecs_provider).service_exec(app, env, service)
+        ServiceManager(ecs_provider=ecs_provider).service_exec(app, env, name)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

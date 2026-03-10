@@ -15,7 +15,7 @@ def test_service_exec(mock_application, mock_service_manager_object):
 
     result = CliRunner().invoke(
         service,
-        ["exec", "--app", "test-application", "--env", "development", "--service", "test-service"],
+        ["exec", "--app", "test-application", "--env", "development", "--name", "test-service"],
     )
 
     assert result.exit_code == 0
