@@ -44,6 +44,8 @@ def exec(app: str, env: str, name: str, command: str, container: str, task_id: s
             env,
         )
 
-        ServiceManager(ecs_provider=ecs_provider).service_exec(app, env, name)
+        ServiceManager(ecs_provider=ecs_provider).service_exec(
+            app, env, name, command, container, task_id
+        )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

@@ -582,7 +582,7 @@ class ServiceManager:
         else:
             self.io.info(f"[{timestamp}] {message}")
 
-    def service_exec(self, app, env, service):
+    def service_exec(self, app, env, service, command=None, container=None, task_id=None):
         cluster = f"{app}-{env}-cluster"
         service_name = f"{app}-{env}-{service}"
         tasks = self.ecs_provider.get_ecs_task_arns(cluster=cluster, service_name=service_name)
