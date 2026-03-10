@@ -38,6 +38,8 @@
         - [platform-helper database copy](#platform-helper-database-copy)
     - [platform-helper version](#platform-helper-version)
         - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
+    - [platform-helper service](#platform-helper-service)
+        - [platform-helper service exec](#platform-helper-service-exec)
 
 # platform-helper
 
@@ -68,6 +70,7 @@ platform-helper <command> [--version]
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
+- [`service` ↪](#platform-helper-service)
 - [`version` ↪](#platform-helper-version)
 
 # platform-helper application
@@ -975,5 +978,49 @@ platform-helper version get-platform-helper-for-project [--pipeline <pipeline>]
 
 - `--pipeline <text>`
   - Take into account platform-tools version overrides in the specified pipeline
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper service
+
+[↩ Parent](#platform-helper)
+
+    Commands for managing a live service
+
+## Usage
+
+```
+platform-helper service exec 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`exec` ↪](#platform-helper-service-exec)
+
+# platform-helper service exec
+
+[↩ Parent](#platform-helper-service)
+
+    Opens a shell for a given container.
+
+## Usage
+
+```
+platform-helper service exec --app <application> --env <environment> --service <service> 
+```
+
+## Options
+
+- `--app <text>`
+  - Application name
+- `--env <text>`
+  - Environment name
+- `--service <text>`
+  - Service name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

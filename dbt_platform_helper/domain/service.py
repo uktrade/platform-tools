@@ -581,3 +581,7 @@ class ServiceManager:
             self.io.deploy_error(f"[{timestamp}] {message}")
         else:
             self.io.info(f"[{timestamp}] {message}")
+
+    def service_exec(self, app, env, service):
+        self.io.info(f"{app}, {env}, {service}")
+        self.io.info(self.ecs_provider.application_name())
