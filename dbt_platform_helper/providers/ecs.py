@@ -304,7 +304,7 @@ class ECS:
         except ClientError as err:
             raise PlatformException(f"Error retrieving ECS tasks: {err}")
 
-    def execute(self, cluster, task, container):
+    def execute(self, cluster, task, container, command=None):
         aws_cli_cmd = [
             "aws",
             "ecs",
@@ -316,7 +316,7 @@ class ECS:
             "--container",
             container,
             "--command",
-            "/bin/bash",
+            command or "/bin/bash",
             "--interactive",
         ]
         subprocess.run(aws_cli_cmd)

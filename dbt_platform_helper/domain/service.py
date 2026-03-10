@@ -585,6 +585,16 @@ class ServiceManager:
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
         cluster = f"{app}-{env}-cluster"
         service_name = f"{app}-{env}-{service}"
-        tasks = self.ecs_provider.get_ecs_task_arns(cluster=cluster, service_name=service_name)
-        self.io.info(f"Executing into cluster {cluster}, container {service}, task {tasks[0]}")
-        self.ecs_provider.execute(cluster, tasks[0], service)
+
+        if task_id:
+            task_arn = self.ecs_provider.describe_tasks(cluster, [task_id])[0]["taskArn"]
+        else:
+            task_arn = self.ecs_provider.get_ecs_task_arns(
+                cluster=cluster, service_name=service_name
+            )[0]
+
+        container = container or service
+
+        self.io.info(f"Executing into cluster {cluster}, container {container}, task {task_arn}")
+
+        self.ecs_provider.execute(cluster, task_arn, container, command)

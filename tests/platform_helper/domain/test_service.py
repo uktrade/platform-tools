@@ -578,8 +578,35 @@ def test_service_exec_selects_running_task_and_executes_command():
         "test-app-test-env-cluster",
         "task-1",
         "test-service",
+        None,
     )
 
     mocks.io.info.assert_called_once_with(
         "Executing into cluster test-app-test-env-cluster, container test-service, task task-1"
+    )
+
+
+def test_service_exec_executes_command_with_specified_task_id_command_and_container():
+    mocks = ServiceManagerMocks()
+    # mocks.ecs_provider.get_cluster.return_value = "test-app-test-env-cluster"
+    # mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
+    mocks.ecs_provider.describe_tasks.return_value = [
+        {"containers": [{"name": "test-service"}], "taskArn": "test-task-arn"}
+    ]
+
+    service_manager = ServiceManager(**mocks.params())
+
+    service_manager.service_exec(
+        "test-app", "test-env", "test-service", "pwd", "test-container", "test-task"
+    )
+
+    mocks.ecs_provider.execute.assert_called_once_with(
+        "test-app-test-env-cluster",
+        "test-task-arn",
+        "test-container",
+        "pwd",
+    )
+
+    mocks.io.info.assert_called_once_with(
+        "Executing into cluster test-app-test-env-cluster, container test-container, task test-task-arn"
     )
