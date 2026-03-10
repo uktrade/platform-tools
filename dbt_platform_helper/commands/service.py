@@ -10,7 +10,7 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 @click.group(cls=ClickDocOptGroup)
 def service():
-    """Commands for managing a live service"""
+    """Commands for managing a live service."""
 
 
 @service.command()
@@ -29,8 +29,6 @@ def exec(app: str, env: str, service: str):
             env,
         )
 
-        ServiceManager(ecs_provider=ecs_provider).service_exec(
-            app, env, service
-        )
+        ServiceManager(ecs_provider=ecs_provider).service_exec(app, env, service)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
