@@ -305,4 +305,6 @@ class ECS:
             raise PlatformException(f"Error retrieving ECS tasks: {err}")
 
     def execute(self, cluster, task, container):
-        pass
+        return self.ecs_client.execute_command(
+            cluster=cluster, container=container, command="/bin/bash", interactive=True, task=task
+        )

@@ -616,3 +616,25 @@ def test_describe_tasks_success():
 
     assert tasks == [{"taskArn": "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"}]
     ecs_client.describe_tasks.assert_called_once_with(cluster="myapp-dev-cluster", tasks=["abc123"])
+
+
+def test_execute_success():
+    mock_task_arn = "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"
+    mock_task_arn_2 = "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/def123"
+    ecs_client = MagicMock()
+    ecs_client.list_tasks.return_value = {"taskArns": [mock_task_arn, mock_task_arn_2]}
+    ecs_client.describe_tasks.return_value = {
+        "tasks": [{"taskArn": mock_task_arn, "containers": [{"name": "myservice"}]}]
+    }
+
+    ecs = ECS(ecs_client, None, "myapp", "dev")
+
+    ecs.execute(cluster="myapp-dev-cluster", task=mock_task_arn, container="myservice")
+
+    ecs_client.execute_command.assert_called_once_with(
+        cluster="myapp-dev-cluster",
+        task=mock_task_arn,
+        container="myservice",
+        command="/bin/bash",
+        interactive=True,
+    )
