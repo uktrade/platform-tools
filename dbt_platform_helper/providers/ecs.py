@@ -305,6 +305,22 @@ class ECS:
             raise PlatformException(f"Error retrieving ECS tasks: {err}")
 
     def execute(self, cluster, task, container):
-        return self.ecs_client.execute_command(
-            cluster=cluster, container=container, command="/bin/bash", interactive=True, task=task
-        )
+
+        cmd = [
+            "aws",
+            "ecs",
+            "execute-command",
+            "--cluster",
+            cluster,
+            "--task",
+            task,
+            "--container",
+            container,
+            "--command",
+            "/bin/bash",
+            "--interactive",
+        ]
+        subprocess.run(cmd)
+        # return self.ecs_client.execute_command(
+        #     cluster=cluster, container=container, command="/bin/bash", interactive=True, task=task
+        # )

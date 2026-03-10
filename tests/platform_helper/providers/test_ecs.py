@@ -618,7 +618,8 @@ def test_describe_tasks_success():
     ecs_client.describe_tasks.assert_called_once_with(cluster="myapp-dev-cluster", tasks=["abc123"])
 
 
-def test_execute_success():
+@patch("dbt_platform_helper.providers.ecs.subprocess.run")
+def test_execute_success(run):
     mock_task_arn = "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"
     mock_task_arn_2 = "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/def123"
     ecs_client = MagicMock()
@@ -631,10 +632,19 @@ def test_execute_success():
 
     ecs.execute(cluster="myapp-dev-cluster", task=mock_task_arn, container="myservice")
 
-    ecs_client.execute_command.assert_called_once_with(
-        cluster="myapp-dev-cluster",
-        task=mock_task_arn,
-        container="myservice",
-        command="/bin/bash",
-        interactive=True,
-    )
+    expected_cmd = [
+        "aws",
+        "ecs",
+        "execute-command",
+        "--cluster",
+        "myapp-dev-cluster",
+        "--task",
+        mock_task_arn,
+        "--container",
+        "myservice",
+        "--command",
+        "/bin/bash",
+        "--interactive",
+    ]
+
+    run.assert_called_once_with(expected_cmd)
