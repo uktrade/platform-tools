@@ -583,5 +583,7 @@ class ServiceManager:
             self.io.info(f"[{timestamp}] {message}")
 
     def service_exec(self, app, env, service):
-        self.io.info(f"{app}, {env}, {service}")
-        self.io.info(self.ecs_provider.application_name())
+        cluster = f"{app}-{env}-cluster"
+        tasks = self.ecs_provider.get_ecs_task_arns(cluster)
+        self.io.info(f"Executing into cluster {cluster}, container {service}, task {tasks[0]}")
+        self.ecs_provider.execute(cluster, tasks[0], service)
