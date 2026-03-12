@@ -146,7 +146,7 @@ def test_run_database_copy_task(is_dump, exp_operation):
     ]
     if not is_dump:
         expected_env_vars.append(
-            {"name": "ECS_CLUSTER", "value": "test-app-test-env"},
+            {"name": "ECS_CLUSTER", "value": "test-app-test-env-cluster"},
         )
 
     mock_client.run_task.assert_called_once_with(

@@ -1,3 +1,4 @@
+import datetime
 import json
 import re
 from dataclasses import dataclass
@@ -7,6 +8,7 @@ from dbt_platform_helper.domain.terraform_environment import TerraformEnvironmen
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.s3 import S3Provider
 from dbt_platform_helper.providers.terraform import TerraformProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 
@@ -100,7 +102,9 @@ class CDNDetachLogic:
             return res1["attributes"]["arn"] == res2["attributes"]["arn"]
         except KeyError:
             pass
-        raise NotImplementedError(f"don't know how to compare resources of type {typ}")
+        if res1["type"] == "aws_cloudfront_monitoring_subscription":
+            return res1["attributes"]["id"] == res2["attributes"]["id"]
+        raise NotImplementedError(f"don't know how to compare resources of type {res1['type']}")
 
     def is_resource_in_ingress_tfstate(self, res):
         return any(
@@ -121,6 +125,7 @@ class CDNDetach:
         self,
         io: ClickIOProvider,
         config_provider: ConfigProvider,
+        s3_provider: S3Provider,
         terraform_environment: TerraformEnvironment,
         manifest_provider: TerraformManifestProvider = None,
         terraform_provider: TerraformProvider = None,
@@ -128,12 +133,15 @@ class CDNDetach:
     ):
         self.io = io
         self.config_provider = config_provider
+        self.s3_provider = s3_provider
         self.terraform_environment = terraform_environment
         self.manifest_provider = manifest_provider or self.terraform_environment.manifest_provider
         self.terraform_provider = terraform_provider or TerraformProvider()
         self.logic_constructor = logic_constructor
 
     def execute(self, environment_name, dry_run=True, cdn_account_profile=None):
+        run_timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
+
         self.validate_environment_name(environment_name)
 
         environment_tfstate = self.fetch_environment_tfstate(environment_name)
@@ -152,6 +160,15 @@ class CDNDetach:
             raise CDNResourcesNotImportedException(logic_result.resources_not_in_ingress_tfstate)
 
         if not dry_run:
+            audit = AuditRecorder(
+                config_provider=self.config_provider,
+                s3_provider=self.s3_provider,
+                environment_name=environment_name,
+                run_timestamp=run_timestamp,
+            )
+            audit.record_environment_tfstate("before")
+            audit.record_resources_removed(logic_result.resources_to_detach)
+
             if logic_result.resources_to_detach:
                 self.io.info(
                     f"Removing resources from the {environment_name} environment's terraform state..."
@@ -161,6 +178,8 @@ class CDNDetach:
                     terraform_config_dir,
                     {address_for_tfstate_resource(res) for res in logic_result.resources_to_detach},
                 )
+
+            audit.record_environment_tfstate("after")
             self.io.info("Success.")
 
     def validate_environment_name(self, environment_name):
@@ -223,3 +242,43 @@ def address_for_tfstate_resource(res):
     except KeyError:
         pass
     return s
+
+
+class AuditRecorder:
+    bucket_name = "platform-cdn-detach-audit"
+
+    def __init__(self, config_provider, s3_provider, environment_name, run_timestamp):
+        self.config_provider = config_provider
+        self.s3_provider = s3_provider
+        self.environment_name = environment_name
+        self.run_timestamp = run_timestamp
+
+    @property
+    def application_name(self):
+        return self.config_provider.get_enriched_config()["application"]
+
+    @property
+    def deploy_account_name(self):
+        cfg = self.config_provider.get_enriched_config()
+        return cfg["environments"][self.environment_name]["accounts"]["deploy"]["name"]
+
+    @property
+    def key_prefix(self):
+        run_timestamp_str = self.run_timestamp.strftime("%Y-%m-%d/%H:%M:%S")
+        return f"{self.application_name}/{self.environment_name}/{run_timestamp_str}"
+
+    def record_environment_tfstate(self, before_or_after):
+        self.s3_provider.copy_object(
+            source_bucket_name=f"terraform-platform-state-{self.deploy_account_name}",
+            source_object_key=f"tfstate/application/{self.application_name}-{self.environment_name}.tfstate",
+            dest_bucket_name=self.bucket_name,
+            dest_object_key=f"{self.key_prefix}/{before_or_after}.tfstate",
+        )
+
+    def record_resources_removed(self, resources):
+        addresses = sorted(address_for_tfstate_resource(res) for res in resources)
+        self.s3_provider.put_object(
+            bucket_name=self.bucket_name,
+            object_key=f"{self.key_prefix}/resources_removed.json",
+            body=json.dumps(addresses, separators=(",", ":")),
+        )

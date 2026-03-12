@@ -173,6 +173,7 @@ def detach(env, dry_run, cdn_account_profile):
     try:
         session = get_aws_session_or_abort()
         config_provider = ConfigProvider(ConfigValidator(session=session))
+        s3_provider = S3Provider(client=session.client("s3"))
         platform_helper_versioning = PlatformHelperVersioning(
             click_io,
             config_provider,
@@ -184,6 +185,7 @@ def detach(env, dry_run, cdn_account_profile):
         cdn_detach = CDNDetach(
             io=click_io,
             config_provider=config_provider,
+            s3_provider=s3_provider,
             terraform_environment=terraform_environment,
         )
         cdn_detach.execute(

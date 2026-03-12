@@ -129,7 +129,7 @@ run "data_load_unit_test" {
   }
 
   assert {
-    condition     = data.aws_iam_policy_document.data_load.statement[1].resources == toset(["arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/default/*", "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/test-app-test-env/*"])
+    condition     = data.aws_iam_policy_document.data_load.statement[1].resources == toset(["arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/default/*", "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/test-app-test-env-cluster/*", "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/test-app-test-env/*"])
     error_message = "Unexpected resources"
   }
 
