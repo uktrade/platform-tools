@@ -13,6 +13,7 @@ from freezegun import freeze_time
 
 from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
+from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
@@ -600,6 +601,23 @@ def test_service_exec_raises_if_platform_cluster_is_not_found():
         "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."
         in str(e.value)
     )
+
+
+def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.describe_tasks.return_value = []
+    service_manager = ServiceManager(**mocks.params())
+
+    with pytest.raises(TaskNotFoundException) as e:
+        service_manager.service_exec(
+            "test-app", "test-env", "test-service", None, None, "my-task-id"
+        )
+
+    # assert (
+    #     "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."
+    #     in str(e.value)
+    # )
 
 
 def test_service_exec_executes_command_with_specified_task_id_command_and_container():

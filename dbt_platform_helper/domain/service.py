@@ -615,16 +615,24 @@ class ServiceManager:
             raise ManagedPlatformClusterNotFoundException(platform_cluster)
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
-        # TODO handle exception cases such as no tasks
 
         cluster = self._get_platform_cluster_for_app_and_env(app, env)
 
+        task_arn = None
+
         if task_id:
-            task_arn = self.ecs_provider.describe_tasks(cluster, [task_id])[0]["taskArn"]
+            tasks = self.ecs_provider.describe_tasks(cluster, [task_id])
+            if tasks:
+                task_arn = tasks[0]["taskArn"]
         else:
-            task_arn = self.ecs_provider.get_ecs_task_arns(
+            task_arns = self.ecs_provider.get_ecs_task_arns(
                 cluster=cluster, service_name=f"{app}-{env}-{service}"
-            )[0]
+            )
+            if task_arns:
+                task_arn = task_arns[0]
+
+        if not task_arn:
+            raise TaskNotFoundException
 
         container = container or service
 
