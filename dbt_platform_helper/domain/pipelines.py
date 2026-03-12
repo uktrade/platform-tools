@@ -211,28 +211,28 @@ class Pipelines:
             yield {
                 "account_name": pipeline_config["account"],
                 "account_id": account_id_map[pipeline_config["account"]],
-                "codepipeline_name": f"{application_name}-{pipeline_name}-environment-pipeline",
+                "name": f"{application_name}-{pipeline_name}-environment-pipeline",
             }
 
     def lock_all_environment_pipelines(self):
-        for instance in self._environment_codepipelines():
+        for codepipeline in self._environment_codepipelines():
             self.io.info(
-                f"Disabling first stage transition of CodePipeline '{instance['codepipeline_name']}' in AWS account '{instance['account_name']}'."
+                f"Disabling first stage transition of CodePipeline '{codepipeline['name']}' in AWS account '{codepipeline['account_name']}'."
             )
             self.codepipeline_provider.disable_stage_transition(
-                account_id=instance["account_id"],
-                pipeline_name=instance["codepipeline_name"],
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
                 from_stage_name="Source",
                 reason=DISABLE_STAGE_TRANSITION_REASON,
             )
 
     def unlock_all_environment_pipelines(self):
-        for instance in self._environment_codepipelines():
+        for codepipeline in self._environment_codepipelines():
             self.io.info(
-                f"(Re)enabling first stage transition of CodePipeline '{instance['codepipeline_name']}' in AWS account '{instance['account_name']}'."
+                f"(Re)enabling first stage transition of CodePipeline '{codepipeline['name']}' in AWS account '{codepipeline['account_name']}'."
             )
             self.codepipeline_provider.enable_stage_transition(
-                account_id=instance["account_id"],
-                pipeline_name=instance["codepipeline_name"],
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
                 from_stage_name="Source",
             )
