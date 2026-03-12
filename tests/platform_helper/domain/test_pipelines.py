@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 from unittest.mock import Mock
+from unittest.mock import call
 from unittest.mock import create_autospec
 from unittest.mock import patch
 
@@ -9,6 +10,7 @@ import pytest
 import yaml
 from freezegun.api import freeze_time
 
+from dbt_platform_helper.constants import DISABLE_STAGE_TRANSITION_REASON
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import (
@@ -20,6 +22,7 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
+from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from tests.platform_helper.domain.test_versioning import PlatformHelperVersioningMocks
@@ -50,6 +53,7 @@ class PipelineMocks:
         self.mock_platform_helper_versioning = PlatformHelperVersioning(
             **platform_helper_versioning_mocks.params()
         )
+        self.mock_codepipeline_provider = Mock(spec=CodePipelineProvider)
 
     def params(self):
         return {
@@ -59,6 +63,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "platform_helper_versioning": self.mock_platform_helper_versioning,
+            "codepipeline_provider": self.mock_codepipeline_provider,
         }
 
 
@@ -417,3 +422,122 @@ def assert_terraform(
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
         assert environment_pipeline_module["pinned_version"] == expected_pinned_version
+
+
+class TestLockUnlock:
+    def test_lock_disables_first_stage_transition_of_all_pipelines(
+        self, fakefs, platform_config_for_env_pipelines
+    ):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+        )
+        mocks = PipelineMocks("test-app")
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.lock_all_environment_pipelines()
+
+        mocks.mock_codepipeline_provider.disable_stage_transition.assert_has_calls(
+            [
+                call(
+                    account_id="1111111111",
+                    pipeline_name="test-app-main-environment-pipeline",
+                    from_stage_name="Source",
+                    reason=DISABLE_STAGE_TRANSITION_REASON,
+                ),
+                call(
+                    account_id="1111111111",
+                    pipeline_name="test-app-another-pipeline-in-same-account-environment-pipeline",
+                    from_stage_name="Source",
+                    reason=DISABLE_STAGE_TRANSITION_REASON,
+                ),
+                call(
+                    account_id="3333333333",
+                    pipeline_name="test-app-prod-main-environment-pipeline",
+                    from_stage_name="Source",
+                    reason=DISABLE_STAGE_TRANSITION_REASON,
+                ),
+            ],
+            any_order=True,
+        )
+        mocks.mock_codepipeline_provider.enable_stage_transition.assert_not_called()
+
+    def test_lock_logs_what_its_doing(self, fakefs, platform_config_for_env_pipelines):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+        )
+        mocks = PipelineMocks("test-app")
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.lock_all_environment_pipelines()
+
+        mocks.io.info.assert_has_calls(
+            [
+                call(
+                    "Disabling first stage transition of CodePipeline 'test-app-main-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                ),
+                call(
+                    "Disabling first stage transition of CodePipeline 'test-app-another-pipeline-in-same-account-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                ),
+                call(
+                    "Disabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
+                ),
+            ],
+            any_order=True,
+        )
+
+    def test_unlock_enables_first_stage_transition_of_all_pipelines(
+        self, fakefs, platform_config_for_env_pipelines
+    ):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+        )
+        mocks = PipelineMocks("test-app")
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        mocks.mock_codepipeline_provider.enable_stage_transition.assert_has_calls(
+            [
+                call(
+                    account_id="1111111111",
+                    pipeline_name="test-app-main-environment-pipeline",
+                    from_stage_name="Source",
+                ),
+                call(
+                    account_id="1111111111",
+                    pipeline_name="test-app-another-pipeline-in-same-account-environment-pipeline",
+                    from_stage_name="Source",
+                ),
+                call(
+                    account_id="3333333333",
+                    pipeline_name="test-app-prod-main-environment-pipeline",
+                    from_stage_name="Source",
+                ),
+            ],
+            any_order=True,
+        )
+        mocks.mock_codepipeline_provider.disable_stage_transition.assert_not_called()
+
+    def test_unlock_logs_what_its_doing(self, fakefs, platform_config_for_env_pipelines):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+        )
+        mocks = PipelineMocks("test-app")
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        mocks.io.info.assert_has_calls(
+            [
+                call(
+                    "(Re)enabling first stage transition of CodePipeline 'test-app-main-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                ),
+                call(
+                    "(Re)enabling first stage transition of CodePipeline 'test-app-another-pipeline-in-same-account-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                ),
+                call(
+                    "(Re)enabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
+                ),
+            ],
+            any_order=True,
+        )

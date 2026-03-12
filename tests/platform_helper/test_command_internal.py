@@ -290,3 +290,19 @@ class TestInternalCDNDetach:
 
         assert result.exit_code == 2, result.output
         assert "Missing option '--env'" in result.output
+
+
+class TestEnvironmentPipelinesLockUnlock:
+    @patch("dbt_platform_helper.commands.internal.Pipelines")
+    def test_lock_calls_domain_method(self, mock_pipelines):
+        result = CliRunner().invoke(internal, ["environment-pipelines", "lock"])
+
+        assert result.exit_code == 0, result.output
+        mock_pipelines.return_value.lock_all_environment_pipelines.assert_called_once()
+
+    @patch("dbt_platform_helper.commands.internal.Pipelines")
+    def test_unlock_calls_domain_method(self, mock_pipelines):
+        result = CliRunner().invoke(internal, ["environment-pipelines", "unlock"])
+
+        assert result.exit_code == 0, result.output
+        mock_pipelines.return_value.unlock_all_environment_pipelines.assert_called_once()

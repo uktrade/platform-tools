@@ -2,6 +2,7 @@ import click
 
 from dbt_platform_helper.domain.cdn_detach import CDNDetach
 from dbt_platform_helper.domain.config import Config
+from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.terraform_environment import TerraformEnvironment
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
@@ -193,3 +194,22 @@ def detach(env, dry_run, cdn_account_profile):
         )
     except PlatformException as err:
         click_io.abort_with_error(str(err))
+
+
+@internal.group(cls=ClickDocOptGroup)
+def environment_pipelines():
+    pass
+
+
+@environment_pipelines.command()
+def lock():
+    config_provider = ConfigProvider(ConfigValidator())
+    pipelines = Pipelines(config_provider=config_provider)
+    pipelines.lock_all_environment_pipelines()
+
+
+@environment_pipelines.command()
+def unlock():
+    config_provider = ConfigProvider(ConfigValidator())
+    pipelines = Pipelines(config_provider=config_provider)
+    pipelines.unlock_all_environment_pipelines()

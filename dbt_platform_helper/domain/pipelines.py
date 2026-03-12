@@ -5,11 +5,13 @@ from pathlib import Path
 from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.constants import DISABLE_STAGE_TRANSITION_REASON
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -29,6 +31,7 @@ class Pipelines:
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         platform_helper_versioning: PlatformHelperVersioning = None,
+        codepipeline_provider: CodePipelineProvider = CodePipelineProvider(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -37,6 +40,7 @@ class Pipelines:
         self.io = io
         self.file_provider = file_provider
         self.platform_helper_versioning = platform_helper_versioning
+        self.codepipeline_provider = codepipeline_provider
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -196,3 +200,40 @@ class Pipelines:
         self.io.info(
             self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
         )
+
+    def lock_all_environment_pipelines(self):
+        platform_config = self.config_provider.get_enriched_config()
+        application_name = platform_config["application"]
+        account_ids = dict(self._map_environment_pipeline_accounts(platform_config))
+
+        pipelines = platform_config.get("environment_pipelines", {})
+        for pipeline_name, pipeline_config in pipelines.items():
+            account_name = pipeline_config["account"]
+            full_pipeline_name = f"{application_name}-{pipeline_name}-environment-pipeline"
+            self.io.info(
+                f"Disabling first stage transition of CodePipeline '{full_pipeline_name}' in AWS account '{account_name}'."
+            )
+            self.codepipeline_provider.disable_stage_transition(
+                account_id=account_ids[account_name],
+                pipeline_name=full_pipeline_name,
+                from_stage_name="Source",
+                reason=DISABLE_STAGE_TRANSITION_REASON,
+            )
+
+    def unlock_all_environment_pipelines(self):
+        platform_config = self.config_provider.get_enriched_config()
+        application_name = platform_config["application"]
+        account_ids = dict(self._map_environment_pipeline_accounts(platform_config))
+
+        pipelines = platform_config.get("environment_pipelines", {})
+        for pipeline_name, pipeline_config in pipelines.items():
+            account_name = pipeline_config["account"]
+            full_pipeline_name = f"{application_name}-{pipeline_name}-environment-pipeline"
+            self.io.info(
+                f"(Re)enabling first stage transition of CodePipeline '{full_pipeline_name}' in AWS account '{account_name}'."
+            )
+            self.codepipeline_provider.enable_stage_transition(
+                account_id=account_ids[account_name],
+                pipeline_name=full_pipeline_name,
+                from_stage_name="Source",
+            )

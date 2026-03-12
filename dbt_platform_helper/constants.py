@@ -73,3 +73,9 @@ STANDARD_PLATFORM_SSO_ROLES = [
 ROUTED_TO_PLATFORM_MODES = ["platform", "dual-deploy-platform-traffic"]
 ROUTED_TO_COPILOT_MODES = ["copilot", "dual-deploy-copilot-traffic"]
 HTTP_SERVICE_TYPES = ["Load Balanced Web Service"]
+
+DISABLE_STAGE_TRANSITION_REASON = """
+Disabled by the Platform Team while your application's CDNs are moved to central management.
+The pipeline will be re-enabled as soon as this work is complete.
+Please **DO NOT** re-enable this yourself without first consulting with the Platform Team.
+""".strip()
