@@ -617,16 +617,34 @@ def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
         )
 
 
-def test_service_exec_raises_if_container_doesnt_exist_for_task():
+def test_service_exec_raises_if_specified_container_doesnt_exist_for_task():
     mocks = ServiceManagerMocks()
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
-    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = []
+    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
     service_manager = ServiceManager(**mocks.params())
 
     with pytest.raises(ContainerNotFoundException) as e:
         service_manager.service_exec(
-            "test-app", "test-env", "test-service", None, "my-container", "my-task-id"
+            "test-app",
+            "test-env",
+            "test-service",
+            None,
+            "my-specified-non-existent-container",
+            "my-task-id",
+        )
+
+
+def test_service_exec_raises_if_main_container_doesnt_exist_for_task():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
+    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["some-random-container"]
+    service_manager = ServiceManager(**mocks.params())
+
+    with pytest.raises(ContainerNotFoundException) as e:
+        service_manager.service_exec(
+            "test-app", "test-env", "test-service", None, None, "my-task-id"
         )
 
     # assert (

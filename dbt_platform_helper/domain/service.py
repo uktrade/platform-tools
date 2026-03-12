@@ -634,13 +634,14 @@ class ServiceManager:
 
         return task_arn
 
-    def _get_valid_container_for_exec(self, container, service, task_arn):
+    def _get_valid_container_for_exec(self, cluster, container, service, task_arn):
         containers_for_task = self.ecs_provider.get_container_names_from_ecs_tasks(
-            task_ids=[task_arn]
+            cluster, task_ids=[task_arn]
         )
-        if container in containers_for_task:
-            return container
-        if service in containers_for_task:
+        if container:
+            if container in containers_for_task:
+                return container
+        elif service in containers_for_task:
             return service
         raise ContainerNotFoundException(container)
 
@@ -650,7 +651,7 @@ class ServiceManager:
 
         task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
 
-        container = self._get_valid_container_for_exec(container, service, task_arn)
+        container = self._get_valid_container_for_exec(cluster, container, service, task_arn)
 
         self.io.info(f"Executing into cluster {cluster}, container {container}, task {task_arn}")
 
