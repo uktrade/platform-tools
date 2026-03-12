@@ -616,6 +616,23 @@ def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
             "test-app", "test-env", "test-service", None, None, "my-task-id"
         )
 
+    assert "Task with ID my-task-id not found in test-app-test-env-cluster cluster." in str(e.value)
+
+
+def test_service_exec_raises_if_no_task_found_for_service():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.get_ecs_task_arns.return_value = []
+    service_manager = ServiceManager(**mocks.params())
+
+    with pytest.raises(TaskNotFoundException) as e:
+        service_manager.service_exec("test-app", "test-env", "test-service", None, None, None)
+
+    assert (
+        "Task not found for service test-app-test-env-test-service in test-app-test-env-cluster cluster."
+        in str(e.value)
+    )
+
 
 def test_service_exec_raises_if_specified_container_doesnt_exist_for_task():
     mocks = ServiceManagerMocks()

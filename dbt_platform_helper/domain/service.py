@@ -630,7 +630,11 @@ class ServiceManager:
                 task_arn = task_arns[0]
 
         if not task_arn:
-            raise TaskNotFoundException
+            if task_id:
+                message = f"Task with ID {task_id} not found in {cluster} cluster."
+            else:
+                message = f"Task not found for service {service_name} in {cluster} cluster."
+            raise TaskNotFoundException(message)
 
         return task_arn
 
@@ -646,7 +650,6 @@ class ServiceManager:
         raise ContainerNotFoundException(container)
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
-
         cluster = self._get_platform_cluster_for_app_and_env(app, env)
 
         task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
