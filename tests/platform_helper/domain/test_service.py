@@ -589,10 +589,17 @@ def test_service_exec_selects_running_task_and_executes_command():
 
 def test_service_exec_raises_if_platform_cluster_is_not_found():
     mocks = ServiceManagerMocks()
-    mocks.ecs_provider.get_cluster_arn_by_name.side_effect = ManagedPlatformClusterNotFoundException
+    mocks.ecs_provider.get_cluster_arn_by_name.side_effect = (
+        ManagedPlatformClusterNotFoundException("test-app-test-env-cluster")
+    )
 
     with pytest.raises(ManagedPlatformClusterNotFoundException) as e:
         ServiceManager(**mocks.params()).service_exec("test-app", "test-env", "test-service")
+
+    assert (
+        "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."
+        in str(e.value)
+    )
 
 
 def test_service_exec_executes_command_with_specified_task_id_command_and_container():
