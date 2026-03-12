@@ -614,10 +614,7 @@ class ServiceManager:
         except NoClusterException:
             raise ManagedPlatformClusterNotFoundException(platform_cluster)
 
-    def service_exec(self, app, env, service, command=None, container=None, task_id=None):
-
-        cluster = self._get_platform_cluster_for_app_and_env(app, env)
-
+    def _get_valid_task_arn_for_exec(self, cluster, task_id, service_name):
         task_arn = None
 
         if task_id:
@@ -626,13 +623,21 @@ class ServiceManager:
                 task_arn = tasks[0]["taskArn"]
         else:
             task_arns = self.ecs_provider.get_ecs_task_arns(
-                cluster=cluster, service_name=f"{app}-{env}-{service}"
+                cluster=cluster, service_name=service_name
             )
             if task_arns:
                 task_arn = task_arns[0]
 
         if not task_arn:
             raise TaskNotFoundException
+
+        return task_arn
+
+    def service_exec(self, app, env, service, command=None, container=None, task_id=None):
+
+        cluster = self._get_platform_cluster_for_app_and_env(app, env)
+
+        task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
 
         container = container or service
 
