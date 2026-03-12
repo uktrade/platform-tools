@@ -11,6 +11,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
+from dbt_platform_helper.domain.service import ContainerNotFoundException
 from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.service import TaskNotFoundException
@@ -570,6 +571,7 @@ def test_monitor_task_events_outputs_events():
 def test_service_exec_selects_running_task_and_executes_command():
     mocks = ServiceManagerMocks()
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
     mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
     mocks.ecs_provider.describe_tasks.return_value = [{"containers": [{"name": "test-service"}]}]
     service_manager = ServiceManager(**mocks.params())
@@ -614,6 +616,19 @@ def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
             "test-app", "test-env", "test-service", None, None, "my-task-id"
         )
 
+
+def test_service_exec_raises_if_container_doesnt_exist_for_task():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
+    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = []
+    service_manager = ServiceManager(**mocks.params())
+
+    with pytest.raises(ContainerNotFoundException) as e:
+        service_manager.service_exec(
+            "test-app", "test-env", "test-service", None, "my-container", "my-task-id"
+        )
+
     # assert (
     #     "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."
     #     in str(e.value)
@@ -625,6 +640,7 @@ def test_service_exec_executes_command_with_specified_task_id_command_and_contai
     mocks.ecs_provider.describe_tasks.return_value = [
         {"containers": [{"name": "test-service"}], "taskArn": "test-task-arn"}
     ]
+    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-container"]
 
     service_manager = ServiceManager(**mocks.params())
 

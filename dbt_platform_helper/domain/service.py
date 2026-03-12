@@ -57,7 +57,8 @@ class ServiceExecException(ServiceManagerException):
 
 
 class ContainerNotFoundException(ServiceExecException):
-    pass
+    def __init__(self, container):
+        super().__init__(f"Container {container} not found.")
 
 
 class TaskNotFoundException(ServiceExecException):
@@ -633,13 +634,23 @@ class ServiceManager:
 
         return task_arn
 
+    def _get_valid_container_for_exec(self, container, service, task_arn):
+        containers_for_task = self.ecs_provider.get_container_names_from_ecs_tasks(
+            task_ids=[task_arn]
+        )
+        if container in containers_for_task:
+            return container
+        if service in containers_for_task:
+            return service
+        raise ContainerNotFoundException(container)
+
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
 
         cluster = self._get_platform_cluster_for_app_and_env(app, env)
 
         task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
 
-        container = container or service
+        container = self._get_valid_container_for_exec(container, service, task_arn)
 
         self.io.info(f"Executing into cluster {cluster}, container {container}, task {task_arn}")
 
