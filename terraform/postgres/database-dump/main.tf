@@ -168,6 +168,13 @@ data "aws_iam_policy_document" "pipeline_access" {
   }
 
   statement {
+    sid       = "AllowECSRead"
+    effect    = "Allow"
+    actions   = ["ecs:DescribeClusters"]
+    resources = ["arn:aws:ecs:${local.region_account}:cluster/${var.application}-*-cluster"]
+  }
+
+  statement {
     sid    = "AllowRunningDumpTask"
     effect = "Allow"
     actions = [

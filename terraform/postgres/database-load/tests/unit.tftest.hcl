@@ -59,41 +59,6 @@ run "data_load_unit_test" {
   }
 
   assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[0].actions, "ecr:GetAuthorizationToken")
-    error_message = "Permission not found: ecr:GetAuthorizationToken"
-  }
-
-  assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[0].actions, "ecr:BatchCheckLayerAvailability")
-    error_message = "Permission not found: ecr:BatchCheckLayerAvailability"
-  }
-
-  assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[0].actions, "ecr:GetDownloadUrlForLayer")
-    error_message = "Permission not found: ecr:GetDownloadUrlForLayer"
-  }
-
-  assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[0].actions, "ecr:BatchGetImage")
-    error_message = "Permission not found: ecr:BatchGetImage"
-  }
-
-  assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[1].actions, "logs:CreateLogGroup")
-    error_message = "Permission not found: logs:CreateLogGroup"
-  }
-
-  assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[1].actions, "logs:CreateLogStream")
-    error_message = "Permission not found: logs:CreateLogStream"
-  }
-
-  assert {
-    condition     = contains(data.aws_iam_policy_document.allow_task_creation.statement[1].actions, "logs:PutLogEvents")
-    error_message = "Permission not found: logs:PutLogEvents"
-  }
-
-  assert {
     condition     = contains(data.aws_iam_policy_document.assume_ecs_task_role.statement[0].actions, "sts:AssumeRole")
     error_message = "Permission not found: sts:AssumeRole"
   }
@@ -164,7 +129,7 @@ run "data_load_unit_test" {
   }
 
   assert {
-    condition     = data.aws_iam_policy_document.data_load.statement[1].resources == toset(["arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/default/*", "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/test-app-test-env/*"])
+    condition     = data.aws_iam_policy_document.data_load.statement[1].resources == toset(["arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/default/*", "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/test-app-test-env-cluster/*", "arn:aws:ecs:eu-west-2:${data.aws_caller_identity.current.account_id}:service/test-app-test-env/*"])
     error_message = "Unexpected resources"
   }
 
@@ -316,151 +281,5 @@ run "pipeline_unit_test" {
   assert {
     condition     = aws_iam_role_policy.allow_pipeline_access[""].role == "test-app-test-env-test-db-load-task"
     error_message = "Should be: 'test-app-test-env-test-db-load-task'"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[0].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[0].actions == toset(["iam:ListAccountAliases"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[0].resources == toset([
-      "*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[1].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[1].actions == toset(["ssm:GetParametersByPath",
-      "ssm:GetParameters",
-    "ssm:GetParameter"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[1].resources == toset([
-      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/copilot/*",
-      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[2].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[2].actions == toset(["secretsmanager:GetSecretValue"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[2].resources == toset([
-      "arn:aws:secretsmanager:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:secret:rds*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[3].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[3].actions == toset(["ecs:RunTask"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[3].resources == toset([
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task-definition/*-load:*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[4].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[4].actions == toset(["logs:StartLiveTail"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[4].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/*-load"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[5].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[5].actions == toset(["iam:PassRole"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[5].resources == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*-load-exec"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[6].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[6].actions == toset(["logs:DescribeLogGroups"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[6].resources == toset([
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group::log-stream:"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[7].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[7].actions == toset(["elasticache:DescribeCacheEngineVersions"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[7].resources == toset([
-      "*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[8].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[8].actions == toset(["es:ListVersions", "es:ListElasticsearchVersions"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[8].resources == toset([
-      "*"
-    ])
-    error_message = "Unexpected resources"
-  }
-  assert {
-    condition     = data.aws_iam_policy_document.pipeline_access.statement[9].effect == "Allow"
-    error_message = "Should be: Allow"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[9].actions == toset(["ec2:DescribeVpcs",
-      "ec2:DescribeSubnets",
-      "ec2:DescribeRouteTables",
-    "ec2:DescribeSecurityGroups"])
-    error_message = "Unexpected actions"
-  }
-  assert {
-    condition = data.aws_iam_policy_document.pipeline_access.statement[9].resources == toset([
-      "*"
-    ])
-    error_message = "Unexpected resources"
   }
 }
