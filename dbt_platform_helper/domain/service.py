@@ -65,6 +65,10 @@ class TaskNotFoundException(ServiceExecException):
     pass
 
 
+class ExecNotAllowedForServiceException(ServiceExecException):
+    pass
+
+
 class ManagedPlatformClusterNotFoundException(ServiceExecException):
     def __init__(self, cluster):
         super().__init__(
@@ -649,7 +653,17 @@ class ServiceManager:
             return service
         raise ContainerNotFoundException(container)
 
+    def service_exec_is_allowed(self, service):
+        # TODO implement
+        return True
+
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
+
+        if not self.service_exec_is_allowed(service):
+            raise ExecNotAllowedForServiceException(
+                "Failed to execute command /bin/sh. Is `exec: true` set in your manifest?"
+            )
+
         cluster = self._get_platform_cluster_for_app_and_env(app, env)
 
         task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
