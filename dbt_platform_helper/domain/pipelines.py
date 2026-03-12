@@ -201,39 +201,38 @@ class Pipelines:
             self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
         )
 
-    def lock_all_environment_pipelines(self):
+    def _environment_codepipelines(self):
         platform_config = self.config_provider.get_enriched_config()
         application_name = platform_config["application"]
-        account_ids = dict(self._map_environment_pipeline_accounts(platform_config))
-
         pipelines = platform_config.get("environment_pipelines", {})
+        account_id_map = dict(self._map_environment_pipeline_accounts(platform_config))
+
         for pipeline_name, pipeline_config in pipelines.items():
-            account_name = pipeline_config["account"]
-            full_pipeline_name = f"{application_name}-{pipeline_name}-environment-pipeline"
+            yield {
+                "account_name": pipeline_config["account"],
+                "account_id": account_id_map[pipeline_config["account"]],
+                "codepipeline_name": f"{application_name}-{pipeline_name}-environment-pipeline",
+            }
+
+    def lock_all_environment_pipelines(self):
+        for instance in self._environment_codepipelines():
             self.io.info(
-                f"Disabling first stage transition of CodePipeline '{full_pipeline_name}' in AWS account '{account_name}'."
+                f"Disabling first stage transition of CodePipeline '{instance['codepipeline_name']}' in AWS account '{instance['account_name']}'."
             )
             self.codepipeline_provider.disable_stage_transition(
-                account_id=account_ids[account_name],
-                pipeline_name=full_pipeline_name,
+                account_id=instance["account_id"],
+                pipeline_name=instance["codepipeline_name"],
                 from_stage_name="Source",
                 reason=DISABLE_STAGE_TRANSITION_REASON,
             )
 
     def unlock_all_environment_pipelines(self):
-        platform_config = self.config_provider.get_enriched_config()
-        application_name = platform_config["application"]
-        account_ids = dict(self._map_environment_pipeline_accounts(platform_config))
-
-        pipelines = platform_config.get("environment_pipelines", {})
-        for pipeline_name, pipeline_config in pipelines.items():
-            account_name = pipeline_config["account"]
-            full_pipeline_name = f"{application_name}-{pipeline_name}-environment-pipeline"
+        for instance in self._environment_codepipelines():
             self.io.info(
-                f"(Re)enabling first stage transition of CodePipeline '{full_pipeline_name}' in AWS account '{account_name}'."
+                f"(Re)enabling first stage transition of CodePipeline '{instance['codepipeline_name']}' in AWS account '{instance['account_name']}'."
             )
             self.codepipeline_provider.enable_stage_transition(
-                account_id=account_ids[account_name],
-                pipeline_name=full_pipeline_name,
+                account_id=instance["account_id"],
+                pipeline_name=instance["codepipeline_name"],
                 from_stage_name="Source",
             )
