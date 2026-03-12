@@ -303,8 +303,7 @@ class ECS:
             return response["tasks"]
         except ClientError as err:
             raise PlatformException(f"Error retrieving ECS tasks: {err}")
-    
-    
+
     def execute(self, cluster, task, container, command=None):
         aws_cli_cmd = [
             "aws",

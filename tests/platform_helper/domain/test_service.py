@@ -11,6 +11,7 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
+from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.application import Application
@@ -586,10 +587,16 @@ def test_service_exec_selects_running_task_and_executes_command():
     )
 
 
+def test_service_exec_raises_if_platform_cluster_is_not_found():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.get_cluster_arn_by_name.side_effect = ManagedPlatformClusterNotFoundException
+
+    with pytest.raises(ManagedPlatformClusterNotFoundException) as e:
+        ServiceManager(**mocks.params()).service_exec("test-app", "test-env", "test-service")
+
+
 def test_service_exec_executes_command_with_specified_task_id_command_and_container():
     mocks = ServiceManagerMocks()
-    # mocks.ecs_provider.get_cluster.return_value = "test-app-test-env-cluster"
-    # mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
     mocks.ecs_provider.describe_tasks.return_value = [
         {"containers": [{"name": "test-service"}], "taskArn": "test-task-arn"}
     ]

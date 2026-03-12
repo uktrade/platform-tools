@@ -26,7 +26,8 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
-from dbt_platform_helper.providers.ecs import ECS, NoClusterException
+from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.environment_variable import (
     EnvironmentVariableProvider,
 )
@@ -45,6 +46,26 @@ DEPLOYMENT_TIMEOUT_SECONDS = 1200
 POLL_INTERVAL_SECONDS = 5
 
 # TODO add schema version to service config
+
+
+class ServiceManagerException(PlatformException):
+    pass
+
+
+class ServiceExecException(ServiceManagerException):
+    pass
+
+
+class ContainerNotFoundException(ServiceExecException):
+    pass
+
+
+class TaskNotFoundException(ServiceExecException):
+    pass
+
+
+class ManagedPlatformClusterNotFoundException(ServiceExecException):
+    pass
 
 
 class ServiceManager:
@@ -582,19 +603,18 @@ class ServiceManager:
         else:
             self.io.info(f"[{timestamp}] {message}")
 
-    
-    
-    def _get_cluster_for_app_and_env(self, app, env):
+    def _get_platform_cluster_for_app_and_env(self, app, env):
         platform_cluster = f"{app}-{env}-cluster"
         try:
             self.ecs_provider.get_cluster_arn_by_name(platform_cluster)
             return platform_cluster
         except NoClusterException:
-            return f"{app}-{env}"
-    
-    
+            raise ManagedPlatformClusterNotFoundException
+
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
-        cluster = self._get_cluster_for_app_and_env(app, env)
+        # TODO handle exception cases such as no tasks
+
+        cluster = self._get_platform_cluster_for_app_and_env(app, env)
 
         if task_id:
             task_arn = self.ecs_provider.describe_tasks(cluster, [task_id])[0]["taskArn"]
