@@ -604,7 +604,7 @@ data "aws_iam_policy_document" "postgres" {
   }
 
   statement {
-    sid    = "AllowCreateServiceLinkedRole"
+    sid    = "AllowCreateRDSServiceLinkedRole"
     effect = "Allow"
 
     actions = [
@@ -618,6 +618,25 @@ data "aws_iam_policy_document" "postgres" {
     condition {
       test     = "StringLike"
       values   = ["rds.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+  }
+
+  statement {
+    sid    = "AllowCreateElastiCacheServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during ElastiCache Subnet Group creation
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/elasticache.amazonaws.com/AWSServiceRoleForElastiCache*"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["elasticache.amazonaws.com"]
       variable = "iam:AWSServiceName"
     }
   }
