@@ -341,9 +341,6 @@ resource "aws_acm_certificate_validation" "certificate_validation" {
   certificate_arn         = aws_acm_certificate.certificate[0].arn
   validation_record_fqdns = [aws_route53_record.cert_validation[0].fqdn]
   depends_on              = [aws_route53_record.cert_validation]
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_route53_record" "cloudfront_domain" {
