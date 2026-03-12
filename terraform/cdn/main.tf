@@ -23,9 +23,6 @@ resource "aws_acm_certificate_validation" "cert-validate" {
   for_each                = local.cdn_domains_list
   certificate_arn         = aws_acm_certificate.certificate[each.key].arn
   validation_record_fqdns = [for record in aws_route53_record.validation-record : record.fqdn]
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 data "aws_route53_zone" "domain-root" {
