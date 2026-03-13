@@ -342,7 +342,7 @@ class TestCDNDetach:
 
 @pytest.fixture
 def mock_environment_tfstate():
-    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/environment.tfstate.json") as f:
+    with open(INPUT_DATA_DIR / "cdn_detach/terraform_state/environment/typical.tfstate.json") as f:
         return json.load(f)
 
 
