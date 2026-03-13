@@ -203,13 +203,21 @@ def environment_pipelines():
 
 @environment_pipelines.command()
 def lock():
-    config_provider = ConfigProvider(ConfigValidator())
-    pipelines = Pipelines(config_provider=config_provider)
-    pipelines.lock_all_environment_pipelines()
+    click_io = ClickIOProvider()
+    try:
+        config_provider = ConfigProvider(ConfigValidator())
+        pipelines = Pipelines(config_provider=config_provider, io=click_io)
+        pipelines.lock_all_environment_pipelines()
+    except PlatformException as err:
+        click_io.abort_with_error(str(err))
 
 
 @environment_pipelines.command()
 def unlock():
-    config_provider = ConfigProvider(ConfigValidator())
-    pipelines = Pipelines(config_provider=config_provider)
-    pipelines.unlock_all_environment_pipelines()
+    click_io = ClickIOProvider()
+    try:
+        config_provider = ConfigProvider(ConfigValidator())
+        pipelines = Pipelines(config_provider=config_provider, io=click_io)
+        pipelines.unlock_all_environment_pipelines()
+    except PlatformException as err:
+        click_io.abort_with_error(str(err))
