@@ -1,4 +1,4 @@
-from datetime import datetime
+from operator import itemgetter
 
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
@@ -10,7 +10,7 @@ class CodePipelineProvider:
         execution_list = client.list_pipeline_executions(pipelineName=pipeline_name)
         latest_execution = max(
             execution_list["pipelineExecutionSummaries"],
-            key=lambda execution: datetime.fromisoformat(execution["startTime"]),
+            key=itemgetter("startTime"),
         )
         return latest_execution["status"]
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import patch
 
 from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
@@ -10,11 +11,11 @@ class TestGetLatestExecutionStatus:
             "pipelineExecutionSummaries": [
                 {
                     "status": "InProgress",
-                    "startTime": "2026-03-06T19:16:31.030000+00:00",
+                    "startTime": datetime.fromisoformat("2026-03-06T19:16:31.030000+00:00"),
                 },
                 {
                     "status": "Succeeded",
-                    "startTime": "2026-03-03T12:14:53.743000+00:00",
+                    "startTime": datetime.fromisoformat("2026-03-03T12:14:53.743000+00:00"),
                 },
             ]
         }
@@ -34,11 +35,11 @@ class TestGetLatestExecutionStatus:
             "pipelineExecutionSummaries": [
                 {
                     "status": "Succeeded",
-                    "startTime": "2026-03-06T19:16:31.030000+00:00",
+                    "startTime": datetime.fromisoformat("2026-03-06T19:16:31.030000+00:00"),
                 },
                 {
                     "status": "InProgress",
-                    "startTime": "2026-03-03T12:14:53.743000+00:00",
+                    "startTime": datetime.fromisoformat("2026-03-03T12:14:53.743000+00:00"),
                 },
             ]
         }
@@ -58,11 +59,11 @@ class TestGetLatestExecutionStatus:
             "pipelineExecutionSummaries": [
                 {
                     "status": "InProgress",
-                    "startTime": "2026-03-03T12:14:53.743000+00:00",
+                    "startTime": datetime.fromisoformat("2026-03-03T12:14:53.743000+00:00"),
                 },
                 {
                     "status": "Succeeded",
-                    "startTime": "2026-03-06T19:16:31.030000+00:00",
+                    "startTime": datetime.fromisoformat("2026-03-06T19:16:31.030000+00:00"),
                 },
             ]
         }
