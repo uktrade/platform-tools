@@ -684,6 +684,10 @@ class ServiceManager:
 
         container = self._get_valid_container_for_exec(cluster, container, service, task_arn)
 
-        self.io.info(f"Executing into cluster {cluster}, container {container}, task {task_arn}")
+        command = command or "/bin/bash"
+
+        self.io.info(
+            f"Running command `{command}` in cluster {cluster}, container {container}, task {task_arn}"
+        )
 
         self.ecs_provider.execute(cluster, task_arn, container, command)

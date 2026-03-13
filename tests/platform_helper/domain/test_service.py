@@ -588,11 +588,11 @@ class TestServiceExecSuccess:
             "test-app-test-env-cluster",
             "task-1",
             "test-service",
-            None,
+            "/bin/bash",
         )
 
         mocks.io.info.assert_called_once_with(
-            "Executing into cluster test-app-test-env-cluster, container test-service, task task-1"
+            "Running command `/bin/bash` in cluster test-app-test-env-cluster, container test-service, task task-1"
         )
 
     def test_service_exec_executes_command_with_specified_task_id_command_and_container(self):
@@ -616,7 +616,7 @@ class TestServiceExecSuccess:
         )
 
         mocks.io.info.assert_called_once_with(
-            "Executing into cluster test-app-test-env-cluster, container test-container, task test-task-arn"
+            "Running command `pwd` in cluster test-app-test-env-cluster, container test-container, task test-task-arn"
         )
 
 

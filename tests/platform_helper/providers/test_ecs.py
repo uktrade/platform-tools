@@ -630,7 +630,9 @@ def test_execute_success(run):
 
     ecs = ECS(ecs_client, None, "myapp", "dev")
 
-    ecs.execute(cluster="myapp-dev-cluster", task=mock_task_arn, container="myservice")
+    ecs.execute(
+        cluster="myapp-dev-cluster", task=mock_task_arn, container="myservice", command="/bin/bash"
+    )
 
     expected_cmd = [
         "aws",
