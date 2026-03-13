@@ -429,7 +429,8 @@ class TestLockUnlock:
         self, fakefs, platform_config_for_env_pipelines
     ):
         fakefs.create_file(
-            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
         )
         mocks = PipelineMocks("test-app")
         pipelines = Pipelines(**mocks.params())
@@ -457,13 +458,13 @@ class TestLockUnlock:
                     reason=DISABLE_STAGE_TRANSITION_REASON,
                 ),
             ],
-            any_order=True,
         )
         mocks.mock_codepipeline_provider.enable_stage_transition.assert_not_called()
 
     def test_lock_logs_what_its_doing(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
-            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
         )
         mocks = PipelineMocks("test-app")
         pipelines = Pipelines(**mocks.params())
@@ -482,14 +483,14 @@ class TestLockUnlock:
                     "Disabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
                 ),
             ],
-            any_order=True,
         )
 
     def test_unlock_enables_first_stage_transition_of_all_pipelines(
         self, fakefs, platform_config_for_env_pipelines
     ):
         fakefs.create_file(
-            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
         )
         mocks = PipelineMocks("test-app")
         pipelines = Pipelines(**mocks.params())
@@ -514,13 +515,13 @@ class TestLockUnlock:
                     from_stage_name="Source",
                 ),
             ],
-            any_order=True,
         )
         mocks.mock_codepipeline_provider.disable_stage_transition.assert_not_called()
 
     def test_unlock_logs_what_its_doing(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
-            PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines)
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
         )
         mocks = PipelineMocks("test-app")
         pipelines = Pipelines(**mocks.params())
@@ -539,5 +540,4 @@ class TestLockUnlock:
                     "(Re)enabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
                 ),
             ],
-            any_order=True,
         )
