@@ -74,10 +74,7 @@ class ExecNotAllowedForServiceException(ServiceExecException):
 
 
 class ManagedPlatformClusterNotFoundException(ServiceExecException):
-    def __init__(self, cluster):
-        super().__init__(
-            f"Cluster not found.  This command is only available for services running on the platform cluster, {cluster}. For services running on the copilot cluster, use the `copilot svc exec` command instead.",
-        )
+    pass
 
 
 class ServiceManager:
@@ -623,7 +620,9 @@ class ServiceManager:
             self.ecs_provider.get_cluster_arn_by_name(platform_cluster)
             return platform_cluster
         except NoClusterException:
-            raise ManagedPlatformClusterNotFoundException(platform_cluster)
+            raise ManagedPlatformClusterNotFoundException(
+                f"Cluster not found.  This command is only available for services running on the platform cluster, {platform_cluster}. For services running on the copilot cluster, use the `copilot svc exec` command instead."
+            )
 
     def _get_valid_task_arn_for_exec(self, cluster, task_id, service_name):
         task_arn = None

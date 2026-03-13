@@ -18,6 +18,7 @@ from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.service import ServiceNotFoundException
 from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
@@ -625,9 +626,7 @@ class TestServiceExecSuccess:
 class TestServiceExecRaises:
     def test_service_exec_raises_if_platform_cluster_is_not_found(self):
         mocks = ServiceManagerMocks()
-        mocks.ecs_provider.get_cluster_arn_by_name.side_effect = (
-            ManagedPlatformClusterNotFoundException("test-app-test-env-cluster")
-        )
+        mocks.ecs_provider.get_cluster_arn_by_name.side_effect = NoClusterException("foo", "bar")
 
         with pytest.raises(ManagedPlatformClusterNotFoundException) as e:
             ServiceManager(**mocks.params()).service_exec("test-app", "test-env", "test-service")
