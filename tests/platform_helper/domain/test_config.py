@@ -605,14 +605,24 @@ class TestConfigMigrate:
 
 
 class TestConfigMarkCDNsManaged:
-    def test_doesnt_add_managed_ingress_to_alb_extension_yet(self):
+    def test_adds_managed_ingress_to_alb_extension(self):
         input = {
             "environments": {"my-env": {}},
             "extensions": {
                 "my-ext": {"type": "alb"},
             },
         }
-        expected_output = deepcopy(input)
+        expected_output = {
+            "environments": {"my-env": {}},
+            "extensions": {
+                "my-ext": {
+                    "type": "alb",
+                    "environments": {
+                        "my-env": {"managed_ingress": True},
+                    },
+                },
+            },
+        }
 
         config_mocks = ConfigMocks()
         config_domain = Config(**config_mocks.params())
@@ -700,7 +710,12 @@ class TestConfigMarkCDNsManaged:
         expected_output = {
             "environments": {"my-env": {}},
             "extensions": {
-                "my-alb-ext": {"type": "alb"},
+                "my-alb-ext": {
+                    "type": "alb",
+                    "environments": {
+                        "my-env": {"managed_ingress": True},
+                    },
+                },
                 "my-s3-ext": {"type": "s3"},
                 "my-static-s3-ext": {
                     "type": "s3",

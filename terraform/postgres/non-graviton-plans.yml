@@ -5,31 +5,31 @@
 NO-PLAN:
   volume_size: 100
   multi_az: false
-  instance: db.t4g.micro
+  instance: db.t3.micro
 
 # 2v CPU, 1GB RAM, 100GB Storage
 tiny:
   volume_size: 100
   multi_az: false
-  instance: db.t4g.micro
+  instance: db.t3.micro
 
 # 2v CPU, 2GB RAM, 100GB Storage
 small:
   volume_size: 100
   multi_az: false
-  instance: db.t4g.small
+  instance: db.t3.small
 
 # 2v CPU, 2GB RAM, 100GB Storage, multi AZ
 small-ha:
   volume_size: 100
   multi_az: true
-  instance: db.t4g.small
+  instance: db.t3.small
 
 # 2v CPU, 2GB RAM, 100GB Storage, multi AZ, high IOPS
 small-high-io:
   volume_size: 100
   multi_az: true
-  instance: db.t4g.small
+  instance: db.t3.small
   storage_type: io2
   iops: 40000
 
@@ -37,19 +37,19 @@ small-high-io:
 medium:
   volume_size: 100
   multi_az: false
-  instance: db.t4g.medium
+  instance: db.t3.medium
 
 # # 2v CPU, 4GB RAM, 100GB Storage, multi AZ
 medium-ha:
   volume_size: 100
   multi_az: true
-  instance: db.t4g.medium
+  instance: db.t3.medium
 
 # 2v CPU, 4GB RAM, 100GB Storage, multi AZ, high IOPS
 medium-high-io:
   volume_size: 100
   multi_az: true
-  instance: db.t4g.medium
+  instance: db.t3.medium
   storage_type: io2
   iops: 40000
 
@@ -57,19 +57,19 @@ medium-high-io:
 large:
   volume_size: 100
   multi_az: false
-  instance: db.m8g.large
+  instance: db.m5.large
 
 # 2v CPU, 8GB RAM, 100GB Storage, multi AZ
 large-ha:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.large
+  instance: db.m5.large
 
 # 2v CPU, 8GB RAM, 100GB Storage, multi AZ, high IOPS
 large-high-io:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.large
+  instance: db.m5.large
   storage_type: io2
   iops: 40000
 
@@ -77,19 +77,19 @@ large-high-io:
 x-large:
   volume_size: 100
   multi_az: false
-  instance: db.m8g.xlarge
+  instance: db.m5.xlarge
 
 # 4v CPU, 16GB RAM, 100GB Storage, multi AZ
 x-large-ha:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.xlarge
+  instance: db.m5.xlarge
 
 # 4v CPU, 16GB RAM, 100GB Storage, multi AZ, high IOPS
 x-large-high-io:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.xlarge
+  instance: db.m5.xlarge
   storage_type: io2
   iops: 40000
 
@@ -97,19 +97,19 @@ x-large-high-io:
 2x-large:
   volume_size: 100
   multi_az: false
-  instance: db.m8g.2xlarge
+  instance: db.m5.2xlarge
 
 # 8v CPU, 32GB RAM, 100GB Storage, multi AZ
 2x-large-ha:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.2xlarge
+  instance: db.m5.2xlarge
 
 # 8v CPU, 32GB RAM, 100GB Storage, multi AZ, high IOPS
 2x-large-high-io:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.2xlarge
+  instance: db.m5.2xlarge
   storage_type: io2
   iops: 40000
 
@@ -117,18 +117,18 @@ x-large-high-io:
 4x-large:
   volume_size: 100
   multi_az: false
-  instance: db.m8g.4xlarge
+  instance: db.m5.4xlarge
 
 # 16v CPU, 64GB RAM, 100GB Storage, multi AZ
 4x-large-ha:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.4xlarge
+  instance: db.m5.4xlarge
 
 # 16v CPU, 64GB RAM, 100GB Storage, multi AZ, high IOPS
 4x-large-high-io:
   volume_size: 100
   multi_az: true
-  instance: db.m8g.4xlarge
+  instance: db.m5.4xlarge
   storage_type: io2
   iops: 40000
