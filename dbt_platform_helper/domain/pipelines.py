@@ -5,11 +5,14 @@ from pathlib import Path
 from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.constants import DISABLE_STAGE_TRANSITION_REASON
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -17,6 +20,21 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.template import setup_templates
+
+
+class PipelineInProgressException(PlatformException):
+    def __init__(self, account_name, pipeline_name):
+        self.account_name = account_name
+        self.pipeline_name = pipeline_name
+
+    def __str__(self):
+        return (
+            f"CodePipeline {self.pipeline_name} in AWS account "
+            f"{self.account_name} is currently running, and therefore may "
+            "interfere with CDN detachment even if future executions were to "
+            "be inhibited. Please stop all executions or wait for them to finish "
+            "before trying this command again."
+        )
 
 
 class Pipelines:
@@ -29,6 +47,7 @@ class Pipelines:
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         platform_helper_versioning: PlatformHelperVersioning = None,
+        codepipeline_provider: CodePipelineProvider = CodePipelineProvider(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -37,6 +56,7 @@ class Pipelines:
         self.io = io
         self.file_provider = file_provider
         self.platform_helper_versioning = platform_helper_versioning
+        self.codepipeline_provider = codepipeline_provider
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -196,3 +216,81 @@ class Pipelines:
         self.io.info(
             self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
         )
+
+    def _environment_codepipelines(self):
+        platform_config = self.config_provider.get_enriched_config()
+        application_name = platform_config["application"]
+        pipelines = platform_config.get("environment_pipelines", {})
+        account_id_map = dict(self._map_environment_pipeline_accounts(platform_config))
+
+        for pipeline_name, pipeline_config in pipelines.items():
+            yield {
+                "account_name": pipeline_config["account"],
+                "account_id": account_id_map[pipeline_config["account"]],
+                "name": f"{application_name}-{pipeline_name}-environment-pipeline",
+            }
+
+    def lock_all_environment_pipelines(self):
+        for codepipeline in self._environment_codepipelines():
+            running_executions = self.codepipeline_provider.get_in_progress_executions(
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
+            )
+            if running_executions:
+                raise PipelineInProgressException(
+                    account_name=codepipeline["account_name"], pipeline_name=codepipeline["name"]
+                )
+
+        for codepipeline in self._environment_codepipelines():
+            self.io.info(
+                f"Disabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
+            )
+            self.codepipeline_provider.disable_first_stage_transition(
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
+                reason=DISABLE_STAGE_TRANSITION_REASON,
+            )
+
+    def unlock_all_environment_pipelines(self):
+        queued_executions = []
+        for codepipeline in self._environment_codepipelines():
+            is_unlocked = self.codepipeline_provider.is_first_stage_transition_enabled(
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
+            )
+            is_locked = not is_unlocked
+            if is_locked:
+                pipeline_queued_executions = self.codepipeline_provider.get_in_progress_executions(
+                    account_id=codepipeline["account_id"],
+                    pipeline_name=codepipeline["name"],
+                )
+                if pipeline_queued_executions:
+                    queued_executions.append((codepipeline, pipeline_queued_executions))
+
+        if queued_executions:
+            self.io.warn(
+                "One or more pipelines have queued executions that will start running once the pipelines are unlocked."
+            )
+            self.io.info("Details:")
+            for codepipeline, pipeline_queued_executions in queued_executions:
+                self.io.info(
+                    f"  {codepipeline['name']} (in AWS account {codepipeline['account_name']}):"
+                )
+                for execution in pipeline_queued_executions:
+                    short_id = execution["pipelineExecutionId"].split("-")[0]
+                    self.io.info(
+                        f"    Execution {short_id} (triggered by {execution['trigger']['triggerDetail']})"
+                    )
+            self.io.info("")
+            if not self.io.confirm("Proceed with unlock?"):
+                return
+            self.io.info("")
+
+        for codepipeline in self._environment_codepipelines():
+            self.io.info(
+                f"(Re)enabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
+            )
+            self.codepipeline_provider.enable_first_stage_transition(
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
+            )
