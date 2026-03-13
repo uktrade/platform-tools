@@ -705,10 +705,10 @@ def test_service_exec_raises_if_service_doesnt_exist():
     with pytest.raises(ServiceNotFoundException) as e:
         service_manager.service_exec("test-app", "test-env", "test-service")
 
-    # assert (
-    #     "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."
-    #     in str(e.value)
-    # )
+    assert (
+        "Service test-service not found in the test-app application's test-env environment."
+        in str(e.value)
+    )
 
 
 def test_service_exec_executes_command_with_specified_task_id_command_and_container():
