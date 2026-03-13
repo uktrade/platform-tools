@@ -31,9 +31,9 @@ def service():
 @click.option("--task-id", help="Optional. ID of the task you want to exec in.", required=False)
 def exec(app: str, env: str, name: str, command: str, container: str, task_id: str):
     """Opens a shell for a given container."""
-    application = load_application(app=app, env=env)
 
     try:
+        application = load_application(app=app, env=env)
         ecs_provider: ECS = ECS(
             application.environments[env].session.client("ecs"),
             None,
