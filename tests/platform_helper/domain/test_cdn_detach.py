@@ -394,15 +394,19 @@ class TestCDNDetachLogic:
         assert resource_addrs == expected_resource_addrs
 
     @pytest.mark.parametrize(
-        "ingress_tfstate_filename,expected_data_filename",
+        "env_tfstate_filename,ingress_tfstate_filename,expected_data_filename",
         [
-            ("empty.tfstate.json", "empty_tfstate.yaml"),
-            ("partial.tfstate.json", "partial_tfstate.yaml"),
+            ("typical.tfstate.json", "empty.tfstate.json", "empty_tfstate.yaml"),
+            ("typical.tfstate.json", "partial.tfstate.json", "partial_tfstate.yaml"),
         ],
     )
     def test_resources_not_in_ingress_tfstate(
-        self, mock_environment_tfstate, ingress_tfstate_filename, expected_data_filename
+        self, env_tfstate_filename, ingress_tfstate_filename, expected_data_filename
     ):
+        with open(
+            INPUT_DATA_DIR / "cdn_detach/terraform_state/environment" / env_tfstate_filename
+        ) as f:
+            mock_environment_tfstate = json.load(f)
         with open(
             INPUT_DATA_DIR / "cdn_detach/terraform_state/ingress" / ingress_tfstate_filename
         ) as f:
