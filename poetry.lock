@@ -1283,18 +1283,18 @@ files = [
 
 [[package]]
 name = "joserfc"
-version = "1.0.2"
+version = "1.6.3"
 description = "The ultimate Python library for JOSE RFCs, including JWS, JWE, JWK, JWA, JWT"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "joserfc-1.0.2-py3-none-any.whl", hash = "sha256:8d3e0253b0b24aeaf049d7bf7a847040dd6462de24cefd0c14abfc8b353f9619"},
-    {file = "joserfc-1.0.2.tar.gz", hash = "sha256:f3c4efa35a62fc100097e4bec2584f5fd21b878eee3eb5324bc9b37d2969b2a4"},
+    {file = "joserfc-1.6.3-py3-none-any.whl", hash = "sha256:6beab3635358cbc565cb94fb4c53d0557e6d10a15b933e2134939351590bda9a"},
+    {file = "joserfc-1.6.3.tar.gz", hash = "sha256:c00c2830db969b836cba197e830e738dd9dda0955f1794e55d3c636f17f5c9a6"},
 ]
 
 [package.dependencies]
-cryptography = "*"
+cryptography = ">=45.0.1"
 
 [package.extras]
 drafts = ["pycryptodome"]
@@ -1615,14 +1615,14 @@ tests = ["pytest (>=4.6)"]
 
 [[package]]
 name = "multipart"
-version = "1.2.1"
+version = "1.2.2"
 description = "Parser for multipart/form-data"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "multipart-1.2.1-py3-none-any.whl", hash = "sha256:c03dc203bc2e67f6b46a599467ae0d87cf71d7530504b2c1ff4a9ea21d8b8c8c"},
-    {file = "multipart-1.2.1.tar.gz", hash = "sha256:829b909b67bc1ad1c6d4488fcdc6391c2847842b08323addf5200db88dbe9480"},
+    {file = "multipart-1.2.2-py3-none-any.whl", hash = "sha256:8379020c484e94e511b4d948432441362dbcf3d71cdb48f59856f2417a3eae09"},
+    {file = "multipart-1.2.2.tar.gz", hash = "sha256:4b5596e533f4b859c6efb208897b9a4198776a2ef6951b28cea64eca1a9345af"},
 ]
 
 [package.extras]
