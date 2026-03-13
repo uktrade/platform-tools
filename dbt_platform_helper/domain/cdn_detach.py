@@ -94,14 +94,17 @@ class CDNDetachLogic:
     def is_same_resource(res1, res2):
         if res1["type"] != res2["type"]:
             return False
-        try:
-            return res1["identity"] == res2["identity"]
-        except KeyError:
-            pass
-        try:
-            return res1["attributes"]["arn"] == res2["attributes"]["arn"]
-        except KeyError:
-            pass
+        identity1 = res1.get("identity")
+        identity2 = res2.get("identity")
+        if identity1 and identity2:
+            if res1["type"] == "aws_route53_record":
+                identity1["name"] = identity1["name"].rstrip(".")
+                identity2["name"] = identity2["name"].rstrip(".")
+            return identity1 == identity2
+        arn1 = res1.get("attributes", {}).get("arn")
+        arn2 = res2.get("attributes", {}).get("arn")
+        if arn1 and arn2:
+            return arn1 == arn2
         if res1["type"] == "aws_cloudfront_monitoring_subscription":
             return res1["attributes"]["id"] == res2["attributes"]["id"]
         raise NotImplementedError(f"don't know how to compare resources of type {res1['type']}")
