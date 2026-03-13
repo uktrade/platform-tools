@@ -476,13 +476,13 @@ class TestLockUnlock:
         mocks.io.info.assert_has_calls(
             [
                 call(
-                    "Disabling first stage transition of CodePipeline 'test-app-main-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                    "Disabling first stage transition of CodePipeline test-app-main-environment-pipeline in AWS account platform-sandbox-test."
                 ),
                 call(
-                    "Disabling first stage transition of CodePipeline 'test-app-another-pipeline-in-same-account-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                    "Disabling first stage transition of CodePipeline test-app-another-pipeline-in-same-account-environment-pipeline in AWS account platform-sandbox-test."
                 ),
                 call(
-                    "Disabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
+                    "Disabling first stage transition of CodePipeline test-app-prod-main-environment-pipeline in AWS account platform-prod-test."
                 ),
             ],
         )
@@ -506,8 +506,8 @@ class TestLockUnlock:
             pipelines.lock_all_environment_pipelines()
 
         assert str(e.value) == (
-            "CodePipeline 'test-app-main-environment-pipeline' in AWS account "
-            "'platform-sandbox-test' is currently running, and therefore may "
+            "CodePipeline test-app-main-environment-pipeline in AWS account "
+            "platform-sandbox-test is currently running, and therefore may "
             "interfere with CDN detachment even if future executions were to "
             "be inhibited. Please stop the pipeline or wait for it to finish "
             "before trying this command again."
@@ -559,13 +559,13 @@ class TestLockUnlock:
         mocks.io.info.assert_has_calls(
             [
                 call(
-                    "(Re)enabling first stage transition of CodePipeline 'test-app-main-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                    "(Re)enabling first stage transition of CodePipeline test-app-main-environment-pipeline in AWS account platform-sandbox-test."
                 ),
                 call(
-                    "(Re)enabling first stage transition of CodePipeline 'test-app-another-pipeline-in-same-account-environment-pipeline' in AWS account 'platform-sandbox-test'."
+                    "(Re)enabling first stage transition of CodePipeline test-app-another-pipeline-in-same-account-environment-pipeline in AWS account platform-sandbox-test."
                 ),
                 call(
-                    "(Re)enabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
+                    "(Re)enabling first stage transition of CodePipeline test-app-prod-main-environment-pipeline in AWS account platform-prod-test."
                 ),
             ],
         )

@@ -29,8 +29,8 @@ class PipelineInProgressException(PlatformException):
 
     def __str__(self):
         return (
-            f"CodePipeline '{self.pipeline_name}' in AWS account "
-            f"'{self.account_name}' is currently running, and therefore may "
+            f"CodePipeline {self.pipeline_name} in AWS account "
+            f"{self.account_name} is currently running, and therefore may "
             "interfere with CDN detachment even if future executions were to "
             "be inhibited. Please stop the pipeline or wait for it to finish "
             "before trying this command again."
@@ -243,7 +243,7 @@ class Pipelines:
 
         for codepipeline in self._environment_codepipelines():
             self.io.info(
-                f"Disabling first stage transition of CodePipeline '{codepipeline['name']}' in AWS account '{codepipeline['account_name']}'."
+                f"Disabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
             )
             self.codepipeline_provider.disable_stage_transition(
                 account_id=codepipeline["account_id"],
@@ -255,7 +255,7 @@ class Pipelines:
     def unlock_all_environment_pipelines(self):
         for codepipeline in self._environment_codepipelines():
             self.io.info(
-                f"(Re)enabling first stage transition of CodePipeline '{codepipeline['name']}' in AWS account '{codepipeline['account_name']}'."
+                f"(Re)enabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
             )
             self.codepipeline_provider.enable_stage_transition(
                 account_id=codepipeline["account_id"],
