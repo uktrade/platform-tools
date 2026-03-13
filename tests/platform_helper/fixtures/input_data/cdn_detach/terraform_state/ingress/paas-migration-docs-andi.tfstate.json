@@ -1,0 +1,54 @@
+{
+  "version": 4,
+  "terraform_version": "1.12.2",
+  "serial": 10,
+  "lineage": "3a4c6b29-b9df-4a63-baf3-71707ae5082a",
+  "outputs": {},
+  "resources": [
+    {
+      "module": "module.public_alb[\"andi.paas-migrations.readme.uktrade.digital\"].module.ssl_certificate",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "certificate_validation",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 2,
+          "attributes": {
+            "alias": [],
+            "allow_overwrite": null,
+            "cidr_routing_policy": [],
+            "failover_routing_policy": [],
+            "fqdn": "_3e7228851a913801bc35fe95de3737ef.andi.paas-migrations.readme.uktrade.digital",
+            "geolocation_routing_policy": [],
+            "geoproximity_routing_policy": [],
+            "health_check_id": "",
+            "id": "Z08826231Y500UYD6EJOI__3e7228851a913801bc35fe95de3737ef.andi.paas-migrations.readme.uktrade.digital._CNAME",
+            "latency_routing_policy": [],
+            "multivalue_answer_routing_policy": false,
+            "name": "_3e7228851a913801bc35fe95de3737ef.andi.paas-migrations.readme.uktrade.digital",
+            "records": [
+              "_e84b11e373acaedc922800a0dc19e3db.jkddzztszm.acm-validations.aws."
+            ],
+            "set_identifier": "",
+            "timeouts": null,
+            "ttl": 300,
+            "type": "CNAME",
+            "weighted_routing_policy": [],
+            "zone_id": "Z08826231Y500UYD6EJOI"
+          },
+          "sensitive_attributes": [],
+          "identity_schema_version": 0,
+          "identity": {
+            "account_id": "112233445566",
+            "name": "_3e7228851a913801bc35fe95de3737ef.andi.paas-migrations.readme.uktrade.digital",
+            "set_identifier": null,
+            "type": "CNAME",
+            "zone_id": "Z08826231Y500UYD6EJOI"
+          }
+        }
+      ]
+    }
+  ]
+}
+

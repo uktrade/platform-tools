@@ -97,6 +97,9 @@ class CDNDetachLogic:
         identity1 = res1.get("identity")
         identity2 = res2.get("identity")
         if identity1 and identity2:
+            if res1["type"] == "aws_route53_record":
+                identity1["name"] = identity1["name"].rstrip(".")
+                identity2["name"] = identity2["name"].rstrip(".")
             return identity1 == identity2
         arn1 = res1.get("attributes", {}).get("arn")
         arn2 = res2.get("attributes", {}).get("arn")

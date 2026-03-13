@@ -398,6 +398,11 @@ class TestCDNDetachLogic:
         [
             ("typical.tfstate.json", "empty.tfstate.json", "empty_tfstate.yaml"),
             ("typical.tfstate.json", "partial.tfstate.json", "partial_tfstate.yaml"),
+            (
+                "paas-migration-docs-andi.tfstate.json",
+                "paas-migration-docs-andi.tfstate.json",
+                "none.yaml",
+            ),
         ],
     )
     def test_resources_not_in_ingress_tfstate(
