@@ -61,8 +61,8 @@ class ServiceNotFoundException(ServiceExecException):
 
 
 class ContainerNotFoundException(ServiceExecException):
-    def __init__(self, container):
-        super().__init__(f"Container {container} not found.")
+    def __init__(self, container, possible_containers):
+        super().__init__(f"Container {container} not found. Options are {possible_containers}")
 
 
 class TaskNotFoundException(ServiceExecException):
@@ -657,7 +657,9 @@ class ServiceManager:
                 return container
         elif service in containers_for_task:
             return service
-        raise ContainerNotFoundException(container)
+        
+        unmatching_container = container or service
+        raise ContainerNotFoundException(unmatching_container, containers_for_task)
 
     def service_exec_is_allowed(self, app, env, service):
         service_details = self.ecs_provider.describe_service(service, env, app)
