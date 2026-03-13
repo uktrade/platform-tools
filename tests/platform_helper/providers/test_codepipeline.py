@@ -119,16 +119,20 @@ def test_get_in_progress_executions(mock_get_aws_client):
 
 
 @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
-def test_disable_stage_transition(mock_get_aws_client):
+def test_disable_first_stage_transition(mock_get_aws_client):
+    mock_get_aws_client.return_value.get_pipeline.return_value = {
+        "pipeline": {"stages": [{"name": "firststage"}]},
+    }
+
     provider = CodePipelineProvider()
 
-    provider.disable_stage_transition(
+    provider.disable_first_stage_transition(
         account_id="111111111111",
         pipeline_name="mypipeline",
-        from_stage_name="firststage",
         reason="the reason",
     )
 
+    mock_get_aws_client.return_value.get_pipeline.assert_called_once_with(name="mypipeline")
     mock_get_aws_client.return_value.disable_stage_transition.assert_called_once_with(
         pipelineName="mypipeline",
         stageName="firststage",
@@ -138,13 +142,16 @@ def test_disable_stage_transition(mock_get_aws_client):
 
 
 @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
-def test_enable_stage_transition(mock_get_aws_client):
+def test_enable_first_stage_transition(mock_get_aws_client):
+    mock_get_aws_client.return_value.get_pipeline.return_value = {
+        "pipeline": {"stages": [{"name": "firststage"}]},
+    }
+
     provider = CodePipelineProvider()
 
-    provider.enable_stage_transition(
-        account_id="111111111111", pipeline_name="mypipeline", from_stage_name="firststage"
-    )
+    provider.enable_first_stage_transition(account_id="111111111111", pipeline_name="mypipeline")
 
+    mock_get_aws_client.return_value.get_pipeline.assert_called_once_with(name="mypipeline")
     mock_get_aws_client.return_value.enable_stage_transition.assert_called_once_with(
         pipelineName="mypipeline",
         stageName="firststage",

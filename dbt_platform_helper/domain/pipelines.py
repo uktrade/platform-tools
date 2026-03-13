@@ -245,10 +245,9 @@ class Pipelines:
             self.io.info(
                 f"Disabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
             )
-            self.codepipeline_provider.disable_stage_transition(
+            self.codepipeline_provider.disable_first_stage_transition(
                 account_id=codepipeline["account_id"],
                 pipeline_name=codepipeline["name"],
-                from_stage_name="Source",
                 reason=DISABLE_STAGE_TRANSITION_REASON,
             )
 
@@ -291,8 +290,7 @@ class Pipelines:
             self.io.info(
                 f"(Re)enabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
             )
-            self.codepipeline_provider.enable_stage_transition(
+            self.codepipeline_provider.enable_first_stage_transition(
                 account_id=codepipeline["account_id"],
                 pipeline_name=codepipeline["name"],
-                from_stage_name="Source",
             )

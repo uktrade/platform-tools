@@ -21,18 +21,22 @@ class CodePipelineProvider:
             x for x in execution_list["pipelineExecutionSummaries"] if x["status"] == "InProgress"
         ]
 
-    def disable_stage_transition(self, account_id, pipeline_name, from_stage_name, reason):
-        self._get_aws_client(account_id).disable_stage_transition(
+    def disable_first_stage_transition(self, account_id, pipeline_name, reason):
+        client = self._get_aws_client(account_id)
+        first_stage_name = client.get_pipeline(name=pipeline_name)["pipeline"]["stages"][0]["name"]
+        client.disable_stage_transition(
             pipelineName=pipeline_name,
-            stageName=from_stage_name,
+            stageName=first_stage_name,
             transitionType="Outbound",
             reason=reason,
         )
 
-    def enable_stage_transition(self, account_id, pipeline_name, from_stage_name):
-        self._get_aws_client(account_id).enable_stage_transition(
+    def enable_first_stage_transition(self, account_id, pipeline_name):
+        client = self._get_aws_client(account_id)
+        first_stage_name = client.get_pipeline(name=pipeline_name)["pipeline"]["stages"][0]["name"]
+        client.enable_stage_transition(
             pipelineName=pipeline_name,
-            stageName=from_stage_name,
+            stageName=first_stage_name,
             transitionType="Outbound",
         )
 

@@ -441,29 +441,26 @@ class TestLockUnlock:
 
         pipelines.lock_all_environment_pipelines()
 
-        mocks.mock_codepipeline_provider.disable_stage_transition.assert_has_calls(
+        mocks.mock_codepipeline_provider.disable_first_stage_transition.assert_has_calls(
             [
                 call(
                     account_id="1111111111",
                     pipeline_name="test-app-main-environment-pipeline",
-                    from_stage_name="Source",
                     reason=DISABLE_STAGE_TRANSITION_REASON,
                 ),
                 call(
                     account_id="1111111111",
                     pipeline_name="test-app-another-pipeline-in-same-account-environment-pipeline",
-                    from_stage_name="Source",
                     reason=DISABLE_STAGE_TRANSITION_REASON,
                 ),
                 call(
                     account_id="3333333333",
                     pipeline_name="test-app-prod-main-environment-pipeline",
-                    from_stage_name="Source",
                     reason=DISABLE_STAGE_TRANSITION_REASON,
                 ),
             ],
         )
-        mocks.mock_codepipeline_provider.enable_stage_transition.assert_not_called()
+        mocks.mock_codepipeline_provider.enable_first_stage_transition.assert_not_called()
 
     def test_lock_logs_what_its_doing(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
@@ -527,26 +524,23 @@ class TestLockUnlock:
 
         pipelines.unlock_all_environment_pipelines()
 
-        mocks.mock_codepipeline_provider.enable_stage_transition.assert_has_calls(
+        mocks.mock_codepipeline_provider.enable_first_stage_transition.assert_has_calls(
             [
                 call(
                     account_id="1111111111",
                     pipeline_name="test-app-main-environment-pipeline",
-                    from_stage_name="Source",
                 ),
                 call(
                     account_id="1111111111",
                     pipeline_name="test-app-another-pipeline-in-same-account-environment-pipeline",
-                    from_stage_name="Source",
                 ),
                 call(
                     account_id="3333333333",
                     pipeline_name="test-app-prod-main-environment-pipeline",
-                    from_stage_name="Source",
                 ),
             ],
         )
-        mocks.mock_codepipeline_provider.disable_stage_transition.assert_not_called()
+        mocks.mock_codepipeline_provider.disable_first_stage_transition.assert_not_called()
 
     def test_unlock_logs_what_its_doing(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
@@ -638,7 +632,7 @@ class TestUnlockConfirmation:
 
         mocks.io.warn.assert_called_once()
         mocks.io.confirm.assert_called_once_with("Proceed with unlock?")
-        mocks.mock_codepipeline_provider.enable_stage_transition.assert_called()
+        mocks.mock_codepipeline_provider.enable_first_stage_transition.assert_called()
 
     def test_aborts_if_user_answers_no(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
@@ -656,7 +650,7 @@ class TestUnlockConfirmation:
 
         mocks.io.warn.assert_called_once()
         mocks.io.confirm.assert_called_once_with("Proceed with unlock?")
-        mocks.mock_codepipeline_provider.enable_stage_transition.assert_not_called()
+        mocks.mock_codepipeline_provider.enable_first_stage_transition.assert_not_called()
 
     def test_only_locked_pipelines_are_checked_for_queued_executions(
         self, fakefs, platform_config_for_env_pipelines
