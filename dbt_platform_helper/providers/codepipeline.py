@@ -18,7 +18,9 @@ class CodePipelineProvider:
         client = self._get_aws_client(account_id)
         execution_list = client.list_pipeline_executions(pipelineName=pipeline_name)
         return [
-            x for x in execution_list["pipelineExecutionSummaries"] if x["status"] == "InProgress"
+            x
+            for x in execution_list["pipelineExecutionSummaries"]
+            if x["status"] in ("InProgress", "Stopping")
         ]
 
     def disable_first_stage_transition(self, account_id, pipeline_name, reason):

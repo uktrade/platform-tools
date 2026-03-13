@@ -94,7 +94,7 @@ def test_get_in_progress_executions(mock_get_aws_client):
             },
             {
                 "pipelineExecutionId": "1bdcce6f-8d60-4f26-bfee-d5cddcc894ab",
-                "status": "InProgress",
+                "status": "Stopping",
             },
         ]
     }
@@ -113,7 +113,7 @@ def test_get_in_progress_executions(mock_get_aws_client):
         },
         {
             "pipelineExecutionId": "1bdcce6f-8d60-4f26-bfee-d5cddcc894ab",
-            "status": "InProgress",
+            "status": "Stopping",
         },
     ]
 
