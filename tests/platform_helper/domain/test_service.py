@@ -15,6 +15,7 @@ from dbt_platform_helper.domain.service import ContainerNotFoundException
 from dbt_platform_helper.domain.service import ExecNotAllowedForServiceException
 from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
+from dbt_platform_helper.domain.service import ServiceNotFoundException
 from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.utils.application import Application
@@ -691,6 +692,18 @@ def test_service_exec_raises_if_main_container_doesnt_exist_for_task():
         service_manager.service_exec(
             "test-app", "test-env", "test-service", None, None, "my-task-id"
         )
+
+
+def test_service_exec_raises_if_service_doesnt_exist():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = None
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
+    mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["some-random-container"]
+    service_manager = ServiceManager(**mocks.params())
+
+    with pytest.raises(ServiceNotFoundException) as e:
+        service_manager.service_exec("test-app", "test-env", "test-service")
 
     # assert (
     #     "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."

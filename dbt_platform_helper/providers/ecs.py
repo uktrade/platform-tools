@@ -291,7 +291,10 @@ class ECS:
                     f"{application}-{environment}-{service}",
                 ],
             )
-            return service_response["services"][0]
+            services = service_response.get("services")
+            if services:
+                return services[0]
+
         except ClientError as err:
             raise PlatformException(f"Error retrieving ECS service: {err}")
 

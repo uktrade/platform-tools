@@ -56,6 +56,10 @@ class ServiceExecException(ServiceManagerException):
     pass
 
 
+class ServiceNotFoundException(ServiceExecException):
+    pass
+
+
 class ContainerNotFoundException(ServiceExecException):
     def __init__(self, container):
         super().__init__(f"Container {container} not found.")
@@ -656,10 +660,14 @@ class ServiceManager:
         raise ContainerNotFoundException(container)
 
     def service_exec_is_allowed(self, app, env, service):
-        service_exec_allowed = self.ecs_provider.describe_service(service, env, app).get(
-            "enableExecuteCommand"
-        )
-        return service_exec_allowed == True
+        service_details = self.ecs_provider.describe_service(service, env, app)
+
+        if not service_details:
+            raise ServiceNotFoundException(
+                f"Service {service} not found in the {app} application's {env} environment."
+            )
+
+        return service_details.get("enableExecuteCommand") == True
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
 
