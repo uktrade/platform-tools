@@ -595,7 +595,9 @@ class TestServiceExecSuccess:
             "Running command `/bin/bash` in cluster test-app-test-env-cluster, container test-service, task task-1"
         )
 
-    def test_service_exec_executes_command_with_specified_task_id_command_and_container(self):
+    def test_service_exec_executes_command_with_optionally_specified_task_id_command_and_container(
+        self,
+    ):
         mocks = ServiceManagerMocks()
         mocks.ecs_provider.describe_tasks.return_value = [
             {"containers": [{"name": "test-service"}], "taskArn": "test-task-arn"}
