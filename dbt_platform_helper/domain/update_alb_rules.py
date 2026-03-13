@@ -140,7 +140,7 @@ class UpdateALBRules:
             service_deployment_mode == Deployment.PLATFORM.value
             or service_deployment_mode == Deployment.DUAL_DEPLOY_PLATFORM.value
         ):
-            service_models = ServiceManager().service_model_provider.get_service_models(
+            service_models = ServiceManager().get_service_models(
                 application.name, environment
             )
             grouped = defaultdict(list)

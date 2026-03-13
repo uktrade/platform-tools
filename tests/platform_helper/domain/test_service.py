@@ -250,7 +250,6 @@ class ServiceManagerMocks:
         self.logs_provider = Mock()
         self.autoscaling_provider = Mock()
         self.io = Mock()
-        self.service_model_provider = Mock()
 
         # Fake Application object
         env = Environment(name=env_name, account_id=account_id, sessions={})
@@ -265,7 +264,6 @@ class ServiceManagerMocks:
             logs_provider=self.logs_provider,
             autoscaling_provider=self.autoscaling_provider,
             io=self.io,
-            service_model_provider=self.service_model_provider,
         )
 
 
