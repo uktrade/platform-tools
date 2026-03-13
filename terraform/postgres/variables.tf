@@ -28,7 +28,7 @@ variable "config" {
     snapshot_id         = optional(string)
     skip_final_snapshot = optional(string)
     multi_az            = optional(bool)
-    instance            = optional(string)
+    instance            = string
     storage_type        = optional(string)
     database_copy = optional(list(
       object({
