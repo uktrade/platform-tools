@@ -32,7 +32,7 @@ class PipelineInProgressException(PlatformException):
             f"CodePipeline {self.pipeline_name} in AWS account "
             f"{self.account_name} is currently running, and therefore may "
             "interfere with CDN detachment even if future executions were to "
-            "be inhibited. Please stop the pipeline or wait for it to finish "
+            "be inhibited. Please stop all executions or wait for them to finish "
             "before trying this command again."
         )
 
@@ -232,11 +232,11 @@ class Pipelines:
 
     def lock_all_environment_pipelines(self):
         for codepipeline in self._environment_codepipelines():
-            status = self.codepipeline_provider.get_latest_execution_status(
+            running_executions = self.codepipeline_provider.get_in_progress_executions(
                 account_id=codepipeline["account_id"],
                 pipeline_name=codepipeline["name"],
             )
-            if status in ("InProgress", "Stopping"):
+            if running_executions:
                 raise PipelineInProgressException(
                     account_name=codepipeline["account_name"], pipeline_name=codepipeline["name"]
                 )

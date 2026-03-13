@@ -55,7 +55,6 @@ class PipelineMocks:
             **platform_helper_versioning_mocks.params()
         )
         self.mock_codepipeline_provider = Mock(spec=CodePipelineProvider)
-        self.mock_codepipeline_provider.get_latest_execution_status.return_value = "Succeeded"
         self.mock_codepipeline_provider.get_in_progress_executions.return_value = []
         self.mock_codepipeline_provider.is_first_stage_transition_enabled.return_value = False
 
@@ -498,7 +497,7 @@ class TestLockUnlock:
             contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
         )
         mocks = PipelineMocks("test-app")
-        mocks.mock_codepipeline_provider.get_latest_execution_status.return_value = pipeline_status
+        mocks.mock_codepipeline_provider.get_in_progress_executions.return_value = [{}]
         pipelines = Pipelines(**mocks.params())
 
         with pytest.raises(PipelineInProgressException) as e:
@@ -508,7 +507,7 @@ class TestLockUnlock:
             "CodePipeline test-app-main-environment-pipeline in AWS account "
             "platform-sandbox-test is currently running, and therefore may "
             "interfere with CDN detachment even if future executions were to "
-            "be inhibited. Please stop the pipeline or wait for it to finish "
+            "be inhibited. Please stop all executions or wait for them to finish "
             "before trying this command again."
         )
 

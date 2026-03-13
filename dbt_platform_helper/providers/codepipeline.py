@@ -1,19 +1,8 @@
-from operator import itemgetter
-
 from dbt_platform_helper.utils.aws import get_aws_session_or_abort
 from dbt_platform_helper.utils.aws import get_profile_name_from_account_id
 
 
 class CodePipelineProvider:
-    def get_latest_execution_status(self, account_id, pipeline_name):
-        client = self._get_aws_client(account_id)
-        execution_list = client.list_pipeline_executions(pipelineName=pipeline_name)
-        latest_execution = max(
-            execution_list["pipelineExecutionSummaries"],
-            key=itemgetter("startTime"),
-        )
-        return latest_execution["status"]
-
     def get_in_progress_executions(self, account_id, pipeline_name):
         client = self._get_aws_client(account_id)
         execution_list = client.list_pipeline_executions(pipelineName=pipeline_name)
