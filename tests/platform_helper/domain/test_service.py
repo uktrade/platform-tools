@@ -12,6 +12,7 @@ import yaml
 from freezegun import freeze_time
 
 from dbt_platform_helper.domain.service import ContainerNotFoundException
+from dbt_platform_helper.domain.service import ExecNotAllowedForServiceException
 from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.service import TaskNotFoundException
@@ -627,6 +628,22 @@ def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
         )
 
     assert "Task with ID my-task-id not found in test-app-test-env-cluster cluster." in str(e.value)
+
+
+def test_service_exec_raises_if_service_exec_is_not_enabled():
+    mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": False}
+    mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
+    mocks.ecs_provider.get_ecs_task_arns.return_value = []
+    service_manager = ServiceManager(**mocks.params())
+
+    with pytest.raises(ExecNotAllowedForServiceException) as e:
+        service_manager.service_exec("test-app", "test-env", "test-service", None, None, None)
+
+    assert (
+        "Failed to execute command /bin/sh. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+        in str(e.value)
+    )
 
 
 def test_service_exec_raises_if_no_task_found_for_service():
