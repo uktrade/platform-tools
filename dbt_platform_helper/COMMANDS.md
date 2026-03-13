@@ -269,7 +269,7 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 [↩ Parent](#platform-helper)
 
     Opens a shell for a given addon_name create a conduit connection to
-    interact with postgres, opensearch or redis.
+interact with postgres, opensearch or redis.
 
 ## Usage
 
@@ -355,9 +355,9 @@ platform-helper config migrate
 [↩ Parent](#platform-helper-config)
 
     Writes a local config file containing all the AWS profiles to which the
-    logged in user has access.
+logged in user has access.
 
-    If no `--file-path` is specified, defaults to `~/.aws/config`.
+If no `--file-path` is specified, defaults to `~/.aws/config`.
 
 ## Usage
 
@@ -488,7 +488,7 @@ platform-helper environment online --app <application> --env <environment>
 [↩ Parent](#platform-helper-environment)
 
     Gathers various IDs and ARNs from AWS and generates the AWS Copilot
-    environment manifest at copilot/environments/<environment>/manifest.yml.
+environment manifest at copilot/environments/<environment>/manifest.yml.
 
 ## Usage
 
@@ -529,9 +529,9 @@ platform-helper environment generate-terraform --name <name>
 [↩ Parent](#platform-helper)
 
     Generate deployment pipeline configuration files and generate addons
-    CloudFormation template files for each environment.
+CloudFormation template files for each environment.
 
-    Wraps pipeline generate and make-addons.
+Wraps pipeline generate and make-addons.
 
 ## Usage
 
@@ -570,17 +570,17 @@ platform-helper pipeline generate
 [↩ Parent](#platform-helper-pipeline)
 
     Given a platform-config.yml file, generate environment and service
-    deployment pipelines.
+deployment pipelines.
 
-    This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
-      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
-      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+This command does the following in relation to the environment pipelines:
+- Reads contents of `platform-config.yml/environment_pipelines` configuration.
+  The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+  The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
 
-    This command does the following in relation to the codebase pipelines:
-    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
-      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
-      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
+This command does the following in relation to the codebase pipelines:
+- Reads contents of `platform-config.yml/codebase_pipelines` configuration.
+  The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
+  The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
 
 ## Usage
 
@@ -629,7 +629,7 @@ platform-helper secrets (create|copy|list)
 [↩ Parent](#platform-helper-secrets)
 
     Create a Parameter Store secret for all environments of an
-    application.
+application.
 
 ## Usage
 
@@ -945,7 +945,7 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 [↩ Parent](#platform-helper)
 
     Contains subcommands for getting version information about the current
-    project.
+project.
 
 ## Usage
 
@@ -985,7 +985,7 @@ platform-helper version get-platform-helper-for-project [--pipeline <pipeline>]
 
 [↩ Parent](#platform-helper)
 
-    Commands for managing a live service
+    Commands for managing a live service.
 
 ## Usage
 
@@ -1011,16 +1011,28 @@ platform-helper service exec
 ## Usage
 
 ```
-platform-helper service exec --app <application> --env <environment> --service <service> 
+platform-helper service exec --app <application> --env <environment> --name <name> 
+                             [--command <command>] [--container <container>] 
+                             [--task-id <task_id>] 
 ```
 
 ## Options
 
-- `--app <text>`
+- `--app
+-a <text>`
   - Application name
-- `--env <text>`
+- `--env
+-e <text>`
   - Environment name
-- `--service <text>`
-  - Service name
+- `--name
+-n <text>`
+  - Name of the service
+- `--command
+-c <text>`
+  - Optional. The command that is passed to a running container. (default '/bin/bash')
+- `--container <text>`
+  - Optional. The specific container you want to exec in. By default the first essential container will be used.
+- `--task-id <text>`
+  - Optional. ID of the task you want to exec in.
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
