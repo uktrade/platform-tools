@@ -573,7 +573,9 @@ class TestLockUnlock:
 
 
 class TestUnlockConfirmation:
-    def test_when_no_queued_executions(self, fakefs, platform_config_for_env_pipelines):
+    def test_doesnt_prompt_when_there_are_no_queued_executions(
+        self, fakefs, platform_config_for_env_pipelines
+    ):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
@@ -584,8 +586,11 @@ class TestUnlockConfirmation:
         pipelines.unlock_all_environment_pipelines()
 
         mocks.io.warn.assert_not_called()
+        mocks.io.confirm.assert_not_called()
 
-    def test_logging_of_execution_details(self, fakefs, platform_config_for_env_pipelines):
+    def test_queued_execution_details_are_displayed(
+        self, fakefs, platform_config_for_env_pipelines
+    ):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
@@ -616,7 +621,7 @@ class TestUnlockConfirmation:
             ],
         )
 
-    def test_when_user_answers_yes(self, fakefs, platform_config_for_env_pipelines):
+    def test_proceeds_if_user_answers_yes(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
@@ -634,7 +639,7 @@ class TestUnlockConfirmation:
         mocks.io.confirm.assert_called_once_with("Proceed with unlock?")
         mocks.mock_codepipeline_provider.enable_stage_transition.assert_called()
 
-    def test_when_user_answers_no(self, fakefs, platform_config_for_env_pipelines):
+    def test_aborts_if_user_answers_no(self, fakefs, platform_config_for_env_pipelines):
         fakefs.create_file(
             PLATFORM_CONFIG_FILE,
             contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
