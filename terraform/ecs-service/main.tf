@@ -351,6 +351,9 @@ resource "aws_appautoscaling_policy" "memory_autoscaling_policy" {
 data "aws_lb" "load_balancer" {
   count = local.enable_req ? 1 : 0
   arn   = one(aws_lb_target_group.target_group[0].load_balancer_arns)
+  depends_on = [
+    aws_lambda_invocation.dummy_listener_rule
+  ]
 }
 
 # This policy is only for 'Load Balanced Web Service' type services
