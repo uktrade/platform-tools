@@ -20,6 +20,11 @@ from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
 
+class MockService:
+    def __init__(self, exec):
+        self.exec = exec
+
+
 @pytest.fixture
 def copilot_manifest(tmp_path):
     copilot_dir = tmp_path / "copilot" / "my-service"
@@ -244,6 +249,7 @@ class ServiceManagerMocks:
         self.logs_provider = Mock()
         self.autoscaling_provider = Mock()
         self.io = Mock()
+        self.service_model_provider = Mock()
 
         # Fake Application object
         env = Environment(name=env_name, account_id=account_id, sessions={})
@@ -258,6 +264,7 @@ class ServiceManagerMocks:
             logs_provider=self.logs_provider,
             autoscaling_provider=self.autoscaling_provider,
             io=self.io,
+            service_model_provider=self.service_model_provider,
         )
 
 
@@ -570,6 +577,7 @@ def test_monitor_task_events_outputs_events():
 
 def test_service_exec_selects_running_task_and_executes_command():
     mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
     mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
@@ -592,6 +600,7 @@ def test_service_exec_selects_running_task_and_executes_command():
 
 def test_service_exec_raises_if_platform_cluster_is_not_found():
     mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_cluster_arn_by_name.side_effect = (
         ManagedPlatformClusterNotFoundException("test-app-test-env-cluster")
     )
@@ -607,6 +616,7 @@ def test_service_exec_raises_if_platform_cluster_is_not_found():
 
 def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
     mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.describe_tasks.return_value = []
     service_manager = ServiceManager(**mocks.params())
@@ -621,6 +631,7 @@ def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster():
 
 def test_service_exec_raises_if_no_task_found_for_service():
     mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.get_ecs_task_arns.return_value = []
     service_manager = ServiceManager(**mocks.params())
@@ -636,6 +647,7 @@ def test_service_exec_raises_if_no_task_found_for_service():
 
 def test_service_exec_raises_if_specified_container_doesnt_exist_for_task():
     mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
@@ -654,6 +666,7 @@ def test_service_exec_raises_if_specified_container_doesnt_exist_for_task():
 
 def test_service_exec_raises_if_main_container_doesnt_exist_for_task():
     mocks = ServiceManagerMocks()
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_cluster_arn_by_name.return_value = "test-app-test-env-cluster"
     mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["some-random-container"]
@@ -675,6 +688,7 @@ def test_service_exec_executes_command_with_specified_task_id_command_and_contai
     mocks.ecs_provider.describe_tasks.return_value = [
         {"containers": [{"name": "test-service"}], "taskArn": "test-task-arn"}
     ]
+    mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
     mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-container"]
 
     service_manager = ServiceManager(**mocks.params())

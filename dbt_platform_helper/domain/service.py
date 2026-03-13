@@ -76,6 +76,59 @@ class ManagedPlatformClusterNotFoundException(ServiceExecException):
         )
 
 
+class Service:
+    def __init__(self, file_provider, io):
+        self.file_provider = file_provider or YamlFileProvider
+        self.io = io or ClickIOProvider
+
+    def get_service_models(
+        self, application_name, environment, services=None
+    ) -> list[ServiceConfig]:
+        if not services:
+            services = []
+            try:
+                for dir in Path("services").iterdir():
+                    if dir.is_dir():
+                        config_path = dir / SERVICE_CONFIG_FILE
+                        if config_path.exists():
+                            services.append(dir.name)
+                        else:
+                            self.io.warn(
+                                f"Failed loading service name from {dir.name}.\n"
+                                "Please ensure that your '/services' directory follows the correct structure (i.e. /services/<service_name>/service-config.yml) and the 'service-config.yml' contents are correct."
+                            )
+            except Exception as e:
+                self.io.abort_with_error(f"Failed extracting services with exception, {e}")
+
+        service_models = []
+        for service in services:
+            file_content = self.file_provider.load(
+                f"{SERVICE_DIRECTORY}/{service}/{SERVICE_CONFIG_FILE}"
+            )
+
+            file_content = self.file_provider.find_and_replace(
+                config=file_content,
+                strings=[
+                    "${PLATFORM_APPLICATION_NAME}",
+                    "${PLATFORM_ENVIRONMENT_NAME}",
+                ],
+                replacements=[application_name, environment],
+            )
+
+            env_overrides = file_content.get("environments", {}).get(environment)
+            if env_overrides:
+                merged_config = deep_merge(file_content, env_overrides)
+            else:
+                merged_config = file_content
+            merged_config.pop("environments", None)
+
+            service_model = ServiceConfig(**merged_config)
+            service_models.append(service_model)
+
+        return service_models
+
+
+
 class ServiceManager:
     def __init__(
         self,
@@ -90,6 +143,7 @@ class ServiceManager:
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
         autoscaling_provider: AutoscalingProvider = None,
+        service_model_provider: Service = None,
     ):
 
         self.file_provider = file_provider
@@ -106,6 +160,7 @@ class ServiceManager:
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
+        self.service_model_provider = service_model_provider or Service(self.file_provider, self.io)
 
     def generate(self, environment: str, services: list[str]):
 
@@ -136,7 +191,9 @@ class ServiceManager:
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        service_models = self.get_service_models(application, environment, services)
+        service_models = self.service_model_provider.get_service_models(
+            application.name, environment, services
+        )
 
         for service in service_models:
 
@@ -164,50 +221,6 @@ class ServiceManager:
                 config,
                 module_source_override,
             )
-
-    def get_service_models(self, application, environment, services=None) -> list[ServiceConfig]:
-        if not services:
-            services = []
-            try:
-                for dir in Path("services").iterdir():
-                    if dir.is_dir():
-                        config_path = dir / SERVICE_CONFIG_FILE
-                        if config_path.exists():
-                            services.append(dir.name)
-                        else:
-                            self.io.warn(
-                                f"Failed loading service name from {dir.name}.\n"
-                                "Please ensure that your '/services' directory follows the correct structure (i.e. /services/<service_name>/service-config.yml) and the 'service-config.yml' contents are correct."
-                            )
-            except Exception as e:
-                self.io.abort_with_error(f"Failed extracting services with exception, {e}")
-
-        service_models = []
-        for service in services:
-            file_content = self.file_provider.load(
-                f"{SERVICE_DIRECTORY}/{service}/{SERVICE_CONFIG_FILE}"
-            )
-
-            file_content = self.file_provider.find_and_replace(
-                config=file_content,
-                strings=[
-                    "${PLATFORM_APPLICATION_NAME}",
-                    "${PLATFORM_ENVIRONMENT_NAME}",
-                ],
-                replacements=[application.name, environment],
-            )
-
-            env_overrides = file_content.get("environments", {}).get(environment)
-            if env_overrides:
-                merged_config = deep_merge(file_content, env_overrides)
-            else:
-                merged_config = file_content
-            merged_config.pop("environments", None)
-
-            service_model = ServiceConfig(**merged_config)
-            service_models.append(service_model)
-
-        return service_models
 
     def migrate_copilot_manifests(self) -> None:
         service_directory = Path("services/")
@@ -653,15 +666,17 @@ class ServiceManager:
             return service
         raise ContainerNotFoundException(container)
 
-    def service_exec_is_allowed(self, service):
-        # TODO implement
-        return True
+    def service_exec_is_allowed(self, app, env, service):
+        service_exec_allowed = self.ecs_provider.describe_service(service, env, app).get(
+            "enableExecuteCommand"
+        )
+        return service_exec_allowed == True
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
 
-        if not self.service_exec_is_allowed(service):
+        if not self.service_exec_is_allowed(app, env, service):
             raise ExecNotAllowedForServiceException(
-                "Failed to execute command /bin/sh. Is `exec: true` set in your manifest?"
+                "Failed to execute command /bin/sh. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
             )
 
         cluster = self._get_platform_cluster_for_app_and_env(app, env)
