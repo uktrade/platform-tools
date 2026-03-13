@@ -57,6 +57,7 @@ class PipelineMocks:
         self.mock_codepipeline_provider = Mock(spec=CodePipelineProvider)
         self.mock_codepipeline_provider.get_latest_execution_status.return_value = "Succeeded"
         self.mock_codepipeline_provider.get_in_progress_executions.return_value = []
+        self.mock_codepipeline_provider.is_first_stage_transition_enabled.return_value = False
 
     def params(self):
         return {
@@ -656,6 +657,37 @@ class TestUnlockConfirmation:
         mocks.io.warn.assert_called_once()
         mocks.io.confirm.assert_called_once_with("Proceed with unlock?")
         mocks.mock_codepipeline_provider.enable_stage_transition.assert_not_called()
+
+    def test_only_locked_pipelines_are_checked_for_queued_executions(
+        self, fakefs, platform_config_for_env_pipelines
+    ):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
+        )
+        mocks = PipelineMocks("test-app")
+        mocks.mock_codepipeline_provider.get_in_progress_executions = (
+            self.mock_get_in_progress_executions
+        )
+        # First stage is enabled (i.e. unlocked) for `main` and disabled (i.e. locked) for the other two pipelines.
+        mocks.mock_codepipeline_provider.is_first_stage_transition_enabled = (
+            lambda account_id, pipeline_name: pipeline_name == "test-app-main-environment-pipeline"
+        )
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        # We shouldn't see the running executions of the `main` pipeline printed here, because it's not locked.
+        mocks.io.info.assert_has_calls(
+            [
+                call("Details:"),
+                call(
+                    "  test-app-prod-main-environment-pipeline (in AWS account platform-prod-test):"
+                ),
+                call("    Execution 847e338a (triggered by mytrigger2)"),
+                call("    Execution 2f2784b9 (triggered by mytrigger3)"),
+            ],
+        )
 
     @staticmethod
     def mock_get_in_progress_executions(account_id, pipeline_name):

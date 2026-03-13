@@ -36,6 +36,10 @@ class CodePipelineProvider:
             transitionType="Outbound",
         )
 
+    def is_first_stage_transition_enabled(self, account_id, pipeline_name):
+        state = self._get_aws_client(account_id).get_pipeline_state(name=pipeline_name)
+        return state["stageStates"][1]["inboundTransitionState"]["enabled"]
+
     def _get_aws_client(self, account_id):
         session = get_aws_session_or_abort(get_profile_name_from_account_id(account_id))
         return session.client("codepipeline")

@@ -255,12 +255,18 @@ class Pipelines:
     def unlock_all_environment_pipelines(self):
         queued_executions = []
         for codepipeline in self._environment_codepipelines():
-            pipeline_queued_executions = self.codepipeline_provider.get_in_progress_executions(
+            is_unlocked = self.codepipeline_provider.is_first_stage_transition_enabled(
                 account_id=codepipeline["account_id"],
                 pipeline_name=codepipeline["name"],
             )
-            if pipeline_queued_executions:
-                queued_executions.append((codepipeline, pipeline_queued_executions))
+            is_locked = not is_unlocked
+            if is_locked:
+                pipeline_queued_executions = self.codepipeline_provider.get_in_progress_executions(
+                    account_id=codepipeline["account_id"],
+                    pipeline_name=codepipeline["name"],
+                )
+                if pipeline_queued_executions:
+                    queued_executions.append((codepipeline, pipeline_queued_executions))
 
         if queued_executions:
             self.io.warn(

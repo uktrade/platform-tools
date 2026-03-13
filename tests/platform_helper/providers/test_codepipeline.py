@@ -1,6 +1,8 @@
 from datetime import datetime
 from unittest.mock import patch
 
+import pytest
+
 from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
 
 
@@ -148,6 +150,36 @@ def test_enable_stage_transition(mock_get_aws_client):
         stageName="firststage",
         transitionType="Outbound",
     )
+
+
+@pytest.mark.parametrize("is_enabled", [False, True])
+@patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
+def test_is_first_stage_transition_enabled(mock_get_aws_client, is_enabled):
+    mock_get_aws_client.return_value.get_pipeline_state.return_value = {
+        "stageStates": [
+            {
+                "stageName": "firststage",
+                "inboundTransitionState": {
+                    "enabled": True,
+                },
+            },
+            {
+                "stageName": "secondstage",
+                "inboundTransitionState": {
+                    "enabled": is_enabled,
+                },
+            },
+        ],
+    }
+
+    provider = CodePipelineProvider()
+
+    result = provider.is_first_stage_transition_enabled(
+        account_id="111111111111", pipeline_name="mypipeline"
+    )
+
+    assert result == is_enabled
+    mock_get_aws_client.return_value.get_pipeline_state.assert_called_once_with(name="mypipeline")
 
 
 @patch(
