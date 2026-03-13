@@ -32,4 +32,5 @@ class TestCopilotHelperCli:
             "notify",
             "database",
             "version",
+            "service",
         ]

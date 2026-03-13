@@ -27,6 +27,7 @@ from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.environment_variable import (
     EnvironmentVariableProvider,
 )
@@ -45,6 +46,34 @@ DEPLOYMENT_TIMEOUT_SECONDS = 1200
 POLL_INTERVAL_SECONDS = 5
 
 # TODO add schema version to service config
+
+
+class ServiceManagerException(PlatformException):
+    pass
+
+
+class ServiceExecException(ServiceManagerException):
+    pass
+
+
+class ServiceNotFoundException(ServiceExecException):
+    pass
+
+
+class ContainerNotFoundException(ServiceExecException):
+    pass
+
+
+class TaskNotFoundException(ServiceExecException):
+    pass
+
+
+class ExecNotAllowedForServiceException(ServiceExecException):
+    pass
+
+
+class ManagedPlatformClusterNotFoundException(ServiceExecException):
+    pass
 
 
 class ServiceManager:
@@ -581,3 +610,82 @@ class ServiceManager:
             self.io.deploy_error(f"[{timestamp}] {message}")
         else:
             self.io.info(f"[{timestamp}] {message}")
+
+    def _get_platform_cluster_for_app_and_env(self, app, env):
+        platform_cluster = f"{app}-{env}-cluster"
+        try:
+            self.ecs_provider.get_cluster_arn_by_name(platform_cluster)
+            return platform_cluster
+        except NoClusterException:
+            raise ManagedPlatformClusterNotFoundException(
+                f"Cluster not found.  This command is only available for services running on the platform cluster, {platform_cluster}. For services running on the copilot cluster, use the `copilot svc exec` command instead."
+            )
+
+    def _get_valid_task_arn_for_exec(self, cluster, task_id, service_name):
+        task_arn = None
+
+        if task_id:
+            tasks = self.ecs_provider.describe_tasks(cluster, [task_id])
+            if tasks:
+                task_arn = tasks[0]["taskArn"]
+        else:
+            task_arns = self.ecs_provider.get_ecs_task_arns(
+                cluster=cluster, service_name=service_name
+            )
+            if task_arns:
+                task_arn = task_arns[0]
+
+        if not task_arn:
+            if task_id:
+                message = f"Task with ID {task_id} not found in {cluster} cluster."
+            else:
+                message = f"Task not found for service {service_name} in {cluster} cluster."
+            raise TaskNotFoundException(message)
+
+        return task_arn
+
+    def _get_valid_container_for_exec(self, cluster, container, service, task_arn):
+        containers_for_task = self.ecs_provider.get_container_names_from_ecs_tasks(
+            cluster, task_ids=[task_arn]
+        )
+        if container:
+            if container in containers_for_task:
+                return container
+        elif service in containers_for_task:
+            return service
+
+        unmatching_container = container or service
+        raise ContainerNotFoundException(
+            f"Container {unmatching_container} not found. Options are {containers_for_task}"
+        )
+
+    def service_exec_is_allowed(self, app, env, service):
+        service_details = self.ecs_provider.describe_service(service, env, app)
+
+        if not service_details:
+            raise ServiceNotFoundException(
+                f"Service {service} not found in the {app} application's {env} environment."
+            )
+
+        return service_details.get("enableExecuteCommand") == True
+
+    def service_exec(self, app, env, service, command=None, container=None, task_id=None):
+
+        if not self.service_exec_is_allowed(app, env, service):
+            raise ExecNotAllowedForServiceException(
+                "Failed to execute command /bin/sh. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+            )
+
+        cluster = self._get_platform_cluster_for_app_and_env(app, env)
+
+        task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
+
+        container = self._get_valid_container_for_exec(cluster, container, service, task_arn)
+
+        command = command or "/bin/bash"
+
+        self.io.info(
+            f"Running command `{command}` in cluster {cluster}, container {container}, task {task_arn}"
+        )
+
+        self.ecs_provider.execute(cluster, task_arn, container, command)

@@ -291,7 +291,10 @@ class ECS:
                     f"{application}-{environment}-{service}",
                 ],
             )
-            return service_response["services"][0]
+            services = service_response.get("services")
+            if services:
+                return services[0]
+
         except ClientError as err:
             raise PlatformException(f"Error retrieving ECS service: {err}")
 
@@ -303,3 +306,20 @@ class ECS:
             return response["tasks"]
         except ClientError as err:
             raise PlatformException(f"Error retrieving ECS tasks: {err}")
+
+    def execute(self, cluster, task, container, command):
+        aws_cli_cmd = [
+            "aws",
+            "ecs",
+            "execute-command",
+            "--cluster",
+            cluster,
+            "--task",
+            task,
+            "--container",
+            container,
+            "--command",
+            command,
+            "--interactive",
+        ]
+        subprocess.run(aws_cli_cmd)

@@ -11,8 +11,14 @@ import pytest
 import yaml
 from freezegun import freeze_time
 
+from dbt_platform_helper.domain.service import ContainerNotFoundException
+from dbt_platform_helper.domain.service import ExecNotAllowedForServiceException
+from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
+from dbt_platform_helper.domain.service import ServiceNotFoundException
+from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
 
@@ -246,6 +252,8 @@ class ServiceManagerMocks:
         env = Environment(name=env_name, account_id=account_id, sessions={})
         self.application = Application(name=app_name, environments={env_name: env})
         self.load_application = Mock(return_value=self.application)
+        self.ecs_provider.get_cluster_arn_by_name.return_value = "myapp-dev-cluster"
+        self.ecs_provider.describe_service.return_value = {"enableExecuteCommand": True}
 
     def params(self):
         return dict(
@@ -563,3 +571,159 @@ def test_monitor_task_events_outputs_events():
             call("[13:00:00] Application error"),
         ]
     )
+
+
+class TestServiceExecSuccess:
+    def test_service_exec_selects_running_task_and_executes_command(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
+        mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
+        mocks.ecs_provider.describe_tasks.return_value = [
+            {"containers": [{"name": "test-service"}]}
+        ]
+        service_manager = ServiceManager(**mocks.params())
+
+        service_manager.service_exec("test-app", "test-env", "test-service")
+
+        mocks.ecs_provider.execute.assert_called_once_with(
+            "test-app-test-env-cluster",
+            "task-1",
+            "test-service",
+            "/bin/bash",
+        )
+
+        mocks.io.info.assert_called_once_with(
+            "Running command `/bin/bash` in cluster test-app-test-env-cluster, container test-service, task task-1"
+        )
+
+    def test_service_exec_executes_command_with_optionally_specified_task_id_command_and_container(
+        self,
+    ):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.describe_tasks.return_value = [
+            {"containers": [{"name": "test-service"}], "taskArn": "test-task-arn"}
+        ]
+        mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-container"]
+
+        service_manager = ServiceManager(**mocks.params())
+
+        service_manager.service_exec(
+            "test-app", "test-env", "test-service", "pwd", "test-container", "test-task"
+        )
+
+        mocks.ecs_provider.execute.assert_called_once_with(
+            "test-app-test-env-cluster",
+            "test-task-arn",
+            "test-container",
+            "pwd",
+        )
+
+        mocks.io.info.assert_called_once_with(
+            "Running command `pwd` in cluster test-app-test-env-cluster, container test-container, task test-task-arn"
+        )
+
+
+class TestServiceExecRaises:
+    def test_service_exec_raises_if_platform_cluster_is_not_found(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.get_cluster_arn_by_name.side_effect = NoClusterException("foo", "bar")
+
+        with pytest.raises(ManagedPlatformClusterNotFoundException) as e:
+            ServiceManager(**mocks.params()).service_exec("test-app", "test-env", "test-service")
+
+        assert (
+            "Cluster not found.  This command is only available for services running on the platform cluster, test-app-test-env-cluster."
+            in str(e.value)
+        )
+
+    def test_service_exec_raises_if_task_id_parameter_not_found_in_cluster(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.describe_tasks.return_value = []
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(TaskNotFoundException) as e:
+            service_manager.service_exec(
+                "test-app", "test-env", "test-service", None, None, "my-task-id"
+            )
+
+        assert "Task with ID my-task-id not found in test-app-test-env-cluster cluster." in str(
+            e.value
+        )
+
+    def test_service_exec_raises_if_service_exec_is_not_enabled(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.describe_service.return_value = {"enableExecuteCommand": False}
+        mocks.ecs_provider.get_ecs_task_arns.return_value = []
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(ExecNotAllowedForServiceException) as e:
+            service_manager.service_exec("test-app", "test-env", "test-service", None, None, None)
+
+        assert (
+            "Failed to execute command /bin/sh. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+            in str(e.value)
+        )
+
+    def test_service_exec_raises_if_no_task_found_for_service(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.get_ecs_task_arns.return_value = []
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(TaskNotFoundException) as e:
+            service_manager.service_exec("test-app", "test-env", "test-service", None, None, None)
+
+        assert (
+            "Task not found for service test-app-test-env-test-service in test-app-test-env-cluster cluster."
+            in str(e.value)
+        )
+
+    def test_service_exec_raises_if_specified_container_doesnt_exist_for_task(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
+        mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(ContainerNotFoundException) as e:
+            service_manager.service_exec(
+                "test-app",
+                "test-env",
+                "test-service",
+                None,
+                "my-specified-non-existent-container",
+                "my-task-id",
+            )
+
+        assert "Container my-specified-non-existent-container not found." in str(e.value)
+
+    def test_service_exec_raises_if_main_container_doesnt_exist_for_task(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
+        mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = [
+            "some-random-container"
+        ]
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(ContainerNotFoundException) as e:
+            service_manager.service_exec(
+                "test-app", "test-env", "test-service", None, None, "my-task-id"
+            )
+        assert "Container test-service not found. Options are ['some-random-container']" in str(
+            e.value
+        )
+
+    def test_service_exec_raises_if_service_doesnt_exist(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.describe_service.return_value = None
+        mocks.ecs_provider.describe_tasks.return_value = [{"taskArn": "task-1-arn"}]
+        mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = [
+            "some-random-container"
+        ]
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(ServiceNotFoundException) as e:
+            service_manager.service_exec("test-app", "test-env", "test-service")
+
+        assert (
+            "Service test-service not found in the test-app application's test-env environment."
+            in str(e.value)
+        )
