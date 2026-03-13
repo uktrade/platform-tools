@@ -657,7 +657,7 @@ class ServiceManager:
                 return container
         elif service in containers_for_task:
             return service
-        
+
         unmatching_container = container or service
         raise ContainerNotFoundException(unmatching_container, containers_for_task)
 
