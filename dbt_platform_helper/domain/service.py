@@ -136,7 +136,7 @@ class ServiceManager:
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        service_models = self.get_service_models(application.name, environment, services)
+        service_models = self.get_service_models(application, environment, services)
 
         for service in service_models:
 
@@ -165,9 +165,7 @@ class ServiceManager:
                 module_source_override,
             )
 
-    def get_service_models(
-        self, application_name, environment, services=None
-    ) -> list[ServiceConfig]:
+    def get_service_models(self, application, environment, services=None) -> list[ServiceConfig]:
         if not services:
             services = []
             try:
@@ -196,7 +194,7 @@ class ServiceManager:
                     "${PLATFORM_APPLICATION_NAME}",
                     "${PLATFORM_ENVIRONMENT_NAME}",
                 ],
-                replacements=[application_name, environment],
+                replacements=[application.name, environment],
             )
 
             env_overrides = file_content.get("environments", {}).get(environment)
