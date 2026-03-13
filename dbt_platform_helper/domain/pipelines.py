@@ -11,6 +11,7 @@ from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
@@ -19,6 +20,21 @@ from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.utils.git import git_remote
 from dbt_platform_helper.utils.template import setup_templates
+
+
+class PipelineInProgressException(PlatformException):
+    def __init__(self, account_name, pipeline_name):
+        self.account_name = account_name
+        self.pipeline_name = pipeline_name
+
+    def __str__(self):
+        return (
+            f"CodePipeline '{self.pipeline_name}' in AWS account "
+            f"'{self.account_name}' is currently running, and therefore may "
+            "interfere with CDN detachment even if future executions were to "
+            "be inhibited. Please stop the pipeline or wait for it to finish "
+            "before trying this command again."
+        )
 
 
 class Pipelines:
@@ -215,6 +231,16 @@ class Pipelines:
             }
 
     def lock_all_environment_pipelines(self):
+        for codepipeline in self._environment_codepipelines():
+            status = self.codepipeline_provider.get_latest_execution_status(
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
+            )
+            if status in ("InProgress", "Stopping"):
+                raise PipelineInProgressException(
+                    account_name=codepipeline["account_name"], pipeline_name=codepipeline["name"]
+                )
+
         for codepipeline in self._environment_codepipelines():
             self.io.info(
                 f"Disabling first stage transition of CodePipeline '{codepipeline['name']}' in AWS account '{codepipeline['account_name']}'."

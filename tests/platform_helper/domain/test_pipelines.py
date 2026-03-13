@@ -19,6 +19,7 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
+from dbt_platform_helper.domain.pipelines import PipelineInProgressException
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
@@ -54,6 +55,7 @@ class PipelineMocks:
             **platform_helper_versioning_mocks.params()
         )
         self.mock_codepipeline_provider = Mock(spec=CodePipelineProvider)
+        self.mock_codepipeline_provider.get_latest_execution_status.return_value = "Succeeded"
 
     def params(self):
         return {
@@ -483,6 +485,32 @@ class TestLockUnlock:
                     "Disabling first stage transition of CodePipeline 'test-app-prod-main-environment-pipeline' in AWS account 'platform-prod-test'."
                 ),
             ],
+        )
+
+    @pytest.mark.parametrize("pipeline_status", ["InProgress", "Stopping"])
+    def test_lock_raises_exception_if_any_pipeline_is_running(
+        self,
+        fakefs,
+        platform_config_for_env_pipelines,
+        pipeline_status,
+    ):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
+        )
+        mocks = PipelineMocks("test-app")
+        mocks.mock_codepipeline_provider.get_latest_execution_status.return_value = pipeline_status
+        pipelines = Pipelines(**mocks.params())
+
+        with pytest.raises(PipelineInProgressException) as e:
+            pipelines.lock_all_environment_pipelines()
+
+        assert str(e.value) == (
+            "CodePipeline 'test-app-main-environment-pipeline' in AWS account "
+            "'platform-sandbox-test' is currently running, and therefore may "
+            "interfere with CDN detachment even if future executions were to "
+            "be inhibited. Please stop the pipeline or wait for it to finish "
+            "before trying this command again."
         )
 
     def test_unlock_enables_first_stage_transition_of_all_pipelines(

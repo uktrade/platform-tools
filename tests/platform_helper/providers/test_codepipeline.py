@@ -3,6 +3,80 @@ from unittest.mock import patch
 from dbt_platform_helper.providers.codepipeline import CodePipelineProvider
 
 
+class TestGetLatestExecutionStatus:
+    @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
+    def test_when_status_is_in_progress(self, mock_get_aws_client):
+        mock_get_aws_client.return_value.list_pipeline_executions.return_value = {
+            "pipelineExecutionSummaries": [
+                {
+                    "status": "InProgress",
+                    "startTime": "2026-03-06T19:16:31.030000+00:00",
+                },
+                {
+                    "status": "Succeeded",
+                    "startTime": "2026-03-03T12:14:53.743000+00:00",
+                },
+            ]
+        }
+
+        provider = CodePipelineProvider()
+
+        result = provider.get_latest_execution_status(
+            account_id="111111111111",
+            pipeline_name="mypipeline",
+        )
+
+        assert result == "InProgress"
+
+    @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
+    def test_when_status_is_succeeded(self, mock_get_aws_client):
+        mock_get_aws_client.return_value.list_pipeline_executions.return_value = {
+            "pipelineExecutionSummaries": [
+                {
+                    "status": "Succeeded",
+                    "startTime": "2026-03-06T19:16:31.030000+00:00",
+                },
+                {
+                    "status": "InProgress",
+                    "startTime": "2026-03-03T12:14:53.743000+00:00",
+                },
+            ]
+        }
+
+        provider = CodePipelineProvider()
+
+        result = provider.get_latest_execution_status(
+            account_id="111111111111",
+            pipeline_name="mypipeline",
+        )
+
+        assert result == "Succeeded"
+
+    @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
+    def test_does_not_depend_on_order_executions_are_returned_by_aws(self, mock_get_aws_client):
+        mock_get_aws_client.return_value.list_pipeline_executions.return_value = {
+            "pipelineExecutionSummaries": [
+                {
+                    "status": "InProgress",
+                    "startTime": "2026-03-03T12:14:53.743000+00:00",
+                },
+                {
+                    "status": "Succeeded",
+                    "startTime": "2026-03-06T19:16:31.030000+00:00",
+                },
+            ]
+        }
+
+        provider = CodePipelineProvider()
+
+        result = provider.get_latest_execution_status(
+            account_id="111111111111",
+            pipeline_name="mypipeline",
+        )
+
+        assert result == "Succeeded"
+
+
 @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
 def test_disable_stage_transition(mock_get_aws_client):
     provider = CodePipelineProvider()
