@@ -79,6 +79,44 @@ class TestGetLatestExecutionStatus:
 
 
 @patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
+def test_get_in_progress_executions(mock_get_aws_client):
+    mock_get_aws_client.return_value.list_pipeline_executions.return_value = {
+        "pipelineExecutionSummaries": [
+            {
+                "pipelineExecutionId": "2977be15-0b81-4c7a-bc07-4c8d935eeb76",
+                "status": "InProgress",
+            },
+            {
+                "pipelineExecutionId": "a7510cdf-d49b-4853-971e-7b2fb875a741",
+                "status": "Succeeded",
+            },
+            {
+                "pipelineExecutionId": "1bdcce6f-8d60-4f26-bfee-d5cddcc894ab",
+                "status": "InProgress",
+            },
+        ]
+    }
+
+    provider = CodePipelineProvider()
+
+    result = provider.get_in_progress_executions(
+        account_id="111111111111",
+        pipeline_name="mypipeline",
+    )
+
+    assert result == [
+        {
+            "pipelineExecutionId": "2977be15-0b81-4c7a-bc07-4c8d935eeb76",
+            "status": "InProgress",
+        },
+        {
+            "pipelineExecutionId": "1bdcce6f-8d60-4f26-bfee-d5cddcc894ab",
+            "status": "InProgress",
+        },
+    ]
+
+
+@patch("dbt_platform_helper.providers.codepipeline.CodePipelineProvider._get_aws_client")
 def test_disable_stage_transition(mock_get_aws_client):
     provider = CodePipelineProvider()
 

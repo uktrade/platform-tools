@@ -56,6 +56,7 @@ class PipelineMocks:
         )
         self.mock_codepipeline_provider = Mock(spec=CodePipelineProvider)
         self.mock_codepipeline_provider.get_latest_execution_status.return_value = "Succeeded"
+        self.mock_codepipeline_provider.get_in_progress_executions.return_value = []
 
     def params(self):
         return {
@@ -569,3 +570,106 @@ class TestLockUnlock:
                 ),
             ],
         )
+
+
+class TestUnlockConfirmation:
+    def test_when_no_queued_executions(self, fakefs, platform_config_for_env_pipelines):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
+        )
+        mocks = PipelineMocks("test-app")
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        mocks.io.warn.assert_not_called()
+
+    def test_logging_of_execution_details(self, fakefs, platform_config_for_env_pipelines):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
+        )
+        mocks = PipelineMocks("test-app")
+        mocks.mock_codepipeline_provider.get_in_progress_executions = (
+            self.mock_get_in_progress_executions
+        )
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        mocks.io.warn.assert_called_once_with(
+            "One or more pipelines have queued executions that will start running once the pipelines are unlocked."
+        )
+        mocks.io.info.assert_has_calls(
+            [
+                call("Details:"),
+                call(
+                    "  test-app-main-environment-pipeline (in AWS account platform-sandbox-test):"
+                ),
+                call("    Execution 6447e349 (triggered by mytrigger1)"),
+                call(
+                    "  test-app-prod-main-environment-pipeline (in AWS account platform-prod-test):"
+                ),
+                call("    Execution 847e338a (triggered by mytrigger2)"),
+                call("    Execution 2f2784b9 (triggered by mytrigger3)"),
+            ],
+        )
+
+    def test_when_user_answers_yes(self, fakefs, platform_config_for_env_pipelines):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
+        )
+        mocks = PipelineMocks("test-app")
+        mocks.mock_codepipeline_provider.get_in_progress_executions = (
+            self.mock_get_in_progress_executions
+        )
+        mocks.io.confirm.return_value = True
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        mocks.io.warn.assert_called_once()
+        mocks.io.confirm.assert_called_once_with("Proceed with unlock?")
+        mocks.mock_codepipeline_provider.enable_stage_transition.assert_called()
+
+    def test_when_user_answers_no(self, fakefs, platform_config_for_env_pipelines):
+        fakefs.create_file(
+            PLATFORM_CONFIG_FILE,
+            contents=yaml.dump(platform_config_for_env_pipelines, sort_keys=False),
+        )
+        mocks = PipelineMocks("test-app")
+        mocks.mock_codepipeline_provider.get_in_progress_executions = (
+            self.mock_get_in_progress_executions
+        )
+        mocks.io.confirm.return_value = False
+        pipelines = Pipelines(**mocks.params())
+
+        pipelines.unlock_all_environment_pipelines()
+
+        mocks.io.warn.assert_called_once()
+        mocks.io.confirm.assert_called_once_with("Proceed with unlock?")
+        mocks.mock_codepipeline_provider.enable_stage_transition.assert_not_called()
+
+    @staticmethod
+    def mock_get_in_progress_executions(account_id, pipeline_name):
+        return {
+            "test-app-main-environment-pipeline": [
+                {
+                    "pipelineExecutionId": "6447e349-4c95-4417-ba3a-34d30a4795d6",
+                    "trigger": {"triggerDetail": "mytrigger1"},
+                }
+            ],
+            "test-app-another-pipeline-in-same-account-environment-pipeline": [],
+            "test-app-prod-main-environment-pipeline": [
+                {
+                    "pipelineExecutionId": "847e338a-587d-4954-a046-4d6f797aa736",
+                    "trigger": {"triggerDetail": "mytrigger2"},
+                },
+                {
+                    "pipelineExecutionId": "2f2784b9-835c-4d22-9cc1-f09ea5cb8b0d",
+                    "trigger": {"triggerDetail": "mytrigger3"},
+                },
+            ],
+        }[pipeline_name]

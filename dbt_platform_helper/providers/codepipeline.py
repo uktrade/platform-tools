@@ -14,6 +14,13 @@ class CodePipelineProvider:
         )
         return latest_execution["status"]
 
+    def get_in_progress_executions(self, account_id, pipeline_name):
+        client = self._get_aws_client(account_id)
+        execution_list = client.list_pipeline_executions(pipelineName=pipeline_name)
+        return [
+            x for x in execution_list["pipelineExecutionSummaries"] if x["status"] == "InProgress"
+        ]
+
     def disable_stage_transition(self, account_id, pipeline_name, from_stage_name, reason):
         self._get_aws_client(account_id).disable_stage_transition(
             pipelineName=pipeline_name,

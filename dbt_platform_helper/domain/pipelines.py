@@ -253,6 +253,34 @@ class Pipelines:
             )
 
     def unlock_all_environment_pipelines(self):
+        queued_executions = []
+        for codepipeline in self._environment_codepipelines():
+            pipeline_queued_executions = self.codepipeline_provider.get_in_progress_executions(
+                account_id=codepipeline["account_id"],
+                pipeline_name=codepipeline["name"],
+            )
+            if pipeline_queued_executions:
+                queued_executions.append((codepipeline, pipeline_queued_executions))
+
+        if queued_executions:
+            self.io.warn(
+                "One or more pipelines have queued executions that will start running once the pipelines are unlocked."
+            )
+            self.io.info("Details:")
+            for codepipeline, pipeline_queued_executions in queued_executions:
+                self.io.info(
+                    f"  {codepipeline['name']} (in AWS account {codepipeline['account_name']}):"
+                )
+                for execution in pipeline_queued_executions:
+                    short_id = execution["pipelineExecutionId"].split("-")[0]
+                    self.io.info(
+                        f"    Execution {short_id} (triggered by {execution['trigger']['triggerDetail']})"
+                    )
+            self.io.info("")
+            if not self.io.confirm("Proceed with unlock?"):
+                return
+            self.io.info("")
+
         for codepipeline in self._environment_codepipelines():
             self.io.info(
                 f"(Re)enabling first stage transition of CodePipeline {codepipeline['name']} in AWS account {codepipeline['account_name']}."
