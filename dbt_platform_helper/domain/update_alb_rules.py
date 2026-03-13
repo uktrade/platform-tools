@@ -140,9 +140,7 @@ class UpdateALBRules:
             service_deployment_mode == Deployment.PLATFORM.value
             or service_deployment_mode == Deployment.DUAL_DEPLOY_PLATFORM.value
         ):
-            service_models = ServiceManager().get_service_models(
-                application.name, environment
-            )
+            service_models = ServiceManager().get_service_models(application.name, environment)
             grouped = defaultdict(list)
 
             service_mapped_tgs = self._get_tg_arns_for_platform_services(

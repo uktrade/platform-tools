@@ -4,7 +4,10 @@ from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.utils.application import ApplicationEnvironmentNotFoundException, load_application
+from dbt_platform_helper.utils.application import (
+    ApplicationEnvironmentNotFoundException,
+)
+from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
 
@@ -34,13 +37,13 @@ def exec(app: str, env: str, name: str, command: str, container: str, task_id: s
 
     try:
         application = load_application(app=app, env=env)
-        
-        #TODO This is a workaround until DBTP-2754 is fixed
+
+        # TODO This is a workaround until DBTP-2754 is fixed
         try:
             ecs_client = application.environments[env].session.client("ecs")
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
-        
+
         ecs_provider: ECS = ECS(
             ecs_client,
             None,

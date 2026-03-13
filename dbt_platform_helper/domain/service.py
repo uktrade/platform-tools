@@ -165,7 +165,9 @@ class ServiceManager:
                 module_source_override,
             )
 
-    def get_service_models(self, application_name, environment, services=None) -> list[ServiceConfig]:
+    def get_service_models(
+        self, application_name, environment, services=None
+    ) -> list[ServiceConfig]:
         if not services:
             services = []
             try:
