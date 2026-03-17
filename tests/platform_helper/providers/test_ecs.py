@@ -649,4 +649,4 @@ def test_execute_success(run):
         "--interactive",
     ]
 
-    run.assert_called_once_with(expected_cmd)
+    run.assert_called_once_with(expected_cmd, check=True)

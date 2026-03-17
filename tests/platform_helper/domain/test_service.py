@@ -18,6 +18,7 @@ from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.service import ServiceNotFoundException
 from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.ecs import ECSExecException
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
@@ -727,3 +728,20 @@ class TestServiceExecRaises:
             "Service test-service not found in the test-app application's test-env environment."
             in str(e.value)
         )
+
+    def test_service_exec_raises_if_subprocess_fails(self):
+        mocks = ServiceManagerMocks()
+        mocks.ecs_provider.get_container_names_from_ecs_tasks.return_value = ["test-service"]
+        mocks.ecs_provider.get_ecs_task_arns.return_value = ["task-1", "task-2"]
+        mocks.ecs_provider.describe_tasks.return_value = [
+            {"containers": [{"name": "test-service"}]}
+        ]
+        mocks.ecs_provider.execute.side_effect = ECSExecException(
+            "some cli command", "command unknown"
+        )
+        service_manager = ServiceManager(**mocks.params())
+
+        with pytest.raises(ECSExecException) as e:
+            service_manager.service_exec("test-app", "test-env", "test-service")
+
+        assert "Command `some cli command` failed with error: command unknown" in str(e.value)
