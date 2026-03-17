@@ -671,9 +671,11 @@ class ServiceManager:
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
 
+        command = command or "/bin/bash"
+
         if not self.service_exec_is_allowed(app, env, service):
             raise ExecNotAllowedForServiceException(
-                "Failed to execute command /bin/sh. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+                f"Failed to execute command {command}. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
             )
 
         cluster = self._get_platform_cluster_for_app_and_env(app, env)
@@ -681,8 +683,6 @@ class ServiceManager:
         task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
 
         container = self._get_valid_container_for_exec(cluster, container, service, task_arn)
-
-        command = command or "/bin/bash"
 
         self.io.info(
             f"Running command `{command}` in cluster {cluster}, container {container}, task {task_arn}"

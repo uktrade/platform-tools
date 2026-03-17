@@ -660,7 +660,7 @@ class TestServiceExecRaises:
             service_manager.service_exec("test-app", "test-env", "test-service", None, None, None)
 
         assert (
-            "Failed to execute command /bin/sh. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+            "Failed to execute command /bin/bash. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
             in str(e.value)
         )
 
