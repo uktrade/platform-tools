@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.23.0](https://github.com/uktrade/platform-tools/compare/15.22.0...15.23.0) (2026-03-13)
+
+
+### Features
+
+* Postgres Graviton switchover in non prod (DBTP-2707) ([#1317](https://github.com/uktrade/platform-tools/issues/1317)) ([fdadecc](https://github.com/uktrade/platform-tools/commit/fdadeccc26390a902405c9b67d0d35b3206862c2))
+
+
+### Bug Fixes
+
+* Permit destroy for aws_acm_certificate_validation (off-ticket) ([#1336](https://github.com/uktrade/platform-tools/issues/1336)) ([84c1504](https://github.com/uktrade/platform-tools/commit/84c1504a42ceacbe21a8dfe7bdea9d370f985994))
+* Permit enironment-pipeline to create role:AWSServiceRoleForElasticache (off-ticket) ([#1334](https://github.com/uktrade/platform-tools/issues/1334)) ([e318b12](https://github.com/uktrade/platform-tools/commit/e318b12ca7a4a899e0baa05dcf680ea169cde689))
+
 ## [15.22.0](https://github.com/uktrade/platform-tools/compare/15.21.1...15.22.0) (2026-03-09)
 
 
