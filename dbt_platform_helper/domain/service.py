@@ -659,7 +659,7 @@ class ServiceManager:
             f"Container {unmatching_container} not found. Options are {containers_for_task}"
         )
 
-    def service_exec_is_allowed(self, app, env, service):
+    def _service_exec_is_allowed(self, app, env, service):
         service_details = self.ecs_provider.describe_service(service, env, app)
 
         if not service_details:
@@ -673,7 +673,7 @@ class ServiceManager:
 
         command = command or "/bin/bash"
 
-        if not self.service_exec_is_allowed(app, env, service):
+        if not self._service_exec_is_allowed(app, env, service):
             raise ExecNotAllowedForServiceException(
                 f"Failed to execute command {command}. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
             )
