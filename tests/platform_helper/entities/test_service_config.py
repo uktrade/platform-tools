@@ -110,10 +110,11 @@ def test_count_rejects_bad_range_format():
         Count.model_validate({"range": "1 to 3", "cpu_percentage": 50})
 
 
-@pytest.mark.parametrize("range_value", ["2-1", "5-5"])
+@pytest.mark.parametrize("range_value", ["2-1", "1-0"])
 def test_count_rejects_min_less_than_max(range_value):
     with pytest.raises(
-        PlatformException, match="Range minimum value must be less than the maximum value."
+        PlatformException,
+        match="Range minimum value must be less than or equal to the maximum value.",
     ):
         Count.model_validate({"range": range_value, "cpu_percentage": 50})
 
