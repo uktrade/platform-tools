@@ -343,9 +343,12 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
       "application-autoscaling:ListTagsForResource",
       "application-autoscaling:DeregisterScalableTarget",
       "application-autoscaling:PutScalingPolicy",
+      "application-autoscaling:PutScheduledAction",
       "application-autoscaling:DescribeScalingPolicies",
       "application-autoscaling:DescribeScalingActivities",
-      "application-autoscaling:DeleteScalingPolicy"
+      "application-autoscaling:DescribeScheduledActions",
+      "application-autoscaling:DeleteScalingPolicy",
+      "application-autoscaling:DeleteScheduledAction"
     ]
     resources = [
       "arn:aws:application-autoscaling:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:scalable-target/*"
