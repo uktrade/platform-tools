@@ -143,7 +143,7 @@ def test_cron_schedule_valid(config):
         ),
         (
             {"range": "1-2", "schedule": "invalid"},
-            "Invalid cron expression: 'invalid'. Excepted format: 'MIN HOUR DOM MONTH DOW YEAR' e.g. '0 06 * * MON-FRI *'",
+            "Invalid cron expression: 'invalid'. Excepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'",
         ),
     ],
 )

@@ -258,7 +258,7 @@ class CronSchedule(BaseModel):
         if not CRON_REGEX.match(self.schedule):
             raise PlatformException(
                 f"Invalid cron expression: '{self.schedule}'. "
-                "Excepted format: 'MIN HOUR DOM MONTH DOW YEAR' e.g. '0 06 * * MON-FRI *'"
+                "Excepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'"
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
