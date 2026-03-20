@@ -340,6 +340,7 @@ class PlatformConfigSchema:
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("apply_immediately"): bool,
                     Optional("plan"): _valid_postgres_plans,
+                    Optional("instance"): str,
                     Optional("version"): (Or(int, float)),
                     Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
                     Optional("iops"): PlatformConfigSchema.is_integer_between(1000, 9950),
