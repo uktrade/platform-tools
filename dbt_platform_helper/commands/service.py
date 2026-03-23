@@ -31,7 +31,7 @@ def service():
     help="Optional. The specific container you want to exec in. By default the first essential container will be used.",
     required=False,
 )
-@click.option("--task-id", help="Optional. ID of the task you want to exec in.", required=False)
+@click.option("--task-id", help="Optional. ID of the task you want to exec into.", required=False)
 def exec(app: str, env: str, name: str, command: str, container: str, task_id: str):
     """Opens a shell for a given container."""
 
