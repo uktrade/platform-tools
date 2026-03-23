@@ -28,7 +28,9 @@ def service():
 )
 @click.option(
     "--container",
-    help="Optional. The specific container you want to exec in. By default the first essential container will be used.",
+    help="Optional. [Note: This is an advanced feature and not yet fully supported.  In most cases only the essential container can be exec'd into.] The specific container you want to exec in. By default the first essential container will be used.",
+    # https://github.com/aws/containers-roadmap/issues/2268
+    # https://platform.readme.trade.gov.uk/managed/troubleshooting/ecs-task/connecting-to-container-fails-with-internal-error/#problem
     required=False,
 )
 @click.option("--task-id", help="Optional. ID of the task you want to exec into.", required=False)

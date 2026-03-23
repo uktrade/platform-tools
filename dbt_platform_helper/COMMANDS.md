@@ -1031,7 +1031,7 @@ platform-helper service exec --app <application> --env <environment> --name <nam
 -c <text>`
   - Optional. The command that is passed to a running container. (default 'launcher /bin/bash')
 - `--container <text>`
-  - Optional. The specific container you want to exec in. By default the first essential container will be used.
+  - Optional. [Note: This is an advanced feature and not yet fully supported.  In most cases only the essential container can be exec'd into.] The specific container you want to exec in. By default the first essential container will be used.
 - `--task-id <text>`
   - Optional. ID of the task you want to exec into.
 - `--help <boolean>` _Defaults to False._
