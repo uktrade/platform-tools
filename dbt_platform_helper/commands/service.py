@@ -23,7 +23,7 @@ def service():
 @click.option(
     "--command",
     "-c",
-    help="Optional. The command that is passed to a running container. (default '/bin/bash')",
+    help="Optional. The command that is passed to a running container. (default 'launcher /bin/bash')",
     required=False,
 )
 @click.option(

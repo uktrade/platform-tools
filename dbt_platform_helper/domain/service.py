@@ -671,7 +671,7 @@ class ServiceManager:
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
 
-        command = command or "/bin/bash"
+        command = command or "launcher /bin/bash"
 
         if not self._service_exec_is_allowed(app, env, service):
             raise ExecNotAllowedForServiceException(

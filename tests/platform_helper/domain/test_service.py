@@ -590,11 +590,11 @@ class TestServiceExecSuccess:
             "test-app-test-env-cluster",
             "task-1",
             "test-service",
-            "/bin/bash",
+            "launcher /bin/bash",
         )
 
         mocks.io.info.assert_called_once_with(
-            "Running command `/bin/bash` in cluster test-app-test-env-cluster, container test-service, task task-1"
+            "Running command `launcher /bin/bash` in cluster test-app-test-env-cluster, container test-service, task task-1"
         )
 
     def test_service_exec_executes_command_with_optionally_specified_task_id_command_and_container(
@@ -661,7 +661,7 @@ class TestServiceExecRaises:
             service_manager.service_exec("test-app", "test-env", "test-service", None, None, None)
 
         assert (
-            "Failed to execute command /bin/bash. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+            "Failed to execute command launcher /bin/bash. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
             in str(e.value)
         )
 
