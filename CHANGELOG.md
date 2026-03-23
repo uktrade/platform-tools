@@ -1,5 +1,14 @@
 # Changelog
 
+## [15.24.0](https://github.com/uktrade/platform-tools/compare/15.23.0...15.24.0) (2026-03-23)
+
+
+### Features
+
+* Allow applications to specify specific postgres instance class (off-ticket) ([#1340](https://github.com/uktrade/platform-tools/issues/1340)) ([311df5e](https://github.com/uktrade/platform-tools/commit/311df5e9ece5d6131a6fe335290d94f840e50f91))
+* Platform-Helper command to replace copilot svc exec (DBTP-2602) ([#1331](https://github.com/uktrade/platform-tools/issues/1331)) ([76a9435](https://github.com/uktrade/platform-tools/commit/76a9435a6e3c67cc56f45dffa0909176b5d73769))
+* Service Autoscaling schedule (DBTP-2709) ([#1287](https://github.com/uktrade/platform-tools/issues/1287)) ([aedf881](https://github.com/uktrade/platform-tools/commit/aedf881f447b3057360321f5dcd201b8290330b1))
+
 ## [15.23.0](https://github.com/uktrade/platform-tools/compare/15.22.0...15.23.0) (2026-03-13)
 
 
