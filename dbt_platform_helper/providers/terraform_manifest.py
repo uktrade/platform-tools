@@ -250,6 +250,7 @@ class TerraformManifestProvider:
         module_source_override: str = None,
         pinned_version: str = None,
     ):
+        pinned_version = pinned_version or "null"
         source = module_source_override or f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
         terraform["module"] = {
             "extensions": {
@@ -257,7 +258,7 @@ class TerraformManifestProvider:
                 "args": "${local.args}",
                 "environment": env,
                 "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}",
-                "pinned_version": "${pinned_version ? pinned_version : null}",
+                "pinned_version": pinned_version,
             }
         }
 

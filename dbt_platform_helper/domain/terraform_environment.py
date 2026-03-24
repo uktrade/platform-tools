@@ -35,7 +35,7 @@ class TerraformEnvironment:
         pinned_version = None
 
         if self.platform_helper_versioning.is_auto():
-            pinned_version = self.platform_helper_versioning.get_version_status().installed
+            pinned_version = str(self.platform_helper_versioning.get_version_status().installed)
 
         config = self.config_provider.get_enriched_config()
 
