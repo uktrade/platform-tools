@@ -76,6 +76,7 @@ class TestGenerateTerraform:
         module_source_override,
     ):
         mocks = GenerateTerraformMocks()
+        mocks.mock_platform_helper_versioning.is_auto.return_value = False
         mocks.mock_platform_helper_versioning.get_template_version.return_value = (
             expected_platform_helper_version
         )
@@ -97,4 +98,5 @@ class TestGenerateTerraform:
             environment_name,
             expected_platform_helper_version,
             module_source_override,
+            None,
         )

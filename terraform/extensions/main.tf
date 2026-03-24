@@ -35,7 +35,8 @@ module "postgres" {
   vpc_name    = local.vpc_name
   env_config  = var.args.env_config
 
-  config = each.value
+  config         = each.value
+  pinned_version = var.pinned_version
 }
 
 module "elasticache-redis" {

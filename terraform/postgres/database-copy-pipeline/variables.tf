@@ -21,3 +21,8 @@ variable "task" {
     }))
   })
 }
+
+variable "pinned_version" {
+  type    = string
+  default = null
+}

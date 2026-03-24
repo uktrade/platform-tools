@@ -127,6 +127,7 @@ class TerraformManifestProvider:
         env: str,
         platform_helper_version: str,
         module_source_override: str = None,
+        pinned_version: str = None,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
         account = self._get_account_for_env(env, platform_config)
@@ -141,7 +142,9 @@ class TerraformManifestProvider:
         self._add_backend(
             terraform, platform_config, account, f"tfstate/application/{state_key_suffix}.tfstate"
         )
-        self._add_extensions_module(terraform, platform_helper_version, env, module_source_override)
+        self._add_extensions_module(
+            terraform, platform_helper_version, env, module_source_override, pinned_version
+        )
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
@@ -241,7 +244,11 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_extensions_module(
-        terraform: dict, platform_helper_version: str, env: str, module_source_override: str = None
+        terraform: dict,
+        platform_helper_version: str,
+        env: str,
+        module_source_override: str = None,
+        pinned_version: str = None,
     ):
         source = module_source_override or f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
         terraform["module"] = {
@@ -250,6 +257,7 @@ class TerraformManifestProvider:
                 "args": "${local.args}",
                 "environment": env,
                 "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}",
+                "pinned_version": "${pinned_version ? pinned_version : null}",
             }
         }
 
