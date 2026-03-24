@@ -100,7 +100,7 @@ class TestGenerateTerraform:
             module_source_override,
             None,
         )
-        
+
     @pytest.mark.parametrize(
         "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source_override",
         [(False, "14.0.0", None), (True, "test-branch", "../local/path/")],
@@ -114,7 +114,7 @@ class TestGenerateTerraform:
         class MockStatus:
             def __init__(self, installed):
                 self.installed = installed
-        
+
         mocks = GenerateTerraformMocks()
         mocks.mock_platform_helper_versioning.is_auto.return_value = True
         mocks.mock_platform_helper_versioning.get_version_status.return_value = MockStatus("1.2.3")
@@ -141,4 +141,3 @@ class TestGenerateTerraform:
             module_source_override,
             "1.2.3",
         )
-
