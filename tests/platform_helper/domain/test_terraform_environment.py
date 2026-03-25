@@ -102,12 +102,12 @@ class TestGenerateTerraform:
         )
 
     @pytest.mark.parametrize(
-        "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source_override",
+        "use_module_source_override, expected_platform_helper_version, module_source_override",
         [(False, "14.0.0", None), (True, "test-branch", "../local/path/")],
     )
     def test_generate_success_for_centralised_service(
         self,
-        use_environment_variable_platform_helper_version,
+        use_module_source_override,
         expected_platform_helper_version,
         module_source_override,
     ):
@@ -123,7 +123,7 @@ class TestGenerateTerraform:
         )
         environment_name = "test"
 
-        if use_environment_variable_platform_helper_version:
+        if use_module_source_override:
             mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = (
                 module_source_override
             )
