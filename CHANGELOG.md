@@ -1,5 +1,18 @@
 # Changelog
 
+## [15.24.1](https://github.com/uktrade/platform-tools/compare/15.24.0...15.24.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* Propagate version to database copy pipeline (DBTP-2790) ([#1349](https://github.com/uktrade/platform-tools/issues/1349)) ([3c7320e](https://github.com/uktrade/platform-tools/commit/3c7320e1942f15da96878cd51dd22df0b247f1c4))
+
+
+### Dependencies
+
+* bump DataDog/datadog from 3.84.0 to 4.3.0 in /terraform/extensions ([#1344](https://github.com/uktrade/platform-tools/issues/1344)) ([c4a08b0](https://github.com/uktrade/platform-tools/commit/c4a08b02a91dc25d4ff47f73c85d1c902512ba42))
+* bump slack-sdk from 3.40.0 to 3.40.1 ([#1302](https://github.com/uktrade/platform-tools/issues/1302)) ([a4bc8a7](https://github.com/uktrade/platform-tools/commit/a4bc8a779787cdcb144db5b2d3ba4cab9cba791b))
+
 ## [15.24.0](https://github.com/uktrade/platform-tools/compare/15.23.0...15.24.0) (2026-03-23)
 
 
