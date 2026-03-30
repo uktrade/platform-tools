@@ -1,5 +1,36 @@
 # Changelog
 
+## [15.25.0](https://github.com/uktrade/platform-tools/compare/15.24.1...15.25.0) (2026-03-30)
+
+
+### Features
+
+* Switch production Postgres to Graviton (DBTP-2742) ([#1350](https://github.com/uktrade/platform-tools/issues/1350)) ([10d6c55](https://github.com/uktrade/platform-tools/commit/10d6c5507667286082a487ed07b28dea4b0aea21))
+
+
+### Bug Fixes
+
+* Add missing resource to codebase deploy IAM policy (off-ticket) ([#1356](https://github.com/uktrade/platform-tools/issues/1356)) ([f47f0d6](https://github.com/uktrade/platform-tools/commit/f47f0d6b310f6c6e327d5b38258312fdeaf2fdfa))
+* Support for new ECS task role naming convention to cross-env S3 policy (DBTP-2766) ([#1358](https://github.com/uktrade/platform-tools/issues/1358)) ([c88a2e3](https://github.com/uktrade/platform-tools/commit/c88a2e374d724201aea3ca26bed2eef2d4bc23d8))
+
+
+### Dependencies
+
+* Bump requests from 2.32.5 to 2.33.0 ([#1354](https://github.com/uktrade/platform-tools/issues/1354)) ([c6d34ef](https://github.com/uktrade/platform-tools/commit/c6d34ef8045bd9f1a3a0a0ec556c5ec022918986))
+
+## [15.24.1](https://github.com/uktrade/platform-tools/compare/15.24.0...15.24.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* Propagate version to database copy pipeline (DBTP-2790) ([#1349](https://github.com/uktrade/platform-tools/issues/1349)) ([3c7320e](https://github.com/uktrade/platform-tools/commit/3c7320e1942f15da96878cd51dd22df0b247f1c4))
+
+
+### Dependencies
+
+* bump DataDog/datadog from 3.84.0 to 4.3.0 in /terraform/extensions ([#1344](https://github.com/uktrade/platform-tools/issues/1344)) ([c4a08b0](https://github.com/uktrade/platform-tools/commit/c4a08b02a91dc25d4ff47f73c85d1c902512ba42))
+* bump slack-sdk from 3.40.0 to 3.40.1 ([#1302](https://github.com/uktrade/platform-tools/issues/1302)) ([a4bc8a7](https://github.com/uktrade/platform-tools/commit/a4bc8a779787cdcb144db5b2d3ba4cab9cba791b))
+
 ## [15.24.0](https://github.com/uktrade/platform-tools/compare/15.23.0...15.24.0) (2026-03-23)
 
 
