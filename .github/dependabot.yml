@@ -24,3 +24,8 @@ updates:
       # Don't include dev dependencies in release notes, they
       # are of no interest outside this repository's maintainers.
       prefix-development: "chore(deps-dev)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
