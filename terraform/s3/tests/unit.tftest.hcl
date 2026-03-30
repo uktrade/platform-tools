@@ -550,7 +550,10 @@ run "aws_s3_bucket_cross_environment_service_access_read_write_unit_test" {
 
   assert {
     condition = length([for item in data.aws_iam_policy_document.bucket-policy.statement[1].condition :
-    item if item.values == tolist(["arn:aws:iam::123456789012:role/s3-test-application-test-service-TaskRole-*"])]) == 1
+      item if item.values == tolist([
+        "arn:aws:iam::123456789012:role/s3-test-application-test-service-TaskRole-*", #ECS task role name convention used by AWS Copilot
+        "arn:aws:iam::123456789012:role/s3-test-application-test-service-ecs-task"
+    ])]) == 1
     error_message = "condition should have a values: [bucket arn] attribute"
   }
 

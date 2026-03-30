@@ -72,8 +72,11 @@ data "aws_iam_policy_document" "bucket-policy" {
         type        = "AWS"
       }
       condition {
-        test     = "StringLike"
-        values   = ["arn:aws:iam::${statement.value.account}:role/${var.application}-${statement.value.environment}-${statement.value.service}-TaskRole-*"]
+        test = "StringLike"
+        values = [
+          "arn:aws:iam::${statement.value.account}:role/${var.application}-${statement.value.environment}-${statement.value.service}-TaskRole-*", #ECS task role name convention used by AWS Copilot
+          "arn:aws:iam::${statement.value.account}:role/${var.application}-${statement.value.environment}-${statement.value.service}-ecs-task"
+        ]
         variable = "aws:PrincipalArn"
       }
       resources = [aws_s3_bucket.this.arn, "${aws_s3_bucket.this.arn}/*"]
@@ -162,8 +165,11 @@ data "aws_iam_policy_document" "key-policy" {
         type        = "AWS"
       }
       condition {
-        test     = "StringLike"
-        values   = ["arn:aws:iam::${statement.value.account}:role/${var.application}-${statement.value.environment}-${statement.value.service}-TaskRole-*"]
+        test = "StringLike"
+        values = [
+          "arn:aws:iam::${statement.value.account}:role/${var.application}-${statement.value.environment}-${statement.value.service}-TaskRole-*", #ECS task role name convention used by AWS Copilot
+          "arn:aws:iam::${statement.value.account}:role/${var.application}-${statement.value.environment}-${statement.value.service}-ecs-task"
+        ]
         variable = "aws:PrincipalArn"
       }
       resources = [aws_kms_key.kms-key[0].arn]
