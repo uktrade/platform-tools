@@ -464,6 +464,12 @@ class ServiceManager:
             f"New deployment with ID '{primary_deployment_id}' has been triggered."
         )
 
+        if desired_count == 0:
+            self._output_with_timestamp(
+                "Detected 'count: 0' in service-config.yml. Scaling ECS service down to zero tasks."
+            )
+            return
+
         seen_events = set()
         deadline = time.monotonic() + DEPLOYMENT_TIMEOUT_SECONDS
 

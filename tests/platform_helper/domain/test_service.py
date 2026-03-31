@@ -370,6 +370,46 @@ def test_service_deploy_success():
     )
 
 
+@freeze_time("2026-03-31 12:00:00")
+def test_service_deploy_exits_early_when_desired_count_zero():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+
+    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
+    mocks.ecs_provider.register_task_definition.return_value = (
+        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
+    )
+
+    update_service_response = get_ecs_update_service_response(
+        service_name="myapp-dev-web",
+        deployment_id="deployment-123",
+    )
+    mocks.ecs_provider.update_service.return_value = update_service_response
+
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {"MinCapacity": 0}
+
+    with patch.object(service_manager, "_wait_for_new_tasks") as wait_for_new_tasks, patch.object(
+        service_manager, "_monitor_task_events"
+    ) as monitor_task_events, patch.object(
+        service_manager, "_monitor_service_events"
+    ) as monitor_service_events:
+
+        service_manager.deploy(
+            service="web",
+            environment="dev",
+            application="myapp",
+            image_tag="tag-123",
+        )
+
+        wait_for_new_tasks.assert_not_called()
+        monitor_task_events.assert_not_called()
+        monitor_service_events.assert_not_called()
+
+    mocks.io.info.assert_any_call(
+        "[12:00:00] Detected 'count: 0' in service-config.yml. Scaling ECS service down to zero tasks."
+    )
+
+
 @patch("dbt_platform_helper.domain.service.time.sleep", return_value=None)
 def test_wait_for_new_tasks_success(time_sleep):
     mocks = ServiceManagerMocks()
