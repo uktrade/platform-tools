@@ -1,6 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "daily"
@@ -13,6 +15,8 @@ updates:
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
+    cooldown:
+      default-days: 7
     directories:
       - "/terraform/*/"
     schedule:
@@ -26,6 +30,8 @@ updates:
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "github-actions"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "weekly"
