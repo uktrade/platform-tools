@@ -535,7 +535,7 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_platform_helper_version_override = None
         result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
         assert result == "version_passed_in_from_platform_upgrade"
-        
+
     def test_get_pinned_version_falls_back_to_installed_version_given_auto(
         self, platform_config_for_env_pipelines
     ):
@@ -553,10 +553,8 @@ class TestPlatformHelperVersioningAuto:
         )
         result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
         assert result == "1.0.1"
-        
-    def test_get_pinned_version_returns_none_if_not_auto(
-        self, platform_config_for_env_pipelines
-    ):
+
+    def test_get_pinned_version_returns_none_if_not_auto(self, platform_config_for_env_pipelines):
 
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.2.3"}
 
