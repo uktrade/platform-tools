@@ -307,12 +307,12 @@ class UpdateALBRules:
 
     def _filter_rule_type(self, rule: dict) -> str:
         if rule["Tags"]:
-            if rule["Tags"].get("managed-by", "") == MANAGED_BY_PLATFORM:
-                return RuleType.PLATFORM.value
             if rule["Tags"].get("reason", None) == MAINTENANCE_PAGE_REASON:
                 return RuleType.MAINTENANCE.value
             if rule["Tags"].get("reason", None) == DUMMY_RULE_REASON:
                 return RuleType.DUMMY.value
+            if rule["Tags"].get("managed-by", "") == MANAGED_BY_PLATFORM:
+                return RuleType.PLATFORM.value
 
         if rule["Priority"] == "default":
             return RuleType.DEFAULT.value
