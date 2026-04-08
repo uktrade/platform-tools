@@ -15,10 +15,6 @@ variables {
 mock_provider "aws" {}
 
 mock_provider "aws" {
-  alias = "domain-cdn"
-}
-
-mock_provider "aws" {
   alias = "domain"
 }
 

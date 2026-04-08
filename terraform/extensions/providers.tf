@@ -9,14 +9,6 @@ provider "aws" {
   }
 }
 
-provider "aws" {
-  region = "us-east-1"
-  alias  = "domain-cdn"
-  assume_role {
-    role_arn = "arn:aws:iam::${local.dns_account_id}:role/environment-pipeline-assumed-role"
-  }
-}
-
 # The default provider configuration prevents deployment to the wrong aws account
 provider "aws" {
   allowed_account_ids = [local.deploy_account_id]
@@ -36,7 +28,6 @@ terraform {
       version = "~> 6"
       configuration_aliases = [
         aws.domain,
-        aws.domain-cdn
       ]
     }
     datadog = {
