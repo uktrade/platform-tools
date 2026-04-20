@@ -494,6 +494,7 @@ class PlatformConfigSchema:
             "role_arn": PlatformConfigSchema.__valid_iam_role_arn("role_arn"),
             "read": bool,
             "write": bool,
+            Optional("encrypt"): bool,
             "cyber_sign_off_by": PlatformConfigSchema.__valid_dbt_email_address(
                 "cyber_sign_off_by"
             ),
@@ -622,7 +623,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __valid_iam_role_arn(key) -> Regex:
         return Regex(
-            r"^arn:aws:iam::\d{12}:role/.*",
+            r"^arn:aws:iam::\d{12}:(?:role|user)/.*",
             error=f"{key} must contain a valid ARN for an IAM role",
         )
 

@@ -7,3 +7,5 @@ personal-data-exclusions.txt
 /src/terraform/elasticache-redis/plans.yml
 .*/tests/.*
 .*/templates/.*
+
+tests/platform_helper/utils/fixtures/addons_files/*.yml

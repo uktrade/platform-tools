@@ -43,6 +43,7 @@ variable "config" {
       role_arn          = string
       read              = bool
       write             = bool
+      encrypt           = optional(bool, false)
       cyber_sign_off_by = string
     })))
     # NOTE: allows access to S3 bucket from DBT Platform managed service roles, also generates Copilot addon for service access
