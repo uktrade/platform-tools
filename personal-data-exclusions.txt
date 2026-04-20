@@ -1,6 +1,9 @@
 .pre-commit-config.yaml
 personal-data-exclusions.txt
+/src/pyproject.toml
 /src/extensions-example.yml
+/src/terraform/README.md
+/src/dbt_platform_helper/constants.py
 /src/terraform/elasticache-redis/plans.yml
 **/tests/*
 **/templates/*
