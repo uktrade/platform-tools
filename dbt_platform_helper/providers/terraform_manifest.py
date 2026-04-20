@@ -4,6 +4,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
+from dbt_platform_helper.constants import GIT_PLATFORM_TOOLS_REPO_SSH
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
@@ -72,7 +73,7 @@ class TerraformManifestProvider:
     ):
         source = (
             module_source_override
-            or f"git::git@github.com:uktrade/platform-tools.git//terraform/ecs-service?depth=1&ref={platform_helper_version}"
+            or f"git::{GIT_PLATFORM_TOOLS_REPO_SSH}/terraform/ecs-service?depth=1&ref={platform_helper_version}"
         )
         terraform["module"] = {
             "ecs-service": {
