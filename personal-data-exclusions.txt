@@ -5,5 +5,5 @@ personal-data-exclusions.txt
 /src/terraform/README.md
 /src/dbt_platform_helper/constants.py
 /src/terraform/elasticache-redis/plans.yml
-**/tests/*
-**/templates/*
+.*/tests/.*
+.*/templates/.*
