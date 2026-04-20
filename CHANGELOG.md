@@ -1,5 +1,25 @@
 # Changelog
 
+## [15.26.0](https://github.com/uktrade/platform-tools/compare/15.25.0...15.26.0) (2026-04-20)
+
+
+### Features
+
+* Convert scheduled tasks manifests (DBTP-2876) ([#1381](https://github.com/uktrade/platform-tools/issues/1381)) ([a9f30dd](https://github.com/uktrade/platform-tools/commit/a9f30dd8ea0b215aeb76e90b3dd4cb0cb7747301))
+* S3 external user access support and encrypt flag (DBTP-2902) ([#1390](https://github.com/uktrade/platform-tools/issues/1390)) ([028521f](https://github.com/uktrade/platform-tools/commit/028521f066290a06cdface942ac6a32dea756850))
+
+
+### Bug Fixes
+
+* Add check for services directory to config validate command (DBTP-2766) ([#1367](https://github.com/uktrade/platform-tools/issues/1367)) ([aa15c37](https://github.com/uktrade/platform-tools/commit/aa15c37ad44565e737c7459cfbb56959dc285a26))
+* Prevent deletion of maintenance page ALB rules during deployments (DBTP-2755) ([#1376](https://github.com/uktrade/platform-tools/issues/1376)) ([67a97d3](https://github.com/uktrade/platform-tools/commit/67a97d32cabaeebc59144ebe5ff935df5555e957))
+* Prevent deployment failures when desired count is set to 0 (DBTP-2696) ([#1370](https://github.com/uktrade/platform-tools/issues/1370)) ([acd7f3e](https://github.com/uktrade/platform-tools/commit/acd7f3e7e0ad2f4ad8f72f807f60da69029a8ded))
+
+
+### Dependencies
+
+* Bump slack-sdk from 3.40.1 to 3.41.0 ([#1366](https://github.com/uktrade/platform-tools/issues/1366)) ([14b927c](https://github.com/uktrade/platform-tools/commit/14b927c5b0164d44edeb72833c2b310594e2488f))
+
 ## [15.25.0](https://github.com/uktrade/platform-tools/compare/15.24.1...15.25.0) (2026-03-30)
 
 
