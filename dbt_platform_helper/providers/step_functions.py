@@ -58,17 +58,17 @@ class StepFunctions:
 class StateMachineNotFoundException(AWSException):
     def __init__(self, application_name: str, environment: str, job_name: str):
         super().__init__(
-            f"""Scheduled Job '{job_name}' not found in '{environment} of application '{application_name}'."""
-            f"""Please check that the combination of application, environment and scheduled job names are correct."""
+            f"Scheduled Job '{job_name}' not found in '{environment}' of application '{application_name}'.\n"
+            f"Please check that the combination of application, environment and scheduled job are correct."
         )
 
 
 class StartExecutionFailedException(AWSException):
     def __init__(self, state_machine_arn: str, error: str):
         super().__init__(
-            f"""Failed to start the Scheduled Job"""
-            f"""AWS returned: {error}"""
-            f"""State Machine ARN: {state_machine_arn}."""
+            f"Failed to start the Scheduled Job execution.\n"
+            f"AWS returned: {error}\n"
+            f"State Machine ARN: {state_machine_arn}."
         )
 
 
@@ -77,8 +77,8 @@ class MultipleStateMachinesFoundException(AWSException):
         self, application_name: str, environment: str, job_name: str, state_machine_arns: list[str]
     ):
         super().__init__(
-            f"""Multiple Jobs {len(state_machine_arns)} with the name '{job_name}' found in '{environment}'"""
-            f"""Expected 1 job"""
-            f"""This usually means that they share the same tags"""
-            f"""Found ARNs: {state_machine_arns}"""
+            f"Multiple Jobs {len(state_machine_arns)} with the name '{job_name}' found in '{environment}'\n"
+            f"Expected 1 job\n"
+            f"This usually means that they share the same tags\n"
+            f"Found ARNs: {state_machine_arns}"
         )
