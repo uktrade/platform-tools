@@ -2,7 +2,7 @@
 resource "aws_scheduler_schedule" "this" {
 
   # Required
-  schedule_expression = var.service_config.schedule == "none" ? "rate(5 minutes)" : var.service_config.schedule
+  schedule_expression = var.schedule == "none" ? "rate(5 minutes)" : var.schedule
 
   flexible_time_window {
     mode = "OFF"
@@ -14,10 +14,10 @@ resource "aws_scheduler_schedule" "this" {
   }
 
   # Optional
-  name       = "${local.full_service_name}-schedule"
+  name       = "${var.name}-schedule"
   group_name = "default"
 
-  state = var.service_config.schedule == "none" ? "DISABLED" : "ENABLED"
+  state = var.schedule == "none" ? "DISABLED" : "ENABLED"
 
   # retries? 
   #   retry_policy {
@@ -29,7 +29,7 @@ resource "aws_scheduler_schedule" "this" {
 
 ### State Machine
 resource "aws_sfn_state_machine" "this" {
-  name     = local.full_service_name
+  name     = var.name
   role_arn = aws_iam_role.state_machine_role.arn
 
   definition = jsonencode(local.state_machine_definition)

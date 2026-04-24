@@ -152,7 +152,7 @@ resource "aws_ecs_service" "service" {
 }
 
 data "aws_vpc" "vpc" {
-  count = local.web_service_required
+  count = local.web_service_required + (local.is_scheduled_job ? 1 : 0)
 
   filter {
     name   = "tag:Name"
@@ -408,3 +408,74 @@ resource "aws_ssm_parameter" "service_data" {
   })
   tags = local.tags
 }
+
+# Scheduled Job only resources
+
+resource "aws_ecs_task_definition" "job" {
+  for_each                 = toset(local.is_scheduled_job ? ["enabled"] : [""])
+  family                   = "${local.full_service_name}-task-def"
+  requires_compatibilities = ["FARGATE"]
+  pid_mode                 = "task"
+  region                   = data.aws_region.current.region
+  cpu                      = tostring(var.service_config.cpu)
+  memory                   = tostring(var.service_config.memory)
+  network_mode             = "awsvpc"
+
+  dynamic "ephemeral_storage" {
+    for_each = var.service_config.storage.ephemeral != null ? toset([var.service_config.storage.ephemeral]) : toset([])
+    content {
+      size_in_gib = ephemeral_storage.value
+    }
+  }
+
+  execution_role_arn    = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-task-exec"
+  container_definitions = jsonencode(local.container_definitions_list)
+  task_role_arn         = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-ecs-task"
+
+  dynamic "volume" {
+    for_each = local.scheduled_job_volumes
+    content {
+      name      = volume.value["name"]
+      host_path = volume.value["host"]
+    }
+  }
+
+  runtime_platform {
+    cpu_architecture = local.cpu_architecture
+  }
+
+  tags = local.tags
+}
+
+resource "aws_security_group" "job" {
+  name        = "security-group-for-scheduled-job"
+  description = "SG for scheduled job ECS task"
+  vpc_id      = data.aws_vpc.vpc[0].id
+
+  tags = local.tags
+}
+
+resource "aws_vpc_security_group_egress_rule" "scheduled_job_egress" {
+  security_group_id = aws_security_group.job.id
+  description       = "Allow all outbound traffic"
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+  tags              = local.tags
+}
+
+
+module "scheduling" {
+  for_each            = toset(local.is_scheduled_job ? ["enabled"] : [])
+  source              = "./scheduling"
+  name                = local.full_service_name
+  schedule            = try(var.service_config.schedule, null)
+  retries             = try(var.service_config.retries, null)
+  timeout             = try(var.service_config.timeout, null)
+  security_group_id   = aws_security_group.job
+  task_definition_arn = aws_ecs_task_definition.job
+  subnet_ids          = data.aws_subnets.private-subnets.ids
+  cluster_id          = data.aws_ecs_cluster.cluster.id
+  tags                = local.tags
+}
+
+

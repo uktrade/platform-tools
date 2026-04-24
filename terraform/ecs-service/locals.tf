@@ -11,10 +11,16 @@ locals {
   secrets                      = values(coalesce(var.service_config.secrets, {}))
   web_service_required         = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
   ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) ? 1 : 0
+  is_scheduled_job             = var.service_config.type == "Scheduled Job"
   target_container             = try(var.service_config.http.target_container, "")
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
+
+
+  # CPU architecture — defaults to X86_64; set platform = "arm64" for Graviton.                         
+  cpu_architecture = try(lower(var.service_config.platform), null) == "arm64" ? "ARM64" : "X86_64"
+
 
   ##############################
   # S3 EXTENSIONS — SAME ACCOUNT
@@ -273,6 +279,9 @@ locals {
     for path in local.writable_directories :
     { name = "path${replace(path, "/", "-")}", host = {} }
   ]
+
+  scheduled_job_volumes = concat([{ "name" : "path-tmp", "host" : "{}" }], local.writable_volumes)
+
 
   task_definition_json = jsonencode(
     merge(

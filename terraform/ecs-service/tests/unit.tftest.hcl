@@ -697,3 +697,40 @@ run "service_scheduled_auto_scaling" {
     error_message = "Should be: 0"
   }
 }
+
+run "test_scheduling_module_is_created_for_scheduled_job" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+        port     = 8080
+      }
+
+      cpu       = 256
+      memory    = 512
+      count     = 1
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+  }
+
+  assert {
+    condition     = length(module.scheduling) == 1
+    error_message = "Should have the scheduling module"
+  }
+}
+
+# Write a test to check the default values for retries and timeout (already exists in the old module tests we think)
