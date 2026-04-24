@@ -129,7 +129,7 @@ class Pipelines:
                 ecrs_that_need_importing,
                 deploy_repository,
                 self.platform_helper_versioning.get_codebase_pipeline_modules_source(),
-                self.platform_helper_versioning.get_version_tracker_module_source_override(),
+                self.platform_helper_versioning.get_version_tracker_module_source(),
                 workspace,
             )
 

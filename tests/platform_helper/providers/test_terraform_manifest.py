@@ -8,6 +8,7 @@ from freezegun import freeze_time
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
+from dbt_platform_helper.constants import VERSION_TRACKER_MODULE_PATH
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from tests.platform_helper.conftest import (
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
@@ -31,7 +32,7 @@ def test_generate_codebase_pipeline_config_creates_file(
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
         codebase_pipeline_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
-        version_tracker_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=X.X.X",
+        version_tracker_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=14.0.0",
         platform_helper_version="14.0.0",
     )
 
@@ -77,33 +78,46 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert aws_req_provider["source"] == "hashicorp/aws"
     assert aws_req_provider["version"] == SUPPORTED_AWS_PROVIDER_VERSION
 
-    module = json_content["module"]["codebase-pipelines"]
+    codebase_pipelines_module = json_content["module"]["codebase-pipelines"]
     assert (
-        module["source"]
+        codebase_pipelines_module["source"]
         == f"git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0"
     )
-    assert module["for_each"] == "${local.all_codebases}"
-    assert module["application"] == "${local.application}"
-    assert module["codebase"] == "${each.key}"
-    assert module["repository"] == "${each.value.repository}"
-    assert module["deploy_repository"] == "uktrade/my-app-deploy"
+    assert codebase_pipelines_module["for_each"] == "${local.all_codebases}"
+    assert codebase_pipelines_module["application"] == "${local.application}"
+    assert codebase_pipelines_module["codebase"] == "${each.key}"
+    assert codebase_pipelines_module["repository"] == "${each.value.repository}"
+    assert codebase_pipelines_module["deploy_repository"] == "uktrade/my-app-deploy"
     assert (
-        module["deploy_repository_branch"]
+        codebase_pipelines_module["deploy_repository_branch"]
         == '${lookup(each.value, "deploy_repository_branch", "main")}'
     )
     assert (
-        module["additional_ecr_repository"]
+        codebase_pipelines_module["additional_ecr_repository"]
         == '${lookup(each.value, "additional_ecr_repository", null)}'
     )
-    assert module["pipelines"] == '${lookup(each.value, "pipelines", [])}'
-    assert module["services"] == "${each.value.services}"
-    assert module["requires_image_build"] == '${lookup(each.value, "requires_image_build", true)}'
+    assert codebase_pipelines_module["pipelines"] == '${lookup(each.value, "pipelines", [])}'
+    assert codebase_pipelines_module["services"] == "${each.value.services}"
     assert (
-        module["slack_channel"]
+        codebase_pipelines_module["requires_image_build"]
+        == '${lookup(each.value, "requires_image_build", true)}'
+    )
+    assert (
+        codebase_pipelines_module["slack_channel"]
         == '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}'
     )
-    assert module["env_config"] == "${local.environments}"
-    assert module["platform_tools_version"] == "14.0.0"
+    assert codebase_pipelines_module["env_config"] == "${local.environments}"
+    assert codebase_pipelines_module["platform_tools_version"] == "14.0.0"
+
+    version_tracker_module = json_content["module"]["version-tracker"]
+    assert (
+        version_tracker_module["source"]
+        == f"git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=14.0.0"
+    )
+    assert version_tracker_module["platform_version"] == "14.0.0"
+    assert version_tracker_module["application"] == "${local.application}"
+    assert version_tracker_module["pipeline_type"] == "codebase-pipeline"
+    assert version_tracker_module["depends_on"] == ["module.codebase-pipelines"]
 
 
 @freeze_time("2025-01-16 13:00:00")
@@ -245,12 +259,12 @@ def test_generate_environment_config_creates_file(
     assert aws_req_provider["source"] == "hashicorp/aws"
     assert aws_req_provider["version"] == SUPPORTED_AWS_PROVIDER_VERSION
 
-    module = json_content["module"]["extensions"]
-    assert module["source"] == f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
-    assert module["args"] == "${local.args}"
-    assert module["environment"] == env
+    extensions_module = json_content["module"]["extensions"]
+    assert extensions_module["source"] == f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
+    assert extensions_module["args"] == "${local.args}"
+    assert extensions_module["environment"] == env
     assert (
-        module["repos"]
+        extensions_module["repos"]
         == "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}"
     )
 
@@ -262,6 +276,16 @@ def test_generate_environment_config_creates_file(
     )
     assert moved[0]["from"] == "module.extensions-tf"
     assert moved[0]["to"] == "module.extensions"
+
+    version_tracker_module = json_content["module"]["version-tracker"]
+    assert (
+        version_tracker_module["source"]
+        == f"{VERSION_TRACKER_MODULE_PATH}{platform_helper_version}"
+    )
+    assert version_tracker_module["platform_version"] == platform_helper_version
+    assert version_tracker_module["application"] == "${local.args.application}"
+    assert version_tracker_module["environment"] == "${local.environment}"
+    assert version_tracker_module["depends_on"] == ["module.extensions"]
 
 
 def test_generate_environment_config_with_multiple_extensions_adds_moved_blocks_for_s3(

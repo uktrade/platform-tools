@@ -141,13 +141,41 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, is_auto, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch, expected_pinned_version, module_source_override",
+    "use_environment_variable_platform_helper_version, is_auto, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch, expected_pinned_version, env_pipeline_module_source_override, version_tracker_module_source_override",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        (False, False, "14.0.0", "demodjango-branch", "demodjango-branch", None, "../local/path/"),
-        (False, False, "14.0.0", None, None, None, None),
-        (True, False, "test-branch", None, None, None, "../local/path/"),
-        (True, False, "test-branch", None, None, None, None),
-        (True, True, "test-branch", None, None, "test-branch", None),
+        (
+            False,
+            False,
+            "14.0.0",
+            "demodjango-branch",
+            "demodjango-branch",
+            None,
+            "../local/terraform/environment-pipelines/path/",
+            "../local/terraform/version-tracker/path/",
+        ),
+        (False, False, "14.0.0", None, None, None, None, None),
+        (
+            True,
+            False,
+            "test-branch",
+            None,
+            None,
+            None,
+            "../local/terraform/environment-pipelines/path/",
+            "../local/terraform/version-tracker/path/",
+        ),
+        (True, False, "test-branch", None, None, None, None, None),
+        (True, True, "test-branch", None, None, "test-branch", None, None),
+        (
+            True,
+            True,
+            "test-branch",
+            None,
+            None,
+            "test-branch",
+            "../local/terraform/environment-pipelines/path/",
+            "../local/terraform/version-tracker/path/",
+        ),
     ],
 )
 def test_pipeline_generate_command_generate_terraform_files_for_environment_pipeline_manifest(
@@ -158,7 +186,8 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
     cli_demodjango_branch,
     expected_demodjango_branch,
     expected_pinned_version,
-    module_source_override,
+    env_pipeline_module_source_override,
+    version_tracker_module_source_override,
     platform_config_for_env_pipelines,
 ):
 
@@ -187,8 +216,10 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
     ] = expected_platform_helper_version
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source_override
-
+    ] = env_pipeline_module_source_override
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = version_tracker_module_source_override
     pipelines = Pipelines(**mocks.params())
 
     pipelines.generate(cli_demodjango_branch)
@@ -208,7 +239,8 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         expected_pinned_version,
-        module_source_override,
+        env_pipeline_module_source_override,
+        version_tracker_module_source_override,
         "1111111111",
     )
     assert_terraform(
@@ -217,7 +249,8 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         expected_pinned_version,
-        module_source_override,
+        env_pipeline_module_source_override,
+        version_tracker_module_source_override,
         "3333333333",
     )
 
@@ -294,7 +327,7 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
 
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = codebase_pipelines_module_source
+    ] = version_tracker_module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -403,7 +436,8 @@ def assert_terraform(
     expected_version,
     expected_branch,
     expected_pinned_version,
-    module_source_override,
+    env_pipeline_module_source_override,
+    version_tracker_module_source_override,
     deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
@@ -420,8 +454,8 @@ def assert_terraform(
 
         environment_pipeline_module = parsed_terraform["module"][0]["environment-pipelines"]
 
-        if module_source_override:
-            assert environment_pipeline_module["source"] == module_source_override
+        if env_pipeline_module_source_override:
+            assert environment_pipeline_module["source"] == env_pipeline_module_source_override
         else:
             assert (
                 environment_pipeline_module["source"]
@@ -439,3 +473,17 @@ def assert_terraform(
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
         assert environment_pipeline_module["pinned_version"] == expected_pinned_version
+
+        version_tracker_module = parsed_terraform["module"][1]["version-tracker"]
+
+        if version_tracker_module_source_override:
+            assert version_tracker_module["source"] == version_tracker_module_source_override
+        else:
+            assert (
+                version_tracker_module["source"]
+                == f"git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref={expected_version}"
+            )
+        assert version_tracker_module["platform_version"] == expected_version
+        assert version_tracker_module["application"] == app_name
+        assert version_tracker_module["pipeline_type"] == "environment-pipeline"
+        assert version_tracker_module["depends_on"] == ["${module.environment-pipelines}"]
