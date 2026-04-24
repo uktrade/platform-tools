@@ -2,9 +2,8 @@ variable "name" {
   type = string
 }
 
-
 variable "schedule" {
-  type = any
+  type = string
 }
 
 variable "retries" {
@@ -12,9 +11,9 @@ variable "retries" {
   default = null
 }
 
-variable "timeout" {
+variable "timeout_seconds" {
   type    = number
-  default = null
+  default = 86400 # set timeout to 24 hours to avoid runaway state machines caused by the default provided by AWS (99999999, which is approximately 3 years). See here: https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html
 }
 
 variable "vpc_id" {
@@ -27,13 +26,13 @@ variable "task_definition_arn" {
 
 
 variable "cluster_id" {
-  type = any
+  type = string
 }
 
 variable "subnet_ids" {
-  type = any
+  type = list(string)
 }
 
 variable "tags" {
-  type = any
+  type = map(any)
 }

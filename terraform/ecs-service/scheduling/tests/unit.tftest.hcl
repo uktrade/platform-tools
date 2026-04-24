@@ -44,80 +44,14 @@ override_data {
 
 
 variables {
-  application         = "demodjango"
-  environment         = "dev"
-  platform_extensions = {} # Empty placeholder to pass validate - declared further down in individual tests
-
-  name = "db-dump"
-
-  env_config = {
-    dev = {
-      accounts = {
-        deploy = { name = "sandbox", id = "000123456789" }
-        dns    = { name = "dev", id = "123456" }
-      }
-      vpc                     = "test-vpc"
-      service-deployment-mode = "doesn't matter"
-    }
-    hotfix = {
-      accounts = {
-        deploy = { name = "prod", id = "999888777666" }
-        dns    = { name = "dev", id = "123456" }
-      }
-      vpc = "test-vpc-hotfix"
-    }
-  }
-
-  service_config = {
-    name = "web"
-    type = "Scheduled Job"
-
-    image = {
-      location = "public.ecr.aws/example/app:latest"
-      port     = 8080
-    }
-
-    cpu       = 256
-    memory    = 512
-    count     = 1
-    exec      = true
-    essential = true
-
-    schedule = "none"
-
-    storage = {
-      readonly_fs          = false
-      writable_directories = []
-    }
-
-    # sidecars = {
-    #   nginx = {
-    #     port  = 443
-    #     image = "public.ecr.aws/example/nginx:latest"
-    #   }
-    # }
-
-    # network = {
-    #   connect = true
-    #   vpc = {
-    #     placement = "private"
-    #   }
-    # }
-
-
-    #   variables = {
-    #     LOG_LEVEL = "DEBUG"
-    #     DEBUG     = false
-    #     PORT      = 8080
-    #   }
-
-    #   secrets = {
-    #     DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
-    #   }
-  }
-
+  name                = "db-dump"
+  schedule            = "none"
+  vpc_id              = "my-vpc"
+  task_definition_arn = "arn:aws:logs:eu-west-2:001122334455:task-definition/my-app-dev-db-dump:7"
+  cluster_id          = "my-cluster"
+  subnet_ids          = ["subnet-0000001111122222c", "subnet-0000002222233333e"]
+  tags                = {}
 }
-
 
 /* 
 EventBridge test ideas:
@@ -138,7 +72,7 @@ run "test_rate_schedule_expression_is_enabled" {
   command = plan
 
   variables {
-    service_config = merge(var.service_config, { schedule = "rate(5 minutes)" })
+    schedule = "rate(5 minutes)"
   }
 
   assert {
@@ -151,7 +85,7 @@ run "test_cron_schedule_expression_is_as_expected" {
   command = plan
 
   variables {
-    service_config = merge(var.service_config, { schedule = "5 * * * ?" })
+    schedule = "5 * * * ?"
   }
 
   assert {
@@ -191,7 +125,7 @@ run "test_state_machine_definition_has_expected_retry" {
   command = plan
 
   variables {
-    service_config = merge(var.service_config, { retries = 1 })
+    retries = 1
   }
 
   assert {
@@ -200,11 +134,12 @@ run "test_state_machine_definition_has_expected_retry" {
   }
 }
 
+
 run "test_state_machine_definition_has_no_timeout" {
   command = plan
 
   assert {
-    condition     = local.timeout_seconds == 86400
+    condition     = local.state_machine_definition.TimeoutSeconds == 86400
     error_message = "Should have a timeout of 86400"
   }
 }

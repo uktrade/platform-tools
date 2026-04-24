@@ -244,7 +244,6 @@ resource "aws_service_discovery_service" "service_discovery_service" {
   }
 }
 
-### DO NOT FOR_EACH START
 resource "aws_kms_key" "ecs_service_log_group_kms_key" {
   description         = "KMS Key for ECS service '${local.full_service_name}' log encryption"
   enable_key_rotation = true
@@ -312,7 +311,6 @@ resource "aws_cloudwatch_log_subscription_filter" "ecs_service_logs_filter" {
   filter_pattern  = ""
   destination_arn = local.central_log_group_destination
 }
-### DO NOT FOR_EACH END
 
 resource "aws_appautoscaling_target" "ecs_autoscaling" {
   for_each           = toset(local.is_scheduled_job ? [] : ["enabled"])
@@ -477,7 +475,7 @@ module "scheduling" {
   name                = local.full_service_name
   schedule            = try(var.service_config.schedule, null)
   retries             = try(var.service_config.retries, null)
-  timeout             = try(var.service_config.timeout, null)
+  timeout_seconds     = try(var.service_config.timeout, null)
   vpc_id              = local.vpc_name
   task_definition_arn = aws_ecs_task_definition.job["enabled"].arn
   subnet_ids          = data.aws_subnets.private-subnets.ids
