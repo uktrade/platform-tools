@@ -17,6 +17,9 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
+from dbt_platform_helper.constants import (
+    TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
@@ -250,20 +253,27 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
 
 
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source",
+    "use_environment_variable_platform_helper_version, expected_platform_helper_version, codebase_pipelines_module_source, version_tracker_module_source",
     [
         (
             False,
             "14.0.0",
             "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+            "git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=14.0.0",
         ),
-        (True, "test-branch", "../local/path/"),
+        (
+            True,
+            "test-branch",
+            "../local/codebase-pipelines/path/",
+            "../local/version-tracker/path/",
+        ),
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected_platform_helper_version(
     use_environment_variable_platform_helper_version,
     expected_platform_helper_version,
-    module_source,
+    codebase_pipelines_module_source,
+    version_tracker_module_source,
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
@@ -280,7 +290,11 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
 
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source
+    ] = codebase_pipelines_module_source
+
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = codebase_pipelines_module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -292,24 +306,27 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
         expected_platform_helper_version,
         {},
         "uktrade/my-app-deploy",
-        module_source,
+        codebase_pipelines_module_source,
+        version_tracker_module_source,
         None,  # workspace
     )
 
 
 @pytest.mark.parametrize(
-    "expected_platform_helper_version, module_source",
+    "expected_platform_helper_version, codebase_pipelines_module_source, version_tracker_module_source",
     [
         (
             "14.0.0",
             "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+            "git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=14.0.0",
         ),
-        ("test-branch", "../local/path/"),
+        ("test-branch", "../local/codebase-pipelines/path/", "../local/version-tracker/path/"),
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     expected_platform_helper_version,
-    module_source,
+    codebase_pipelines_module_source,
+    version_tracker_module_source,
     codebase_pipeline_config_for_2_pipelines_and_1_run_group,
     fakefs,
 ):
@@ -333,7 +350,11 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
 
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source
+    ] = codebase_pipelines_module_source
+
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = version_tracker_module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -345,7 +366,8 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
         expected_platform_helper_version,
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
         "uktrade/my-app-deploy",
-        module_source,
+        codebase_pipelines_module_source,
+        version_tracker_module_source,
         None,  # workspace
     )
 

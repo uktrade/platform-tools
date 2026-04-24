@@ -30,7 +30,8 @@ def test_generate_codebase_pipeline_config_creates_file(
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
-        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+        codebase_pipeline_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+        version_tracker_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=X.X.X",
         platform_helper_version="14.0.0",
     )
 
@@ -127,7 +128,8 @@ def test_generate_codebase_pipeline_config_creates_required_imports(
         config,
         ecr_imports={"application": "test_project/application"},
         deploy_repository="uktrade/my-app-deploy",
-        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
+        codebase_pipeline_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
+        version_tracker_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=X.X.X",
         platform_helper_version="X.X.X",
     )
 
@@ -153,7 +155,8 @@ def test_generate_codebase_pipeline_config_omits_import_block_if_no_codebases_pr
         codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
         ecr_imports={},
         deploy_repository="uktrade/my-app-deploy",
-        module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
+        codebase_pipeline_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=X.X.X",
+        version_tracker_module_source="git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=X.X.X",
         platform_helper_version="X.X.X",
     )
 
