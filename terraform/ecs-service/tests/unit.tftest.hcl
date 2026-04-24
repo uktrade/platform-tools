@@ -459,12 +459,12 @@ run "web_service_ecs_service_connect" {
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_connect_configuration[0].enabled == true
+    condition     = aws_ecs_service.service["enabled"].service_connect_configuration[0].enabled == true
     error_message = "Should be: true"
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_registries[0].port == 443
+    condition     = aws_ecs_service.service["enabled"].service_registries[0].port == 443
     error_message = "Should be: 8080"
   }
 }
@@ -520,12 +520,12 @@ run "backend_service_ecs_service_connect" {
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_connect_configuration[0].enabled == true
+    condition     = aws_ecs_service.service["enabled"].service_connect_configuration[0].enabled == true
     error_message = "Should be: true"
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_registries[0].port == 8080
+    condition     = aws_ecs_service.service["enabled"].service_registries[0].port == 8080
     error_message = "Should be: 8080"
   }
 }
@@ -580,12 +580,12 @@ run "backend_service_no_ecs_service_connect" {
   }
 
   assert {
-    condition     = length(aws_ecs_service.service.service_connect_configuration) == 0
+    condition     = length(aws_ecs_service.service["enabled"].service_connect_configuration) == 0
     error_message = "Should be: 0"
   }
 
   assert {
-    condition     = length(aws_ecs_service.service.service_registries) == 0
+    condition     = length(aws_ecs_service.service["enabled"].service_registries) == 0
     error_message = "Should be: 0"
   }
 }
@@ -746,5 +746,41 @@ run "test_scheduling_module_is_not_created_for_load_balanced_web_service" {
     error_message = "Should not create the scheduling module"
   }
 }
+
+run "test_app_autoscaling_target_is_not_created_for_scheduled_job" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+        port     = 8080
+      }
+
+      cpu       = 256
+      memory    = 512
+      count     = 1
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_target.ecs_autoscaling) == 0
+    error_message = "Should not create the app autoscaling target"
+  }
+}
+
 
 # Write a test to check the default values for retries and timeout (already exists in the old module tests we think)
