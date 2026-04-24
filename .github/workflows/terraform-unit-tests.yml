@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: ${{ matrix.terraform-version }}
       - run: terraform --version
