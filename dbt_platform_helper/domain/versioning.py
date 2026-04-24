@@ -207,7 +207,6 @@ class PlatformHelperVersioning:
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
         )
 
-    # Only for generating env pipeline Terraform manifest
     def get_version_tracker_module_source(self):
         version_tracker_module_override = self.environment_variable_provider.get(
             TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
