@@ -10,7 +10,7 @@ locals {
   vpc_name                     = var.env_config[var.environment]["vpc"]
   secrets                      = values(coalesce(var.service_config.secrets, {}))
   web_service_required         = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
-  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) ? 1 : 0
+  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) && !local.is_scheduled_job ? 1 : 0
   is_scheduled_job             = var.service_config.type == "Scheduled Job"
   target_container             = try(var.service_config.http.target_container, "")
 
@@ -336,7 +336,7 @@ locals {
 
   # Scheduled Actions
 
-  scheduled_actions = {
+  scheduled_actions = local.is_scheduled_job ? {} : {
     for idx, schedule in try(var.service_config.count.schedules, []) :
     "${local.full_service_name}-schedule-${idx}" => {
       schedule = schedule.schedule

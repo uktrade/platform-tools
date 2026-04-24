@@ -747,7 +747,7 @@ run "test_scheduling_module_is_not_created_for_load_balanced_web_service" {
   }
 }
 
-run "test_app_autoscaling_target_is_not_created_for_scheduled_job" {
+run "test_conditionally_creates_resources_for_a_scheduled_job" {
   command = plan
 
   variables {
@@ -777,8 +777,73 @@ run "test_app_autoscaling_target_is_not_created_for_scheduled_job" {
   }
 
   assert {
+    condition     = length(aws_ecs_service.service) == 0
+    error_message = "Should not create the ecs service for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_lambda_invocation.dummy_listener_rule) == 0
+    error_message = "Should not create a lambda invocation for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_ecs_task_definition.default_task_def) == 0
+    error_message = "Should not create a default task definition for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_s3_object.task_definition) == 0
+    error_message = "Should not create the s3 bucket for a scheduled job"
+  }
+
+  assert {
     condition     = length(aws_appautoscaling_target.ecs_autoscaling) == 0
-    error_message = "Should not create the app autoscaling target"
+    error_message = "Should not create the app autoscaling target for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_scheduled_action.scheduled_autoscaling) == 0
+    error_message = "Should not create the app autoscaling target for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_lb_target_group.target_group) == 0
+    error_message = "Should not create a load balancer target group for a scheduled job"
+  }
+
+  assert {
+    condition     = length(data.aws_service_discovery_dns_namespace.private_dns_namespace) == 0
+    error_message = "Should not create service discovery resources for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_service_discovery_service.service_discovery_service) == 0
+    error_message = "Should not create service discovery resources for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_policy.cpu_autoscaling_policy) == 0
+    error_message = "Should not create autoscaling policy for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_policy.memory_autoscaling_policy) == 0
+    error_message = "Should not create autoscaling memory policy for a scheduled job"
+  }
+
+  assert {
+    condition     = length(data.aws_lb.load_balancer) == 0
+    error_message = "Should not load load balancer data for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_policy.requests_autoscaling_policy) == 0
+    error_message = "Should not create autoscaling requests policy for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_ecs_task_definition.job) == 1
+    error_message = "Should create task definition for a scheduled job"
   }
 }
 
