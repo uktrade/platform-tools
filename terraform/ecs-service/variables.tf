@@ -76,6 +76,7 @@ variable "service_config" {
       }))
     })
 
+    platform   = optional(string)
     cpu        = number
     memory     = number
     count      = any # Can be an integer or a map due to Copilot. See Copilot docs: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count

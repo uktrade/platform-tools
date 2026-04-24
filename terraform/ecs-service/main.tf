@@ -431,7 +431,7 @@ resource "aws_ecs_task_definition" "job" {
   task_role_arn         = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-ecs-task"
 
   dynamic "volume" {
-    for_each = local.scheduled_job_volumes
+    for_each = local.volumes
     content {
       name      = volume.value["name"]
       host_path = volume.value["host"]

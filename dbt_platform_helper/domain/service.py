@@ -118,10 +118,11 @@ class ServiceManager:
                 f"Cannot generate Terraform for environment '{environment}'. It does not exist in your configuration."
             )
 
-        platform_helper_version_for_template: str = (
-            self.platform_helper_version_override
-            or config.get("default_versions", {}).get("platform-helper")
-        )
+        platform_helper_version_for_template: (
+            str
+        ) = self.platform_helper_version_override or config.get("default_versions", {}).get(
+            "platform-helper"
+        )  # TODO: add ability to override "auto" platform-helper version
 
         source_type = EnvironmentVariableProvider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
