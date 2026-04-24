@@ -24,15 +24,15 @@ resource "null_resource" "validate_cdn_domains" {
 
   lifecycle {
     precondition {
-      condition     = sort(local.cdn_domains_list) == sort(local.ingress_cdn_domains_list)
+      condition     = local.cdn_domains_list == local.ingress_cdn_domains_list
       error_message = <<-EOT
       cdn_domains_list in the ${var.environment} environment does not match the domains defined in platform-public-ingress.
       
       Either add the domain to extensions.${var.name}.environments.${var.environment}.cdn_domains_list
       or Ensure the domain is defined in https://github.com/uktrade/platform-public-ingress/blob/main/terraform/configuration/${var.application}/${var.application}.${var.environment}.tfvars
 
-      platform-public-ingress = ${jsonencode(sort(local.ingress_cdn_domains_list))}
-      cdn_domains_list        = ${jsonencode(sort(local.cdn_domains_list))}
+      platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
+      cdn_domains_list        = ${jsonencode(local.cdn_domains_list)}
       EOT
     }
   }
