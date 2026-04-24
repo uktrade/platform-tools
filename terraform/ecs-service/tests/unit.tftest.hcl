@@ -82,6 +82,11 @@ override_data {
   }
 }
 
+override_module {
+  target  = module.scheduling["enabled"]
+  outputs = {}
+}
+
 variables {
   application         = "demodjango"
   environment         = "dev"
@@ -729,7 +734,16 @@ run "test_scheduling_module_is_created_for_scheduled_job" {
 
   assert {
     condition     = length(module.scheduling) == 1
-    error_message = "Should have the scheduling module"
+    error_message = "Should create the scheduling module"
+  }
+}
+
+run "test_scheduling_module_is_not_created_for_load_balanced_web_service" {
+  command = plan
+
+  assert {
+    condition     = length(module.scheduling) == 0
+    error_message = "Should not create the scheduling module"
   }
 }
 

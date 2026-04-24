@@ -152,8 +152,6 @@ resource "aws_ecs_service" "service" {
 }
 
 data "aws_vpc" "vpc" {
-  count = local.web_service_required + (local.is_scheduled_job ? 1 : 0)
-
   filter {
     name   = "tag:Name"
     values = [local.vpc_name]
@@ -176,7 +174,7 @@ resource "aws_lb_target_group" "target_group" {
   port                 = 443
   protocol             = "HTTPS"
   target_type          = "ip"
-  vpc_id               = data.aws_vpc.vpc[count.index].id
+  vpc_id               = data.aws_vpc.vpc.id
   deregistration_delay = var.service_config.http.deregistration_delay
   tags                 = local.tags
 
@@ -450,7 +448,7 @@ resource "aws_ecs_task_definition" "job" {
 resource "aws_security_group" "job" {
   name        = "security-group-for-scheduled-job"
   description = "SG for scheduled job ECS task"
-  vpc_id      = data.aws_vpc.vpc[0].id
+  vpc_id      = data.aws_vpc.vpc.id
 
   tags = local.tags
 }
@@ -471,8 +469,8 @@ module "scheduling" {
   schedule            = try(var.service_config.schedule, null)
   retries             = try(var.service_config.retries, null)
   timeout             = try(var.service_config.timeout, null)
-  security_group_id   = aws_security_group.job
-  task_definition_arn = aws_ecs_task_definition.job
+  security_group_id   = aws_security_group.job.id
+  task_definition_arn = aws_ecs_task_definition.job["enabled"].arn
   subnet_ids          = data.aws_subnets.private-subnets.ids
   cluster_id          = data.aws_ecs_cluster.cluster.id
   tags                = local.tags
