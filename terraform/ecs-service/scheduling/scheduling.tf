@@ -27,6 +27,23 @@ resource "aws_scheduler_schedule" "this" {
 
 }
 
+resource "aws_security_group" "job" {
+  name        = "security-group-for-scheduled-job"
+  description = "SG for scheduled job ECS task"
+  vpc_id      = var.vpc_id
+
+  tags = var.tags
+}
+
+resource "aws_vpc_security_group_egress_rule" "scheduled_job_egress" {
+  security_group_id = aws_security_group.job.id
+  description       = "Allow all outbound traffic"
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+
+  tags = var.tags
+}
+
 ### State Machine
 resource "aws_sfn_state_machine" "this" {
   name     = var.name

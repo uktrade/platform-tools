@@ -20,7 +20,7 @@ locals {
           LaunchType      = "FARGATE"
           PlatformVersion = "LATEST"
           Cluster         = var.cluster_id
-          TaskDefinition  = "" # Replace with aws_ecs_task_definition.service.arn
+          TaskDefinition  = var.task_definition_arn
           PropagateTags   = "TASK_DEFINITION"
           "Group.$"       = "$$.Execution.Name"
           NetworkConfiguration = {
@@ -28,7 +28,7 @@ locals {
               Subnets = var.subnet_ids
             }
             AssignPublicIp = "DISABLED"
-            SecurityGroups = var.security_group_id
+            SecurityGroups = aws_security_group.job.id
           }
         }
         Retry = var.retries != null ? [{

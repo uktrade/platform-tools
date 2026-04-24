@@ -445,23 +445,6 @@ resource "aws_ecs_task_definition" "job" {
   tags = local.tags
 }
 
-resource "aws_security_group" "job" {
-  name        = "security-group-for-scheduled-job"
-  description = "SG for scheduled job ECS task"
-  vpc_id      = data.aws_vpc.vpc.id
-
-  tags = local.tags
-}
-
-resource "aws_vpc_security_group_egress_rule" "scheduled_job_egress" {
-  security_group_id = aws_security_group.job.id
-  description       = "Allow all outbound traffic"
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1"
-  tags              = local.tags
-}
-
-
 module "scheduling" {
   for_each            = toset(local.is_scheduled_job ? ["enabled"] : [])
   source              = "./scheduling"
@@ -469,11 +452,9 @@ module "scheduling" {
   schedule            = try(var.service_config.schedule, null)
   retries             = try(var.service_config.retries, null)
   timeout             = try(var.service_config.timeout, null)
-  security_group_id   = aws_security_group.job.id
+  vpc_id              = local.vpc_name
   task_definition_arn = aws_ecs_task_definition.job["enabled"].arn
   subnet_ids          = data.aws_subnets.private-subnets.ids
   cluster_id          = data.aws_ecs_cluster.cluster.id
   tags                = local.tags
 }
-
-
