@@ -54,6 +54,10 @@ class StepFunctions:
         response = self.sfn_client.list_tags_for_resource(resourceArn=resource_arn)
         return {tag["key"]: tag["value"] for tag in response.get("tags", [])}
 
+    def _get_status(self, execution_arn: str):
+        response = self.sfn_client.describe_execution(executionArn=execution_arn)
+        return response["status"]
+
 
 class StateMachineNotFoundException(AWSException):
     def __init__(self, application_name: str, environment: str, job_name: str):
