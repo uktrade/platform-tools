@@ -9,8 +9,8 @@ class JobManager:
 
     def run(self, app: str, env: str, name: str):
 
-        self.io.info(f"Looking up state machine for job '{name}' in {app}/{env}...")
+        self.io.info(f"Beginning execution for job '{name}' in {app}/{env}...")
         state_machine_arn = self.sfn_provider.find_state_machine_arn(name)
 
         response = self.sfn_provider.start_execution(state_machine_arn)
-        self.io.info(f"Execution started:  {response['executionArn']}")
+        self.io.info(f"Job started:  {response['executionArn']}")
