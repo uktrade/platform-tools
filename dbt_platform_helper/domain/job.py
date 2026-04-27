@@ -3,11 +3,12 @@ from dbt_platform_helper.providers.step_functions import StepFunctions
 
 
 class JobManager:
+
     def __init__(self, sfn_provider: StepFunctions, io: ClickIOProvider = ClickIOProvider()):
         self.sfn_provider = sfn_provider
         self.io = io
 
-    def run(self, app: str, env: str, name: str):
+    def run(self, app: str, env: str, name: str, follow: bool):
 
         self.io.info(f"Beginning execution for job '{name}' in {app}/{env}...")
         state_machine_arn = self.sfn_provider.find_state_machine_arn(name)

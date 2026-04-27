@@ -38,6 +38,6 @@ def run(app: str, env: str, name: str, follow: bool):
             env,
         )
 
-        JobManager(sfn_provider=sfn_provider).run(app, env, name)
+        JobManager(sfn_provider=sfn_provider).run(app, env, name, follow)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))

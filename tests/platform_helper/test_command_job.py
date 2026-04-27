@@ -25,7 +25,7 @@ def test_job_run(mock_application, mock_step_functions, mock_job_manager_object)
     mock_application.assert_called_once_with(app="test-application", env="development")
     mock_step_functions.assert_called_once()
     mock_job_manager_instance.run.assert_called_once_with(
-        "test-application", "development", "test-job"
+        "test-application", "development", "test-job", False
     )
 
 
@@ -84,5 +84,5 @@ def test_job_run_with_optional_follow(
     mock_application.assert_called_once_with(app="test-application", env="development")
     mock_step_functions.assert_called_once()
     mock_job_manager_instance.run.assert_called_once_with(
-        "test-application", "development", "test-job"
+        "test-application", "development", "test-job", True
     )
