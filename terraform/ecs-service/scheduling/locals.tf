@@ -22,10 +22,10 @@ locals {
           "Group.$"       = "$$.Execution.Name"
           NetworkConfiguration = {
             AwsvpcConfiguration = {
-              Subnets = var.subnet_ids
+              Subnets        = var.subnet_ids
+              AssignPublicIp = "DISABLED"
+              SecurityGroups = [aws_security_group.job.id]
             }
-            AssignPublicIp = "DISABLED"
-            SecurityGroups = aws_security_group.job.id
           }
         }
         Retry = var.retries != null ? [{

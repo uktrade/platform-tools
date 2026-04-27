@@ -458,8 +458,7 @@ resource "aws_ecs_task_definition" "job" {
   dynamic "volume" {
     for_each = local.volumes
     content {
-      name      = volume.value["name"]
-      host_path = volume.value["host"]
+      name = volume.value["name"]
     }
   }
 
@@ -477,7 +476,7 @@ module "scheduling" {
   schedule            = var.service_config.schedule
   retries             = try(var.service_config.retries, null)
   timeout_seconds     = try(var.service_config.timeout, null)
-  vpc_id              = local.vpc_name
+  vpc_id              = data.aws_vpc.vpc.id
   task_definition_arn = aws_ecs_task_definition.job["enabled"].arn
   subnet_ids          = data.aws_subnets.private-subnets.ids
   cluster_id          = data.aws_ecs_cluster.cluster.id

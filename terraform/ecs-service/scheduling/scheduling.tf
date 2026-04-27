@@ -46,10 +46,8 @@ resource "aws_vpc_security_group_egress_rule" "scheduled_job_egress" {
 
 ### State Machine
 resource "aws_sfn_state_machine" "this" {
-  name     = var.name
+  name     = "${var.name}-sfn"
   role_arn = aws_iam_role.state_machine_role.arn
 
   definition = jsonencode(local.state_machine_definition)
 }
-
-

@@ -237,8 +237,7 @@ class ServiceManager:
 
             if timeout.endswith("m"):
                 return int(timeout.rstrip("m")) * 60
-
-            if timeout.endswith("h"):
+            elif timeout.endswith("h"):
                 return int(timeout.rstrip("h")) * 3600
 
             raise ValueError(f"Unsupported timeout format: {timeout}")

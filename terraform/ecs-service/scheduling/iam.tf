@@ -50,11 +50,11 @@ data "aws_iam_policy_document" "state_machine_assume_role" {
       type        = "Service"
       identifiers = ["states.amazonaws.com"]
     }
-    condition {
-      test     = "ArnLike"
-      variable = "aws:SourceArn"
-      values   = ["arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.name}"]
-    }
+    # condition {
+    #   test     = "ArnLike"
+    #   variable = "aws:SourceArn"
+    #   values   = ["arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:*"]
+    # }
   }
 }
 
@@ -79,7 +79,7 @@ data "aws_iam_policy_document" "start_ecs_task" {
       "ecs:RunTask"
     ]
     resources = [
-      "*" # Replace with aws_ecs_task_definition.service.arn
+      var.task_definition_arn
     ]
   }
   statement {
@@ -89,7 +89,7 @@ data "aws_iam_policy_document" "start_ecs_task" {
       "ecs:DescribeTasks"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${var.cluster_id}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/demodjango-dev-cluster/*" #${var.cluster_id}/*"
     ]
   }
   statement {
@@ -101,6 +101,16 @@ data "aws_iam_policy_document" "start_ecs_task" {
     ]
     resources = [
       "arn:aws:events:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:rule/StepFunctionsGetEventsForECSTaskRule"
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:PassRole",
+    ]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-task-exec",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-ecs-task"
     ]
   }
 }
