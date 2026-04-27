@@ -117,5 +117,5 @@ data "aws_iam_policy_document" "start_ecs_task" {
 
 resource "aws_iam_role_policy_attachment" "state_machine_start_ecs_task" {
   role       = aws_iam_role.state_machine_role.name
-  policy_arn = aws_iam_policy.start_state_machine_execution_policy.arn
+  policy_arn = aws_iam_policy.start_ecs_task_policy.arn
 }
