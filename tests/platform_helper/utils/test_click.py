@@ -37,61 +37,61 @@ def test_click_docopt_command_help():
 
 def test_click_docopt_command_group_usage_command():
     @click.group(cls=ClickDocOptGroup)
-    def test_group():
+    def test_collection():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_one():
         pass
 
-    result = CliRunner().invoke(test_group, ["--help"])
+    result = CliRunner().invoke(test_collection, ["--help"])
 
-    assert "test-group command-one" in result.output
+    assert "test-collection command-one" in result.output
 
 
 def test_click_docopt_command_group_usage_command_choice():
     @click.group(cls=ClickDocOptGroup)
-    def test_group():
+    def test_collection():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_one():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_two():
         pass
 
-    result = CliRunner().invoke(test_group, ["--help"])
+    result = CliRunner().invoke(test_collection, ["--help"])
 
-    assert "test-group (command-one|command-two)" in result.output
+    assert "test-collection (command-one|command-two)" in result.output
 
 
 def test_click_docopt_command_group_usage_command_many():
     @click.group(cls=ClickDocOptGroup)
-    def test_group():
+    def test_collection():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_one():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_two():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_three():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_four():
         pass
 
-    @test_group.command()
+    @test_collection.command()
     def command_five():
         pass
 
-    result = CliRunner().invoke(test_group, ["--help"])
+    result = CliRunner().invoke(test_collection, ["--help"])
 
-    assert "test-group <command>" in result.output
+    assert "test-collection <command>" in result.output
