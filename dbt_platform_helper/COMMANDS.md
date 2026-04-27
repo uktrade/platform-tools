@@ -1070,7 +1070,7 @@ platform-helper job run
 ## Usage
 
 ```
-platform-helper job run --app <application> --env <environment> --name <name> 
+platform-helper job run --app <application> --env <environment> --name <name> [--follow] 
 ```
 
 ## Options
@@ -1084,5 +1084,7 @@ platform-helper job run --app <application> --env <environment> --name <name>
 - `--name
 -n <text>`
   - Name of the scheduled job
+- `--follow <boolean>` _Defaults to False._
+
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

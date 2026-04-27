@@ -61,3 +61,28 @@ def test_job_run_missing_required_arguments(
 
     assert result.exit_code != 0
     assert "Error" in result.output or "Missing option" in result.output
+
+
+@patch("dbt_platform_helper.commands.job.JobManager")
+@patch("dbt_platform_helper.commands.job.StepFunctions")
+@patch("dbt_platform_helper.commands.job.load_application")
+def test_job_run_with_optional_follow(
+    mock_application, mock_step_functions, mock_job_manager_object
+):
+    """Test that given an app, env and job name strings, the job run command
+    calls run with app, env and job name."""
+
+    mock_job_manager_instance = mock_job_manager_object.return_value
+
+    result = CliRunner().invoke(
+        run,
+        ["--app", "test-application", "--env", "development", "--name", "test-job", "--follow"],
+    )
+
+    assert result.exit_code == 0
+
+    mock_application.assert_called_once_with(app="test-application", env="development")
+    mock_step_functions.assert_called_once()
+    mock_job_manager_instance.run.assert_called_once_with(
+        "test-application", "development", "test-job"
+    )
