@@ -306,6 +306,29 @@ def test_schedule_is_required_for_scheduled_job():
 
 
 @pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+def test_schedule_is_not_allowed_for_other_services(type):
+    service_config = {
+        "name": "web",
+        "type": type,
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "/",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+        "count": 1,
+        "schedule": "none",
+    }
+    with pytest.raises(
+        PlatformException, match=f"'schedule' is not allowed for service type == {type}"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
 def test_retries_is_not_allowed_for_other_services(type):
     service_config = {
         "name": "web",

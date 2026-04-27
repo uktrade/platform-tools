@@ -363,7 +363,6 @@ class ServiceConfig(BaseModel):
 
     @model_validator(mode="after")
     def check_allowed_fields_in_scheduled_job(self):
-        # Could add all checks for scheduled jobs here
         if self.type == ServiceType.SCHEDULED_JOB:
             if self.count is not None:
                 raise PlatformException(
@@ -381,6 +380,10 @@ class ServiceConfig(BaseModel):
             if self.count is None:
                 raise PlatformException(
                     f"'count' is required for service type == {self.type.value}"
+                )
+            if self.schedule is not None:
+                raise PlatformException(
+                    f"'schedule' is not allowed for service type == {self.type.value}"
                 )
             if self.retries is not None:
                 raise PlatformException(
@@ -449,50 +452,3 @@ class ServiceConfig(BaseModel):
 
     # Class based variable used when handling the object
     local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
-
-
-class ScheduledJobEnvironmentOverride(BaseModel):
-    cpu: Optional[int] = Field(default=None)
-    memory: Optional[int] = Field(default=None)
-    retries: Optional[int] = Field(default=None)
-    timeout: Optional[int] = Field(default=None)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
-
-
-class ScheduledJobConfig(BaseModel):
-    name: str = Field(description="Scheduled job name.")
-    type: ServiceType = Field(
-        description=f"Type of service. Must be '{ServiceType.SCHEDULED_JOB.value}'"
-    )
-    schedule: str = Field(
-        description="The cron or rate expression defining when the job runs (e.g. '@daily', 'rate(1 hour)', 'cron(0 8 * * ? *)')."
-    )
-    cpu: int = Field(
-        description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
-    )
-    memory: int = Field(description="Memory in MiB reserved for the ECS task.")
-    retries: Optional[int] = Field(
-        description="Number of times to retry the job on failure.", default=None
-    )
-    timeout: Optional[int] = Field(
-        description="Maximum duration the job may run (e.g. '1h', '30m').", default=None
-    )
-    image: Image = Field()
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
-        description="Environment variables to inject into the container.", default=None
-    )
-    secrets: Optional[Dict[str, str]] = Field(
-        description="Parameter Store secrets to inject into the container.", default=None
-    )
-    environments: Optional[Dict[str, ScheduledJobEnvironmentOverride]] = Field(
-        description="Per-environment overrides for the scheduled job configuration.", default=None
-    )
-
-    @model_validator(mode="after")
-    def check_type_is_scheduled_job(self):
-        if self.type != ServiceType.SCHEDULED_JOB:
-            raise PlatformException(
-                f"ScheduledJobConfig requires type == '{ServiceType.SCHEDULED_JOB.value}', got '{self.type.value}'"
-            )
-        return self

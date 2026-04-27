@@ -229,21 +229,6 @@ class ServiceManager:
             items = list(d.items())
             return {**dict(items[:2]), "schedule": schedule, **dict(items[2:])}
 
-        # TODO Remove this check on keywords as part of the copilot cleanup.
-        # Note - get_on_key() function handles how YAML parsing may convert the *on* key into a boolean True. This ensures migration works reliably regardless of whether the key is read as "on" or True. Without this, the schedule section could be skipped/produce incorrect output. https://yaml.org/type/bool.html
-        def get_on_key(d: dict) -> str | bool | None:
-            if "on" in d:
-                return "on"
-            if True in d:
-                return True
-            return None
-
-        # Regenerate manifest with the *schedule* included after the *type* field
-        # This is required to avoid sending the *schedule* field to the bottom of the service-config.yml file
-        def set_schedule_order(d: dict, schedule: str) -> dict:
-            items = list(d.items())
-            return {**dict(items[:2]), "schedule": schedule, **dict(items[2:])}
-
         for dirname, _, filenames in os.walk("copilot"):
             if "manifest.yml" in filenames and "environments" not in dirname:
                 copilot_manifest = self.file_provider.load(f"{dirname}/manifest.yml")
