@@ -786,8 +786,8 @@ def expected_scheduled_job_config():
             "name": "my-scheduled-service",
             "type": "Scheduled Job",
             "schedule": "none",
-            "retries": "1",
-            "timeout": "60m",
+            "retries": 1,
+            "timeout": 3600,
             "image": {
                 "location": "123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service"
             },
@@ -974,7 +974,7 @@ name: my-scheduled-service
 type: Scheduled Job
 schedule: none
 retries: 1
-timeout: 60m
+timeout: 3600
 image:
   location: 123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service
 """.lstrip()
@@ -1086,6 +1086,27 @@ environments:
     service_manager.migrate_copilot_manifests()
 
     with open(tmp_path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+@pytest.mark.parametrize(
+    "timeout_string,expected",
+    [("1h", 3600), ("60m", 3600)],
+    ids=["hours", "minutes"],
+)
+def test_scheduled_jobs_converts_timeout_to_seconds(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config, timeout_string, expected
+):
+    path = copilot_scheduled_job_manifest({"timeout": timeout_string})
+    expected_service_config = expected_scheduled_job_config({"timeout": expected})
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
         service_config = yaml.safe_load(f)
 
     assert service_config == expected_service_config

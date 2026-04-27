@@ -229,6 +229,20 @@ class ServiceManager:
             items = list(d.items())
             return {**dict(items[:2]), "schedule": schedule, **dict(items[2:])}
 
+        def timeout_to_seconds(timeout: str) -> int:
+            if not isinstance(timeout, str):
+                raise ValueError("timeout value must be a string")
+
+            timeout = timeout.strip()
+
+            if timeout.endswith("m"):
+                return int(timeout.rstrip("m")) * 60
+
+            if timeout.endswith("h"):
+                return int(timeout.rstrip("h")) * 3600
+
+            raise ValueError(f"Unsupported timeout format: {timeout}")
+
         for dirname, _, filenames in os.walk("copilot"):
             if "manifest.yml" in filenames and "environments" not in dirname:
                 copilot_manifest = self.file_provider.load(f"{dirname}/manifest.yml")
@@ -430,6 +444,12 @@ class ServiceManager:
                                 service_manifest["count"]["cooldown"]["out"] = int(
                                     scaling_out.rstrip("s")
                                 )
+
+                if "timeout" in service_manifest:
+                    service_manifest["timeout"] = timeout_to_seconds(service_manifest["timeout"])
+
+                if "retries" in service_manifest:
+                    service_manifest["retries"] = int(service_manifest["retries"])
 
                 if "network" in service_manifest:
                     del service_manifest["network"]
