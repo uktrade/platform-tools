@@ -53,6 +53,8 @@ class PipelineMocks:
         self.mock_platform_helper_versioning = PlatformHelperVersioning(
             **platform_helper_versioning_mocks.params()
         )
+        self.mock_environment_variable_provider = Mock()
+        self.mock_environment_variable_provider.get.return_value = None
 
     def params(self):
         return {
@@ -62,6 +64,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "platform_helper_versioning": self.mock_platform_helper_versioning,
+            "environment_variable_provider": self.mock_environment_variable_provider,
         }
 
 
@@ -487,3 +490,35 @@ def assert_terraform(
         assert version_tracker_module["application"] == app_name
         assert version_tracker_module["pipeline_type"] == "environment-pipeline"
         assert version_tracker_module["depends_on"] == ["${module.environment-pipelines}"]
+
+
+@pytest.mark.parametrize(
+    "pinned_version, platform_helper_version_override, platform_config_version, expected",
+    [
+        ("10.0.0", "doesnt-matter", "doesnt-matter", "10.0.0"),
+        (None, "11.0.0", "doesnt-matter", "11.0.0"),
+        (None, None, "12.0.0", "12.0.0"),
+    ],
+)
+def test_resolve_platform_version_for_version_tracker(
+    pinned_version,
+    platform_helper_version_override,
+    platform_config_version,
+    expected,
+):
+    mocks = PipelineMocks("test-app")
+    mocks.mock_environment_variable_provider.get.return_value = platform_helper_version_override
+
+    pipelines = Pipelines(**mocks.params())
+
+    result = pipelines._resolve_platform_version_for_version_tracker(
+        pinned_version,
+        platform_config_version,
+    )
+
+    assert result == expected
+
+    if pinned_version is None:
+        mocks.mock_environment_variable_provider.get.assert_called_once_with(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )

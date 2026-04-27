@@ -7,11 +7,15 @@ from shutil import rmtree
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.ecr import ECRProvider
+from dbt_platform_helper.providers.environment_variable import (
+    EnvironmentVariableProvider,
+)
 from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -29,6 +33,7 @@ class Pipelines:
         io: ClickIOProvider = ClickIOProvider(),
         file_provider: FileProvider = FileProvider(),
         platform_helper_versioning: PlatformHelperVersioning = None,
+        environment_variable_provider: EnvironmentVariableProvider = EnvironmentVariableProvider(),
     ):
         self.config_provider = config_provider
         self.get_git_remote = get_git_remote
@@ -37,6 +42,7 @@ class Pipelines:
         self.io = io
         self.file_provider = file_provider
         self.platform_helper_versioning = platform_helper_versioning
+        self.environment_variable_provider = environment_variable_provider
 
     def _map_environment_pipeline_accounts(self, platform_config) -> list[tuple[str, str]]:
         environment_pipelines_config = platform_config[ENVIRONMENT_PIPELINES_KEY]
@@ -177,10 +183,8 @@ class Pipelines:
 
         pipelines = self._get_pipelines_list_for_account(config, aws_account)
 
-        platform_version = (
-            pinned_version
-            if pinned_version is not None
-            else config["default_versions"]["platform-helper"]
+        platform_version = self._resolve_platform_version_for_version_tracker(
+            pinned_version, config["default_versions"]["platform-helper"]
         )
 
         contents = env_pipeline_template.render(
@@ -207,3 +211,17 @@ class Pipelines:
         self.io.info(
             self.file_provider.mkfile(".", f"{dir_path}/main.tf", contents, overwrite=True)
         )
+
+    def _resolve_platform_version_for_version_tracker(
+        self, pinned_version, platform_config_version
+    ):
+        if pinned_version is not None:
+            return pinned_version
+
+        platform_version_override = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
+        if pinned_version is None and platform_version_override is not None:
+            return platform_version_override
+        else:
+            return platform_config_version
