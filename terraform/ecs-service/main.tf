@@ -450,7 +450,8 @@ resource "aws_ecs_task_definition" "job" {
     }
   }
 
-  execution_role_arn    = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-task-exec"
+  # execution_role_arn    = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-task-exec"
+  execution_role_arn    = aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode(local.container_definitions_list)
   task_role_arn         = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-ecs-task"
 
@@ -473,7 +474,7 @@ module "scheduling" {
   for_each            = toset(local.is_scheduled_job ? ["enabled"] : [])
   source              = "./scheduling"
   name                = local.full_service_name
-  schedule            = try(var.service_config.schedule, null)
+  schedule            = var.service_config.schedule
   retries             = try(var.service_config.retries, null)
   timeout_seconds     = try(var.service_config.timeout, null)
   vpc_id              = local.vpc_name
