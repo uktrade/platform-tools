@@ -26,7 +26,6 @@ phases:
           export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
           export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)        
           for i in ${DOMAINS}; do
-            export i=api.dev.demodjango.uktrade.digital
             echo "Getting distribution ID for domain ${i}"
             DISTRIBUTION_ID=$(aws cloudfront list-distributions --query 'DistributionList.Items' --output json | jq -r --arg domain "$i" '.[] | select(.Aliases.Items != null and .Aliases.Items[0] == $domain) | .Id')
             PATHS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r --arg domain "${i}" '.[$domain] | map(@sh) | join(" ")')
