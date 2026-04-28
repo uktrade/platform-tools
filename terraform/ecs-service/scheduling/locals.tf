@@ -3,6 +3,8 @@ locals {
 
   full_service_name = var.name
 
+  cluster_name = split("/", var.cluster_id)[1]
+
   ### State Machine
   state_machine_definition = {
     Version        = "1.0"

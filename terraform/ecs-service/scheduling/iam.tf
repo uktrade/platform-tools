@@ -50,11 +50,16 @@ data "aws_iam_policy_document" "state_machine_assume_role" {
       type        = "Service"
       identifiers = ["states.amazonaws.com"]
     }
-    # condition {
-    #   test     = "ArnLike"
-    #   variable = "aws:SourceArn"
-    #   values   = ["arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:*"]
-    # }
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:*"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
   }
 }
 
@@ -89,7 +94,7 @@ data "aws_iam_policy_document" "start_ecs_task" {
       "ecs:DescribeTasks"
     ]
     resources = [
-      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/demodjango-dev-cluster/*" #${var.cluster_id}/*"
+      "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:task/${local.cluster_name}/*"
     ]
   }
   statement {
