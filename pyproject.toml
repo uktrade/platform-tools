@@ -47,7 +47,7 @@ parameterized = "^0.9.0"
 pytest-xdist = "^3.5.0"
 pytest-cov = ">=6,<8"
 mypy-boto3-codebuild = "^1.40.8"
-python-hcl2 = "^7.3.1"
+python-hcl2 = ">=7.3.1,<9.0.0"
 boto3-stubs =  "^1.26.148"
 
 [build-system]
