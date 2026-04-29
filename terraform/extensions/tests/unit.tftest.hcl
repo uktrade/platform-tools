@@ -63,7 +63,8 @@ variables {
       }
     }
   }
-  environment = "test-env"
+  environment       = "test-env"
+  deploy_repository = "uktrade/test-application-deploy"
 }
 
 mock_provider "aws" {

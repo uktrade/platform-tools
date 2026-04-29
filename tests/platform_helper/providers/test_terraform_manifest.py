@@ -192,6 +192,7 @@ def test_generate_environment_config_creates_file(
     platform_env_config, app, env, platform_helper_version, expected_aws_account
 ):
     platform_env_config["application"] = app
+    platform_env_config["deploy_repository"] = "uktrade/platform-my-app-deploy"
     mock_file_provider = Mock()
     mock_file_provider.mkfile.return_value = "File created"
     mock_file_provider.delete_file.return_value = (
@@ -263,6 +264,7 @@ def test_generate_environment_config_creates_file(
     assert extensions_module["source"] == f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
     assert extensions_module["args"] == "${local.args}"
     assert extensions_module["environment"] == env
+    assert extensions_module["deploy_repository"] == platform_env_config["deploy_repository"]
     assert (
         extensions_module["repos"]
         == "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}"
