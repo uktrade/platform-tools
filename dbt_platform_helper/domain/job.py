@@ -2,7 +2,6 @@ import time
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.step_functions import StepFunctions
 
 
 class ScheduledJobExecutionFailedException(PlatformException):
@@ -11,39 +10,36 @@ class ScheduledJobExecutionFailedException(PlatformException):
 
 class JobManager:
 
-    SECONDS = 5
-    STATUSES = {"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"}
+    JOB_POLL_SECONDS = 5
+    JOB_FINAL_STATUSES = {"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"}
 
-    def __init__(self, sfn_provider: StepFunctions, io: ClickIOProvider = ClickIOProvider()):
-        self.sfn_provider = sfn_provider
+    def __init__(self, job_runner, io: ClickIOProvider = ClickIOProvider()):
+        self.job_runner = job_runner
         self.io = io
 
     def run(self, app: str, env: str, name: str, follow: bool):
 
         self.io.info(f"Beginning execution for job '{name}' in {app}/{env}...")
-        state_machine_arn = self.sfn_provider.find_state_machine_arn(name)
-
-        response = self.sfn_provider.start_execution(state_machine_arn)
-        execution_arn = response["executionArn"]
-        self.io.info(f"Job started:  {response['executionArn']}")
+        execution_id = self.job_runner.run(name)
+        self.io.info(f"Job started: {execution_id}")
 
         if follow:
-            self.follow_execution(execution_arn)
+            self.follow_execution(execution_id)
 
-    def follow_execution(self, execution_arn: str):
+    def follow_execution(self, execution_id: str):
 
         self.io.info("Waiting for execution to finish...")
 
         while True:
-            time.sleep(self.SECONDS)
-            status = self.sfn_provider._get_status(execution_arn)
+            time.sleep(self.JOB_POLL_SECONDS)
+            status = self.job_runner.get_status(execution_id)
             self.io.info(status)
-            if status in self.STATUSES:
+            if status in self.JOB_FINAL_STATUSES:
                 break
 
         if status == "SUCCEEDED":
-            self.io.info(f"Job {execution_arn} completed successfully.")
+            self.io.info(f"Job {execution_id} completed successfully.")
         else:
             raise ScheduledJobExecutionFailedException(
-                f"Job {execution_arn} finished with status {status}"
+                f"Job {execution_id} finished with status {status}"
             )

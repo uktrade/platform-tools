@@ -41,7 +41,7 @@ def test_find_state_machine_arn_returns_arn_when_tags_match():
     )
 
     provider = StepFunctions(client, application_name="test-app", env="dev")
-    result = provider.find_state_machine_arn("hello-world")
+    result = provider._find_state_machine_arn("hello-world")
 
     assert result == "arn:aws:states:::stateMachine:test-hello-world"
 
@@ -62,7 +62,7 @@ def test_find_state_machine_arn_raises_when_not_found():
 
     provider = StepFunctions(client, application_name="test-app", env="dev")
     with pytest.raises(StateMachineNotFoundException):
-        provider.find_state_machine_arn("hello-world")
+        provider._find_state_machine_arn("hello-world")
 
 
 def test_find_state_machine_arn_raises_when_multiple_found():
@@ -82,7 +82,7 @@ def test_find_state_machine_arn_raises_when_multiple_found():
 
     provider = StepFunctions(client, application_name="test-app", env="dev")
     with pytest.raises(MultipleStateMachinesFoundException):
-        provider.find_state_machine_arn("hello-world")
+        provider._find_state_machine_arn("hello-world")
 
 
 def test_get_status():
@@ -94,6 +94,6 @@ def test_get_status():
 
     provider = StepFunctions(client, application_name="test-app", env="dev")
 
-    status = provider._get_status("arn:exec:123")
+    status = provider.get_status("arn:exec:123")
 
     assert status == "RUNNING"

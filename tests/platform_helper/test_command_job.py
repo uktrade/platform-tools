@@ -60,7 +60,7 @@ def test_job_run_missing_required_arguments(
     result = CliRunner().invoke(run, [])
 
     assert result.exit_code != 0
-    assert "Error" in result.output or "Missing option" in result.output
+    assert "Error" in result.output and "Missing option" in result.output
 
 
 @patch("dbt_platform_helper.commands.job.JobManager")

@@ -12,7 +12,7 @@ class StepFunctions:
         self.application_name = application_name
         self.env = env
 
-    def find_state_machine_arn(self, job_name: str) -> Optional[str]:
+    def _find_state_machine_arn(self, job_name: str) -> Optional[str]:
 
         matches: list[str] = []
         paginator = self.sfn_client.get_paginator("list_state_machines")
@@ -36,25 +36,22 @@ class StepFunctions:
             )
         return matches[0]
 
-    def start_execution(self, state_machine_arn: str, name: Optional[str] = None) -> str:
-        kwargs = {"stateMachineArn": state_machine_arn}
-        if name:
-            kwargs["name"] = name
-
+    def run(self, job_name: str) -> str:
+        state_machine_arn = self._find_state_machine_arn(job_name)
         try:
-            result = self.sfn_client.start_execution(**kwargs)
-            return result
-
+            response = self.sfn_client.start_execution(stateMachineArn=state_machine_arn)
         except ClientError as err:
             raise StartExecutionFailedException(
                 state_machine_arn, err.response.get("Error", {}).get("Message", str(err))
             )
 
+        return response["executionArn"]
+
     def _list_tags(self, resource_arn: str) -> dict:
         response = self.sfn_client.list_tags_for_resource(resourceArn=resource_arn)
         return {tag["key"]: tag["value"] for tag in response.get("tags", [])}
 
-    def _get_status(self, execution_arn: str):
+    def get_status(self, execution_arn: str):
         response = self.sfn_client.describe_execution(executionArn=execution_arn)
         return response["status"]
 
@@ -63,17 +60,13 @@ class StateMachineNotFoundException(AWSException):
     def __init__(self, application_name: str, environment: str, job_name: str):
         super().__init__(
             f"Scheduled Job '{job_name}' not found in '{environment}' of application '{application_name}'.\n"
-            f"Please check that the combination of application, environment and scheduled job are correct."
+            f"Please check that the combination of application, environment and name correctly describe a deployed scheduled job."
         )
 
 
 class StartExecutionFailedException(AWSException):
     def __init__(self, state_machine_arn: str, error: str):
-        super().__init__(
-            f"Failed to start the Scheduled Job execution.\n"
-            f"AWS returned: {error}\n"
-            f"State Machine ARN: {state_machine_arn}."
-        )
+        super().__init__(f"Failed to start the Scheduled Job execution. {error}")
 
 
 class MultipleStateMachinesFoundException(AWSException):
