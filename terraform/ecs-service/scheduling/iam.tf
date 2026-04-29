@@ -16,14 +16,14 @@ resource "aws_iam_role" "eventbridge_scheduler_role" {
   tags               = var.tags
 }
 
-resource "aws_iam_policy" "start_state_machine_execution_policy" {
-  name        = "${var.name}-state-machine-policy"
+resource "aws_iam_policy" "eventbridge_execution_policy" {
+  name        = "${var.name}-eventbridge-policy"
   description = "Allows EventBridge Schedule to start Scheduled Job State Machine execution."
-  policy      = data.aws_iam_policy_document.start_state_machine_execution.json
+  policy      = data.aws_iam_policy_document.eventbridge_permissions.json
   tags        = var.tags
 }
 
-data "aws_iam_policy_document" "start_state_machine_execution" {
+data "aws_iam_policy_document" "eventbridge_permissions" {
 
   statement {
     effect = "Allow"
@@ -36,9 +36,9 @@ data "aws_iam_policy_document" "start_state_machine_execution" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "eventbridge_scheduler_role" {
+resource "aws_iam_role_policy_attachment" "eventbridge_execution_policy" {
   role       = aws_iam_role.eventbridge_scheduler_role.name
-  policy_arn = aws_iam_policy.start_state_machine_execution_policy.arn
+  policy_arn = aws_iam_policy.eventbridge_execution_policy.arn
 }
 
 ### State Machine
@@ -69,14 +69,14 @@ resource "aws_iam_role" "state_machine_role" {
   tags               = var.tags
 }
 
-resource "aws_iam_policy" "start_ecs_task_policy" {
-  name        = "${var.name}-start-task-policy"
-  description = "Allows the State Machine to start an ECS task."
-  policy      = data.aws_iam_policy_document.start_ecs_task.json
+resource "aws_iam_policy" "state_machine_policy" {
+  name        = "${var.name}-state-machine-policy"
+  description = "Allows the State Machine to interact with an ECS task and send logs"
+  policy      = data.aws_iam_policy_document.state_machine_permissions.json
   tags        = var.tags
 }
 
-data "aws_iam_policy_document" "start_ecs_task" {
+data "aws_iam_policy_document" "state_machine_permissions" {
 
   statement {
     effect = "Allow"
@@ -138,7 +138,7 @@ data "aws_iam_policy_document" "start_ecs_task" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "state_machine_start_ecs_task" {
+resource "aws_iam_role_policy_attachment" "state_machine_policy" {
   role       = aws_iam_role.state_machine_role.name
-  policy_arn = aws_iam_policy.start_ecs_task_policy.arn
+  policy_arn = aws_iam_policy.state_machine_policy.arn
 }
