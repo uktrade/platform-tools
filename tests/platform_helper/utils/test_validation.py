@@ -103,6 +103,7 @@ def test_validate_addons_success(addons_file):
                 "my-s3-cross-environment-service-access-bucket-invalid-write": r"cross_environment_service_access.*'WRITE' should be instance of 'bool'",
                 "my-s3-cross-environment-service-access-bucket-invalid-read": r"cross_environment_service_access.*'READ' should be instance of 'bool'",
                 "my-s3-cross-environment-service-access-bucket-missing-cyber-sign-off": r"Missing key: 'cyber_sign_off_by'",
+                "my-s3-external-access-invalid-encrypt": r"encrypt.*should be instance of 'bool'",
             },
         ),
         (

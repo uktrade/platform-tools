@@ -379,6 +379,14 @@ run "aws_s3_bucket_external_role_access_read_write_unit_test" {
     ])
     error_message = "Should be: kms:Decrypt, kms:GenerateDataKey"
   }
+
+  assert {
+    condition = alltrue([
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:Encrypt"),
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:ReEncrypt"),
+    ])
+    error_message = "Should not contain: kms:Encrypt, kms:ReEncrypt"
+  }
 }
 
 run "aws_s3_bucket_external_role_access_read_only_unit_test" {
@@ -492,6 +500,66 @@ run "aws_s3_bucket_external_role_access_write_only_unit_test" {
     error_message = "Should be: kms:GenerateDataKey"
   }
 }
+
+run "aws_s3_bucket_external_role_access_encrypt_only_unit_test" {
+  command = plan
+
+  variables {
+    config = {
+      "bucket_name" = "dbt-terraform-test-s3-external-role-access",
+      "type"        = "s3",
+      "external_role_access" = {
+        "test-access" = {
+          "role_arn"          = "arn:aws:iam::123456789012:user/user-role/my-privileged-arn",
+          "read"              = false,
+          "write"             = false,
+          "encrypt"           = true,
+          "cyber_sign_off_by" = "test@businessandtrade.gov.uk"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_s3_bucket_policy.bucket-policy) == 1
+    error_message = "Should be a bucket policy"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.bucket-policy.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+
+  assert {
+    condition = alltrue([
+      !contains(data.aws_iam_policy_document.bucket-policy.statement[1].actions, "s3:Get*"),
+      !contains(data.aws_iam_policy_document.bucket-policy.statement[1].actions, "s3:ListBucket"),
+      !contains(data.aws_iam_policy_document.bucket-policy.statement[1].actions, "s3:Put*"),
+    ])
+    error_message = "Should be: empty"
+  }
+
+  assert {
+    condition     = length(aws_kms_key_policy.key-policy) == 1
+    error_message = "Should be a kms key policy"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.key-policy[0].statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+
+  assert {
+    condition = alltrue([
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:Decrypt"),
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:GenerateDataKey"),
+      contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:Encrypt"),
+      contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:ReEncrypt*"),
+    ])
+    error_message = "Should be: kms:Encrypt, kms:ReEncrypt"
+  }
+}
+
 
 run "aws_s3_bucket_external_role_access_invalid_cyber_sign_off" {
   command = plan
