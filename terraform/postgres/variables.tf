@@ -44,6 +44,10 @@ variable "config" {
   })
 }
 
+variable "deploy_repository" {
+  type = string
+}
+
 variable "pinned_version" {
   type    = string
   default = null

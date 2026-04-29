@@ -249,6 +249,28 @@ def test_generate_pipeline_generates_expected_terraform_manifest_when_no_deploy_
     assert re.search(r'repository += +"uktrade/test-app-deploy"', content)
 
 
+@freeze_time("2024-10-28 12:00:00")
+@patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
+def test_pipeline_generate_passes_explicit_deploy_repository_to_environment_pipelines(
+    fakefs,
+    platform_config_for_env_pipelines,
+):
+    app_name = "test-app"
+    platform_config_for_env_pipelines["deploy_repository"] = "uktrade/platform-test-app-deploy"
+    platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "14.0.0"}
+    fakefs.create_file(PLATFORM_CONFIG_FILE, contents=yaml.dump(platform_config_for_env_pipelines))
+    mocks = PipelineMocks(app_name)
+    pipelines = Pipelines(**mocks.params())
+
+    pipelines.generate("a-branch")
+
+    expected_file = Path("terraform/environment-pipelines/platform-prod-test/main.tf")
+    assert expected_file.exists()
+    content = expected_file.read_text()
+
+    assert re.search(r'repository += +"uktrade/platform-test-app-deploy"', content)
+
+
 @pytest.mark.parametrize(
     "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source",
     [
