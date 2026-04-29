@@ -24,3 +24,12 @@ phases:
     commands:
       - echo -e "\nBuild and publish to PyPi"
       - ./publish_to_pypi.sh ${PYPI_TOKEN} ${SLACK_TOKEN} ${SLACK_CHANNEL_ID}
+
+  post_build:
+    commands:
+      - echo -e "\nBuild and publish deploy tools image"
+      - PLATFORM_HELPER_VERSION=($(python utils/check_pypi.py --version))
+      - VERSION_NUMBER=${PLATFORM_HELPER_VERSION[1]}
+      - docker build --build-arg PLATFORM_HELPER_VERSION=$VERSION_NUMBER -t public.ecr.aws/uktrade/platform-deploy-tools:$VERSION_NUMBER ./images/tools/deploy
+      - docker tag public.ecr.aws/uktrade/platform-deploy-tools:$VERSION_NUMBER public.ecr.aws/uktrade/platform-deploy-tools:latest
+      - echo "\nBuild platform-deploy-tools image for $VERSION_NUMBER completed on $(date)"
