@@ -143,6 +143,7 @@ data "aws_iam_policy_document" "key-policy" {
       actions = flatten([
         statement.value.read ? ["kms:Decrypt"] : [],
         statement.value.write ? ["kms:GenerateDataKey"] : [],
+        statement.value.encrypt ? ["kms:Encrypt", "kms:ReEncrypt*"] : []
       ])
       principals {
         identifiers = [statement.value.role_arn]

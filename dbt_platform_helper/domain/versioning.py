@@ -173,7 +173,9 @@ class PlatformHelperVersioning:
 
     def get_pinned_version(self):
         if self.is_auto():
-            return self.environment_variable_provider.get(PLATFORM_HELPER_VERSION_OVERRIDE_KEY)
+            return self.environment_variable_provider.get(
+                PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+            ) or str(self.get_version_status().installed)
 
         return None
 

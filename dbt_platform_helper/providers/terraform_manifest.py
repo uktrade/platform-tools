@@ -4,6 +4,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
+from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
@@ -72,7 +73,7 @@ class TerraformManifestProvider:
     ):
         source = (
             module_source_override
-            or f"git::git@github.com:uktrade/platform-tools.git//terraform/ecs-service?depth=1&ref={platform_helper_version}"
+            or f"{PLATFORM_TOOLS_REPO_SSH_SOURCE}/terraform/ecs-service?depth=1&ref={platform_helper_version}"
         )
         terraform["module"] = {
             "ecs-service": {
@@ -130,6 +131,12 @@ class TerraformManifestProvider:
         pinned_version: str = None,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
+
+        if "deploy_repository" in platform_config.keys():
+            deploy_repository = platform_config["deploy_repository"]
+        else:
+            deploy_repository = f"uktrade/{platform_config['application']}-deploy"
+
         account = self._get_account_for_env(env, platform_config)
 
         application_name = platform_config["application"]
@@ -143,7 +150,12 @@ class TerraformManifestProvider:
             terraform, platform_config, account, f"tfstate/application/{state_key_suffix}.tfstate"
         )
         self._add_extensions_module(
-            terraform, platform_helper_version, env, module_source_override, pinned_version
+            terraform,
+            platform_helper_version,
+            env,
+            deploy_repository,
+            module_source_override,
+            pinned_version,
         )
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
@@ -247,6 +259,7 @@ class TerraformManifestProvider:
         terraform: dict,
         platform_helper_version: str,
         env: str,
+        deploy_repository: str,
         module_source_override: str = None,
         pinned_version: str = None,
     ):
@@ -256,6 +269,7 @@ class TerraformManifestProvider:
                 "source": source,
                 "args": "${local.args}",
                 "environment": env,
+                "deploy_repository": deploy_repository,
                 "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}",
                 "pinned_version": pinned_version,
             }

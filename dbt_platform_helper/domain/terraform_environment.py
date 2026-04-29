@@ -32,11 +32,6 @@ class TerraformEnvironment:
 
         self.platform_helper_versioning.check_platform_helper_version_mismatch()
 
-        pinned_version = None
-
-        if self.platform_helper_versioning.is_auto():
-            pinned_version = str(self.platform_helper_versioning.get_version_status().installed)
-
         config = self.config_provider.get_enriched_config()
 
         if environment_name not in config.get("environments").keys():
@@ -49,5 +44,5 @@ class TerraformEnvironment:
             environment_name,
             self.platform_helper_versioning.get_template_version(),
             self.platform_helper_versioning.get_extensions_module_source(),
-            pinned_version,
+            self.platform_helper_versioning.get_pinned_version(),
         )

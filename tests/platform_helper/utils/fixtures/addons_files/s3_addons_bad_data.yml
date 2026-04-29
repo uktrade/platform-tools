@@ -406,3 +406,15 @@ my-s3-cross-environment-service-access-bucket-missing-cyber-sign-off:
           write: True
           read: True
 
+my-s3-external-access-invalid-encrypt:
+  type: s3
+  environments:
+    dev:
+      bucket_name: mandatory
+      external_role_access:
+        some-reason-for-access:
+          role_arn: arn:aws:iam::123456789012:user/test-role
+          write: True
+          read: True
+          encrypt: invalid
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
