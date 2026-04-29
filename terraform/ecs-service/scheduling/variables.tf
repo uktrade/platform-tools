@@ -36,3 +36,7 @@ variable "subnet_ids" {
 variable "tags" {
   type = map(any)
 }
+
+variable "log_group" {
+  type = string
+}

@@ -481,4 +481,5 @@ module "scheduling" {
   subnet_ids          = data.aws_subnets.private-subnets.ids
   cluster_id          = data.aws_ecs_cluster.cluster.id
   tags                = local.tags
+  log_group           = aws_cloudwatch_log_group.ecs_service_logs.arn
 }

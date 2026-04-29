@@ -28,7 +28,7 @@ resource "aws_scheduler_schedule" "this" {
 }
 
 resource "aws_security_group" "job" {
-  name        = "security-group-for-scheduled-job"
+  name        = "${var.name}-scheduled-job"
   description = "SG for scheduled job ECS task"
   vpc_id      = var.vpc_id
 
@@ -50,4 +50,10 @@ resource "aws_sfn_state_machine" "this" {
   role_arn = aws_iam_role.state_machine_role.arn
 
   definition = jsonencode(local.state_machine_definition)
+
+  logging_configuration {
+    log_destination        = "${var.log_group}:*"
+    include_execution_data = true
+    level                  = "ALL"
+  }
 }
