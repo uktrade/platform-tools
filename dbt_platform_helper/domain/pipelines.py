@@ -221,7 +221,7 @@ class Pipelines:
         platform_version_override = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         )
-        if pinned_version is None and platform_version_override is not None:
+        if platform_version_override:
             return platform_version_override
         else:
             return platform_config_version
