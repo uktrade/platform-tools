@@ -19,3 +19,7 @@ variable "pinned_version" {
   type    = string
   default = null # Only populated for centralised services
 }
+
+variable "deploy_repository" {
+  type = string
+}

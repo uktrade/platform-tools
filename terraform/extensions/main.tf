@@ -34,6 +34,7 @@ module "postgres" {
   name        = each.key
   vpc_name    = local.vpc_name
   env_config  = var.args.env_config
+  deploy_repository = var.deploy_repository
 
   config         = each.value
   pinned_version = var.pinned_version
