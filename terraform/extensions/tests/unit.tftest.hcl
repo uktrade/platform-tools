@@ -75,6 +75,10 @@ mock_provider "aws" {
   alias = "domain"
 }
 
+mock_provider "aws" {
+  alias = "domain-cdn"
+}
+
 mock_provider "aws" {}
 
 mock_provider "datadog" {
