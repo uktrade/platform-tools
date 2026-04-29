@@ -433,8 +433,8 @@ resource "aws_ssm_parameter" "service_data" {
 
 # Scheduled Job only resources
 
-resource "aws_ecs_task_definition" "job" {
-  for_each                 = toset(local.is_scheduled_job ? ["enabled"] : [""])
+resource "aws_ecs_task_definition" "scheduled_job" {
+  for_each                 = toset(local.is_scheduled_job ? ["enabled"] : [])
   family                   = "${local.full_service_name}-task-def"
   requires_compatibilities = ["FARGATE"]
   pid_mode                 = "task"
@@ -477,7 +477,7 @@ module "scheduling" {
   retries             = try(var.service_config.retries, null)
   timeout_seconds     = try(var.service_config.timeout, null)
   vpc_id              = data.aws_vpc.vpc.id
-  task_definition_arn = aws_ecs_task_definition.job["enabled"].arn
+  task_definition_arn = aws_ecs_task_definition.scheduled_job["enabled"].arn
   subnet_ids          = data.aws_subnets.private-subnets.ids
   cluster_id          = data.aws_ecs_cluster.cluster.id
   tags                = local.tags

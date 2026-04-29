@@ -841,7 +841,7 @@ run "test_conditionally_creates_resources_for_a_scheduled_job" {
   }
 
   assert {
-    condition     = length(aws_ecs_task_definition.job) == 1
+    condition     = length(aws_ecs_task_definition.scheduled_job) == 1
     error_message = "Should create task definition for a scheduled job"
   }
 }

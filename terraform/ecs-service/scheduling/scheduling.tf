@@ -27,7 +27,7 @@ resource "aws_scheduler_schedule" "this" {
 
 }
 
-resource "aws_security_group" "job" {
+resource "aws_security_group" "scheduled_job" {
   name        = "${var.name}-scheduled-job"
   description = "SG for scheduled job ECS task"
   vpc_id      = var.vpc_id
@@ -36,7 +36,7 @@ resource "aws_security_group" "job" {
 }
 
 resource "aws_vpc_security_group_egress_rule" "scheduled_job_egress" {
-  security_group_id = aws_security_group.job.id
+  security_group_id = aws_security_group.scheduled_job.id
   description       = "Allow all outbound traffic"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"

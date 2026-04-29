@@ -26,7 +26,7 @@ locals {
             AwsvpcConfiguration = {
               Subnets        = var.subnet_ids
               AssignPublicIp = "DISABLED"
-              SecurityGroups = [aws_security_group.job.id]
+              SecurityGroups = [aws_security_group.scheduled_job.id]
             }
           }
         }

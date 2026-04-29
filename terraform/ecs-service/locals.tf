@@ -280,7 +280,7 @@ locals {
     { name = "path${replace(path, "/", "-")}", host = {} }
   ]
 
-  volumes = concat([{ "name" : "path-tmp", "host" : "{}" }], local.writable_volumes)
+  volumes = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
 
 
   task_definition_json = jsonencode(
