@@ -28,21 +28,6 @@ override_data {
   }
 }
 
-# override_data {
-#   target = data.aws_iam_policy_document.service_logs
-#   values = {
-#     json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
-#   }
-# }
-
-# override_data {
-#   target = data.aws_ssm_parameter.log-destination-arn
-#   values = {
-#     value = "{\"dev\":\"arn:aws:logs:eu-west-2:001122334455:log-group:/central/dev\",\"prod\":\"arn:aws:logs:eu-west-2:001122334455:log-group:/central/prod\"}"
-#   }
-# }
-
-
 variables {
   name                = "db-dump"
   schedule            = "none"
@@ -52,12 +37,6 @@ variables {
   subnet_ids          = ["subnet-0000001111122222c", "subnet-0000002222233333e"]
   tags                = {}
 }
-
-/* 
-EventBridge test ideas:
-- state machine target is correct
-- IAM role is correct
-*/
 
 run "test_none_schedule_expression_is_disabled" {
   command = plan
@@ -108,10 +87,6 @@ run "test_none_schedule_expression_defaults_to_rate_5_minutes" {
   }
 }
 
-/*
-State Machine tests:
-- retries set to null result in no 'Retry' block
-*/
 run "test_state_machine_definition_has_no_retry" {
   command = plan
 
@@ -143,36 +118,3 @@ run "test_state_machine_definition_has_no_timeout" {
     error_message = "Should have a timeout of 86400"
   }
 }
-
-/* 
-ECS tests:
-- platform (cpu architecture)
-- ephemeral storage
-- volumes
-
-More generally - how do we handle testing shared functionality in both ecs-service and ecs-scheduled-job?
-- Duplicating all tests that are relevant from ecs-service to ecs-scheduled-job?
-- Splitting out shared module functionality into a 3rd module, and then having ecs-service and ecs-scheduled-job call the 3rd module? The 3rd module owns all the shared tests 
- */
-
-# run "test_ecs_task_default_platform_is_x86_64" {
-#   command = plan
-
-#   assert {
-#     condition     = local.cpu_architecture == "X86_64"
-#     error_message = "Should be 'X86_64'"
-#   }
-# }
-
-# run "test_ecs_task_platform_is_arm64" {
-#   command = plan
-
-#   variables {
-#     service_config = merge(var.service_config, { platform = "arm64" })
-#   }
-
-#   assert {
-#     condition     = local.cpu_architecture == "ARM64"
-#     error_message = "Should be 'ARM64'"
-#   }
-# }

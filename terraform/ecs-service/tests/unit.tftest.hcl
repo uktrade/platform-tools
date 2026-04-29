@@ -716,9 +716,9 @@ run "test_scheduling_module_is_created_for_scheduled_job" {
         port     = 8080
       }
 
-      cpu       = 256
-      memory    = 512
-      count     = 1
+      cpu    = 256
+      memory = 512
+
       exec      = true
       essential = true
 
@@ -762,7 +762,6 @@ run "test_conditionally_creates_resources_for_a_scheduled_job" {
 
       cpu       = 256
       memory    = 512
-      count     = 1
       exec      = true
       essential = true
 
@@ -849,3 +848,50 @@ run "test_conditionally_creates_resources_for_a_scheduled_job" {
 
 
 # Write a test to check the default values for retries and timeout (already exists in the old module tests we think)
+
+run "test_ecs_task_default_platform_is_x86_64" {
+  command = plan
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app:latest"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+  }
+
+  assert {
+    condition     = local.cpu_architecture == "X86_64"
+    error_message = "Should be 'X86_64'"
+  }
+}
+
+run "test_ecs_task_platform_is_arm64" {
+  command = plan
+
+  variables {
+    service_config = merge(var.service_config, { platform = "arm64" })
+  }
+
+  assert {
+    condition     = local.cpu_architecture == "ARM64"
+    error_message = "Should be 'ARM64'"
+  }
+}
