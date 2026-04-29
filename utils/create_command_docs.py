@@ -71,18 +71,19 @@ def get_cmd_metadata(
     for subcommand in subcommands_names:
         subcommands[subcommand]["link"] = f"#{command_name.replace(' ', '-').lower()}-{subcommand}"
 
+    param_info_dicts = [param.to_info_dict() for param in cmd.get_params(context)]
     params = [
         Parameter(
-            default=param.default,
-            help=param.help if isinstance(param, click.core.Option) else None,
-            name=param.name or "",
-            param_type_name=param.param_type_name,
-            prompt=param.prompt if isinstance(param, click.core.Option) else None,
-            required=param.required,
-            type_name=param.type.name,
-            usage="\n".join(param.opts),
+            default=param.get("default"),
+            help=param.get("help"),
+            name=param.get("name"),
+            param_type_name=param.get("param_type_name"),
+            prompt=param.get("prompt"),
+            required=param.get("required"),
+            type_name=param.get("type").get("name"),
+            usage="\n".join(param.get("opts")),
         )
-        for param in cmd.get_params(context)
+        for param in param_info_dicts
     ]
 
     yield CommandMetadata(
