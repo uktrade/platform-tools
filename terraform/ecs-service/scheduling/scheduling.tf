@@ -52,7 +52,7 @@ resource "aws_sfn_state_machine" "this" {
   definition = jsonencode(local.state_machine_definition)
 
   logging_configuration {
-    log_destination        = "${var.log_group}:*"
+    log_destination        = "${var.log_group_arn}:*"
     include_execution_data = true
     level                  = "ALL"
   }

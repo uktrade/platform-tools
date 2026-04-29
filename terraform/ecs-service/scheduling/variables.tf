@@ -37,6 +37,6 @@ variable "tags" {
   type = map(any)
 }
 
-variable "log_group" {
+variable "log_group_arn" {
   type = string
 }
