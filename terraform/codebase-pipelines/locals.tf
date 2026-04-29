@@ -19,7 +19,6 @@ locals {
   ])
 
   tagged_pipeline = length([for pipeline in var.pipelines : true if lookup(pipeline, "tag", null) == true]) > 0
-  environment_name = distinct(flatten([for pipeline in var.pipelines : [for env in pipeline.environments : env.name]]))
 
   base_env_config = {
     for name, config in var.env_config : name => {

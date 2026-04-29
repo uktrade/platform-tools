@@ -28,7 +28,7 @@ locals {
       { "name" = env_obj.name }
     )
   ]
-  environment_name = [for env in local.environment_config : env.name]
+
 
   triggers_another_pipeline         = var.pipeline_to_trigger != null
   triggered_pipeline_account_name   = local.triggers_another_pipeline ? var.all_pipelines[var.pipeline_to_trigger].account : null
