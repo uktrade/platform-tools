@@ -10,6 +10,10 @@ variable "database_name" {
   type = string
 }
 
+variable "deploy_repository" {
+  type = string
+}
+
 variable "task" {
   type = object({
     from         = string

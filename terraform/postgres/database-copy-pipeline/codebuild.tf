@@ -27,6 +27,7 @@ resource "aws_cloudwatch_log_group" "database_pipeline_codebuild" {
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
   name              = "codebuild/${local.pipeline_name}/log-group"
   retention_in_days = 90
+  tags              = local.tags
 }
 
 resource "aws_cloudwatch_log_stream" "database_pipeline_codebuild" {

@@ -38,200 +38,160 @@ def copilot_manifest(tmp_path):
         },
         "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
     }
-    with open(manifest_path, "w") as f:
-        yaml.safe_dump(manifest_content, f)
-    return tmp_path
+
+    def _make(extra={}):
+        if extra:
+            manifest_content.update(extra)
+        with open(manifest_path, "w") as f:
+            yaml.safe_dump(manifest_content, f)
+
+        return tmp_path
+
+    return _make
 
 
-def test_migrate_copilot_manifests_creates_services_directory_and_files(tmp_path, copilot_manifest):
-    output_dir = tmp_path / "services"
+@pytest.fixture
+def expected_service_config():
+    def _make(extra={}):
+        expected_content = {
+            "name": "my-service",
+            "type": "Load Balanced Web Service",
+            "environments": {
+                "dev": {"http": {"alias": ["test.alias.com"]}},
+                "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
+            },
+            "variables": {
+                "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
+            },
+        }
+
+        if extra:
+            expected_content.update(extra)
+
+        return expected_content
+
+    return _make
+
+
+def test_migrate_copilot_manifests_creates_services_directory_and_files(copilot_manifest):
+    path = copilot_manifest()
+    output_dir = path / "services"
     file_path = output_dir / "my-service/service-config.yml"
 
-    os.chdir(tmp_path)
+    os.chdir(path)
     service_manager = ServiceManager()
     service_manager.migrate_copilot_manifests()
 
     assert file_path.exists()
 
 
-def test_migrate_copilot_manifests_generates_expected_service_config(tmp_path, copilot_manifest):
-    expected_service_config = {
-        "name": "my-service",
-        "type": "Load Balanced Web Service",
-        "environments": {
-            "dev": {"http": {"alias": ["test.alias.com"]}},
-            "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
-        },
-        "variables": {
-            "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
-        },
-    }
-
-    os.chdir(tmp_path)
-    service_manager = ServiceManager()
-    service_manager.migrate_copilot_manifests()
-
-    with open(tmp_path / "services/my-service/service-config.yml") as f:
-        service_config = yaml.safe_load(f)
-
-    assert service_config == expected_service_config
-
-
-def test_migrate_service_configs_writable_dirs(tmp_path):
-
-    copilot_dir = tmp_path / "copilot" / "my-service"
-    copilot_dir.mkdir(parents=True)
-    manifest_path = copilot_dir / "manifest.yml"
-    manifest_content = {
-        "name": "my-service",
-        "type": "Load Balanced Web Service",
-        "image": {"depends_on": {"permissions_side": "success"}},
-        "environments": {
-            "dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}},
-            "prod": {"http": {"alb": "alb-arn", "alias": ["test.alias.com", "test2.alias.com"]}},
-        },
-        "sidecars": {
-            "permissions_side": {
-                "command": ["chown"],
-                "mount_points": [{"path": "/write/dir"}],
-            }
-        },
-        "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
-    }
-    with open(manifest_path, "w") as f:
-        yaml.safe_dump(manifest_content, f)
-
-    expected_service_config = {
-        "name": "my-service",
-        "type": "Load Balanced Web Service",
-        "environments": {
-            "dev": {"http": {"alias": ["test.alias.com"]}},
-            "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
-        },
-        "image": {},
-        "sidecars": {},
-        "storage": {"readonly_fs": False, "writable_directories": ["/write/dir"]},
-        "variables": {
-            "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
-        },
-    }
-
-    os.chdir(tmp_path)
-    service_manager = ServiceManager()
-    service_manager.migrate_copilot_manifests()
-
-    with open(tmp_path / "services/my-service/service-config.yml") as f:
-        service_config = yaml.safe_load(f)
-
-    assert service_config == expected_service_config
-
-
-def test_migrate_service_configs_no_writable_dirs(tmp_path):
-
-    copilot_dir = tmp_path / "copilot" / "my-service"
-    copilot_dir.mkdir(parents=True)
-    manifest_path = copilot_dir / "manifest.yml"
-    manifest_content = {
-        "name": "my-service",
-        "type": "Load Balanced Web Service",
-        "environments": {
-            "dev": {"http": {"alb": "alb-arn", "alias": "test.alias.com"}},
-            "prod": {"http": {"alb": "alb-arn", "alias": ["test.alias.com", "test2.alias.com"]}},
-        },
-        "sidecars": {
-            "not-real": {
-                "port": 2772,
-                "image": "not-real-image",
-                "essential": True,
-            }
-        },
-        "storage": {
-            "readonly_fs": False,
-        },
-        "variables": {"S3_BUCKET_NAME": "${COPILOT_APPLICATION_NAME}-${COPILOT_ENVIRONMENT_NAME}"},
-    }
-    with open(manifest_path, "w") as f:
-        yaml.safe_dump(manifest_content, f)
-
-    expected_service_config = {
-        "name": "my-service",
-        "type": "Load Balanced Web Service",
-        "environments": {
-            "dev": {"http": {"alias": ["test.alias.com"]}},
-            "prod": {"http": {"alias": ["test.alias.com", "test2.alias.com"]}},
-        },
-        "sidecars": {
-            "not-real": {
-                "port": 2772,
-                "image": "not-real-image",
-                "essential": True,
-            }
-        },
-        "storage": {"readonly_fs": False, "writable_directories": []},
-        "variables": {
-            "S3_BUCKET_NAME": "${PLATFORM_APPLICATION_NAME}-${PLATFORM_ENVIRONMENT_NAME}"
-        },
-    }
-
-    os.chdir(tmp_path)
-    service_manager = ServiceManager()
-    service_manager.migrate_copilot_manifests()
-
-    with open(tmp_path / "services/my-service/service-config.yml") as f:
-        service_config = yaml.safe_load(f)
-
-    assert service_config == expected_service_config
-
-
-def test_migrate_copilot_manifests_skips_unwanted_service_types(tmp_path):
-    copilot_dir = tmp_path / "copilot" / "my-service"
-    copilot_dir.mkdir(parents=True)
-    manifest_path = copilot_dir / "manifest.yml"
-    manifest_content = {"name": "my-service", "type": "Scheduled Job"}
-    with open(manifest_path, "w") as f:
-        yaml.safe_dump(manifest_content, f)
-
-    output_dir = tmp_path / "services"
-    file_path = output_dir / "my-service/service-config.yml"
-
-    os.chdir(tmp_path)
-    service_manager = ServiceManager()
-    service_manager.migrate_copilot_manifests()
-
-    assert not file_path.exists()
-
-
-def test_migrate_copilot_manifests_sets_depends_on_for_remaining_sidecars(
-    tmp_path,
+def test_migrate_copilot_manifests_generates_expected_service_config(
+    copilot_manifest, expected_service_config
 ):
-    copilot_dir = tmp_path / "copilot" / "my-service"
-    copilot_dir.mkdir(parents=True)
-    manifest_path = copilot_dir / "manifest.yml"
+    path = copilot_manifest()
 
-    manifest_content = {
-        "name": "my-service",
-        "type": "Load Balanced Web Service",
-        "image": {"location": "myrepo/myimage:latest"},
-        "sidecars": {
-            "permissions": {
-                "command": "chown -R 1000:1000 /tmp",
-                "mount_points": [{"path": "/tmp"}],
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config()
+
+
+def test_migrate_service_configs_writable_dirs(copilot_manifest, expected_service_config):
+    path = copilot_manifest(
+        {
+            "sidecars": {
+                "permissions_side": {
+                    "command": ["chown"],
+                    "mount_points": [{"path": "/write/dir"}],
+                }
             },
-            "hello-world": {
-                "command": 'echo "Hello World"',
+            "image": {"depends_on": {"permissions_side": "success"}},
+        }
+    )
+
+    expected_service_config = expected_service_config(
+        {
+            "image": {},
+            "sidecars": {},
+            "storage": {"readonly_fs": False, "writable_directories": ["/write/dir"]},
+        }
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_service_configs_no_writable_dirs(copilot_manifest, expected_service_config):
+    path = copilot_manifest(
+        {
+            "sidecars": {
+                "not-real": {
+                    "port": 2772,
+                    "image": "not-real-image",
+                    "essential": True,
+                }
             },
-        },
-    }
+            "storage": {
+                "readonly_fs": False,
+            },
+        }
+    )
 
-    with open(manifest_path, "w") as f:
-        yaml.safe_dump(manifest_content, f)
+    expected_service_config = expected_service_config(
+        {
+            "sidecars": {
+                "not-real": {
+                    "port": 2772,
+                    "image": "not-real-image",
+                    "essential": True,
+                }
+            },
+            "storage": {"readonly_fs": False, "writable_directories": []},
+        }
+    )
 
-    os.chdir(tmp_path)
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_copilot_manifests_sets_depends_on_for_remaining_sidecars(copilot_manifest):
+    path = copilot_manifest(
+        {
+            "sidecars": {
+                "permissions": {
+                    "command": "chown -R 1000:1000 /tmp",
+                    "mount_points": [{"path": "/tmp"}],
+                },
+                "hello-world": {
+                    "command": 'echo "Hello World"',
+                },
+            },
+            "image": {"location": "myrepo/myimage:latest"},
+        }
+    )
+
+    os.chdir(path)
     service_manager = ServiceManager()
 
     service_manager.migrate_copilot_manifests()
 
-    with open(tmp_path / "services/my-service/service-config.yml") as f:
+    with open(path / "services/my-service/service-config.yml") as f:
         service_config = yaml.safe_load(f)
 
     assert "sidecars" in service_config
@@ -367,6 +327,46 @@ def test_service_deploy_success():
         task_response=ecs_task_response,
         seen_events=set(),
         log_group="/platform/ecs/service/myapp/dev/web",
+    )
+
+
+@freeze_time("2026-03-31 12:00:00")
+def test_service_deploy_exits_early_when_desired_count_zero():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+
+    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
+    mocks.ecs_provider.register_task_definition.return_value = (
+        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
+    )
+
+    update_service_response = get_ecs_update_service_response(
+        service_name="myapp-dev-web",
+        deployment_id="deployment-123",
+    )
+    mocks.ecs_provider.update_service.return_value = update_service_response
+
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {"MinCapacity": 0}
+
+    with patch.object(service_manager, "_wait_for_new_tasks") as wait_for_new_tasks, patch.object(
+        service_manager, "_monitor_task_events"
+    ) as monitor_task_events, patch.object(
+        service_manager, "_monitor_service_events"
+    ) as monitor_service_events:
+
+        service_manager.deploy(
+            service="web",
+            environment="dev",
+            application="myapp",
+            image_tag="tag-123",
+        )
+
+        wait_for_new_tasks.assert_not_called()
+        monitor_task_events.assert_not_called()
+        monitor_service_events.assert_not_called()
+
+    mocks.io.info.assert_any_call(
+        "[12:00:00] Detected 'count: 0' in service-config.yml. Scaling ECS service down to zero tasks."
     )
 
 
@@ -745,3 +745,347 @@ class TestServiceExecRaises:
             service_manager.service_exec("test-app", "test-env", "test-service")
 
         assert "Command `some cli command` failed with error: command unknown" in str(e.value)
+
+
+# SCHEDULED JOBS TESTS --------------------------------------------------------------
+
+
+@pytest.fixture
+def copilot_scheduled_job_manifest(tmp_path):
+
+    copilot_dir = tmp_path / "copilot" / "my-scheduled-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+    copilot_manifest_content = {
+        "name": "my-scheduled-service",
+        "type": "Scheduled Job",
+        "on": {"schedule": "none"},
+        "retries": "1",
+        "timeout": "60m",
+        "image": {
+            "location": "123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service:a-tag"
+        },
+    }
+
+    def _make(extra={}):
+        if extra:
+            copilot_manifest_content.update(extra)
+        with open(manifest_path, "w") as f:
+            yaml.safe_dump(copilot_manifest_content, f)
+
+        return tmp_path
+
+    return _make
+
+
+@pytest.fixture
+def expected_scheduled_job_config():
+
+    def _make(extra={}):
+        expected_content = {
+            "name": "my-scheduled-service",
+            "type": "Scheduled Job",
+            "schedule": "none",
+            "retries": "1",
+            "timeout": "60m",
+            "image": {
+                "location": "123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service"
+            },
+        }
+
+        if extra:
+            expected_content.update(extra)
+
+        return expected_content
+
+    return _make
+
+
+def test_migrate_scheduled_job_copilot_manifests_creates_services_directory_and_files(
+    copilot_scheduled_job_manifest,
+):
+    path = copilot_scheduled_job_manifest()
+
+    output_dir = path / "services"
+    file_path = output_dir / "my-scheduled-service/service-config.yml"
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    assert file_path.exists()
+
+
+def test_migrate_scheduled_job_converts_image_build_to_location(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest(
+        {"image": {"build": "./copilot/developer-database-dumper/image/Dockerfile"}}
+    )
+
+    config_path = path / "platform-config.yml"
+    config_data = {
+        "application": "demodjango",
+        "schema_version": 1,
+        "default_versions": {"platform-helper": "15.25.0"},
+        "environments": {
+            "*": {
+                "accounts": {
+                    "deploy": {"id": "123456789012", "name": "test-account"},
+                    "dns": {"id": "011755346992", "name": "dev"},
+                }
+            },
+            "env1": {},
+        },
+    }
+
+    with open(config_path, "w") as f:
+        yaml.safe_dump(config_data, f)
+
+    account_id = "123456789012"
+    ecr_repo = "demodjango/my-scheduled-service"
+
+    expected_service_config = expected_scheduled_job_config(
+        {"image": {"location": f"{account_id}.dkr.ecr.eu-west-2.amazonaws.com/{ecr_repo}"}}
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_removes_network_block(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest(
+        {
+            "network": {"connect": "true", "vpc": {"placement": "private"}},
+        }
+    )
+
+    expected_service_config = expected_scheduled_job_config()
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        ("linux/x86_64", "X86_64"),
+        ("linux/amd64", "X86_64"),
+        ("linux/arm64", "ARM64"),
+    ],
+    ids=["X86_64", "X86_64", "ARM64"],
+)
+def test_migrate_scheduled_job_converts_platform_architecture(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config, test_input, expected
+):
+
+    path = copilot_scheduled_job_manifest({"platform": test_input})
+
+    expected_service_config = expected_scheduled_job_config({"platform": expected})
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_removes_image_tag(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    account_id = "563763463626"
+    ecr_repo = "demodjango/my-scheduled-service"
+
+    path = copilot_scheduled_job_manifest(
+        {"image": {"location": f"{account_id}.dkr.ecr.eu-west-2.amazonaws.com/{ecr_repo}:some-tag"}}
+    )
+
+    expected_service_config = expected_scheduled_job_config(
+        {"image": {"location": f"{account_id}.dkr.ecr.eu-west-2.amazonaws.com/{ecr_repo}"}}
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_handles_schedule_being_none(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest({"on": {"schedule": "none"}})
+    expected_service_config = expected_scheduled_job_config({"schedule": "none"})
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_places_schedule_key_in_correct_place(tmp_path):
+    copilot_dir = tmp_path / "copilot" / "my-scheduled-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+
+    manifest_path.write_text(
+        """
+name: my-scheduled-service
+type: Scheduled Job
+on:
+  schedule: none
+retries: 1
+timeout: 60m
+image:
+  location: 123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service:a-tag
+""".lstrip()
+    )
+
+    expected_output_dir = tmp_path / "expected_output"
+    expected_output_dir.mkdir(parents=True)
+    expected_output_path = expected_output_dir / "expected_output.yml"
+    expected_output_path.write_text(
+        """
+name: my-scheduled-service
+type: Scheduled Job
+schedule: none
+retries: 1
+timeout: 60m
+image:
+  location: 123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service
+""".lstrip()
+    )
+
+    os.chdir(tmp_path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(tmp_path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = f.read()
+
+    with open(expected_output_path) as f:
+        expected_output = f.read()
+
+    assert expected_output in service_config
+
+
+@pytest.mark.parametrize(
+    "test_input,expected",
+    [
+        ("@hourly", "rate(1 hours)"),
+        ("@daily", "rate(1 days)"),
+        ("@weekly", "0 0 * * 1"),
+        ("@monthly", "0 0 1 * *"),
+        ("@yearly", "0 * * * ?"),
+        ("5 * * * *", "5 * * * ?"),
+    ],
+    ids=["hourly", "daily", "weekly", "monthly", "yearly", "five minutes past each hour"],
+)
+def test_migrate_scheduled_job_converts_schedule_to_eventbridge_format(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config, test_input, expected
+):
+    path = copilot_scheduled_job_manifest({"on": {"schedule": test_input}})
+
+    expected_service_config = expected_scheduled_job_config({"schedule": expected})
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_handles_overrides(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest(
+        {
+            "on": {"schedule": "none"},
+            "environments": {
+                "dev": {"on": {"schedule": "0 23 * * *"}},
+                "staging": {"on": {"schedule": "0 0 * * *"}},
+            },
+        }
+    )
+    expected_service_config = expected_scheduled_job_config(
+        {
+            "schedule": "none",
+            "environments": {
+                "dev": {"schedule": "0 23 * * ?"},
+                "staging": {"schedule": "0 0 * * ?"},
+            },
+        }
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+# In Copilot manifests the key *on* is unquoted, and when parsed by YAML it is interpreted as a bool value (True). This test ensures our code correctly handles that behaviour and still processes the schedule configuration as expected. We can remove this test once we stop using Copilot manifests syntax.
+def test_migrate_scheduled_job_handles_unquoted_on_key(tmp_path, expected_scheduled_job_config):
+    copilot_dir = tmp_path / "copilot" / "my-scheduled-service"
+    copilot_dir.mkdir(parents=True)
+    manifest_path = copilot_dir / "manifest.yml"
+
+    manifest_path.write_text(
+        """
+name: my-scheduled-service
+type: Scheduled Job
+on:
+  schedule: "@daily"
+retries: "1"
+timeout: "60m"
+image:
+  location: 123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service:a-tag
+environments:
+  dev:
+    on:
+      schedule: "@hourly"
+""".lstrip()
+    )
+
+    expected_service_config = expected_scheduled_job_config(
+        {"schedule": "rate(1 days)", "environments": {"dev": {"schedule": "rate(1 hours)"}}}
+    )
+
+    os.chdir(tmp_path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(tmp_path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config

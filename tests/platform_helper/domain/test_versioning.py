@@ -536,6 +536,40 @@ class TestPlatformHelperVersioningAuto:
         result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
         assert result == "version_passed_in_from_platform_upgrade"
 
+    def test_get_pinned_version_falls_back_to_installed_version_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 1
+        )
+        result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
+        assert result == "1.0.1"
+
+    def test_get_pinned_version_returns_none_if_not_auto(self, platform_config_for_env_pipelines):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.2.3"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            "version_passed_in_from_platform_upgrade"
+        )
+
+        mocks.mock_platform_helper_version_override = None
+        result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
+        assert result is None
+
 
 class TestAWSVersioning:
     def test_get_aws_versioning(self):

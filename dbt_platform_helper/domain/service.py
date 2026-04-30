@@ -41,7 +41,7 @@ from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.deep_merge import deep_merge
 
-SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service"]
+SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service", "Scheduled Job"]
 DEPLOYMENT_TIMEOUT_SECONDS = 1200
 POLL_INTERVAL_SECONDS = 5
 
@@ -213,6 +213,21 @@ class ServiceManager:
         service_directory = Path("services/")
         service_directory.mkdir(parents=True, exist_ok=True)
 
+        # TODO Remove this check on keywords as part of the copilot cleanup.
+        # Note - get_on_key() function handles how YAML parsing may convert the *on* key into a boolean True. This ensures migration works reliably regardless of whether the key is read as "on" or True. Without this, the schedule section could be skipped/produce incorrect output. https://yaml.org/type/bool.html
+        def get_on_key(d: dict) -> str | bool | None:
+            if "on" in d:
+                return "on"
+            if True in d:
+                return True
+            return None
+
+        # Regenerate manifest with the *schedule* included after the *type* field
+        # This is required to avoid sending the *schedule* field to the bottom of the service-config.yml file
+        def set_schedule_order(d: dict, schedule: str) -> dict:
+            items = list(d.items())
+            return {**dict(items[:2]), "schedule": schedule, **dict(items[2:])}
+
         for dirname, _, filenames in os.walk("copilot"):
             if "manifest.yml" in filenames and "environments" not in dirname:
                 copilot_manifest = self.file_provider.load(f"{dirname}/manifest.yml")
@@ -284,6 +299,32 @@ class ServiceManager:
                         if "observability" in env_config:
                             del env_config["observability"]
 
+                        on_key = get_on_key(env_config)
+                        if on_key is not None:
+                            if "@" in env_config[on_key]["schedule"]:
+                                rate_conversion = {
+                                    "@hourly": "rate(1 hours)",
+                                    "@daily": "rate(1 days)",
+                                    "@weekly": "0 0 * * 1",
+                                    "@monthly": "0 0 1 * *",
+                                    "@yearly": "0 * * * ?",
+                                }
+                                schedule = env_config[on_key]["schedule"]
+                                env_config["schedule"] = rate_conversion.get(schedule, schedule)
+                                del env_config[on_key]
+
+                            elif "*" in env_config[on_key]["schedule"]:
+                                split_cron = env_config[on_key]["schedule"].split()
+                                if split_cron[2] == "*" and split_cron[4] == "*":
+                                    split_cron[4] = "?"
+                                schedule = " ".join(split_cron)
+                                env_config["schedule"] = schedule
+                                del env_config[on_key]
+
+                            elif "none" in env_config[on_key]["schedule"]:
+                                env_config["schedule"] = "none"
+                                del env_config[on_key]
+
                 if "healthcheck" in service_manifest.get("http", {}):
                     if "interval" in service_manifest["http"]["healthcheck"]:
                         interval = service_manifest["http"]["healthcheck"]["interval"]
@@ -321,6 +362,59 @@ class ServiceManager:
                             service_manifest["image"]["healthcheck"]["start_period"] = int(
                                 start_period.rstrip("s")
                             )
+                    if "build" in service_manifest["image"]:
+                        del service_manifest["image"]["build"]
+
+                        config = self.config_provider.get_enriched_config()
+                        application_name = config.get("application", "")
+
+                        environments = config.get("environments", {})
+                        first_env = list(environments.values())[0] if environments else {}
+                        account_id = first_env["accounts"]["deploy"]["id"]
+
+                        name = service_manifest["name"]
+
+                        ecr_repo = f"{application_name}/{name}"
+
+                        service_manifest["image"][
+                            "location"
+                        ] = f"{account_id}.dkr.ecr.eu-west-2.amazonaws.com/{ecr_repo}"
+
+                on_key = get_on_key(service_manifest)
+                if on_key is not None:
+                    if "@" in service_manifest[on_key]["schedule"]:
+                        rate_conversion = {
+                            "@hourly": "rate(1 hours)",
+                            "@daily": "rate(1 days)",
+                            "@weekly": "0 0 * * 1",
+                            "@monthly": "0 0 1 * *",
+                            "@yearly": "0 * * * ?",
+                        }
+                        schedule = service_manifest[on_key]["schedule"]
+                        service_manifest = set_schedule_order(
+                            service_manifest, rate_conversion.get(schedule, schedule)
+                        )
+                        del service_manifest[on_key]
+
+                    elif "*" in service_manifest[on_key]["schedule"]:
+                        split_cron = service_manifest[on_key]["schedule"].split()
+                        if split_cron[2] == "*" and split_cron[4] == "*":
+                            split_cron[4] = "?"
+                        schedule = " ".join(split_cron)
+                        service_manifest = set_schedule_order(service_manifest, schedule)
+                        del service_manifest[on_key]
+
+                    elif "none" in service_manifest[on_key]["schedule"]:
+                        service_manifest = set_schedule_order(service_manifest, "none")
+                        del service_manifest[on_key]
+
+                if "platform" in service_manifest:
+                    if service_manifest["platform"] == "linux/amd64":
+                        service_manifest["platform"] = "X86_64"
+                    else:
+                        service_manifest["platform"] = (
+                            service_manifest["platform"].split("/")[1].upper()
+                        )
 
                 if "count" in service_manifest:
                     if not isinstance(service_manifest.get("count"), int):
@@ -463,6 +557,12 @@ class ServiceManager:
         self._output_with_timestamp(
             f"New deployment with ID '{primary_deployment_id}' has been triggered."
         )
+
+        if desired_count == 0:
+            self._output_with_timestamp(
+                "Detected 'count: 0' in service-config.yml. Scaling ECS service down to zero tasks."
+            )
+            return
 
         seen_events = set()
         deadline = time.monotonic() + DEPLOYMENT_TIMEOUT_SECONDS

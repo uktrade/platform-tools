@@ -95,7 +95,7 @@ class Config:
         self.migrator = migrator
 
     def validate(self):
-        if not Path("copilot").exists():
+        if not Path("copilot").exists() and not Path("services").exists():
             raise NoDeploymentRepoConfigException()
         if not Path(PLATFORM_CONFIG_FILE).exists():
             raise NoPlatformConfigException()
