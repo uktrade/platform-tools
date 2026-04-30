@@ -17,7 +17,7 @@ class JobManager:
         self.job_runner = job_runner
         self.io = io
 
-    def run(self, app: str, env: str, name: str, follow: bool):
+    def start_execution(self, app: str, env: str, name: str, follow: bool):
 
         self.io.info(f"Beginning execution for job '{name}' in {app}/{env}...")
         execution_id = self.job_runner.run(name)

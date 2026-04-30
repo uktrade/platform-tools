@@ -24,7 +24,7 @@ def test_job_run(mock_application, mock_step_functions, mock_job_manager_object)
 
     mock_application.assert_called_once_with(app="test-application", env="development")
     mock_step_functions.assert_called_once()
-    mock_job_manager_instance.run.assert_called_once_with(
+    mock_job_manager_instance.start_execution.assert_called_once_with(
         "test-application", "development", "test-job", False
     )
 
@@ -37,7 +37,7 @@ def test_job_run_fail(mock_io, mock_application, mock_step_functions, mock_job_m
     """Test that job run command handles exceptions gracefully."""
 
     mock_job_manager_instance = mock_job_manager_object.return_value
-    mock_job_manager_instance.run.side_effect = PlatformException("Job not found")
+    mock_job_manager_instance.start_execution.side_effect = PlatformException("Job not found")
     mock_io.return_value.abort_with_error.side_effect = SystemExit(1)
 
     result = CliRunner().invoke(
@@ -83,6 +83,6 @@ def test_job_run_with_optional_follow(
 
     mock_application.assert_called_once_with(app="test-application", env="development")
     mock_step_functions.assert_called_once()
-    mock_job_manager_instance.run.assert_called_once_with(
+    mock_job_manager_instance.start_execution.assert_called_once_with(
         "test-application", "development", "test-job", True
     )
