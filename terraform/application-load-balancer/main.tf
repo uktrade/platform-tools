@@ -19,12 +19,12 @@ resource "null_resource" "validate_cdn_domains" {
 
   triggers = {
     platform-public-ingress = jsonencode(local.ingress_cdn_domains_list)
-    cdn_domains_list        = jsonencode(local.cdn_domains_list)
+    cdn_domains_list        = jsonencode(local.config_cdn_domains_list)
   }
 
   lifecycle {
     precondition {
-      condition     = local.cdn_domains_list == local.ingress_cdn_domains_list
+      condition     = local.config_cdn_domains_list == local.ingress_cdn_domains_list
       error_message = <<-EOT
       cdn_domains_list in the ${var.environment} environment does not match the domains defined in platform-public-ingress.
       
@@ -32,7 +32,7 @@ resource "null_resource" "validate_cdn_domains" {
       or Ensure the domain is defined in https://github.com/uktrade/platform-public-ingress/blob/main/terraform/configuration/${var.application}/${var.application}.${var.environment}.tfvars
 
       platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
-      cdn_domains_list        = ${jsonencode(local.cdn_domains_list)}
+      cdn_domains_list        = ${jsonencode(local.config_cdn_domains_list)}
       EOT
     }
   }

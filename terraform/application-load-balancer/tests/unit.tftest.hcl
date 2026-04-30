@@ -103,7 +103,7 @@ override_data {
   target = data.aws_ssm_parameters_by_path.cdn_domain_list
   values = {
     names  = ["/platform/my-application/dev/cdn_domains_list/value"]
-    values = ["[\"web.dev.my-application.uktrade.digital\",\"api.dev.my-application.uktrade.digital\"]"]
+    values = ["{\"api.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"},\"web.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"}}"]
     types  = ["String"]
     arns   = ["arn:aws:ssm:us-east-1:123456789012:parameter/platform/my-application/dev/cdn_domains_list/value"]
   }
@@ -359,7 +359,7 @@ run "domain_length_validation_tests_succeed_with_empty_cdn_domains_list_in_confi
   override_data {
     target = data.aws_ssm_parameters_by_path.cdn_domain_list
     values = {
-      values = ["[]"]
+      values = ["{}"]
     }
   }
 
@@ -896,7 +896,7 @@ run "waf_and_rotate_lambda_no_cdn_domains" {
   override_data {
     target = data.aws_ssm_parameters_by_path.cdn_domain_list
     values = {
-      values = ["[]"]
+      values = ["{}"]
     }
   }
 
@@ -962,7 +962,7 @@ run "waf_and_rotate_lambda_cdn_domains_disabled" {
   override_data {
     target = data.aws_ssm_parameters_by_path.cdn_domain_list
     values = {
-      values = ["[\"web.dev.my-application.uktrade.digital\"]"]
+      values = ["{\"web.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"}}"]
     }
   }
 
