@@ -28,13 +28,6 @@ my-small-ha-rds-db:
     default:
       plan: small-ha
 
-my-small-high-io-rds-db:
-  type: postgres
-  version: 14
-  environments:
-    default:
-      plan: small-high-io
-
 my-medium-rds-db:
   type: postgres
   version: 14
@@ -48,13 +41,6 @@ my-medium-ha-rds-db:
   environments:
     default:
       plan: medium-ha
-
-my-medium-high-io-rds-db:
-  type: postgres
-  version: 14
-  environments:
-    default:
-      plan: medium-high-io
 
 my-large-rds-db:
   type: postgres
@@ -70,13 +56,6 @@ my-large-ha-rds-db:
     default:
       plan: large-ha
 
-my-large-high-io-rds-db:
-  type: postgres
-  version: 14
-  environments:
-    default:
-      plan: large-high-io
-
 my-x-large-rds-db:
   type: postgres
   version: 14
@@ -90,13 +69,6 @@ my-x-large-ha-rds-db:
   environments:
     default:
       plan: x-large-ha
-
-my-x-large-high-io-rds-db:
-  type: postgres
-  version: 14
-  environments:
-    default:
-      plan: x-large-high-io
 
 my-2x-large-rds-db:
   type: postgres
@@ -112,13 +84,6 @@ my-2x-large-ha-rds-db:
     default:
       plan: 2x-large-ha
 
-my-2x-large-high-io-rds-db:
-  type: postgres
-  version: 14
-  environments:
-    default:
-      plan: 2x-large-high-io
-
 my-4x-large-rds-db:
   type: postgres
   version: 14
@@ -132,13 +97,6 @@ my-4x-large-ha-rds-db:
   environments:
     default:
       plan: 4x-large-ha
-
-my-4x-large-high-io-rds-db:
-  type: postgres
-  version: 14
-  environments:
-    default:
-      plan: 4x-large-high-io
 
 
 ##### OpenSearch example:
