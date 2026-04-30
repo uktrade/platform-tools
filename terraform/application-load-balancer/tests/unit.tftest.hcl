@@ -18,7 +18,8 @@ mock_provider "aws" {
     defaults = {
       account_id = "123456789012"
       id         = "123456789012"
-    user_id = "XXXXXXXXXXXXXXXXXXXXX" }
+      user_id    = "XXXXXXXXXXXXXXXXXXXXX"
+    }
   }
 }
 
@@ -28,7 +29,8 @@ mock_provider "aws" {
     defaults = {
       account_id = "123456789012"
       id         = "123456789012"
-    user_id = "XXXXXXXXXXXXXXXXXXXXX" }
+      user_id    = "XXXXXXXXXXXXXXXXXXXXX"
+    }
   }
 }
 
