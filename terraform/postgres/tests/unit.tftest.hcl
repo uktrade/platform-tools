@@ -227,6 +227,7 @@ variables {
     "test-env"  = null,
     "other-env" = null
   }
+  deploy_repository = "uktrade/test-application-deploy"
 }
 
 

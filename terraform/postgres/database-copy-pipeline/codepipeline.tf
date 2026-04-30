@@ -46,7 +46,7 @@ resource "aws_codepipeline" "database_copy_pipeline" {
 
       configuration = {
         ConnectionArn    = data.external.codestar_connections.result["ConnectionArn"]
-        FullRepositoryId = "uktrade/${var.application}-deploy"
+        FullRepositoryId = var.deploy_repository
         BranchName       = "main"
         DetectChanges    = false
       }
