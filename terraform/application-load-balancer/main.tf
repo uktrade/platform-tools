@@ -19,7 +19,7 @@ resource "null_resource" "validate_cdn_domains" {
 
   triggers = {
     platform-public-ingress = jsonencode(local.ingress_cdn_domains_list)
-    cdn_domains_list        = jsonencode(local.config_cdn_domains_list)
+    platform-config         = jsonencode(local.config_cdn_domains_list)
   }
 
   lifecycle {
@@ -32,7 +32,7 @@ resource "null_resource" "validate_cdn_domains" {
       or Ensure the domain is defined in https://github.com/uktrade/platform-public-ingress/blob/main/terraform/configuration/${var.application}/${var.application}.${var.environment}.tfvars
 
       platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
-      cdn_domains_list        = ${jsonencode(local.config_cdn_domains_list)}
+      platform-config         = ${jsonencode(local.config_cdn_domains_list)}
       EOT
     }
   }
