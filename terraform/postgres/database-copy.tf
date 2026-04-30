@@ -22,9 +22,10 @@ module "database-copy-pipeline" {
   count  = length(local.pipeline_tasks)
   source = "./database-copy-pipeline"
 
-  application    = var.application
-  environment    = var.environment
-  database_name  = var.name
-  task           = local.pipeline_tasks[count.index]
-  pinned_version = var.pinned_version
+  application       = var.application
+  environment       = var.environment
+  database_name     = var.name
+  deploy_repository = var.deploy_repository
+  task              = local.pipeline_tasks[count.index]
+  pinned_version    = var.pinned_version
 }
