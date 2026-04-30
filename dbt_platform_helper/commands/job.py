@@ -29,15 +29,12 @@ def run(app: str, env: str, name: str, follow: bool):
 
         try:
             sfn_client = application.environments[env].session.client("stepfunctions")
+            account_id = application.environments[env].account_id
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
 
-        sfn_provider: StepFunctions = StepFunctions(
-            sfn_client,
-            application.name,
-            env,
-        )
+        job_runner: StepFunctions = StepFunctions(sfn_client, application.name, env, account_id)
 
-        JobManager(job_runner=sfn_provider).run(app, env, name, follow)
+        JobManager(job_runner=job_runner).start_execution(app, env, name, follow)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
