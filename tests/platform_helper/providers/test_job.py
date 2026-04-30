@@ -1,88 +1,75 @@
 from unittest.mock import Mock
 
 import pytest
+from botocore.exceptions import ClientError
 
-from dbt_platform_helper.providers.step_functions import (
-    MultipleStateMachinesFoundException,
-)
+from dbt_platform_helper.providers.step_functions import StartExecutionFailedException
 from dbt_platform_helper.providers.step_functions import StateMachineNotFoundException
 from dbt_platform_helper.providers.step_functions import StepFunctions
 
 
-def make_paginated_client(state_machines):
-    client = Mock()
-    arns = [arn for arn, _ in state_machines]
-    paginator = Mock()
-    paginator.paginate.return_value = [
-        {"stateMachines": [{"stateMachineArn": arn} for arn in arns]}
-    ]
+def test_run_constructs_correct_arn():
 
-    client.get_paginator.return_value = paginator
+    sfn_client = Mock()
+    sfn_client.meta.region_name = "eu-west-2"
+    sfn_client.start_execution.return_value = {"executionArn": "arn:exec:123"}
+    job_runner = StepFunctions(
+        sfn_client, application_name="demodjango", env="dev", account_id="123456789012"
+    )
 
-    tags_by_arn = {arn: tags for arn, tags in state_machines}
-    client.list_tags_for_resource.side_effect = lambda resourceArn: {
-        "tags": [{"key": k, "value": v} for k, v in tags_by_arn[resourceArn].items()]
+    job_runner.run("test")
+
+    sfn_client.start_execution.assert_called_once_with(
+        stateMachineArn="arn:aws:states:eu-west-2:123456789012:stateMachine:demodjango-dev-test"
+    )
+
+
+def test_run_returns_correct_arn():
+
+    sfn_client = Mock()
+    sfn_client.meta.region_name = "eu-west-2"
+    sfn_client.start_execution.return_value = {
+        "executionArn": "arn:aws:states:eu-west-2:123456789012:stateMachine:demodjango-dev-test:abc"
     }
-    return client
-
-
-def test_find_state_machine_arn_returns_arn_when_tags_match():
-    client = make_paginated_client(
-        [
-            (
-                "arn:aws:states:::stateMachine:test-hello-world",
-                {
-                    "copilot-application": "test-app",
-                    "copilot-environment": "dev",
-                    "copilot-service": "hello-world",
-                },
-            ),
-        ]
+    job_runner = StepFunctions(
+        sfn_client, application_name="demodjango", env="dev", account_id="123456789012"
     )
 
-    provider = StepFunctions(client, application_name="test-app", env="dev")
-    result = provider._find_state_machine_arn("hello-world")
+    result = job_runner.run("test")
 
-    assert result == "arn:aws:states:::stateMachine:test-hello-world"
+    assert result == "arn:aws:states:eu-west-2:123456789012:stateMachine:demodjango-dev-test:abc"
 
 
-def test_find_state_machine_arn_raises_when_not_found():
-    client = make_paginated_client(
-        [
-            (
-                "arn:other",
-                {
-                    "copilot-application": "different-app",
-                    "copilot-environment": "staging",
-                    "copilot-service": "different-job",
-                },
-            ),
-        ]
+def test_run_raises_when_state_machine_not_found():
+
+    sfn_client = Mock()
+    sfn_client.meta.region_name = "eu-west-2"
+    sfn_client.start_execution.side_effect = ClientError(
+        {"Error": {"Code": "StateMachineDoesNotExist", "Message": "..."}},
+        "StartExecution",
+    )
+    job_runner = StepFunctions(
+        sfn_client, application_name="demodjango", env="dev", account_id="123456789012"
     )
 
-    provider = StepFunctions(client, application_name="test-app", env="dev")
     with pytest.raises(StateMachineNotFoundException):
-        provider._find_state_machine_arn("hello-world")
+        job_runner.run("test")
 
 
-def test_find_state_machine_arn_raises_when_multiple_found():
-
-    tags = {
-        "copilot-application": "test-app",
-        "copilot-environment": "dev",
-        "copilot-service": "hello-world",
-    }
-
-    client = make_paginated_client(
-        [
-            ("arn:duplicate-one", tags),
-            ("arn:duplicate-two", tags),
-        ]
+def test_run_raises_when_client_error():
+    sfn_client = Mock()
+    sfn_client.meta.region_name = "eu-west-2"
+    sfn_client.start_execution.side_effect = ClientError(
+        {"Error": {"Code": "AccessDenied", "Message": "Not allowed"}},
+        "StartExecution",
     )
 
-    provider = StepFunctions(client, application_name="test-app", env="dev")
-    with pytest.raises(MultipleStateMachinesFoundException):
-        provider._find_state_machine_arn("hello-world")
+    job_runner = StepFunctions(
+        sfn_client, application_name="demodjango", env="dev", account_id="123456789012"
+    )
+
+    with pytest.raises(StartExecutionFailedException):
+        job_runner.run("test")
 
 
 def test_get_status():
@@ -92,7 +79,9 @@ def test_get_status():
         "status": "RUNNING",
     }
 
-    provider = StepFunctions(client, application_name="test-app", env="dev")
+    provider = StepFunctions(
+        client, application_name="test-app", env="dev", account_id="123456789012"
+    )
 
     status = provider.get_status("arn:exec:123")
 
