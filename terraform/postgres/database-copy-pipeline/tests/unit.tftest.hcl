@@ -63,6 +63,7 @@ variables {
   application   = "test-app"
   environment   = "test-env"
   database_name = "test-db"
+  deploy_repository = "uktrade/test-app-deploy"
   task = {
     from : "prod"
     from_account = "123456789000"
