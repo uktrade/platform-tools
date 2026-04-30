@@ -41,7 +41,7 @@ locals {
   number_of_domains = length(local.full_list)
   domain_list       = lookup(var.config, "cdn_domains_list", null) != null ? join(",", keys(var.config.cdn_domains_list)) : ""
   config_cdn_domains_list = tomap({
-    for cdn_domain, cdn_config in lookup(var.config, "cdn_domains_list", {}) :
+    for cdn_domain, cdn_config in coalesce(lookup(var.config, "cdn_domains_list", {}), {}) :
     cdn_domain => { zone_name = cdn_config[1] }
   })
   ingress_cdn_domains_list = tomap(
