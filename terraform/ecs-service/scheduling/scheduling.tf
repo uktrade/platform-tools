@@ -1,11 +1,6 @@
 ### Eventbridge
 resource "aws_scheduler_schedule" "this" {
 
-  # Required
-  # TODO: handle day-of-week and day-of-month wildcards, e.g. if day-of-week is specified, then day-of-month must be "?" ("?"" means "any") and vice-versa
-  # TODO: add cron() around the cron expression in the service-config file, so "30 * * * ?" would be "cron(0 * * * ?)"
-  # TODO: Add test for above logic - done
-  # TODO: Add comment on cron gotchas in EventBridge Scheduler (when to use * and ? examples)
   schedule_expression = var.schedule == "none" ? "rate(5 minutes)" : "cron(${var.schedule})"
 
   flexible_time_window {

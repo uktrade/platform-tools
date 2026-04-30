@@ -999,13 +999,14 @@ image:
     [
         ("@hourly", "rate(1 hours)"),
         ("@daily", "rate(1 days)"),
-        ("@weekly", "0 0 * * 1"),
-        ("@monthly", "0 0 1 * *"),
-        ("@yearly", "0 * * * ?"),
-        ("5 * * * *", "5 * * * ?"),
-        ("5 * * * 1-5", "5 * ? * 1-5"),
-        ("30 8-19/2 * * 1-5", "30 8-19/2 ? * 1-5"),
-        ("5 * 1-5 * *", "5 * 1-5 * ?"),
+        ("@weekly", "0 0 * * 1 *"),
+        ("@monthly", "0 0 1 * * *"),
+        ("@yearly", "0 * * * ? *"),
+        ("5 * * * *", "5 * * * ? *"),
+        ("5 * * * 1-5", "5 * ? * 1-5 *"),
+        ("30 8-19/2 * * 1-5", "30 8-19/2 ? * 1-5 *"),
+        ("5 * 1-5 * *", "5 * 1-5 * ? *"),
+        ("30 * * * * *", "30 * * * ? *"),
     ],
     ids=[
         "hourly",
@@ -1015,8 +1016,9 @@ image:
         "yearly",
         "five minutes past each hour",
         "five minutes past each hour mon-fri",
-        "on 30th minute of each second hour from 8am-7pm mon-fri",
+        "on thirtieth minute of each second hour from 8am-7pm mon-fri",
         "five minutes past each hour for the first five days of the month",
+        "thirty minutes past each hour (explicitly every year)",
     ],
 )
 def test_migrate_scheduled_job_converts_schedule_to_eventbridge_format(
@@ -1045,6 +1047,7 @@ def test_migrate_scheduled_job_handles_overrides(
             "environments": {
                 "dev": {"on": {"schedule": "0 23 * * *"}},
                 "staging": {"on": {"schedule": "0 0 * * *"}},
+                "uat": {"on": {"schedule": "@hourly"}},
             },
         }
     )
@@ -1052,8 +1055,9 @@ def test_migrate_scheduled_job_handles_overrides(
         {
             "schedule": "none",
             "environments": {
-                "dev": {"schedule": "0 23 * * ?"},
-                "staging": {"schedule": "0 0 * * ?"},
+                "dev": {"schedule": "0 23 * * ? *"},
+                "staging": {"schedule": "0 0 * * ? *"},
+                "uat": {"schedule": "rate(1 hours)"},
             },
         }
     )

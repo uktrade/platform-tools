@@ -223,6 +223,15 @@ class ServiceManager:
                 return True
             return None
 
+        # Convert "@" schedule expressions to expressions understood by EventBridge
+        rate_conversion = {
+            "@hourly": "rate(1 hours)",
+            "@daily": "rate(1 days)",
+            "@weekly": "0 0 * * 1 *",
+            "@monthly": "0 0 1 * * *",
+            "@yearly": "0 * * * ? *",
+        }
+
         # Regenerate manifest with the *schedule* included after the *type* field
         # This is required to avoid sending the *schedule* field to the bottom of the service-config.yml file
         def set_schedule_order(d: dict, schedule: str) -> dict:
@@ -315,20 +324,19 @@ class ServiceManager:
 
                         on_key = get_on_key(env_config)
                         if on_key is not None:
+                            split_cron = env_config[on_key]["schedule"].split()
+
+                            # Add in an extra "*" to the end of the schedule to ensure that EventBridge Scheduler shows future schedule trigger dates in the AWS Console
+                            if len(split_cron) == 5:
+                                split_cron.append("*")
+                                schedule = " ".join(split_cron)
+
                             if "@" in env_config[on_key]["schedule"]:
-                                rate_conversion = {
-                                    "@hourly": "rate(1 hours)",
-                                    "@daily": "rate(1 days)",
-                                    "@weekly": "0 0 * * 1",
-                                    "@monthly": "0 0 1 * *",
-                                    "@yearly": "0 * * * ?",
-                                }
                                 schedule = env_config[on_key]["schedule"]
                                 env_config["schedule"] = rate_conversion.get(schedule, schedule)
                                 del env_config[on_key]
 
                             elif "*" in env_config[on_key]["schedule"]:
-                                split_cron = env_config[on_key]["schedule"].split()
                                 if split_cron[2] == "*" and split_cron[4] == "*":
                                     split_cron[4] = "?"
                                 schedule = " ".join(split_cron)
@@ -396,14 +404,14 @@ class ServiceManager:
 
                 on_key = get_on_key(service_manifest)
                 if on_key is not None:
+                    split_cron = service_manifest[on_key]["schedule"].split()
+
+                    # Add in an extra "*" to the end of the schedule to ensure that EventBridge Scheduler shows future schedule trigger dates in the AWS Console
+                    if len(split_cron) == 5:
+                        split_cron.append("*")
+                        schedule = " ".join(split_cron)
+
                     if "@" in service_manifest[on_key]["schedule"]:
-                        rate_conversion = {
-                            "@hourly": "rate(1 hours)",
-                            "@daily": "rate(1 days)",
-                            "@weekly": "0 0 * * 1",
-                            "@monthly": "0 0 1 * *",
-                            "@yearly": "0 * * * ?",
-                        }
                         schedule = service_manifest[on_key]["schedule"]
                         service_manifest = set_schedule_order(
                             service_manifest, rate_conversion.get(schedule, schedule)
@@ -411,7 +419,6 @@ class ServiceManager:
                         del service_manifest[on_key]
 
                     elif "*" in service_manifest[on_key]["schedule"]:
-                        split_cron = service_manifest[on_key]["schedule"].split()
                         if split_cron[2] == "*" and split_cron[4] == "*":
                             split_cron[4] = "?"
 
