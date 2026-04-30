@@ -42,6 +42,12 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__s3_bucket_policy_schema(),
                     )
                 },
+                Optional("scheduled_shutdown"): {
+                    "working_hours": {
+                        "weekdays": str,
+                        "weekends": str,
+                    },
+                },
             }
         )
 
