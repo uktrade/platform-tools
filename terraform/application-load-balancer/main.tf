@@ -594,7 +594,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
       HEADERNAME         = "x-origin-verify"
       APPLICATION        = var.application
       ENVIRONMENT        = var.environment
-      ROLEARN            = "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation" # Test here
+      ROLEARN            = "arn:aws:iam::${var.dns_account_id}:role/test-role-dbtp2964" # Test here
       AWS_ACCOUNT        = data.aws_caller_identity.current.account_id
       SLACK_TOKEN        = data.aws_ssm_parameter.slack_token.value
       SLACK_CHANNEL      = local.config_with_defaults.slack_alert_channel_alb_secret_rotation
