@@ -414,6 +414,13 @@ class ServiceManager:
                         split_cron = service_manifest[on_key]["schedule"].split()
                         if split_cron[2] == "*" and split_cron[4] == "*":
                             split_cron[4] = "?"
+
+                        elif split_cron[2] == "*" and split_cron[4] not in ["*", "?"]:
+                            split_cron[2] = "?"
+
+                        elif split_cron[2] not in ["*", "?"] and split_cron[4] == "*":
+                            split_cron[4] = "?"
+
                         schedule = " ".join(split_cron)
                         service_manifest = set_schedule_order(service_manifest, schedule)
                         del service_manifest[on_key]

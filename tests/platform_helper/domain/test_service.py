@@ -993,6 +993,7 @@ image:
     assert expected_output in service_config
 
 
+# cron syntax: minutes, hours, day-of-month, month, day-of-week
 @pytest.mark.parametrize(
     "test_input,expected",
     [
@@ -1002,8 +1003,21 @@ image:
         ("@monthly", "0 0 1 * *"),
         ("@yearly", "0 * * * ?"),
         ("5 * * * *", "5 * * * ?"),
+        ("5 * * * 1-5", "5 * ? * 1-5"),
+        ("30 8-19/2 * * 1-5", "30 8-19/2 ? * 1-5"),
+        ("5 * 1-5 * *", "5 * 1-5 * ?"),
     ],
-    ids=["hourly", "daily", "weekly", "monthly", "yearly", "five minutes past each hour"],
+    ids=[
+        "hourly",
+        "daily",
+        "weekly",
+        "monthly",
+        "yearly",
+        "five minutes past each hour",
+        "five minutes past each hour mon-fri",
+        "on 30th minute of each second hour from 8am-7pm mon-fri",
+        "five minutes past each hour for the first five days of the month",
+    ],
 )
 def test_migrate_scheduled_job_converts_schedule_to_eventbridge_format(
     copilot_scheduled_job_manifest, expected_scheduled_job_config, test_input, expected

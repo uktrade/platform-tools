@@ -68,8 +68,8 @@ run "test_cron_schedule_expression_is_as_expected" {
   }
 
   assert {
-    condition     = aws_scheduler_schedule.this.schedule_expression == "5 * * * ?"
-    error_message = "Should be '5 * * * ?'"
+    condition     = aws_scheduler_schedule.this.schedule_expression == "cron(5 * * * ?)"
+    error_message = "Should be 'cron(5 * * * ?)'"
   }
 
   assert {
