@@ -30,7 +30,7 @@ class StepFunctions:
 
     def _build_state_machine_arn(self, job_name: str) -> str:
         region = self.sfn_client.meta.region_name
-        state_machine_name = f"{self.application_name}-{self.env}-{job_name}"
+        state_machine_name = f"{self.application_name}-{self.env}-{job_name}-sfn"
         return f"arn:aws:states:{region}:{self.account_id}:stateMachine:{state_machine_name}"
 
 

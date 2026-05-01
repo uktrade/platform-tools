@@ -20,7 +20,7 @@ def test_run_constructs_correct_arn():
     job_runner.run("test")
 
     sfn_client.start_execution.assert_called_once_with(
-        stateMachineArn="arn:aws:states:eu-west-2:123456789012:stateMachine:demodjango-dev-test"
+        stateMachineArn="arn:aws:states:eu-west-2:123456789012:stateMachine:demodjango-dev-test-sfn"
     )
 
 
