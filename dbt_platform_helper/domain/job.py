@@ -29,11 +29,13 @@ class JobManager:
     def follow_execution(self, execution_id: str):
 
         self.io.info("Waiting for execution to finish...")
+        start_time = time.monotonic()
 
         while True:
             time.sleep(self.JOB_POLL_SECONDS)
+            elapsed = int(time.monotonic() - start_time)
             status = self.job_runner.get_status(execution_id)
-            self.io.info(status)
+            self.io.info(f"Status: {status} ({elapsed}s elapsed)")
             if status in self.JOB_FINAL_STATUSES:
                 break
 
