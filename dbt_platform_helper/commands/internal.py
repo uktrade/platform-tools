@@ -22,6 +22,28 @@ def internal():
 
 
 @internal.command()
+@click.option(
+    "--name",
+    required=True,
+    help="The name of the job to migrate.",
+)
+@click.option(
+    "--env",
+    required=True,
+    help="The name of the environment to migrate the job for.",
+)
+def migrate_job(name, env):
+    """Migrate copilot manifests to service manifests."""
+    click_io = ClickIOProvider()
+
+    try:
+        service_manager = ServiceManager()
+        service_manager.migrate_job(name, env)
+    except PlatformException as error:
+        click_io.abort_with_error(str(error))
+
+
+@internal.command()
 def migrate_service_manifests():
     """Migrate copilot manifests to service manifests."""
     click_io = ClickIOProvider()

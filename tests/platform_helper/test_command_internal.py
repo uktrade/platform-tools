@@ -192,3 +192,18 @@ class TestInternal:
 
         assert result.exit_code == 1
         mock_click.assert_called_with("Error: bad env", err=True, fg="red")
+
+    @mock_aws
+    @patch("dbt_platform_helper.commands.internal.ServiceManager")
+    @patch("dbt_platform_helper.commands.internal.click.secho")
+    def test_migrate_job(self, mock_click, mock_service_manager):
+        mock_instance = mock_service_manager.return_value
+        mock_instance.generate.side_effect = EnvironmentNotFoundException("bad env")
+
+        result = CliRunner().invoke(
+            internal,
+            ["migrate-job", "--env", "my-env", "--name", "my-job"],
+        )
+
+        assert result.exit_code == 0
+        mock_instance.migrate_job.assert_called_once()

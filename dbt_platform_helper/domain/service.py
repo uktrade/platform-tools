@@ -107,6 +107,11 @@ class ServiceManager:
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
 
+    def migrate_job(self, job_name, environment):
+        self.io.info(
+            f"Migrating the schedule for job {job_name} in {environment} from copilot to platform"
+        )
+
     def generate(self, environment: str, services: list[str]):
 
         config = self.config_provider.get_enriched_config()

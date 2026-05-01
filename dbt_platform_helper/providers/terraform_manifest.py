@@ -4,8 +4,8 @@ from importlib.metadata import version
 from pathlib import Path
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
-from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
