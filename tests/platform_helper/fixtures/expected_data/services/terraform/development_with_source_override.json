@@ -50,6 +50,16 @@
       "env_config": "${local.env_config}",
       "platform_extensions": "${local.platform_config[\"extensions\"]}",
       "custom_iam_policy_json": "${local.custom_iam_policy_json}"
+    },
+    "version-tracker": {
+      "source": "../../../../../platform-tools/terraform/version-tracker",
+      "platform_version": "10.2.0",
+      "application": "${local.application}",
+      "environment": "${local.environment}",
+      "service_name": "${local.service_config.name}",
+      "depends_on": [
+        "module.ecs-service"
+      ]
     }
   }
 }
