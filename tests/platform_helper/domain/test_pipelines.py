@@ -17,6 +17,9 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.constants import (
     TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
+from dbt_platform_helper.constants import (
+    TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
 from dbt_platform_helper.entities.semantic_version import SemanticVersion
@@ -50,6 +53,8 @@ class PipelineMocks:
         self.mock_platform_helper_versioning = PlatformHelperVersioning(
             **platform_helper_versioning_mocks.params()
         )
+        self.mock_environment_variable_provider = Mock()
+        self.mock_environment_variable_provider.get.return_value = None
 
     def params(self):
         return {
@@ -59,6 +64,7 @@ class PipelineMocks:
             "io": self.io,
             "get_git_remote": self.mock_git_remote,
             "platform_helper_versioning": self.mock_platform_helper_versioning,
+            "environment_variable_provider": self.mock_environment_variable_provider,
         }
 
 
@@ -138,13 +144,41 @@ def test_pipeline_generate_with_non_empty_platform_config_but_no_pipelines_outpu
 @freeze_time("2024-10-28 12:00:00")
 @patch("dbt_platform_helper.jinja2_tags.version", new=Mock(return_value="v0.1-TEST"))
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, is_auto, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch, expected_pinned_version, module_source_override",
+    "use_environment_variable_platform_helper_version, is_auto, expected_platform_helper_version, cli_demodjango_branch, expected_demodjango_branch, expected_pinned_version, env_pipeline_module_source_override, version_tracker_module_source_override",
     [  # config_platform_helper_version sets the platform-config.yml to include the platform-helper version at platform-config.yml/default_versions/platform-helper
-        (False, False, "14.0.0", "demodjango-branch", "demodjango-branch", None, "../local/path/"),
-        (False, False, "14.0.0", None, None, None, None),
-        (True, False, "test-branch", None, None, None, "../local/path/"),
-        (True, False, "test-branch", None, None, None, None),
-        (True, True, "test-branch", None, None, "test-branch", None),
+        (
+            False,
+            False,
+            "14.0.0",
+            "demodjango-branch",
+            "demodjango-branch",
+            None,
+            "../local/terraform/environment-pipelines/path/",
+            "../local/terraform/version-tracker/path/",
+        ),
+        (False, False, "14.0.0", None, None, None, None, None),
+        (
+            True,
+            False,
+            "test-branch",
+            None,
+            None,
+            None,
+            "../local/terraform/environment-pipelines/path/",
+            "../local/terraform/version-tracker/path/",
+        ),
+        (True, False, "test-branch", None, None, None, None, None),
+        (True, True, "test-branch", None, None, "test-branch", None, None),
+        (
+            True,
+            True,
+            "test-branch",
+            None,
+            None,
+            "test-branch",
+            "../local/terraform/environment-pipelines/path/",
+            "../local/terraform/version-tracker/path/",
+        ),
     ],
 )
 def test_pipeline_generate_command_generate_terraform_files_for_environment_pipeline_manifest(
@@ -155,7 +189,8 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
     cli_demodjango_branch,
     expected_demodjango_branch,
     expected_pinned_version,
-    module_source_override,
+    env_pipeline_module_source_override,
+    version_tracker_module_source_override,
     platform_config_for_env_pipelines,
 ):
 
@@ -184,8 +219,10 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
     ] = expected_platform_helper_version
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source_override
-
+    ] = env_pipeline_module_source_override
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = version_tracker_module_source_override
     pipelines = Pipelines(**mocks.params())
 
     pipelines.generate(cli_demodjango_branch)
@@ -205,7 +242,8 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         expected_pinned_version,
-        module_source_override,
+        env_pipeline_module_source_override,
+        version_tracker_module_source_override,
         "1111111111",
     )
     assert_terraform(
@@ -214,7 +252,8 @@ def test_pipeline_generate_command_generate_terraform_files_for_environment_pipe
         expected_platform_helper_version,
         expected_demodjango_branch,
         expected_pinned_version,
-        module_source_override,
+        env_pipeline_module_source_override,
+        version_tracker_module_source_override,
         "3333333333",
     )
 
@@ -272,20 +311,27 @@ def test_pipeline_generate_passes_explicit_deploy_repository_to_environment_pipe
 
 
 @pytest.mark.parametrize(
-    "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source",
+    "use_environment_variable_platform_helper_version, expected_platform_helper_version, codebase_pipelines_module_source, version_tracker_module_source",
     [
         (
             False,
             "14.0.0",
             "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+            "git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=14.0.0",
         ),
-        (True, "test-branch", "../local/path/"),
+        (
+            True,
+            "test-branch",
+            "../local/codebase-pipelines/path/",
+            "../local/version-tracker/path/",
+        ),
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected_platform_helper_version(
     use_environment_variable_platform_helper_version,
     expected_platform_helper_version,
-    module_source,
+    codebase_pipelines_module_source,
+    version_tracker_module_source,
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
     fakefs,
 ):
@@ -302,7 +348,11 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
 
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source
+    ] = codebase_pipelines_module_source
+
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = version_tracker_module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -314,24 +364,27 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_expected
         expected_platform_helper_version,
         {},
         "uktrade/my-app-deploy",
-        module_source,
+        codebase_pipelines_module_source,
+        version_tracker_module_source,
         None,  # workspace
     )
 
 
 @pytest.mark.parametrize(
-    "expected_platform_helper_version, module_source",
+    "expected_platform_helper_version, codebase_pipelines_module_source, version_tracker_module_source",
     [
         (
             "14.0.0",
             "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref=14.0.0",
+            "git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=14.0.0",
         ),
-        ("test-branch", "../local/path/"),
+        ("test-branch", "../local/codebase-pipelines/path/", "../local/version-tracker/path/"),
     ],
 )
 def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     expected_platform_helper_version,
-    module_source,
+    codebase_pipelines_module_source,
+    version_tracker_module_source,
     codebase_pipeline_config_for_2_pipelines_and_1_run_group,
     fakefs,
 ):
@@ -355,7 +408,11 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
 
     mocks.mock_platform_helper_versioning.environment_variable_provider[
         TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR
-    ] = module_source
+    ] = codebase_pipelines_module_source
+
+    mocks.mock_platform_helper_versioning.environment_variable_provider[
+        TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+    ] = version_tracker_module_source
 
     pipelines = Pipelines(**mocks.params())
 
@@ -367,7 +424,8 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
         expected_platform_helper_version,
         {"test_codebase": "my-app/test_codebase", "test_codebase_2": "my-app/test_codebase_2"},
         "uktrade/my-app-deploy",
-        module_source,
+        codebase_pipelines_module_source,
+        version_tracker_module_source,
         None,  # workspace
     )
 
@@ -403,7 +461,8 @@ def assert_terraform(
     expected_version,
     expected_branch,
     expected_pinned_version,
-    module_source_override,
+    env_pipeline_module_source_override,
+    version_tracker_module_source_override,
     deploy_account_id,
 ):
     expected_files_dir = Path(f"terraform/environment-pipelines/{aws_account}/main.tf")
@@ -420,8 +479,8 @@ def assert_terraform(
 
         environment_pipeline_module = parsed_terraform["module"][0]["environment-pipelines"]
 
-        if module_source_override:
-            assert environment_pipeline_module["source"] == module_source_override
+        if env_pipeline_module_source_override:
+            assert environment_pipeline_module["source"] == env_pipeline_module_source_override
         else:
             assert (
                 environment_pipeline_module["source"]
@@ -439,3 +498,49 @@ def assert_terraform(
 
         assert not parsed_terraform["provider"][0]["aws"].get("alias")
         assert environment_pipeline_module["pinned_version"] == expected_pinned_version
+
+        version_tracker_module = parsed_terraform["module"][1]["version-tracker"]
+
+        if version_tracker_module_source_override:
+            assert version_tracker_module["source"] == version_tracker_module_source_override
+        else:
+            assert (
+                version_tracker_module["source"]
+                == f"git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref={expected_version}"
+            )
+        assert version_tracker_module["platform_version"] == expected_version
+        assert version_tracker_module["application"] == app_name
+        assert version_tracker_module["pipeline_type"] == "environment-pipeline"
+        assert version_tracker_module["depends_on"] == ["${module.environment-pipelines}"]
+
+
+@pytest.mark.parametrize(
+    "pinned_version, platform_helper_version_override, platform_config_version, expected",
+    [
+        ("10.0.0", "doesnt-matter", "doesnt-matter", "10.0.0"),
+        (None, "11.0.0", "doesnt-matter", "11.0.0"),
+        (None, None, "12.0.0", "12.0.0"),
+    ],
+)
+def test_resolve_platform_version_for_version_tracker(
+    pinned_version,
+    platform_helper_version_override,
+    platform_config_version,
+    expected,
+):
+    mocks = PipelineMocks("test-app")
+    mocks.mock_environment_variable_provider.get.return_value = platform_helper_version_override
+
+    pipelines = Pipelines(**mocks.params())
+
+    result = pipelines._resolve_platform_version_for_version_tracker(
+        pinned_version,
+        platform_config_version,
+    )
+
+    assert result == expected
+
+    if pinned_version is None:
+        mocks.mock_environment_variable_provider.get.assert_called_once_with(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
