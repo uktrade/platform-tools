@@ -731,7 +731,7 @@ run "waf_and_rotate_lambda" {
   }
 
   assert {
-    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[6].resources) == "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation"
+    condition     = one(data.aws_iam_policy_document.origin_verify_rotate_policy[""].statement[6].resources) == "arn:aws:iam::${var.dns_account_id}:role/${var.application}-${var.environment}-secret-rotation-role"
     error_message = "Unexpected resources"
   }
 
