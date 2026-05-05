@@ -15,8 +15,8 @@ run "test_environment_ssm_parameter" {
   }
 
   assert {
-    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/application/demodjango/environment/dev"
-    error_message = "SSM parameter name should be '/platform/version/application/demodjango/environment/dev'"
+    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/applications/demodjango/environments/dev"
+    error_message = "SSM parameter name should be '/platform/version/applications/demodjango/environments/dev'"
   }
 
   assert {
@@ -39,8 +39,8 @@ run "test_service_ssm_parameter" {
   }
 
   assert {
-    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/application/demodjango/environment/dev/service/web"
-    error_message = "SSM parameter name should be '/platform/version/application/demodjango/environment/dev/service/web'"
+    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/applications/demodjango/environments/dev/services/web"
+    error_message = "SSM parameter name should be '/platform/version/applications/demodjango/environments/dev/services/web'"
   }
 
   assert {
@@ -64,15 +64,15 @@ run "test_codebase_pipeline_ssm_parameter" {
   }
 
   assert {
-    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/application/demodjango/codebase-pipeline"
-    error_message = "SSM parameter name should be '/platform/version/application/demodjango/codebase-pipeline'"
+    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/applications/demodjango/codebase-pipelines"
+    error_message = "SSM parameter name should be '/platform/version/applications/demodjango/codebase-pipelines'"
   }
 
   assert {
     condition = aws_ssm_parameter.platform_version.tags == tomap({
       "application" : "demodjango",
-      "pipeline" : "codebase-pipeline",
-      "managed-by" : "DBT Platform - Codebase Pipeline Terraform",
+      "pipeline" : "codebase-pipelines",
+      "managed-by" : "DBT Platform - Codebase Pipelines Terraform",
     })
     error_message = "SSM parameter tags do not match expected values"
   }
@@ -88,15 +88,15 @@ run "test_environment_pipeline_ssm_parameter" {
   }
 
   assert {
-    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/application/demodjango/environment-pipeline"
-    error_message = "SSM parameter name should be '/platform/version/application/demodjango/environment-pipeline'"
+    condition     = aws_ssm_parameter.platform_version.name == "/platform/version/applications/demodjango/environment-pipelines"
+    error_message = "SSM parameter name should be '/platform/version/applications/demodjango/environment-pipelines'"
   }
 
   assert {
     condition = aws_ssm_parameter.platform_version.tags == tomap({
       "application" : "demodjango",
-      "pipeline" : "environment-pipeline",
-      "managed-by" : "DBT Platform - Environment Pipeline Terraform",
+      "pipeline" : "environment-pipelines",
+      "managed-by" : "DBT Platform - Environment Pipelines Terraform",
     })
     error_message = "SSM parameter tags do not match expected values"
   }
