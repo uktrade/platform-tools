@@ -430,15 +430,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
     actions   = ["secretsmanager:GetRandomPassword"]
     resources = ["*"]
   }
-
-  statement {
-          effect = "Allow"
-          actions =  ["sts:AssumeRole"]
-          resources = ["arn:aws:iam::011755346992:role/test-role-dbtp2964"]
-        }
     
-
-
   statement {
     effect = "Allow"
     actions = [
@@ -482,7 +474,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
     resources = [
-      "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation"
+      "arn:aws:iam::${var.dns_account_id}:role/${var.application}-${var.environment}-secret-rotation-role"
     ]
   }
 
