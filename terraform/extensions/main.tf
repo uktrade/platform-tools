@@ -25,11 +25,11 @@ module "postgres" {
 
   for_each = local.postgres
 
-  application = var.args.application
-  environment = var.environment
-  name        = each.key
-  vpc_name    = local.vpc_name
-  env_config  = var.args.env_config
+  application       = var.args.application
+  environment       = var.environment
+  name              = each.key
+  vpc_name          = local.vpc_name
+  env_config        = var.args.env_config
   deploy_repository = var.deploy_repository
 
   config         = each.value
