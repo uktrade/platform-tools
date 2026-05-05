@@ -514,7 +514,7 @@ run "waf_and_rotate_lambda" {
   }
 
   assert {
-    condition     = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.ROLEARN == "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation"
+    condition     = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.ROLEARN == "arn:aws:iam::${var.dns_account_id}:role/${var.application}-${var.environment}-secret-rotation-role"
     error_message = "Invalid ROLEARN environment variable for aws_lambda_function.origin-secret-rotate-function"
   }
 
