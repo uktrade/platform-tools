@@ -430,7 +430,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
     actions   = ["secretsmanager:GetRandomPassword"]
     resources = ["*"]
   }
-    
+
   statement {
     effect = "Allow"
     actions = [
@@ -439,7 +439,6 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
       "cloudfront:ListDistributions",
       "cloudfront:UpdateDistribution"
     ]
-
     resources = [
       "arn:aws:cloudfront::${var.dns_account_id}:distribution/*"
     ]
