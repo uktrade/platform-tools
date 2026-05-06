@@ -1220,5 +1220,3 @@ run "dnb_domain_list_precondition_pass_if_both_lists_are_empty" {
     }
   }
 }
-
-# local.cdn_domains_list is not defined
