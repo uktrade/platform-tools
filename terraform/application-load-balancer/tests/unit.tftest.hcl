@@ -1201,7 +1201,7 @@ run "cdn_domain_list_precondition_fails_when_domains_do_not_match" {
   ]
 }
 
-run "dnb_domain_list_precondition_pass_if_both_lists_are_empty" {
+run "cdn_domain_list_precondition_passes_if_both_lists_are_empty" {
   command = plan
 
   override_data {
@@ -1215,8 +1215,6 @@ run "dnb_domain_list_precondition_pass_if_both_lists_are_empty" {
   }
 
   variables {
-    config = {
-
-    }
+    config = {}
   }
 }
