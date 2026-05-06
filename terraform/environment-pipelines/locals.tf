@@ -140,7 +140,10 @@ locals {
   )
 
   dns_ids                   = tolist(toset(flatten([for stage in local.all_stages : lookup(stage, "accounts", null) != null ? [stage.accounts.dns.id] : []])))
-  dns_account_assumed_roles = toset([for env in local.environment_config : "arn:aws:iam::${env.accounts.dns.id}:role/${var.application}-${env.name}-pipeline-deployment-role"])
+  dns_account_assumed_roles = toset([
+    for env in local.environment_config :
+    "arn:aws:iam::${env.accounts.dns.id}:role/${var.application}-${env.name}-pipeline-deployment-role"
+  ])
 
   # Merge in the stage specific config from the stage_config.yml file:
   stages = [for stage in local.all_stages : merge(stage, local.stage_config[stage["type"]])]
