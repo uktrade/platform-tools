@@ -439,16 +439,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
       "cloudfront:ListDistributions",
       "cloudfront:UpdateDistribution"
     ]
-     condition {
-      test     = "ForAllValues:StringEquals"
-      variable = "aws:ResourceTag/application"
-      values   = [var.application]
-    }
-    condition {
-      test     = "ForAllValues:StringEquals"
-      variable = "aws:ResourceTag/environment"
-      values   = [var.environment]
-    }
+
     resources = [
       "arn:aws:cloudfront::${var.dns_account_id}:distribution/*"
     ]
