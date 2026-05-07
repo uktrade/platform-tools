@@ -7,12 +7,13 @@ from moto import mock_aws
 
 
 class ScheduleMigrator:
-    def __init__(self, scheduler_client):
-        self.scheduler_client = scheduler_client
+    def __init__(self, old_scheduler_client, new_scheduler_client=None):
+        self.old_scheduler_client = old_scheduler_client
+        self.new_scheduler_client = new_scheduler_client
 
-    def disable_schedule(self, name, environment):
-        schedule = self.scheduler_client.get_schedule(Name=name, GroupName="default")
-        self.scheduler_client.update_schedule(
+    def disable_old_schedule(self, name, environment):
+        schedule = self.old_scheduler_client.get_schedule(Name=name, GroupName="default")
+        self.old_scheduler_client.update_schedule(
             Name=schedule["Name"],
             GroupName=schedule["GroupName"],
             FlexibleTimeWindow=schedule["FlexibleTimeWindow"],
@@ -21,9 +22,9 @@ class ScheduleMigrator:
             State="DISABLED",
         )
 
-    def enable_schedule(self, name, environment):
-        schedule = self.scheduler_client.get_schedule(Name=name, GroupName="default")
-        self.scheduler_client.update_schedule(
+    def enable_old_schedule(self, name, environment):
+        schedule = self.old_scheduler_client.get_schedule(Name=name, GroupName="default")
+        self.old_scheduler_client.update_schedule(
             Name=schedule["Name"],
             GroupName=schedule["GroupName"],
             FlexibleTimeWindow=schedule["FlexibleTimeWindow"],
@@ -32,8 +33,8 @@ class ScheduleMigrator:
             State="ENABLED",
         )
 
-    def get_schedule(self, name, environment):
-        schedule = self.scheduler_client.get_schedule(Name=name, GroupName="default")
+    def get_old_schedule(self, name, environment):
+        schedule = self.old_scheduler_client.get_schedule(Name=name, GroupName="default")
         if schedule.get("State") == "ENABLED":
             return schedule.get("ScheduleExpression")
         else:
@@ -41,7 +42,7 @@ class ScheduleMigrator:
 
 
 @mock_aws
-def test_get_schedule():
+def test_get_old_schedule():
     client = boto3.client("scheduler", region_name="eu-west-2")
     test_rule = "my-enabled-rule"
     client.create_schedule(
@@ -56,13 +57,13 @@ def test_get_schedule():
         State="ENABLED",
     )
 
-    result = ScheduleMigrator(client).get_schedule("my-enabled-rule", "dev")
+    result = ScheduleMigrator(client).get_old_schedule("my-enabled-rule", "dev")
 
     assert result == "rate(5 minutes)"
 
 
 @mock_aws
-def test_disable_schedule():
+def test_disable_old_schedule():
     client = boto3.client("scheduler", region_name="eu-west-2")
     test_rule = "my-rule"
     client.create_schedule(
@@ -77,15 +78,15 @@ def test_disable_schedule():
         State="ENABLED",
     )
 
-    ScheduleMigrator(client).disable_schedule("my-rule", "dev")
+    ScheduleMigrator(client).disable_old_schedule("my-rule", "dev")
 
-    result = ScheduleMigrator(client).get_schedule("my-rule", "dev")
+    result = ScheduleMigrator(client).get_old_schedule("my-rule", "dev")
 
     assert result is None
 
 
 @mock_aws
-def test_enable_schedule():
+def test_enable_old_schedule():
     client = boto3.client("scheduler", region_name="eu-west-2")
     test_rule = "my-job"
     client.create_schedule(
@@ -100,10 +101,12 @@ def test_enable_schedule():
         State="DISABLED",
     )
 
-    assert ScheduleMigrator(client).get_schedule("my-job", "dev") is None
+    assert ScheduleMigrator(client).get_old_schedule("my-job", "dev") is None
 
-    ScheduleMigrator(client).enable_schedule("my-job", "dev")
+    ScheduleMigrator(client).enable_old_schedule("my-job", "dev")
 
-    result = ScheduleMigrator(client).get_schedule("my-job", "dev")
+    result = ScheduleMigrator(client).get_old_schedule("my-job", "dev")
 
     assert result == "rate(5 minutes)"
+    
+
