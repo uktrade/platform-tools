@@ -7,6 +7,7 @@ from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
+from dbt_platform_helper.constants import SUPPORTED_GITHUB_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.files import FileProvider
@@ -276,7 +277,7 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_github_provider(terraform: dict):
-        terraform["provider"] = {"github": {}}
+        terraform["provider"]["github"] = {}
         terraform["provider"]["github"]["app_auth"] = {}
 
     @staticmethod
@@ -294,7 +295,11 @@ class TerraformManifestProvider:
                 }
             },
             "required_providers": {
-                "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION}
+                "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION},
+                "github": {
+                    "source": "integrations/github",
+                    "version": SUPPORTED_GITHUB_PROVIDER_VERSION,
+                },
             },
         }
 
