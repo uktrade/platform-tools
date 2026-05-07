@@ -362,7 +362,7 @@ class ServiceConfig(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def check_allowed_fields_in_scheduled_job(self):
+    def check_scheduled_job_conditional_fields(self):
         if self.type == ServiceType.SCHEDULED_JOB:
             if self.count is not None:
                 raise PlatformException(
