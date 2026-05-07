@@ -450,10 +450,9 @@ resource "aws_ecs_task_definition" "scheduled_job" {
     }
   }
 
-  # execution_role_arn    = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-task-exec"
   execution_role_arn    = aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode(local.container_definitions_list)
-  task_role_arn         = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${local.full_service_name}-ecs-task"
+  task_role_arn         = aws_iam_role.ecs_task_role.arn
 
   dynamic "volume" {
     for_each = local.volumes
