@@ -2,7 +2,14 @@ from unittest.mock import Mock
 
 import boto3
 from moto import mock_aws
+import pytest
 
+from dbt_platform_helper.platform_exception import PlatformException
+
+
+
+class NewScheduleNotFoundException(PlatformException):
+    pass
 
 class ScheduleMigrator:
     def __init__(self, old_scheduler_client, new_scheduler_client=None):
@@ -52,6 +59,12 @@ class ScheduleMigrator:
         self.new_scheduler_client.disable_rule(Name=name)
         
     def migrate_schedule(self, name, env):
+        try:
+            self.get_new_schedule(name, env)
+        except Exception:
+            raise NewScheduleNotFoundException(f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}")
+        
+        
         self.disable_old_schedule(name, env)
         self.enable_new_schedule(name, env)
         
@@ -247,3 +260,29 @@ def test_undo_migrate_schedule():
     
     assert migrator.get_old_schedule("my-job", "dev") == "rate(5 minutes)"
     assert migrator.get_new_schedule("my-job", "dev") is None
+    
+@mock_aws
+def test_migrate_fails_if_no_new_schedule():
+    old_client = boto3.client("scheduler", region_name="eu-west-2")
+    new_client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job"
+    old_client.create_schedule(
+        Name=test_rule,
+        GroupName="default",
+        FlexibleTimeWindow={"Mode": "OFF"},
+        Target={
+            "Arn": "arn:aws:states:eu-west-2:123456789012:stateMachine:dummy",
+            "RoleArn": "arn:aws:iam::123456789012:role/dummy",
+        },
+        ScheduleExpression="rate(5 minutes)",
+        State="ENABLED",
+    )
+    
+    migrator = ScheduleMigrator(old_client, new_client)
+
+    with pytest.raises(NewScheduleNotFoundException) as e:
+        migrator.migrate_schedule("my-job", "dev")
+    
+    assert "No new schedule to migrate to.  Ensure job my-job is deployed to dev" in str(e.value)
+    
+
