@@ -21,5 +21,7 @@ variable "config" {
 }
 
 variable "repos" {
-  type = list(string)
+  type     = list(string)
+  default  = []
+  nullable = false
 }

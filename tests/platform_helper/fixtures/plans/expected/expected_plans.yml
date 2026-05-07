@@ -185,14 +185,6 @@ postgres:
     multi_az: true
     instance: db.t4g.small
 
-  # 2v CPU, 2GB RAM, 100GB Storage, multi AZ, high IOPS
-  small-high-io:
-    volume_size: 100
-    multi_az: true
-    instance: db.t4g.small
-    storage_type: io2
-    iops: 40000
-
   # # 2v CPU, 4GB RAM, 100GB Storage
   medium:
     volume_size: 100
@@ -204,14 +196,6 @@ postgres:
     volume_size: 100
     multi_az: true
     instance: db.t4g.medium
-
-  # 2v CPU, 4GB RAM, 100GB Storage, multi AZ, high IOPS
-  medium-high-io:
-    volume_size: 100
-    multi_az: true
-    instance: db.t4g.medium
-    storage_type: io2
-    iops: 40000
 
   # 2v CPU, 8GB RAM, 100GB Storage
   large:
@@ -225,14 +209,6 @@ postgres:
     multi_az: true
     instance: db.m8g.large
 
-  # 2v CPU, 8GB RAM, 100GB Storage, multi AZ, high IOPS
-  large-high-io:
-    volume_size: 100
-    multi_az: true
-    instance: db.m8g.large
-    storage_type: io2
-    iops: 40000
-
   # 4v CPU, 16GB RAM, 100GB Storage
   x-large:
     volume_size: 100
@@ -244,14 +220,6 @@ postgres:
     volume_size: 100
     multi_az: true
     instance: db.m8g.xlarge
-
-  # 4v CPU, 16GB RAM, 100GB Storage, multi AZ, high IOPS
-  x-large-high-io:
-    volume_size: 100
-    multi_az: true
-    instance: db.m8g.xlarge
-    storage_type: io2
-    iops: 40000
 
   # 8v CPU, 32GB RAM, 100GB Storage
   2x-large:
@@ -265,14 +233,6 @@ postgres:
     multi_az: true
     instance: db.m8g.2xlarge
 
-  # 8v CPU, 32GB RAM, 100GB Storage, multi AZ, high IOPS
-  2x-large-high-io:
-    volume_size: 100
-    multi_az: true
-    instance: db.m8g.2xlarge
-    storage_type: io2
-    iops: 40000
-
   # 16v CPU, 64GB RAM, 100GB Storage
   4x-large:
     volume_size: 100
@@ -284,11 +244,3 @@ postgres:
     volume_size: 100
     multi_az: true
     instance: db.m8g.4xlarge
-
-  # 16v CPU, 64GB RAM, 100GB Storage, multi AZ, high IOPS
-  4x-large-high-io:
-    volume_size: 100
-    multi_az: true
-    instance: db.m8g.4xlarge
-    storage_type: io2
-    iops: 40000

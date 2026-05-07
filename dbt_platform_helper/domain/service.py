@@ -18,6 +18,9 @@ from dbt_platform_helper.constants import (
     TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.constants import TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR
+from dbt_platform_helper.constants import (
+    TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.domain.terraform_environment import (
     EnvironmentNotFoundException,
 )
@@ -126,13 +129,20 @@ class ServiceManager:
         source_type = EnvironmentVariableProvider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
         if source_type == "LOCAL":
-            module_source_override = ServiceConfig.local_terraform_source
+            service_module_source_override = ServiceConfig.local_ecs_service_terraform_source
+            version_tracker_module_source_override = (
+                ServiceConfig.local_version_tracker_terraform_source
+            )
         elif source_type == "OVERRIDE":
-            module_source_override = EnvironmentVariableProvider.get(
+            service_module_source_override = EnvironmentVariableProvider.get(
                 TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR
             )
+            version_tracker_module_source_override = EnvironmentVariableProvider.get(
+                TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
         else:
-            module_source_override = None
+            service_module_source_override = None
+            version_tracker_module_source_override = None
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -162,7 +172,8 @@ class ServiceManager:
                 environment,
                 platform_helper_version_for_template,
                 config,
-                module_source_override,
+                service_module_source_override,
+                version_tracker_module_source_override,
             )
 
     def get_service_models(self, application, environment, services=None) -> list[ServiceConfig]:

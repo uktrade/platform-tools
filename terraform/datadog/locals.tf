@@ -15,7 +15,7 @@ EOF
 EOF
 
   ## Create repo metadata section(s)
-  repos = var.repos == null ? "" : <<EOF
+  repos = <<EOF
   %{for r in var.repos}
     - name: ${r}
       type: repo
