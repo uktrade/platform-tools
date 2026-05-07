@@ -2573,3 +2573,21 @@ run "test_update_alb_rules" {
     error_message = "Should be: my-app-my-codebase-codebase-update-alb-rules"
   }
 }
+
+run "test_disable_codepipeline_triggers" {
+  command = plan
+
+  variables {
+    use_github_actions = true
+  }
+
+  assert {
+    condition     = aws_codebuild_webhook.codebuild_webhook == {}
+    error_message = "Should be: {}"
+  }
+
+  assert {
+    condition     = aws_cloudwatch_event_rule.ecr_image_publish[0].state == "DISABLED"
+    error_message = "Should be: 'DISABLED'"
+  }
+}

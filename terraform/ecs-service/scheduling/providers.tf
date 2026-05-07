@@ -3,9 +3,6 @@ terraform {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6"
-      configuration_aliases = [
-        aws.domain-cdn,
-      ]
     }
   }
 }
