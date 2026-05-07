@@ -1,9 +1,7 @@
+from unittest.mock import Mock
 
 import boto3
 from moto import mock_aws
-
-
-
 
 
 class ScheduleMigrator:
@@ -37,6 +35,13 @@ class ScheduleMigrator:
         schedule = self.old_scheduler_client.get_schedule(Name=name, GroupName="default")
         if schedule.get("State") == "ENABLED":
             return schedule.get("ScheduleExpression")
+        else:
+            return None
+
+    def get_new_schedule(self, name, environment):
+        rule = self.new_scheduler_client.describe_rule(Name=name)
+        if rule.get("State") == "ENABLED":
+            return rule.get("ScheduleExpression")
         else:
             return None
 
@@ -108,5 +113,18 @@ def test_enable_old_schedule():
     result = ScheduleMigrator(client).get_old_schedule("my-job", "dev")
 
     assert result == "rate(5 minutes)"
-    
 
+
+@mock_aws
+def test_get_new_schedule():
+    client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job"
+    client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="ENABLED",
+    )
+
+    result = ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev")
+
+    assert result == "rate(5 minutes)"
