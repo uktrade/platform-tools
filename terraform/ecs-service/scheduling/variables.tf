@@ -7,13 +7,11 @@ variable "schedule" {
 }
 
 variable "retries" {
-  type    = number
-  default = null
+  type = number
 }
 
 variable "timeout_seconds" {
-  type    = number
-  default = 86400 # set timeout to 24 hours to avoid runaway state machines caused by the default provided by AWS (99999999, which is approximately 3 years). See here: https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html
+  type = number
 }
 
 variable "vpc_id" {

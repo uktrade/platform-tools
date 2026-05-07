@@ -18,12 +18,6 @@ resource "aws_scheduler_schedule" "this" {
 
   state = var.schedule == "none" ? "DISABLED" : "ENABLED"
 
-  # retries? 
-  #   retry_policy {
-  #     maximum_event_age_in_seconds = 60
-  #     maximum_retry_attempts = 1
-  #   }
-
 }
 
 resource "aws_security_group" "scheduled_job" {

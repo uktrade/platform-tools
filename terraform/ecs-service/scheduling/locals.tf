@@ -9,7 +9,7 @@ locals {
   state_machine_definition = {
     Version        = "1.0"
     Comment        = "Run AWS Fargate task for Scheduled Job ${var.name}"
-    TimeoutSeconds = var.timeout_seconds
+    TimeoutSeconds = var.timeout_seconds != null ? var.timeout_seconds : 86400 # set timeout to 24 hours to avoid runaway state machines caused by the default provided by AWS (99999999, which is approximately 3 years). See here: https://docs.aws.amazon.com/step-functions/latest/dg/state-task.html
     StartAt        = "run-fargate-task"
     States = {
       run-fargate-task = {
@@ -34,9 +34,9 @@ locals {
           ErrorEquals = [
             "States.ALL"
           ]
-          IntervalSeconds = 10 # do we want this value configurable?
+          IntervalSeconds = 10
           MaxAttempts     = var.retries
-          BackoffRate     = 1.5 # do we want this value configurable?
+          BackoffRate     = 1.5
         }] : []
 
         # notifications state
