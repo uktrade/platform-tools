@@ -3,7 +3,10 @@ import boto3
 from moto import mock_aws
 
 
-class ScheduleManager:
+
+
+
+class ScheduleMigrator:
     def __init__(self, scheduler_client):
         self.scheduler_client = scheduler_client
 
@@ -53,7 +56,7 @@ def test_get_schedule():
         State="ENABLED",
     )
 
-    result = ScheduleManager(client).get_schedule("my-enabled-rule", "dev")
+    result = ScheduleMigrator(client).get_schedule("my-enabled-rule", "dev")
 
     assert result == "rate(5 minutes)"
 
@@ -74,9 +77,9 @@ def test_disable_schedule():
         State="ENABLED",
     )
 
-    ScheduleManager(client).disable_schedule("my-rule", "dev")
+    ScheduleMigrator(client).disable_schedule("my-rule", "dev")
 
-    result = ScheduleManager(client).get_schedule("my-rule", "dev")
+    result = ScheduleMigrator(client).get_schedule("my-rule", "dev")
 
     assert result is None
 
@@ -97,10 +100,10 @@ def test_enable_schedule():
         State="DISABLED",
     )
 
-    assert ScheduleManager(client).get_schedule("my-job", "dev") is None
+    assert ScheduleMigrator(client).get_schedule("my-job", "dev") is None
 
-    ScheduleManager(client).enable_schedule("my-job", "dev")
+    ScheduleMigrator(client).enable_schedule("my-job", "dev")
 
-    result = ScheduleManager(client).get_schedule("my-job", "dev")
+    result = ScheduleMigrator(client).get_schedule("my-job", "dev")
 
     assert result == "rate(5 minutes)"
