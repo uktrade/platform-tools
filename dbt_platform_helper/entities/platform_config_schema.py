@@ -140,6 +140,7 @@ class PlatformConfigSchema:
                 "repository": str,
                 Optional("slack_channel"): str,
                 Optional("requires_image_build"): bool,
+                Optional("use_github_actions"): bool,
                 Optional("additional_ecr_repository"): str,
                 Optional("deploy_repository_branch"): str,
                 "services": [{str: [str]}],
