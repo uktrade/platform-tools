@@ -1,9 +1,11 @@
 .pre-commit-config.yaml
 personal-data-exclusions.txt
+/src/pyproject.toml
 /src/extensions-example.yml
+/src/terraform/README.md
+/src/dbt_platform_helper/constants.py
 /src/terraform/elasticache-redis/plans.yml
-tests/platform_helper/fixtures/plans/expected/expected_plans.yml
-/src/tests/platform_helper/utils/fixtures/addons_files/alb_addons.yml
-/src/tests/platform_helper/utils/fixtures/addons_files/datadog_addons.yml
-/src/tests/platform_helper/utils/fixtures/addons_files/s3_addons.yml
-/src/tests/platform_helper/utils/fixtures/addons_files/s3_addons_bad_data.yml
+.*/tests/.*
+.*/templates/.*
+
+tests/platform_helper/utils/fixtures/addons_files/*.yml

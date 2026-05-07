@@ -1,5 +1,47 @@
 # Changelog
 
+## [15.27.0](https://github.com/uktrade/platform-tools/compare/15.26.0...15.27.0) (2026-04-30)
+
+
+### Features
+
+* Build deploy image after pypi publish (DBTP-2795) ([#1384](https://github.com/uktrade/platform-tools/issues/1384)) ([f5a3abb](https://github.com/uktrade/platform-tools/commit/f5a3abbe6e2191a91a8376dd922e4a341f512353))
+* Remove high-io Postgres plans (DBTP-2906) ([#1410](https://github.com/uktrade/platform-tools/issues/1410)) ([72e4b95](https://github.com/uktrade/platform-tools/commit/72e4b9587b9d184f3ea40d7844818a77057273f2))
+
+
+### Bug Fixes
+
+* Add tags to tagless AWS CloudWatch Log Groups (DBTP-2865) ([#1395](https://github.com/uktrade/platform-tools/issues/1395)) ([2ee06f2](https://github.com/uktrade/platform-tools/commit/2ee06f23c29d9c686b2a8b0eb3444efdb4b45627))
+* Pass deploy repository through to postgres database copy extension (DBTP-2830) ([#1371](https://github.com/uktrade/platform-tools/issues/1371)) ([a4f4b65](https://github.com/uktrade/platform-tools/commit/a4f4b6573545797f1ee9ac4207fdf40b02fef9a8))
+
+
+### Dependencies
+
+* Bump click from 8.1.8 to 8.3.2 ([#1413](https://github.com/uktrade/platform-tools/issues/1413)) ([1c6e000](https://github.com/uktrade/platform-tools/commit/1c6e000552c33a5f332f3ac31f28ab23201f06a1))
+* Bump datadog/datadog from 4.3.0 to 4.5.0 in /terraform ([#1400](https://github.com/uktrade/platform-tools/issues/1400)) ([91c4ed0](https://github.com/uktrade/platform-tools/commit/91c4ed09324f2b723ad13f4e1afe1bf36036daeb))
+* Bump psycopg2-binary from 2.9.11 to 2.9.12 ([#1416](https://github.com/uktrade/platform-tools/issues/1416)) ([3aedec8](https://github.com/uktrade/platform-tools/commit/3aedec8c7436ef177567a24fa856714ca4aa9e11))
+* Bump requests from 2.33.0 to 2.33.1 ([#1414](https://github.com/uktrade/platform-tools/issues/1414)) ([c21a3b5](https://github.com/uktrade/platform-tools/commit/c21a3b5433f7fc2e19395c7be547af922f44515c))
+
+## [15.26.0](https://github.com/uktrade/platform-tools/compare/15.25.0...15.26.0) (2026-04-20)
+
+
+### Features
+
+* Convert scheduled tasks manifests (DBTP-2876) ([#1381](https://github.com/uktrade/platform-tools/issues/1381)) ([a9f30dd](https://github.com/uktrade/platform-tools/commit/a9f30dd8ea0b215aeb76e90b3dd4cb0cb7747301))
+* S3 external user access support and encrypt flag (DBTP-2902) ([#1390](https://github.com/uktrade/platform-tools/issues/1390)) ([028521f](https://github.com/uktrade/platform-tools/commit/028521f066290a06cdface942ac6a32dea756850))
+
+
+### Bug Fixes
+
+* Add check for services directory to config validate command (DBTP-2766) ([#1367](https://github.com/uktrade/platform-tools/issues/1367)) ([aa15c37](https://github.com/uktrade/platform-tools/commit/aa15c37ad44565e737c7459cfbb56959dc285a26))
+* Prevent deletion of maintenance page ALB rules during deployments (DBTP-2755) ([#1376](https://github.com/uktrade/platform-tools/issues/1376)) ([67a97d3](https://github.com/uktrade/platform-tools/commit/67a97d32cabaeebc59144ebe5ff935df5555e957))
+* Prevent deployment failures when desired count is set to 0 (DBTP-2696) ([#1370](https://github.com/uktrade/platform-tools/issues/1370)) ([acd7f3e](https://github.com/uktrade/platform-tools/commit/acd7f3e7e0ad2f4ad8f72f807f60da69029a8ded))
+
+
+### Dependencies
+
+* Bump slack-sdk from 3.40.1 to 3.41.0 ([#1366](https://github.com/uktrade/platform-tools/issues/1366)) ([14b927c](https://github.com/uktrade/platform-tools/commit/14b927c5b0164d44edeb72833c2b310594e2488f))
+
 ## [15.25.0](https://github.com/uktrade/platform-tools/compare/15.24.1...15.25.0) (2026-03-30)
 
 

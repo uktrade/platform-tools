@@ -398,4 +398,9 @@ class ServiceConfig(BaseModel):
     )
 
     # Class based variable used when handling the object
-    local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
+    local_ecs_service_terraform_source: ClassVar[str] = (
+        "../../../../../platform-tools/terraform/ecs-service"
+    )
+    local_version_tracker_terraform_source: ClassVar[str] = (
+        "../../../../../platform-tools/terraform/version-tracker"
+    )

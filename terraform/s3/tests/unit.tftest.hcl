@@ -15,10 +15,6 @@ variables {
 mock_provider "aws" {}
 
 mock_provider "aws" {
-  alias = "domain-cdn"
-}
-
-mock_provider "aws" {
   alias = "domain"
 }
 
@@ -379,6 +375,14 @@ run "aws_s3_bucket_external_role_access_read_write_unit_test" {
     ])
     error_message = "Should be: kms:Decrypt, kms:GenerateDataKey"
   }
+
+  assert {
+    condition = alltrue([
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:Encrypt"),
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:ReEncrypt"),
+    ])
+    error_message = "Should not contain: kms:Encrypt, kms:ReEncrypt"
+  }
 }
 
 run "aws_s3_bucket_external_role_access_read_only_unit_test" {
@@ -492,6 +496,66 @@ run "aws_s3_bucket_external_role_access_write_only_unit_test" {
     error_message = "Should be: kms:GenerateDataKey"
   }
 }
+
+run "aws_s3_bucket_external_role_access_encrypt_only_unit_test" {
+  command = plan
+
+  variables {
+    config = {
+      "bucket_name" = "dbt-terraform-test-s3-external-role-access",
+      "type"        = "s3",
+      "external_role_access" = {
+        "test-access" = {
+          "role_arn"          = "arn:aws:iam::123456789012:user/user-role/my-privileged-arn",
+          "read"              = false,
+          "write"             = false,
+          "encrypt"           = true,
+          "cyber_sign_off_by" = "test@businessandtrade.gov.uk"
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_s3_bucket_policy.bucket-policy) == 1
+    error_message = "Should be a bucket policy"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.bucket-policy.statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+
+  assert {
+    condition = alltrue([
+      !contains(data.aws_iam_policy_document.bucket-policy.statement[1].actions, "s3:Get*"),
+      !contains(data.aws_iam_policy_document.bucket-policy.statement[1].actions, "s3:ListBucket"),
+      !contains(data.aws_iam_policy_document.bucket-policy.statement[1].actions, "s3:Put*"),
+    ])
+    error_message = "Should be: empty"
+  }
+
+  assert {
+    condition     = length(aws_kms_key_policy.key-policy) == 1
+    error_message = "Should be a kms key policy"
+  }
+
+  assert {
+    condition     = data.aws_iam_policy_document.key-policy[0].statement[1].effect == "Allow"
+    error_message = "Should be: Allow"
+  }
+
+  assert {
+    condition = alltrue([
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:Decrypt"),
+      !contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:GenerateDataKey"),
+      contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:Encrypt"),
+      contains(data.aws_iam_policy_document.key-policy[0].statement[1].actions, "kms:ReEncrypt*"),
+    ])
+    error_message = "Should be: kms:Encrypt, kms:ReEncrypt"
+  }
+}
+
 
 run "aws_s3_bucket_external_role_access_invalid_cyber_sign_off" {
   command = plan
@@ -726,264 +790,6 @@ run "aws_s3_bucket_object_lock_configuration_nopolicy_unit_test" {
   }
 }
 
-run "aws_cloudfront_origin_access_control_unit_test" {
-  command = plan
-
-  variables {
-    config = {
-      "bucket_name"          = "test",
-      "type"                 = "string",
-      "serve_static_content" = true,
-      "objects"              = [],
-    }
-  }
-
-  assert {
-    condition     = aws_cloudfront_origin_access_control.oac[0].name == "test.dev.s3-test-application-oac"
-    error_message = "Invalid value for aws_cloudfront_origin_access_control name."
-  }
-
-  assert {
-    condition     = aws_cloudfront_origin_access_control.oac[0].description == "Origin access control for Cloudfront distribution and test.dev.s3-test-application.uktrade.digital static s3 bucket."
-    error_message = "Invalid value for aws_cloudfront_origin_access_control name."
-  }
-
-  assert {
-    condition     = aws_cloudfront_origin_access_control.oac[0].origin_access_control_origin_type == "s3"
-    error_message = "Invalid value for aws_cloudfront_origin_access_control origin type."
-  }
-
-  assert {
-    condition     = aws_cloudfront_origin_access_control.oac[0].signing_behavior == "always"
-    error_message = "Invalid value for aws_cloudfront_origin_access_control signing_behavior."
-  }
-
-  assert {
-    condition     = aws_cloudfront_origin_access_control.oac[0].signing_protocol == "sigv4"
-    error_message = "Invalid value for aws_cloudfront_origin_access_control signing protocol."
-  }
-}
-
-run "aws_acm_certificate_unit_test" {
-  command = plan
-
-  variables {
-    config = {
-      "bucket_name"          = "test",
-      "serve_static_content" = true,
-      "type"                 = "string",
-      "objects"              = [],
-    }
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].domain_name == "test.dev.s3-test-application.uktrade.digital"
-    error_message = "Invalid value for aws_acm_certificate domain name."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].validation_method == "DNS"
-    error_message = "Invalid value for aws_acm_certificate validation method."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].tags["application"] == "s3-test-application"
-    error_message = "Invalid value for aws_acm_certificate tags parameter."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].tags["environment"] == "dev"
-    error_message = "Invalid value for aws_acm_certificate tags parameter."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].tags["application"] == "s3-test-application"
-    error_message = "Invalid value for aws_acm_certificate tags parameter."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].tags["copilot-application"] == "s3-test-application"
-    error_message = "Invalid value for aws_acm_certificate tags parameter."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].tags["copilot-environment"] == "dev"
-    error_message = "Invalid value for aws_acm_certificate tags parameter."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].tags["managed-by"] == "DBT Platform - Terraform"
-    error_message = "Invalid value for aws_acm_certificate tags parameter."
-  }
-}
-
-run "aws_route53_record_cert_validation_unit_test" {
-  command = plan
-
-  variables {
-    config = {
-      "bucket_name"          = "test",
-      "serve_static_content" = true,
-      "type"                 = "string",
-      "objects"              = [],
-    }
-  }
-
-  # assert {
-  #   condition     = aws_route53_record.cert_validation[0].type == "CNAME"
-  #   error_message = "Invalid value for aws_route53_record cert validation type."
-  # }
-
-  assert {
-    condition     = aws_route53_record.cert_validation[0].ttl == 60
-    error_message = "Invalid TTL value for aws_route53_record cert validation."
-  }
-}
-
-# ADD E2E for aws_acm_certificate_validation
-
-run "aws_route53_record_cloudfront_domain_unit_test" {
-  command = plan
-
-  variables {
-    config = {
-      "bucket_name"          = "test",
-      "serve_static_content" = true,
-      "type"                 = "string",
-      "objects"              = [],
-    }
-  }
-
-  # assert {
-  #   condition     = aws_route53_record.cloudfront_domain[0].name == aws_s3_bucket.this.bucket
-  #   error_message = "Route 53 record name should match the S3 bucket name."
-  # } MOVE TO E2E
-
-  assert {
-    condition     = aws_route53_record.cloudfront_domain[0].type == "A"
-    error_message = "Route 53 record type should be 'A'."
-  }
-
-  # assert {
-  #   condition     = aws_route53_record.cloudfront_domain[0].zone_id == data.aws_route53_zone.selected[0].id
-  #   error_message = "Route 53 record zone ID should match the selected Route 53 zone ID."
-  # } MOVE TO E2E
-
-  # assert {
-  #   condition     = aws_route53_record.cloudfront_domain[0].alias[0].name == aws_cloudfront_distribution.s3_distribution[0].domain_name
-  #   error_message = "Route 53 alias name should match the CloudFront distribution domain name."
-  # } MOVE TO E2E
-
-  # assert {
-  #   condition     = aws_route53_record.cloudfront_domain[0].alias[0].zone_id == aws_cloudfront_distribution.s3_distribution[0].hosted_zone_id
-  #   error_message = "Route 53 alias zone ID should match the CloudFront distribution hosted zone ID."
-  # } MOVE TO E2E
-
-  assert {
-    condition     = aws_route53_record.cloudfront_domain[0].alias[0].evaluate_target_health == false
-    error_message = "Route 53 alias should not evaluate target health."
-  }
-
-}
-
-
-run "aws_cloudfront_distribution_unit_test" {
-  command = plan
-
-  variables {
-    config = {
-      "bucket_name"          = "test",
-      "serve_static_content" = true,
-      "type"                 = "string",
-      "objects"              = [],
-    }
-  }
-
-  assert {
-    condition     = aws_cloudfront_distribution.s3_distribution[0].enabled == true
-    error_message = "CloudFront distribution should be enabled."
-  }
-
-  assert {
-    condition     = contains(aws_cloudfront_distribution.s3_distribution[0].aliases, "test.dev.s3-test-application.uktrade.digital")
-    error_message = "CloudFront distribution should include the correct alias."
-  }
-
-  assert {
-    condition     = length(aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].allowed_methods) == 2 && contains(aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].allowed_methods, "GET") && contains(aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].allowed_methods, "HEAD")
-    error_message = "Cloudfront distribution default_cache_behavior allowed methods should contain GET and HEAD."
-  }
-
-  assert {
-    condition     = length(aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].cached_methods) == 2 && contains(aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].cached_methods, "GET") && contains(aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].cached_methods, "HEAD")
-    error_message = "Cloudfront distribution default_cache_behavior cached methods should contain GET and HEAD."
-  }
-
-  assert {
-    condition     = aws_cloudfront_distribution.s3_distribution[0].default_cache_behavior[0].viewer_protocol_policy == "redirect-to-https"
-    error_message = "CloudFront should enforce HTTPS."
-  }
-
-  assert {
-    condition     = aws_cloudfront_distribution.s3_distribution[0].viewer_certificate[0].ssl_support_method == "sni-only"
-    error_message = "Cloudfront viewer certificate ssl support method should be sni-only."
-  }
-
-  assert {
-    condition     = aws_cloudfront_distribution.s3_distribution[0].viewer_certificate[0].minimum_protocol_version == "TLSv1.2_2021"
-    error_message = "Cloudfront viewer certificate minimum_protocol_version should be TLSv1.2_2021."
-  }
-
-  assert {
-    condition     = aws_cloudfront_distribution.s3_distribution[0].restrictions[0].geo_restriction[0].restriction_type == "none"
-    error_message = "Cloudfront geo restrictions should be none."
-  }
-
-  assert {
-    condition     = aws_ssm_parameter.cloudfront_alias[0].tags["environment"] == "dev"
-    error_message = "Invalid value for aws_s3_bucket tags parameter."
-  }
-
-  assert {
-    condition     = aws_ssm_parameter.cloudfront_alias[0].tags["application"] == "s3-test-application"
-    error_message = "Invalid value for aws_s3_bucket tags parameter."
-  }
-
-  assert {
-    condition     = aws_ssm_parameter.cloudfront_alias[0].tags["copilot-application"] == "s3-test-application"
-    error_message = "Invalid value for aws_s3_bucket tags parameter."
-  }
-
-  assert {
-    condition     = aws_ssm_parameter.cloudfront_alias[0].tags["copilot-environment"] == "dev"
-    error_message = "Invalid value for aws_s3_bucket tags parameter."
-  }
-
-  assert {
-    condition     = aws_ssm_parameter.cloudfront_alias[0].tags["managed-by"] == "DBT Platform - Terraform"
-    error_message = "Invalid value for aws_s3_bucket tags parameter."
-  }
-}
-
-# run "aws_s3_bucket_policy_cloudfront_unit_test" {    TEST IN E2E instead
-#   command = plan
-
-#   variables {
-#     config = {
-#       "bucket_name" = "test",
-#       "serve_static_content" = true,
-#       "type"        = "string",
-#       "objects"     = [],
-#     }
-#   }
-
-#   assert {
-#     condition     = contains(tolist([aws_s3_bucket_policy.cloudfront_bucket_policy[0].policy]), "cloudfront.amazonaws.com")
-#     error_message = "S3 bucket policy should allow CloudFront access."
-#   }
-# }
-
-
 # run "aws_kms_key_policy_s3_ssm_kms_key_policy_test" {   TEST IN E2E
 #   command = plan
 
@@ -1119,21 +925,6 @@ run "aws_ssm_parameter_cloudfront_alias_prod_domain_name_unit_test" {
   }
 
   assert {
-    condition     = aws_cloudfront_origin_access_control.oac[0].description == "Origin access control for Cloudfront distribution and test.s3-test-application.prod.uktrade.digital static s3 bucket."
-    error_message = "Invalid value for aws_cloudfront_origin_access_control name."
-  }
-
-  assert {
-    condition     = aws_acm_certificate.certificate[0].domain_name == "test.s3-test-application.prod.uktrade.digital"
-    error_message = "Invalid value for aws_acm_certificate domain name."
-  }
-
-  assert {
-    condition     = contains(aws_cloudfront_distribution.s3_distribution[0].aliases, "test.s3-test-application.prod.uktrade.digital")
-    error_message = "CloudFront distribution should include the correct alias."
-  }
-
-  assert {
     condition     = aws_ssm_parameter.cloudfront_alias[0].value == "test.s3-test-application.prod.uktrade.digital"
     error_message = "Invalid value for aws_ssm_parameter cloudfront alias."
   }
@@ -1141,56 +932,5 @@ run "aws_ssm_parameter_cloudfront_alias_prod_domain_name_unit_test" {
   assert {
     condition     = aws_ssm_parameter.cloudfront_alias[0].value == "test.s3-test-application.prod.uktrade.digital"
     error_message = "Invalid value for aws_ssm_parameter cloudfront alias."
-  }
-}
-
-run "managed_ingress_remove_resources" {
-  command = plan
-  variables {
-    config = {
-      bucket_name          = "test",
-      serve_static_content = true,
-      managed_ingress      = true
-    }
-  }
-
-  assert {
-    condition     = length(aws_cloudfront_origin_access_control.oac) == 0
-    error_message = "aws_cloudfront_origin_access_control oac should not be created"
-  }
-
-  assert {
-    condition     = length(aws_cloudfront_distribution.s3_distribution) == 0
-    error_message = "aws_cloudfront_distribution s3_distribution should not be created"
-  }
-
-  assert {
-    condition     = length(aws_s3_bucket_policy.cloudfront_bucket_policy) == 1
-    error_message = "aws_s3_bucket_policy cloudfront_bucket_policy should be created"
-  }
-
-  assert {
-    condition     = length(aws_route53_record.cloudfront_domain) == 0
-    error_message = "aws_route53_record cloudfront_domain should not be created"
-  }
-
-  assert {
-    condition     = length(aws_acm_certificate.certificate) == 0
-    error_message = "aws_acm_certificate certificate should not be created"
-  }
-
-  assert {
-    condition     = length(aws_route53_record.cert_validation) == 0
-    error_message = "aws_route53_record cert_validation should not be created"
-  }
-
-  assert {
-    condition     = length(aws_acm_certificate_validation.certificate_validation) == 0
-    error_message = "aws_acm_certificate_validation certificate_validation should not be created"
-  }
-
-  assert {
-    condition     = length(data.aws_route53_zone.selected) == 0
-    error_message = "aws_route53_zone selected should not be created"
   }
 }
