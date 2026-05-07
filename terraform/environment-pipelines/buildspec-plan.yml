@@ -26,7 +26,8 @@ phases:
       - echo "Working on environment ${ENVIRONMENT}"
       # Generate environment manifest
       - local_extensions_path=../../../platform-tools/terraform/extensions
-      - TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE=${local_extensions_path} platform-helper environment generate-terraform --name "${ENVIRONMENT}"
+      - local_version_tracker_path=../../../platform-tools/terraform/version-tracker
+      - TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE=${local_extensions_path} TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE=${local_version_tracker_path} platform-helper environment generate-terraform --name "${ENVIRONMENT}"
       
       # Run plan
       - cd terraform/environments/${ENVIRONMENT}

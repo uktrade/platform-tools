@@ -153,6 +153,14 @@ class Mocks:
         )
         self.mock_platform_helper_versioning.get_template_version.return_value = "14.0.0"
         self.mock_platform_helper_versioning.get_codebase_pipeline_modules_source.return_value = "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines?depth=1&ref="
+        self.mock_platform_helper_versioning.get_environment_pipeline_modules_source.return_value = "git::git@github.com:uktrade/platform-tools.git//terraform/environment-pipelines?depth=1&ref="
+        self.mock_platform_helper_versioning.get_version_tracker_module_source.return_value = (
+            "git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref="
+        )
+        self.mock_platform_helper_versioning.get_version_tracker_module_source_override.return_value = (
+            None
+        )
+        self.mock_platform_helper_versioning.get_pinned_version.return_value = None
         self.mock_config_validator = Mock(spec=ConfigValidator)
         self.mock_config_provider = ConfigProvider(
             self.mock_config_validator,

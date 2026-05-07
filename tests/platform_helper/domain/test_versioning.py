@@ -435,7 +435,7 @@ class TestPlatformHelperVersioningEnvironmentVersioning:
     def test_get_extensions_module_source_precedence_with_env_override(self):
         mocks = PlatformHelperVersioningMocks()
 
-        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source_override()
         assert result == f"extensions_env_override"
 
     def test_get_extensions_module_source_is_none_with_no_env_var_override(self):
@@ -443,7 +443,7 @@ class TestPlatformHelperVersioningEnvironmentVersioning:
         mocks.mock_environment_variable_provider[
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = None
-        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source_override()
         assert result == None
 
 
@@ -498,7 +498,7 @@ class TestPlatformHelperVersioningAuto:
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = "module_path_passed_in_from_platform_upgrade"
 
-        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source_override()
         assert result == "module_path_passed_in_from_platform_upgrade"
 
     def test_get_template_version_returns_platform_helper_override_given_auto(

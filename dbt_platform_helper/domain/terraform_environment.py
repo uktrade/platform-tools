@@ -43,6 +43,7 @@ class TerraformEnvironment:
             config,
             environment_name,
             self.platform_helper_versioning.get_template_version(),
-            self.platform_helper_versioning.get_extensions_module_source(),
+            self.platform_helper_versioning.get_extensions_module_source_override(),
+            self.platform_helper_versioning.get_version_tracker_module_source_override(),
             self.platform_helper_versioning.get_pinned_version(),
         )
