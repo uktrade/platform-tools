@@ -96,7 +96,7 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
 }
 
 resource "aws_codebuild_webhook" "codebuild_webhook" {
-  for_each     = toset(var.requires_image_build && var.use_github_actions == false ? [""] : [])
+  for_each     = toset(var.requires_image_build && var.use_github_actions ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
   build_type   = "BUILD"
 

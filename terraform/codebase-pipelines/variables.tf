@@ -47,9 +47,9 @@ variable "cache_invalidation" {
 variable "pipelines" {
   type = list(object(
     {
-      name               = string
-      branch             = optional(string)
-      tag                = optional(bool)
+      name   = string
+      branch = optional(string)
+      tag    = optional(bool)
 
       environments = list(object(
         {
