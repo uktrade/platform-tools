@@ -61,13 +61,17 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-task-exec",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-eventbridge-scheduler",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-state-machine",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-appconfig-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy-cross-env",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-state-machine-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-eventbridge-policy",
     ]
   }
 
@@ -123,24 +127,6 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
     ]
     resources = [
       "*"
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ec2:DescribeVpcs",
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    effect = "Allow"
-    actions = [
-      "ec2:DescribeVpcAttribute"
-    ]
-    resources = [
-      "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:vpc/*"
     ]
   }
 
@@ -287,16 +273,6 @@ data "aws_iam_policy_document" "ecs_service_access_for_codebase" {
     ]
     resources = [
       "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:cluster/${var.args.application}-${var.environment}-cluster"
-    ]
-  }
-
-  statement {
-    actions = [
-      "ec2:DescribeSecurityGroups",
-      "ec2:DescribeSubnets"
-    ]
-    resources = [
-      "*"
     ]
   }
 
@@ -671,6 +647,102 @@ data "aws_iam_policy_document" "cloudformation_access" {
     ]
     resources = [
       "arn:aws:cloudformation:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stack/${var.args.application}-${var.environment}-*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "step_functions_access" {
+  name   = "step-functions-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.step_functions_access.json
+}
+
+data "aws_iam_policy_document" "step_functions_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "states:CreateStateMachine",
+      "states:ValidateStateMachineDefinition",
+      "states:TagResource"
+    ]
+    resources = [
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.args.application}-${var.environment}-*"
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:PassRole"
+    ]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-state-machine"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "eventbrdige_scheduler_access" {
+  name   = "eventbrdige-scheduler-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.eventbrdige_scheduler_access.json
+}
+
+data "aws_iam_policy_document" "eventbrdige_scheduler_access" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "scheduler:CreateSchedule",
+      "scheduler:TagResource"
+    ]
+    resources = [
+      "arn:aws:scheduler:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:schedule/default/${var.args.application}-${var.environment}-*"
+    ]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:PassRole"
+    ]
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-eventbridge-scheduler"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "eventbrdige_scheduler_access" {
+  name   = "eventbrdige-scheduler-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.eventbrdige_scheduler_access.json
+}
+
+resource "aws_iam_role_policy" "ec2_access" {
+  name   = "ec2-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.ec2_access.json
+}
+
+data "aws_iam_policy_document" "ec2_access" {
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeVpcAttribute"
+    ]
+    resources = [
+      "arn:aws:ec2:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:vpc/*"
+    ]
+  }
+
+  statement {
+    actions = [
+      "ec2:DescribeVpcs",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSubnets",
+      "ec2:CreateSecurityGroup",
+      "ec2:AuthorizeSecurityGroupEgress",
+      "ec2:CreateTags"
+    ]
+    resources = [
+      "*"
     ]
   }
 }
