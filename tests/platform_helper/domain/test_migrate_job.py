@@ -50,6 +50,10 @@ class ScheduleMigrator:
         
     def disable_new_schedule(self, name, environment):
         self.new_scheduler_client.disable_rule(Name=name)
+        
+    def migrate_schedule(self, name, env):
+        self.disable_old_schedule(name, env)
+        self.enable_new_schedule(name, env)
 
 
 @mock_aws
@@ -145,12 +149,14 @@ def test_enable_new_schedule():
         ScheduleExpression="rate(5 minutes)",
         State="DISABLED",
     )
+    
+    migrator = ScheduleMigrator(Mock(), client)
 
-    assert ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev") is None
+    assert migrator.get_new_schedule("my-job", "dev") is None
     
-    ScheduleMigrator(Mock(), client).enable_new_schedule("my-job", "dev")
+    migrator.enable_new_schedule("my-job", "dev")
     
-    result = ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev")
+    result = migrator.get_new_schedule("my-job", "dev")
 
     assert result == "rate(5 minutes)"
     
@@ -164,10 +170,44 @@ def test_disable_new_schedule():
         State="ENABLED",
     )
 
-    assert ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev") == "rate(5 minutes)"
+    migrator = ScheduleMigrator(Mock(), client)
     
-    ScheduleMigrator(Mock(), client).disable_new_schedule("my-job", "dev")
+    assert migrator.get_new_schedule("my-job", "dev") == "rate(5 minutes)"
     
-    result = ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev")
+    migrator.disable_new_schedule("my-job", "dev")
+    
+    result = migrator.get_new_schedule("my-job", "dev")
 
     assert result is None
+    
+@mock_aws
+def test_migrate_schedule():
+    old_client = boto3.client("scheduler", region_name="eu-west-2")
+    new_client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job"
+    old_client.create_schedule(
+        Name=test_rule,
+        GroupName="default",
+        FlexibleTimeWindow={"Mode": "OFF"},
+        Target={
+            "Arn": "arn:aws:states:eu-west-2:123456789012:stateMachine:dummy",
+            "RoleArn": "arn:aws:iam::123456789012:role/dummy",
+        },
+        ScheduleExpression="rate(5 minutes)",
+        State="ENABLED",
+    )
+    new_client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+    )
+    
+    migrator = ScheduleMigrator(old_client, new_client)
+
+    assert migrator.get_old_schedule("my-job", "dev") == "rate(5 minutes)"
+    assert migrator.get_new_schedule("my-job", "dev") is None
+    
+    migrator.migrate_schedule("my-job", "dev")
+    
+    assert migrator.get_new_schedule("my-job", "dev") == "rate(5 minutes)"
+    assert migrator.get_old_schedule("my-job", "dev") is None
