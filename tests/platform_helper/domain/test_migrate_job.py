@@ -67,15 +67,18 @@ class ScheduleMigrator:
         self.old_scheduler_client.disable_rule(Name=name)
 
     def migrate_schedule(self, name, env):
+        new_name = self.get_new_schedule_name(name, env)
+        old_name = self.get_old_schedule_name(name, env)
+        
         try:
-            self.get_new_schedule(name, env)
+            self.get_new_schedule(new_name, env)
         except Exception:
             raise NewScheduleNotFoundException(
                 f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
             )
 
-        self.disable_old_schedule(name, env)
-        self.enable_new_schedule(name, env)
+        self.disable_old_schedule(old_name, env)
+        self.enable_new_schedule(new_name, env)
 
     def undo_migrate_schedule(self, name, env):
         try:
@@ -364,9 +367,9 @@ def test_disable_old_schedule():
 def test_migrate_schedule():
     new_client = boto3.client("scheduler", region_name="eu-west-2")
     old_client = boto3.client("events", region_name="eu-west-2")
-    test_rule = "my-job"
+    new_schedule_name = f"demodjango-dev-my-job-schedule"
     new_client.create_schedule(
-        Name=test_rule,
+        Name=new_schedule_name,
         GroupName="default",
         FlexibleTimeWindow={"Mode": "OFF"},
         Target={
@@ -376,21 +379,36 @@ def test_migrate_schedule():
         ScheduleExpression="rate(5 minutes)",
         State="DISABLED",
     )
+    old_schedule_name = "old-rule-for-my-job"
     old_client.put_rule(
-        Name=test_rule,
+        Name=old_schedule_name,
         ScheduleExpression="rate(5 minutes)",
         State="ENABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "demodjango"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
     )
 
     migrator = ScheduleMigrator("demodjango", old_client, new_client)
 
-    assert migrator.get_old_schedule("my-job", "dev") == "rate(5 minutes)"
-    assert migrator.get_new_schedule("my-job", "dev") is None
+    assert migrator.get_old_schedule(old_schedule_name, "dev") == "rate(5 minutes)"
+    assert migrator.get_new_schedule(new_schedule_name, "dev") is None
 
     migrator.migrate_schedule("my-job", "dev")
 
-    assert migrator.get_new_schedule("my-job", "dev") == "rate(5 minutes)"
-    assert migrator.get_old_schedule("my-job", "dev") is None
+    assert migrator.get_new_schedule(new_schedule_name, "dev") == "rate(5 minutes)"
+    assert migrator.get_old_schedule(old_schedule_name, "dev") is None
 
 
 @mock_aws
@@ -435,6 +453,20 @@ def test_migrate_fails_if_no_new_schedule():
         Name=test_rule,
         ScheduleExpression="rate(5 minutes)",
         State="ENABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "demodjango"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
     )
 
     migrator = ScheduleMigrator("demodjango", old_client, new_client)
