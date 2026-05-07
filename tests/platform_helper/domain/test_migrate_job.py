@@ -11,6 +11,9 @@ from dbt_platform_helper.platform_exception import PlatformException
 class NewScheduleNotFoundException(PlatformException):
     pass
 
+class OldScheduleNotFoundException(PlatformException):
+    pass
+
 class ScheduleMigrator:
     def __init__(self, old_scheduler_client, new_scheduler_client=None):
         self.old_scheduler_client = old_scheduler_client
@@ -69,6 +72,11 @@ class ScheduleMigrator:
         self.enable_new_schedule(name, env)
         
     def undo_migrate_schedule(self, name, env):
+        try:
+            self.get_old_schedule(name, env)
+        except Exception:
+            raise OldScheduleNotFoundException(f"No old schedule to revert to.  Leaving new schedule enabled")
+        
         self.disable_new_schedule(name, env)
         self.enable_old_schedule(name, env)
 
@@ -286,3 +294,20 @@ def test_migrate_fails_if_no_new_schedule():
     assert "No new schedule to migrate to.  Ensure job my-job is deployed to dev" in str(e.value)
     
 
+@mock_aws
+def test_undo_migrate_fails_if_no_old_schedule():
+    old_client = boto3.client("scheduler", region_name="eu-west-2")
+    new_client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job"
+    new_client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="ENABLED",
+    )
+    
+    migrator = ScheduleMigrator(old_client, new_client)
+
+    with pytest.raises(OldScheduleNotFoundException) as e:
+        migrator.undo_migrate_schedule("my-job", "dev")
+    
+    assert "No old schedule to revert to.  Leaving new schedule enabled" in str(e.value)
