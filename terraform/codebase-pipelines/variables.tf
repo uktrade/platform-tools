@@ -83,3 +83,8 @@ variable "has_custom_post_deploy" {
   default = false
 }
 
+variable "use_github_actions" {
+  type    = bool
+  default = false
+}
+
