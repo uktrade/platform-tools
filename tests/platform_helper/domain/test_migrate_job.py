@@ -84,12 +84,15 @@ class ScheduleMigrator:
 
         self.disable_new_schedule(name, env)
         self.enable_old_schedule(name, env)
+        
+    def get_new_schedule_name(self, name, env):
+        return f"{self.application}-{env}-{name}-schedule"
 
 
-# def test_resolve_new_schedule_name():
-#     result = ScheduleMigrator("demodjango", Mock(), Mock()).resolve_new_schedule_name("my-enabled-rule", "dev")
+def test_get_new_schedule_name():
+    result = ScheduleMigrator("demodjango", Mock(), Mock()).get_new_schedule_name("my-enabled-rule", "dev")
 
-#     assert result == "demodjango-dev-my-enabled-rule-schedule"
+    assert result == "demodjango-dev-my-enabled-rule-schedule"
 
 
 # def test_resolve_old_schedule_name():
