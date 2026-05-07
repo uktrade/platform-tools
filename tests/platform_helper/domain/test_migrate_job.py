@@ -54,6 +54,10 @@ class ScheduleMigrator:
     def migrate_schedule(self, name, env):
         self.disable_old_schedule(name, env)
         self.enable_new_schedule(name, env)
+        
+    def undo_migrate_schedule(self, name, env):
+        self.disable_new_schedule(name, env)
+        self.enable_old_schedule(name, env)
 
 
 @mock_aws
@@ -211,3 +215,35 @@ def test_migrate_schedule():
     
     assert migrator.get_new_schedule("my-job", "dev") == "rate(5 minutes)"
     assert migrator.get_old_schedule("my-job", "dev") is None
+    
+@mock_aws
+def test_undo_migrate_schedule():
+    old_client = boto3.client("scheduler", region_name="eu-west-2")
+    new_client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job"
+    old_client.create_schedule(
+        Name=test_rule,
+        GroupName="default",
+        FlexibleTimeWindow={"Mode": "OFF"},
+        Target={
+            "Arn": "arn:aws:states:eu-west-2:123456789012:stateMachine:dummy",
+            "RoleArn": "arn:aws:iam::123456789012:role/dummy",
+        },
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+    )
+    new_client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="ENABLED",
+    )
+    
+    migrator = ScheduleMigrator(old_client, new_client)
+
+    assert migrator.get_new_schedule("my-job", "dev") == "rate(5 minutes)"
+    assert migrator.get_old_schedule("my-job", "dev") is None
+    
+    migrator.undo_migrate_schedule("my-job", "dev")
+    
+    assert migrator.get_old_schedule("my-job", "dev") == "rate(5 minutes)"
+    assert migrator.get_new_schedule("my-job", "dev") is None
