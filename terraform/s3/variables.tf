@@ -83,7 +83,6 @@ variable "config" {
       })))
       })
     )
-    managed_ingress = optional(string, false)
   })
 
   validation {

@@ -98,8 +98,8 @@ resource "aws_ecs_service" "service" {
   enable_execute_command            = var.service_config.exec
   task_definition                   = aws_ecs_task_definition.default_task_def["enabled"].arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
-  desired_count                     = 1                                                         # Dummy count used for first deployment. For subsequent deployments, desired_count is controlled by ECS autoscaling.
-  health_check_grace_period_seconds = try(var.service_config.http.healthcheck.grace_period, 30) # NOTE: This is problematic for Backend Services because `http` is LB-specific. Long term, `grace_period` should be moved out of `http.healthcheck` into a service-level setting so this fallback is not required.
+  desired_count                     = 1                                                         # Dummy count used only for the first deployment. For subsequent deployments, desired_count is controlled by ECS autoscaling which is always enabled.
+  health_check_grace_period_seconds = try(var.service_config.http.healthcheck.grace_period, 30) # NOTE: This is problematic for Backend Services because the `var.service_config.http` block is web service specific. Long term, `grace_period` should be moved out of `http.healthcheck` into a better service-level setting so this fallback is not required.
   tags                              = local.tags
 
   deployment_circuit_breaker {
@@ -158,7 +158,7 @@ resource "aws_ecs_service" "service" {
   }
 
   lifecycle {
-    ignore_changes = [task_definition, desired_count]
+    ignore_changes = [task_definition, desired_count] # See reasoning for this above
   }
 
   depends_on = [aws_lambda_invocation.dummy_listener_rule]
