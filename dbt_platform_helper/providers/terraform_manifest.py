@@ -4,8 +4,8 @@ from importlib.metadata import version
 from pathlib import Path
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
-from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -40,7 +40,7 @@ class TerraformManifestProvider:
 
         self._add_service_locals(terraform, environment)
 
-        self._add_provider(terraform, account, deploy_to_account_id)
+        self._add_aws_provider(terraform, account, deploy_to_account_id)
         self._add_backend(
             terraform,
             platform_config,
@@ -108,7 +108,8 @@ class TerraformManifestProvider:
             f"platform-config.{workspace}.yml" if workspace else PLATFORM_CONFIG_FILE
         )
         self._add_codebase_pipeline_locals(terraform, platform_config_file_name)
-        self._add_provider(terraform, default_account, deploy_to_account_id)
+        self._add_aws_provider(terraform, default_account, deploy_to_account_id)
+        self._add_github_provider(terraform)
         self._add_backend(
             terraform,
             platform_config,
@@ -201,11 +202,16 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
-    def _add_provider(terraform: dict, deploy_to_account: str, deploy_to_account_id: str):
+    def _add_aws_provider(terraform: dict, deploy_to_account: str, deploy_to_account_id: str):
         terraform["provider"] = {"aws": {}}
         terraform["provider"]["aws"]["region"] = "eu-west-2"
         terraform["provider"]["aws"]["profile"] = deploy_to_account
         terraform["provider"]["aws"]["allowed_account_ids"] = [deploy_to_account_id]
+
+    @staticmethod
+    def _add_github_provider(terraform: dict):
+        terraform["provider"] = {"github": {}}
+        terraform["provider"]["github"]["app_auth"] = {}
 
     @staticmethod
     def _add_backend(terraform: dict, platform_config: dict, account: str, state_key: str):
