@@ -44,6 +44,9 @@ class ScheduleMigrator:
             return rule.get("ScheduleExpression")
         else:
             return None
+        
+    def enable_new_schedule(self, name, environment):
+        self.new_scheduler_client.enable_rule(Name=name)
 
 
 @mock_aws
@@ -125,6 +128,25 @@ def test_get_new_schedule():
         State="ENABLED",
     )
 
+    result = ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev")
+
+    assert result == "rate(5 minutes)"
+    
+
+@mock_aws
+def test_enable_new_schedule():
+    client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job"
+    client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+    )
+
+    assert ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev") is None
+    
+    ScheduleMigrator(Mock(), client).enable_new_schedule("my-job", "dev")
+    
     result = ScheduleMigrator(Mock(), client).get_new_schedule("my-job", "dev")
 
     assert result == "rate(5 minutes)"
