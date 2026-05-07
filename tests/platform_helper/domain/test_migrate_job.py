@@ -14,6 +14,9 @@ class NewScheduleNotFoundException(PlatformException):
 class OldScheduleNotFoundException(PlatformException):
     pass
 
+class TooManyOldScheduledJobsFoundException(PlatformException):
+    pass
+
 
 class ScheduleMigrator:
     def __init__(self, application, old_scheduler_client, new_scheduler_client=None):
@@ -87,6 +90,34 @@ class ScheduleMigrator:
         
     def get_new_schedule_name(self, name, env):
         return f"{self.application}-{env}-{name}-schedule"
+    
+    def get_old_schedule_name(self, name, env):
+        REQUIRED_TAGS = {
+            "copilot-application": self.application,
+            "copilot-environment": env,
+            "copilot-service": name,
+        }
+        paginator = self.old_scheduler_client.get_paginator("list_rules")
+        matching_rules = []
+        for page in paginator.paginate():
+            for rule in page["Rules"]:
+                arn = rule["Arn"]
+                tags_response = self.old_scheduler_client.list_tags_for_resource(ResourceARN=arn)
+                
+                tags = {
+                    tag["Key"]: tag["Value"]
+                    for tag in tags_response.get("Tags", [])
+                }
+                
+                if all(tags.get(k) == v for k, v in REQUIRED_TAGS.items()):
+                    matching_rules.append(rule)
+        
+        if len(matching_rules)==1:
+            return matching_rules[0].get("Name")
+        if not matching_rules:
+            raise OldScheduleNotFoundException(f"{name} could not be found in the {env} environment")
+        else:
+            raise TooManyOldScheduledJobsFoundException(f"A unique job {name} could not be found in the {env} environment")
 
 
 def test_get_new_schedule_name():
@@ -95,10 +126,106 @@ def test_get_new_schedule_name():
     assert result == "demodjango-dev-my-enabled-rule-schedule"
 
 
-# def test_resolve_old_schedule_name():
-#     result = ScheduleMigrator("demodjango", Mock(), Mock()).resolve_old_schedule_name("my-enabled-rule", "dev")
+@mock_aws
+def test_get_old_schedule_name():
+    client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job-XYZ"
+    client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "demodjango"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
+    )
+    result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule_name("my-job", "dev")
 
-#     assert result == "demodjango-dev-my-enabled-rule-schedule"
+    assert result == "my-job-XYZ"
+    
+@mock_aws
+def test_get_old_schedule_raises_if_tags_dont_match():
+    client = boto3.client("events", region_name="eu-west-2")
+    test_rule = "my-job-XYZ"
+    client.put_rule(
+        Name=test_rule,
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "something else"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
+    )
+    with pytest.raises(OldScheduleNotFoundException) as e:
+        result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule_name("my-job", "dev")
+
+    assert "my-job could not be found in the dev environment" in str(e.value)
+    
+@mock_aws
+def test_get_old_schedule_raises_if_tags_not_unique():
+    client = boto3.client("events", region_name="eu-west-2")
+    client.put_rule(
+        Name="my-job-XYZ",
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "demodjango"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
+    )
+    client.put_rule(
+        Name="my-job-123",
+        ScheduleExpression="rate(5 minutes)",
+        State="DISABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "demodjango"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
+    )
+    with pytest.raises(TooManyOldScheduledJobsFoundException) as e:
+        result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule_name("my-job", "dev")
+
+    assert "A unique job my-job could not be found in the dev environment" in str(e.value)
 
 
 @mock_aws
