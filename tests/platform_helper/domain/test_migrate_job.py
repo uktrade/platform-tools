@@ -4,7 +4,12 @@ import boto3
 import pytest
 from moto import mock_aws
 
+from dbt_platform_helper.domain.migrate_job import NewScheduleNotFoundException
+from dbt_platform_helper.domain.migrate_job import NewScheduleProvider
+from dbt_platform_helper.domain.migrate_job import OldScheduleNotFoundException
+from dbt_platform_helper.domain.migrate_job import OldScheduleProvider
 from dbt_platform_helper.domain.migrate_job import ScheduleMigrator
+from dbt_platform_helper.domain.migrate_job import TooManyOldScheduledJobsFoundException
 
 
 def test_get_new_schedule_name():
