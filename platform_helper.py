@@ -17,6 +17,7 @@ from dbt_platform_helper.commands.notify import notify as notify_commands
 from dbt_platform_helper.commands.pipeline import pipeline as pipeline_commands
 from dbt_platform_helper.commands.secrets import secrets as secrets_commands
 from dbt_platform_helper.commands.service import service as service_commands
+from dbt_platform_helper.commands.job import job as job_commands
 from dbt_platform_helper.commands.version import version as version_commands
 from dbt_platform_helper.utils.click import ClickDocOptGroup
 
@@ -44,6 +45,7 @@ platform_helper.add_command(notify_commands)
 platform_helper.add_command(database_commands)
 platform_helper.add_command(version_commands)
 platform_helper.add_command(service_commands)
+platform_helper.add_command(job_commands)
 
 if __name__ == "__main__":
     platform_helper(auto_envvar_prefix="DBT_PLATFORM")
