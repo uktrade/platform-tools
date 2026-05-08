@@ -997,8 +997,8 @@ image:
 @pytest.mark.parametrize(
     "test_input,expected",
     [
-        ("@hourly", "rate(1 hours)"),
-        ("@daily", "rate(1 days)"),
+        ("@hourly", "1 hours"),
+        ("@daily", "1 days"),
         ("@weekly", "0 0 * * 1 *"),
         ("@monthly", "0 0 1 * * *"),
         ("@yearly", "0 * * * ? *"),
@@ -1057,7 +1057,7 @@ def test_migrate_scheduled_job_handles_overrides(
             "environments": {
                 "dev": {"schedule": "0 23 * * ? *"},
                 "staging": {"schedule": "0 0 * * ? *"},
-                "uat": {"schedule": "rate(1 hours)"},
+                "uat": {"schedule": "1 hours"},
             },
         }
     )
@@ -1096,7 +1096,7 @@ environments:
     )
 
     expected_service_config = expected_scheduled_job_config(
-        {"schedule": "rate(1 days)", "environments": {"dev": {"schedule": "rate(1 hours)"}}}
+        {"schedule": "1 days", "environments": {"dev": {"schedule": "1 hours"}}}
     )
 
     os.chdir(tmp_path)
