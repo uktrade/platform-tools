@@ -40,7 +40,7 @@ resource "github_actions_secret" "oidc_role_arn_prod" {
   value       = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-github-platform-prod"
 }
 
-#TODO - teams are created in the SRE terraform-github repo, how can we ensure this slug matches?
+# TODO - teams are created in the SRE terraform-github repo, how can we ensure this slug matches?
 # data "github_team" "team" {
 #   # slug = "${var.application}-approvers"
 #   slug = "platform"
@@ -57,6 +57,7 @@ resource "github_repository_environment" "github_environments" {
     custom_branch_policies = each.key == "prod"
   }
 
+  # TODO - see comment above, need to match github team
   # dynamic "reviewers" {
   #   for_each = each.key == "prod" ? [""] : []
   #   content {
