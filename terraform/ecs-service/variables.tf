@@ -15,8 +15,9 @@ variable "platform_extensions" {
 }
 
 variable "custom_iam_policy_json" {
-  type    = string
-  default = null
+  type        = string
+  default     = null
+  description = "Optional custom IAM policy JSON to attach to the ECS task role"
 
   validation {
     condition     = var.custom_iam_policy_json == null ? true : length(var.custom_iam_policy_json) <= 6144
@@ -74,13 +75,17 @@ variable "service_config" {
         start_period = optional(number)
       }))
     })
-
+    platform   = optional(string)
     cpu        = number
     memory     = number
-    count      = any # Can be an integer or a map due to Copilot. See Copilot docs: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+    count      = optional(any) # Can be an integer or a map due to Copilot. See Copilot docs: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
     exec       = optional(bool)
     entrypoint = optional(list(string))
     essential  = optional(bool)
+
+    schedule = optional(string)
+    retries  = optional(number)
+    timeout  = optional(number)
 
     network = optional(object({
       connect = optional(bool)
