@@ -25,7 +25,12 @@ class StepFunctions:
         return response["executionArn"]
 
     def get_status(self, execution_arn: str):
-        response = self.sfn_client.describe_execution(executionArn=execution_arn)
+        try:
+            response = self.sfn_client.describe_execution(executionArn=execution_arn)
+        except ClientError as err:
+            raise GetExecutionStatusFailedException(
+                err.response.get("Error", {}).get("Message", str(err))
+            )
         return response["status"]
 
     def _build_state_machine_arn(self, job_name: str) -> str:
@@ -45,3 +50,8 @@ class StateMachineNotFoundException(AWSException):
 class StartExecutionFailedException(AWSException):
     def __init__(self, state_machine_arn: str, error: str):
         super().__init__(f"Failed to start the Scheduled Job execution. {error}")
+
+
+class GetExecutionStatusFailedException(AWSException):
+    def __init__(self, error: str):
+        super().__init__(f"Failed to get status for Scheduled Job. {error}")

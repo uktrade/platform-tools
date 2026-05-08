@@ -3,6 +3,9 @@ from unittest.mock import Mock
 import pytest
 from botocore.exceptions import ClientError
 
+from dbt_platform_helper.providers.step_functions import (
+    GetExecutionStatusFailedException,
+)
 from dbt_platform_helper.providers.step_functions import StartExecutionFailedException
 from dbt_platform_helper.providers.step_functions import StateMachineNotFoundException
 from dbt_platform_helper.providers.step_functions import StepFunctions
@@ -86,3 +89,18 @@ def test_get_status():
     status = provider.get_status("arn:exec:123")
 
     assert status == "RUNNING"
+
+
+def test_get_status_raises_when_client_error():
+    sfn_client = Mock()
+    sfn_client.meta.region_name = "eu-west-2"
+    sfn_client.describe_execution.side_effect = ClientError(
+        {"Error": {"Code": "ExecutionDoesNotExist", "Message": "Execution not found"}},
+        "DescribeExecution",
+    )
+    runner = StepFunctions(
+        sfn_client, application_name="demodjango", env="dev", account_id="123456789012"
+    )
+
+    with pytest.raises(GetExecutionStatusFailedException):
+        runner.get_status("arn:exec:nonexistent")
