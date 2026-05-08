@@ -2,6 +2,11 @@ variable "application" {
   type = string
 }
 
+variable "use_github_actions" {
+  type    = bool
+  default = false
+}
+
 variable "codebase" {
   type = string
 }
@@ -45,6 +50,7 @@ variable "pipelines" {
       name   = string
       branch = optional(string)
       tag    = optional(bool)
+
       environments = list(object(
         {
           name              = string

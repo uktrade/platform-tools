@@ -1,4 +1,5 @@
 resource "aws_s3_object" "task_definition" {
+  for_each     = toset(local.is_scheduled_job ? [] : ["enabled"])
   bucket       = "ecs-task-definitions-${var.application}-${var.environment}"
   key          = "${var.application}/${var.environment}/${var.service_config.name}.json"
   content      = local.task_definition_json
@@ -6,9 +7,15 @@ resource "aws_s3_object" "task_definition" {
   tags         = local.tags
 }
 
+moved {
+  from = aws_s3_object.task_definition
+  to   = aws_s3_object.task_definition["enabled"]
+}
+
 # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
 resource "aws_ecs_task_definition" "default_task_def" {
   # checkov:skip=CKV_AWS_336: Nginx needs access to a few paths on the root filesystem
+  for_each                 = toset(local.is_scheduled_job ? [] : ["enabled"])
   family                   = "${local.full_service_name}-task-def" # Same name as the actual task definition the service will have
   requires_compatibilities = ["FARGATE"]
   cpu                      = 256
@@ -49,6 +56,11 @@ resource "aws_ecs_task_definition" "default_task_def" {
   ])
 }
 
+moved {
+  from = aws_ecs_task_definition.default_task_def
+  to   = aws_ecs_task_definition.default_task_def["enabled"]
+}
+
 data "aws_ecs_cluster" "cluster" {
   cluster_name = "${var.application}-${var.environment}-cluster"
 }
@@ -79,11 +91,12 @@ resource "aws_lambda_invocation" "dummy_listener_rule" {
 }
 
 resource "aws_ecs_service" "service" {
+  for_each                          = toset(local.is_scheduled_job ? [] : ["enabled"])
   name                              = "${var.application}-${var.environment}-${var.service_config.name}"
   cluster                           = data.aws_ecs_cluster.cluster.id
   launch_type                       = "FARGATE"
   enable_execute_command            = var.service_config.exec
-  task_definition                   = aws_ecs_task_definition.default_task_def.arn # Dummy task definition used only for the first deployment. Cannot create a valid ECS service without a task def.
+  task_definition                   = aws_ecs_task_definition.default_task_def["enabled"].arn # Dummy task definition used for first deployment. Cannot create an ECS service without a task def.
   propagate_tags                    = "SERVICE"
   desired_count                     = 1                                                         # Dummy count used only for the first deployment. For subsequent deployments, desired_count is controlled by ECS autoscaling which is always enabled.
   health_check_grace_period_seconds = try(var.service_config.http.healthcheck.grace_period, 30) # NOTE: This is problematic for Backend Services because the `var.service_config.http` block is web service specific. Long term, `grace_period` should be moved out of `http.healthcheck` into a better service-level setting so this fallback is not required.
@@ -151,9 +164,12 @@ resource "aws_ecs_service" "service" {
   depends_on = [aws_lambda_invocation.dummy_listener_rule]
 }
 
-data "aws_vpc" "vpc" {
-  count = local.web_service_required
+moved {
+  from = aws_ecs_service.service
+  to   = aws_ecs_service.service["enabled"]
+}
 
+data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Name"
     values = [local.vpc_name]
@@ -176,7 +192,7 @@ resource "aws_lb_target_group" "target_group" {
   port                 = 443
   protocol             = "HTTPS"
   target_type          = "ip"
-  vpc_id               = data.aws_vpc.vpc[count.index].id
+  vpc_id               = data.aws_vpc.vpc.id
   deregistration_delay = var.service_config.http.deregistration_delay
   tags                 = local.tags
 
@@ -297,6 +313,7 @@ resource "aws_cloudwatch_log_subscription_filter" "ecs_service_logs_filter" {
 }
 
 resource "aws_appautoscaling_target" "ecs_autoscaling" {
+  for_each           = toset(local.is_scheduled_job ? [] : ["enabled"])
   service_namespace  = "ecs"
   resource_id        = "service/${data.aws_ecs_cluster.cluster.cluster_name}/${local.full_service_name}"
   scalable_dimension = "ecs:service:DesiredCount"
@@ -305,17 +322,22 @@ resource "aws_appautoscaling_target" "ecs_autoscaling" {
   max_capacity = local.count_max
 
   depends_on = [
-    aws_ecs_service.service
+    aws_ecs_service.service["enabled"]
   ]
+}
+
+moved {
+  from = aws_appautoscaling_target.ecs_autoscaling
+  to   = aws_appautoscaling_target.ecs_autoscaling["enabled"]
 }
 
 resource "aws_appautoscaling_scheduled_action" "scheduled_autoscaling" {
   for_each = local.scheduled_actions
 
   name               = each.key
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
 
   schedule = "cron(${each.value.schedule})"
   timezone = "Europe/London"
@@ -332,9 +354,9 @@ resource "aws_appautoscaling_policy" "cpu_autoscaling_policy" {
 
   name               = "${local.full_service_name}-cpu-autoscaling"
   policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -351,9 +373,9 @@ resource "aws_appautoscaling_policy" "memory_autoscaling_policy" {
 
   name               = "${local.full_service_name}-memory-autoscaling"
   policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -377,9 +399,9 @@ resource "aws_appautoscaling_policy" "requests_autoscaling_policy" {
 
   name               = "${local.full_service_name}-req-100"
   policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
+  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
 
   # Ensure the listener-rule Lambda runs first to attach the TG on the ALB
   depends_on = [aws_lambda_invocation.dummy_listener_rule]
@@ -407,4 +429,56 @@ resource "aws_ssm_parameter" "service_data" {
     "type" : var.service_config.type
   })
   tags = local.tags
+}
+
+# Scheduled Job only resources
+
+resource "aws_ecs_task_definition" "scheduled_job" {
+  for_each                 = toset(local.is_scheduled_job ? ["enabled"] : [])
+  family                   = "${local.full_service_name}-task-def"
+  requires_compatibilities = ["FARGATE"]
+  pid_mode                 = "task"
+  region                   = data.aws_region.current.region
+  cpu                      = tostring(var.service_config.cpu)
+  memory                   = tostring(var.service_config.memory)
+  network_mode             = "awsvpc"
+
+  dynamic "ephemeral_storage" {
+    for_each = var.service_config.storage.ephemeral != null ? toset([var.service_config.storage.ephemeral]) : toset([])
+    content {
+      size_in_gib = ephemeral_storage.value
+    }
+  }
+
+  execution_role_arn    = aws_iam_role.ecs_task_execution_role.arn
+  container_definitions = jsonencode(local.container_definitions_list)
+  task_role_arn         = aws_iam_role.ecs_task_role.arn
+
+  dynamic "volume" {
+    for_each = local.volumes
+    content {
+      name = volume.value["name"]
+    }
+  }
+
+  runtime_platform {
+    cpu_architecture = local.cpu_architecture
+  }
+
+  tags = local.tags
+}
+
+module "scheduling" {
+  for_each            = toset(local.is_scheduled_job ? ["enabled"] : [])
+  source              = "./scheduling"
+  name                = local.full_service_name
+  schedule            = var.service_config.schedule
+  retries             = try(var.service_config.retries, null)
+  timeout_seconds     = try(var.service_config.timeout, null)
+  vpc_id              = data.aws_vpc.vpc.id
+  task_definition_arn = aws_ecs_task_definition.scheduled_job["enabled"].arn
+  subnet_ids          = data.aws_subnets.private-subnets.ids
+  cluster_id          = data.aws_ecs_cluster.cluster.id
+  tags                = local.tags
+  log_group_arn       = aws_cloudwatch_log_group.ecs_service_logs.arn
 }

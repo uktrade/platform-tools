@@ -315,6 +315,7 @@ class TerraformManifestProvider:
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
                 "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
+                "use_github_actions": '${lookup(each.value, "use_github_actions", false)}',
                 "env_config": "${local.environments}",
                 "platform_tools_version": f"{platform_helper_version}",
             }
@@ -336,7 +337,7 @@ class TerraformManifestProvider:
                 "args": "${local.args}",
                 "environment": env,
                 "deploy_repository": deploy_repository,
-                "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null, try([local.config.deploy_repository], []))}",
+                "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : [], try([local.config.deploy_repository], []))}",
                 "pinned_version": pinned_version,
             }
         }
