@@ -1,4 +1,5 @@
 from dbt_platform_helper.platform_exception import PlatformException
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 class NewScheduleNotFoundException(PlatformException):
@@ -82,32 +83,45 @@ class ScheduleMigrator:
         application: str,
         old_schedule_provider: OldScheduleProvider,
         new_schedule_provider: NewScheduleProvider,
+        io: ClickIOProvider = None,
     ):
         self.application = application
         self.old_schedule_provider = old_schedule_provider
         self.new_schedule_provider = new_schedule_provider
+        self.io = io or ClickIOProvider()
 
     def migrate_schedule(self, name, env):
+        self.io.info(f"Beginning migration for job {name}. Checking initial conditions...")
         new_name = self.get_new_schedule_name(name, env)
         old_name = self.get_old_schedule_name(name, env)
         try:
-            self.new_schedule_provider.get_schedule(new_name)
+            new_schedule = self.new_schedule_provider.get_schedule(new_name)
+            self.io.info(f"New schedule is deployed to {env} environment.  Ready to migrate.")
         except Exception:
             raise NewScheduleNotFoundException(
                 f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
-            )
+            )           
 
         old_schedule = self.old_schedule_provider.get_schedule(old_name)
+        
+        if new_schedule and not old_schedule:
+            self.io.abort_with_error("New schedule is already activated. Aborting.")
+        
+        self.io.info(f"Updating new schedule with old schedule expression {old_schedule}.")
         self.new_schedule_provider.update_schedule(new_name, old_schedule)
         self.old_schedule_provider.disable_schedule(old_name)
         self.new_schedule_provider.enable_schedule(new_name)
+        self.io.info(f"Complete!  New schedule event {new_name} is enabled and old scheduled rule {old_name} is disabled")
+        self.io.info(f'\nPaste the following into service-manifest.yml schedule: "{old_schedule}"')
 
     def undo_migrate_schedule(self, name, env):
+        self.io.info(f"Reverting migration for job {name}. Checking initial conditions...")
         new_name = self.get_new_schedule_name(name, env)
         old_name = self.get_old_schedule_name(name, env)
 
         self.new_schedule_provider.disable_schedule(new_name)
         self.old_schedule_provider.enable_schedule(old_name)
+        self.io.info(f"Complete!  Old scheduled rule {old_name} is now enabled and new schedule event {new_name} is disabled")
 
     def get_new_schedule_name(self, name, env):
         return f"{self.application}-{env}-{name}-schedule"

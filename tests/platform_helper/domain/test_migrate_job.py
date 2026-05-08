@@ -405,3 +405,91 @@ def test_migrate_copies_old_schedule_to_new_schedule():
 
     assert migrator.new_schedule_provider.get_schedule(new_schedule_name) == ORIGINAL_SCHEDULE
     assert migrator.old_schedule_provider.get_schedule(old_schedule_name) is None
+    
+@mock_aws
+def test_migrate_fails_if_new_schedule_already_active(capsys):
+    ORIGINAL_SCHEDULE = "rate(10 minutes)"
+
+    new_client = boto3.client("scheduler", region_name="eu-west-2")
+    old_client = boto3.client("events", region_name="eu-west-2")
+    new_schedule_name = f"demodjango-dev-my-job-schedule"
+    old_schedule_name = "old-rule-for-my-job"
+    new_client.create_schedule(
+        Name=new_schedule_name,
+        GroupName="default",
+        FlexibleTimeWindow={"Mode": "OFF"},
+        Target={
+            "Arn": "arn:aws:states:eu-west-2:123456789012:stateMachine:dummy",
+            "RoleArn": "arn:aws:iam::123456789012:role/dummy",
+        },
+        ScheduleExpression=ORIGINAL_SCHEDULE,
+        State="ENABLED",
+    )
+    old_client.put_rule(
+        Name=old_schedule_name,
+        ScheduleExpression=ORIGINAL_SCHEDULE,
+        State="DISABLED",
+        Tags=[
+            {"Key": "copilot-application", "Value": "demodjango"},
+            {"Key": "copilot-environment", "Value": "dev"},
+            {"Key": "copilot-service", "Value": "my-job"},
+        ],
+    )
+
+    migrator = ScheduleMigrator(
+        "demodjango", OldScheduleProvider(old_client), NewScheduleProvider(new_client)
+    )
+
+    assert migrator.old_schedule_provider.get_schedule(old_schedule_name) == None
+    assert migrator.new_schedule_provider.get_schedule(new_schedule_name) == ORIGINAL_SCHEDULE
+
+    with pytest.raises(SystemExit) as e:
+        migrator.migrate_schedule("my-job", "dev")
+
+    assert "New schedule is already activated. Aborting." in capsys.readouterr().err
+
+# @mock_aws
+# def test_migrate_succeeds_if_new_schedule_already_active_but_with_different_cron(capsys):
+#     DEFAULT_SCHEDULE = "rate(5 minutes)"
+#     ORIGINAL_SCHEDULE = "rate(10 minutes)"
+
+#     new_client = boto3.client("scheduler", region_name="eu-west-2")
+#     old_client = boto3.client("events", region_name="eu-west-2")
+#     new_schedule_name = f"demodjango-dev-my-job-schedule"
+#     old_schedule_name = "old-rule-for-my-job"
+#     new_client.create_schedule(
+#         Name=new_schedule_name,
+#         GroupName="default",
+#         FlexibleTimeWindow={"Mode": "OFF"},
+#         Target={
+#             "Arn": "arn:aws:states:eu-west-2:123456789012:stateMachine:dummy",
+#             "RoleArn": "arn:aws:iam::123456789012:role/dummy",
+#         },
+#         ScheduleExpression=DEFAULT_SCHEDULE,
+#         State="ENABLED",
+#     )
+#     old_client.put_rule(
+#         Name=old_schedule_name,
+#         ScheduleExpression=ORIGINAL_SCHEDULE,
+#         State="DISABLED",
+#         Tags=[
+#             {"Key": "copilot-application", "Value": "demodjango"},
+#             {"Key": "copilot-environment", "Value": "dev"},
+#             {"Key": "copilot-service", "Value": "my-job"},
+#         ],
+#     )
+
+#     migrator = ScheduleMigrator(
+#         "demodjango", OldScheduleProvider(old_client), NewScheduleProvider(new_client)
+#     )
+
+#     assert migrator.old_schedule_provider.get_schedule(old_schedule_name) == None
+#     assert migrator.new_schedule_provider.get_schedule(new_schedule_name) == DEFAULT_SCHEDULE
+
+#     migrator.migrate_schedule("my-job", "dev")
+
+#     assert migrator.old_schedule_provider.get_schedule(old_schedule_name) == None
+#     assert migrator.new_schedule_provider.get_schedule(new_schedule_name) == ORIGINAL_SCHEDULE
+
+
+

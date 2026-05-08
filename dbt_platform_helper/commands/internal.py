@@ -35,7 +35,14 @@ def internal():
     required=True,
     help="The name of the environment to migrate the job for.",
 )
-def migrate_job(name, env):
+@click.option(
+    "--revert",
+    required=False,
+    is_flag=True,
+    default=False,
+    help="To revert to the old copilot job.",
+)
+def migrate_job(name, env, revert):
     """Migrate copilot manifests to service manifests."""
     click_io = ClickIOProvider()
 
@@ -51,8 +58,12 @@ def migrate_job(name, env):
             application_name,
             OldScheduleProvider(event_client),
             NewScheduleProvider(scheduler_client),
+            click_io,
         )
-        migrator.migrate_schedule(name, env)
+        if not revert:
+            migrator.migrate_schedule(name, env)
+        else:
+            migrator.undo_migrate_schedule(name, env)
     except PlatformException as error:
         click_io.abort_with_error(str(error))
 
