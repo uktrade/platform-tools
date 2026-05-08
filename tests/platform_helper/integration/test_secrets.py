@@ -674,3 +674,13 @@ def test_secrets_copy_exception_raised(mock_application, input_args, expected_me
         match=re.escape(expected_message),
     ):
         secrets.copy(**input_args)
+
+
+def test_secrets_copy_succeeds_when_application_has_no_prod_environment(
+    mock_application_without_prod,
+):
+    aws_mocks = AWSMocks()
+    inputs = aws_mocks.setup_copy(mock_application_without_prod, "dev", "staging")
+    secrets = Secrets(**inputs)
+
+    secrets.copy(app_name="test-application", source="dev", target="staging")

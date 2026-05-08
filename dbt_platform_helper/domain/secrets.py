@@ -203,15 +203,17 @@ class Secrets:
         self.__has_access(source_env, actions=["ssm:GetParameter"], access_type="read")
         self.__has_access(target_env)
 
-        prod_account_id = self.application.environments["prod"].account_id
-        if (
-            self.application.environments[source].account_id == prod_account_id
-            and self.application.environments[target].account_id != prod_account_id
-        ):
-            raise PlatformException(
-                f"Cannot transfer secrets out from '{source}' in the prod account '{prod_account_id}'"
-                f" to '{target}' in '{self.application.environments[target].account_id}'"
-            )
+        prod_env = self.application.environments.get("prod")
+        if prod_env:
+            prod_account_id = prod_env.account_id
+            if (
+                self.application.environments[source].account_id == prod_account_id
+                and self.application.environments[target].account_id != prod_account_id
+            ):
+                raise PlatformException(
+                    f"Cannot transfer secrets out from '{source}' in the prod account '{prod_account_id}'"
+                    f" to '{target}' in '{self.application.environments[target].account_id}'"
+                )
 
         parameter_store: ParameterStore = self.parameter_store_provider(
             source_env.session.client("ssm"), with_model=True
