@@ -18,6 +18,10 @@ class OldScheduleProvider:
     def __init__(self, event_client):
         self.client = event_client
 
+    def get_schedule_expression(self, name):
+        rule = self.client.describe_rule(Name=name)
+        return rule.get("ScheduleExpression")
+
     def get_schedule(self, name):
         rule = self.client.describe_rule(Name=name)
         if rule.get("State") == "ENABLED":
@@ -100,18 +104,30 @@ class ScheduleMigrator:
         except Exception:
             raise NewScheduleNotFoundException(
                 f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
-            )           
+            )
 
         old_schedule = self.old_schedule_provider.get_schedule(old_name)
-        
+
         if new_schedule and not old_schedule:
-            self.io.abort_with_error("New schedule is already activated. Aborting.")
-        
+            original_schedule_expression = self.old_schedule_provider.get_schedule_expression(
+                old_name
+            )
+            if new_schedule == original_schedule_expression:
+                self.io.abort_with_error("New schedule is already activated. Aborting.")
+            else:
+                self.io.info(
+                    f"Updating new schedule from {new_schedule} to {original_schedule_expression} to match the original job"
+                )
+                self.new_schedule_provider.update_schedule(new_name, original_schedule_expression)
+                return
+
         self.io.info(f"Updating new schedule with old schedule expression {old_schedule}.")
         self.new_schedule_provider.update_schedule(new_name, old_schedule)
         self.old_schedule_provider.disable_schedule(old_name)
         self.new_schedule_provider.enable_schedule(new_name)
-        self.io.info(f"Complete!  New schedule event {new_name} is enabled and old scheduled rule {old_name} is disabled")
+        self.io.info(
+            f"Complete!  New schedule event {new_name} is enabled and old scheduled rule {old_name} is disabled"
+        )
         self.io.info(f'\nPaste the following into service-manifest.yml schedule: "{old_schedule}"')
 
     def undo_migrate_schedule(self, name, env):
@@ -121,7 +137,9 @@ class ScheduleMigrator:
 
         self.new_schedule_provider.disable_schedule(new_name)
         self.old_schedule_provider.enable_schedule(old_name)
-        self.io.info(f"Complete!  Old scheduled rule {old_name} is now enabled and new schedule event {new_name} is disabled")
+        self.io.info(
+            f"Complete!  Old scheduled rule {old_name} is now enabled and new schedule event {new_name} is disabled"
+        )
 
     def get_new_schedule_name(self, name, env):
         return f"{self.application}-{env}-{name}-schedule"
