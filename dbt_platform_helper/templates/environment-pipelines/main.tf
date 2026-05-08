@@ -34,7 +34,7 @@ terraform {
 
 
 module "environment-pipelines" {
-  source = "{{ module_source }}"
+  source = "{{ env_pipeline_module_source }}"
 
   for_each = local.pipelines
 
@@ -50,6 +50,16 @@ module "environment-pipelines" {
   trigger_on_push     = each.value.trigger_on_push
   pipeline_to_trigger = lookup(each.value, "pipeline_to_trigger", null)
   pinned_version      = {% if pinned_version  %}"{{ pinned_version }}"{% else %}null{% endif %}
+}
+
+module "version-tracker" {
+  source = "{{ version_tracker_module_source }}"
+  platform_version = "{{ platform_version }}"
+  application = "{{ application }}"
+  pipeline_type = "environment-pipeline"
+  depends_on = [
+      module.environment-pipelines
+  ]
 }
 
 {% if workspace %}
