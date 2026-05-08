@@ -63,6 +63,17 @@ class NewScheduleProvider:
             return schedule.get("ScheduleExpression")
         else:
             return None
+        
+    def update_schedule(self, name, new_schedule):
+        schedule = self.client.get_schedule(Name=name, GroupName="default")
+        self.client.update_schedule(
+            Name=schedule["Name"],
+            GroupName=schedule["GroupName"],
+            FlexibleTimeWindow=schedule["FlexibleTimeWindow"],
+            Target=schedule["Target"],
+            ScheduleExpression=new_schedule,
+            State="ENABLED",
+        )
 
 
 class ScheduleMigrator:
@@ -80,7 +91,9 @@ class ScheduleMigrator:
             raise NewScheduleNotFoundException(
                 f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
             )
-
+            
+        old_schedule = self.old_schedule_provider.get_schedule(old_name)
+        self.new_schedule_provider.update_schedule(new_name, old_schedule)
         self.old_schedule_provider.disable_schedule(old_name)
         self.new_schedule_provider.enable_schedule(new_name)
 
