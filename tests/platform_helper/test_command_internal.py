@@ -224,7 +224,7 @@ class TestInternal:
 
         assert result.exit_code == 0
         mock_instance.migrate_schedule.assert_called_once()
-        
+
     @patch("dbt_platform_helper.commands.internal.load_application")
     @patch("dbt_platform_helper.commands.internal.ConfigProvider")
     @patch("dbt_platform_helper.commands.internal.ConfigValidator")
@@ -256,4 +256,3 @@ class TestInternal:
 
         assert result.exit_code == 0
         mock_instance.undo_migrate_schedule.assert_called_once()
-
