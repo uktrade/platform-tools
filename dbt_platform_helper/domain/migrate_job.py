@@ -107,11 +107,10 @@ class ScheduleMigrator:
             )
 
         old_schedule = self.old_schedule_provider.get_schedule(old_name)
+        original_schedule_expression = self.old_schedule_provider.get_schedule_expression(old_name)
 
         if new_schedule and not old_schedule:
-            original_schedule_expression = self.old_schedule_provider.get_schedule_expression(
-                old_name
-            )
+                
             if new_schedule == original_schedule_expression:
                 self.io.abort_with_error("New schedule is already activated. Aborting.")
             else:
@@ -119,16 +118,16 @@ class ScheduleMigrator:
                     f"Updating new schedule from {new_schedule} to {original_schedule_expression} to match the original job"
                 )
                 self.new_schedule_provider.update_schedule(new_name, original_schedule_expression)
-                return
-
-        self.io.info(f"Updating new schedule with old schedule expression {old_schedule}.")
-        self.new_schedule_provider.update_schedule(new_name, old_schedule)
-        self.old_schedule_provider.disable_schedule(old_name)
-        self.new_schedule_provider.enable_schedule(new_name)
-        self.io.info(
-            f"Complete!  New schedule event {new_name} is enabled and old scheduled rule {old_name} is disabled"
-        )
-        self.io.info(f'\nPaste the following into service-manifest.yml schedule: "{old_schedule}"')
+        else:
+            self.io.info(f"Updating new schedule with old schedule expression {original_schedule_expression}.")
+            self.new_schedule_provider.update_schedule(new_name, original_schedule_expression)
+            self.old_schedule_provider.disable_schedule(old_name)
+            self.new_schedule_provider.enable_schedule(new_name)
+            self.io.info(
+                f"Complete!  New schedule event {new_name} is enabled and old scheduled rule {old_name} is disabled"
+            )
+            
+        self.io.info(f'\nPaste the following into service-manifest.yml schedule: "{original_schedule_expression}"')
 
     def undo_migrate_schedule(self, name, env):
         self.io.info(f"Reverting migration for job {name}. Checking initial conditions...")
