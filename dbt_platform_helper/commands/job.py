@@ -20,7 +20,12 @@ def job():
 @click.option("--app", "-a", help="Application name", required=True)
 @click.option("--env", "-e", help="Environment name", required=True)
 @click.option("--name", "-n", help="Name of the scheduled job", required=True)
-@click.option("--follow", is_flag=True)
+@click.option(
+    "--follow",
+    "-f",
+    help="Wait for the execution to finish and report it's final status",
+    is_flag=True,
+)
 def run(app: str, env: str, name: str, follow: bool):
     """Runs a scheduled job on demand."""
 
