@@ -14,8 +14,8 @@ class TooManyOldScheduledJobsFoundException(PlatformException):
 
 
 class OldScheduleProvider:
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, event_client):
+        self.client = event_client
 
     def get_schedule(self, name):
         rule = self.client.describe_rule(Name=name)
@@ -32,8 +32,8 @@ class OldScheduleProvider:
 
 
 class NewScheduleProvider:
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, scheduler_client):
+        self.client = scheduler_client
 
     def disable_schedule(self, name):
         schedule = self.client.get_schedule(Name=name, GroupName="default")
