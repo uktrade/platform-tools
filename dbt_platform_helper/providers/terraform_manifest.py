@@ -170,6 +170,7 @@ class TerraformManifestProvider:
             default_account,
             f"tfstate/application/{state_key_suffix}.tfstate",
         )
+        self._add_github_required_provider(terraform)
         self._add_codebase_pipeline_module(
             terraform, platform_helper_version, deploy_repository, codebase_pipeline_module_source
         )
@@ -295,12 +296,15 @@ class TerraformManifestProvider:
                 }
             },
             "required_providers": {
-                "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION},
-                "github": {
-                    "source": "integrations/github",
-                    "version": SUPPORTED_GITHUB_PROVIDER_VERSION,
-                },
+                "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION}
             },
+        }
+
+    @staticmethod
+    def _add_github_required_provider(terraform: dict):
+        terraform["terraform"]["required_providers"]["github"] = {
+            "source": "integrations/github",
+            "version": SUPPORTED_GITHUB_PROVIDER_VERSION,
         }
 
     @staticmethod
