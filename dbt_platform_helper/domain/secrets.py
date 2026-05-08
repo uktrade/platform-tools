@@ -134,6 +134,8 @@ class Secrets:
             if overwrite and environment_name in found_params:
                 data_dict["Overwrite"] = True
                 del data_dict["Tags"]
+            else:
+                data_dict["Overwrite"] = False
             self.io.debug(
                 f"Creating AWS Parameter Store secret {get_secret_name(environment.name)} ..."
             )
