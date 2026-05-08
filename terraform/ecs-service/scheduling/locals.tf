@@ -1,5 +1,5 @@
 locals {
-
+  schedule_expression = can(regex("minutes|hours|days", var.schedule)) ? "rate(${var.schedule})" : "cron(${var.schedule})"
 
   full_service_name = var.name
 

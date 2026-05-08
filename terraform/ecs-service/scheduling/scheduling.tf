@@ -1,7 +1,7 @@
 ### Eventbridge
 resource "aws_scheduler_schedule" "this" {
 
-  schedule_expression = var.schedule == "none" ? "rate(5 minutes)" : "cron(${var.schedule})"
+  schedule_expression = var.schedule == "none" ? "rate(5 minutes)" : local.schedule_expression #var.schedule == "none" ? "rate(5 minutes)" : "cron(${var.schedule})"
 
   flexible_time_window {
     mode = "OFF"
