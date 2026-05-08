@@ -2,7 +2,7 @@ resource "github_actions_variable" "test" {
   for_each      = toset(var.use_github_actions ? [""] : [])
   repository    = "demodjango"
   variable_name = "JOHN_TERRAFORM_TEST"
-  value         = "test-${aws_ecr_repository.this.name}"
+  value         = "test-123-${aws_ecr_repository.this.name}"
 }
 
 # resource "github_actions_variable" "ecr_repo" {
