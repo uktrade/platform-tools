@@ -77,7 +77,7 @@ class NewScheduleProvider:
 
 
 class ScheduleMigrator:
-    def __init__(self, application, old_schedule_provider, new_schedule_provider=None):
+    def __init__(self, application, old_schedule_provider: OldScheduleProvider, new_schedule_provider: NewScheduleProvider):
         self.application = application
         self.old_schedule_provider = old_schedule_provider
         self.new_schedule_provider = new_schedule_provider
