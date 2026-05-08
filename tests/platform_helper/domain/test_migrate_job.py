@@ -18,15 +18,31 @@ class TooManyOldScheduledJobsFoundException(PlatformException):
     pass
 
 
-class ScheduleMigrator:
-    def __init__(self, application, old_scheduler_client, new_scheduler_client=None):
-        self.application = application
-        self.old_scheduler_client = old_scheduler_client
-        self.new_scheduler_client = new_scheduler_client
+class OldScheduleProvider:
+    def __init__(self, client):
+        self.client = client
+        
+    def get_schedule(self, name):
+        rule = self.client.describe_rule(Name=name)
+        if rule.get("State") == "ENABLED":
+            return rule.get("ScheduleExpression")
+        else:
+            return None
 
-    def disable_new_schedule(self, name, environment):
-        schedule = self.new_scheduler_client.get_schedule(Name=name, GroupName="default")
-        self.new_scheduler_client.update_schedule(
+    def enable_schedule(self, name):
+        self.client.enable_rule(Name=name)
+
+    def disable_schedule(self, name):
+        self.client.disable_rule(Name=name)
+
+        
+class NewScheduleProvider:
+    def __init__(self, client):
+        self.client = client
+        
+    def disable_schedule(self, name):
+        schedule = self.client.get_schedule(Name=name, GroupName="default")
+        self.client.update_schedule(
             Name=schedule["Name"],
             GroupName=schedule["GroupName"],
             FlexibleTimeWindow=schedule["FlexibleTimeWindow"],
@@ -35,9 +51,9 @@ class ScheduleMigrator:
             State="DISABLED",
         )
 
-    def enable_new_schedule(self, name, environment):
-        schedule = self.new_scheduler_client.get_schedule(Name=name, GroupName="default")
-        self.new_scheduler_client.update_schedule(
+    def enable_schedule(self, name):
+        schedule = self.client.get_schedule(Name=name, GroupName="default")
+        self.client.update_schedule(
             Name=schedule["Name"],
             GroupName=schedule["GroupName"],
             FlexibleTimeWindow=schedule["FlexibleTimeWindow"],
@@ -46,50 +62,41 @@ class ScheduleMigrator:
             State="ENABLED",
         )
 
-    def get_new_schedule(self, name, environment):
-        schedule = self.new_scheduler_client.get_schedule(Name=name, GroupName="default")
+    def get_schedule(self, name):
+        schedule = self.client.get_schedule(Name=name, GroupName="default")
         if schedule.get("State") == "ENABLED":
             return schedule.get("ScheduleExpression")
         else:
             return None
 
-    def get_old_schedule(self, name, environment):
-        rule = self.old_scheduler_client.describe_rule(Name=name)
-        if rule.get("State") == "ENABLED":
-            return rule.get("ScheduleExpression")
-        else:
-            return None
 
-    def enable_old_schedule(self, name, environment):
-        self.old_scheduler_client.enable_rule(Name=name)
 
-    def disable_old_schedule(self, name, environment):
-        self.old_scheduler_client.disable_rule(Name=name)
+class ScheduleMigrator:
+    def __init__(self, application, old_schedule_provider, new_schedule_provider=None):
+        self.application = application
+        self.old_schedule_provider = old_schedule_provider
+        self.new_schedule_provider = new_schedule_provider
 
+    
     def migrate_schedule(self, name, env):
         new_name = self.get_new_schedule_name(name, env)
         old_name = self.get_old_schedule_name(name, env)
-        
         try:
-            self.get_new_schedule(new_name, env)
+            self.new_schedule_provider.get_schedule(new_name)
         except Exception:
             raise NewScheduleNotFoundException(
                 f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
             )
 
-        self.disable_old_schedule(old_name, env)
-        self.enable_new_schedule(new_name, env)
+        self.old_schedule_provider.disable_schedule(old_name)
+        self.new_schedule_provider.enable_schedule(new_name)
 
     def undo_migrate_schedule(self, name, env):
-        try:
-            self.get_old_schedule(name, env)
-        except Exception:
-            raise OldScheduleNotFoundException(
-                f"No old schedule to revert to.  Leaving new schedule enabled"
-            )
+        new_name = self.get_new_schedule_name(name, env)
+        old_name = self.get_old_schedule_name(name, env)
 
-        self.disable_new_schedule(name, env)
-        self.enable_old_schedule(name, env)
+        self.new_schedule_provider.disable_schedule(new_name)
+        self.old_schedule_provider.enable_schedule(old_name)
         
     def get_new_schedule_name(self, name, env):
         return f"{self.application}-{env}-{name}-schedule"
@@ -100,12 +107,12 @@ class ScheduleMigrator:
             "copilot-environment": env,
             "copilot-service": name,
         }
-        paginator = self.old_scheduler_client.get_paginator("list_rules")
+        paginator = self.old_schedule_provider.client.get_paginator("list_rules")
         matching_rules = []
         for page in paginator.paginate():
             for rule in page["Rules"]:
                 arn = rule["Arn"]
-                tags_response = self.old_scheduler_client.list_tags_for_resource(ResourceARN=arn)
+                tags_response = self.old_schedule_provider.client.list_tags_for_resource(ResourceARN=arn)
                 
                 tags = {
                     tag["Key"]: tag["Value"]
@@ -152,7 +159,7 @@ def test_get_old_schedule_name():
             },
          ],
     )
-    result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule_name("my-job", "dev")
+    result = ScheduleMigrator("demodjango", OldScheduleProvider(client), Mock()).get_old_schedule_name("my-job", "dev")
 
     assert result == "my-job-XYZ"
     
@@ -180,7 +187,7 @@ def test_get_old_schedule_raises_if_tags_dont_match():
          ],
     )
     with pytest.raises(OldScheduleNotFoundException) as e:
-        result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule_name("my-job", "dev")
+        result = ScheduleMigrator("demodjango", OldScheduleProvider(client), Mock()).get_old_schedule_name("my-job", "dev")
 
     assert "my-job could not be found in the dev environment" in str(e.value)
     
@@ -226,7 +233,7 @@ def test_get_old_schedule_raises_if_tags_not_unique():
          ],
     )
     with pytest.raises(TooManyOldScheduledJobsFoundException) as e:
-        result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule_name("my-job", "dev")
+        result = ScheduleMigrator("demodjango", OldScheduleProvider(client), Mock()).get_old_schedule_name("my-job", "dev")
 
     assert "A unique job my-job could not be found in the dev environment" in str(e.value)
 
@@ -247,8 +254,8 @@ def test_get_new_schedule():
         State="ENABLED",
     )
 
-    result = ScheduleMigrator("demodjango", Mock(), client).get_new_schedule(
-        "my-enabled-rule", "dev"
+    result = ScheduleMigrator("demodjango", Mock(), NewScheduleProvider(client)).new_schedule_provider.get_schedule(
+        "my-enabled-rule"
     )
 
     assert result == "rate(5 minutes)"
@@ -270,11 +277,11 @@ def test_disable_new_schedule():
         State="ENABLED",
     )
 
-    migrator = ScheduleMigrator("demodjango", Mock(), client)
+    migrator = ScheduleMigrator("demodjango", Mock(), NewScheduleProvider(client))
 
-    migrator.disable_new_schedule("my-rule", "dev")
+    migrator.new_schedule_provider.disable_schedule("my-rule")
 
-    result = migrator.get_new_schedule("my-rule", "dev")
+    result = migrator.new_schedule_provider.get_schedule("my-rule")
 
     assert result is None
 
@@ -295,13 +302,13 @@ def test_enable_new_schedule():
         State="DISABLED",
     )
 
-    migrator = ScheduleMigrator("demodjango", Mock(), client)
+    migrator = ScheduleMigrator("demodjango", Mock(), NewScheduleProvider(client))
 
-    assert migrator.get_new_schedule("my-job", "dev") is None
+    assert migrator.new_schedule_provider.get_schedule("my-job") is None
 
-    migrator.enable_new_schedule("my-job", "dev")
+    migrator.new_schedule_provider.enable_schedule("my-job")
 
-    result = migrator.get_new_schedule("my-job", "dev")
+    result = migrator.new_schedule_provider.get_schedule("my-job")
 
     assert result == "rate(5 minutes)"
 
@@ -316,7 +323,7 @@ def test_get_old_schedule():
         State="ENABLED",
     )
 
-    result = ScheduleMigrator("demodjango", client, Mock()).get_old_schedule("my-job", "dev")
+    result = ScheduleMigrator("demodjango", OldScheduleProvider(client), Mock()).old_schedule_provider.get_schedule("my-job")
 
     assert result == "rate(5 minutes)"
 
@@ -331,13 +338,13 @@ def test_enable_old_schedule():
         State="DISABLED",
     )
 
-    migrator = ScheduleMigrator("demodjango", client, Mock())
+    migrator = ScheduleMigrator("demodjango", OldScheduleProvider(client), Mock())
 
-    assert migrator.get_old_schedule("my-job", "dev") is None
+    assert migrator.old_schedule_provider.get_schedule("my-job") is None
 
-    migrator.enable_old_schedule("my-job", "dev")
+    migrator.old_schedule_provider.enable_schedule("my-job")
 
-    result = migrator.get_old_schedule("my-job", "dev")
+    result = migrator.old_schedule_provider.get_schedule("my-job")
 
     assert result == "rate(5 minutes)"
 
@@ -352,13 +359,13 @@ def test_disable_old_schedule():
         State="ENABLED",
     )
 
-    migrator = ScheduleMigrator("demodjango", client, Mock())
+    migrator = ScheduleMigrator("demodjango", OldScheduleProvider(client), Mock())
 
-    assert migrator.get_old_schedule("my-job", "dev") == "rate(5 minutes)"
+    assert migrator.old_schedule_provider.get_schedule("my-job") == "rate(5 minutes)"
 
-    migrator.disable_old_schedule("my-job", "dev")
+    migrator.old_schedule_provider.disable_schedule("my-job")
 
-    result = migrator.get_old_schedule("my-job", "dev")
+    result = migrator.old_schedule_provider.get_schedule("my-job")
 
     assert result is None
 
@@ -400,24 +407,25 @@ def test_migrate_schedule():
          ],
     )
 
-    migrator = ScheduleMigrator("demodjango", old_client, new_client)
+    migrator = ScheduleMigrator("demodjango", OldScheduleProvider(old_client), NewScheduleProvider(new_client))
 
-    assert migrator.get_old_schedule(old_schedule_name, "dev") == "rate(5 minutes)"
-    assert migrator.get_new_schedule(new_schedule_name, "dev") is None
+    assert migrator.old_schedule_provider.get_schedule(old_schedule_name) == "rate(5 minutes)"
+    assert migrator.new_schedule_provider.get_schedule(new_schedule_name) is None
 
     migrator.migrate_schedule("my-job", "dev")
 
-    assert migrator.get_new_schedule(new_schedule_name, "dev") == "rate(5 minutes)"
-    assert migrator.get_old_schedule(old_schedule_name, "dev") is None
+    assert migrator.new_schedule_provider.get_schedule(new_schedule_name) == "rate(5 minutes)"
+    assert migrator.old_schedule_provider.get_schedule(old_schedule_name) is None
 
 
 @mock_aws
 def test_undo_migrate_schedule():
     new_client = boto3.client("scheduler", region_name="eu-west-2")
     old_client = boto3.client("events", region_name="eu-west-2")
-    test_rule = "my-job"
+    new_schedule_name = f"demodjango-dev-my-job-schedule"
+    old_schedule_name = "old-rule-for-my-job"
     new_client.create_schedule(
-        Name=test_rule,
+        Name=new_schedule_name,
         GroupName="default",
         FlexibleTimeWindow={"Mode": "OFF"},
         Target={
@@ -428,20 +436,34 @@ def test_undo_migrate_schedule():
         State="ENABLED",
     )
     old_client.put_rule(
-        Name=test_rule,
+        Name=old_schedule_name,
         ScheduleExpression="rate(5 minutes)",
         State="DISABLED",
+        Tags=[
+            {
+                "Key": "copilot-application",
+                "Value": "demodjango"
+            },
+            {
+                "Key": "copilot-environment",
+                "Value": "dev"
+            },
+            {
+                "Key": "copilot-service",
+                "Value": "my-job"
+            },
+         ],
     )
 
-    migrator = ScheduleMigrator("demodjango", old_client, new_client)
+    migrator = ScheduleMigrator("demodjango", OldScheduleProvider(old_client), NewScheduleProvider(new_client))
 
-    assert migrator.get_new_schedule("my-job", "dev") == "rate(5 minutes)"
-    assert migrator.get_old_schedule("my-job", "dev") is None
+    assert migrator.new_schedule_provider.get_schedule(new_schedule_name) == "rate(5 minutes)"
+    assert migrator.old_schedule_provider.get_schedule(old_schedule_name) is None
 
     migrator.undo_migrate_schedule("my-job", "dev")
 
-    assert migrator.get_old_schedule("my-job", "dev") == "rate(5 minutes)"
-    assert migrator.get_new_schedule("my-job", "dev") is None
+    assert migrator.old_schedule_provider.get_schedule(old_schedule_name) == "rate(5 minutes)"
+    assert migrator.new_schedule_provider.get_schedule(new_schedule_name) is None
 
 
 @mock_aws
@@ -469,7 +491,7 @@ def test_migrate_fails_if_no_new_schedule():
          ],
     )
 
-    migrator = ScheduleMigrator("demodjango", old_client, new_client)
+    migrator = ScheduleMigrator("demodjango", OldScheduleProvider(old_client), NewScheduleProvider(new_client))
 
     with pytest.raises(NewScheduleNotFoundException) as e:
         migrator.migrate_schedule("my-job", "dev")
@@ -494,9 +516,9 @@ def test_undo_migrate_fails_if_no_old_schedule():
         State="ENABLED",
     )
 
-    migrator = ScheduleMigrator("demodjango", old_client, new_client)
+    migrator = ScheduleMigrator("demodjango", OldScheduleProvider(old_client), NewScheduleProvider(new_client))
 
     with pytest.raises(OldScheduleNotFoundException) as e:
         migrator.undo_migrate_schedule("my-job", "dev")
 
-    assert "No old schedule to revert to.  Leaving new schedule enabled" in str(e.value)
+    assert "my-job could not be found in the dev environment" in str(e.value)
