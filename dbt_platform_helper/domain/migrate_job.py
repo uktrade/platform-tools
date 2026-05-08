@@ -63,7 +63,7 @@ class NewScheduleProvider:
             return schedule.get("ScheduleExpression")
         else:
             return None
-        
+
     def update_schedule(self, name, new_schedule):
         schedule = self.client.get_schedule(Name=name, GroupName="default")
         self.client.update_schedule(
@@ -77,7 +77,12 @@ class NewScheduleProvider:
 
 
 class ScheduleMigrator:
-    def __init__(self, application, old_schedule_provider: OldScheduleProvider, new_schedule_provider: NewScheduleProvider):
+    def __init__(
+        self,
+        application: str,
+        old_schedule_provider: OldScheduleProvider,
+        new_schedule_provider: NewScheduleProvider,
+    ):
         self.application = application
         self.old_schedule_provider = old_schedule_provider
         self.new_schedule_provider = new_schedule_provider
@@ -91,7 +96,7 @@ class ScheduleMigrator:
             raise NewScheduleNotFoundException(
                 f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
             )
-            
+
         old_schedule = self.old_schedule_provider.get_schedule(old_name)
         self.new_schedule_provider.update_schedule(new_name, old_schedule)
         self.old_schedule_provider.disable_schedule(old_name)

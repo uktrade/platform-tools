@@ -193,17 +193,34 @@ class TestInternal:
         assert result.exit_code == 1
         mock_click.assert_called_with("Error: bad env", err=True, fg="red")
 
-    @mock_aws
-    @patch("dbt_platform_helper.commands.internal.ServiceManager")
+    @patch("dbt_platform_helper.commands.internal.load_application")
+    @patch("dbt_platform_helper.commands.internal.ConfigProvider")
+    @patch("dbt_platform_helper.commands.internal.ConfigValidator")
+    @patch("dbt_platform_helper.commands.internal.OldScheduleProvider")
+    @patch("dbt_platform_helper.commands.internal.NewScheduleProvider")
+    @patch("dbt_platform_helper.commands.internal.ScheduleMigrator")
     @patch("dbt_platform_helper.commands.internal.click.secho")
-    def test_migrate_job(self, mock_click, mock_service_manager):
-        mock_instance = mock_service_manager.return_value
-        mock_instance.generate.side_effect = EnvironmentNotFoundException("bad env")
+    def test_migrate_job(
+        self,
+        mock_click,
+        mock_migrator,
+        mock_new_schedule,
+        mock_old_schedule,
+        mock_config,
+        mock_validate,
+        mock_load,
+    ):
+        mock_application = Mock()
+        mock_application.name = "myapp"
+        mock_application.environments = {"dev": Mock()}
+        mock_load.return_value = mock_application
+
+        mock_instance = mock_migrator.return_value
 
         result = CliRunner().invoke(
             internal,
-            ["migrate-job", "--env", "my-env", "--name", "my-job"],
+            ["migrate-job", "--env", "dev", "--name", "my-job"],
         )
 
         assert result.exit_code == 0
-        mock_instance.migrate_job.assert_called_once()
+        mock_instance.migrate_schedule.assert_called_once()

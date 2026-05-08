@@ -1,5 +1,8 @@
 import click
 
+from dbt_platform_helper.domain.migrate_job import NewScheduleProvider
+from dbt_platform_helper.domain.migrate_job import OldScheduleProvider
+from dbt_platform_helper.domain.migrate_job import ScheduleMigrator
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
@@ -37,8 +40,19 @@ def migrate_job(name, env):
     click_io = ClickIOProvider()
 
     try:
-        service_manager = ServiceManager()
-        service_manager.migrate_job(name, env)
+        config = ConfigProvider(ConfigValidator()).get_enriched_config()
+        application_name = config.get("application", "")
+        application = load_application(app=application_name, env=env)
+
+        event_client = application.environments[env].session.client("events")
+        scheduler_client = application.environments[env].session.client("scheduler")
+
+        migrator = ScheduleMigrator(
+            application_name,
+            OldScheduleProvider(event_client),
+            NewScheduleProvider(scheduler_client),
+        )
+        migrator.migrate_schedule(name, env)
     except PlatformException as error:
         click_io.abort_with_error(str(error))
 

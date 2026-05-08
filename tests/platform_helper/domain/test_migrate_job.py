@@ -362,11 +362,12 @@ def test_undo_migrate_fails_if_no_old_schedule():
 
     assert "my-job could not be found in the dev environment" in str(e.value)
 
+
 @mock_aws
 def test_migrate_copies_old_schedule_to_new_schedule():
     DEFAULT_SCHEDULE = "rate(5 minutes)"
     ORIGINAL_SCHEDULE = "rate(10 minutes)"
-    
+
     new_client = boto3.client("scheduler", region_name="eu-west-2")
     old_client = boto3.client("events", region_name="eu-west-2")
     new_schedule_name = f"demodjango-dev-my-job-schedule"
