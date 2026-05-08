@@ -30,14 +30,14 @@ class JobManager:
 
         self.io.info("Waiting for execution to finish...")
         start_time = time.monotonic()
+        status = self.job_runner.get_status(execution_id)
+        self.io.info(f"Status: {status}")
 
-        while True:
+        while status not in self.JOB_FINAL_STATUSES:
             time.sleep(self.JOB_POLL_SECONDS)
             elapsed = int(time.monotonic() - start_time)
             status = self.job_runner.get_status(execution_id)
             self.io.info(f"Status: {status} ({elapsed}s elapsed)")
-            if status in self.JOB_FINAL_STATUSES:
-                break
 
         if status == "SUCCEEDED":
             self.io.info(f"Job {execution_id} completed successfully.")
