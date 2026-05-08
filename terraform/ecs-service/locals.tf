@@ -10,11 +10,17 @@ locals {
   vpc_name                     = var.env_config[var.environment]["vpc"]
   secrets                      = values(coalesce(var.service_config.secrets, {}))
   web_service_required         = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
-  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) ? 1 : 0
+  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) && !local.is_scheduled_job ? 1 : 0
+  is_scheduled_job             = var.service_config.type == "Scheduled Job"
   target_container             = try(var.service_config.http.target_container, "")
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
+
+
+  # CPU architecture — defaults to X86_64; set platform = "arm64" for Graviton.                         
+  cpu_architecture = try(lower(var.service_config.platform), null) == "arm64" ? "ARM64" : "X86_64"
+
 
   ##############################
   # S3 EXTENSIONS — SAME ACCOUNT
@@ -274,6 +280,9 @@ locals {
     { name = "path${replace(path, "/", "-")}", host = {} }
   ]
 
+  volumes = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
+
+
   task_definition_json = jsonencode(
     merge(
       {
@@ -282,7 +291,7 @@ locals {
         executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-exec"
         networkMode             = "awsvpc"
         containerDefinitions    = local.container_definitions_list
-        volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
+        volumes                 = local.volumes
         placementConstraints    = []
         requiresCompatibilities = ["FARGATE"]
         cpu                     = tostring(var.service_config.cpu)
@@ -327,7 +336,7 @@ locals {
 
   # Scheduled Actions
 
-  scheduled_actions = {
+  scheduled_actions = local.is_scheduled_job ? {} : {
     for idx, schedule in try(var.service_config.count.schedules, []) :
     "${local.full_service_name}-schedule-${idx}" => {
       schedule = schedule.schedule
