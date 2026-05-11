@@ -40,6 +40,8 @@
         - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
     - [platform-helper service](#platform-helper-service)
         - [platform-helper service exec](#platform-helper-service-exec)
+    - [platform-helper job](#platform-helper-job)
+        - [platform-helper job run](#platform-helper-job-run)
 
 # platform-helper
 
@@ -67,6 +69,7 @@ platform-helper <command> [--version]
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`internal` ↪](#platform-helper-internal)
+- [`job` ↪](#platform-helper-job)
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
@@ -1034,5 +1037,55 @@ platform-helper service exec --app <application> --env <environment> --name <nam
   - Optional. [Note: This is an advanced feature and not yet fully supported.  In most cases only the essential container can be exec'd into.] The specific container you want to exec in. By default the first essential container will be used.
 - `--task-id <text>`
   - Optional. ID of the task you want to exec into.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper job
+
+[↩ Parent](#platform-helper)
+
+    Commands for managing a scheduled job.
+
+## Usage
+
+```
+platform-helper job run 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`run` ↪](#platform-helper-job-run)
+
+# platform-helper job run
+
+[↩ Parent](#platform-helper-job)
+
+    Runs a scheduled job on demand.
+
+## Usage
+
+```
+platform-helper job run --app <application> --env <environment> --name <name> [--follow|-f] 
+```
+
+## Options
+
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
+- `--name
+-n <text>`
+  - Name of the scheduled job
+- `--follow
+-f <boolean>` _Defaults to False._
+  - Wait for the execution to finish and report it's final status
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
