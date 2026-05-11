@@ -33,4 +33,5 @@ class TestCopilotHelperCli:
             "database",
             "version",
             "service",
+            "job",
         ]

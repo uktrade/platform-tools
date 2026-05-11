@@ -236,8 +236,8 @@ class ServiceManager:
 
         # Convert "@" schedule expressions to expressions understood by EventBridge
         rate_conversion = {
-            "@hourly": "rate(1 hours)",
-            "@daily": "rate(1 days)",
+            "@hourly": "1 hours",
+            "@daily": "1 days",
             "@weekly": "0 0 * * 1 *",
             "@monthly": "0 0 1 * * *",
             "@yearly": "0 * * * ? *",

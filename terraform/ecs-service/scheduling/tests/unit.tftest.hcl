@@ -89,6 +89,58 @@ run "test_none_schedule_expression_defaults_to_rate_5_minutes" {
   }
 }
 
+run "test_minutes_rate_schedule_expression_gets_wrapped_with_rate_function" {
+  command = plan
+
+  variables {
+    schedule = "1 minutes"
+  }
+
+  assert {
+    condition     = aws_scheduler_schedule.this.schedule_expression == "rate(1 minutes)"
+    error_message = "Should be 'rate(1 minutes)'"
+  }
+}
+
+run "test_hours_rate_schedule_expression_gets_wrapped_with_rate_function" {
+  command = plan
+
+  variables {
+    schedule = "1 hours"
+  }
+
+  assert {
+    condition     = aws_scheduler_schedule.this.schedule_expression == "rate(1 hours)"
+    error_message = "Should be 'rate(1 hours)'"
+  }
+}
+
+run "test_days_rate_schedule_expression_gets_wrapped_with_rate_function" {
+  command = plan
+
+  variables {
+    schedule = "1 days"
+  }
+
+  assert {
+    condition     = aws_scheduler_schedule.this.schedule_expression == "rate(1 days)"
+    error_message = "Should be 'rate(1 days)'"
+  }
+}
+
+run "test_cron_schedule_expression_gets_wrapped_with_cron_function" {
+  command = plan
+
+  variables {
+    schedule = "5 * * * ?"
+  }
+
+  assert {
+    condition     = aws_scheduler_schedule.this.schedule_expression == "cron(5 * * * ?)"
+    error_message = "Should be 'cron(5 * * * ?)'"
+  }
+}
+
 run "test_state_machine_definition_has_no_retry" {
   command = plan
 

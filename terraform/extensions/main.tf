@@ -67,7 +67,8 @@ module "alb" {
 
   for_each = local.alb
   providers = {
-    aws.domain = aws.domain
+    aws.domain     = aws.domain
+    aws.domain-cdn = aws.domain-cdn
   }
   application             = var.args.application
   environment             = var.environment
@@ -75,6 +76,7 @@ module "alb" {
   dns_account_id          = local.dns_account_id
   service_deployment_mode = local.service_deployment_mode
 
+  name   = each.key
   config = each.value
 }
 
