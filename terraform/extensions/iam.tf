@@ -19,7 +19,8 @@ data "aws_iam_policy_document" "assume_codebase_pipeline" {
       values = [
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline",
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline-*",
-        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-*"
+        "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-*",
+        "arn:aws:iam::${local.pipeline_account_id}:role/github-oidc-${var.args.application}-repo-role"
       ]
       variable = "aws:PrincipalArn"
     }
