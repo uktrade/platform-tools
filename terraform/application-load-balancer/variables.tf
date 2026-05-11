@@ -35,3 +35,7 @@ variable "config" {
 variable "service_deployment_mode" {
   type = string
 }
+
+variable "name" {
+  type = string
+}
