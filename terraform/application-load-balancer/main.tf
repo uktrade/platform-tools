@@ -26,13 +26,12 @@ resource "null_resource" "validate_cdn_domains" {
     precondition {
       condition     = local.config_cdn_domains_list == local.ingress_cdn_domains_list
       error_message = <<-EOT
-      cdn_domains_list in the ${var.environment} environment does not match the domains defined in platform-public-ingress.
-      
-      Either add the domain to extensions.${var.name}.environments.${var.environment}.cdn_domains_list
-      or Ensure the domain is defined in https://github.com/uktrade/platform-public-ingress/blob/main/terraform/configuration/${var.application}/${var.application}.${var.environment}.tfvars
+      cdn_domains_list for the ${var.environment} environment in platform-config.yml doesn't match the domains defined in https://github.com/uktrade/platform-public-ingress.
 
-      platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
       platform-config         = ${jsonencode(local.config_cdn_domains_list)}
+      platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
+      
+      If the platform-public-ingress list is wrong, please raise a platform request (#platform-requests on Slack) to get it changed and deployed.
       EOT
     }
   }
