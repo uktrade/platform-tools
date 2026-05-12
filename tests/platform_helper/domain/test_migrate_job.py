@@ -333,7 +333,7 @@ def test_migrate_fails_if_no_new_schedule():
     with pytest.raises(NewScheduleNotFoundException) as e:
         migrator.migrate_schedule("my-job", "dev")
 
-    assert "No new schedule to migrate to.  Ensure job my-job is deployed to dev" in str(e.value)
+    assert "No new schedule to migrate to. Ensure job my-job is deployed to dev" in str(e.value)
 
 
 @mock_aws
