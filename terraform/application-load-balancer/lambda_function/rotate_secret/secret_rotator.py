@@ -2,7 +2,6 @@ import json
 import os
 import time
 from typing import Any
-from typing import Dict
 from typing import Tuple
 
 import boto3
@@ -56,7 +55,7 @@ class SecretRotator:
             aws_session_token=credentials["SessionToken"],
         )
 
-    def get_deployed_distributions(self) -> list[Dict[str, Any]]:
+    def get_deployed_distributions(self) -> list[dict[str, Any]]:
         client = self.get_cloudfront_client()
         paginator = client.get_paginator("list_distributions")
         matching_distributions = []
@@ -75,11 +74,11 @@ class SecretRotator:
         self.logger.info(f"Matched cloudfront distributions: {matching_distributions}")
         return matching_distributions
 
-    def get_waf_acl(self) -> Dict[str, Any]:
+    def get_waf_acl(self) -> dict[str, Any]:
         client = boto3.client("wafv2")
         return client.get_web_acl(Name=self.waf_acl_name, Scope="REGIONAL", Id=self.waf_acl_id)
 
-    def _create_byte_match_statement(self, search_string: str) -> Dict[str, Any]:
+    def _create_byte_match_statement(self, search_string: str) -> dict[str, Any]:
         return {
             "ByteMatchStatement": {
                 "FieldToMatch": {"SingleHeader": {"Name": self.header_name}},
@@ -136,17 +135,17 @@ class SecretRotator:
         if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
             self.logger.info("WAF WebACL rules updated")
 
-    def get_cf_distro(self, distro_id: str) -> Dict:
+    def get_cf_distro(self, distro_id: str) -> dict:
         """Fetches the CloudFront distribution details."""
         client = self.get_cloudfront_client()
         return client.get_distribution(Id=distro_id)
 
-    def get_cf_distro_config(self, distro_id: str) -> Dict:
+    def get_cf_distro_config(self, distro_id: str) -> dict:
         """Fetches the configuration of a CloudFront distribution."""
         client = self.get_cloudfront_client()
         return client.get_distribution_config(Id=distro_id)
 
-    def update_cf_distro(self, distro_id: str, header_value: str) -> Dict:
+    def update_cf_distro(self, distro_id: str, header_value: str) -> dict:
         """
         Updates the custom headers for a CloudFront distribution.
 
@@ -179,7 +178,7 @@ class SecretRotator:
         dist_status = self.get_cf_distro(distro_id)
         return "Deployed" in dist_status["Distribution"]["Status"]
 
-    def update_custom_headers(self, dist_config: Dict, header_value: str) -> bool:
+    def update_custom_headers(self, dist_config: dict, header_value: str) -> bool:
         """
         Updates or creates given custom header in the distribution config.
 
@@ -220,7 +219,7 @@ class SecretRotator:
 
         return header_count > 0
 
-    def apply_distribution_update(self, client, distro_id: str, dist_config: Dict) -> Dict:
+    def apply_distribution_update(self, client, distro_id: str, dist_config: dict) -> dict:
         """Applies the distribution update to CloudFront."""
         try:
             response = client.update_distribution(
@@ -416,7 +415,7 @@ class SecretRotator:
             self.logger.error(f"Unexpected Error Details: {str(unexpected_err)}")
             return False
 
-    def get_secrets(self, service_client, arn: str) -> Tuple[Dict, Dict]:
+    def get_secrets(self, service_client, arn: str) -> Tuple[dict, dict]:
         metadata = service_client.describe_secret(SecretId=arn)
         version_stages = metadata.get("VersionIdsToStages", {})
         current_version = None

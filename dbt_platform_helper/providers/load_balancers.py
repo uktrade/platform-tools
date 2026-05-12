@@ -1,5 +1,4 @@
 import json
-from typing import Dict
 
 from boto3 import Session
 
@@ -21,11 +20,11 @@ def normalise_to_cidr(ip: str):
 class ALBDataNormaliser:
 
     @staticmethod
-    def tags_to_dict(tags: list[Dict[str, str]]) -> Dict[str, str]:
+    def tags_to_dict(tags: list[dict[str, str]]) -> dict[str, str]:
         return {tag.get("Key", ""): tag.get("Value", "") for tag in tags}
 
     @staticmethod
-    def conditions_to_dict(conditions: list[Dict[str, list[str]]]) -> Dict[str, list[str]]:
+    def conditions_to_dict(conditions: list[dict[str, list[str]]]) -> dict[str, list[str]]:
         return {condition.get("Field", ""): condition.get("Values", "") for condition in conditions}
 
 
