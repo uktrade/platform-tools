@@ -1,6 +1,5 @@
 import json
 from typing import Dict
-from typing import List
 
 from boto3 import Session
 
@@ -22,11 +21,11 @@ def normalise_to_cidr(ip: str):
 class ALBDataNormaliser:
 
     @staticmethod
-    def tags_to_dict(tags: List[Dict[str, str]]) -> Dict[str, str]:
+    def tags_to_dict(tags: list[Dict[str, str]]) -> Dict[str, str]:
         return {tag.get("Key", ""): tag.get("Value", "") for tag in tags}
 
     @staticmethod
-    def conditions_to_dict(conditions: List[Dict[str, List[str]]]) -> Dict[str, List[str]]:
+    def conditions_to_dict(conditions: list[Dict[str, list[str]]]) -> Dict[str, list[str]]:
         return {condition.get("Field", ""): condition.get("Values", "") for condition in conditions}
 
 
@@ -111,7 +110,7 @@ class LoadBalancerProvider:
 
         return target_group_arn
 
-    def get_target_groups(self, target_group_arns: List[str]) -> List[dict]:
+    def get_target_groups(self, target_group_arns: list[str]) -> list[dict]:
         tgs = []
         paginator = self.evlb_client.get_paginator("describe_target_groups")
         page_iterator = paginator.paginate(TargetGroupArns=target_group_arns)
@@ -121,8 +120,8 @@ class LoadBalancerProvider:
         return tgs
 
     def get_target_groups_with_tags(
-        self, target_group_arns: List[str], normalise: bool = True
-    ) -> List[dict]:
+        self, target_group_arns: list[str], normalise: bool = True
+    ) -> list[dict]:
         target_groups = self.get_target_groups(target_group_arns)
 
         tags = self.get_resources_tag_descriptions(target_groups, "TargetGroupArn")
@@ -152,7 +151,7 @@ class LoadBalancerProvider:
         listener_arn = self.get_https_listener_for_application(app, env)
         return self.get_https_certificate_for_listener(listener_arn, env)
 
-    def get_listeners_for_load_balancer(self, load_balancer_arn: str) -> List[dict]:
+    def get_listeners_for_load_balancer(self, load_balancer_arn: str) -> list[dict]:
         listeners = []
         paginator = self.evlb_client.get_paginator("describe_listeners")
         page_iterator = paginator.paginate(LoadBalancerArn=load_balancer_arn)
@@ -178,7 +177,7 @@ class LoadBalancerProvider:
 
         return listener_arn
 
-    def get_load_balancers(self) -> List[dict]:
+    def get_load_balancers(self) -> list[dict]:
         load_balancers = []
         paginator = self.evlb_client.get_paginator("describe_load_balancers")
         page_iterator = paginator.paginate()
@@ -247,8 +246,8 @@ class LoadBalancerProvider:
 
     def merge_in_tags_by_resource_arn(
         self,
-        resources: List[dict],
-        tag_descriptions: List[dict],
+        resources: list[dict],
+        tag_descriptions: list[dict],
         resources_identifier: str = "RuleArn",
     ):
         tags_by_resource_arn = {

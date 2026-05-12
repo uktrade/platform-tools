@@ -1,7 +1,6 @@
 import json
 import logging
 from typing import Dict
-from typing import List
 from typing import Tuple
 
 import requests
@@ -18,7 +17,7 @@ class SlackNotificationService:
 
     def send_test_failures(
         self,
-        failures: List[Dict],
+        failures: list[Dict],
         environment: str,
         application: str,
         channel: str = None,
@@ -51,7 +50,7 @@ class SlackNotificationService:
             logger.error(f"Failed to send Slack notification: {str(e)}")
 
     def _send_message(
-        self, channel: str, text: str, blocks: List[Dict] = None, thread_ts: str = None
+        self, channel: str, text: str, blocks: list[Dict] = None, thread_ts: str = None
     ) -> Dict:
         """Sends a message to Slack using the Slack API."""
         headers = {
@@ -78,8 +77,8 @@ class SlackNotificationService:
         return response.json()
 
     def _build_failure_message(
-        self, failures: List[Dict], environment: str, application: str
-    ) -> Tuple[List[Dict], str, str]:
+        self, failures: list[Dict], environment: str, application: str
+    ) -> Tuple[list[Dict], str, str]:
         message_blocks = [
             {
                 "type": "header",

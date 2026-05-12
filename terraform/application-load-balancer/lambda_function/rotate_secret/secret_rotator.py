@@ -3,7 +3,6 @@ import os
 import time
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Tuple
 
 import boto3
@@ -57,7 +56,7 @@ class SecretRotator:
             aws_session_token=credentials["SessionToken"],
         )
 
-    def get_deployed_distributions(self) -> List[Dict[str, Any]]:
+    def get_deployed_distributions(self) -> list[Dict[str, Any]]:
         client = self.get_cloudfront_client()
         paginator = client.get_paginator("list_distributions")
         matching_distributions = []
