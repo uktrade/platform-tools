@@ -2,7 +2,6 @@ import os
 import re
 import webbrowser
 from pathlib import Path
-from typing import Dict
 
 from prettytable import PrettyTable
 
@@ -358,7 +357,7 @@ class Config:
 
         return compatible
 
-    def _render_recommendations(self, recommendations: Dict[str, str]):
+    def _render_recommendations(self, recommendations: dict[str, str]):
         if recommendations:
             self.io.info("\nRecommendations:\n", bold=True)
 

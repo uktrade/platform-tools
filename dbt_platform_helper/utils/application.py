@@ -4,7 +4,6 @@ import re
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
-from typing import Dict
 
 import boto3
 
@@ -21,7 +20,7 @@ from dbt_platform_helper.utils.messages import abort_with_error
 class Environment:
     name: str
     account_id: str
-    sessions: Dict[str, boto3.Session]
+    sessions: dict[str, boto3.Session]
 
     @property
     def session(self):
@@ -42,8 +41,8 @@ class Service:
 @dataclass
 class Application:
     name: str
-    environments: Dict[str, Environment] = field(default_factory=dict)
-    services: Dict[str, Service] = field(default_factory=dict)
+    environments: dict[str, Environment] = field(default_factory=dict)
+    services: dict[str, Service] = field(default_factory=dict)
 
     def __str__(self):
         output = f"Application {self.name} with"
@@ -141,7 +140,7 @@ def load_application(app=None, default_session=None, env=None) -> Application:
     return application
 
 
-def _load_services(ssm_client, application: Application) -> Dict[str, Service]:
+def _load_services(ssm_client, application: Application) -> dict[str, Service]:
     """
     Try to load
     /platform/applications/{app}/environments/{env}/services/{service}
@@ -150,7 +149,7 @@ def _load_services(ssm_client, application: Application) -> Dict[str, Service]:
     Otherwise, fall back to legacy /copilot/applications/{app}/components
     parameters.
     """
-    services: Dict[str, Service] = {}
+    services: dict[str, Service] = {}
 
     # Try /platform SSM parameter
     for env_name in application.environments.keys():

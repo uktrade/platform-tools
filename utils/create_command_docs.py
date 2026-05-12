@@ -4,7 +4,6 @@ import importlib
 from pathlib import Path
 from typing import Any
 from typing import Generator
-from typing import List
 from typing import NamedTuple
 from typing import Optional
 
@@ -31,11 +30,11 @@ class Parameter(NamedTuple):
 class CommandMetadata(NamedTuple):
     """Command metadata definition."""
 
-    arguments: List[Parameter]
+    arguments: list[Parameter]
     description: Optional[str]
     help: str
     name: str
-    options: List[Parameter]
+    options: list[Parameter]
     parent_reference: str
     subcommands: Optional[Any]
     usage: str
