@@ -103,7 +103,7 @@ class ScheduleMigrator:
             self.io.info(f"New schedule is deployed to {env} environment.  Ready to migrate.")
         except Exception:
             raise NewScheduleNotFoundException(
-                f"No new schedule to migrate to.  Ensure job {name} is deployed to {env}"
+                f"No new schedule to migrate to. Ensure job {name} is deployed to {env}"
             )
 
         old_schedule = self.old_schedule_provider.get_schedule(old_name)
