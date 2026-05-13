@@ -11,12 +11,16 @@ variable "env_config" {
 }
 
 variable "scheduled_job_image_tag" {
-  type    = string
-  default = null
+  type        = string
+  description = "Allow passing an image tag during terraform apply. Only for scheduled jobs."
 
   validation {
-    condition     = var.service_config.type == "Scheduled Job" && var.scheduled_job_image_tag == null
-    error_message = "Passing an image tag is required when the service type is set to 'Scheduled Job'"
+    condition = (
+      var.service_config.type == "Scheduled Job"
+      ? var.scheduled_job_image_tag != null
+      : var.scheduled_job_image_tag == null
+    )
+    error_message = "Passing an image tag is required when the service type is set to 'Scheduled Job'. For example: terraform apply -var='scheduled_job_image_tag=latest'"
   }
 }
 
