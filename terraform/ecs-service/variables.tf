@@ -10,6 +10,16 @@ variable "env_config" {
   type = any
 }
 
+variable "scheduled_job_image_tag" {
+  type    = string
+  default = null
+
+  validation {
+    condition     = var.service_config.type == "Scheduled Job" && var.scheduled_job_image_tag == null
+    error_message = "Passing an image tag is required when the service type is set to 'Scheduled Job'"
+  }
+}
+
 variable "platform_extensions" {
   type = any
 }
