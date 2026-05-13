@@ -40,6 +40,15 @@ locals {
   # Count total number of domains.
   number_of_domains = length(local.full_list)
   domain_list       = lookup(var.config, "cdn_domains_list", null) != null ? join(",", keys(var.config.cdn_domains_list)) : ""
+  config_cdn_domains_list = tomap({
+    for cdn_domain, cdn_config in coalesce(lookup(var.config, "cdn_domains_list", {}), {}) :
+    cdn_domain => { zone_name = cdn_config[1] }
+  })
+  ingress_cdn_domains_list = tomap(
+    can(data.aws_ssm_parameters_by_path.cdn_domain_list.values[0])
+    ? jsondecode(nonsensitive(data.aws_ssm_parameters_by_path.cdn_domain_list.values[0]))
+    : {}
+  )
 
   config_with_defaults = { slack_alert_channel_alb_secret_rotation = coalesce(try(var.config.slack_alert_channel_alb_secret_rotation, null), "C31KW7NLE") } # Slack ID for P2 alerts channel
 

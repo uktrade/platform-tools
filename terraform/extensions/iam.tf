@@ -51,6 +51,7 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "iam:GetPolicy",
       "iam:GetPolicyVersion",
       "iam:CreatePolicyVersion",
+      "iam:DeletePolicyVersion",
       "iam:ListRolePolicies",
       "iam:GetRolePolicy",
       "iam:ListAttachedRolePolicies",

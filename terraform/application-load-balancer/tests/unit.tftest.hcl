@@ -18,7 +18,19 @@ mock_provider "aws" {
     defaults = {
       account_id = "123456789012"
       id         = "123456789012"
-    user_id = "XXXXXXXXXXXXXXXXXXXXX" }
+      user_id    = "XXXXXXXXXXXXXXXXXXXXX"
+    }
+  }
+}
+
+mock_provider "aws" {
+  alias = "domain-cdn"
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "123456789012"
+      id         = "123456789012"
+      user_id    = "XXXXXXXXXXXXXXXXXXXXX"
+    }
   }
 }
 
@@ -87,10 +99,21 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_ssm_parameters_by_path.cdn_domain_list
+  values = {
+    names  = ["/platform/my-application/dev/cdn_domains_list/value"]
+    values = ["{\"api.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"},\"web.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"}}"]
+    types  = ["String"]
+    arns   = ["arn:aws:ssm:us-east-1:123456789012:parameter/platform/my-application/dev/cdn_domains_list/value"]
+  }
+}
+
 
 variables {
   application    = "app"
   environment    = "env"
+  name           = "my-app-alb"
   vpc_name       = "vpc-name"
   dns_account_id = "123456789012"
   cloudfront_id  = ["123456789"]
@@ -332,6 +355,13 @@ run "domain_length_validation_tests" {
 
 run "domain_length_validation_tests_succeed_with_empty_cdn_domains_list_in_config" {
   command = plan
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.cdn_domain_list
+    values = {
+      values = ["{}"]
+    }
+  }
 
   variables {
     application = "app"
@@ -863,6 +893,13 @@ run "waf_and_rotate_lambda" {
 run "waf_and_rotate_lambda_no_cdn_domains" {
   command = plan
 
+  override_data {
+    target = data.aws_ssm_parameters_by_path.cdn_domain_list
+    values = {
+      values = ["{}"]
+    }
+  }
+
   variables {
     config = {
       cdn_domains_list = null
@@ -921,6 +958,13 @@ run "waf_and_rotate_lambda_no_cdn_domains" {
 
 run "waf_and_rotate_lambda_cdn_domains_disabled" {
   command = plan
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.cdn_domain_list
+    values = {
+      values = ["{\"web.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"}}"]
+    }
+  }
 
   variables {
     config = {
@@ -1124,5 +1168,53 @@ run "dummy_listener_rule_manager" {
   assert {
     condition     = aws_lambda_function.listener-rule-organiser-function[0].reserved_concurrent_executions == 1
     error_message = "Invalid reserved concurrency, must be one to avoid race conditions when creating dummy rules for multiple services"
+  }
+}
+
+run "cdn_domain_list_precondition_passes_when_domains_match" {
+  command = plan
+
+  variables {
+    config = {
+      cdn_domains_list = {
+        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
+        "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital", "disable_cdn"]
+      }
+    }
+  }
+}
+
+run "cdn_domain_list_precondition_fails_when_domains_do_not_match" {
+  command = plan
+
+  variables {
+    config = {
+      cdn_domains_list = {
+        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
+        "frontend.dev.my-application.uktrade.digital" : ["internal.frontend", "my-application.uktrade.digital", "disable_cdn"]
+      }
+    }
+  }
+
+  expect_failures = [
+    null_resource.validate_cdn_domains
+  ]
+}
+
+run "cdn_domain_list_precondition_passes_if_both_lists_are_empty" {
+  command = plan
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.cdn_domain_list
+    values = {
+      names  = ["/platform/my-application/dev/cdn_domains_list/value"]
+      values = []
+      types  = ["String"]
+      arns   = ["arn:aws:ssm:us-east-1:123456789012:parameter/platform/my-application/dev/cdn_domains_list/value"]
+    }
+  }
+
+  variables {
+    config = {}
   }
 }

@@ -8,6 +8,35 @@ data "aws_ssm_parameter" "slack_token" {
   name = "/codebuild/slack_oauth_token"
 }
 
+data "aws_ssm_parameters_by_path" "cdn_domain_list" {
+  provider = aws.domain-cdn
+
+  path      = "/platform/${var.application}/${var.environment}/cdn_domains_list"
+  recursive = false
+}
+
+resource "null_resource" "validate_cdn_domains" {
+
+  triggers = {
+    platform-public-ingress = jsonencode(local.ingress_cdn_domains_list)
+    platform-config         = jsonencode(local.config_cdn_domains_list)
+  }
+
+  lifecycle {
+    precondition {
+      condition     = local.config_cdn_domains_list == local.ingress_cdn_domains_list
+      error_message = <<-EOT
+      cdn_domains_list for the ${var.environment} environment in platform-config.yml doesn't match the domains defined in https://github.com/uktrade/platform-public-ingress.
+
+      platform-config         = ${jsonencode(local.config_cdn_domains_list)}
+      platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
+      
+      If the platform-public-ingress list is wrong, please raise a platform request (#platform-requests on Slack) to get it changed and deployed.
+      EOT
+    }
+  }
+}
+
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Name"

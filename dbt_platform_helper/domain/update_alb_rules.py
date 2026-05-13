@@ -2,7 +2,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 from dataclasses import field
 from enum import Enum
-from typing import List
 
 from botocore.exceptions import ClientError
 
@@ -45,9 +44,9 @@ class Deployment(Enum):
 
 @dataclass
 class OperationState:
-    created_rules: List[object] = field(default_factory=list)
-    deleted_rules: List[object] = field(default_factory=list)
-    updated_rules: List[object] = field(default_factory=list)
+    created_rules: list[object] = field(default_factory=list)
+    deleted_rules: list[object] = field(default_factory=list)
+    updated_rules: list[object] = field(default_factory=list)
     listener_arn: str = ""
 
 
@@ -294,7 +293,7 @@ class UpdateALBRules:
             ):
                 self._delete_rules(rules_to_delete, operation_state)
 
-    def _delete_rules(self, rules: List[dict], operation_state: OperationState):
+    def _delete_rules(self, rules: list[dict], operation_state: OperationState):
         for rule in rules:
             rule_arn = rule["RuleArn"]
             try:

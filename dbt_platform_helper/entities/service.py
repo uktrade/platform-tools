@@ -1,7 +1,6 @@
 import re
 from enum import Enum
 from typing import ClassVar
-from typing import Dict
 from typing import Optional
 from typing import Union
 
@@ -123,10 +122,10 @@ class Sidecar(BaseModel):
         description="Whether the ECS task should stop if this sidecar container exits.",
         default=True,
     )
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the sidecar container.", default=None
     )
-    secrets: Optional[Dict[str, str]] = Field(
+    secrets: Optional[dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the sidecar.", default=None
     )
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
@@ -136,8 +135,8 @@ class SidecarOverride(BaseModel):
     port: Optional[int] = Field(default=None)
     image: Optional[str] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(default=None)
+    secrets: Optional[dict[str, str]] = Field(default=None)
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
@@ -324,7 +323,7 @@ class Count(BaseModel):
 
 class ServiceConfigEnvironmentOverride(BaseModel):
     http: Optional[HttpOverride] = Field(default=None)
-    sidecars: Optional[Dict[str, SidecarOverride]] = Field(default=None)
+    sidecars: Optional[dict[str, SidecarOverride]] = Field(default=None)
     image: Optional[Image] = Field(default=None)
 
     cpu: Optional[int] = Field(default=None)
@@ -336,8 +335,8 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 
     storage: Optional[Storage] = Field(default=None)
 
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(default=None)
+    secrets: Optional[dict[str, str]] = Field(default=None)
 
 
 class ServiceType(str, Enum):
@@ -412,7 +411,7 @@ class ServiceConfig(BaseModel):
     platform: Optional[str] = Field(
         default=None, description="Set platform for Scheduled Job (e.g. 'x86_64' or 'arm64')."
     )
-    sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
+    sidecars: Optional[dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
     cpu: int = Field(
         description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
@@ -436,16 +435,16 @@ class ServiceConfig(BaseModel):
         default=True,
     )
     storage: Storage = Field(default_factory=Storage)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the main application container.",
         default=None,
     )
-    secrets: Optional[Dict[str, str]] = Field(
+    secrets: Optional[dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the main application container.",
         default=None,
     )
     # Environment overrides can override almost the full config
-    environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
+    environments: Optional[dict[str, ServiceConfigEnvironmentOverride]] = Field(
         description="Allows you to override most service config properties for specific environments.",
         default=None,
     )
