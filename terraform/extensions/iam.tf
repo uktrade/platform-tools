@@ -709,12 +709,6 @@ data "aws_iam_policy_document" "eventbrdige_scheduler_access" {
   }
 }
 
-resource "aws_iam_role_policy" "eventbrdige_scheduler_access" {
-  name   = "eventbrdige-scheduler-access"
-  role   = aws_iam_role.codebase_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.eventbrdige_scheduler_access.json
-}
-
 resource "aws_iam_role_policy" "ec2_access" {
   name   = "ec2-access"
   role   = aws_iam_role.codebase_pipeline_deploy.name
