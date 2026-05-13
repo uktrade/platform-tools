@@ -665,7 +665,8 @@ data "aws_iam_policy_document" "step_functions_access" {
     actions = [
       "states:CreateStateMachine",
       "states:ValidateStateMachineDefinition",
-      "states:TagResource"
+      "states:TagResource",
+      "states:DescribeStateMachine"
     ]
     resources = [
       "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.args.application}-${var.environment}-*"
@@ -732,6 +733,7 @@ data "aws_iam_policy_document" "ec2_access" {
     actions = [
       "ec2:DescribeVpcs",
       "ec2:DescribeSecurityGroups",
+      "ec2:DescribeSecurityGroupRules",
       "ec2:DescribeSubnets",
       "ec2:CreateSecurityGroup",
       "ec2:AuthorizeSecurityGroupEgress",
