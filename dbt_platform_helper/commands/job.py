@@ -43,3 +43,29 @@ def run(app: str, env: str, name: str, follow: bool):
         JobManager(job_runner=job_runner).start_execution(app, env, name, follow)
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
+        
+@job.command()
+@click.option("--app", "-a", help="Application name", required=True)
+@click.option("--env", "-e", help="Environment name", required=True)
+@click.option("--name", "-n", help="Name of the scheduled job", required=True)
+def ls(app: str, env: str, name: str):
+    """Lists deployed scheduled jobs."""
+    io = ClickIOProvider()
+
+    try:
+        application = load_application(app=app, env=env)
+
+        try:
+            sfn_client = application.environments[env].session.client("stepfunctions")
+            account_id = application.environments[env].account_id
+        except KeyError:
+            raise ApplicationEnvironmentNotFoundException(app, env)
+
+        job_runner: StepFunctions = StepFunctions(sfn_client, application.name, env, account_id)
+
+        jobs = JobManager(job_runner=job_runner).list_jobs(app, env, name)
+        
+        io.info("\n".join(jobs))
+        
+    except PlatformException as err:
+        io.abort_with_error(str(err))
