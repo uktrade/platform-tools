@@ -1,0 +1,27 @@
+##### RDS postgres example:
+
+my-rds-db:
+  type: postgres
+  version: 14.4
+  deletion_policy: "Retain"
+
+  environments:
+    default:
+      plan: small-ha
+      version: 15
+      volume_size: 700
+      snapshot_id: test-snapshot-id
+      multi_az: false
+      storage_type: "gp2"
+    dev:
+      deletion_policy: "Delete"
+      deletion_protection: false
+      apply_immediately: true
+  database_copy:
+    - from: prod
+      to: hotfix
+      pipeline: { }
+    - from: prod
+      to: staging
+      pipeline:
+        schedule: "0 0 * * WED"

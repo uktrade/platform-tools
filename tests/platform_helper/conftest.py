@@ -522,6 +522,13 @@ extensions:
         volume_size: 40
         password_special_characters: "-_.,"
         urlencode_password: false
+        external_user_access:
+            user-write-access:
+                vpc_endpoint_id: aos-adfsgshs435
+                account: "123456789012"
+                read: false
+                write: true
+                cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
   test-app-s3-bucket-with-objects:
     type: s3

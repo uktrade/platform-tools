@@ -1,0 +1,51 @@
+my-redis-bad-key:
+  type: redis
+  bad_key:
+
+my-redis-bad-engine-size:
+  type: redis
+  environments:
+    default:
+      engine: 'a-big-engine'
+
+my-redis-bad-plan:
+  type: redis
+  environments:
+    default:
+      plan: enormous
+
+my-redis-too-many-replicas:
+  type: redis
+  environments:
+    default:
+      replicas: 42
+
+my-redis-bad-deletion-policy:
+  type: redis
+  environments:
+    default:
+      deletion_policy: Never
+
+my-redis-apply-immediately-should-be-bool:
+  type: redis
+  environments:
+    default:
+      apply_immediately: "yes"
+
+my-redis-automatic-failover-enabled-should-be-bool:
+  type: redis
+  environments:
+    default:
+      automatic_failover_enabled: "no"
+
+my-redis-instance-should-be-string:
+  type: redis
+  environments:
+    default:
+      instance: 10
+
+my-redis-multi-az-enabled-should-be-bool:
+  type: redis
+  environments:
+    default:
+      multi_az_enabled: "yes"
