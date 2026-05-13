@@ -667,7 +667,8 @@ data "aws_iam_policy_document" "step_functions_access" {
       "states:ValidateStateMachineDefinition",
       "states:TagResource",
       "states:DescribeStateMachine",
-      "states:ListStateMachineVersions"
+      "states:ListStateMachineVersions",
+      "states:ListTagsForResource"
     ]
     resources = [
       "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.args.application}-${var.environment}-*"
