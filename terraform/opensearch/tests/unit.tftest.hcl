@@ -69,6 +69,63 @@ EOT
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.lambda-assume-role-policy
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["sts:AssumeRole"],
+      "Principals": {
+        "Type" : "Service",
+        "Identifiers" : ["lambda.amazonaws.com"]
+      }
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.lambda-execution-policy
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ssm:DeleteParameter",
+        "ssm:PutParameter",
+        "ssm:AddTagsToResource",
+        "kms:Decrypt",
+        "secretsmanager:GetRandomPassword"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
 
 run "test_create_opensearch" {
   command = plan
@@ -515,5 +572,60 @@ run "aws_kms_key_unit_test" {
   assert {
     condition     = aws_iam_role_policy.kms_access_for_conduit_ecs_task.role == "my_name-my_app-my_env-conduitEcsTask"
     error_message = "Should be: 'my_name-my_app-my_env-conduitEcsTask'"
+  }
+}
+
+run "aws_opensearch_external_role_access_read_write_unit_test" {
+  command = plan
+
+  variables {
+    application = "my_app"
+    environment = "my_env"
+    name        = "my_name"
+    vpc_name    = "terraform-tests-vpc"
+
+    config = {
+      engine                      = "2.5"
+      instance                    = "t3.small.search"
+      instances                   = 1
+      volume_size                 = 80
+      enable_ha                   = false
+      password_special_characters = "-_.,()"
+      urlencode_password          = false
+      external_user_access = {
+        test-access = {
+          account           = "012345678912"
+          vpc_endpoint_id   = "aos-something"
+          read              = true,
+          write             = true,
+          cyber_sign_off_by = "test@businessandtrade.gov.uk"
+        }
+      }
+    }
+  }
+
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.opensearch-policy.statement[2].principals :
+      c.identifiers == toset(["arn:aws:iam::012345678912:root"])
+    ])
+    error_message = "Should be: arn:aws:iam::012345678912:root"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.opensearch-policy.statement[2].condition :
+      c.test == "StringEquals"
+    ])
+    error_message = "Should be: StringEquals"
+  }
+
+  assert {
+    condition = anytrue([
+      for c in data.aws_iam_policy_document.opensearch-policy.statement[2].condition :
+      c.variable == "aws:sourceVpce"
+    ])
+    error_message = "Should be: aos-something"
   }
 }

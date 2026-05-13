@@ -1,0 +1,143 @@
+# reuse rds-endpoint for sm
+data "aws_security_group" "rds-endpoint" {
+  name = "${var.vpc_name}-rds-endpoint-sg"
+}
+
+data "aws_iam_policy_document" "lambda-assume-role-policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "lambda-execution-policy" {
+  # checkov:skip=CKV_AWS_108:Permissions required to perform Lambda role
+  # checkov:skip=CKV_AWS_111:Permissions required to perform Lambda role
+  # checkov:skip=CKV_AWS_356:Permissions required to perform Lambda role
+  statement {
+    effect = "Allow"
+    actions = [
+      "ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+      "ec2:DeleteNetworkInterface",
+      "ssm:DeleteParameter",
+      "ssm:PutParameter",
+      "ssm:AddTagsToResource",
+      "kms:Decrypt",
+      "secretsmanager:GetRandomPassword",
+
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+    "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ssm:GetParameter"
+    ]
+    resources = [aws_ssm_parameter.opensearch_endpoint.arn]
+
+  }
+}
+
+resource "aws_iam_role" "lambda-execution-role" {
+  name               = "${local.name}-lambda-role"
+  path               = "/"
+  assume_role_policy = data.aws_iam_policy_document.lambda-assume-role-policy.json
+}
+
+resource "aws_iam_role_policy" "lambda-execution-role-policy" {
+  name   = "${local.name}-execution-policy"
+  role   = aws_iam_role.lambda-execution-role.name
+  policy = data.aws_iam_policy_document.lambda-execution-policy.json
+}
+
+data "aws_security_group" "opensearch-endpoint" {
+  name = local.domain_name
+}
+
+# This file needs to exist, but it's not directly used in the Terraform so...
+# tflint-ignore: terraform_unused_declarations
+data "archive_file" "lambda" {
+  type        = "zip"
+  source_file = "${path.module}/manage_users.py"
+  output_path = "${path.module}/manage_users.zip"
+  depends_on = [
+    aws_iam_role.lambda-execution-role
+  ]
+}
+
+resource "aws_lambda_function" "lambda" {
+  # checkov:skip=CKV_AWS_272:Code signing is not currently in use
+  # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
+  filename                       = "${path.module}/manage_users.zip"
+  function_name                  = "${local.name}-opensearch-create-users"
+  role                           = aws_iam_role.lambda-execution-role.arn
+  handler                        = "manage_users.handler"
+  runtime                        = "python3.12"
+  memory_size                    = 128
+  timeout                        = 10
+  reserved_concurrent_executions = -1
+
+  source_code_hash = data.archive_file.lambda.output_base64sha256
+
+  vpc_config {
+    security_group_ids = [data.aws_security_group.opensearch-endpoint.id, data.aws_security_group.rds-endpoint.id]
+    subnet_ids         = data.aws_subnets.private-subnets.ids
+  }
+
+  tracing_config {
+    mode = "Active"
+  }
+}
+
+resource "aws_lambda_invocation" "create-users" {
+  function_name = aws_lambda_function.lambda.function_name
+
+  input = jsonencode({
+    AdminUserEndpointParam = local.ssm_parameter_name
+
+    Application       = var.application
+    Environment       = var.environment
+    SecretDescription = "Opensearch endpoint secret for ${local.name}"
+    Users = flatten(concat([
+      {
+        Username = "read",
+        Read     = true,
+        Write    = false
+      },
+      {
+        Username = "write",
+        Read     = true,
+        Write    = true
+      }
+      ],
+      [
+        for k, v in coalesce(var.config.external_user_access, {}) :
+        {
+          Username = k,
+          Read     = v.read,
+          Write    = v.write
+        }
+      ]
+    ))
+  })
+
+  depends_on = [
+    aws_lambda_function.lambda,
+    aws_opensearch_domain.this,
+  ]
+}
