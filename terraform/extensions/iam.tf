@@ -740,6 +740,7 @@ data "aws_iam_policy_document" "ec2_access" {
       "ec2:DescribeSubnets",
       "ec2:CreateSecurityGroup",
       "ec2:AuthorizeSecurityGroupEgress",
+      "ec2:RevokeSecurityGroupEgress",
       "ec2:CreateTags"
     ]
     resources = [
