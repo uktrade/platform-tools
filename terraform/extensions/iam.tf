@@ -696,6 +696,7 @@ data "aws_iam_policy_document" "eventbrdige_scheduler_access" {
     effect = "Allow"
     actions = [
       "scheduler:CreateSchedule",
+      "scheduler:GetSchedule",
       "scheduler:TagResource"
     ]
     resources = [
