@@ -3,6 +3,7 @@ import click
 from dbt_platform_helper.domain.job import JobManager
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.providers.step_functions import StepFunctions
 from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
@@ -57,13 +58,15 @@ def ls(app: str, env: str):
 
         try:
             sfn_client = application.environments[env].session.client("stepfunctions")
+            ssm_client = application.environments[env].session.client("ssm")
             account_id = application.environments[env].account_id
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
 
-        job_runner: StepFunctions = StepFunctions(sfn_client, application.name, env, account_id)
+        job_runner = StepFunctions(sfn_client, application.name, env, account_id)
+        service_repository = ServiceRepository(ssm_client)
 
-        jobs = JobManager(job_runner=job_runner).list_jobs(app, env)
+        jobs = JobManager(job_runner=job_runner, service_repository=service_repository).list_jobs(app, env)
 
         io.info("\n".join(jobs))
 
