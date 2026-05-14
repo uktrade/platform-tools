@@ -56,8 +56,9 @@ class JobManager:
     def list_jobs(self, app: str, env: str):
         jobs = [job.name for job in self.service_repository.list_jobs(app, env)]
         if jobs:
+            jobs_list = "\n".join(jobs)
             self.io.info(
-                f"Scheduled Jobs currently deployed for {app} in the {env} environment:\n{'\n'.join(jobs)}"
+                f"Scheduled Jobs currently deployed for {app} in the {env} environment:\n{jobs_list}"
             )
         else:
             self.io.info(
