@@ -2,7 +2,7 @@ import time
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
-from dbt_platform_helper.providers.parameter_store import ParameterStore
+from dbt_platform_helper.providers.service import ServiceRepository
 
 
 class ScheduledJobExecutionFailedException(PlatformException):
@@ -14,9 +14,9 @@ class JobManager:
     JOB_POLL_SECONDS = 5
     JOB_FINAL_STATUSES = {"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"}
 
-    def __init__(self, job_runner, parameter_store: ParameterStore, io: ClickIOProvider = ClickIOProvider()):
+    def __init__(self, job_runner, service_repository: ServiceRepository = None, io: ClickIOProvider = ClickIOProvider()):
         self.job_runner = job_runner
-        self.parameter_store = parameter_store
+        self.service_repository = service_repository
         self.io = io
 
     def start_execution(self, app: str, env: str, name: str, follow: bool):
@@ -50,10 +50,10 @@ class JobManager:
             
     def list_jobs(self, app: str, env: str):
         # /platform/applications/demodjango/environments/ben/services/api
-        service_parameter_names = self.parameter_store.list_parameters_by_name_starts_with(f"/platform/applications/{app}/environments/{env}/services/")
+        service_parameter_names = self.service_repository.list_parameters_by_name_starts_with(f"/platform/applications/{app}/environments/{env}/services/")
         jobs = []
         for param_name in service_parameter_names:
-            service = self.parameter_store.get_ssm_parameter_by_name(param_name)
+            service = self.service_repository.get_ssm_parameter_by_name(param_name)
             if service.value.get("type") == "Scheduled Job":
                 jobs.append(service.value.get("name"))
         if jobs:
