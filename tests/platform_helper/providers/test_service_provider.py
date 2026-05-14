@@ -1,6 +1,7 @@
 import json
 
 import boto3
+import pytest
 from moto import mock_aws
 
 from dbt_platform_helper.entities.service import ServiceType
@@ -42,18 +43,26 @@ def test_list_services():
     assert Service("backend-1", "Backend Service") in services
 
 
+@pytest.mark.parametrize(
+    "type",
+    [
+        "Scheduled Job",
+        "Load Balanced Web Service",
+        "Backend Service",
+    ],
+)
 @mock_aws
-def test_list_services_by_type():
+def test_list_services_by_type(type):
     client = boto3.client("ssm", region_name="eu-west-2")
 
     for param in MOCK_SERVICE_PARAMS:
         client.put_parameter(**param)
 
     service_repository = ServiceRepository(ParameterStore(client, True))
-    service_type = ServiceType("Scheduled Job")
+    service_type = ServiceType(type)
     services = service_repository.list_services("my-app", "my-env", service_type)
     assert len(services) == 1
-    assert Service("job-1", "Scheduled Job") in services
+    assert services[0].kind == type
 
 
 @mock_aws
