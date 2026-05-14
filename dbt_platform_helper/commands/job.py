@@ -58,16 +58,14 @@ def ls(app: str, env: str):
         application = load_application(app=app, env=env)
 
         try:
-            sfn_client = application.environments[env].session.client("stepfunctions")
             ssm_client = application.environments[env].session.client("ssm")
             account_id = application.environments[env].account_id
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
 
-        job_runner = StepFunctions(sfn_client, application.name, env, account_id)
         service_repository = ServiceRepository(ParameterStore(ssm_client, True))
 
-        JobManager(job_runner=job_runner, service_repository=service_repository, io=io).list_jobs(
+        JobManager(job_runner=None, service_repository=service_repository, io=io).list_jobs(
             app, env
         )
 
