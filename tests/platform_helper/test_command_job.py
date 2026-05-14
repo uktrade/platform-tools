@@ -113,14 +113,9 @@ def test_job_list(
     mock_job_manager_instance.list_jobs.assert_called_once_with("test-application", "development")
 
 
-@patch("dbt_platform_helper.commands.job.JobManager")
-@patch("dbt_platform_helper.commands.job.StepFunctions")
 @patch("dbt_platform_helper.commands.job.load_application")
-@patch("dbt_platform_helper.commands.job.ServiceRepository")
 @patch("dbt_platform_helper.commands.job.ClickIOProvider")
-def test_job_list_raises_given_wrong_environment(
-    mock_io, mock_service_repository, mock_application, mock_step_functions, mock_job_manager_object
-):
+def test_job_list_raises_given_wrong_environment(mock_io, mock_application):
     """Test that given an app, env and job name strings, the job run command
     calls run with app, env and job name."""
     mock_application_instance = Mock()
