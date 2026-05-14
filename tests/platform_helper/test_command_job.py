@@ -1,3 +1,4 @@
+from unittest.mock import Mock
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -110,3 +111,31 @@ def test_job_list(
 
     mock_application.assert_called_once_with(app="test-application", env="development")
     mock_job_manager_instance.list_jobs.assert_called_once_with("test-application", "development")
+
+
+@patch("dbt_platform_helper.commands.job.JobManager")
+@patch("dbt_platform_helper.commands.job.StepFunctions")
+@patch("dbt_platform_helper.commands.job.load_application")
+@patch("dbt_platform_helper.commands.job.ServiceRepository")
+@patch("dbt_platform_helper.commands.job.ClickIOProvider")
+def test_job_list_raises_given_wrong_environment(
+    mock_io, mock_service_repository, mock_application, mock_step_functions, mock_job_manager_object
+):
+    """Test that given an app, env and job name strings, the job run command
+    calls run with app, env and job name."""
+    mock_application_instance = Mock()
+    mock_application_instance.environments = {"development": {}}
+
+    mock_application.return_value = mock_application_instance
+
+    mock_io_instance = Mock()
+    mock_io.return_value = mock_io_instance
+
+    result = CliRunner().invoke(
+        ls,
+        ["--app", "test-application", "--env", "wrong-environment"],
+    )
+
+    mock_io_instance.abort_with_error.assert_called_with(
+        'The environment "wrong-environment" either does not exist or has not been deployed for the application test-application.'
+    )
