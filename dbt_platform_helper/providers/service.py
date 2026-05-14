@@ -18,7 +18,7 @@ class ServiceRepository:
         for param in service_parameters:
             value = json.loads(param.value)
             if type:
-                if value.get("type") == "Scheduled Job":
+                if value.get("type") == type:
                     services.append(Service(value.get("name"), type))
             else:
                 services.append(Service(value.get("name"), value.get("type")))
