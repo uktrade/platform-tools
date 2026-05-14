@@ -70,6 +70,69 @@ EOT
 }
 
 override_data {
+  target = data.aws_iam_policy_document.opensearch-policy
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": ["es:*"],
+      "Principals": {
+        "Type" : "*",
+        "Identifiers" : "*"
+      },
+      "Condition": [
+        {
+          "Test": "Bool",
+          "Variable": "aws:SecureTransport",
+          "Values": ["false"]
+        }
+      ],
+      "Resources" : [
+            "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["es:*"],
+      "Principals": {
+        "Type" : "AWS",
+        "Identifiers" : "*"
+      },
+      "Resources" : [
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["es:*"],
+      "Principals": {
+        "Type" : "AWS",
+        "Identifiers" : "arn:aws:iam::012345678912:root"
+      },
+      "Condition": [
+        {
+          "Test": "StringEquals",
+          "Variable": "aws:sourceVpce",
+          "Values": ["aos-something"]
+        }
+      ],
+      "Resources" : [
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
+      ]
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
   target = data.aws_iam_policy_document.lambda-assume-role-policy
   values = {
     json = <<EOT
