@@ -60,8 +60,8 @@ my-opensearch-bad-user-write:
    schema: "environments.*dev.*external_user_access.*user-write-access.write.*Input should be a valid boolean"
    pydantic: "environments.*dev.*external_user_access.*user-write-access.write.*Input should be a valid boolean"
 my-opensearch-bad-user-cyber: 
-   schema: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must contain a valid DBT email address"
-   pydantic: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must contain a valid DBT email address"
+   schema: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must be a valid DBT email address"
+   pydantic: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must be a valid DBT email address"
 my-opensearch-invalid-plan: 
    schema: "environments.*dev.*plan.*does not match 'invalid'"
    pydantic: "environments.*dev.*plan.*Input should be"
