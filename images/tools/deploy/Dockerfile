@@ -18,9 +18,16 @@ RUN curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terrafor
         mv terraform /usr/local/bin/ && \
         rm -f terraform_install.zip
 
-# Install dbt-platform-helper at PLATFORM_HELPER_VERSION
+## Install dbt-platform-helper at PLATFORM_HELPER_VERSION
+#RUN python3.12 -m ensurepip && \
+#        python3.12 -m pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION && \
+#        python3.12 -m pip install yq
+
+COPY . /tmp/platform-tools
+
 RUN python3.12 -m ensurepip && \
-        python3.12 -m pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION && \
-        python3.12 -m pip install yq
+        python3.12 -m pip install /tmp/platform-tools && \
+        python3.12 -m pip install yq && \
+        rm -rf /tmp/platform-tools
 
 CMD ["/bin/bash"]
