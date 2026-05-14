@@ -506,6 +506,7 @@ data "aws_iam_policy_document" "postgres" {
     ]
 
     resources = flatten([for env in local.environment_config : [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${env.name}-${var.application}-*", # Openserch naming is flipped
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
       ]
@@ -526,9 +527,10 @@ data "aws_iam_policy_document" "postgres" {
       "lambda:TagResource",
       "lambda:PutFunctionConcurrency"
     ]
-    resources = [for env in local.environment_config :
-      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
-    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*",
+      "arn:aws:lambda:${local.account_region}:function:${env.name}-${var.application}-*" # Openserch naming is flipped
+    ]])
   }
 
   statement {

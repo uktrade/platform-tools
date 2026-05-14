@@ -54,13 +54,13 @@ data "aws_iam_policy_document" "lambda-execution-policy" {
 }
 
 resource "aws_iam_role" "lambda-execution-role" {
-  name               = "${local.name}-lambda-role"
+  name               = "${var.environment}-${local.name}-lambda-role"
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.lambda-assume-role-policy.json
 }
 
 resource "aws_iam_role_policy" "lambda-execution-role-policy" {
-  name   = "${local.name}-execution-policy"
+  name   = "${var.environment}-${local.name}-execution-policy"
   role   = aws_iam_role.lambda-execution-role.name
   policy = data.aws_iam_policy_document.lambda-execution-policy.json
 }
@@ -84,7 +84,7 @@ resource "aws_lambda_function" "lambda" {
   # checkov:skip=CKV_AWS_272:Code signing is not currently in use
   # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
   filename                       = "${path.module}/manage_users.zip"
-  function_name                  = "${local.name}-opensearch-create-users"
+  function_name                  = "${var.environment}-${local.name}-opensearch-create-users"
   role                           = aws_iam_role.lambda-execution-role.arn
   handler                        = "manage_users.handler"
   runtime                        = "python3.12"
