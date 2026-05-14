@@ -1,5 +1,4 @@
 import json
-from dataclasses import dataclass
 
 from dbt_platform_helper.entities.service import ServiceType
 from dbt_platform_helper.providers.parameter_store import ParameterStore

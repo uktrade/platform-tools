@@ -54,7 +54,8 @@ def test_list_services_by_type():
     services = service_repository.list_services("my-app", "my-env", service_type)
     assert len(services) == 1
     assert Service("job-1", "Scheduled Job") in services
-    
+
+
 @mock_aws
 def test_list_jobs():
     client = boto3.client("ssm", region_name="eu-west-2")
