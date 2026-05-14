@@ -383,3 +383,33 @@ def test_generate_environment_config_when_old_manifest_not_deleted_does_not_outp
     )
 
     mock_io.info.assert_called_once_with("File created")
+
+
+@freeze_time("2025-01-16 13:00:00")
+def test_generate_service_terraform_config_includes_scheduled_job_variable():
+    mock_file_provider = Mock()
+    template_provider = TerraformManifestProvider(mock_file_provider)
+
+    template_provider.generate_service_config(
+        config_object=mock_file_provider(name="test-service"),
+        environment="dev",
+        platform_helper_version="X.X.X",
+        platform_config={
+            "application": "test-application",
+            "schema_version": 1,
+            "default_versions": {"platform-helper": "X.X.X"},
+            "environments": {
+                "*": {
+                    "accounts": {
+                        "deploy": {"id": "123456789012", "name": "test-account"},
+                        "dns": {"id": "011755346992", "name": "dev"},
+                    }
+                },
+                "env1": {},
+            },
+        },
+    )
+
+    mock_file_provider.mkfile.assert_called_once()
+    json_content = json.loads(mock_file_provider.mkfile.call_args.args[2])
+    assert "scheduled_job_image_tag" in json_content["variable"]

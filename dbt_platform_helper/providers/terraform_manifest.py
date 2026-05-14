@@ -49,6 +49,8 @@ class TerraformManifestProvider:
             f"tfstate/application/{application_name}/services/{environment}/{config_object.name}.tfstate",
         )
 
+        self._add_scheduled_job_variable(terraform)
+
         self._add_service_module(terraform, platform_helper_version, service_module_source_override)
 
         self._add_version_tracker_module(
@@ -291,6 +293,10 @@ class TerraformManifestProvider:
                 "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION}
             },
         }
+
+    @staticmethod
+    def _add_scheduled_job_variable(terraform: dict):
+        terraform["variable"] = {"scheduled_job_image_tag": {"type": "string", "default": None}}
 
     @staticmethod
     def _add_codebase_pipeline_module(
