@@ -3,15 +3,7 @@ from dataclasses import dataclass
 
 from dbt_platform_helper.entities.service import ServiceType
 from dbt_platform_helper.providers.parameter_store import ParameterStore
-
-
-@dataclass
-class Service:
-    name: str
-    type: str
-
-    def __eq__(self, other) -> bool:
-        return self.name == other.name and self.type == other.type
+from dbt_platform_helper.utils.application import Service
 
 
 class ServiceRepository:
