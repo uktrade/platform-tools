@@ -5,7 +5,8 @@ from moto import mock_aws
 
 from dbt_platform_helper.entities.service import ServiceType
 from dbt_platform_helper.providers.parameter_store import ParameterStore
-from dbt_platform_helper.providers.service import Service, ServiceRepository
+from dbt_platform_helper.providers.service import Service
+from dbt_platform_helper.providers.service import ServiceRepository
 
 MOCK_SERVICE_PARAMS = [
     {
@@ -36,10 +37,11 @@ def test_list_services():
     service_repository = ServiceRepository(ParameterStore(client, True))
     services = service_repository.list_services("my-app", "my-env")
     assert len(services) == 3
-    assert Service("job-1","Scheduled Job") in services
-    assert Service("service-1","Load Balanced Web Service") in services
-    assert Service("backend-1","Backend Service") in services
-    
+    assert Service("job-1", "Scheduled Job") in services
+    assert Service("service-1", "Load Balanced Web Service") in services
+    assert Service("backend-1", "Backend Service") in services
+
+
 @mock_aws
 def test_list_services_by_type():
     client = boto3.client("ssm", region_name="eu-west-2")
@@ -51,4 +53,4 @@ def test_list_services_by_type():
     service_type = ServiceType("Scheduled Job")
     services = service_repository.list_services("my-app", "my-env", service_type)
     assert len(services) == 1
-    assert Service("job-1","Scheduled Job") in services
+    assert Service("job-1", "Scheduled Job") in services
