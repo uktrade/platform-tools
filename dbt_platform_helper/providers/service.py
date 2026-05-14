@@ -25,4 +25,4 @@ class ServiceRepository:
         return services
 
     def list_jobs(self, app, env) -> list[Service]:
-        return self.list_services(app, env, ServiceType("Scheduled Job"))
+        return self.list_services(app, env, ServiceType.SCHEDULED_JOB)
