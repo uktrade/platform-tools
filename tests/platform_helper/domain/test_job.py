@@ -55,11 +55,11 @@ def test_follow_execution_polls_until_fails(mock_sleep):
 
 def test_list_jobs():
     mock_io = Mock(spec=ClickIOProvider)
-    mock_sfn = Mock(spec=StepFunctions)
+
     mock_repository = Mock(spec=ServiceRepository)
     mock_repository.list_jobs.return_value = [Service("test-job", "test")]
 
-    manager = JobManager(job_runner=mock_sfn, service_repository=mock_repository, io=mock_io)
+    manager = JobManager(job_runner=None, service_repository=mock_repository, io=mock_io)
 
     manager.list_jobs("test-app", "test-env")
 

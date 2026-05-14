@@ -59,7 +59,6 @@ def ls(app: str, env: str):
 
         try:
             ssm_client = application.environments[env].session.client("ssm")
-            account_id = application.environments[env].account_id
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
 
