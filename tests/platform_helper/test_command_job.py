@@ -97,8 +97,8 @@ def test_job_run_with_optional_follow(
 def test_job_list(
     mock_service_repository, mock_application, mock_step_functions, mock_job_manager_object
 ):
-    """Test that given an app, env and job name strings, the job run command
-    calls run with app, env and job name."""
+    """Test that given an app and env strings, the job ls command calls
+    list_jobs with app and env parameters."""
 
     mock_job_manager_instance = mock_job_manager_object.return_value
 
@@ -116,8 +116,8 @@ def test_job_list(
 @patch("dbt_platform_helper.commands.job.load_application")
 @patch("dbt_platform_helper.commands.job.ClickIOProvider")
 def test_job_list_raises_given_wrong_environment(mock_io, mock_application):
-    """Test that given an app, env and job name strings, the job run command
-    calls run with app, env and job name."""
+    """Test that given an app but the wrong env, an exception message is
+    displayed."""
     mock_application_instance = Mock()
     mock_application_instance.environments = {"development": {}}
 
