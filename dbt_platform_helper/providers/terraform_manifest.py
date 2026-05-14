@@ -98,6 +98,7 @@ class TerraformManifestProvider:
                 "env_config": "${local.env_config}",
                 "platform_extensions": '${local.platform_config["extensions"]}',
                 "custom_iam_policy_json": "${local.custom_iam_policy_json}",
+                "scheduled_job_image_tag": "${var.scheduled_job_image_tag}",
             }
         }
 
