@@ -7,6 +7,7 @@ from freezegun import freeze_time
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
+from dbt_platform_helper.constants import SUPPORTED_GITHUB_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.constants import VERSION_TRACKER_MODULE_PATH
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -63,6 +64,9 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert aws_provider["allowed_account_ids"] == ["1122334455"]
     assert not aws_provider.get("alias")
 
+    github_provider = json_content["provider"]["github"]
+    assert github_provider["app_auth"] == {}
+
     terraform = json_content["terraform"]
     assert terraform["required_version"] == SUPPORTED_TERRAFORM_VERSION
 
@@ -77,6 +81,10 @@ def test_generate_codebase_pipeline_config_creates_file(
     aws_req_provider = terraform["required_providers"]["aws"]
     assert aws_req_provider["source"] == "hashicorp/aws"
     assert aws_req_provider["version"] == SUPPORTED_AWS_PROVIDER_VERSION
+
+    aws_req_provider = terraform["required_providers"]["github"]
+    assert aws_req_provider["source"] == "integrations/github"
+    assert aws_req_provider["version"] == SUPPORTED_GITHUB_PROVIDER_VERSION
 
     codebase_pipelines_module = json_content["module"]["codebase-pipelines"]
     assert (
