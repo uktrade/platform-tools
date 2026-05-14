@@ -35,7 +35,7 @@ class ExternalUserAccessEntry(BaseModel):
     @classmethod
     def valid_cyber_sign_off_by(cls, v: str) -> str:
         if not re.match(r"^[\w.-]+@(businessandtrade\.gov\.uk|digital\.trade\.gov\.uk)$", v):
-            raise ValueError("must contain a valid DBT email address")
+            raise ValueError("must be a valid DBT email address")
         return v
 
 
