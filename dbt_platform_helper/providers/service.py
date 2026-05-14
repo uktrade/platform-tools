@@ -1,0 +1,37 @@
+from dataclasses import dataclass
+import json
+
+from dbt_platform_helper.entities.service import ServiceType
+from dbt_platform_helper.providers.parameter_store import ParameterStore
+
+
+@dataclass
+class Service:
+    name: str
+    type: str
+    
+    def __eq__(self, other) -> bool:
+        return self.name == other.name and self.type == other.type
+        
+
+
+class ServiceRepository:
+    
+    def __init__(self, parameter_store: ParameterStore):
+        self.parameter_store = parameter_store
+        
+    def list_services(self, app, env, type: ServiceType=None):
+        service_parameters = self.parameter_store.get_ssm_parameters_by_path(f"/platform/applications/{app}/environments/{env}/services/")
+        services = []
+        for param in service_parameters:
+            value = json.loads(param.value)
+            print(value)
+            if type:
+                if value.get("type") == "Scheduled Job":
+                    services.append(Service(value.get("name")), type)
+            else:
+                services.append(Service(value.get("name"), value.get("type")))
+        return services
+            
+    def list_jobs(self, app, env):
+        return self.list_services(app, env, "Scheduled Job")
