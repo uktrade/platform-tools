@@ -14,7 +14,12 @@ class JobManager:
     JOB_POLL_SECONDS = 5
     JOB_FINAL_STATUSES = {"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"}
 
-    def __init__(self, job_runner, service_repository: ServiceRepository = None, io: ClickIOProvider = ClickIOProvider()):
+    def __init__(
+        self,
+        job_runner,
+        service_repository: ServiceRepository = None,
+        io: ClickIOProvider = ClickIOProvider(),
+    ):
         self.job_runner = job_runner
         self.service_repository = service_repository
         self.io = io
@@ -47,12 +52,14 @@ class JobManager:
             raise ScheduledJobExecutionFailedException(
                 f"Job {execution_id} finished with status {status}"
             )
-            
+
     def list_jobs(self, app: str, env: str):
         jobs = [job.name for job in self.service_repository.list_jobs(app, env)]
         if jobs:
-            self.io.info(f"Scheduled Jobs currently deployed for {app} in the {env} environment:\n{"\n".join(jobs)}")
+            self.io.info(
+                f"Scheduled Jobs currently deployed for {app} in the {env} environment:\n{'\n'.join(jobs)}"
+            )
         else:
-            self.io.info(f"No Scheduled Jobs currently deployed for {app} in the {env} environment.")
-            
-        
+            self.io.info(
+                f"No Scheduled Jobs currently deployed for {app} in the {env} environment."
+            )
