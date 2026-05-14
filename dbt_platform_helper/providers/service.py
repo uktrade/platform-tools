@@ -10,7 +10,7 @@ class ServiceRepository:
     def __init__(self, parameter_store: ParameterStore):
         self.parameter_store = parameter_store
 
-    def list_services(self, app, env, type: ServiceType = None):
+    def list_services(self, app, env, type: ServiceType = None) -> list[Service]:
         service_parameters = self.parameter_store.get_ssm_parameters_by_path(
             f"/platform/applications/{app}/environments/{env}/services/"
         )
@@ -24,5 +24,5 @@ class ServiceRepository:
                 services.append(Service(value.get("name"), value.get("type")))
         return services
 
-    def list_jobs(self, app, env):
+    def list_jobs(self, app, env) -> list[Service]:
         return self.list_services(app, env, ServiceType("Scheduled Job"))
