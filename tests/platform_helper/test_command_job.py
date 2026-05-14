@@ -2,8 +2,8 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from dbt_platform_helper.commands.job import run
 from dbt_platform_helper.commands.job import ls
+from dbt_platform_helper.commands.job import run
 from dbt_platform_helper.platform_exception import PlatformException
 
 
@@ -87,17 +87,19 @@ def test_job_run_with_optional_follow(
     mock_job_manager_instance.start_execution.assert_called_once_with(
         "test-application", "development", "test-job", True
     )
-    
+
+
 @patch("dbt_platform_helper.commands.job.JobManager")
 @patch("dbt_platform_helper.commands.job.StepFunctions")
 @patch("dbt_platform_helper.commands.job.load_application")
+@patch("dbt_platform_helper.commands.job.ServiceRepository")
 def test_job_list(
-    mock_application, mock_step_functions, mock_job_manager_object
+    mock_service_repository, mock_application, mock_step_functions, mock_job_manager_object
 ):
     """Test that given an app, env and job name strings, the job run command
     calls run with app, env and job name."""
 
-    mock_job_manager_instance = mock_job_manager_object.return_value
+    mock_job_manager_object.return_value
 
     result = CliRunner().invoke(
         ls,
