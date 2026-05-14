@@ -49,13 +49,7 @@ class JobManager:
             )
             
     def list_jobs(self, app: str, env: str):
-        # /platform/applications/demodjango/environments/ben/services/api
-        service_parameter_names = self.service_repository.list_parameters_by_name_starts_with(f"/platform/applications/{app}/environments/{env}/services/")
-        jobs = []
-        for param_name in service_parameter_names:
-            service = self.service_repository.get_ssm_parameter_by_name(param_name)
-            if service.value.get("type") == "Scheduled Job":
-                jobs.append(service.value.get("name"))
+        jobs = [job.name for job in self.service_repository.list_jobs(app, env)]
         if jobs:
             self.io.info(f"Scheduled Jobs currently deployed for {app} in the {env} environment:\n{"\n".join(jobs)}")
         else:
