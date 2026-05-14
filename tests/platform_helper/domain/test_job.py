@@ -66,3 +66,18 @@ def test_list_jobs():
     mock_io.info.assert_called_with(
         f"Scheduled Jobs currently deployed for test-app in the test-env environment:\ntest-job"
     )
+
+
+def test_list_jobs_given_no_jobs():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_jobs.return_value = []
+
+    manager = JobManager(job_runner=None, service_repository=mock_repository, io=mock_io)
+
+    manager.list_jobs("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"No Scheduled Jobs currently deployed for test-app in the test-env environment."
+    )
