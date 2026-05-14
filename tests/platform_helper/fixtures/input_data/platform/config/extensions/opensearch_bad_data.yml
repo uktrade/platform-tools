@@ -110,31 +110,13 @@ my-opensearch-urlencode-password:
     dev:
       urlencode_password: "BAD_DATA"
 
-my-opensearch-bad-user-vpc-endpoint:
+my-opensearch-bad-user-name:
   type: opensearch
   environments:
     dev:
       external_user_access:
-        user-write-access:
-          vpc_endpoint_id: invalid
-          account: "123456789012"
-          read: false
-          write: true
-          cyber_sign_off_by: somebody@businessandtrade.gov.uk
-          # account_id: "short"
-          # read: "invalid"
-          # write: "invalud"
-          # cyber_sign_off_by: somebody@invalid.gov.uk
-
-my-opensearch-bad-user-account:
-  type: opensearch
-  environments:
-    dev:
-      external_user_access:
-        user-write-access:
-          vpc_endpoint_id: aos-adfsgshs435
-          account: "short"
-          read: false
+        INVALID@USER:
+          read: true
           write: true
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
@@ -144,8 +126,6 @@ my-opensearch-bad-user-read:
     dev:
       external_user_access:
         user-write-access:
-          vpc_endpoint_id: aos-adfsgshs435
-          account: "123456789012"
           read: invalid
           write: true
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
@@ -156,8 +136,6 @@ my-opensearch-bad-user-write:
     dev:
       external_user_access:
         user-write-access:
-          vpc_endpoint_id: aos-adfsgshs435
-          account: "123456789012"
           read: false
           write: invalid
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
@@ -168,8 +146,13 @@ my-opensearch-bad-user-cyber:
     dev:
       external_user_access:
         user-write-access:
-          vpc_endpoint_id: aos-adfsgshs435
-          account: "123456789012"
           read: false
           write: true
           cyber_sign_off_by: somebody@invalid.gov.uk
+
+my-opensearch-invalid-plan:
+  type: opensearch
+  environments:
+    dev:
+      plan: invalid
+      

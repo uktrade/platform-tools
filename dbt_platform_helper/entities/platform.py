@@ -23,30 +23,13 @@ OPENSEARCH_MAX_VOLUME_SIZE: dict[str, int] = {
     "x-large": 1500,
     "x-large-ha": 1500,
 }
-
 OPENSEARCH_MIN_VOLUME_SIZE = 10
 
 
 class ExternalUserAccessEntry(BaseModel):
-    account: str
-    vpc_endpoint_id: str
     read: bool
     write: bool
     cyber_sign_off_by: str
-
-    @field_validator("account")
-    @classmethod
-    def valid_account_number(cls, v: str) -> str:
-        if not re.match(r"^\d{12}$", v):
-            raise ValueError("must be a valid AWS 12 Digit Account Number")
-        return v
-
-    @field_validator("vpc_endpoint_id")
-    @classmethod
-    def valid_vpc_endpoint_id(cls, v: str) -> str:
-        if not re.match(r"^aos-[a-zA-Z0-9]*", v):
-            raise ValueError("must be a valid Opensearch VPC Endpoint ID")
-        return v
 
     @field_validator("cyber_sign_off_by")
     @classmethod
@@ -72,17 +55,6 @@ class ExternalUserAccess(BaseModel):
                     "only alphanumeric, hyphen, underscore allowed"
                 )
         return v
-
-
-def external_user_access_validator(raw: dict) -> dict:
-    from pydantic import ValidationError
-
-    try:
-        ExternalUserAccess(entries=raw)
-    except ValidationError as e:
-        raise SchemaError(str(e))
-
-    return raw
 
 
 class OpenSearch(BaseModel):
@@ -144,6 +116,7 @@ class OpensearchExtension(BaseModel):
         return self
 
 
+# Factories
 class OpensearchExtensionSchema:
     """Temp class to integrate pydantic into platform config."""
 
@@ -160,7 +133,15 @@ class OpensearchExtensionSchema:
         return self.validate(raw)
 
 
-# Configfactory
+def external_user_access_validator(raw: dict) -> dict:
+    from pydantic import ValidationError
+
+    try:
+        ExternalUserAccess(entries=raw)
+    except ValidationError as e:
+        raise SchemaError(str(e))
+
+    return raw
 
 
 def validate_extension_fn(extension):

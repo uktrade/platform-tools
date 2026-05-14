@@ -109,13 +109,9 @@ def test_validate_opensearch_failure():
             "schema": r"environments.*urlencode_password.*should be instance of 'bool'",
             "pydantic": r"environments.*urlencode_password.*Input should be a valid boolean, unable to interpret input",
         },
-        "my-opensearch-bad-user-vpc-endpoint": {
-            "schema": r"environments.*dev.*external_user_access.*user-write-access.vpc_endpoint_id.*must be a valid Opensearch VPC Endpoint ID",
-            "pydantic": r"environments.*dev.*external_user_access.*user-write-access.vpc_endpoint_id.*must be a valid Opensearch VPC Endpoint ID",
-        },
-        "my-opensearch-bad-user-account": {
-            "schema": r"environments.*dev.*external_user_access.*user-write-access.account.*must be a valid AWS 12 Digit Account Number",
-            "pydantic": r"environments.*dev.*external_user_access.*user-write-access.account.*must be a valid AWS 12 Digit Account Number",
+        "my-opensearch-bad-user-name": {
+            "schema": r"environments.*dev.*external_user_access.*Key.*is invalid: must start with lowercase letter,only alphanumeric, hyphen, underscore allowed",
+            "pydantic": r"environments.*dev.*external_user_access.*Key.*is invalid: must start with lowercase letter,only alphanumeric, hyphen, underscore allowed",
         },
         "my-opensearch-bad-user-read": {
             "schema": r"environments.*dev.*external_user_access.*user-write-access.read.*Input should be a valid boolean",
@@ -129,9 +125,12 @@ def test_validate_opensearch_failure():
             "schema": r"environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must contain a valid DBT email address",
             "pydantic": r"environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must contain a valid DBT email address",
         },
+        "my-opensearch-invalid-plan": {
+            "schema": r"environments.*dev.*plan.*does not match 'invalid'",
+            "pydantic": r"environments.*dev.*plan.*Input should be",
+        },
     }
     for mode in modes:
-        print(mode)
         with open(
             Path(INPUT_DATA_DIR / "platform/config/extensions") / "opensearch_bad_data.yml"
         ) as fh:
@@ -140,7 +139,6 @@ def test_validate_opensearch_failure():
             for ext, config in opensearch_exts.items():
                 try:
                     validator = make_validator_fixture("opensearch", mode)
-                    print(config)
                     validator(config)
                 except SchemaError as ex:
                     errors[ext] = ex.code
@@ -154,5 +152,4 @@ def test_validate_opensearch_failure():
             regex: {error[mode]} 
             could not find match in:
             {errors[entry]}
-
             """

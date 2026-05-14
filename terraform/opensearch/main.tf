@@ -158,29 +158,6 @@ data "aws_iam_policy_document" "opensearch-policy" {
       "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*",
     ]
   }
-  dynamic "statement" {
-    for_each = coalesce(var.config.external_user_access, {})
-    content {
-      effect  = "Allow"
-      actions = ["es:*", ]
-      principals {
-        identifiers = ["arn:aws:iam::${statement.value.account}:root"]
-        type        = "AWS"
-      }
-
-
-      condition {
-        test = "StringEquals"
-        values = [
-          statement.value.vpc_endpoint_id
-        ]
-        variable = "aws:sourceVpce"
-      }
-      resources = [
-        "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}",
-      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*"]
-    }
-  }
 }
 
 resource "aws_opensearch_domain" "this" {

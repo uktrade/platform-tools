@@ -106,25 +106,6 @@ override_data {
         "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
         "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
       ]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["es:*"],
-      "Principals": {
-        "Type" : "AWS",
-        "Identifiers" : "arn:aws:iam::012345678912:root"
-      },
-      "Condition": [
-        {
-          "Test": "StringEquals",
-          "Variable": "aws:sourceVpce",
-          "Values": ["aos-something"]
-        }
-      ],
-      "Resources" : [
-        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
-        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
-      ]
     }
   ]
 }
@@ -638,57 +619,3 @@ run "aws_kms_key_unit_test" {
   }
 }
 
-run "aws_opensearch_external_role_access_read_write_unit_test" {
-  command = plan
-
-  variables {
-    application = "my_app"
-    environment = "my_env"
-    name        = "my_name"
-    vpc_name    = "terraform-tests-vpc"
-
-    config = {
-      engine                      = "2.5"
-      instance                    = "t3.small.search"
-      instances                   = 1
-      volume_size                 = 80
-      enable_ha                   = false
-      password_special_characters = "-_.,()"
-      urlencode_password          = false
-      external_user_access = {
-        test-access = {
-          account           = "012345678912"
-          vpc_endpoint_id   = "aos-something"
-          read              = true,
-          write             = true,
-          cyber_sign_off_by = "test@businessandtrade.gov.uk"
-        }
-      }
-    }
-  }
-
-
-  assert {
-    condition = anytrue([
-      for c in data.aws_iam_policy_document.opensearch-policy.statement[2].principals :
-      c.identifiers == toset(["arn:aws:iam::012345678912:root"])
-    ])
-    error_message = "Should be: arn:aws:iam::012345678912:root"
-  }
-
-  assert {
-    condition = anytrue([
-      for c in data.aws_iam_policy_document.opensearch-policy.statement[2].condition :
-      c.test == "StringEquals"
-    ])
-    error_message = "Should be: StringEquals"
-  }
-
-  assert {
-    condition = anytrue([
-      for c in data.aws_iam_policy_document.opensearch-policy.statement[2].condition :
-      c.variable == "aws:sourceVpce"
-    ])
-    error_message = "Should be: aos-something"
-  }
-}

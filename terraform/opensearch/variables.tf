@@ -32,8 +32,6 @@ variable "config" {
     master                            = optional(bool) # Keeping for now to avoid a breaking change. This is deprecated and will need to be removed in a future update.
     # NOTE: allows access to Opensearch from outwith the account
     external_user_access = optional(map(object({
-      account           = string,
-      vpc_endpoint_id   = string,
       read              = bool,
       write             = bool,
       cyber_sign_off_by = string
