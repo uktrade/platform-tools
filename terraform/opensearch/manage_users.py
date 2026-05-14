@@ -170,9 +170,9 @@ def handler(event, context):
 
     for user_config in event["Users"]:
         username = user_config["Username"]
-        secret_prefix = username.replace("-", "_").upper()
-        secret_name = (
-            f"/platform/{application}/{environment}/secrets/{secret_prefix}_OPENSEARCH_ENDPOINT"
+        param_prefix = username.replace("-", "_").upper()
+        ssm_param_name = (
+            f"/platform/{application}/{environment}/secrets/{param_prefix}_OPENSEARCH_ENDPOINT"
         )
         read = user_config["Read"]
         write = user_config["Write"]
@@ -194,5 +194,5 @@ def handler(event, context):
         parsed = urlparse(host)
         user_secret_string = f"https://{username}:{user_password}@{parsed.hostname}"
 
-        print(f"Updating user {username} in ssm {secret_name}")
-        create_or_update_user_secret(ssm, secret_name, user_secret_string, event)
+        print(f"Updating user {username} in ssm {ssm_param_name}")
+        create_or_update_user_secret(ssm, ssm_param_name, user_secret_string, event)
