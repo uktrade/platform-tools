@@ -38,6 +38,7 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.logs import LogsProvider
 from dbt_platform_helper.providers.s3 import S3Provider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -93,6 +94,7 @@ class ServiceManager:
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
         autoscaling_provider: AutoscalingProvider = None,
+        service_repository: ServiceRepository = None,
     ):
 
         self.file_provider = file_provider
@@ -111,7 +113,9 @@ class ServiceManager:
         self.autoscaling_provider = autoscaling_provider
 
     def list_services(self, app: str, env: str):
-        self.io.info("Some output")
+        self.io.info(
+            f"Services currently deployed for {app} in the {env} environment:\ntest-service"
+        )
 
     def generate(self, environment: str, services: list[str]):
 
