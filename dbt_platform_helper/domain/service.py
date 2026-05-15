@@ -111,11 +111,17 @@ class ServiceManager:
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
+        self.service_repository = service_repository
 
     def list_services(self, app: str, env: str):
-        self.io.info(
-            f"Services currently deployed for {app} in the {env} environment:\ntest-service"
-        )
+        services = [services.name for services in self.service_repository.list_services(app, env)]
+        if services:
+            service_list = "\n".join(services)
+            self.io.info(
+                f"Services currently deployed for {app} in the {env} environment:\n{service_list}"
+            )
+        else:
+            self.io.info(f"No Services currently deployed for {app} in the {env} environment.")
 
     def generate(self, environment: str, services: list[str]):
 
