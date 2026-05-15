@@ -1,4 +1,3 @@
-from unittest.mock import Mock
 from unittest.mock import patch
 
 from click.testing import CliRunner
@@ -131,19 +130,13 @@ def test_service_ls(
 def test_service_list_raises_given_wrong_environment(mock_io, mock_application):
     """Test that given an app but the wrong env, an exception message is
     displayed."""
-    mock_application_instance = Mock()
-    mock_application_instance.environments = {"development": {}}
-
-    mock_application.return_value = mock_application_instance
-
-    mock_io_instance = Mock()
-    mock_io.return_value = mock_io_instance
+    mock_application.return_value.environments = {"development": {}}
 
     CliRunner().invoke(
         service,
         ["ls", "--app", "test-application", "--env", "wrong-environment"],
     )
 
-    mock_io_instance.abort_with_error.assert_called_with(
+    mock_io.return_value.abort_with_error.assert_called_with(
         'The environment "wrong-environment" either does not exist or has not been deployed for the application test-application.'
     )
