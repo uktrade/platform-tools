@@ -4,6 +4,7 @@ from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
@@ -76,7 +77,7 @@ def ls(app: str, env: str):
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
 
-        service_repository: ServiceRepository = ServiceRepository(ssm_client)
+        service_repository: ServiceRepository = ServiceRepository(ParameterStore(ssm_client, True))
 
         ServiceManager(
             io=io, ecs_provider=None, service_repository=service_repository

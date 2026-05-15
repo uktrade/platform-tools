@@ -90,15 +90,19 @@ def test_service_exec_fail(mock_io, mock_application, mock_service_manager_objec
 @patch("dbt_platform_helper.commands.service.ServiceManager")
 @patch("dbt_platform_helper.commands.service.load_application")
 @patch("dbt_platform_helper.commands.service.ClickIOProvider")
+@patch("dbt_platform_helper.commands.service.ParameterStore")
 @patch("dbt_platform_helper.commands.service.ServiceRepository")
 def test_service_ls(
-    mock_service_repository, mock_io, mock_application, mock_service_manager_object
+    mock_service_repository, mock_param_store, mock_io, mock_application, mock_service_manager
 ):
-    """Test that given an app, env, the service ls command calls list_services
-    with app and env."""
+    """Test that given an app and env, the ls command constructs the service
+    manager as expected and calls list_services with app and env."""
 
-    mock_service_manager_instance = mock_service_manager_object.return_value
-    mock_service_manager_instance.service_exec.side_effect = PlatformException("Some weird error")
+    mock_service_manager_instance = mock_service_manager.return_value
+    mock_parameter_store_instance = mock_param_store.return_value
+    mock_ssm_client = (
+        mock_application.return_value.environments.__getitem__.return_value.session.client.return_value
+    )
 
     result = CliRunner().invoke(
         service,
@@ -108,6 +112,14 @@ def test_service_ls(
     assert result.exit_code == 0
 
     mock_application.assert_called_once()
+    mock_param_store.assert_called_with(mock_ssm_client, True)
+    mock_service_repository.assert_called_with(mock_parameter_store_instance)
+    mock_service_manager.assert_called_with(
+        io=mock_io.return_value,
+        ecs_provider=None,
+        service_repository=mock_service_repository.return_value,
+    )
+
     mock_service_manager_instance.list_services.assert_called_with(
         "test-application", "development"
     )
