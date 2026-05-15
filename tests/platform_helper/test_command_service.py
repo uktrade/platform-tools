@@ -98,8 +98,6 @@ def test_service_ls(
     """Test that given an app and env, the ls command constructs the service
     manager as expected and calls list_services with app and env."""
 
-    mock_service_manager_instance = mock_service_manager.return_value
-    mock_parameter_store_instance = mock_param_store.return_value
     mock_ssm_client = (
         mock_application.return_value.environments.__getitem__.return_value.session.client.return_value
     )
@@ -113,14 +111,14 @@ def test_service_ls(
 
     mock_application.assert_called_once()
     mock_param_store.assert_called_with(mock_ssm_client, True)
-    mock_service_repository.assert_called_with(mock_parameter_store_instance)
+    mock_service_repository.assert_called_with(mock_param_store.return_value)
     mock_service_manager.assert_called_with(
         io=mock_io.return_value,
         ecs_provider=None,
         service_repository=mock_service_repository.return_value,
     )
 
-    mock_service_manager_instance.list_services.assert_called_with(
+    mock_service_manager.return_value.list_services.assert_called_with(
         "test-application", "development"
     )
 
