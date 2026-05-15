@@ -110,6 +110,10 @@ class ServiceManager:
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
 
+    def list_services(self, app: str, env: str):
+        self.io.info("Some output")
+    
+    
     def generate(self, environment: str, services: list[str]):
 
         config = self.config_provider.get_enriched_config()

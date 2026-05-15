@@ -4,6 +4,7 @@ from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
 )
@@ -58,3 +59,27 @@ def exec(app: str, env: str, name: str, command: str, container: str, task_id: s
         )
     except PlatformException as err:
         ClickIOProvider().abort_with_error(str(err))
+
+
+@service.command()
+@click.option("--app", "-a", help="Application name", required=True)
+@click.option("--env", "-e", help="Environment name", required=True)
+def ls(app: str, env: str):
+    """Lists deployed services for the applicaiton and environment."""
+    io = ClickIOProvider()
+    try:
+        application = load_application(app=app, env=env)
+
+        # TODO This is a workaround until DBTP-2754 is fixed
+        try:
+            ssm_client = application.environments[env].session.client("ssm")
+        except KeyError:
+            raise ApplicationEnvironmentNotFoundException(app, env)
+
+        service_repository: ServiceRepository = ServiceRepository(ssm_client)
+
+        ServiceManager(io=io, ecs_provider=None, service_repository=service_repository).list_services(
+            app, env
+        )
+    except PlatformException as err:
+        io.abort_with_error(str(err))
