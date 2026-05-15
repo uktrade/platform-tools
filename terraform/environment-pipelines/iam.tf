@@ -527,7 +527,8 @@ data "aws_iam_policy_document" "postgres" {
       "lambda:PutFunctionConcurrency"
     ]
     resources = [for env in local.environment_config :
-      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*",
+      "arn:aws:lambda:${local.account_region}:function:${env.name}-${var.application}-*",
     ]
   }
 
@@ -946,7 +947,9 @@ data "aws_iam_policy_document" "iam" {
   statement {
     sid = "AllowUpdatingPostgresLambdaRoleTrustPolicy"
     actions = [
-      "iam:UpdateAssumeRolePolicy"
+      "iam:UpdateAssumeRolePolicy",
+      "iam:GetRolePolicy",
+      "iam:GetRole",
     ]
     resources = [for environment in local.environment_config : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${environment.name}-*-lambda-role"]
   }
