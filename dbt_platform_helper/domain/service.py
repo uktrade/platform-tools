@@ -114,9 +114,13 @@ class ServiceManager:
         self.service_repository = service_repository
 
     def list_services(self, app: str, env: str):
-        services = [services.name for services in self.service_repository.list_services(app, env)]
+        services = self.service_repository.list_services(app, env)
+
         if services:
-            service_list = "\n".join(services)
+            name_width = max(len(service.name) for service in services)
+            service_list = "\n".join(
+                [f"{service.name:<{name_width}}   ({service.kind})" for service in services]
+            )
             self.io.info(
                 f"Services currently deployed for {app} in the {env} environment:\n{service_list}"
             )

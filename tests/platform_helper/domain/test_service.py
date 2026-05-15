@@ -1137,7 +1137,7 @@ def test_list_services():
     mock_io = Mock(spec=ClickIOProvider)
 
     mock_repository = Mock(spec=ServiceRepository)
-    mock_repository.list_services.return_value = [Service("test-service", "test")]
+    mock_repository.list_services.return_value = [Service("test-service", "test-type")]
 
     manager = ServiceManager(
         config_provider=None,
@@ -1152,7 +1152,7 @@ def test_list_services():
     manager.list_services("test-app", "test-env")
 
     mock_io.info.assert_called_with(
-        f"Services currently deployed for test-app in the test-env environment:\ntest-service"
+        f"Services currently deployed for test-app in the test-env environment:\ntest-service   (test-type)"
     )
 
 
