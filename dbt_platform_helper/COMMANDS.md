@@ -42,6 +42,7 @@
         - [platform-helper service exec](#platform-helper-service-exec)
     - [platform-helper job](#platform-helper-job)
         - [platform-helper job run](#platform-helper-job-run)
+        - [platform-helper job ls](#platform-helper-job-ls)
 
 # platform-helper
 
@@ -1049,7 +1050,7 @@ platform-helper service exec --app <application> --env <environment> --name <nam
 ## Usage
 
 ```
-platform-helper job run 
+platform-helper job (run|ls) 
 ```
 
 ## Options
@@ -1059,6 +1060,7 @@ platform-helper job run
 
 ## Commands
 
+- [`ls` ↪](#platform-helper-job-ls)
 - [`run` ↪](#platform-helper-job-run)
 
 # platform-helper job run
@@ -1087,5 +1089,28 @@ platform-helper job run --app <application> --env <environment> --name <name> [-
 - `--follow
 -f <boolean>` _Defaults to False._
   - Wait for the execution to finish and report it's final status
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper job ls
+
+[↩ Parent](#platform-helper-job)
+
+    Lists deployed scheduled jobs.
+
+## Usage
+
+```
+platform-helper job ls --app <application> --env <environment> 
+```
+
+## Options
+
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

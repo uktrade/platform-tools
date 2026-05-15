@@ -2585,6 +2585,7 @@ run "test_disable_codepipeline_triggers" {
   command = plan
 
   variables {
+    deploy_repository  = "uktrade/application-deploy"
     use_github_actions = true
   }
 

@@ -37,6 +37,9 @@ class Service:
     name: str
     kind: str
 
+    def __eq__(self, other) -> bool:
+        return self.name == other.name and self.kind == other.kind
+
 
 @dataclass
 class Application:
