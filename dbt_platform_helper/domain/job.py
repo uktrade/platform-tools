@@ -2,6 +2,7 @@ import time
 
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.service import ServiceRepository
 
 
 class ScheduledJobExecutionFailedException(PlatformException):
@@ -13,8 +14,14 @@ class JobManager:
     JOB_POLL_SECONDS = 5
     JOB_FINAL_STATUSES = {"SUCCEEDED", "FAILED", "TIMED_OUT", "ABORTED"}
 
-    def __init__(self, job_runner, io: ClickIOProvider = ClickIOProvider()):
+    def __init__(
+        self,
+        job_runner,
+        service_repository: ServiceRepository = None,
+        io: ClickIOProvider = ClickIOProvider(),
+    ):
         self.job_runner = job_runner
+        self.service_repository = service_repository
         self.io = io
 
     def start_execution(self, app: str, env: str, name: str, follow: bool):
@@ -44,4 +51,16 @@ class JobManager:
         else:
             raise ScheduledJobExecutionFailedException(
                 f"Job {execution_id} finished with status {status}"
+            )
+
+    def list_jobs(self, app: str, env: str):
+        jobs = [job.name for job in self.service_repository.list_jobs(app, env)]
+        if jobs:
+            jobs_list = "\n".join(jobs)
+            self.io.info(
+                f"Scheduled Jobs currently deployed for {app} in the {env} environment:\n{jobs_list}"
+            )
+        else:
+            self.io.info(
+                f"No Scheduled Jobs currently deployed for {app} in the {env} environment."
             )
