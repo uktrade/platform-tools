@@ -78,8 +78,8 @@ def ls(app: str, env: str):
 
         service_repository: ServiceRepository = ServiceRepository(ssm_client)
 
-        ServiceManager(io=io, ecs_provider=None, service_repository=service_repository).list_services(
-            app, env
-        )
+        ServiceManager(
+            io=io, ecs_provider=None, service_repository=service_repository
+        ).list_services(app, env)
     except PlatformException as err:
         io.abort_with_error(str(err))

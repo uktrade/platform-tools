@@ -91,11 +91,11 @@ def test_service_exec_fail(mock_io, mock_application, mock_service_manager_objec
 @patch("dbt_platform_helper.commands.service.load_application")
 @patch("dbt_platform_helper.commands.service.ClickIOProvider")
 @patch("dbt_platform_helper.commands.service.ServiceRepository")
-def test_service_exec_fail(
+def test_service_ls(
     mock_service_repository, mock_io, mock_application, mock_service_manager_object
 ):
-    """Test that given an app, env and service name strings, the service exec
-    command calls exec with app, env and service name."""
+    """Test that given an app, env, the service ls command calls list_services
+    with app and env."""
 
     mock_service_manager_instance = mock_service_manager_object.return_value
     mock_service_manager_instance.service_exec.side_effect = PlatformException("Some weird error")
