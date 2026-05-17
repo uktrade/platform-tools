@@ -13,13 +13,7 @@ def version():
 
 
 @version.command(help="Print the version of platform-tools required by the current project")
-@click.option(
-    "--pipeline",
-    required=False,
-    type=str,
-    help="Take into account platform-tools version overrides in the specified pipeline",
-)
-def get_platform_helper_for_project(pipeline):
+def get_platform_helper_for_project():
     """
     Deprecated: Required in pipelines for projects running platform-helper < 14.0.0.
 

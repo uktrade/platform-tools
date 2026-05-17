@@ -975,13 +975,11 @@ platform-helper version get-platform-helper-for-project
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
+platform-helper version get-platform-helper-for-project 
 ```
 
 ## Options
 
-- `--pipeline <text>`
-  - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
