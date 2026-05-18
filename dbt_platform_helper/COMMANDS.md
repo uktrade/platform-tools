@@ -35,8 +35,6 @@
         - [platform-helper database dump](#platform-helper-database-dump)
         - [platform-helper database load](#platform-helper-database-load)
         - [platform-helper database copy](#platform-helper-database-copy)
-    - [platform-helper version](#platform-helper-version)
-        - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
     - [platform-helper service](#platform-helper-service)
         - [platform-helper service exec](#platform-helper-service-exec)
     - [platform-helper job](#platform-helper-job)
@@ -74,7 +72,6 @@ platform-helper <command> [--version]
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
 - [`service` ↪](#platform-helper-service)
-- [`version` ↪](#platform-helper-version)
 
 # platform-helper application
 
@@ -917,47 +914,6 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
   - The maintenance page you wish to put up.
 - `--no-maintenance-page <boolean>` _Defaults to False._
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper version
-
-[↩ Parent](#platform-helper)
-
-    Contains subcommands for getting version information about the current
-    project.
-
-## Usage
-
-```
-platform-helper version get-platform-helper-for-project 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`get-platform-helper-for-project` ↪](#platform-helper-version-get-platform-helper-for-project)
-
-# platform-helper version get-platform-helper-for-project
-
-[↩ Parent](#platform-helper-version)
-
-    Print the version of platform-tools required by the current project
-
-## Usage
-
-```
-platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
-```
-
-## Options
-
-- `--pipeline <text>`
-  - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
