@@ -138,7 +138,7 @@ variables {
     }
 
     image = {
-      location = "public.ecr.aws/example/app:latest"
+      location = "public.ecr.aws/example/app"
       port     = 8080
     }
 
@@ -427,7 +427,7 @@ run "web_service_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -488,7 +488,7 @@ run "backend_service_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -549,7 +549,7 @@ run "backend_service_no_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
       }
 
       cpu    = 256
@@ -624,7 +624,7 @@ run "service_scheduled_auto_scaling" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -714,7 +714,7 @@ run "test_scheduling_module_is_created_for_scheduled_job" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -761,7 +761,7 @@ run "test_conditionally_creates_resources_for_a_scheduled_job" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -864,7 +864,7 @@ run "test_ecs_task_default_platform_is_x86_64" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
