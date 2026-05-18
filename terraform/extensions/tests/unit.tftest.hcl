@@ -263,7 +263,7 @@ override_data {
 }
 
 override_data {
-  target = data.aws_iam_policy_document.eventbrdige_scheduler_access
+  target = data.aws_iam_policy_document.eventbridge_scheduler_access
   values = {
     json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }

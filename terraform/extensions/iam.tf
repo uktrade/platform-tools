@@ -694,13 +694,13 @@ data "aws_iam_policy_document" "step_functions_access" {
   }
 }
 
-resource "aws_iam_role_policy" "eventbrdige_scheduler_access" {
-  name   = "eventbrdige-scheduler-access"
+resource "aws_iam_role_policy" "eventbridge_scheduler_access" {
+  name   = "eventbridge-scheduler-access"
   role   = aws_iam_role.codebase_pipeline_deploy.name
-  policy = data.aws_iam_policy_document.eventbrdige_scheduler_access.json
+  policy = data.aws_iam_policy_document.eventbridge_scheduler_access.json
 }
 
-data "aws_iam_policy_document" "eventbrdige_scheduler_access" {
+data "aws_iam_policy_document" "eventbridge_scheduler_access" {
   statement {
     effect = "Allow"
     actions = [
