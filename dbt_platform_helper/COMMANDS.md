@@ -27,7 +27,6 @@
     - [platform-helper secrets](#platform-helper-secrets)
         - [platform-helper secrets create](#platform-helper-secrets-create)
         - [platform-helper secrets copy](#platform-helper-secrets-copy)
-        - [platform-helper secrets list](#platform-helper-secrets-list)
     - [platform-helper notify](#platform-helper-notify)
         - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
         - [platform-helper notify post-message](#platform-helper-notify-post-message)
@@ -614,7 +613,7 @@ This will load it's own platform-config.<workspace>.yml file
 ## Usage
 
 ```
-platform-helper secrets (create|copy|list) 
+platform-helper secrets (create|copy) 
 ```
 
 ## Options
@@ -626,7 +625,6 @@ platform-helper secrets (create|copy|list)
 
 - [`copy` ↪](#platform-helper-secrets-copy)
 - [`create` ↪](#platform-helper-secrets-create)
-- [`list` ↪](#platform-helper-secrets-list)
 
 # platform-helper secrets create
 
@@ -672,28 +670,6 @@ platform-helper secrets copy --app <application> --source <source> --target <tar
   - Source environment where to copy secrets from.
 - `--target <text>`
   - Destination environment where to copy secrets to.
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper secrets list
-
-[↩ Parent](#platform-helper-secrets)
-
-    [DELETED] List secret names and values for an environment.
-
-## Usage
-
-```
-platform-helper secrets list <application> <environment> 
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
-
-## Options
-
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
