@@ -913,7 +913,7 @@ run "test_scheduled_job_requires_image_tag_variable" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
