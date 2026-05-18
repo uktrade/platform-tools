@@ -20,12 +20,6 @@ RUN curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terrafor
 
 # Install dbt-platform-helper at PLATFORM_HELPER_VERSION
 RUN python3.12 -m ensurepip && \
-       python3.12 -m pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION && \
-       python3.12 -m pip install yq
-
-COPY . /tmp/platform-tools
-
-RUN python3.12 -m ensurepip && \
         python3.12 -m pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION && \
         python3.12 -m pip install yq
 
