@@ -46,9 +46,12 @@ def get_or_create_roles(host, admin_user):
                     "index_patterns": ["*"],
                     "allowed_actions": [
                         "write",
+                        "read",  # Required: For bulk checks/updates
                         "create_index",
                         "manage",
                         "indices:data/write/*",
+                        "indices:admin/exists",
+                        "indices:admin/get",  # Allows check if index exists
                         "indices:admin/create",
                     ],
                 }
