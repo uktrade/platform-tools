@@ -3,7 +3,6 @@ import stat
 import subprocess
 from collections.abc import Callable
 from pathlib import Path
-from typing import Tuple
 
 import requests
 import yaml
@@ -223,7 +222,7 @@ class Codebase:
                 "You have provided more than one of the --tag, --branch and --commit options but these are mutually exclusive. Please provide only one of these options."
             )
 
-    def _populate_application_values(self, app: str, env: str) -> Tuple[Application, Session]:
+    def _populate_application_values(self, app: str, env: str) -> tuple[Application, Session]:
         session = self.get_aws_session_or_abort()
         application = self.load_application(app, default_session=session)
         if not application.environments.get(env):
