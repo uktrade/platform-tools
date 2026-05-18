@@ -385,7 +385,6 @@ def test_generate_environment_config_when_old_manifest_not_deleted_does_not_outp
     mock_io.info.assert_called_once_with("File created")
 
 
-@freeze_time("2025-01-16 13:00:00")
 def test_generate_service_terraform_config_includes_scheduled_job_variable():
     mock_file_provider = Mock()
     template_provider = TerraformManifestProvider(mock_file_provider)
