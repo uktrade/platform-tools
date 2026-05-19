@@ -90,13 +90,14 @@ def create_or_update_user(host, admin_user, new_user, roles):
     username = new_user["username"]
     path = "/internalusers/" + username
     user_response = request("PUT", host, path, admin_user, body)
-    if user_response.status in [200, 201]:
-        for role in roles:
+
+    for role in roles:
+        try:
             map_response = request(
                 "PUT", host, f"rolesmapping/{role}", admin_user, {"users": [username]}
             )
-            if map_response.status != 200:
-                print(f"Failed to create user mapping for {username} to role {role}")
+        except Exception:
+            print(f"Failed to create user mapping for {username} to role {role}")
     return user_response
 
 
