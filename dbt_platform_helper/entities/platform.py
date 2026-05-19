@@ -75,6 +75,20 @@ class OpenSearch(BaseModel):
     urlencode_password: Optional[bool] = None
     external_user_access: Optional[dict[str, ExternalUserAccessEntry]] = None
 
+    @field_validator("external_user_access")
+    @classmethod
+    def validate_keys(cls, v: dict) -> dict:
+        import re
+
+        for key in v:
+
+            if not re.match(r"^([a-z][a-zA-Z0-9_-]*)", key):
+                raise ValueError(
+                    f"Key '{key}' is invalid: must start with lowercase letter,"
+                    "only alphanumeric, hyphen, underscore allowed"
+                )
+        return v
+
 
 class OpensearchExtension(BaseModel):
 
@@ -133,6 +147,7 @@ class OpensearchExtensionSchema:
         return self.validate(raw)
 
 
+# for schema integration for now, when fully pydantic not required
 def external_user_access_validator(raw: dict) -> dict:
     from pydantic import ValidationError
 
