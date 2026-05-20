@@ -20,8 +20,11 @@ from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECSExecException
 from dbt_platform_helper.providers.ecs import NoClusterException
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.application import Service
 
 
 @pytest.fixture
@@ -1128,3 +1131,49 @@ def test_scheduled_jobs_converts_timeout_to_seconds(
         service_config = yaml.safe_load(f)
 
     assert service_config == expected_service_config
+
+
+def test_list_services():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_services.return_value = [Service("test-service", "test-type")]
+
+    manager = ServiceManager(
+        config_provider=None,
+        io=mock_io,
+        file_provider=None,
+        manifest_provider=None,
+        load_application=None,
+        installed_version_provider=None,
+        service_repository=mock_repository,
+    )
+
+    manager.list_services("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"Services currently deployed for test-app in the test-env environment:\ntest-service   (test-type)"
+    )
+
+
+def test_list_services_given_no_services():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_services.return_value = []
+
+    manager = ServiceManager(
+        config_provider=None,
+        io=mock_io,
+        file_provider=None,
+        manifest_provider=None,
+        load_application=None,
+        installed_version_provider=None,
+        service_repository=mock_repository,
+    )
+
+    manager.list_services("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"No Services currently deployed for test-app in the test-env environment."
+    )
