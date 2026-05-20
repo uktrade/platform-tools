@@ -1,6 +1,9 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
 
+# x-release-please-start-version
 ARG PLATFORM_HELPER_VERSION="15.28.0"
+# x-release-please-end
+
 ARG TERRAFORM_VERSION="1.13.0"
 ARG PYTHON_VERSION="3.12"
 
