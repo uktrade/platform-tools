@@ -40,6 +40,12 @@
       }
     }
   },
+  "variable": {
+    "scheduled_job_image_tag": {
+      "type": "string",
+      "default": null
+    }
+  },
   "module": {
     "ecs-service": {
       "source": "../../../../../platform-tools/terraform/ecs-service",
@@ -49,7 +55,8 @@
       "service_config": "${local.service_config}",
       "env_config": "${local.env_config}",
       "platform_extensions": "${local.platform_config[\"extensions\"]}",
-      "custom_iam_policy_json": "${local.custom_iam_policy_json}"
+      "custom_iam_policy_json": "${local.custom_iam_policy_json}",
+      "scheduled_job_image_tag": "${var.scheduled_job_image_tag}"
     },
     "version-tracker": {
       "source": "../../../../../platform-tools/terraform/version-tracker",

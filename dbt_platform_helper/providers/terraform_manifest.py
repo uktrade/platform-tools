@@ -49,6 +49,8 @@ class TerraformManifestProvider:
             f"tfstate/application/{application_name}/services/{environment}/{config_object.name}.tfstate",
         )
 
+        self._add_scheduled_job_variable(terraform)
+
         self._add_service_module(terraform, platform_helper_version, service_module_source_override)
 
         self._add_version_tracker_module(
@@ -96,6 +98,7 @@ class TerraformManifestProvider:
                 "env_config": "${local.env_config}",
                 "platform_extensions": '${local.platform_config["extensions"]}',
                 "custom_iam_policy_json": "${local.custom_iam_policy_json}",
+                "scheduled_job_image_tag": "${var.scheduled_job_image_tag}",
             }
         }
 
@@ -290,6 +293,17 @@ class TerraformManifestProvider:
             "required_providers": {
                 "aws": {"source": "hashicorp/aws", "version": SUPPORTED_AWS_PROVIDER_VERSION}
             },
+        }
+
+    @staticmethod
+    def _add_scheduled_job_variable(terraform: dict):
+        terraform["variable"] = {"scheduled_job_image_tag": {"type": "string", "default": None}}
+
+    @staticmethod
+    def _add_github_required_provider(terraform: dict):
+        terraform["terraform"]["required_providers"]["github"] = {
+            "source": "integrations/github",
+            "version": SUPPORTED_GITHUB_PROVIDER_VERSION,
         }
 
     @staticmethod
