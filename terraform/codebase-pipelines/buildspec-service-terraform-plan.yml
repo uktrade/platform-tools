@@ -75,6 +75,7 @@ phases:
       - TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE=${local_version_tracker_path} platform-helper internal service generate --env "${ENVIRONMENT}" --name "${SERVICE}"
       - cd "${CODEBUILD_SRC_DIR}/terraform/services/${ENVIRONMENT}/${SERVICE}"
       - terraform init
+      - #TODO plan would need the image tag for scheduled jobs
       - terraform plan
 
       # Send notification for stage waiting approval

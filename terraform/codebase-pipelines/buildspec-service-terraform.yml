@@ -123,7 +123,12 @@ phases:
           TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE=${local_version_tracker_path} platform-helper internal service generate --env "${ENVIRONMENT}" --name "${SERVICE}"
           cd "${CODEBUILD_SRC_DIR}/terraform/services/${ENVIRONMENT}/${SERVICE}"
           terraform init
-          terraform apply -auto-approve
+          
+          if [[ $(platform-helper job ls --env ${ENVIRONMENT} --name ${SERVICE} | grep ${SERVICE}) == ${SERVICE} ]]; then
+            terraform apply -var="scheduled_job_image_tag=${IMAGE_TAG} -auto-approve
+          else
+            terraform apply -auto-approve
+          fi
 
           # Send Slack message on pipeline outcome
           
