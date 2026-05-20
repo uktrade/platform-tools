@@ -37,6 +37,7 @@
         - [platform-helper database copy](#platform-helper-database-copy)
     - [platform-helper service](#platform-helper-service)
         - [platform-helper service exec](#platform-helper-service-exec)
+        - [platform-helper service ls](#platform-helper-service-ls)
     - [platform-helper job](#platform-helper-job)
         - [platform-helper job run](#platform-helper-job-run)
         - [platform-helper job ls](#platform-helper-job-ls)
@@ -926,7 +927,7 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 ## Usage
 
 ```
-platform-helper service exec 
+platform-helper service (exec|ls) 
 ```
 
 ## Options
@@ -937,6 +938,7 @@ platform-helper service exec
 ## Commands
 
 - [`exec` ↪](#platform-helper-service-exec)
+- [`ls` ↪](#platform-helper-service-ls)
 
 # platform-helper service exec
 
@@ -970,6 +972,29 @@ platform-helper service exec --app <application> --env <environment> --name <nam
   - Optional. [Note: This is an advanced feature and not yet fully supported.  In most cases only the essential container can be exec'd into.] The specific container you want to exec in. By default the first essential container will be used.
 - `--task-id <text>`
   - Optional. ID of the task you want to exec into.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper service ls
+
+[↩ Parent](#platform-helper-service)
+
+    Lists deployed services for the applicaiton and environment.
+
+## Usage
+
+```
+platform-helper service ls --app <application> --env <environment> 
+```
+
+## Options
+
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
