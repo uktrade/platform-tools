@@ -27,7 +27,6 @@
     - [platform-helper secrets](#platform-helper-secrets)
         - [platform-helper secrets create](#platform-helper-secrets-create)
         - [platform-helper secrets copy](#platform-helper-secrets-copy)
-        - [platform-helper secrets list](#platform-helper-secrets-list)
     - [platform-helper notify](#platform-helper-notify)
         - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
         - [platform-helper notify post-message](#platform-helper-notify-post-message)
@@ -36,8 +35,6 @@
         - [platform-helper database dump](#platform-helper-database-dump)
         - [platform-helper database load](#platform-helper-database-load)
         - [platform-helper database copy](#platform-helper-database-copy)
-    - [platform-helper version](#platform-helper-version)
-        - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
     - [platform-helper service](#platform-helper-service)
         - [platform-helper service exec](#platform-helper-service-exec)
         - [platform-helper service ls](#platform-helper-service-ls)
@@ -76,7 +73,6 @@ platform-helper <command> [--version]
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
 - [`service` ↪](#platform-helper-service)
-- [`version` ↪](#platform-helper-version)
 
 # platform-helper application
 
@@ -615,7 +611,7 @@ This will load it's own platform-config.<workspace>.yml file
 ## Usage
 
 ```
-platform-helper secrets (create|copy|list) 
+platform-helper secrets (create|copy) 
 ```
 
 ## Options
@@ -627,7 +623,6 @@ platform-helper secrets (create|copy|list)
 
 - [`copy` ↪](#platform-helper-secrets-copy)
 - [`create` ↪](#platform-helper-secrets-create)
-- [`list` ↪](#platform-helper-secrets-list)
 
 # platform-helper secrets create
 
@@ -673,28 +668,6 @@ platform-helper secrets copy --app <application> --source <source> --target <tar
   - Source environment where to copy secrets from.
 - `--target <text>`
   - Destination environment where to copy secrets to.
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper secrets list
-
-[↩ Parent](#platform-helper-secrets)
-
-    [DELETED] List secret names and values for an environment.
-
-## Usage
-
-```
-platform-helper secrets list <application> <environment> 
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
-
-## Options
-
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -942,47 +915,6 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
   - The maintenance page you wish to put up.
 - `--no-maintenance-page <boolean>` _Defaults to False._
 
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper version
-
-[↩ Parent](#platform-helper)
-
-    Contains subcommands for getting version information about the current
-    project.
-
-## Usage
-
-```
-platform-helper version get-platform-helper-for-project 
-```
-
-## Options
-
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-## Commands
-
-- [`get-platform-helper-for-project` ↪](#platform-helper-version-get-platform-helper-for-project)
-
-# platform-helper version get-platform-helper-for-project
-
-[↩ Parent](#platform-helper-version)
-
-    Print the version of platform-tools required by the current project
-
-## Usage
-
-```
-platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
-```
-
-## Options
-
-- `--pipeline <text>`
-  - Take into account platform-tools version overrides in the specified pipeline
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 

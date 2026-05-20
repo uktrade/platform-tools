@@ -2,7 +2,6 @@ import json
 import os
 import time
 from typing import Any
-from typing import Tuple
 
 import boto3
 import requests
@@ -415,7 +414,7 @@ class SecretRotator:
             self.logger.error(f"Unexpected Error Details: {str(unexpected_err)}")
             return False
 
-    def get_secrets(self, service_client, arn: str) -> Tuple[dict, dict]:
+    def get_secrets(self, service_client, arn: str) -> tuple[dict, dict]:
         metadata = service_client.describe_secret(SecretId=arn)
         version_stages = metadata.get("VersionIdsToStages", {})
         current_version = None
