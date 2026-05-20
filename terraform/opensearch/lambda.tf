@@ -116,11 +116,13 @@ resource "aws_lambda_invocation" "create-users" {
     Users = flatten(concat([
       {
         Username = "read",
+        Index    = true,
         Read     = true,
         Write    = false
       },
       {
         Username = "write",
+        Index    = true,
         Read     = true,
         Write    = true
       }
@@ -129,6 +131,7 @@ resource "aws_lambda_invocation" "create-users" {
         for k, v in coalesce(var.config.external_user_access, {}) :
         {
           Username = k,
+          Index    = v.index,
           Read     = v.read,
           Write    = v.write
         }

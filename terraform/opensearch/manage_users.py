@@ -11,6 +11,7 @@ http = urllib3.PoolManager()
 
 READ_ROLE = "read_role"
 WRITE_ROLE = "write_role"
+INDEX_ROLE = "index_role"
 
 
 def get_admin_user_and_host(ssm, ssm_param_name):
@@ -35,6 +36,7 @@ def get_or_create_roles(host, admin_user):
                         "read",
                         "indices:data/read/*",
                         "indices:admin/mappings/fields/get*",
+                        "indices:admin/get",
                     ],
                 }
             ],
@@ -47,9 +49,20 @@ def get_or_create_roles(host, admin_user):
                     "allowed_actions": [
                         "write",
                         "read",  # Required: For bulk checks/updates
-                        "create_index",
                         "manage",
                         "indices:data/write/*",
+                    ],
+                }
+            ],
+        },
+        INDEX_ROLE: {
+            "cluster_permissions": ["cluster_composite_ops"],
+            "index_permissions": [
+                {
+                    "index_patterns": ["*"],
+                    "allowed_actions": [
+                        "create_index",
+                        "manage",
                         "indices:admin/exists",
                         "indices:admin/get",  # Allows check if index exists
                         "indices:admin/create",
@@ -68,17 +81,6 @@ def get_or_create_roles(host, admin_user):
             )
 
     return existing_roles
-
-
-def resolve_roles(read, write):
-    roles = []
-    if read:
-        roles.append(READ_ROLE)
-    if write:
-        roles.append(WRITE_ROLE)
-    if not roles:
-        raise ValueError("At least Read or Write must be true")
-    return roles
 
 
 def create_or_update_user(host, admin_user, new_user, roles):
@@ -165,6 +167,7 @@ def handler(event, context):
         "SecretDescription": "description"
         "Users" : [
             "Username" : "reporting",
+            "Index" : false,
             "Read" : true,
             "Write" : false
         ]
@@ -187,9 +190,10 @@ def handler(event, context):
         ssm_param_name = (
             f"/platform/{application}/{environment}/secrets/{param_prefix}_OPENSEARCH_ENDPOINT"
         )
-        read = user_config["Read"]
-        write = user_config["Write"]
-        roles = resolve_roles(read, write)
+
+        role_map = {"Read": READ_ROLE, "Write": WRITE_ROLE, "Index": INDEX_ROLE}
+
+        roles = [role_map[key] for key in role_map.keys() if user_config[key]]
 
         print("generating password ...")
         user_password = secrets_manager.get_random_password(

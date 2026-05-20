@@ -27,6 +27,7 @@ OPENSEARCH_MIN_VOLUME_SIZE = 10
 
 
 class ExternalUserAccessEntry(BaseModel):
+    index: bool
     read: bool
     write: bool
     cyber_sign_off_by: str

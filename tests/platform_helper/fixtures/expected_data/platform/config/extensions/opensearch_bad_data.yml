@@ -65,3 +65,6 @@ my-opensearch-bad-user-cyber:
 my-opensearch-invalid-plan: 
    schema: "environments.*dev.*plan.*does not match 'invalid'"
    pydantic: "environments.*dev.*plan.*Input should be"
+my-opensearch-bad-user-index:
+   schema: "environments.*dev.*external_user_access.*index.*should be a valid boolean"
+   pydantic: "environments.*dev.*external_user_access.*index.*should be a valid boolean"

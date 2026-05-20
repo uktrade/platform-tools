@@ -118,6 +118,7 @@ my-opensearch-bad-user-name:
         INVALID@USER:
           read: true
           write: true
+          index: false
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
 my-opensearch-bad-user-read:
@@ -128,6 +129,7 @@ my-opensearch-bad-user-read:
         user-write-access:
           read: invalid
           write: true
+          index: false
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
 my-opensearch-bad-user-write:
@@ -138,6 +140,18 @@ my-opensearch-bad-user-write:
         user-write-access:
           read: false
           write: invalid
+          index: false
+          cyber_sign_off_by: somebody@businessandtrade.gov.uk
+
+my-opensearch-bad-user-index:
+  type: opensearch
+  environments:
+    dev:
+      external_user_access:
+        user-write-access:
+          read: false
+          write: false
+          index: invalid
           cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
 my-opensearch-bad-user-cyber:
@@ -148,6 +162,7 @@ my-opensearch-bad-user-cyber:
         user-write-access:
           read: false
           write: true
+          index: false
           cyber_sign_off_by: somebody@invalid.gov.uk
 
 my-opensearch-invalid-plan:
