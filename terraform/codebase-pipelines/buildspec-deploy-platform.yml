@@ -52,7 +52,9 @@ phases:
         
         # Skip pipeline if true
         if [[ "$SKIP_BUILD" == "true" ]]; then
-          echo "Skipping pipeline stage, no further action required."
+          echo "No new image to deploy.  Skipping pipeline stage, no further action required."
+        elif [[ $(platform-helper job ls | grep ${SERVICE}) == ${SERVICE} ]]; then
+          echo "${SERVICE} is a Scheduled Job.  Skipping pipeline stage, no further action required."
         else
 
           # Retrieve all tags from the image in ECR
