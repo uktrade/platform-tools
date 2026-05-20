@@ -1,5 +1,31 @@
 # Changelog
 
+## [15.29.0](https://github.com/uktrade/platform-tools/compare/15.28.0...15.29.0) (2026-05-20)
+
+
+### Features
+
+* Changes to support scheduled job deployments (DBTP-2844) ([#1450](https://github.com/uktrade/platform-tools/issues/1450)) ([9d24c16](https://github.com/uktrade/platform-tools/commit/9d24c16bbf9c967f3f8f1cb3d6935076d27e4e64))
+* Codebase pipeline GitHub auth and vars (DBTP-2806) ([#1435](https://github.com/uktrade/platform-tools/issues/1435)) ([e6c1202](https://github.com/uktrade/platform-tools/commit/e6c12025570095265bc8e005f0fe164a84f78982))
+* Platform-helper command `service ls` (DBTP-3023) ([#1452](https://github.com/uktrade/platform-tools/issues/1452)) ([a2532c7](https://github.com/uktrade/platform-tools/commit/a2532c77f75127effae2327933c2854cd2d653a4))
+* Platform-helper command to list deployed Scheduled Jobs (DBTP-3023) ([#1449](https://github.com/uktrade/platform-tools/issues/1449)) ([0d7fda7](https://github.com/uktrade/platform-tools/commit/0d7fda7403e8f4ba7555a18aa79981c4f7b4c537))
+
+
+### Bug Fixes
+
+* CodeBase image builds failing to pull code in rare circumstances (DBTP-2763) ([#1446](https://github.com/uktrade/platform-tools/issues/1446)) ([36022e2](https://github.com/uktrade/platform-tools/commit/36022e23db94410b0a50b875eec0cbf165365206))
+* Remove deleted principal from origin-verify secret's IAM policy (DBTP-2268) ([#1462](https://github.com/uktrade/platform-tools/issues/1462)) ([39884ff](https://github.com/uktrade/platform-tools/commit/39884ff4067a550e2fd8339b47ca1b225153532a))
+
+
+### Dependencies
+
+* Bump urllib3 from 2.6.3 to 2.7.0 ([#1439](https://github.com/uktrade/platform-tools/issues/1439)) ([91805ca](https://github.com/uktrade/platform-tools/commit/91805cac556b4eb1e409f501164d711f8991e3b4))
+
+
+### Reverts
+
+* CodeBase image builds failing to pull code in rare circumstances (DBTP-2763) ([#1466](https://github.com/uktrade/platform-tools/issues/1466)) ([2ad0ec1](https://github.com/uktrade/platform-tools/commit/2ad0ec1cd8309377c76feb6e1645be1ad67c5c45))
+
 ## [15.28.0](https://github.com/uktrade/platform-tools/compare/15.27.0...15.28.0) (2026-05-12)
 
 
