@@ -27,4 +27,9 @@ phases:
 
   post_build:
     commands:
-      - aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value=15.29.0,type=PLAINTEXT
+      - |
+        PLATFORM_HELPER_VERSION="$(pip show dbt-platform-helper | awk '/^Version:/ {print $2}')"
+        aws codebuild start-build \
+          --project-name build-platform-deploy-tools \
+          --environment-variables-override \
+            name=PLATFORM_HELPER_VERSION,value="${PLATFORM_HELPER_VERSION}",type=PLAINTEXT
