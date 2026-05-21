@@ -7,9 +7,9 @@ ARG PYTHON_VERSION="3.12"
 
 RUN dnf install -y \
         python${PYTHON_VERSION} \
-        curl \
         unzip \
-    && dnf clean all
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 
 RUN curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
         unzip terraform_install.zip && \
