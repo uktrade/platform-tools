@@ -1,6 +1,6 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
 
-ARG PLATFORM_HELPER_VERSION="15.29.0"
+ARG PLATFORM_HELPER_VERSION="15.29.0" # x-release-please-version
 ARG TERRAFORM_VERSION="1.13.0"
 ARG PYTHON_VERSION="3.12"
 
@@ -34,6 +34,6 @@ RUN python${PYTHON_VERSION} -m ensurepip && \
 #         rm -rf /tmp/platform-tools
 
 # COPY ../../../terraform/ecs-service ./terraform-modules/ecs-service
-# COPY ../../../terraform/version-tracker ./terraform-modules/ecs-service
+# COPY ../../../terraform/version-tracker ./terraform-modules/version-tracker
 
 CMD ["/bin/bash"]
