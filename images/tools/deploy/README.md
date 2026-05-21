@@ -1,43 +1,81 @@
-# Platform Build Tools image
+# Platform Deploy Tools image
 
-Dockerfile used to build the `platform-deploy-tools` image used in GitHub workflows. Contains the `dbt-platform-helper` tool.
+Reusable Docker image used by GitHub workflows for platform ECS deployment tasks. Image is published to `public.ecr.aws/uktrade/platform-deploy-tools`. It contains:
+
+- Platform Helper
+- Terraform
+- Python
 
 ## Build and push via CodeBuild
 
-This only works with the PyPI published version of `dbt-platform-helper` via the `PLATFORM_HELPER_VERSION` variable.
+This is the recommended way to publish the image. CodeBuild only builds from a published PyPI version of `dbt-platform-helper`. Pass the desired version via the `PLATFORM_HELPER_VERSION` environment variable.
 
 ```shell
 aws sso login
 export AWS_PROFILE=platform-tools
-PLATFORM_HELPER_VERSION=<X.X.X>; aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value="$PLATFORM_HELPER_VERSION",type=PLAINTEXT
+aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value=<X.X.X>,type=PLAINTEXT
 ```
 
-## Build and push manually
+The Codebuild job tags and pushes the image as:
 
-This also allows you to build your local version of `dbt-platform-helper` via the `PLATFORM_HELPER_VERSION_OVERRIDE` variable.
+```text
+public.ecr.aws/uktrade/platform-deploy-tools:<X.X.X>
+public.ecr.aws/uktrade/platform-deploy-tools:latest
+```
+
+## Manual build and push
+
+Manual builds are useful for testing changes locally. All commands must be ran from the repository root.
 
 First, login to public ECR.
 
 ```shell
-export AWS_PROFILE=platform-tools && aws sso login
+aws sso login
+export AWS_PROFILE=platform-tools
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 ```
 
-Build with a released version of `dbt-platform-helper` from PyPI. Replace `PLATFORM_HELPER_VERSION` with the desired version.
+### Build from a PyPI release
+
+Build the image with a released version of `dbt-platform-helper` from PyPI. Replace `PLATFORM_HELPER_VERSION` with the desired version.
 
 ```shell
-#FROM repository root
-DOCKER_BUILDKIT=1 PLATFORM_HELPER_VERSION=<X.X.X> docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION=$PLATFORM_HELPER_VERSION -t public.ecr.aws/uktrade/platform-deploy-tools:$PLATFORM_HELPER_VERSION . --platform linux/amd64
+PLATFORM_HELPER_VERSION=<X.X.X>
+DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION=$PLATFORM_HELPER_VERSION -t public.ecr.aws/uktrade/platform-deploy-tools:$PLATFORM_HELPER_VERSION .
 ```
 
-Or alternatively, build with your local version of `dbt-platform-helper`. Replace `<CUSTOM_IMAGE_TAG>` with your desired testing tag (please don't use `latest` or the `X.X.X` release format).
+### Build from the local repository
+
+Use this when testing local, unpublished changes to `dbt-platform-helper`.
+
+The Dockerfile uses a BuildKit bind mount to make the local repository available during the build without copying it into the final image.
+
+Use a custom image tag for local test builds. DO NOT use latest or release-style `X.X.X` tags!
 
 ```shell
-DOCKER_BUILDKIT=1 docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION_OVERRIDE=true -t public.ecr.aws/uktrade/platform-deploy-tools:<CUSTOM_IMAGE_TAG> . --platform linux/amd64
+CUSTOM_IMAGE_TAG=<CUSTOM_IMAGE_TAG>
+DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION_OVERRIDE=true -t public.ecr.aws/uktrade/platform-deploy-tools:$CUSTOM_IMAGE_TAG .
 ```
 
-Push to ECR.
+### Push a manually built image
+
+Push a specific tag. Avoid pushing all local tags unless you know what you are doing.
 
 ```shell
-docker push public.ecr.aws/uktrade/platform-deploy-tools --all-tags
+docker push "public.ecr.aws/uktrade/platform-deploy-tools:<TAG>"
+```
+
+## Test locally
+
+Run the image with an interactive shell.
+
+```shell
+docker run --rm -it public.ecr.aws/uktrade/platform-deploy-tools:<TAG>
+```
+
+Check the tools installed in the image.
+
+```shell
+docker run --rm public.ecr.aws/uktrade/platform-deploy-tools:<TAG> terraform version
+docker run --rm public.ecr.aws/uktrade/platform-deploy-tools:<TAG> platform-helper --help
 ```
