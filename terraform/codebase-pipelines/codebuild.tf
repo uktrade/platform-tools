@@ -76,6 +76,10 @@ resource "aws_codebuild_project" "codebase_image_build" {
     git_submodules_config {
       fetch_submodules = false
     }
+    auth {
+      resource = data.external.codestar_connections.result["ConnectionArn"]
+      type     = "CODECONNECTIONS"
+    }
   }
 
   tags = local.tags
