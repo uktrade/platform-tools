@@ -3,6 +3,7 @@ from typing import Literal
 from typing import Optional
 
 from pydantic import BaseModel
+from pydantic import Field
 from pydantic import field_validator
 from pydantic import model_validator
 from schema import SchemaError
@@ -27,10 +28,12 @@ OPENSEARCH_MIN_VOLUME_SIZE = 10
 
 
 class ExternalUserAccessEntry(BaseModel):
-    index: bool
-    read: bool
-    write: bool
-    cyber_sign_off_by: str
+    index: bool = Field(description="Enable index access for the user.")
+    read: bool = Field(description="Enable read access for the user.")
+    write: bool = Field(description="Enable write access for the user.")
+    cyber_sign_off_by: str = Field(
+        description="The DBT email address of the cybersecurity team member that signed off the access."
+    )
 
     @field_validator("cyber_sign_off_by")
     @classmethod
@@ -41,7 +44,9 @@ class ExternalUserAccessEntry(BaseModel):
 
 
 class ExternalUserAccess(BaseModel):
-    entries: dict[str, ExternalUserAccessEntry]
+    entries: dict[str, ExternalUserAccessEntry] = Field(
+        description='For the key, use a descriptive name. Letters, numbers, hyphens and underscores are allowed. E.g. "some-3rd-party-write-user".'
+    )
 
     @field_validator("entries")
     @classmethod
@@ -59,22 +64,64 @@ class ExternalUserAccess(BaseModel):
 
 
 class OpenSearch(BaseModel):
-    engine: Optional[str] = None
-    deletion_policy: Optional[Literal["Delete", "Retain"]] = None
-    plan: Optional[Literal[*plan_manager.get_plan_names("opensearch")]] = None
-    volume_size: Optional[int] = None
-    ebs_throughput: Optional[int] = None
-    ebs_volume_type: Optional[str] = None
-    instance: Optional[str] = None
-    instances: Optional[int] = None
-    master: Optional[bool] = None
-    es_app_log_retention_in_days: Optional[int] = None
-    index_slow_log_retention_in_days: Optional[int] = None
-    audit_log_retention_in_days: Optional[int] = None
-    search_slow_log_retention_in_days: Optional[int] = None
-    password_special_characters: Optional[str] = None
-    urlencode_password: Optional[bool] = None
-    external_user_access: Optional[dict[str, ExternalUserAccessEntry]] = None
+    engine: Optional[str] = Field(
+        default=None, description="""The version of OpenSearch. E.g. "2.11"."""
+    )
+    deletion_policy: Optional[Literal["Delete", "Retain"]] = Field(
+        default=None, description="DEPRECATED"
+    )
+    plan: Optional[Literal[*plan_manager.get_plan_names("opensearch")]] = Field(
+        default=None,
+        description="""For convenience, can be used to apply sensible settings for volume size, number of instances etc.""",
+    )
+    volume_size: Optional[int] = Field(
+        default=None,
+        description="""Override the size of EBS volumes attached to the cluster in GiB. This will usually come from the plan used.""",
+    )
+    ebs_throughput: Optional[int] = Field(
+        default=None,
+        description="""Throughput in MiB/s. Relevant if ebs_volume_type is "gp3". Defaults to "250".""",
+    )
+    ebs_volume_type: Optional[str] = Field(
+        default=None,
+        description="""Type of EBS volumes attached to data nodes. Defaults to "gp2".""",
+    )
+    instance: Optional[str] = Field(
+        default=None,
+        description="""Override the instance type of data nodes in the cluster. This will usually come from the plan used.""",
+    )
+    instances: Optional[int] = Field(
+        default=None, description="""The number of instances in the cluster. Defaults to "1"."""
+    )
+    master: Optional[bool] = Field(default=None, description="DEPRECATED")
+    es_app_log_retention_in_days: Optional[int] = Field(
+        default=None,
+        description="""The number of days you want to retain audit log events. Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653, and 0. If you select 0, the events in the log group are always retained and never expire. Defaults to "7".""",
+    )
+    index_slow_log_retention_in_days: Optional[int] = Field(
+        default=None,
+        description="""The number of days you want to retain audit log events. Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653, and 0. If you select 0, the events in the log group are always retained and never expire. Defaults to "7".""",
+    )
+    audit_log_retention_in_days: Optional[int] = Field(
+        default=None,
+        description="""The number of days you want to retain audit log events. Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653, and 0. If you select 0, the events in the log group are always retained and never expire. Defaults to "7".""",
+    )
+    search_slow_log_retention_in_days: Optional[int] = Field(
+        default=None,
+        description="""The number of days you want to retain audit log events. Possible values are: 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653, and 0. If you select 0, the events in the log group are always retained and never expire. Defaults to "7".""",
+    )
+    password_special_characters: Optional[str] = Field(
+        default=None,
+        description="""Use to override the special characters allowed in passwords. Defaults to "-_!.~$&'()*+,;=".""",
+    )
+    urlencode_password: Optional[bool] = Field(
+        default=None,
+        description="""Control whether passwords are URL encoded. Defaults to "true".""",
+    )
+    external_user_access: Optional[dict[str, ExternalUserAccessEntry]] = Field(
+        default=None,
+        description="""Allow extra Users to be defined to be used for access from outwith the account.""",
+    )
 
     @field_validator("external_user_access")
     @classmethod
@@ -93,8 +140,10 @@ class OpenSearch(BaseModel):
 
 class OpensearchExtension(BaseModel):
 
-    type: Literal["opensearch"]
-    environments: Optional[dict[str, OpenSearch]] = None
+    type: Literal["opensearch"] = Field(description="""Use "opensearch".""")
+    environments: Optional[dict[str, OpenSearch]] = Field(
+        default=None, description="""The OpenSearch configurations for your environments."""
+    )
 
     @model_validator(mode="after")
     def validate_volume_size(self):
