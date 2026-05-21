@@ -9,7 +9,7 @@ This only works with the PyPI published version of `dbt-platform-helper` via the
 ```shell
 aws sso login
 export AWS_PROFILE=platform-tools
-aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value=<...>,type=PLAINTEXT
+PLATFORM_HELPER_VERSION=<X.X.X> aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value=$PLATFORM_HELPER_VERSION,type=PLAINTEXT
 ```
 
 ## Build and push to ECR locally
@@ -17,8 +17,7 @@ aws codebuild start-build --project-name build-platform-deploy-tools --environme
 Login to public ECR.
 
 ```shell
-export AWS_PROFILE=platform-tools
-aws sso login
+export AWS_PROFILE=platform-tools && aws sso login
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 ```
 
