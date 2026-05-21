@@ -17,7 +17,7 @@ resource "aws_iam_role" "eventbridge_scheduler_role" {
 }
 
 resource "aws_iam_policy" "eventbridge_execution_policy" {
-  name        = "${var.name}-eb-policy"
+  name        = "${var.name}-eb"
   description = "Allows EventBridge Schedule to start Scheduled Job State Machine execution."
   policy      = data.aws_iam_policy_document.eventbridge_permissions.json
   tags        = var.tags
@@ -70,7 +70,7 @@ resource "aws_iam_role" "state_machine_role" {
 }
 
 resource "aws_iam_policy" "state_machine_policy" {
-  name        = "${var.name}-sm-policy"
+  name        = "${var.name}-sm"
   description = "Allows the State Machine to interact with an ECS task and send logs"
   policy      = data.aws_iam_policy_document.state_machine_permissions.json
   tags        = var.tags

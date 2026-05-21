@@ -72,8 +72,8 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy-cross-env",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-sm-policy",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-eb-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-sm",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-eb",
     ]
   }
 
