@@ -9,26 +9,28 @@ This only works with the PyPI published version of `dbt-platform-helper` via the
 ```shell
 aws sso login
 export AWS_PROFILE=platform-tools
-PLATFORM_HELPER_VERSION=<X.X.X> aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value=$PLATFORM_HELPER_VERSION,type=PLAINTEXT
+PLATFORM_HELPER_VERSION=<X.X.X>; aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value="$PLATFORM_HELPER_VERSION",type=PLAINTEXT
 ```
 
-## Build and push to ECR locally
+## Build and push manually
 
-Login to public ECR.
+This also allows you to build your local version of `dbt-platform-helper` via the `PLATFORM_HELPER_VERSION_OVERRIDE` variable.
+
+First, login to public ECR.
 
 ```shell
 export AWS_PROFILE=platform-tools && aws sso login
 aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 ```
 
-Build with a released version of Platform Helper from PyPI.
+Build with a released version of `dbt-platform-helper` from PyPI. Replace `PLATFORM_HELPER_VERSION` with the desired version.
 
 ```shell
 #FROM repository root
-DOCKER_BUILDKIT=1 PLATFORM_HELPER_VERSION=X.X.X docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION=$PLATFORM_HELPER_VERSION -t public.ecr.aws/uktrade/platform-deploy-tools:$PLATFORM_HELPER_VERSION . --platform linux/amd64
+DOCKER_BUILDKIT=1 PLATFORM_HELPER_VERSION=<X.X.X> docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION=$PLATFORM_HELPER_VERSION -t public.ecr.aws/uktrade/platform-deploy-tools:$PLATFORM_HELPER_VERSION . --platform linux/amd64
 ```
 
-Or alternatively, build with a local version of Platform Helper. Replace `<CUSTOM_IMAGE_TAG>` with your desired testing tag (not `latest` or in the `X.X.X` release format)
+Or alternatively, build with your local version of `dbt-platform-helper`. Replace `<CUSTOM_IMAGE_TAG>` with your desired testing tag (please don't use `latest` or the `X.X.X` release format).
 
 ```shell
 DOCKER_BUILDKIT=1 docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION_OVERRIDE=true -t public.ecr.aws/uktrade/platform-deploy-tools:<CUSTOM_IMAGE_TAG> . --platform linux/amd64
