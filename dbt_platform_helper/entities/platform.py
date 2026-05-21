@@ -70,9 +70,11 @@ class OpenSearch(BaseModel):
     deletion_policy: Optional[Literal["Delete", "Retain"]] = Field(
         default=None, description="DEPRECATED"
     )
-    plan: Optional[Literal[*plan_manager.get_plan_names("opensearch")]] = Field(
-        default=None,
-        description="""For convenience, can be used to apply sensible settings for volume size, number of instances etc.""",
+    plan: Optional[str] = (
+        Field(  # TODO once python 3.10 is out of support - change str to Literal[*plan_manager.get_plan_names("opensearch")
+            default=None,
+            description="""For convenience, can be used to apply sensible settings for volume size, number of instances etc.""",
+        )
     )
     volume_size: Optional[int] = Field(
         default=None,
@@ -122,6 +124,17 @@ class OpenSearch(BaseModel):
         default=None,
         description="""Allow extra Users to be defined to be used for access from outwith the account.""",
     )
+
+    # Explicit validator as pythonn 3.10 does not support dyanmically setting Literals in the type Annotations
+    @field_validator("plan")
+    @classmethod
+    def validate_plan_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        allowed_plans = plan_manager.get_plan_names("opensearch")
+        if v not in allowed_plans:
+            raise ValueError(f"Plan must be one of {allowed_plans}")
+        return v
 
     @field_validator("external_user_access")
     @classmethod

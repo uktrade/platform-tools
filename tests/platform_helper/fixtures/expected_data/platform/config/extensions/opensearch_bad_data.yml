@@ -10,7 +10,7 @@ my-opensearch-bad-env-param:
    pydantic: "Wrong key 'opensearch_plan' in"
 my-opensearch-bad-plan:
    schema: "environments.*dev.*plan.*does not match 'largish'"
-   pydantic: "environments.* Input should be"
+   pydantic: "environments.*dev.plan.* Plan must be one of "
 my-opensearch-no-plan:
    schema: "Missing key: 'plan'"
    pydantic: "Missing key: 'plan'"
@@ -64,7 +64,7 @@ my-opensearch-bad-user-cyber:
    pydantic: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must be a valid DBT email address"
 my-opensearch-invalid-plan: 
    schema: "environments.*dev.*plan.*does not match 'invalid'"
-   pydantic: "environments.*dev.*plan.*Input should be"
+   pydantic: "environments.*dev.*plan.*Plan must be one of"
 my-opensearch-bad-user-index:
    schema: "environments.*dev.*external_user_access.*index.*should be a valid boolean"
    pydantic: "environments.*dev.*external_user_access.*index.*should be a valid boolean"
