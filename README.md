@@ -269,4 +269,3 @@ When working with multiple pipelines and updating them, for example within end t
 ## Contributing
 
 Please check out [Contributing to Platform Tools](./CONTRUBUTING.md).
-
