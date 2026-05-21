@@ -6,7 +6,10 @@
       "include-v-in-tag": false,
       "draft": false,
       "pull-request-header": ":robot: Next release",
-      "pull-request-footer": " "
+      "pull-request-footer": " ",
+      "extra-files": [
+        "images/tools/deploy/Dockerfile"
+      ]
     }
   }
 }
