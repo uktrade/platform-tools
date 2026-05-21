@@ -9,17 +9,12 @@ This only works with the PyPI published version of `dbt-platform-helper` via the
 ```shell
 aws sso login
 export AWS_PROFILE=platform-tools
-aws codebuild start-build --project-name <...> --environment-variables-override name=PLATFORM_HELPER_VERSION,value=<...>,type=PLAINTEXT
+aws codebuild start-build --project-name build-platform-deploy-tools --environment-variables-override name=PLATFORM_HELPER_VERSION,value=<...>,type=PLAINTEXT
 ```
-
-aws codebuild start-build \
-  --project-name your-project-name \
-  --environment-variables-override \
-    name=PLATFORM_HELPER_VERSION,value=15.29.0,type=PLAINTEXT
 
 ## Build and push to ECR locally
 
-Login to public ECR
+Login to public ECR.
 
 ```shell
 export AWS_PROFILE=platform-tools
@@ -31,11 +26,17 @@ Build with a released version of Platform Helper from PyPI.
 
 ```shell
 #FROM repository root
-DOCKER_BUILDKIT=1 docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION=15.29.0 -t deploy-tools . --platform linux/amd64
+DOCKER_BUILDKIT=1 PLATFORM_HELPER_VERSION=X.X.X docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION=$PLATFORM_HELPER_VERSION -t public.ecr.aws/uktrade/platform-deploy-tools:$PLATFORM_HELPER_VERSION . --platform linux/amd64
 ```
 
-Or alternatively, build with a local version of Platform Helper.
+Or alternatively, build with a local version of Platform Helper. Replace `<CUSTOM_IMAGE_TAG>` with your desired testing tag (not `latest` or in the `X.X.X` release format)
 
 ```shell
-DOCKER_BUILDKIT=1 docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION_OVERRIDE=true -t deploy-tools . --platform linux/amd64
+DOCKER_BUILDKIT=1 docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION_OVERRIDE=true -t public.ecr.aws/uktrade/platform-deploy-tools:<CUSTOM_IMAGE_TAG> . --platform linux/amd64
+```
+
+Push to ECR.
+
+```shell
+docker push public.ecr.aws/uktrade/platform-deploy-tools --all-tags
 ```
