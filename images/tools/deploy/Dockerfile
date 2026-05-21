@@ -1,6 +1,6 @@
 FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal
 
-ARG PLATFORM_HELPER_VERSION="15.28.0"
+ARG PLATFORM_HELPER_VERSION="15.29.0"
 ARG TERRAFORM_VERSION="1.13.0"
 ARG PYTHON_VERSION="3.12"
 
@@ -18,9 +18,22 @@ RUN curl -s -qL -o terraform_install.zip https://releases.hashicorp.com/terrafor
         mv terraform /usr/local/bin/ && \
         rm -f terraform_install.zip
 
-# Install dbt-platform-helper at PLATFORM_HELPER_VERSION
-RUN python3.12 -m ensurepip && \
-        python3.12 -m pip install dbt-platform-helper==$PLATFORM_HELPER_VERSION && \
-        python3.12 -m pip install yq
+# Install dbt-platform-helper at PLATFORM_HELPER_VERSION (released version)
+RUN python${PYTHON_VERSION} -m ensurepip && \
+        python${PYTHON_VERSION} -m pip install --no-cache-dir \
+                dbt-platform-helper==$PLATFORM_HELPER_VERSION \
+                yq
+
+# # Install local dbt-platform-helper
+# COPY . /tmp/platform-tools
+
+# RUN python${PYTHON_VERSION} -m ensurepip && \
+#         python${PYTHON_VERSION} -m pip install --no-cache-dir \
+#                 /tmp/platform-tools \
+#                 yq && \
+#         rm -rf /tmp/platform-tools
+
+# COPY ../../../terraform/ecs-service ./terraform-modules/ecs-service
+# COPY ../../../terraform/version-tracker ./terraform-modules/ecs-service
 
 CMD ["/bin/bash"]
