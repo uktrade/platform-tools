@@ -255,6 +255,27 @@ override_module {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.step_functions_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.eventbridge_scheduler_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.ec2_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
 run "aws_ssm_parameter_unit_test" {
   command = plan
 
@@ -724,7 +745,8 @@ run "codebase_deploy_iam_test" {
     condition = flatten([for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].condition : el.values][0]) == [
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline",
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline-*",
-      "arn:aws:iam::000123456789:role/test-application-*-codebase-*"
+      "arn:aws:iam::000123456789:role/test-application-*-codebase-*",
+      "arn:aws:iam::000123456789:role/github-oidc-test-application-repo-role"
     ]
     error_message = "Unexpected condition values"
   }

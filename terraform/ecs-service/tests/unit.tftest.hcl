@@ -138,7 +138,7 @@ variables {
     }
 
     image = {
-      location = "public.ecr.aws/example/app:latest"
+      location = "public.ecr.aws/example/app"
       port     = 8080
     }
 
@@ -169,6 +169,8 @@ variables {
       DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
     }
   }
+
+  scheduled_job_image_tag = null
 }
 
 
@@ -425,7 +427,7 @@ run "web_service_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -486,7 +488,7 @@ run "backend_service_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -547,7 +549,7 @@ run "backend_service_no_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
       }
 
       cpu    = 256
@@ -622,7 +624,7 @@ run "service_scheduled_auto_scaling" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -712,7 +714,7 @@ run "test_scheduling_module_is_created_for_scheduled_job" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -730,6 +732,9 @@ run "test_scheduling_module_is_created_for_scheduled_job" {
         writable_directories = []
       }
     }
+
+    scheduled_job_image_tag = "some-tag"
+
   }
 
   assert {
@@ -756,7 +761,7 @@ run "test_conditionally_creates_resources_for_a_scheduled_job" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -773,6 +778,8 @@ run "test_conditionally_creates_resources_for_a_scheduled_job" {
         writable_directories = []
       }
     }
+
+    scheduled_job_image_tag = "some-tag"
   }
 
   assert {
@@ -857,7 +864,7 @@ run "test_ecs_task_default_platform_is_x86_64" {
       type = "Scheduled Job"
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -875,6 +882,8 @@ run "test_ecs_task_default_platform_is_x86_64" {
         writable_directories = []
       }
     }
+
+    scheduled_job_image_tag = "some-tag"
   }
 
   assert {
@@ -894,4 +903,44 @@ run "test_ecs_task_platform_is_arm64" {
     condition     = local.cpu_architecture == "ARM64"
     error_message = "Should be 'ARM64'"
   }
+}
+
+run "test_scheduled_job_requires_image_tag_variable" {
+  command = plan
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+  }
+
+  expect_failures = [var.scheduled_job_image_tag]
+}
+
+run "test_non_scheduled_job_service_does_not_require_image_tag_variable" {
+  command = plan
+  variables {
+    scheduled_job_image_tag = "some-tag"
+  }
+
+  expect_failures = [var.scheduled_job_image_tag]
 }

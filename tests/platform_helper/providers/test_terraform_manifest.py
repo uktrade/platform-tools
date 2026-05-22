@@ -7,7 +7,6 @@ from freezegun import freeze_time
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
-from dbt_platform_helper.constants import SUPPORTED_GITHUB_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.constants import VERSION_TRACKER_MODULE_PATH
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
@@ -64,9 +63,6 @@ def test_generate_codebase_pipeline_config_creates_file(
     assert aws_provider["allowed_account_ids"] == ["1122334455"]
     assert not aws_provider.get("alias")
 
-    github_provider = json_content["provider"]["github"]
-    assert github_provider["app_auth"] == {}
-
     terraform = json_content["terraform"]
     assert terraform["required_version"] == SUPPORTED_TERRAFORM_VERSION
 
@@ -81,10 +77,6 @@ def test_generate_codebase_pipeline_config_creates_file(
     aws_req_provider = terraform["required_providers"]["aws"]
     assert aws_req_provider["source"] == "hashicorp/aws"
     assert aws_req_provider["version"] == SUPPORTED_AWS_PROVIDER_VERSION
-
-    aws_req_provider = terraform["required_providers"]["github"]
-    assert aws_req_provider["source"] == "integrations/github"
-    assert aws_req_provider["version"] == SUPPORTED_GITHUB_PROVIDER_VERSION
 
     codebase_pipelines_module = json_content["module"]["codebase-pipelines"]
     assert (
@@ -391,3 +383,32 @@ def test_generate_environment_config_when_old_manifest_not_deleted_does_not_outp
     )
 
     mock_io.info.assert_called_once_with("File created")
+
+
+def test_generate_service_terraform_config_includes_scheduled_job_variable():
+    mock_file_provider = Mock()
+    template_provider = TerraformManifestProvider(mock_file_provider)
+
+    template_provider.generate_service_config(
+        config_object=mock_file_provider(name="test-service"),
+        environment="dev",
+        platform_helper_version="X.X.X",
+        platform_config={
+            "application": "test-application",
+            "schema_version": 1,
+            "default_versions": {"platform-helper": "X.X.X"},
+            "environments": {
+                "*": {
+                    "accounts": {
+                        "deploy": {"id": "123456789012", "name": "test-account"},
+                        "dns": {"id": "011755346992", "name": "dev"},
+                    }
+                },
+                "env1": {},
+            },
+        },
+    )
+
+    mock_file_provider.mkfile.assert_called_once()
+    json_content = json.loads(mock_file_provider.mkfile.call_args.args[2])
+    assert "scheduled_job_image_tag" in json_content["variable"]

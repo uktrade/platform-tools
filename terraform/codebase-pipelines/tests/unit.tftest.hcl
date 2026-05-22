@@ -5,7 +5,7 @@ override_data {
 
   values = {
     result = {
-      ConnectionArn = "arn:aws:codeconnections:eu-west-2:aws:2"
+      ConnectionArn = "ConnectionArn"
     }
   }
 }
@@ -526,13 +526,6 @@ run "test_codebuild_images" {
   assert {
     condition     = one(aws_codebuild_project.codebase_image_build[""].source).location == "https://github.com/my-repository.git"
     error_message = "Should be: 'https://github.com/my-repository.git'"
-  }
-  assert {
-    condition = one(one(aws_codebuild_project.codebase_image_build[""].source).auth) == {
-      resource : "arn:aws:codeconnections:eu-west-2:aws:2",
-      type : "CODECONNECTIONS"
-    }
-    error_message = "Should have CODECONNECTIONS auth block with: arn:aws:codeconnections:eu-west-2:aws:2"
   }
   assert {
     condition     = length(regexall(".*/work/cli build.*", aws_codebuild_project.codebase_image_build[""].source[0].buildspec)) > 0
@@ -1452,8 +1445,8 @@ run "test_codebuild_deploy" {
     error_message = "Should be: CODESTAR_CONNECTION_ARN"
   }
   assert {
-    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[1].value == "arn:aws:codeconnections:eu-west-2:aws:2"
-    error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[1].value == "ConnectionArn"
+    error_message = "Should be: ConnectionArn"
   }
 
   assert {
@@ -1547,8 +1540,8 @@ run "test_main_pipeline" {
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.ConnectionArn == "arn:aws:codeconnections:eu-west-2:aws:2"
-    error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.ConnectionArn == "ConnectionArn"
+    error_message = "Should be: ConnectionArn"
   }
 
   # Deploy dev environment stage
@@ -1849,8 +1842,8 @@ run "test_manual_release_pipeline" {
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.ConnectionArn == "arn:aws:codeconnections:eu-west-2:aws:2"
-    error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.ConnectionArn == "ConnectionArn"
+    error_message = "Should be: ConnectionArn"
   }
 
   # Deploy stage
@@ -2585,7 +2578,6 @@ run "test_disable_codepipeline_triggers" {
   command = plan
 
   variables {
-    deploy_repository  = "uktrade/application-deploy"
     use_github_actions = true
   }
 
