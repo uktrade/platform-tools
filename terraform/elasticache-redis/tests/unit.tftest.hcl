@@ -112,6 +112,11 @@ run "aws_elasticache_replication_group_unit_test" {
   }
 
   assert {
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.redis6.x"
+    error_message = "Invalid config for aws_elasticache_replication_group parameter_group_name"
+  }
+
+  assert {
     condition     = aws_elasticache_replication_group.redis.num_node_groups == 1
     error_message = "Invalid config for aws_elasticache_replication_group num_node_groups"
   }
@@ -167,10 +172,11 @@ run "aws_elasticache_replication_group_unit_test" {
   }
 }
 
-run "aws_elasticache_replication_group_unit_test2" {
+run "aws_elasticache_replication_group_unit_7_1_dev" {
   command = plan
 
   variables {
+    environment = "dev"
     config = {
       "engine"                     = "7.1",
       "plan"                       = "small",
@@ -182,15 +188,20 @@ run "aws_elasticache_replication_group_unit_test2" {
     }
   }
 
-  ### Test aws_elasticache_replication_group resource ###
+  ### Development 7.1 redis are being migrated to valkey
   assert {
-    condition     = aws_elasticache_replication_group.redis.engine == "redis"
+    condition     = aws_elasticache_replication_group.redis.engine == "valkey"
     error_message = "Invalid config for aws_elasticache_replication_group engine"
   }
 
   assert {
-    condition     = aws_elasticache_replication_group.redis.engine_version == "7.1"
+    condition     = aws_elasticache_replication_group.redis.engine_version == "7.2"
     error_message = "Invalid config for aws_elasticache_replication_group engine_version"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.valkey7"
+    error_message = "Invalid config for aws_elasticache_replication_group parameter_group_name"
   }
 
   assert {
@@ -229,6 +240,40 @@ run "aws_elasticache_replication_group_unit_test2" {
     error_message = "Invalid config for aws_elasticache_replication_group multi_az_enabled"
   }
 }
+
+run "aws_elasticache_replication_group_unit_7_1_prod" {
+  command = plan
+
+  variables {
+    environment = "prod"
+    config = {
+      "engine"                     = "7.1",
+      "plan"                       = "small",
+      "instance"                   = "test-instance",
+      "replicas"                   = 2,
+      "apply_immediately"          = true,
+      "automatic_failover_enabled" = true,
+      "multi_az_enabled"           = true,
+    }
+  }
+
+  ### Prod redis aren't being upgraded to valkey immediately
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine == "redis"
+    error_message = "Invalid config for aws_elasticache_replication_group engine"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine_version == "7.1"
+    error_message = "Invalid config for aws_elasticache_replication_group engine_version"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.redis7"
+    error_message = "Invalid config for aws_elasticache_replication_group parameter_group_name"
+  }
+}
+
 
 run "aws_security_group_unit_test" {
   command = plan
