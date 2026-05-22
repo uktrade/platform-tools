@@ -50,7 +50,7 @@ Use this when testing local, unpublished changes to `dbt-platform-helper`.
 
 The Dockerfile uses a BuildKit bind mount to make the local repository available during the build without copying it into the final image.
 
-Use a custom image tag for local test builds. DO NOT use latest or release-style `X.X.X` tags!
+Use a custom image tag for local test builds. DO NOT use `latest` or release-style `X.X.X` tags!
 
 ```shell
 CUSTOM_IMAGE_TAG=<CUSTOM_IMAGE_TAG>
@@ -59,7 +59,7 @@ DOCKER_BUILDKIT=1 docker build --platform linux/amd64 -f images/tools/deploy/Doc
 
 ### Push a manually built image
 
-Push a specific tag. Avoid pushing all local tags unless you know what you are doing.
+Push a specific tag (e.g. `test-feature-22-05-2026`). Avoid pushing all local tags unless you know what you are doing.
 
 ```shell
 docker push "public.ecr.aws/uktrade/platform-deploy-tools:<TAG>"
