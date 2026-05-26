@@ -1,0 +1,22 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_NAME: deploy-tools
+    REPOSITORY_URI: public.ecr.aws/uktrade/platform-deploy-tools
+
+phases:
+  pre_build:
+    commands:
+      - test -n "$PLATFORM_HELPER_VERSION" || (echo "PLATFORM_HELPER_VERSION is required" && exit 1)
+      - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+
+  build:
+    commands:
+      - docker build -f images/tools/deploy/Dockerfile --build-arg PLATFORM_HELPER_VERSION="$PLATFORM_HELPER_VERSION" -t "$REPOSITORY_URI:$PLATFORM_HELPER_VERSION" .
+      - docker tag "$REPOSITORY_URI:$PLATFORM_HELPER_VERSION" "$REPOSITORY_URI:latest"
+
+  post_build:
+    commands:
+      - docker push "$REPOSITORY_URI:$PLATFORM_HELPER_VERSION"
+      - docker push "$REPOSITORY_URI:latest"
