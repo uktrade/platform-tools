@@ -506,7 +506,6 @@ data "aws_iam_policy_document" "postgres" {
     ]
 
     resources = flatten([for env in local.environment_config : [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${env.name}-${var.application}-*", # Openserch naming is flipped
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
       ]

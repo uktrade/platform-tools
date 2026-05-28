@@ -21,15 +21,11 @@ data "aws_iam_policy_document" "lambda-execution-policy" {
   statement {
     effect = "Allow"
     actions = [
+      # ec2 permissions required for creating a lambda within the VPC
       "ec2:CreateNetworkInterface",
       "ec2:DescribeNetworkInterfaces",
       "ec2:DeleteNetworkInterface",
-      "ssm:DeleteParameter",
-      "ssm:PutParameter",
-      "ssm:AddTagsToResource",
-      "kms:Decrypt",
       "secretsmanager:GetRandomPassword",
-
     ]
     resources = ["*"]
   }
@@ -37,30 +33,47 @@ data "aws_iam_policy_document" "lambda-execution-policy" {
   statement {
     effect = "Allow"
     actions = [
+      "ssm:DeleteParameter",
+      "ssm:PutParameter",
+      "ssm:AddTagsToResource",
+    ]
+    resources = [
+      "arn:aws:ssm:eu-west-2:*:parameter/platform/${var.application}/${var.environment}/secrets/*_OPENSEARCH_ENDPOINT"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
       "logs:CreateLogGroup",
       "logs:CreateLogStream",
-    "logs:PutLogEvents"]
+      "logs:PutLogEvents"
+    ]
     resources = ["arn:aws:logs:*:*:*"]
   }
 
   statement {
     effect = "Allow"
     actions = [
-      "ssm:GetParameter"
+      "ssm:GetParameter",
+      "kms:Decrypt",
     ]
-    resources = [aws_ssm_parameter.opensearch_endpoint.arn]
+    resources = [
+      aws_ssm_parameter.opensearch_endpoint.arn,
+      aws_kms_key.ssm_opensearch_endpoint.arn
+    ]
 
   }
 }
 
 resource "aws_iam_role" "lambda-execution-role" {
-  name               = "${var.environment}-${local.name}-lambda-role"
+  name               = "${var.application}-${var.environment}-${local.name}-lambda-role"
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.lambda-assume-role-policy.json
 }
 
 resource "aws_iam_role_policy" "lambda-execution-role-policy" {
-  name   = "${var.environment}-${local.name}-execution-policy"
+  name   = "${var.application}-${var.environment}-${local.name}-execution-policy"
   role   = aws_iam_role.lambda-execution-role.name
   policy = data.aws_iam_policy_document.lambda-execution-policy.json
 }
@@ -84,7 +97,7 @@ resource "aws_lambda_function" "lambda" {
   # checkov:skip=CKV_AWS_272:Code signing is not currently in use
   # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
   filename                       = "${path.module}/manage_users.zip"
-  function_name                  = "${var.environment}-${local.name}-opensearch-create-users"
+  function_name                  = "${var.application}-${var.environment}-${local.name}-opensearch-create-users"
   role                           = aws_iam_role.lambda-execution-role.arn
   handler                        = "manage_users.handler"
   runtime                        = "python3.12"
@@ -95,13 +108,11 @@ resource "aws_lambda_function" "lambda" {
   source_code_hash = data.archive_file.lambda.output_base64sha256
 
   vpc_config {
-    security_group_ids = [data.aws_security_group.opensearch-endpoint.id, data.aws_security_group.rds-endpoint.id]
+    security_group_ids = [aws_security_group.opensearch-security-group.id, data.aws_security_group.rds-endpoint.id]
     subnet_ids         = data.aws_subnets.private-subnets.ids
   }
 
-  tracing_config {
-    mode = "Active"
-  }
+  tags = local.tags
 }
 
 resource "aws_lambda_invocation" "create-users" {
@@ -140,7 +151,6 @@ resource "aws_lambda_invocation" "create-users" {
   })
 
   depends_on = [
-    aws_lambda_function.lambda,
     aws_opensearch_domain.this,
   ]
 }
