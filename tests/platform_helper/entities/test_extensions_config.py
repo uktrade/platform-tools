@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 from schema import SchemaError
 
@@ -12,24 +13,24 @@ os_schema = PlatformConfigSchema.extension_schemas().get("opensearch", None)
 modes = ("schema", "pydantic")
 
 
-def _get_validator(extension, param):
-    if param == "schema":
-        from dbt_platform_helper.entities.platform_config_schema import (
-            PlatformConfigSchema,
-        )
+@pytest.fixture
+def make_validator_fixture():
+    def _get_validator(extension, param):
+        if param == "schema":
+            from dbt_platform_helper.entities.platform_config_schema import (
+                PlatformConfigSchema,
+            )
 
-        return PlatformConfigSchema.extension_schemas()[extension].validate
-    if param == "pydantic":
-        from dbt_platform_helper.entities.platform import validate_extension_fn
+            return PlatformConfigSchema.extension_schemas()[extension].validate
+        if param == "pydantic":
+            from dbt_platform_helper.entities.platform import validate_extension_fn
 
-        return validate_extension_fn(extension)
+            return validate_extension_fn(extension)
 
-
-def make_validator_fixture(extension, mode):
-    return _get_validator(extension, mode)
+    return _get_validator
 
 
-def test_validate_opensearch_success():
+def test_validate_opensearch_success(make_validator_fixture):
 
     for mode in modes:
         with open(Path(INPUT_DATA_DIR / "platform/config/extensions") / "opensearch.yml") as fh:
@@ -39,7 +40,7 @@ def test_validate_opensearch_success():
                 validator(config)
 
 
-def test_validate_opensearch_failure():
+def test_validate_opensearch_failure(make_validator_fixture):
     errors = {}
 
     with open(
