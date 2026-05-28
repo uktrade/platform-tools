@@ -20,7 +20,21 @@ data "aws_iam_policy_document" "assume_codebase_pipeline" {
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline",
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline-*",
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-*",
-        "arn:aws:iam::${local.pipeline_account_id}:role/github-oidc-${var.args.application}-repo-role"
+      ]
+      variable = "aws:PrincipalArn"
+    }
+    actions = ["sts:AssumeRole"]
+  }
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    condition {
+      test = "ArnLike"
+      values = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.args.application}-repo-role"
       ]
       variable = "aws:PrincipalArn"
     }
@@ -63,8 +77,8 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-ecs-task",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-task-exec",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-eventbridge-scheduler",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-state-machine",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-eb-scheduler",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-sm",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-secrets-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-execute-command-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-service-logs-policy",
@@ -72,8 +86,8 @@ data "aws_iam_policy_document" "iam_access_for_codebase" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-s3-policy-cross-env",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-custom-iam-policy",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-state-machine-policy",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-eventbridge-policy",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-sm",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.args.application}-${var.environment}-*-eb",
     ]
   }
 
@@ -689,7 +703,7 @@ data "aws_iam_policy_document" "step_functions_access" {
       "iam:PassRole"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-state-machine"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-sm"
     ]
   }
 }
@@ -718,7 +732,7 @@ data "aws_iam_policy_document" "eventbridge_scheduler_access" {
       "iam:PassRole"
     ]
     resources = [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-eventbridge-scheduler"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-eb-scheduler"
     ]
   }
 }

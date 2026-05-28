@@ -1237,7 +1237,9 @@ run "test_iam_documents" {
   assert {
     condition = data.aws_iam_policy_document.codestar_connection_access.statement[0].actions == toset([
       "codestar-connections:GetConnectionToken",
-      "codestar-connections:UseConnection"
+      "codestar-connections:UseConnection",
+      "codeconnections:GetConnectionToken",
+      "codeconnections:GetConnection",
     ])
     error_message = "Unexpected actions"
   }

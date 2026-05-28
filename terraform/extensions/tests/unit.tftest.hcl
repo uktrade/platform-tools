@@ -847,7 +847,12 @@ run "codebase_deploy_iam_test" {
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline",
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline-*",
       "arn:aws:iam::000123456789:role/test-application-*-codebase-*",
-      "arn:aws:iam::000123456789:role/github-oidc-test-application-repo-role"
+    ]
+    error_message = "Unexpected condition values"
+  }
+  assert {
+    condition = flatten([for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[1].condition : el.values][0]) == [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-test-application-repo-role"
     ]
     error_message = "Unexpected condition values"
   }

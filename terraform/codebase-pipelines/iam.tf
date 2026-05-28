@@ -156,7 +156,9 @@ data "aws_iam_policy_document" "codestar_connection_access" {
     effect = "Allow"
     actions = [
       "codestar-connections:GetConnectionToken",
-      "codestar-connections:UseConnection"
+      "codestar-connections:UseConnection",
+      "codeconnections:GetConnectionToken",
+      "codeconnections:GetConnection"
     ]
     resources = [
       data.external.codestar_connections.result["ConnectionArn"]

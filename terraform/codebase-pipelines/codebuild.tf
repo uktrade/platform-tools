@@ -83,6 +83,15 @@ resource "aws_codebuild_project" "codebase_image_build" {
   }
 
   tags = local.tags
+
+  depends_on = [
+    # Per AWS support: when you update the CodeBuild project to use a
+    # CodeConnections-based source, CodeBuild validates that its service
+    # role has permission to access the connection at update time.
+    # So we need to ensure the codebuild's role has had these permissions
+    # set up before attempting to create or update the codebuild project.
+    aws_iam_role_policy.codestar_connection_access_for_codebuild_images,
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "codebase_image_build" {
