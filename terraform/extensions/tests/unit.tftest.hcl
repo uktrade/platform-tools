@@ -746,7 +746,7 @@ run "codebase_deploy_iam_test" {
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline",
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline-*",
       "arn:aws:iam::000123456789:role/test-application-*-codebase-*",
-      "arn:aws:iam::000123456789:role/github-oidc-test-application-repo-role"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-test-application-repo-role"
     ]
     error_message = "Unexpected condition values"
   }
