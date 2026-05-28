@@ -137,7 +137,7 @@ def create_or_update_user_secret(ssm, user_secret_name, user_secret_string, even
             Description=user_secret_description,
             Value=json.dumps(user_secret_string),
             Tags=[
-                {"Key": "managed-by", "Value": "Terraform"},
+                {"Key": "managed-by", "Value": "DBT Platform - opensearch-create-users lambda"},
                 {"Key": "application", "Value": application},
                 {"Key": "environment", "Value": environment},
                 {"Key": "copilot-application", "Value": application},
