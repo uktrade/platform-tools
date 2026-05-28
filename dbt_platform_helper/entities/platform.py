@@ -125,7 +125,7 @@ class OpenSearch(BaseModel):
         description="""Allow extra Users to be defined to be used for access from outwith the account.""",
     )
 
-    # Explicit validator as pythonn 3.10 does not support dyanmically setting Literals in the type Annotations
+    # Explicit validator as python 3.10 does not support dyanmically setting Literals in the type Annotations
     @field_validator("plan")
     @classmethod
     def validate_plan_name(cls, v: Optional[str]) -> Optional[str]:
