@@ -82,8 +82,7 @@ data "aws_security_group" "opensearch-endpoint" {
   name = local.domain_name
 }
 
-# This file needs to exist, but it's not directly used in the Terraform so...
-# tflint-ignore: terraform_unused_declarations
+
 data "archive_file" "lambda" {
   type        = "zip"
   source_file = "${path.module}/manage_users.py"
@@ -96,7 +95,7 @@ data "archive_file" "lambda" {
 resource "aws_lambda_function" "lambda" {
   # checkov:skip=CKV_AWS_272:Code signing is not currently in use
   # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
-  filename                       = "${path.module}/manage_users.zip"
+  filename                       = data.archive_file.lambda.output_path
   function_name                  = "${var.application}-${var.environment}-${local.name}-opensearch-create-users"
   role                           = aws_iam_role.lambda-execution-role.arn
   handler                        = "manage_users.handler"
@@ -124,6 +123,7 @@ resource "aws_lambda_invocation" "create-users" {
     Application       = var.application
     Environment       = var.environment
     SecretDescription = "Opensearch endpoint secret for ${local.name}"
+    ExcludeCharacters = coalesce(var.config.password_special_characters, "-_!.~$&'()*+,;=")
     Users = flatten(concat([
       {
         Username = "read",

@@ -79,14 +79,14 @@ resource "aws_security_group" "opensearch-security-group" {
     ]
   }
 
-  ingress {
-    description = "Ingress from Lambda Functions to Secrets Manager"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+  # ingress {
+  #   description = "Ingress from Lambda Functions to Secrets Manager"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
 
-    self = true
-  }
+  #   self = true
+  # }
 
   egress {
     description = "Allow traffic out on all ports"

@@ -165,6 +165,7 @@ def handler(event, context):
         "Application" : "my-app",
         "Environment" : "production",
         "SecretDescription": "description"
+        "ExcludeCharacters": "[]*"
         "Users" : [
             "Username" : "reporting",
             "Index" : false,
@@ -198,7 +199,7 @@ def handler(event, context):
         print("generating password ...")
         user_password = secrets_manager.get_random_password(
             PasswordLength=16,
-            ExcludeCharacters='[]{}()"@/\\;=?&`><:|#',
+            ExcludeCharacters=event["ExcludeCharacters"],
             ExcludePunctuation=False,
             IncludeSpace=False,
         )["RandomPassword"]
