@@ -78,11 +78,6 @@ resource "aws_iam_role_policy" "lambda-execution-role-policy" {
   policy = data.aws_iam_policy_document.lambda-execution-policy.json
 }
 
-data "aws_security_group" "opensearch-endpoint" {
-  name = local.domain_name
-}
-
-
 data "archive_file" "lambda" {
   type        = "zip"
   source_file = "${path.module}/manage_users.py"
