@@ -20,7 +20,21 @@ data "aws_iam_policy_document" "assume_codebase_pipeline" {
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline",
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-pipeline-*",
         "arn:aws:iam::${local.pipeline_account_id}:role/${var.args.application}-*-codebase-*",
-        "arn:aws:iam::${local.pipeline_account_id}:role/github-oidc-${var.args.application}-repo-role"
+      ]
+      variable = "aws:PrincipalArn"
+    }
+    actions = ["sts:AssumeRole"]
+  }
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    condition {
+      test = "ArnLike"
+      values = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.args.application}-repo-role"
       ]
       variable = "aws:PrincipalArn"
     }
