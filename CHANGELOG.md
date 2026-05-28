@@ -1,5 +1,25 @@
 # Changelog
 
+## [15.30.0](https://github.com/uktrade/platform-tools/compare/15.29.0...15.30.0) (2026-05-28)
+
+
+### Features
+
+* Build platform-deploy-tools image (DBTP-3051) ([#1475](https://github.com/uktrade/platform-tools/issues/1475)) ([94373c9](https://github.com/uktrade/platform-tools/commit/94373c99ca6ed5a052d2db6ad626e983f39801b1))
+* Switch Redis 7.1 to Valkey 7.2 in non-prod (DBTP-2873) ([#1464](https://github.com/uktrade/platform-tools/issues/1464)) ([273744f](https://github.com/uktrade/platform-tools/commit/273744f98fae1ddc96b4fc44901879544d5c868c))
+
+
+### Bug Fixes
+
+* Add OIDC trust policy for prod deployments (DBTP-3054) ([#1479](https://github.com/uktrade/platform-tools/issues/1479)) ([6582d16](https://github.com/uktrade/platform-tools/commit/6582d162b000041dab04dd6c42de4c7b1f152369))
+* CodeBase image builds failing to pull code in rare circumstances (DBTP-2763) ([#1476](https://github.com/uktrade/platform-tools/issues/1476)) ([956585c](https://github.com/uktrade/platform-tools/commit/956585c288228f159085a820f75523b63ccc6a58))
+* Prevent IAM role name from exceeding AWS 64-char limit (off-ticket) ([#1474](https://github.com/uktrade/platform-tools/issues/1474)) ([2966b99](https://github.com/uktrade/platform-tools/commit/2966b99bc8c2ee3f1702201cefc37ad23e714336))
+
+
+### Dependencies
+
+* Bump idna from 3.10 to 3.15 ([#1465](https://github.com/uktrade/platform-tools/issues/1465)) ([bb76a30](https://github.com/uktrade/platform-tools/commit/bb76a30d62726bd97f5ae8175cf95d86642ccae0))
+
 ## [15.29.0](https://github.com/uktrade/platform-tools/compare/15.28.0...15.29.0) (2026-05-20)
 
 
