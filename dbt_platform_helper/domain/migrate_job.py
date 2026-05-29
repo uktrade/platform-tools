@@ -160,7 +160,6 @@ class ScheduleMigrator:
 
     def _get_old_schedule_name_by_name(self, name, env):
         rule_name_pattern = f"{self.application}-{env}-{name}-Rule"
-        print("Pattern: ", rule_name_pattern)
         matching_rules = []
         paginator = self.old_schedule_provider.client.get_paginator("list_rules")
         for page in paginator.paginate():
