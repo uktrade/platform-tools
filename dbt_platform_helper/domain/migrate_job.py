@@ -148,6 +148,9 @@ class ScheduleMigrator:
         return f"{self.application}-{env}-{name}-schedule"
 
     def get_old_schedule_name(self, name, env):
+        return self._get_old_schedule_name_by_tag(name, env)
+    
+    def _get_old_schedule_name_by_tag(self, name, env):
         REQUIRED_TAGS = {
             "copilot-application": self.application,
             "copilot-environment": env,
