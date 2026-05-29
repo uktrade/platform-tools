@@ -12,11 +12,6 @@ from dbt_platform_helper.domain.migrate_job import ScheduleMigrator
 from dbt_platform_helper.domain.migrate_job import TooManyOldScheduledJobsFoundException
 
 
-def test__strip_prefix_and_suffix():
-    full_name = "app-env-job-Rule-weroitueworitu"
-    assert ScheduleMigrator("app", Mock(), Mock())._strip_suffix(full_name) == "app-env-job-Rule"
-
-
 def test_get_new_schedule_name():
     result = ScheduleMigrator("demodjango", Mock(), Mock()).get_new_schedule_name(
         "my-enabled-rule", "dev"
@@ -26,7 +21,7 @@ def test_get_new_schedule_name():
 
 
 @mock_aws
-def test_get_old_schedule_name():
+def test_get_old_schedule_name_with_tags():
     client = boto3.client("events", region_name="eu-west-2")
     test_rule = "my-job-XYZ"
     client.put_rule(
@@ -47,7 +42,7 @@ def test_get_old_schedule_name():
 
 
 @mock_aws
-def test_get_old_schedule_name_without_copilot_tags():
+def test_get_old_schedule_name_by_name_and_without_tags():
     client = boto3.client("events", region_name="eu-west-2")
     test_rule = "test-app-dev-my-job-Rule-XYZ"
     client.put_rule(
@@ -65,13 +60,13 @@ def test_get_old_schedule_name_without_copilot_tags():
 @mock_aws
 def test_get_old_schedule_raises_if_tags_and_name_dont_match():
     client = boto3.client("events", region_name="eu-west-2")
-    test_rule = "my-job-XYZ"
+    test_rule = "unmatching-name-XYZ"
     client.put_rule(
         Name=test_rule,
         ScheduleExpression="rate(5 minutes)",
         State="DISABLED",
         Tags=[
-            {"Key": "copilot-application", "Value": "something else"},
+            {"Key": "copilot-application", "Value": "unmatching"},
             {"Key": "copilot-environment", "Value": "dev"},
             {"Key": "copilot-service", "Value": "my-job"},
         ],

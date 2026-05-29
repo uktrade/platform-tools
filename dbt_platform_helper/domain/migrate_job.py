@@ -158,9 +158,6 @@ class ScheduleMigrator:
                 )
         raise OldScheduleNotFoundException(f"{name} could not be found in the {env} environment")
 
-    def _strip_suffix(self, name):
-        return name.rsplit("-", 1)[0]
-
     def _get_old_schedule_name_by_name(self, name, env):
         rule_name_pattern = f"{self.application}-{env}-{name}-Rule"
         print("Pattern: ", rule_name_pattern)
@@ -168,7 +165,7 @@ class ScheduleMigrator:
         paginator = self.old_schedule_provider.client.get_paginator("list_rules")
         for page in paginator.paginate():
             for rule in page["Rules"]:
-                if self._strip_suffix(rule.get("Name", "")) == rule_name_pattern:
+                if rule.get("Name", "").rsplit("-", 1)[0] == rule_name_pattern:
                     matching_rules.append(rule)
         return matching_rules
 
