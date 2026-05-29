@@ -148,8 +148,30 @@ class ScheduleMigrator:
         return f"{self.application}-{env}-{name}-schedule"
 
     def get_old_schedule_name(self, name, env):
-        return self._get_old_schedule_name_by_tag(name, env)
-    
+        for method in [self._get_old_schedule_name_by_tag, self._get_old_schedule_name_by_name]:
+            matching_rules = method(name, env)
+            if len(matching_rules) == 1:
+                return matching_rules[0].get("Name")
+            if len(matching_rules) > 1:
+                raise TooManyOldScheduledJobsFoundException(
+                    f"A unique job {name} could not be found in the {env} environment"
+                )
+        raise OldScheduleNotFoundException(f"{name} could not be found in the {env} environment")
+
+    def _strip_suffix(self, name):
+        return name.rsplit("-", 1)[0]
+
+    def _get_old_schedule_name_by_name(self, name, env):
+        rule_name_pattern = f"{self.application}-{env}-{name}-Rule"
+        print("Pattern: ", rule_name_pattern)
+        matching_rules = []
+        paginator = self.old_schedule_provider.client.get_paginator("list_rules")
+        for page in paginator.paginate():
+            for rule in page["Rules"]:
+                if self._strip_suffix(rule.get("Name", "")) == rule_name_pattern:
+                    matching_rules.append(rule)
+        return matching_rules
+
     def _get_old_schedule_name_by_tag(self, name, env):
         REQUIRED_TAGS = {
             "copilot-application": self.application,
@@ -170,13 +192,4 @@ class ScheduleMigrator:
                 if all(tags.get(k) == v for k, v in REQUIRED_TAGS.items()):
                     matching_rules.append(rule)
 
-        if len(matching_rules) == 1:
-            return matching_rules[0].get("Name")
-        if not matching_rules:
-            raise OldScheduleNotFoundException(
-                f"{name} could not be found in the {env} environment"
-            )
-        else:
-            raise TooManyOldScheduledJobsFoundException(
-                f"A unique job {name} could not be found in the {env} environment"
-            )
+        return matching_rules
