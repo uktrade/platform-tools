@@ -719,6 +719,7 @@ data "aws_iam_policy_document" "eventbridge_scheduler_access" {
     effect = "Allow"
     actions = [
       "scheduler:CreateSchedule",
+      "scheduler:UpdateSchedule",
       "scheduler:GetSchedule",
       "scheduler:TagResource"
     ]
