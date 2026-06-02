@@ -25,7 +25,12 @@ phases:
         if [ -f .copilot/phases/build.sh ]; then 
           bash .copilot/phases/build.sh; 
         fi
-      - /work/cli build --publish --send-notifications
+      - |
+        if [ "${NOTIFICATIONS_ENABLED}" == "true" ]; then
+          /work/cli build --publish --send-notifications
+        else
+          /work/cli build --publish
+        fi
 
   post_build:
     commands:
@@ -34,7 +39,7 @@ phases:
           bash .copilot/phases/post_build.sh; 
         fi
         
-        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" ]; then
+        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" && "${NOTIFICATIONS_ENABLED}" == "true" ]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
           echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
 
