@@ -10,8 +10,12 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.domain.plans import PlanLoader
-from dbt_platform_helper.entities.platform import OpensearchExtensionSchema
-from dbt_platform_helper.entities.platform import external_user_access_validator
+from dbt_platform_helper.entities.platform.extensions.opensearch import (
+    OpensearchExtensionSchema,
+)
+from dbt_platform_helper.entities.platform.extensions.opensearch import (
+    external_user_access_validator,
+)
 
 plan_manager = PlanLoader()
 plan_manager.load()

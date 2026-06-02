@@ -122,13 +122,13 @@ resource "aws_lambda_invocation" "create-users" {
     Users = flatten(concat([
       {
         Username = "read",
-        Index    = true,
+        Index    = false,
         Read     = true,
         Write    = false
       },
       {
         Username = "write",
-        Index    = true,
+        Index    = false,
         Read     = true,
         Write    = true
       }

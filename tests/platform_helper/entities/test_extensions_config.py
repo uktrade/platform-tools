@@ -23,7 +23,9 @@ def make_validator_fixture():
 
             return PlatformConfigSchema.extension_schemas()[extension].validate
         if param == "pydantic":
-            from dbt_platform_helper.entities.platform import validate_extension_fn
+            from dbt_platform_helper.entities.platform.extensions.opensearch import (
+                validate_extension_fn,
+            )
 
             return validate_extension_fn(extension)
 
