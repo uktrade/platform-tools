@@ -59,6 +59,11 @@ resource "aws_codebuild_project" "codebase_image_build" {
         value = var.additional_ecr_repository
       }
     }
+
+    environment_variable {
+      name  = "NOTIFICATIONS_ENABLED"
+      value = !var.use_github_actions
+    }
   }
 
   logs_config {
