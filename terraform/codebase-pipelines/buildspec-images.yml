@@ -39,7 +39,7 @@ phases:
           bash .copilot/phases/post_build.sh; 
         fi
         
-        if [ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" && "${NOTIFICATIONS_ENABLED}" == "true" ]; then
+        if [[ "${CODEBUILD_BUILD_SUCCEEDING}" != "1" && "${NOTIFICATIONS_ENABLED}" == "true" ]]; then
           BUILD_ID_PREFIX=$(echo $CODEBUILD_BUILD_ID | cut -d':' -f1)
           echo "BUILD_ID_PREFIX - ${BUILD_ID_PREFIX}"
 
