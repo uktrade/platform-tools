@@ -415,8 +415,9 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
         result = PlatformHelperVersioning(**mocks.params()).get_template_version()
         assert result == "platform_helper_env_override"
 
-    def test_get_template_version_default_fallback_when_no_overrides(
-        self, platform_config_for_env_pipelines
+    @pytest.mark.parametrize("platform_helper_env_override", [None, "NONE"])
+    def test_get_template_version_default_fallback_when_no_valid_overrides(
+        self, platform_config_for_env_pipelines, platform_helper_env_override
     ):
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
@@ -425,7 +426,9 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
             platform_config_for_env_pipelines
         )
         mocks.mock_platform_helper_version_override = None
-        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            platform_helper_env_override
+        )
 
         result = PlatformHelperVersioning(**mocks.params()).get_template_version()
         assert result == "1.1.1"

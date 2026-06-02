@@ -508,6 +508,11 @@ run "test_codebuild_images" {
     error_message = "Should be: '/fake/slack/channel'"
   }
   assert {
+    condition = one([for var in one(aws_codebuild_project.codebase_image_build[""].environment).environment_variable :
+    var.value if var.name == "NOTIFICATIONS_ENABLED"]) == "true"
+    error_message = "Should be: 'true'"
+  }
+  assert {
     condition = aws_codebuild_project.codebase_image_build[""].logs_config[0].cloudwatch_logs[
       0
     ].group_name == "codebuild/my-app-my-codebase-codebase-image-build/log-group"
@@ -2593,6 +2598,12 @@ run "test_disable_codepipeline_triggers" {
   assert {
     condition     = aws_codebuild_webhook.codebuild_webhook == {}
     error_message = "Should be: {}"
+  }
+
+  assert {
+    condition = one([for var in one(aws_codebuild_project.codebase_image_build[""].environment).environment_variable :
+    var.value if var.name == "NOTIFICATIONS_ENABLED"]) == "false"
+    error_message = "Should be: 'false'"
   }
 
   assert {

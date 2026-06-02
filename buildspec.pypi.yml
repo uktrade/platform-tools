@@ -18,7 +18,6 @@ phases:
       - echo -e "\nInstalling dependencies"
       - pip install poetry
       - poetry install
-      - pip install dbt-platform-helper
 
   build:
     commands:
@@ -28,7 +27,7 @@ phases:
   post_build:
     commands:
       - |
-        PLATFORM_HELPER_VERSION="$(pip show dbt-platform-helper | awk '/^Version:/ {print $2}')"
+        PLATFORM_HELPER_VERSION="$(poetry version -s)"
         aws codebuild start-build \
           --project-name build-platform-deploy-tools \
           --environment-variables-override \

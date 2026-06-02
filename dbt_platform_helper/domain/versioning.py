@@ -170,7 +170,7 @@ class PlatformHelperVersioning:
         platform_helper_env_override = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         )
-        if platform_helper_env_override:
+        if platform_helper_env_override and platform_helper_env_override != "NONE":
             return platform_helper_env_override
 
         return self.get_default_version()
