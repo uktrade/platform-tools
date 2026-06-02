@@ -1,5 +1,15 @@
 # Changelog
 
+## [15.30.1](https://github.com/uktrade/platform-tools/compare/15.30.0...15.30.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* Disable image build notifications if using GitHub actions (DBTP-3071) ([#1487](https://github.com/uktrade/platform-tools/issues/1487)) ([820e8e9](https://github.com/uktrade/platform-tools/commit/820e8e9e752bd0cd82d06eebbae6d61a895af4dd))
+* Internal migrate-job command works without copilot tags (Off-ticket) ([#1483](https://github.com/uktrade/platform-tools/issues/1483)) ([54f77b2](https://github.com/uktrade/platform-tools/commit/54f77b2f1cb15493155cb9f73f8b238a25cbad99))
+* Pass the correct PH version when building the platform-deploy-tools image (off-ticket)  ([#1481](https://github.com/uktrade/platform-tools/issues/1481)) ([bc583b8](https://github.com/uktrade/platform-tools/commit/bc583b895b36f0feb40854060e3170408e1c89b1))
+* Prevent setting null values in the version tracker SSM parameter (off-ticket) ([#1486](https://github.com/uktrade/platform-tools/issues/1486)) ([9dd76c6](https://github.com/uktrade/platform-tools/commit/9dd76c61f2644e0d89e13472fc1adb49b642bcef))
+
 ## [15.30.0](https://github.com/uktrade/platform-tools/compare/15.29.0...15.30.0) (2026-05-28)
 
 
