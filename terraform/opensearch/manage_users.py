@@ -25,13 +25,15 @@ def get_admin_user_and_host(ssm, ssm_param_name):
     return admin_user, host
 
 
-def get_or_create_roles(host, admin_user):
+def get_or_create_roles(host, admin_user, username):
+    # Read and write can act on all indicies otherwise reduce the pattern
+    index_pattern = f"{username}-*" if username.lower() not in ["read", "write"] else "*"
     roles = {
         READ_ROLE: {
             "cluster_permissions": ["cluster_composite_ops_ro"],
             "index_permissions": [
                 {
-                    "index_patterns": ["*"],
+                    "index_patterns": [index_pattern],
                     "allowed_actions": [
                         "read",
                         "indices:data/read/*",
@@ -45,7 +47,7 @@ def get_or_create_roles(host, admin_user):
             "cluster_permissions": ["cluster_composite_ops"],
             "index_permissions": [
                 {
-                    "index_patterns": ["*"],
+                    "index_patterns": [index_pattern],
                     "allowed_actions": [
                         "write",
                         "read",  # Required: For bulk checks/updates
@@ -59,7 +61,7 @@ def get_or_create_roles(host, admin_user):
             "cluster_permissions": ["cluster_composite_ops"],
             "index_permissions": [
                 {
-                    "index_patterns": ["*"],
+                    "index_patterns": [index_pattern],
                     "allowed_actions": [
                         "create_index",
                         "manage",
@@ -74,10 +76,12 @@ def get_or_create_roles(host, admin_user):
     existing_roles = {}
     for role_name, role in roles.items():
         try:
-            existing_roles[role_name] = request("GET", host, f"/roles/{role_name}", admin_user)
+            existing_roles[role_name] = request(
+                "GET", host, f"/roles/{username}_{role_name}", admin_user
+            )
         except Exception:
             existing_roles[role_name] = request(
-                "PUT", host, f"/roles/{role_name}", admin_user, role
+                "PUT", host, f"/roles/{username}_{role_name}", admin_user, role
             )
 
     return existing_roles
@@ -96,7 +100,7 @@ def create_or_update_user(host, admin_user, new_user, roles):
     for role in roles:
         try:
             map_response = request(
-                "PUT", host, f"rolesmapping/{role}", admin_user, {"users": [username]}
+                "PUT", host, f"rolesmapping/{username}_{role}", admin_user, {"users": [username]}
             )
         except Exception:
             print(f"Failed to create user mapping for {username} to role {role}")
@@ -181,12 +185,12 @@ def handler(event, context):
 
     admin_user, host = get_admin_user_and_host(ssm, event["AdminUserEndpointParam"])
 
-    print(get_or_create_roles(host, admin_user))
     application = event["Application"]
     environment = event["Environment"]
 
     for user_config in event["Users"]:
         username = user_config["Username"]
+        print(get_or_create_roles(host, admin_user, username))
         param_prefix = username.replace("-", "_").upper()
         ssm_param_name = (
             f"/platform/{application}/{environment}/secrets/{param_prefix}_OPENSEARCH_ENDPOINT"
