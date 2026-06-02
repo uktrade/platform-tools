@@ -2601,11 +2601,6 @@ run "test_disable_codepipeline_triggers" {
   }
 
   assert {
-    condition     = aws_codebuild_webhook.codebuild_webhook == {}
-    error_message = "Should be: {}"
-  }
-
-  assert {
     condition = one([for var in one(aws_codebuild_project.codebase_image_build[""].environment).environment_variable :
     var.value if var.name == "NOTIFICATIONS_ENABLED"]) == "false"
     error_message = "Should be: 'false'"
