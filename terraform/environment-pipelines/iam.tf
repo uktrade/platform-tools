@@ -528,7 +528,6 @@ data "aws_iam_policy_document" "postgres" {
     ]
     resources = flatten([for env in local.environment_config : [
       "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*",
-      "arn:aws:lambda:${local.account_region}:function:${env.name}-${var.application}-*" # Openserch naming is flipped
     ]])
   }
 
