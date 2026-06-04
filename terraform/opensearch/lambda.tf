@@ -96,7 +96,7 @@ resource "aws_lambda_function" "lambda" {
   handler                        = "manage_users.handler"
   runtime                        = "python3.12"
   memory_size                    = 128
-  timeout                        = 10
+  timeout                        = 30
   reserved_concurrent_executions = -1
 
   source_code_hash = data.archive_file.lambda.output_base64sha256
