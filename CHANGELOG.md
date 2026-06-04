@@ -1,5 +1,17 @@
 # Changelog
 
+## [15.31.0](https://github.com/uktrade/platform-tools/compare/15.30.1...15.31.0) (2026-06-04)
+
+
+### Features
+
+* Opensearch User creational and config (DBTP-2960) ([#1445](https://github.com/uktrade/platform-tools/issues/1445)) ([310a41b](https://github.com/uktrade/platform-tools/commit/310a41b9f5d74b3c37d0fa2f8a5be00ba13b9dd9))
+
+
+### Bug Fixes
+
+* Run PyPI release notification script with poetry (off-ticket) ([#1489](https://github.com/uktrade/platform-tools/issues/1489)) ([6b16367](https://github.com/uktrade/platform-tools/commit/6b1636722cfbf2d8e2cf94583880f6b9fdca6563))
+
 ## [15.30.1](https://github.com/uktrade/platform-tools/compare/15.30.0...15.30.1) (2026-06-02)
 
 
