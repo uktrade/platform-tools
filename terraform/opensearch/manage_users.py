@@ -25,7 +25,7 @@ def get_admin_user_and_host(ssm, ssm_param_name):
     return admin_user, host
 
 
-def get_or_create_roles(host, admin_user, username):
+def get_or_create_roles(host, admin_user, username, user_roles):
     # Read and write can act on all indicies otherwise reduce the pattern
     index_pattern = f"{username}-*" if username.lower() not in ["read", "write"] else "*"
     roles = {
@@ -74,26 +74,29 @@ def get_or_create_roles(host, admin_user, username):
         },
     }
     existing_roles = {}
-    for role_name, role in roles.items():
+    for role_name in user_roles:
+        role_template = roles[role_name]
+
         try:
             existing_roles[role_name] = request(
                 "GET", host, f"/roles/{username}_{role_name}", admin_user
             )
         except Exception:
             existing_roles[role_name] = request(
-                "PUT", host, f"/roles/{username}_{role_name}", admin_user, role
+                "PUT", host, f"/roles/{username}_{role_name}", admin_user, role_template
             )
 
     return existing_roles
 
 
 def create_or_update_user(host, admin_user, new_user, roles):
+    username = new_user["username"]
     body = {
         "password": new_user["password"],
-        "backend_roles": roles,
+        "backend_roles": [f"{username}_{role}" for role in roles],
         "attributes": {},
     }
-    username = new_user["username"]
+
     path = "/internalusers/" + username
     user_response = request("PUT", host, path, admin_user, body)
 
@@ -190,7 +193,7 @@ def handler(event, context):
 
     for user_config in event["Users"]:
         username = user_config["Username"]
-        print(get_or_create_roles(host, admin_user, username))
+
         param_prefix = username.replace("-", "_").upper()
         ssm_param_name = (
             f"/platform/{application}/{environment}/secrets/{param_prefix}_OPENSEARCH_ENDPOINT"
@@ -200,6 +203,7 @@ def handler(event, context):
 
         roles = [role_map[key] for key in role_map.keys() if user_config[key]]
 
+        print(get_or_create_roles(host, admin_user, username, roles))
         print("generating password ...")
         user_password = secrets_manager.get_random_password(
             PasswordLength=16,
