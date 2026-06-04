@@ -2,7 +2,6 @@ import random
 import string
 import subprocess
 from typing import Any
-from typing import List
 from typing import Optional
 
 from botocore.exceptions import ClientError
@@ -362,7 +361,7 @@ class ECS(DeploymentPort):
                     )
         return services
 
-    def _list_services(self, cluster: str) -> List[str]:
+    def _list_services(self, cluster: str) -> list[str]:
         arns = []
         paginator = self.ecs_client.get_paginator("list_services")
         for page in paginator.paginate(cluster=cluster):

@@ -2,7 +2,6 @@ from abc import ABC
 from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
 from typing import Optional
 
 
@@ -53,7 +52,7 @@ class DeploymentPort(ABC):
     @abstractmethod
     def get_deployed_services(
         self, application: str, environment: str, platform: bool = True
-    ) -> List[DeployedService]:
+    ) -> list[DeployedService]:
         pass
 
 
