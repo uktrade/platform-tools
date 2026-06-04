@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.31.1](https://github.com/uktrade/platform-tools/compare/15.31.0...15.31.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* Increase lambda timeout (DBTP-2960) ([#1491](https://github.com/uktrade/platform-tools/issues/1491)) ([46b16fa](https://github.com/uktrade/platform-tools/commit/46b16fa84eb47802ef18d5e56157112f9d97128d))
+
 ## [15.31.0](https://github.com/uktrade/platform-tools/compare/15.30.1...15.31.0) (2026-06-04)
 
 
