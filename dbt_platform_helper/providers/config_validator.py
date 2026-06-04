@@ -31,6 +31,8 @@ class ConfigValidator:
             self.validate_s3_data_migration_config,
             self.validate_cache_invalidation_config,
             self.validate_config_for_managed_upgrades,
+            self.validate_alb_extension,
+            self.validate_s3_extension,
         ]
         self.io = io
         self.session = session
@@ -312,3 +314,59 @@ class ConfigValidator:
 
             if errors:
                 raise ConfigValidatorError("\n".join(errors))
+
+    def validate_alb_extension(self, config):
+        deprecated_options = {
+            "allowed_methods",
+            "cached_methods",
+            "cdn_compress",
+            "cdn_domains_list",
+            "cdn_geo_locations",
+            "cdn_geo_restriction_type",
+            "cdn_logging_bucket",
+            "cdn_logging_bucket_prefix",
+            "cdn_timeout_seconds",
+            "default_waf",
+            "domain_prefix",
+            "enable_logging",
+            "forwarded_values_forward",
+            "forwarded_values_headers",
+            "forwarded_values_query_string",
+            "origin_protocol_policy",
+            "origin_ssl_protocols",
+            "viewer_certificate_minimum_protocol_version",
+            "viewer_certificate_ssl_support_method",
+            "viewer_protocol_policy",
+            "cache_policy",
+            "origin_request_policy",
+            "paths",
+            "managed_ingress",
+        }
+
+        for ext_name, ext in config.get("extensions", {}).items():
+            if ext["type"] == "alb":
+                deprecated_options_used = set()
+
+                for env_cfg in ext.get("environments", {}).values():
+                    deprecated_options_used |= env_cfg.keys() & deprecated_options
+
+                if deprecated_options_used:
+                    deprecated_options_str = ", ".join(sorted(deprecated_options_used))
+                    self.io.warn(
+                        f"WARNING: In extensions.{ext_name}: option(s) {deprecated_options_str} are deprecated and should be removed from platform-config.yml."
+                    )
+                    self.io.warn(
+                        f"For information about how to manage CDNs, see https://platform.readme.trade.gov.uk/managed/features/public-access/"
+                    )
+
+    def validate_s3_extension(self, config):
+        for ext_name, ext in config.get("extensions", {}).items():
+            if ext["type"] == "s3":
+                deprecated_option_used = any(
+                    "managed_ingress" in env_cfg for env_cfg in ext.get("environments", {}).values()
+                )
+
+                if deprecated_option_used:
+                    self.io.warn(
+                        f"WARNING: In extensions.{ext_name}: the managed_ingress option is deprecated and should be removed from platform-config.yml."
+                    )

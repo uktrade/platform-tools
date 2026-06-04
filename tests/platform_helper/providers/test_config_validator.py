@@ -1,10 +1,12 @@
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 
 import pytest
 
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.config_validator import ConfigValidatorError
+from dbt_platform_helper.providers.io import ClickIOProvider
 
 
 @pytest.mark.parametrize(
@@ -578,3 +580,121 @@ def test_validate_config_for_managed_upgrades(
 
     else:
         validator.validate_config_for_managed_upgrades(config)
+
+
+def test_validate_alb_extension_doesnt_warn_if_no_deprecated_options_used():
+    config = {
+        "extensions": {
+            "my-alb": {
+                "type": "alb",
+                "environments": {
+                    "dev": {
+                        "additional_address_list": [],
+                        "slack_alert_channel_alb_secret_rotation": "",
+                    },
+                },
+            },
+        },
+    }
+
+    mock_io = Mock(spec=ClickIOProvider)
+    validator = ConfigValidator(io=mock_io)
+
+    validator.validate_alb_extension(config)
+
+    mock_io.warn.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        "allowed_methods",
+        "cached_methods",
+        "cdn_compress",
+        "cdn_domains_list",
+        "cdn_geo_locations",
+        "cdn_geo_restriction_type",
+        "cdn_logging_bucket",
+        "cdn_logging_bucket_prefix",
+        "cdn_timeout_seconds",
+        "default_waf",
+        "domain_prefix",
+        "enable_logging",
+        "forwarded_values_forward",
+        "forwarded_values_headers",
+        "forwarded_values_query_string",
+        "origin_protocol_policy",
+        "origin_ssl_protocols",
+        "viewer_certificate_minimum_protocol_version",
+        "viewer_certificate_ssl_support_method",
+        "viewer_protocol_policy",
+        "cache_policy",
+        "origin_request_policy",
+        "paths",
+        "managed_ingress",
+    ],
+)
+def test_validate_alb_extension_warns_if_deprecated_option_used(option):
+    config = {
+        "extensions": {
+            "my-alb": {
+                "type": "alb",
+                "environments": {
+                    "dev": {
+                        option: "value",
+                    },
+                },
+            },
+        },
+    }
+
+    mock_io = Mock(spec=ClickIOProvider)
+    validator = ConfigValidator(io=mock_io)
+
+    validator.validate_alb_extension(config)
+
+    mock_io.warn.assert_called()
+
+
+def test_validate_s3_extension_doesnt_warn_if_deprecated_option_not_used():
+    config = {
+        "extensions": {
+            "my-s3-bucket": {
+                "type": "s3",
+                "serve_static_content": True,
+                "environments": {
+                    "dev": {},
+                },
+            },
+        },
+    }
+
+    mock_io = Mock(spec=ClickIOProvider)
+    validator = ConfigValidator(io=mock_io)
+
+    validator.validate_s3_extension(config)
+
+    mock_io.warn.assert_not_called()
+
+
+def test_validate_s3_extension_warns_if_deprecated_option_used():
+    config = {
+        "extensions": {
+            "my-s3-bucket": {
+                "type": "s3",
+                "serve_static_content": True,
+                "environments": {
+                    "dev": {
+                        "managed_ingress": True,
+                    },
+                },
+            },
+        },
+    }
+
+    mock_io = Mock(spec=ClickIOProvider)
+    validator = ConfigValidator(io=mock_io)
+
+    validator.validate_s3_extension(config)
+
+    mock_io.warn.assert_called()
