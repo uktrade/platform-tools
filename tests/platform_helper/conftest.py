@@ -522,6 +522,12 @@ extensions:
         volume_size: 40
         password_special_characters: "-_.,"
         urlencode_password: false
+        external_user_access:
+            user-write-access:
+                index: false
+                read: false
+                write: true
+                cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
   test-app-s3-bucket-with-objects:
     type: s3
