@@ -5,7 +5,7 @@
 provider "aws" {
   alias = "domain"
   assume_role {
-    role_arn = "arn:aws:iam::${local.dns_account_id}:role/environment-pipeline-assumed-role"
+    role_arn = "arn:aws:iam::${local.dns_account_id}:role/${var.args.application}-${var.environment}-pipeline-deployment-role"
   }
 }
 
@@ -13,7 +13,7 @@ provider "aws" {
   region = "us-east-1"
   alias  = "domain-cdn"
   assume_role {
-    role_arn = "arn:aws:iam::${local.dns_account_id}:role/environment-pipeline-assumed-role"
+    role_arn = "arn:aws:iam::${local.dns_account_id}:role/${var.args.application}-${var.environment}-pipeline-deployment-role"
   }
 }
 
@@ -41,7 +41,7 @@ terraform {
     }
     datadog = {
       source                = "DataDog/datadog"
-      version               = "3.84.0"
+      version               = "4.5.0"
       configuration_aliases = [datadog.ddog]
     }
   }

@@ -11,6 +11,16 @@ variable "environment" {
 }
 
 variable "repos" {
-  type    = list(string)
-  default = null # Default to null in case the repository isn't provided in platform-config.yml
+  type     = list(string)
+  default  = []
+  nullable = false
+}
+
+variable "pinned_version" {
+  type    = string
+  default = null # Only populated for centralised services
+}
+
+variable "deploy_repository" {
+  type = string
 }

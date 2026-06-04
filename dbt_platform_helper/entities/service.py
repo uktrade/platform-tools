@@ -1,7 +1,6 @@
 import re
 from enum import Enum
 from typing import ClassVar
-from typing import Dict
 from typing import Optional
 from typing import Union
 
@@ -11,6 +10,17 @@ from pydantic import field_validator
 from pydantic import model_validator
 
 from dbt_platform_helper.platform_exception import PlatformException
+
+CRON_REGEX = re.compile(
+    r"^"
+    r"([0-9*,\-/]+)\s+"  # min
+    r"([0-9*,\-/]+)\s+"  # hour
+    r"([0-9*,\-/?]+)\s+"  # day of month
+    r"([0-9*,\-/A-Z]+)\s+"  # month
+    r"([0-9*,\-/A-Z?]+)\s+"  # day of week
+    r"([0-9*,\-/]+)"  # year
+    r"$"
+)
 
 
 class HealthCheck(BaseModel):
@@ -112,10 +122,10 @@ class Sidecar(BaseModel):
         description="Whether the ECS task should stop if this sidecar container exits.",
         default=True,
     )
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the sidecar container.", default=None
     )
-    secrets: Optional[Dict[str, str]] = Field(
+    secrets: Optional[dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the sidecar.", default=None
     )
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
@@ -125,8 +135,8 @@ class SidecarOverride(BaseModel):
     port: Optional[int] = Field(default=None)
     image: Optional[str] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(default=None)
+    secrets: Optional[dict[str, str]] = Field(default=None)
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
@@ -160,6 +170,10 @@ class Storage(BaseModel):
     writable_directories: Optional[list[str]] = Field(
         description="List of directories with read/write access.", default=None
     )
+    ephemeral: Optional[int] = Field(
+        description="The total amount, in GiB, of ephemeral storage to set for the ECS task.",
+        default=None,
+    )
 
     @field_validator("writable_directories", mode="after")
     @classmethod
@@ -171,6 +185,15 @@ class Storage(BaseModel):
                         "All writable directory paths must be absolute (starts with a /)"
                     )
         return value
+
+    @model_validator(mode="after")
+    def is_within_allowed_range(self):
+        if self.ephemeral:
+            if self.ephemeral < 21 or self.ephemeral > 200:
+                raise PlatformException(
+                    "The minimum supported ephemeral storage value is 21 (GiB) and the maximum supported value is 200 (GiB)."
+                )
+        return self
 
 
 class Cooldown(BaseModel):
@@ -220,6 +243,35 @@ class RequestsPerMinute(BaseModel):
     )
 
 
+class CronSchedule(BaseModel):
+    schedule: str = Field(
+        description="The cron schedule to carry out the scaling action to the given range."
+    )
+    range: str = Field(
+        description="Minimum and maximum number of ECS tasks to maintain e.g. '1-2'."
+    )
+
+    @model_validator(mode="after")
+    def validate_fields(self):
+
+        if not CRON_REGEX.match(self.schedule):
+            raise PlatformException(
+                f"Invalid cron expression: '{self.schedule}'. "
+                "Excepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'"
+            )
+
+        if not re.match(r"^(\d+)-(\d+)$", self.range):
+            raise PlatformException("Range must be in the format 'int-int' e.g. '1-2'")
+
+        range_split = self.range.split("-")
+        if int(range_split[0]) > int(range_split[1]):
+            raise PlatformException(
+                "Range minimum value must be less or equal to the maximum value."
+            )
+
+        return self
+
+
 class Count(BaseModel):
     range: str = Field(
         description="Minimum and maximum number of ECS tasks to maintain e.g. '1-2'."
@@ -241,28 +293,37 @@ class Count(BaseModel):
         description="Request-rate threshold. Either a plain integer or a map with 'value' and 'cooldown'.",
     )
 
+    schedules: Optional[list[CronSchedule]] = Field(
+        default=None,
+        description="Scheduled scaling actions",
+    )
+
     @model_validator(mode="after")
     def at_least_one_autoscaling_metric(self):
 
-        if not any([self.cpu_percentage, self.memory_percentage, self.requests_per_minute]):
+        if not any(
+            [self.cpu_percentage, self.memory_percentage, self.requests_per_minute, self.schedules]
+        ):
             raise PlatformException(
-                "If autoscaling is enabled, you must define at least one metric: "
-                "cpu_percentage, memory_percentage, or requests_per_minute"
+                "If autoscaling is enabled, you must define at least one metric or a cron schedule: "
+                "cpu_percentage, memory_percentage, requests_per_minute, or cron."
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
             raise PlatformException("Range must be in the format 'int-int' e.g. '1-2'")
 
         range_split = self.range.split("-")
-        if int(range_split[0]) >= int(range_split[1]):
-            raise PlatformException("Range minimum value must be less than the maximum value.")
+        if int(range_split[0]) > int(range_split[1]):
+            raise PlatformException(
+                "Range minimum value must be less than or equal to the maximum value."
+            )
 
         return self
 
 
 class ServiceConfigEnvironmentOverride(BaseModel):
     http: Optional[HttpOverride] = Field(default=None)
-    sidecars: Optional[Dict[str, SidecarOverride]] = Field(default=None)
+    sidecars: Optional[dict[str, SidecarOverride]] = Field(default=None)
     image: Optional[Image] = Field(default=None)
 
     cpu: Optional[int] = Field(default=None)
@@ -274,13 +335,14 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 
     storage: Optional[Storage] = Field(default=None)
 
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(default=None)
+    secrets: Optional[dict[str, str]] = Field(default=None)
 
 
 class ServiceType(str, Enum):
     BACKEND_SERVICE = "Backend Service"
     LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+    SCHEDULED_JOB = "Scheduled Job"
 
 
 class ServiceConfig(BaseModel):
@@ -298,7 +360,58 @@ class ServiceConfig(BaseModel):
             )
         return self
 
-    sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
+    @model_validator(mode="after")
+    def check_scheduled_job_conditional_fields(self):
+        if self.type == ServiceType.SCHEDULED_JOB:
+            if self.count is not None:
+                raise PlatformException(
+                    f"'count' is not allowed for service type == {self.type.value}"
+                )
+            if self.http is not None:
+                raise PlatformException(
+                    f"'http' is not allowed for service type == {self.type.value}"
+                )
+            if self.schedule is None:
+                raise PlatformException(
+                    f"'schedule' is required for service type == {self.type.value}"
+                )
+        else:
+            if self.count is None:
+                raise PlatformException(
+                    f"'count' is required for service type == {self.type.value}"
+                )
+            if self.schedule is not None:
+                raise PlatformException(
+                    f"'schedule' is not allowed for service type == {self.type.value}"
+                )
+            if self.retries is not None:
+                raise PlatformException(
+                    f"'retries' is not allowed for service type == {self.type.value}"
+                )
+            if self.timeout is not None:
+                raise PlatformException(
+                    f"'timeout' is not allowed for service type == {self.type.value}"
+                )
+            if self.platform is not None:
+                raise PlatformException(
+                    f"'platform' is not allowed for service type == {self.type.value}"
+                )
+        return self
+
+    schedule: Optional[str] = Field(
+        default=None,
+        description="Set schedule for Scheduled Job (e.g. 'none', 'rate(5 minutes)', '5 * * * ?').",
+    )
+    retries: Optional[int] = Field(
+        default=None, description="Set retries for Scheduled Job (e.g. 1)."
+    )
+    timeout: Optional[int] = Field(
+        default=None, description="Set timeout for Scheduled Job in seconds (e.g. 300)."
+    )
+    platform: Optional[str] = Field(
+        default=None, description="Set platform for Scheduled Job (e.g. 'x86_64' or 'arm64')."
+    )
+    sidecars: Optional[dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
     cpu: int = Field(
         description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
@@ -306,8 +419,9 @@ class ServiceConfig(BaseModel):
     memory: int = Field(
         description="Memory in MiB reserved for the ECS task (e.g. 256, 512, 1024)."
     )
-    count: Union[int, Count] = Field(
-        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_minute' metrics."
+    count: Optional[Union[int, Count]] = Field(
+        default=None,
+        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_minute' metrics.",
     )
     exec: Optional[bool] = Field(
         description="Enable ECS Exec (remote command execution) for running ECS tasks.",
@@ -321,19 +435,24 @@ class ServiceConfig(BaseModel):
         default=True,
     )
     storage: Storage = Field(default_factory=Storage)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the main application container.",
         default=None,
     )
-    secrets: Optional[Dict[str, str]] = Field(
+    secrets: Optional[dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the main application container.",
         default=None,
     )
     # Environment overrides can override almost the full config
-    environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
+    environments: Optional[dict[str, ServiceConfigEnvironmentOverride]] = Field(
         description="Allows you to override most service config properties for specific environments.",
         default=None,
     )
 
     # Class based variable used when handling the object
-    local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
+    local_ecs_service_terraform_source: ClassVar[str] = (
+        "../../../../../platform-tools/terraform/ecs-service"
+    )
+    local_version_tracker_terraform_source: ClassVar[str] = (
+        "../../../../../platform-tools/terraform/version-tracker"
+    )

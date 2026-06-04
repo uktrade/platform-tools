@@ -7,34 +7,6 @@ resource "aws_secretsmanager_secret" "origin-verify-secret" {
   tags                    = local.tags
 }
 
-data "aws_iam_policy_document" "secret_manager_policy" {
-  for_each = toset(local.cdn_enabled ? [""] : [])
-  statement {
-    sid    = "AllowAssumedRoleToAccessSecret"
-    effect = "Allow"
-
-    principals {
-      type = "AWS"
-      identifiers = [
-        "arn:aws:iam::${var.dns_account_id}:role/environment-pipeline-assumed-role"
-      ]
-    }
-
-    actions = [
-      "secretsmanager:GetSecretValue",
-      "secretsmanager:DescribeSecret"
-    ]
-
-    resources = [aws_secretsmanager_secret.origin-verify-secret[""].arn]
-  }
-}
-
-resource "aws_secretsmanager_secret_policy" "secret_policy" {
-  for_each   = toset(local.cdn_enabled ? [""] : [])
-  secret_arn = aws_secretsmanager_secret.origin-verify-secret[""].arn
-  policy     = data.aws_iam_policy_document.secret_manager_policy[""].json
-}
-
 resource "aws_kms_key" "origin_verify_secret_key" {
   for_each                = toset(local.cdn_enabled ? [""] : [])
   description             = "KMS key for ${var.application}-${var.environment}-origin-verify-header-secret"
@@ -85,12 +57,6 @@ resource "aws_secretsmanager_secret_rotation" "origin-verify-rotate-schedule" {
   rotation_rules {
     automatically_after_days = 7
   }
-}
-
-# Output used in CDN module
-output "origin_verify_secret_id" {
-  value       = local.cdn_enabled ? aws_secretsmanager_secret.origin-verify-secret[""].id : null
-  description = "The secret ID for origin verification header."
 }
 
 # These moved blocks are to prevent resources being recreated

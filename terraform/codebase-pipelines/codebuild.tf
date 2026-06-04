@@ -59,6 +59,11 @@ resource "aws_codebuild_project" "codebase_image_build" {
         value = var.additional_ecr_repository
       }
     }
+
+    environment_variable {
+      name  = "NOTIFICATIONS_ENABLED"
+      value = !var.use_github_actions
+    }
   }
 
   logs_config {
@@ -76,9 +81,22 @@ resource "aws_codebuild_project" "codebase_image_build" {
     git_submodules_config {
       fetch_submodules = false
     }
+    auth {
+      resource = data.external.codestar_connections.result["ConnectionArn"]
+      type     = "CODECONNECTIONS"
+    }
   }
 
   tags = local.tags
+
+  depends_on = [
+    # Per AWS support: when you update the CodeBuild project to use a
+    # CodeConnections-based source, CodeBuild validates that its service
+    # role has permission to access the connection at update time.
+    # So we need to ensure the codebuild's role has had these permissions
+    # set up before attempting to create or update the codebuild project.
+    aws_iam_role_policy.codestar_connection_access_for_codebuild_images,
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "codebase_image_build" {
@@ -96,7 +114,7 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
 }
 
 resource "aws_codebuild_webhook" "codebuild_webhook" {
-  for_each     = toset(var.requires_image_build ? [""] : [])
+  for_each     = toset(var.requires_image_build && !var.use_github_actions ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
   build_type   = "BUILD"
 

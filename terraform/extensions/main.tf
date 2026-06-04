@@ -11,14 +11,11 @@ module "s3" {
 
   for_each = local.s3
 
-  providers = {
-    aws.domain-cdn = aws.domain-cdn
-  }
-
-  application = var.args.application
-  environment = var.environment
-  name        = each.key
-  vpc_name    = local.vpc_name
+  application    = var.args.application
+  environment    = var.environment
+  name           = each.key
+  vpc_name       = local.vpc_name
+  cdn_account_id = local.dns_account_id
 
   config = each.value
 }
@@ -28,13 +25,15 @@ module "postgres" {
 
   for_each = local.postgres
 
-  application = var.args.application
-  environment = var.environment
-  name        = each.key
-  vpc_name    = local.vpc_name
-  env_config  = var.args.env_config
+  application       = var.args.application
+  environment       = var.environment
+  name              = each.key
+  vpc_name          = local.vpc_name
+  env_config        = var.args.env_config
+  deploy_repository = var.deploy_repository
 
-  config = each.value
+  config         = each.value
+  pinned_version = var.pinned_version
 }
 
 module "elasticache-redis" {
@@ -68,7 +67,8 @@ module "alb" {
 
   for_each = local.alb
   providers = {
-    aws.domain = aws.domain
+    aws.domain     = aws.domain
+    aws.domain-cdn = aws.domain-cdn
   }
   application             = var.args.application
   environment             = var.environment
@@ -76,21 +76,7 @@ module "alb" {
   dns_account_id          = local.dns_account_id
   service_deployment_mode = local.service_deployment_mode
 
-  config = each.value
-}
-
-module "cdn" {
-  source = "../cdn"
-
-  for_each = local.cdn
-  providers = {
-    aws.domain-cdn = aws.domain-cdn
-  }
-  application = var.args.application
-  environment = var.environment
-
-  origin_verify_secret_id = one(values(module.alb)).origin_verify_secret_id
-
+  name   = each.key
   config = each.value
 }
 
@@ -181,4 +167,25 @@ resource "aws_ssm_parameter" "environment_data" {
 
 data "aws_ssm_parameter" "log_destination_arn" {
   name = "/copilot/tools/central_log_groups"
+}
+
+resource "null_resource" "check_extension_uses_managed_ingress" {
+  for_each = merge(
+    {
+      for ext_name, ext_cfg in local.alb :
+      ext_name => lookup(ext_cfg, "managed_ingress", false)
+      if can(ext_cfg.cdn_domains_list)
+    },
+    {
+      for ext_name, ext_cfg in local.s3 :
+      ext_name => lookup(ext_cfg, "managed_ingress", false)
+      if lookup(ext_cfg, "serve_static_content", false)
+    },
+  )
+  lifecycle {
+    precondition {
+      condition     = each.value
+      error_message = "Expected managed_ingress to be set to true for extension '${each.key}', environment '${var.environment}'"
+    }
+  }
 }

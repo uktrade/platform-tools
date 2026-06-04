@@ -33,7 +33,10 @@ locals {
 
   dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 
-  cache_invalidation_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/cloudfront-invalidation-assumed-role"]
+  cache_invalidation_assumed_roles = toset([
+    for env_name, env_config in local.base_env_config :
+    "arn:aws:iam::${env_config.dns_account}:role/${var.application}-${env_name}-pipeline-deployment-role"
+  ])
 
   environments_requiring_cache_invalidation = distinct([for d in try(values(var.cache_invalidation.domains), []) : d.environment])
 
@@ -53,7 +56,9 @@ locals {
     for id, val in var.pipelines : id => {
       name : val.name,
       branch : val.branch,
-      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest",
+
+      image_tag : coalesce(val.tag, false) ? "tag-latest" : var.requires_image_build ? "branch-${replace(val.branch, "/", "-")}" : "latest"
+
       stages : flatten([for env in val.environments : concat(
         # Approval
         coalesce(env.requires_approval, false) ?

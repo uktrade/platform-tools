@@ -22,12 +22,12 @@ resource "aws_elasticache_replication_group" "redis" {
   # checkov:skip=CKV_AWS_191:Potential cascading impact on Celery. Requires further analysis - DBTP-1216
   replication_group_id       = "${var.name}-${var.environment}"
   description                = "${var.name}-${var.environment}-redis-cluster"
-  engine                     = "redis"
-  engine_version             = var.config.engine
+  engine                     = local.engine
+  engine_version             = local.engine_version
   node_type                  = coalesce(var.config.instance, "cache.t4g.micro")
   num_node_groups            = 1
   replicas_per_node_group    = coalesce(var.config.replicas, 1)
-  parameter_group_name       = "default.${local.redis_engine_version_map[var.config.engine]}"
+  parameter_group_name       = "default.${local.redis_engine_version_map[local.engine_version]}"
   port                       = 6379
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true

@@ -13,10 +13,10 @@ jobs:
   create-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v4.4.1
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-config.json
           manifest-file: release-manifest.json
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
+from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
 from dbt_platform_helper.constants import SUPPORTED_AWS_PROVIDER_VERSION
 from dbt_platform_helper.constants import SUPPORTED_TERRAFORM_VERSION
 from dbt_platform_helper.providers.config import ConfigProvider
@@ -25,7 +26,8 @@ class TerraformManifestProvider:
         environment,
         platform_helper_version: str,
         platform_config,
-        module_source_override: str = None,
+        service_module_source_override: str = None,
+        version_tracker_module_source_override: str = None,
     ):
 
         service_dir = f"terraform/services/{environment}/{config_object.name}"
@@ -47,7 +49,16 @@ class TerraformManifestProvider:
             f"tfstate/application/{application_name}/services/{environment}/{config_object.name}.tfstate",
         )
 
-        self._add_service_module(terraform, platform_helper_version, module_source_override)
+        self._add_scheduled_job_variable(terraform)
+
+        self._add_service_module(terraform, platform_helper_version, service_module_source_override)
+
+        self._add_version_tracker_module(
+            terraform=terraform,
+            terraform_state_type="service",
+            platform_helper_version=platform_helper_version,
+            version_tracker_module_source_override=version_tracker_module_source_override,
+        )
 
         self._write_terraform_json(terraform, service_dir)
 
@@ -68,11 +79,14 @@ class TerraformManifestProvider:
         }
 
     def _add_service_module(
-        self, terraform: dict, platform_helper_version: str, module_source_override: str = None
+        self,
+        terraform: dict,
+        platform_helper_version: str,
+        service_module_source_override: str = None,
     ):
         source = (
-            module_source_override
-            or f"git::git@github.com:uktrade/platform-tools.git//terraform/ecs-service?depth=1&ref={platform_helper_version}"
+            service_module_source_override
+            or f"{PLATFORM_TOOLS_REPO_SSH_SOURCE}/terraform/ecs-service?depth=1&ref={platform_helper_version}"
         )
         terraform["module"] = {
             "ecs-service": {
@@ -84,7 +98,49 @@ class TerraformManifestProvider:
                 "env_config": "${local.env_config}",
                 "platform_extensions": '${local.platform_config["extensions"]}',
                 "custom_iam_policy_json": "${local.custom_iam_policy_json}",
+                "scheduled_job_image_tag": "${var.scheduled_job_image_tag}",
             }
+        }
+
+    def _add_version_tracker_module(
+        self,
+        terraform: dict,
+        terraform_state_type: str,
+        platform_helper_version: str,
+        version_tracker_module_source_override: str = None,
+    ):
+
+        source = (
+            version_tracker_module_source_override
+            or f"{PLATFORM_TOOLS_REPO_SSH_SOURCE}/terraform/version-tracker?depth=1&ref={platform_helper_version}"
+        )
+
+        module_vars = {
+            "environment": {
+                "application": "${local.args.application}",
+                "environment": "${local.environment}",
+                "depends_on": ["module.extensions"],
+            },
+            "service": {
+                "application": "${local.application}",
+                "environment": "${local.environment}",
+                "service_name": "${local.service_config.name}",
+                "depends_on": ["module.ecs-service"],
+            },
+            "codebase-pipeline": {
+                "application": "${local.application}",
+                "pipeline_type": "codebase-pipeline",
+                "depends_on": ["module.codebase-pipelines"],
+            },
+            # Environment pipeline Terraform manifest is generated separately, hence why not covered in this method
+        }
+
+        params = module_vars.get(terraform_state_type, {})
+
+        terraform["module"]["version-tracker"] = {
+            "source": source,
+            "platform_version": platform_helper_version,
+            **params,
         }
 
     def generate_codebase_pipeline_config(
@@ -93,7 +149,8 @@ class TerraformManifestProvider:
         platform_helper_version: str,
         ecr_imports: dict[str, str],
         deploy_repository: str,
-        module_source: str,
+        codebase_pipeline_module_source: str,
+        version_tracker_module_source: str,
         workspace: str = None,
     ):
         default_account = self._get_account_for_env("*", platform_config)
@@ -115,7 +172,13 @@ class TerraformManifestProvider:
             f"tfstate/application/{state_key_suffix}.tfstate",
         )
         self._add_codebase_pipeline_module(
-            terraform, platform_helper_version, deploy_repository, module_source
+            terraform, platform_helper_version, deploy_repository, codebase_pipeline_module_source
+        )
+        self._add_version_tracker_module(
+            terraform=terraform,
+            terraform_state_type="codebase-pipeline",
+            platform_helper_version=platform_helper_version,
+            version_tracker_module_source_override=version_tracker_module_source,
         )
         self._add_imports(terraform, ecr_imports)
         self._add_checks(terraform, workspace)
@@ -126,9 +189,17 @@ class TerraformManifestProvider:
         platform_config: dict,
         env: str,
         platform_helper_version: str,
-        module_source_override: str = None,
+        extensions_module_source_override: str = None,
+        version_tracker_module_source_override: str = None,
+        pinned_version: str = None,
     ):
         platform_config = ConfigProvider.apply_environment_defaults(platform_config)
+
+        if "deploy_repository" in platform_config.keys():
+            deploy_repository = platform_config["deploy_repository"]
+        else:
+            deploy_repository = f"uktrade/{platform_config['application']}-deploy"
+
         account = self._get_account_for_env(env, platform_config)
 
         application_name = platform_config["application"]
@@ -137,11 +208,24 @@ class TerraformManifestProvider:
 
         terraform = {}
         self._add_header(terraform)
-        self._add_environment_locals(terraform, application_name)
+        self._add_environment_locals(terraform, application_name, env)
         self._add_backend(
             terraform, platform_config, account, f"tfstate/application/{state_key_suffix}.tfstate"
         )
-        self._add_extensions_module(terraform, platform_helper_version, env, module_source_override)
+        self._add_extensions_module(
+            terraform,
+            platform_helper_version,
+            env,
+            deploy_repository,
+            extensions_module_source_override,
+            pinned_version,
+        )
+        self._add_version_tracker_module(
+            terraform=terraform,
+            terraform_state_type="environment",
+            platform_helper_version=platform_helper_version,
+            version_tracker_module_source_override=version_tracker_module_source_override,
+        )
         self._add_moved(terraform, platform_config)
         self._ensure_no_hcl_manifest_file(env_dir)
         self._write_terraform_json(terraform, env_dir)
@@ -212,6 +296,17 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
+    def _add_scheduled_job_variable(terraform: dict):
+        terraform["variable"] = {"scheduled_job_image_tag": {"type": "string", "default": None}}
+
+    @staticmethod
+    def _add_github_required_provider(terraform: dict):
+        terraform["terraform"]["required_providers"]["github"] = {
+            "source": "integrations/github",
+            "version": SUPPORTED_GITHUB_PROVIDER_VERSION,
+        }
+
+    @staticmethod
     def _add_codebase_pipeline_module(
         terraform: dict,
         platform_helper_version: str,
@@ -234,6 +329,7 @@ class TerraformManifestProvider:
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
                 "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
+                "use_github_actions": '${lookup(each.value, "use_github_actions", false)}',
                 "env_config": "${local.environments}",
                 "platform_tools_version": f"{platform_helper_version}",
             }
@@ -241,7 +337,12 @@ class TerraformManifestProvider:
 
     @staticmethod
     def _add_extensions_module(
-        terraform: dict, platform_helper_version: str, env: str, module_source_override: str = None
+        terraform: dict,
+        platform_helper_version: str,
+        env: str,
+        deploy_repository: str,
+        module_source_override: str = None,
+        pinned_version: str = None,
     ):
         source = module_source_override or f"{EXTENSIONS_MODULE_PATH}{platform_helper_version}"
         terraform["module"] = {
@@ -249,7 +350,9 @@ class TerraformManifestProvider:
                 "source": source,
                 "args": "${local.args}",
                 "environment": env,
-                "repos": "${local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : null}",
+                "deploy_repository": deploy_repository,
+                "repos": "${concat(local.codebase_pipeline_repos != null ? (distinct(values(local.codebase_pipeline_repos))) : [], try([local.config.deploy_repository], []))}",
+                "pinned_version": pinned_version,
             }
         }
 
@@ -279,9 +382,10 @@ class TerraformManifestProvider:
             }
 
     @staticmethod
-    def _add_environment_locals(terraform: dict, app: str):
+    def _add_environment_locals(terraform: dict, app: str, env: str):
         terraform["locals"] = {
             "config": '${yamldecode(file("../../../platform-config.yml"))}',
+            "environment": env,
             "environments": '${local.config["environments"]}',
             "env_config": '${{for name, config in local.environments: name => merge(lookup(local.environments, "*", {}), config)}}',
             "args": {

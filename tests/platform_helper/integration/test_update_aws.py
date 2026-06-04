@@ -394,29 +394,46 @@ class MockALBService:
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-1",
                             {
+                                "application": "test-application",
+                                "environment": self.environment,
                                 "name": "AllowedIps",
                                 "service": "web",
                                 "reason": "MaintenancePage",
+                                "managed-by": "DBT Platform",
                             },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-2",
                             {
+                                "application": "test-application",
+                                "environment": self.environment,
                                 "name": "AllowedSourceIps",
                                 "service": "web",
                                 "reason": "MaintenancePage",
+                                "managed-by": "DBT Platform",
                             },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-3",
                             {
+                                "application": "test-application",
+                                "environment": self.environment,
                                 "name": "BypassIpFilter",
                                 "service": "web",
                                 "reason": "MaintenancePage",
+                                "managed-by": "DBT Platform",
                             },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-4",
+                            {
+                                "application": "test-application",
+                                "environment": self.environment,
+                                "name": "MaintenancePage",
+                                "service": "web",
+                                "reason": "MaintenancePage",
+                                "managed-by": "DBT Platform",
+                            },
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-5",
@@ -426,6 +443,9 @@ class MockALBService:
                         ),
                         self.fixtures.create_tag_descriptions(
                             "listener-rule-arn-doesnt-matter-7",
+                        ),
+                        self.fixtures.create_tag_descriptions(
+                            "listener-rule-arn-doesnt-matter-8",
                         ),
                         # Dummy Rule tags
                         self.fixtures.create_tag_descriptions(

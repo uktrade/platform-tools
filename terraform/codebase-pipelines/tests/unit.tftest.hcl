@@ -5,7 +5,7 @@ override_data {
 
   values = {
     result = {
-      ConnectionArn = "ConnectionArn"
+      ConnectionArn = "arn:aws:codeconnections:eu-west-2:aws:2"
     }
   }
 }
@@ -508,6 +508,11 @@ run "test_codebuild_images" {
     error_message = "Should be: '/fake/slack/channel'"
   }
   assert {
+    condition = one([for var in one(aws_codebuild_project.codebase_image_build[""].environment).environment_variable :
+    var.value if var.name == "NOTIFICATIONS_ENABLED"]) == "true"
+    error_message = "Should be: 'true'"
+  }
+  assert {
     condition = aws_codebuild_project.codebase_image_build[""].logs_config[0].cloudwatch_logs[
       0
     ].group_name == "codebuild/my-app-my-codebase-codebase-image-build/log-group"
@@ -526,6 +531,13 @@ run "test_codebuild_images" {
   assert {
     condition     = one(aws_codebuild_project.codebase_image_build[""].source).location == "https://github.com/my-repository.git"
     error_message = "Should be: 'https://github.com/my-repository.git'"
+  }
+  assert {
+    condition = one(one(aws_codebuild_project.codebase_image_build[""].source).auth) == {
+      resource : "arn:aws:codeconnections:eu-west-2:aws:2",
+      type : "CODECONNECTIONS"
+    }
+    error_message = "Should have CODECONNECTIONS auth block with: arn:aws:codeconnections:eu-west-2:aws:2"
   }
   assert {
     condition     = length(regexall(".*/work/cli build.*", aws_codebuild_project.codebase_image_build[""].source[0].buildspec)) > 0
@@ -611,7 +623,7 @@ run "test_codebuild_images_not_required" {
     error_message = "Event pattern is incorrect"
   }
   assert {
-    condition     = aws_cloudwatch_event_rule.ecr_image_publish[1].event_pattern == "{\"detail\":{\"action-type\":[\"PUSH\"],\"image-tag\":[\"latest\"],\"repository-name\":[\"my-app/my-codebase\"],\"result\":[\"SUCCESS\"]},\"detail-type\":[\"ECR Image Action\"],\"source\":[\"aws.ecr\"]}"
+    condition     = aws_cloudwatch_event_rule.ecr_image_publish[1].event_pattern == "{\"detail\":{\"action-type\":[\"PUSH\"],\"image-tag\":[\"tag-latest\"],\"repository-name\":[\"my-app/my-codebase\"],\"result\":[\"SUCCESS\"]},\"detail-type\":[\"ECR Image Action\"],\"source\":[\"aws.ecr\"]}"
     error_message = "Event pattern is incorrect"
   }
 }
@@ -920,6 +932,30 @@ run "test_tagged_branch_filter" {
   }
 }
 
+run "test_tagged_pipeline_with_image_build_image_tag" {
+  command = plan
+
+  variables {
+    requires_image_build = true
+
+    pipelines = [
+      {
+        name = "tagged",
+        tag  = true,
+        environments = [
+          { name = "staging" },
+          { name = "prod", requires_approval = true }
+        ]
+      }
+    ]
+  }
+
+  assert {
+    condition     = aws_cloudwatch_event_rule.ecr_image_publish[0].event_pattern == "{\"detail\":{\"action-type\":[\"PUSH\"],\"image-tag\":[\"tag-latest\"],\"repository-name\":[\"my-app/my-codebase\"],\"result\":[\"SUCCESS\"]},\"detail-type\":[\"ECR Image Action\"],\"source\":[\"aws.ecr\"]}"
+    error_message = "Event pattern is incorrect"
+  }
+}
+
 run "test_iam" {
   command = plan
 
@@ -1206,7 +1242,9 @@ run "test_iam_documents" {
   assert {
     condition = data.aws_iam_policy_document.codestar_connection_access.statement[0].actions == toset([
       "codestar-connections:GetConnectionToken",
-      "codestar-connections:UseConnection"
+      "codestar-connections:UseConnection",
+      "codeconnections:GetConnectionToken",
+      "codeconnections:GetConnection",
     ])
     error_message = "Unexpected actions"
   }
@@ -1421,8 +1459,8 @@ run "test_codebuild_deploy" {
     error_message = "Should be: CODESTAR_CONNECTION_ARN"
   }
   assert {
-    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[1].value == "ConnectionArn"
-    error_message = "Should be: ConnectionArn"
+    condition     = aws_codebuild_project.codebase_deploy[""].environment[0].environment_variable[1].value == "arn:aws:codeconnections:eu-west-2:aws:2"
+    error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
   }
 
   assert {
@@ -1516,8 +1554,8 @@ run "test_main_pipeline" {
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.ConnectionArn == "ConnectionArn"
-    error_message = "Should be: ConnectionArn"
+    condition     = aws_codepipeline.codebase_pipeline[0].stage[0].action[0].configuration.ConnectionArn == "arn:aws:codeconnections:eu-west-2:aws:2"
+    error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
   }
 
   # Deploy dev environment stage
@@ -1818,8 +1856,8 @@ run "test_manual_release_pipeline" {
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.ConnectionArn == "ConnectionArn"
-    error_message = "Should be: ConnectionArn"
+    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.ConnectionArn == "arn:aws:codeconnections:eu-west-2:aws:2"
+    error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
   }
 
   # Deploy stage
@@ -2547,5 +2585,29 @@ run "test_update_alb_rules" {
   assert {
     condition     = aws_codepipeline.codebase_pipeline[0].stage[2].action[7].configuration.ProjectName == "my-app-my-codebase-codebase-update-alb-rules"
     error_message = "Should be: my-app-my-codebase-codebase-update-alb-rules"
+  }
+}
+
+run "test_disable_codepipeline_triggers" {
+  command = plan
+
+  variables {
+    use_github_actions = true
+  }
+
+  assert {
+    condition     = aws_codebuild_webhook.codebuild_webhook == {}
+    error_message = "Should be: {}"
+  }
+
+  assert {
+    condition = one([for var in one(aws_codebuild_project.codebase_image_build[""].environment).environment_variable :
+    var.value if var.name == "NOTIFICATIONS_ENABLED"]) == "false"
+    error_message = "Should be: 'false'"
+  }
+
+  assert {
+    condition     = aws_cloudwatch_event_rule.ecr_image_publish[0].state == "DISABLED"
+    error_message = "Should be: 'DISABLED'"
   }
 }

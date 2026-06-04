@@ -1,17 +1,17 @@
 # Commands Reference
 
 - [cli](#cli)
-    - [cli group-command](#cli-group-command)
-        - [cli group-command hello](#cli-group-command-hello)
-        - [cli group-command argument-replacements](#cli-group-command-argument-replacements)
-        - [cli group-command option-replacements](#cli-group-command-option-replacements)
+    - [cli great-greets](#cli-great-greets)
+        - [cli great-greets hello](#cli-great-greets-hello)
+        - [cli great-greets argument-replacements](#cli-great-greets-argument-replacements)
+        - [cli great-greets option-replacements](#cli-great-greets-option-replacements)
 
 # cli
 
 ## Usage
 
 ```
-cli group-command 
+cli great-greets 
 ```
 
 ## Options
@@ -21,16 +21,16 @@ cli group-command
 
 ## Commands
 
-- [`group-command` ↪](#cli-group-command)
+- [`great-greets` ↪](#cli-great-greets)
 
-# cli group-command
+# cli great-greets
 
 [↩ Parent](#cli)
 
 ## Usage
 
 ```
-cli group-command (hello|argument-replacements|option-replacements) 
+cli great-greets (hello|argument-replacements|option-replacements) 
 ```
 
 ## Options
@@ -40,18 +40,18 @@ cli group-command (hello|argument-replacements|option-replacements)
 
 ## Commands
 
-- [`argument-replacements` ↪](#cli-group-command-argument-replacements)
-- [`hello` ↪](#cli-group-command-hello)
-- [`option-replacements` ↪](#cli-group-command-option-replacements)
+- [`argument-replacements` ↪](#cli-great-greets-argument-replacements)
+- [`hello` ↪](#cli-great-greets-hello)
+- [`option-replacements` ↪](#cli-great-greets-option-replacements)
 
-# cli group-command hello
+# cli great-greets hello
 
-[↩ Parent](#cli-group-command)
+[↩ Parent](#cli-great-greets)
 
 ## Usage
 
 ```
-cli group-command hello <name> [--count <count>] 
+cli great-greets hello <name> [--count <count>] 
 ```
 
 ## Arguments
@@ -65,14 +65,14 @@ cli group-command hello <name> [--count <count>]
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# cli group-command argument-replacements
+# cli great-greets argument-replacements
 
-[↩ Parent](#cli-group-command)
+[↩ Parent](#cli-great-greets)
 
 ## Usage
 
 ```
-cli group-command argument-replacements <application> <environment> <service> 
+cli great-greets argument-replacements <application> <environment> <service> 
 ```
 
 ## Arguments
@@ -86,15 +86,15 @@ cli group-command argument-replacements <application> <environment> <service>
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# cli group-command option-replacements
+# cli great-greets option-replacements
 
-[↩ Parent](#cli-group-command)
+[↩ Parent](#cli-great-greets)
 
 ## Usage
 
 ```
-cli group-command option-replacements [--app <application>] [--env <environment>] 
-                                      [--svc <service>] 
+cli great-greets option-replacements [--app <application>] [--env <environment>] 
+                                     [--svc <service>] 
 ```
 
 ## Options

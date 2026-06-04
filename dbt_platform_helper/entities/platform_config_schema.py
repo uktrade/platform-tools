@@ -10,6 +10,12 @@ from schema import SchemaError
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.domain.plans import PlanLoader
+from dbt_platform_helper.entities.platform.extensions.opensearch import (
+    OpensearchExtensionSchema,
+)
+from dbt_platform_helper.entities.platform.extensions.opensearch import (
+    external_user_access_validator,
+)
 
 plan_manager = PlanLoader()
 plan_manager.load()
@@ -33,7 +39,7 @@ class PlatformConfigSchema:
                     str: Or(
                         PlatformConfigSchema.__alb_schema(),
                         PlatformConfigSchema.__monitoring_schema(),
-                        PlatformConfigSchema.__opensearch_schema(),
+                        Schema(OpensearchExtensionSchema()),
                         PlatformConfigSchema.__postgres_schema(),
                         PlatformConfigSchema.__datadog_schema(),
                         PlatformConfigSchema.__prometheus_policy_schema(),
@@ -140,6 +146,7 @@ class PlatformConfigSchema:
                 "repository": str,
                 Optional("slack_channel"): str,
                 Optional("requires_image_build"): bool,
+                Optional("use_github_actions"): bool,
                 Optional("additional_ecr_repository"): str,
                 Optional("deploy_repository_branch"): str,
                 "services": [{str: [str]}],
@@ -314,6 +321,7 @@ class PlatformConfigSchema:
                     Optional("search_slow_log_retention_in_days"): int,
                     Optional("password_special_characters"): str,
                     Optional("urlencode_password"): bool,
+                    Optional("external_user_access"): external_user_access_validator,
                 }
             },
         }
@@ -340,6 +348,7 @@ class PlatformConfigSchema:
                 PlatformConfigSchema.__valid_environment_name(): {
                     Optional("apply_immediately"): bool,
                     Optional("plan"): _valid_postgres_plans,
+                    Optional("instance"): str,
                     Optional("version"): (Or(int, float)),
                     Optional("volume_size"): PlatformConfigSchema.is_integer_between(20, 10000),
                     Optional("iops"): PlatformConfigSchema.is_integer_between(1000, 9950),
@@ -493,6 +502,7 @@ class PlatformConfigSchema:
             "role_arn": PlatformConfigSchema.__valid_iam_role_arn("role_arn"),
             "read": bool,
             "write": bool,
+            Optional("encrypt"): bool,
             "cyber_sign_off_by": PlatformConfigSchema.__valid_dbt_email_address(
                 "cyber_sign_off_by"
             ),
@@ -621,7 +631,7 @@ class PlatformConfigSchema:
     @staticmethod
     def __valid_iam_role_arn(key) -> Regex:
         return Regex(
-            r"^arn:aws:iam::\d{12}:role/.*",
+            r"^arn:aws:iam::\d{12}:(?:role|user)/.*",
             error=f"{key} must contain a valid ARN for an IAM role",
         )
 

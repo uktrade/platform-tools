@@ -8,6 +8,35 @@ data "aws_ssm_parameter" "slack_token" {
   name = "/codebuild/slack_oauth_token"
 }
 
+data "aws_ssm_parameters_by_path" "cdn_domain_list" {
+  provider = aws.domain-cdn
+
+  path      = "/platform/${var.application}/${var.environment}/cdn_domains_list"
+  recursive = false
+}
+
+resource "null_resource" "validate_cdn_domains" {
+
+  triggers = {
+    platform-public-ingress = jsonencode(local.ingress_cdn_domains_list)
+    platform-config         = jsonencode(local.config_cdn_domains_list)
+  }
+
+  lifecycle {
+    precondition {
+      condition     = local.config_cdn_domains_list == local.ingress_cdn_domains_list
+      error_message = <<-EOT
+      cdn_domains_list for the ${var.environment} environment in platform-config.yml doesn't match the domains defined in https://github.com/uktrade/platform-public-ingress.
+
+      platform-config         = ${jsonencode(local.config_cdn_domains_list)}
+      platform-public-ingress = ${jsonencode(local.ingress_cdn_domains_list)}
+      
+      If the platform-public-ingress list is wrong, please raise a platform request (#platform-requests on Slack) to get it changed and deployed.
+      EOT
+    }
+  }
+}
+
 data "aws_vpc" "vpc" {
   filter {
     name   = "tag:Name"
@@ -464,7 +493,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
     resources = [
-      "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation"
+      "arn:aws:iam::${var.dns_account_id}:role/${var.application}-${var.environment}-secret-rotation-role"
     ]
   }
 
@@ -584,7 +613,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
       HEADERNAME         = "x-origin-verify"
       APPLICATION        = var.application
       ENVIRONMENT        = var.environment
-      ROLEARN            = "arn:aws:iam::${var.dns_account_id}:role/dbt_platform_cloudfront_token_rotation"
+      ROLEARN            = "arn:aws:iam::${var.dns_account_id}:role/${var.application}-${var.environment}-secret-rotation-role"
       AWS_ACCOUNT        = data.aws_caller_identity.current.account_id
       SLACK_TOKEN        = data.aws_ssm_parameter.slack_token.value
       SLACK_CHANNEL      = local.config_with_defaults.slack_alert_channel_alb_secret_rotation

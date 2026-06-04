@@ -134,6 +134,26 @@ def mock_application():
 
 
 @pytest.fixture(scope="function")
+def mock_application_without_prod():
+    with patch(
+        "dbt_platform_helper.utils.application.load_application",
+    ) as load_application:
+        os.environ.pop("AWS_PROFILE", None)
+
+        from dbt_platform_helper.utils.application import Application
+        from dbt_platform_helper.utils.application import Environment
+
+        sessions = {"000000000": boto3, "111111111": boto3}
+        application = Application("test-application")
+        application.environments["dev"] = Environment("dev", "000000000", sessions)
+        application.environments["staging"] = Environment("staging", "111111111", sessions)
+
+        load_application.return_value = application
+
+        yield application
+
+
+@pytest.fixture(scope="function")
 def aws_credentials(monkeypatch):
     """Mocked AWS Credentials for moto."""
     moto_credentials_file_path = Path(__file__).parent.absolute() / "dummy_aws_credentials"
@@ -502,6 +522,12 @@ extensions:
         volume_size: 40
         password_special_characters: "-_.,"
         urlencode_password: false
+        external_user_access:
+            user-write-access:
+                index: false
+                read: false
+                write: true
+                cyber_sign_off_by: somebody@businessandtrade.gov.uk
 
   test-app-s3-bucket-with-objects:
     type: s3

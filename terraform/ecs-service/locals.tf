@@ -10,11 +10,17 @@ locals {
   vpc_name                     = var.env_config[var.environment]["vpc"]
   secrets                      = values(coalesce(var.service_config.secrets, {}))
   web_service_required         = var.service_config.type == "Load Balanced Web Service" ? 1 : 0
-  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) ? 1 : 0
+  ecs_service_connect_required = (var.service_config.type == "Load Balanced Web Service" || try(var.service_config.image.port, null) != null) && !local.is_scheduled_job ? 1 : 0
+  is_scheduled_job             = var.service_config.type == "Scheduled Job"
   target_container             = try(var.service_config.http.target_container, "")
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
+
+
+  # CPU architecture — defaults to X86_64; set platform = "arm64" for Graviton.                         
+  cpu_architecture = try(lower(var.service_config.platform), null) == "arm64" ? "ARM64" : "X86_64"
+
 
   ##############################
   # S3 EXTENSIONS — SAME ACCOUNT
@@ -157,7 +163,7 @@ locals {
     local.default_container_config,
     {
       name      = var.service_config.name
-      image     = var.service_config.image.location
+      image     = var.service_config.type == "Scheduled Job" ? "${var.service_config.image.location}:${var.scheduled_job_image_tag}" : var.service_config.image.location
       essential = var.service_config.essential
       environment = [
         for k, v in merge(try(var.service_config.variables, {}), local.required_env_vars) :
@@ -274,25 +280,37 @@ locals {
     { name = "path${replace(path, "/", "-")}", host = {} }
   ]
 
-  task_definition_json = jsonencode({
-    family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
-    taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task"
-    executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-exec"
-    networkMode             = "awsvpc"
-    containerDefinitions    = local.container_definitions_list
-    volumes                 = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
-    placementConstraints    = []
-    requiresCompatibilities = ["FARGATE"]
-    cpu                     = tostring(var.service_config.cpu)
-    memory                  = tostring(var.service_config.memory)
-    pidMode                 = "task"
-    tags = [
-      { "key" : "application", "value" : var.application },
-      { "key" : "environment", "value" : var.environment },
-      { "key" : "service", "value" : var.service_config.name },
-      { "key" : "managed-by", "value" : "DBT Platform" },
-    ]
-  })
+  volumes = concat([{ "name" : "path-tmp", "host" : {} }], local.writable_volumes)
+
+
+  task_definition_json = jsonencode(
+    merge(
+      {
+        family                  = "${var.application}-${var.environment}-${var.service_config.name}-task-def"
+        taskRoleArn             = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-ecs-task"
+        executionRoleArn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${var.environment}-${var.service_config.name}-task-exec"
+        networkMode             = "awsvpc"
+        containerDefinitions    = local.container_definitions_list
+        volumes                 = local.volumes
+        placementConstraints    = []
+        requiresCompatibilities = ["FARGATE"]
+        cpu                     = tostring(var.service_config.cpu)
+        memory                  = tostring(var.service_config.memory)
+        pidMode                 = "task"
+        tags = [
+          { "key" : "application", "value" : var.application },
+          { "key" : "environment", "value" : var.environment },
+          { "key" : "service", "value" : var.service_config.name },
+          { "key" : "managed-by", "value" : "DBT Platform" },
+        ]
+      },
+      var.service_config.storage.ephemeral != null ? {
+        ephemeralStorage = {
+          sizeInGiB = var.service_config.storage.ephemeral
+        }
+      } : {}
+    )
+  )
 
   ##################
   # ECS AUTO-SCALING
@@ -316,6 +334,16 @@ locals {
   default_cool_in  = try(var.service_config.count.cooldown.in, 60)
   default_cool_out = try(var.service_config.count.cooldown.out, 60)
 
+  # Scheduled Actions
+
+  scheduled_actions = local.is_scheduled_job ? {} : {
+    for idx, schedule in try(var.service_config.count.schedules, []) :
+    "${local.full_service_name}-schedule-${idx}" => {
+      schedule = schedule.schedule
+      min      = tonumber(split("-", schedule.range)[0])
+      max      = tonumber(split("-", schedule.range)[1])
+    }
+  }
   # CPU properties
   cpu_value    = try(var.service_config.count.cpu_percentage.value, var.service_config.count.cpu_percentage, null)
   cpu_cool_in  = try(var.service_config.count.cpu_percentage.cooldown.in, local.default_cool_in)
