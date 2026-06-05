@@ -114,7 +114,12 @@ resource "aws_lambda_function" "lambda" {
     subnet_ids         = data.aws_subnets.private-subnets.ids
   }
 
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      name = local.name
+    }
+  )
 }
 
 resource "aws_lambda_invocation" "create-users" {
