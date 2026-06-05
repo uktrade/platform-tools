@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.31.2](https://github.com/uktrade/platform-tools/compare/15.31.1...15.31.2) (2026-06-05)
+
+
+### Bug Fixes
+
+* Use random string for lambda name (DBTP-2960) ([#1495](https://github.com/uktrade/platform-tools/issues/1495)) ([ce1b5a0](https://github.com/uktrade/platform-tools/commit/ce1b5a0707f68f09fe9f2b36b504b86660d610f8))
+
 ## [15.31.1](https://github.com/uktrade/platform-tools/compare/15.31.0...15.31.1) (2026-06-04)
 
 
