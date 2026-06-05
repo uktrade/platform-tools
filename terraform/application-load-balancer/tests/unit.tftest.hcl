@@ -1209,7 +1209,7 @@ run "cdn_domain_list_precondition_passes_if_both_lists_are_empty" {
   }
 }
 
-run "secret_rotate_function_distrolist_is_a_list_of_domains" {
+run "existing_cdn_lists_match" {
   command = plan
 
   variables {
@@ -1222,12 +1222,30 @@ run "secret_rotate_function_distrolist_is_a_list_of_domains" {
   }
 
   assert {
-    condition = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.DISTROIDLIST == "api.dev.my-application.uktrade.digital,web.dev.my-application.uktrade.digital"
+    condition     = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.DISTROIDLIST == "api.dev.my-application.uktrade.digital,web.dev.my-application.uktrade.digital"
     error_message = "Lambda Distrolist does not match CDN list"
   }
 
   assert {
-    condition = aws_acm_certificate.certificate.subject_alternative_names == toset(["api.dev.my-application.uktrade.digital", "web.dev.my-application.uktrade.digital"])
-    error_message = "Lambda Distrolist does not match CDN list"
+    condition     = aws_acm_certificate.certificate.subject_alternative_names == toset(["api.dev.my-application.uktrade.digital", "web.dev.my-application.uktrade.digital"])
+    error_message = "SAN list does not match given cdn domains list keys given"
+  }
+}
+
+run "disable_cdn_on_all_cdns_does_not_create_lambda" {
+  command = plan
+
+  variables {
+    config = {
+      cdn_domains_list = {
+        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
+        "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital", "disable_cdn"]
+      }
+    }
+  }
+
+  assert {
+    condition = length(aws_lambda_function.origin-secret-rotate-function) == 0
+    error_message = ""
   }
 }
