@@ -1208,3 +1208,26 @@ run "cdn_domain_list_precondition_passes_if_both_lists_are_empty" {
     config = {}
   }
 }
+
+run "secret_rotate_function_distrolist_is_a_list_of_domains" {
+  command = plan
+
+  variables {
+    config = {
+      cdn_domains_list = {
+        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital"],
+        "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital"]
+      }
+    }
+  }
+
+  assert {
+    condition = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.DISTROIDLIST == "api.dev.my-application.uktrade.digital,web.dev.my-application.uktrade.digital"
+    error_message = "Lambda Distrolist does not match CDN list"
+  }
+
+  assert {
+    condition = aws_acm_certificate.certificate.subject_alternative_names == toset(["api.dev.my-application.uktrade.digital", "web.dev.my-application.uktrade.digital"])
+    error_message = "Lambda Distrolist does not match CDN list"
+  }
+}
