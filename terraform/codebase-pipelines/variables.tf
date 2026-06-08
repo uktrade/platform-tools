@@ -7,6 +7,18 @@ variable "use_github_actions" {
   default = false
 }
 
+variable "use_aws_codepipeline" {
+  type        = bool
+  default     = true
+  description = "Controls whether to create ECS deployment CodePipelines and related resources."
+}
+
+variable "requires_image_build" {
+  type        = bool
+  default     = true
+  description = "Controls whether to create ci-image-builder CodeBuild project and related resources."
+}
+
 variable "codebase" {
   type = string
 }
@@ -72,11 +84,6 @@ variable "slack_channel" {
 
 variable "env_config" {
   type = any
-}
-
-variable "requires_image_build" {
-  type    = bool
-  default = true
 }
 
 variable "has_custom_pre_deploy" {

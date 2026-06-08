@@ -40,7 +40,7 @@ locals {
 
   environments_requiring_cache_invalidation = distinct([for d in try(values(var.cache_invalidation.domains), []) : d.environment])
 
-  cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
+  cache_invalidation_enabled = var.use_aws_codepipeline && length(local.environments_requiring_cache_invalidation) > 0
 
   default_variables = [
     { name : "APPLICATION", value : var.application },
@@ -183,6 +183,7 @@ locals {
         }]
       )])
     }
+    if var.use_aws_codepipeline
   }
 
   manual_pipeline_actions_map = concat(
@@ -298,10 +299,10 @@ locals {
   ])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
-  platform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
+  platform_deployment_enabled = var.use_aws_codepipeline && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
-  copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
+  copilot_deployment_enabled = var.use_aws_codepipeline && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
   # Determine if a custom pre-deploy and post-deploy steps are required
   has_custom_pre_deploy  = var.has_custom_pre_deploy ? true : fileexists("${path.root}/../../custom-build/pre-deploy.sh")

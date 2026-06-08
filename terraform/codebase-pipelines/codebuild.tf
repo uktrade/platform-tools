@@ -299,8 +299,8 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules.name
-      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules.name
+      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules[""].name
     }
   }
 
@@ -315,13 +315,15 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 resource "aws_cloudwatch_log_group" "codebase_update_alb_rules" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(var.use_aws_codepipeline ? [""] : [])
   name              = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-group"
   retention_in_days = 90
 }
 
 resource "aws_cloudwatch_log_stream" "codebase_update_alb_rules" {
+  for_each       = toset(var.use_aws_codepipeline ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules.name
+  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules[""].name
 }
 
 resource "aws_codebuild_project" "invalidate_cache" {
@@ -582,4 +584,14 @@ moved {
 moved {
   from = aws_cloudwatch_log_stream.codebase_deploy
   to   = aws_cloudwatch_log_stream.codebase_deploy[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_group.codebase_update_alb_rules
+  to   = aws_cloudwatch_log_group.codebase_update_alb_rules[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_stream.codebase_update_alb_rules
+  to   = aws_cloudwatch_log_stream.codebase_update_alb_rules[""]
 }
