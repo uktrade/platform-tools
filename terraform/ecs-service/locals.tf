@@ -163,7 +163,7 @@ locals {
     local.default_container_config,
     {
       name      = var.service_config.name
-      image     = var.service_config.image.location
+      image     = var.service_config.type == "Scheduled Job" ? "${var.service_config.image.location}:${var.scheduled_job_image_tag}" : var.service_config.image.location
       essential = var.service_config.essential
       environment = [
         for k, v in merge(try(var.service_config.variables, {}), local.required_env_vars) :

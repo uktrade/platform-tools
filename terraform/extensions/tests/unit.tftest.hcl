@@ -155,6 +155,107 @@ EOT
 }
 
 override_data {
+  target = module.opensearch["test-opensearch"].data.aws_iam_policy_document.opensearch-policy
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Deny",
+      "Action": ["es:*"],
+      "Principals": {
+        "Type" : "*",
+        "Identifiers" : "*"
+      },
+      "Condition": [
+        {
+          "Test": "Bool",
+          "Variable": "aws:SecureTransport",
+          "Values": ["false"]
+        }
+      ],
+      "Resources" : [
+            "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["es:*"],
+      "Principals": {
+        "Type" : "AWS",
+        "Identifiers" : "*"
+      },
+      "Resources" : [
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app",
+        "arn:aws:es:eu-west-2:001122334455:domain/my-env-my-app/*"
+      ]
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
+  target = module.opensearch["test-opensearch"].data.aws_iam_policy_document.lambda-assume-role-policy
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["sts:AssumeRole"],
+      "Principals": {
+        "Type" : "Service",
+        "Identifiers" : ["lambda.amazonaws.com"]
+      }
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
+  target = module.opensearch["test-opensearch"].data.aws_iam_policy_document.lambda-execution-policy
+  values = {
+    json = <<EOT
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ssm:DeleteParameter",
+        "ssm:PutParameter",
+        "ssm:AddTagsToResource",
+        "kms:Decrypt",
+        "secretsmanager:GetRandomPassword"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+EOT
+  }
+}
+
+override_data {
   target = module.elasticache-redis["test-redis"].data.aws_ssm_parameter.log-destination-arn
   values = {
     value = "{\"dev\":\"arn:aws:logs:eu-west-2:763451185160:log-group:/copilot/tools/central_log_groups_dev\"}"
@@ -252,6 +353,27 @@ override_module {
   target = module.alb[0]
   outputs = {
     https_security_group_id = "security-group-id"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.step_functions_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.eventbridge_scheduler_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.ec2_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
   }
 }
 
@@ -724,7 +846,13 @@ run "codebase_deploy_iam_test" {
     condition = flatten([for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[0].condition : el.values][0]) == [
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline",
       "arn:aws:iam::000123456789:role/test-application-*-codebase-pipeline-*",
-      "arn:aws:iam::000123456789:role/test-application-*-codebase-*"
+      "arn:aws:iam::000123456789:role/test-application-*-codebase-*",
+    ]
+    error_message = "Unexpected condition values"
+  }
+  assert {
+    condition = flatten([for el in data.aws_iam_policy_document.assume_codebase_pipeline.statement[1].condition : el.values][0]) == [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-test-application-repo-role"
     ]
     error_message = "Unexpected condition values"
   }

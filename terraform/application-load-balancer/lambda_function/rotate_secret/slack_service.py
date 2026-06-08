@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Tuple
 
 import requests
 
@@ -77,7 +76,7 @@ class SlackNotificationService:
 
     def _build_failure_message(
         self, failures: list[dict], environment: str, application: str
-    ) -> Tuple[list[dict], str, str]:
+    ) -> tuple[list[dict], str, str]:
         message_blocks = [
             {
                 "type": "header",

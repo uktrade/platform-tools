@@ -38,6 +38,7 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.logs import LogsProvider
 from dbt_platform_helper.providers.s3 import S3Provider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -93,6 +94,7 @@ class ServiceManager:
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
         autoscaling_provider: AutoscalingProvider = None,
+        service_repository: ServiceRepository = None,
     ):
 
         self.file_provider = file_provider
@@ -109,6 +111,21 @@ class ServiceManager:
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
+        self.service_repository = service_repository
+
+    def list_services(self, app: str, env: str):
+        services = self.service_repository.list_services(app, env)
+
+        if services:
+            name_width = max(len(service.name) for service in services)
+            service_list = "\n".join(
+                [f"{service.name:<{name_width}}   ({service.kind})" for service in services]
+            )
+            self.io.info(
+                f"Services currently deployed for {app} in the {env} environment:\n{service_list}"
+            )
+        else:
+            self.io.info(f"No Services currently deployed for {app} in the {env} environment.")
 
     def generate(self, environment: str, services: list[str]):
 
@@ -482,7 +499,7 @@ class ServiceManager:
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
-                        service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+                        service_manifest["entrypoint"] = service_manifest["entrypoint"].split()
 
                 if "alias" in service_manifest.get("http", {}):
                     if isinstance(service_manifest["http"]["alias"], str):

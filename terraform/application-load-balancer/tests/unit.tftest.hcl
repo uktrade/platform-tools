@@ -912,11 +912,6 @@ run "waf_and_rotate_lambda_no_cdn_domains" {
   }
 
   assert {
-    condition     = length(aws_secretsmanager_secret_policy.secret_policy) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
     condition     = length(aws_kms_key.origin_verify_secret_key) == 0
     error_message = "No secret should be created"
   }
@@ -977,11 +972,6 @@ run "waf_and_rotate_lambda_cdn_domains_disabled" {
   assert {
     condition     = length(aws_secretsmanager_secret.origin-verify-secret) == 0
     error_message = "Resource should not be created"
-  }
-
-  assert {
-    condition     = length(aws_secretsmanager_secret_policy.secret_policy) == 0
-    error_message = "No secret should be created"
   }
 
   assert {

@@ -51,17 +51,5 @@ def copy(app, source, target):
         ClickIOProvider().abort_with_error(str(err))
 
 
-@secrets.command()
-@click.argument("app", type=str, required=True)
-@click.argument("env", type=str, required=True)
-def list(app, env):
-    """[DELETED] List secret names and values for an environment."""
-
-    click.secho(
-        message="\nThis command has been removed to prevent accidental exposure of secret values in local terminals and logs. To view secrets, log into your AWS account and head over to AWS Parameter Store https://eu-west-2.console.aws.amazon.com/systems-manager/parameters/\n",
-        fg="magenta",
-    )
-
-
 if __name__ == "__main__":
     secrets()

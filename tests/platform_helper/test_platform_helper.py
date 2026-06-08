@@ -31,7 +31,6 @@ class TestCopilotHelperCli:
             "secrets",
             "notify",
             "database",
-            "version",
             "service",
             "job",
         ]
