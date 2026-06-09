@@ -233,7 +233,7 @@ resource "random_password" "origin-secret" {
 resource "aws_wafv2_web_acl" "waf-acl" {
   # checkov:skip=CKV2_AWS_31: Ensure WAF2 has a Logging Configuration to be done new ticket
   # checkov:skip=CKV_AWS_192: AWSManagedRulesKnownBadInputsRuleSet handles on the CDN
-  for_each    = toset(local.cdn_enabled ? [""] : [])
+  for_each    = toset([""])
   name        = "${var.application}-${var.environment}-ACL"
   description = "CloudFront Origin Verify"
   scope       = "REGIONAL"
@@ -403,7 +403,7 @@ resource "aws_lambda_function" "listener-rule-organiser-function" {
 
 # IAM Role for Lambda Execution
 resource "aws_iam_role" "origin-secret-rotate-execution-role" {
-  for_each = toset(local.cdn_enabled ? [""] : [])
+  for_each = toset([""])
   name     = "${var.application}-${var.environment}-origin-secret-rotate-role"
 
   assume_role_policy = jsonencode({
@@ -420,7 +420,7 @@ resource "aws_iam_role" "origin-secret-rotate-execution-role" {
 
 data "aws_iam_policy_document" "origin_verify_rotate_policy" {
 
-  for_each = toset(local.cdn_enabled ? [""] : [])
+  for_each = toset([""])
   statement {
     effect = "Allow"
     actions = [
@@ -559,7 +559,7 @@ data "aws_iam_policy_document" "origin_verify_rotate_policy" {
 
 
 resource "aws_iam_role_policy" "origin_secret_rotate_policy" {
-  for_each = toset(local.cdn_enabled ? [""] : [])
+  for_each = toset([""])
   name     = "OriginVerifyRotatePolicy"
   role     = aws_iam_role.origin-secret-rotate-execution-role[""].name
   policy   = data.aws_iam_policy_document.origin_verify_rotate_policy[""].json
@@ -590,7 +590,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
   # checkov:skip=CKV_AWS_173:Encryption of environmental variables is not configured with KMS key
   # checkov:skip=CKV_AWS_117:Run Lambda inside VPC with security groups & private subnets not necessary
   # checkov:skip=CKV_AWS_50:XRAY tracing not used
-  for_each      = toset(local.cdn_enabled ? [""] : [])
+  for_each      = toset([""])
   depends_on    = [data.archive_file.origin-secret-rotate-code, aws_iam_role.origin-secret-rotate-execution-role]
   filename      = data.archive_file.origin-secret-rotate-code.output_path
   function_name = "${var.application}-${var.environment}-origin-secret-rotate"
@@ -635,7 +635,7 @@ resource "aws_lambda_function" "origin-secret-rotate-function" {
 
 # Lambda Permission for Secrets Manager Rotation
 resource "aws_lambda_permission" "rotate-function-invoke-permission" {
-  for_each      = toset(local.cdn_enabled ? [""] : [])
+  for_each      = toset([""])
   statement_id  = "AllowSecretsManagerInvocation"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.origin-secret-rotate-function[""].function_name
@@ -647,7 +647,7 @@ resource "aws_lambda_permission" "rotate-function-invoke-permission" {
 
 # Associate WAF ACL with ALB
 resource "aws_wafv2_web_acl_association" "waf-alb-association" {
-  for_each     = toset(local.cdn_enabled ? [""] : [])
+  for_each     = toset([""])
   resource_arn = aws_lb.this.arn
   web_acl_arn  = aws_wafv2_web_acl.waf-acl[""].arn
 }
