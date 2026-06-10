@@ -36,7 +36,7 @@ locals {
   )
   ingress_cdn_domains = { for k, v in local.ingress_cdn_domains_list : k => v.zone_name }
 
-  san_list        = merge(local.additional_address_fqdn, local.ingress_cdn_domains)
+  san_list = merge(local.additional_address_fqdn, local.ingress_cdn_domains)
 
   # Create a complete domain list, primary domain plus all CDN/SAN domains.
   full_list = merge({ (local.domain_name) = "${var.application}.${local.domain_suffix}" }, local.san_list)

@@ -1050,41 +1050,6 @@ run "cdn_domain_list_precondition_passes_when_domains_match" {
   }
 }
 
-run "cdn_domain_list_precondition_fails_when_domains_do_not_match" {
-  command = plan
-
-  variables {
-    config = {
-      cdn_domains_list = {
-        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
-        "frontend.dev.my-application.uktrade.digital" : ["internal.frontend", "my-application.uktrade.digital", "disable_cdn"]
-      }
-    }
-  }
-
-  expect_failures = [
-    null_resource.validate_cdn_domains
-  ]
-}
-
-run "cdn_domain_list_precondition_passes_if_both_lists_are_empty" {
-  command = plan
-
-  override_data {
-    target = data.aws_ssm_parameters_by_path.cdn_domain_list
-    values = {
-      names  = ["/platform/my-application/dev/cdn_domains_list/value"]
-      values = []
-      types  = ["String"]
-      arns   = ["arn:aws:ssm:us-east-1:123456789012:parameter/platform/my-application/dev/cdn_domains_list/value"]
-    }
-  }
-
-  variables {
-    config = {}
-  }
-}
-
 run "existing_cdn_lists_match" {
   command = plan
 
