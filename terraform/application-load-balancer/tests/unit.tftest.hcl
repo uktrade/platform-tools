@@ -118,11 +118,7 @@ variables {
   dns_account_id = "123456789012"
   cloudfront_id  = ["123456789"]
   config = {
-    domain_prefix = "dom-prefix",
-    cdn_domains_list = {
-      "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital"]
-      "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital"]
-    }
+    domain_prefix                           = "dom-prefix",
     slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
   }
   service_deployment_mode = "doesnt matter for all other tests, except for 'dummy_listener_rule_manager'"
@@ -335,24 +331,6 @@ run "aws_route53_record_unit_test" {
   }
 }
 
-run "domain_length_validation_tests" {
-  command = plan
-
-  variables {
-    application = "app"
-    environment = "env"
-    config = {
-      domain_prefix                           = "dom-prefix",
-      cdn_domains_list                        = { "a-very-long-domain-name-used-to-test-length-validation.my-application.uktrade.digital" : ["internal", "my-application.uktrade.digital"] }
-      slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
-    }
-  }
-
-  expect_failures = [
-    var.config.cdn_domains_list
-  ]
-}
-
 run "domain_length_validation_tests_succeed_with_empty_cdn_domains_list_in_config" {
   command = plan
 
@@ -369,11 +347,6 @@ run "domain_length_validation_tests_succeed_with_empty_cdn_domains_list_in_confi
     config = {
       slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
     }
-  }
-
-  assert {
-    condition     = var.config.cdn_domains_list == null
-    error_message = "Should be: null"
   }
 
   assert {
@@ -1037,30 +1010,8 @@ run "dummy_listener_rule_manager" {
   }
 }
 
-run "cdn_domain_list_precondition_passes_when_domains_match" {
-  command = plan
-
-  variables {
-    config = {
-      cdn_domains_list = {
-        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
-        "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital", "disable_cdn"]
-      }
-    }
-  }
-}
-
 run "existing_cdn_lists_match" {
   command = plan
-
-  variables {
-    config = {
-      cdn_domains_list = {
-        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital"],
-        "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital"]
-      }
-    }
-  }
 
   assert {
     condition     = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.DISTROIDLIST == "api.dev.my-application.uktrade.digital,web.dev.my-application.uktrade.digital"
