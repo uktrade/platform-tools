@@ -174,7 +174,6 @@ resource "null_resource" "check_extension_uses_managed_ingress" {
     {
       for ext_name, ext_cfg in local.alb :
       ext_name => lookup(ext_cfg, "managed_ingress", false)
-      if can(ext_cfg.cdn_domains_list)
     },
     {
       for ext_name, ext_cfg in local.s3 :
