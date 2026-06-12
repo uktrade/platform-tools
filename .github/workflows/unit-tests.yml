@@ -37,7 +37,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
       - name: Upload code coverage results to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v6.0.1
         if: ${{ !cancelled() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -85,7 +85,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
       - name: Upload code coverage results to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v6.0.1
         if: ${{ !cancelled() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
