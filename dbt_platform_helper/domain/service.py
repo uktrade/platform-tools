@@ -499,7 +499,7 @@ class ServiceManager:
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
-                        service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+                        service_manifest["entrypoint"] = service_manifest["entrypoint"].split()
 
                 if "alias" in service_manifest.get("http", {}):
                     if isinstance(service_manifest["http"]["alias"], str):

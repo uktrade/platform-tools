@@ -87,11 +87,19 @@ data "archive_file" "lambda" {
   ]
 }
 
+resource "random_string" "lambda_suffix" {
+  length    = 6
+  min_lower = 6
+  special   = false
+  lower     = true
+}
+
+
 resource "aws_lambda_function" "lambda" {
   # checkov:skip=CKV_AWS_272:Code signing is not currently in use
   # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
   filename                       = data.archive_file.lambda.output_path
-  function_name                  = "${var.application}-${var.environment}-${local.name}-opensearch-create-users"
+  function_name                  = substr("${var.application}-${var.environment}-opensearch-create-users-${random_string.lambda_suffix.result}", 0, 64)
   role                           = aws_iam_role.lambda-execution-role.arn
   handler                        = "manage_users.handler"
   runtime                        = "python3.12"
@@ -106,7 +114,12 @@ resource "aws_lambda_function" "lambda" {
     subnet_ids         = data.aws_subnets.private-subnets.ids
   }
 
-  tags = local.tags
+  tags = merge(
+    local.tags,
+    {
+      name = local.name
+    }
+  )
 }
 
 resource "aws_lambda_invocation" "create-users" {
