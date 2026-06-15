@@ -319,6 +319,7 @@ class ConfigValidator:
         deprecated_options = {
             "allowed_methods",
             "cached_methods",
+            "cache_policy",
             "cdn_compress",
             "cdn_domains_list",
             "cdn_geo_locations",
@@ -331,15 +332,14 @@ class ConfigValidator:
             "forwarded_values_forward",
             "forwarded_values_headers",
             "forwarded_values_query_string",
+            "managed_ingress",
             "origin_protocol_policy",
+            "origin_request_policy",
             "origin_ssl_protocols",
+            "paths",
             "viewer_certificate_minimum_protocol_version",
             "viewer_certificate_ssl_support_method",
             "viewer_protocol_policy",
-            "cache_policy",
-            "origin_request_policy",
-            "paths",
-            "managed_ingress",
         }
 
         for ext_name, ext in config.get("extensions", {}).items():

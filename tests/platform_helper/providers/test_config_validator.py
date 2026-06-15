@@ -611,6 +611,7 @@ def test_validate_alb_extension_doesnt_warn_if_no_deprecated_options_used():
     [
         "allowed_methods",
         "cached_methods",
+        "cache_policy",
         "cdn_compress",
         "cdn_domains_list",
         "cdn_geo_locations",
@@ -623,15 +624,14 @@ def test_validate_alb_extension_doesnt_warn_if_no_deprecated_options_used():
         "forwarded_values_forward",
         "forwarded_values_headers",
         "forwarded_values_query_string",
+        "managed_ingress",
         "origin_protocol_policy",
+        "origin_request_policy",
         "origin_ssl_protocols",
+        "paths",
         "viewer_certificate_minimum_protocol_version",
         "viewer_certificate_ssl_support_method",
         "viewer_protocol_policy",
-        "cache_policy",
-        "origin_request_policy",
-        "paths",
-        "managed_ingress",
     ],
 )
 def test_validate_alb_extension_warns_if_deprecated_option_used(option):
