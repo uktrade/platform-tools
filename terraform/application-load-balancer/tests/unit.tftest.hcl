@@ -118,11 +118,7 @@ variables {
   dns_account_id = "123456789012"
   cloudfront_id  = ["123456789"]
   config = {
-    domain_prefix = "dom-prefix",
-    cdn_domains_list = {
-      "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital"]
-      "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital"]
-    }
+    domain_prefix                           = "dom-prefix",
     slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
   }
   service_deployment_mode = "doesnt matter for all other tests, except for 'dummy_listener_rule_manager'"
@@ -335,24 +331,6 @@ run "aws_route53_record_unit_test" {
   }
 }
 
-run "domain_length_validation_tests" {
-  command = plan
-
-  variables {
-    application = "app"
-    environment = "env"
-    config = {
-      domain_prefix                           = "dom-prefix",
-      cdn_domains_list                        = { "a-very-long-domain-name-used-to-test-length-validation.my-application.uktrade.digital" : ["internal", "my-application.uktrade.digital"] }
-      slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
-    }
-  }
-
-  expect_failures = [
-    var.config.cdn_domains_list
-  ]
-}
-
 run "domain_length_validation_tests_succeed_with_empty_cdn_domains_list_in_config" {
   command = plan
 
@@ -369,11 +347,6 @@ run "domain_length_validation_tests_succeed_with_empty_cdn_domains_list_in_confi
     config = {
       slack_alert_channel_alb_secret_rotation = "/slack/test/ssm/parameter/name"
     }
-  }
-
-  assert {
-    condition     = var.config.cdn_domains_list == null
-    error_message = "Should be: null"
   }
 
   assert {
@@ -900,12 +873,6 @@ run "waf_and_rotate_lambda_no_cdn_domains" {
     }
   }
 
-  variables {
-    config = {
-      cdn_domains_list = null
-    }
-  }
-
   assert {
     condition     = length(aws_secretsmanager_secret.origin-verify-secret) == 0
     error_message = "Resource should not be created"
@@ -913,104 +880,41 @@ run "waf_and_rotate_lambda_no_cdn_domains" {
 
   assert {
     condition     = length(aws_kms_key.origin_verify_secret_key) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
-    condition     = length(aws_kms_alias.origin_verify_secret_key_alias) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
-    condition     = length(aws_secretsmanager_secret_rotation.origin-verify-rotate-schedule) == 0
-    error_message = "No secret should be created"
-  }
-  assert {
-    condition     = length(aws_wafv2_web_acl.waf-acl) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
-    condition     = length(aws_lambda_function.origin-secret-rotate-function) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
-    condition     = length(aws_iam_role.origin-secret-rotate-execution-role) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
-    condition     = length(aws_lambda_permission.rotate-function-invoke-permission) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
-    condition     = length(aws_iam_role_policy.origin_secret_rotate_policy) == 0
-    error_message = "No secret should be created"
-  }
-}
-
-run "waf_and_rotate_lambda_cdn_domains_disabled" {
-  command = plan
-
-  override_data {
-    target = data.aws_ssm_parameters_by_path.cdn_domain_list
-    values = {
-      values = ["{\"web.dev.my-application.uktrade.digital\":{\"zone_name\":\"my-application.uktrade.digital\"}}"]
-    }
-  }
-
-  variables {
-    config = {
-      cdn_domains_list = {
-        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"]
-      }
-    }
-  }
-
-  assert {
-    condition     = length(aws_secretsmanager_secret.origin-verify-secret) == 0
     error_message = "Resource should not be created"
   }
 
   assert {
-    condition     = length(aws_kms_key.origin_verify_secret_key) == 0
-    error_message = "No secret should be created"
-  }
-
-  assert {
     condition     = length(aws_kms_alias.origin_verify_secret_key_alias) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
 
   assert {
     condition     = length(aws_secretsmanager_secret_rotation.origin-verify-rotate-schedule) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
   assert {
     condition     = length(aws_wafv2_web_acl.waf-acl) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
 
   assert {
     condition     = length(aws_lambda_function.origin-secret-rotate-function) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
 
   assert {
     condition     = length(aws_iam_role.origin-secret-rotate-execution-role) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
 
   assert {
     condition     = length(aws_lambda_permission.rotate-function-invoke-permission) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
 
   assert {
     condition     = length(aws_iam_role_policy.origin_secret_rotate_policy) == 0
-    error_message = "No secret should be created"
+    error_message = "Resource should not be created"
   }
 }
 
@@ -1161,50 +1065,16 @@ run "dummy_listener_rule_manager" {
   }
 }
 
-run "cdn_domain_list_precondition_passes_when_domains_match" {
+run "existing_cdn_lists_match" {
   command = plan
 
-  variables {
-    config = {
-      cdn_domains_list = {
-        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
-        "api.dev.my-application.uktrade.digital" : ["internal.api", "my-application.uktrade.digital", "disable_cdn"]
-      }
-    }
-  }
-}
-
-run "cdn_domain_list_precondition_fails_when_domains_do_not_match" {
-  command = plan
-
-  variables {
-    config = {
-      cdn_domains_list = {
-        "web.dev.my-application.uktrade.digital" : ["internal.web", "my-application.uktrade.digital", "disable_cdn"],
-        "frontend.dev.my-application.uktrade.digital" : ["internal.frontend", "my-application.uktrade.digital", "disable_cdn"]
-      }
-    }
+  assert {
+    condition     = aws_lambda_function.origin-secret-rotate-function[""].environment[0].variables.DISTROIDLIST == "api.dev.my-application.uktrade.digital,web.dev.my-application.uktrade.digital"
+    error_message = "Lambda Distrolist does not match CDN list"
   }
 
-  expect_failures = [
-    null_resource.validate_cdn_domains
-  ]
-}
-
-run "cdn_domain_list_precondition_passes_if_both_lists_are_empty" {
-  command = plan
-
-  override_data {
-    target = data.aws_ssm_parameters_by_path.cdn_domain_list
-    values = {
-      names  = ["/platform/my-application/dev/cdn_domains_list/value"]
-      values = []
-      types  = ["String"]
-      arns   = ["arn:aws:ssm:us-east-1:123456789012:parameter/platform/my-application/dev/cdn_domains_list/value"]
-    }
-  }
-
-  variables {
-    config = {}
+  assert {
+    condition     = aws_acm_certificate.certificate.subject_alternative_names == toset(["api.dev.my-application.uktrade.digital", "web.dev.my-application.uktrade.digital"])
+    error_message = "SAN list does not match given cdn domains list keys given"
   }
 }
