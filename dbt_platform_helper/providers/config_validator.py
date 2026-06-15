@@ -327,7 +327,6 @@ class ConfigValidator:
             "cdn_logging_bucket_prefix",
             "cdn_timeout_seconds",
             "default_waf",
-            "domain_prefix",
             "enable_logging",
             "forwarded_values_forward",
             "forwarded_values_headers",

@@ -590,6 +590,7 @@ def test_validate_alb_extension_doesnt_warn_if_no_deprecated_options_used():
                 "environments": {
                     "dev": {
                         "additional_address_list": [],
+                        "domain_prefix": "internal2",
                         "slack_alert_channel_alb_secret_rotation": "",
                     },
                 },
@@ -618,7 +619,6 @@ def test_validate_alb_extension_doesnt_warn_if_no_deprecated_options_used():
         "cdn_logging_bucket_prefix",
         "cdn_timeout_seconds",
         "default_waf",
-        "domain_prefix",
         "enable_logging",
         "forwarded_values_forward",
         "forwarded_values_headers",
