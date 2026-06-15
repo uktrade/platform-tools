@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "origin-verify-secret" {
-  for_each                = toset([""])
+  for_each                = toset(local.cdn_enabled ? [""] : [])
   name                    = "${var.application}-${var.environment}-origin-verify-header-secret"
   description             = "Secret used for Origin verification in WAF rules"
   kms_key_id              = aws_kms_key.origin_verify_secret_key[""].key_id
@@ -8,7 +8,7 @@ resource "aws_secretsmanager_secret" "origin-verify-secret" {
 }
 
 resource "aws_kms_key" "origin_verify_secret_key" {
-  for_each                = toset([""])
+  for_each                = toset(local.cdn_enabled ? [""] : [])
   description             = "KMS key for ${var.application}-${var.environment}-origin-verify-header-secret"
   deletion_window_in_days = 10
   enable_key_rotation     = true
@@ -43,14 +43,14 @@ resource "aws_kms_key" "origin_verify_secret_key" {
 }
 
 resource "aws_kms_alias" "origin_verify_secret_key_alias" {
-  for_each      = toset([""])
+  for_each      = toset(local.cdn_enabled ? [""] : [])
   name          = "alias/${var.application}-${var.environment}-origin-verify-header-secret-key"
   target_key_id = aws_kms_key.origin_verify_secret_key[""].key_id
 }
 
 # Secrets Manager Rotation Schedule
 resource "aws_secretsmanager_secret_rotation" "origin-verify-rotate-schedule" {
-  for_each            = toset([""])
+  for_each            = toset(local.cdn_enabled ? [""] : [])
   secret_id           = aws_secretsmanager_secret.origin-verify-secret[""].id
   rotation_lambda_arn = aws_lambda_function.origin-secret-rotate-function[""].arn
   rotate_immediately  = true

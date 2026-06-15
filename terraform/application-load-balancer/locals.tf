@@ -47,6 +47,9 @@ locals {
 
   config_with_defaults = { slack_alert_channel_alb_secret_rotation = coalesce(try(var.config.slack_alert_channel_alb_secret_rotation, null), "C31KW7NLE") } # Slack ID for P2 alerts channel
 
+  # Does the environment have a CDN configured
+  cdn_enabled = length(local.ingress_cdn_domains) > 0
+
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:9"
 
