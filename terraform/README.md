@@ -142,7 +142,7 @@ For production: `internal.<application_name>.prod.uktrade.digital`
 
 If there are multiple web services on the application, you can add the additional domain to your certificate by adding the prefix name (eg. `internal.static`) to the variable `additional_address_list` see extension.yml example below. `Note: this is just the prefix, no need to add env.uktrade.digital`
 
-`cdn_domains_list` and `additional_address_list` are optional.
+`additional_address_list` is optional.
 
 ### Route 53 record creation
 
