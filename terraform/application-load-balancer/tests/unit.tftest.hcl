@@ -863,6 +863,61 @@ run "waf_and_rotate_lambda" {
   }
 }
 
+run "waf_and_rotate_lambda_no_cdn_domains" {
+  command = plan
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.cdn_domain_list
+    values = {
+      values = ["{}"]
+    }
+  }
+
+  assert {
+    condition     = length(aws_secretsmanager_secret.origin-verify-secret) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_kms_key.origin_verify_secret_key) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_kms_alias.origin_verify_secret_key_alias) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_secretsmanager_secret_rotation.origin-verify-rotate-schedule) == 0
+    error_message = "Resource should not be created"
+  }
+  assert {
+    condition     = length(aws_wafv2_web_acl.waf-acl) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_lambda_function.origin-secret-rotate-function) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_iam_role.origin-secret-rotate-execution-role) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_lambda_permission.rotate-function-invoke-permission) == 0
+    error_message = "Resource should not be created"
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy.origin_secret_rotate_policy) == 0
+    error_message = "Resource should not be created"
+  }
+}
+
 run "dummy_listener_rule_manager" {
   command = plan
 
