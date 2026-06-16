@@ -2623,16 +2623,21 @@ run "test_disable_aws_codepipeline" {
     target = data.aws_iam_policy_document.access_artifact_store
 
     values = {
-      json = jsonencode({
-        Version = "2012-10-17"
-        Statement = [
+      json = <<-JSON
+      {
+        "Version": "2012-10-17",
+        "Statement": [
           {
-            Effect   = "Allow"
-            Action   = ["codebuild:BatchGetBuilds", "codebuild:StartBuild"]
-            Resource = "*"
+            "Effect": "Allow",
+            "Action": [
+              "codebuild:BatchGetBuilds",
+              "codebuild:StartBuild"
+            ],
+            "Resource": "*"
           }
         ]
-      })
+      }
+      JSON
     }
   }
 
