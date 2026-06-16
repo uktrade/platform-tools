@@ -1112,6 +1112,34 @@ environments:
     assert service_config == expected_service_config
 
 
+def test_migrate_scheduled_job_handles_multi_string_entrypoint(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest(
+        {"entrypoint": "launcher python manage.py some_management_command"}
+    )
+
+    expected_service_config = expected_scheduled_job_config(
+        {
+            "entrypoint": [
+                "launcher",
+                "python",
+                "manage.py",
+                "some_management_command",
+            ]
+        }
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
 @pytest.mark.parametrize(
     "timeout_string,expected",
     [("1h", 3600), ("60m", 3600)],
