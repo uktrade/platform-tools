@@ -55,7 +55,6 @@ ALB_CONTENTS = {
         "type": "alb",
         "environments": {
             "default": {
-                "cdn_domains_list": {"test.domain.uktrade.digital": "domain.uktrade.digital"},
                 "additional_address_list": ["another.domain"],
             },
             "development": None,
