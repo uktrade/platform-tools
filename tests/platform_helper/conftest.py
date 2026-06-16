@@ -579,8 +579,6 @@ extensions:
     type: alb
     environments:
       dev:
-        cdn_domains_list:
-          dev.test-app.uktrade.digital: "test-app.uktrade.digital"
 
 environment_pipelines:
   main:

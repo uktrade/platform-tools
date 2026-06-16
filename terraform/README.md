@@ -142,7 +142,7 @@ For production: `internal.<application_name>.prod.uktrade.digital`
 
 If there are multiple web services on the application, you can add the additional domain to your certificate by adding the prefix name (eg. `internal.static`) to the variable `additional_address_list` see extension.yml example below. `Note: this is just the prefix, no need to add env.uktrade.digital`
 
-`cdn_domains_list` and `additional_address_list` are optional.
+`additional_address_list` is optional.
 
 ### Route 53 record creation
 
@@ -157,52 +157,6 @@ my-application-alb:
     dev:
       additional_address_list:
         - internal.my-web-service-2
-```
-
-## CDN
-
-This module will create the CloudFront (CDN) endpoints for the application if enabled.
-
-`cdn_domains_list` is a map of the domain names that will be configured in CloudFront.
-
-- the key is the fully qualified domain name.
-- the value is an array containing the internal prefix and the base domain (the application's Route 53 zone).
-
-### Optional settings:
-
-To create a R53 record pointing to the CloudFront endpoint, set this to true. If not set, in non production this is set to true by default and set to false in production.
-
-- enable_cdn_record: true
-
-To turn on CloudFront logging to a S3 bucket, set this to true.
-
-- enable_logging: true
-
-Add this property to change the CloudFront `custom_read_timeout` value (defaults to 30 seconds):
-
-- cdn_timeout_seconds: 60
-
-example `platform-config.yml` config.
-
-```yaml
-my-application-alb:
-  type: alb
-  environments:
-    dev:
-      cdn_domains_list:
-        - dev.my-application.uktrade.digital:
-            ['internal', 'my-application.uktrade.digital']
-        - dev.my-web-service-2.my-application.uktrade.digital:
-            ['internal.my-web-service-2', 'my-application.uktrade.digital']
-      additional_address_list:
-        - internal.my-web-service-2
-      enable_cdn_record: false
-      enable_logging: true
-      cdn_timeout_seconds: 60
-    prod:
-      cdn_domains_list:
-        - my-application.prod.uktrade.digital:
-            ['internal', 'my-application.prod.uktrade.digital']
 ```
 
 ## Monitoring
