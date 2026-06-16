@@ -347,7 +347,8 @@ class ConfigValidator:
                 deprecated_options_used = set()
 
                 for env_cfg in ext.get("environments", {}).values():
-                    deprecated_options_used |= env_cfg.keys() & deprecated_options
+                    if env_cfg:
+                        deprecated_options_used |= env_cfg.keys() & deprecated_options
 
                 if deprecated_options_used:
                     deprecated_options_str = ", ".join(sorted(deprecated_options_used))
@@ -362,7 +363,9 @@ class ConfigValidator:
         for ext_name, ext in config.get("extensions", {}).items():
             if ext["type"] == "s3":
                 deprecated_option_used = any(
-                    "managed_ingress" in env_cfg for env_cfg in ext.get("environments", {}).values()
+                    "managed_ingress" in env_cfg
+                    for env_cfg in ext.get("environments", {}).values()
+                    if env_cfg
                 )
 
                 if deprecated_option_used:

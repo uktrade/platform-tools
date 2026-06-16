@@ -606,6 +606,26 @@ def test_validate_alb_extension_doesnt_warn_if_no_deprecated_options_used():
     mock_io.warn.assert_not_called()
 
 
+def test_validate_alb_extension_doesnt_warn_if_environment_config_is_none():
+    config = {
+        "extensions": {
+            "my-alb": {
+                "type": "alb",
+                "environments": {
+                    "dev": None,
+                },
+            },
+        },
+    }
+
+    mock_io = Mock(spec=ClickIOProvider)
+    validator = ConfigValidator(io=mock_io)
+
+    validator.validate_alb_extension(config)
+
+    mock_io.warn.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "option",
     [
@@ -664,6 +684,27 @@ def test_validate_s3_extension_doesnt_warn_if_deprecated_option_not_used():
                 "serve_static_content": True,
                 "environments": {
                     "dev": {},
+                },
+            },
+        },
+    }
+
+    mock_io = Mock(spec=ClickIOProvider)
+    validator = ConfigValidator(io=mock_io)
+
+    validator.validate_s3_extension(config)
+
+    mock_io.warn.assert_not_called()
+
+
+def test_validate_s3_extension_doesnt_warn_if_environment_config_is_none():
+    config = {
+        "extensions": {
+            "my-s3-bucket": {
+                "type": "s3",
+                "serve_static_content": True,
+                "environments": {
+                    "dev": None,
                 },
             },
         },
