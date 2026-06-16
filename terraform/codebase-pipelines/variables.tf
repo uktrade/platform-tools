@@ -2,15 +2,14 @@ variable "application" {
   type = string
 }
 
-variable "use_github_actions" {
-  type    = bool
-  default = false
-}
-
-variable "use_aws_codepipeline" {
-  type        = bool
-  default     = true
-  description = "Controls whether to create ECS deployment CodePipelines and related resources."
+variable "pipeline_mode" {
+  type        = string
+  default     = "aws_codepipeline"
+  description = "Controls which pipeline tool is used for ECS deployments."
+  validation {
+    condition     = contains(["aws_codepipeline", "dual_codepipeline_github", "github_actions"], var.pipeline_mode)
+    error_message = "pipeline_mode must be one of 'aws_codepipeline', 'dual_codepipeline_github', or 'github_actions'"
+  }
 }
 
 variable "requires_image_build" {

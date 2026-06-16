@@ -417,47 +417,47 @@ run "test_artifact_store" {
   command = plan
 
   assert {
-    condition     = aws_s3_bucket.artifact_store.bucket == "my-app-my-codebase-cb-arts"
+    condition     = aws_s3_bucket.artifact_store[""].bucket == "my-app-my-codebase-cb-arts"
     error_message = "Should be: my-app-my-codebase-cb-arts"
   }
   assert {
-    condition     = aws_kms_alias.artifact_store_kms_alias.name == "alias/my-app-my-codebase-cb-arts-key"
+    condition     = aws_kms_alias.artifact_store_kms_alias[""].name == "alias/my-app-my-codebase-cb-arts-key"
     error_message = "Should be: alias/my-app-my-codebase-cb-arts-key"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].condition : el.variable][0] == "aws:SecureTransport"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[0].condition : el.variable][0] == "aws:SecureTransport"
     error_message = "Should be: aws:SecureTransport"
   }
   assert {
-    condition     = data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].effect == "Deny"
+    condition     = data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[0].effect == "Deny"
     error_message = "Should be: Deny"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].actions : el][0] == "s3:*"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[0].actions : el][0] == "s3:*"
     error_message = "Should be: s3:*"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].principals : el.type][0] == "AWS"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].principals : el.type][0] == "AWS"
     error_message = "Should be: AWS"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
+    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
     error_message = "Bucket policy principals incorrect"
   }
   assert {
-    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.test]) == "ArnLike"
+    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].condition : el.test]) == "ArnLike"
     error_message = "Bucket policy condition incorrect"
   }
   assert {
-    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.variable]) == "aws:PrincipalArn"
+    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].condition : el.variable]) == "aws:PrincipalArn"
     error_message = "Bucket policy condition incorrect"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.values]) == ["arn:aws:iam::000123456789:role/my-app-*-codebase-pipeline-deploy", "arn:aws:iam::123456789000:role/my-app-*-codebase-pipeline-deploy"]
+    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].condition : el.values]) == ["arn:aws:iam::000123456789:role/my-app-*-codebase-pipeline-deploy", "arn:aws:iam::123456789000:role/my-app-*-codebase-pipeline-deploy"]
     error_message = "Bucket policy condition incorrect"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].actions : el][0] == "s3:*"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].actions : el][0] == "s3:*"
     error_message = "Should be: s3:*"
   }
 }
@@ -2592,7 +2592,7 @@ run "test_disable_codepipeline_triggers" {
   command = plan
 
   variables {
-    use_github_actions = true
+    pipeline_mode = "dual_codepipeline_github"
   }
 
   assert {
@@ -2616,156 +2616,173 @@ run "test_disable_aws_codepipeline" {
   command = plan
 
   variables {
-    use_aws_codepipeline = false
+    pipeline_mode = "github_actions"
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.access_artifact_store
+
+    values = {
+      json = jsonencode({
+        Version = "2012-10-17"
+        Statement = [
+          {
+            Effect   = "Allow"
+            Action   = ["codebuild:BatchGetBuilds", "codebuild:StartBuild"]
+            Resource = "*"
+          }
+        ]
+      })
+    }
   }
 
   assert {
     condition     = length(aws_codepipeline.codebase_pipeline) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codepipeline.manual_release_pipeline) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.codebase_install_tools) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.codebase_install_tools) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_install_tools) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.codebase_service_terraform) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.codebase_service_terraform) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.codebase_update_alb_rules) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.codebase_update_alb_rules) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_update_alb_rules) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.invalidate_cache) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.invalidate_cache) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.invalidate_cache) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.codebase_deploy) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.codebase_deploy) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_deploy) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.codebase_deploy_platform) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.codebase_deploy_platform) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_deploy_platform) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_codebuild_project.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_group.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_event_target.codepipeline) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_iam_role.event_bridge_pipeline_trigger) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_iam_role_policy.event_bridge_pipeline_trigger) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 
   assert {
     condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
-    error_message = "This should not be present when use_aws_codepipeline is false."
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 }
