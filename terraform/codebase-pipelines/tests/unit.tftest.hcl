@@ -156,6 +156,14 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions
+  values = {
+    json = "{\"Sid\": \"AllowScheduledJobs\"}"
+  }
+}
+
+
 variables {
   env_config = {
     "*" = {
@@ -714,6 +722,16 @@ run "test_custom_pre_deploy" {
     condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "custom-pre-deploy"
     error_message = "Should be: custom-pre-deploy"
   }
+
+  assert {
+    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
+    error_message = "Should be: 'run-scheduled-jobs'"
+  }
+
+  assert {
+    condition     = aws_iam_role_policy_attachment.custom_codebuild_scheduled_job_permissions[""].role == aws_iam_role.codebase_deploy.name
+    error_message = "Should be attached to codebase_deploy role"
+  }
 }
 
 
@@ -752,6 +770,16 @@ run "test_custom_post_deploy" {
   assert {
     condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].name == "custom-post-deploy"
     error_message = "Should be: custom-post-deploy"
+  }
+
+  assert {
+    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
+    error_message = "Should be: 'run-scheduled-jobs'"
+  }
+  
+  assert {
+    condition     = aws_iam_role_policy_attachment.custom_codebuild_scheduled_job_permissions[""].role == aws_iam_role.codebase_deploy.name
+    error_message = "Should be attached to codebase_deploy role"
   }
 
 }
@@ -1128,6 +1156,11 @@ run "test_iam" {
   assert {
     condition     = aws_iam_role_policy.env_manager_access.policy == "{\"Sid\": \"AssumeEnvManagerAccess\"}"
     error_message = "Should be: {\"Sid\": \"AssumeEnvManagerAccess\"}"
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.custom_codebuild_scheduled_job_permissions) == 0
+    error_message = "Should not be attached to codebase_deploy role without custom steps"
   }
 }
 
