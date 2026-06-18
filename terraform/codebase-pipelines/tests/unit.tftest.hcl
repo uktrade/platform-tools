@@ -776,7 +776,7 @@ run "test_custom_post_deploy" {
     condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
     error_message = "Should be: 'run-scheduled-jobs'"
   }
-  
+
   assert {
     condition     = aws_iam_role_policy_attachment.custom_codebuild_scheduled_job_permissions[""].role == aws_iam_role.codebase_deploy.name
     error_message = "Should be attached to codebase_deploy role"
