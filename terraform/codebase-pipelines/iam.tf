@@ -198,8 +198,8 @@ data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
       "states:DescribeExecution"
     ]
     resources = [
-      "arn:aws:states:eu-west-2:816069161783:stateMachine:psd-*-sfn",
-      "arn:aws:states:eu-west-2:816069161783:execution:psd-*-sfn*"
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.application}-*-sfn",
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.application}-*-sfn*"
     ]
   }
 }
