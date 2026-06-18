@@ -172,6 +172,51 @@ resource "aws_iam_role" "codebase_deploy_pipeline" {
   tags               = local.tags
 }
 
+
+data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:ListAccountAliases",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "ListDeployedServices"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParametersByPath",
+    ]
+    resources = ["arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.application}/environments/*/services/*"]
+  }
+
+  statement {
+    sid    = "ExecuteScheduledJobs"
+    effect = "Allow"
+    actions = [
+      "states:StartExecution",
+      "states:DescribeExecution"
+    ]
+    resources = [
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.application}-*-sfn",
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.application}-*-sfn*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "custom_codebuild_scheduled_job_permissions" {
+  for_each = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
+  name     = "run-scheduled-jobs"
+  policy   = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions.json
+}
+
+resource "aws_iam_role_policy_attachment" "custom_codebuild_scheduled_job_permissions" {
+  for_each   = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
+  role       = aws_iam_role.codebase_deploy.name
+  policy_arn = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].arn
+}
+
 data "aws_iam_policy_document" "assume_codepipeline_role" {
   statement {
     effect = "Allow"
