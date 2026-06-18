@@ -204,10 +204,16 @@ data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
   }
 }
 
-resource "aws_iam_role_policy" "custom_codebuild_scheduled_job_permissions" {
-  name   = "run-scheduled-jobs"
-  role   = aws_iam_role.codebase_deploy.name
-  policy = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions.json
+resource "aws_iam_policy" "custom_codebuild_scheduled_job_permissions" {
+  for_each = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
+  name     = "run-scheduled-jobs"
+  policy   = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions.json
+}
+
+resource "aws_iam_role_policy_attachment" "custom_codebuild_scheduled_job_permissions" {
+  for_each   = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
+  role       = aws_iam_role.codebase_deploy.name
+  policy_arn = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].arn
 }
 
 data "aws_iam_policy_document" "assume_codepipeline_role" {
