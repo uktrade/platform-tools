@@ -308,7 +308,8 @@ locals {
   has_custom_pre_deploy  = var.has_custom_pre_deploy ? true : fileexists("${path.root}/../../custom-build/pre-deploy.sh")
   has_custom_post_deploy = var.has_custom_post_deploy ? true : fileexists("${path.root}/../../custom-build/post-deploy.sh")
 
-  codepipeline_enabled     = contains(["aws_codepipeline", "dual_codepipeline_github"], var.pipeline_mode)
+  # TODO - https://uktrade.atlassian.net/browse/DBTP-3132 to look into disabling AWS CodePipeline when custom pre/post deploy actions are present
+  codepipeline_enabled     = contains(["aws_codepipeline", "dual_codepipeline_github"], var.pipeline_mode) || local.has_custom_pre_deploy || local.has_custom_post_deploy
   github_actions_enabled   = contains(["dual_codepipeline_github", "github_actions"], var.pipeline_mode)
   artifact_bucket_required = local.codepipeline_enabled || local.cache_invalidation_enabled || local.has_custom_pre_deploy || local.has_custom_post_deploy
 }

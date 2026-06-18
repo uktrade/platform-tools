@@ -6,6 +6,7 @@ variable "pipeline_mode" {
   type        = string
   default     = "aws_codepipeline"
   description = "Controls which pipeline tool is used for ECS deployments."
+
   validation {
     condition     = contains(["aws_codepipeline", "dual_codepipeline_github", "github_actions"], var.pipeline_mode)
     error_message = "pipeline_mode must be one of 'aws_codepipeline', 'dual_codepipeline_github', or 'github_actions'"
@@ -88,10 +89,22 @@ variable "env_config" {
 variable "has_custom_pre_deploy" {
   type    = bool
   default = false
+
+  # TODO - https://uktrade.atlassian.net/browse/DBTP-3132 to look into disabling AWS CodePipeline when custom pre/post deploy actions are present
+  validation {
+    condition     = var.pipeline_mode == "github_actions" && var.has_custom_pre_deploy
+    error_message = "Cannot set pipeline_mode as 'github_actions' due to the presence of custom pre-deploy actions which are not currently supported by platform tooling in GitHub Actions"
+  }
 }
 
 variable "has_custom_post_deploy" {
   type    = bool
   default = false
+
+  # TODO - https://uktrade.atlassian.net/browse/DBTP-3132 to look into disabling AWS CodePipeline when custom pre/post deploy actions are present
+  validation {
+    condition     = var.pipeline_mode == "github_actions" && var.has_custom_post_deploy
+    error_message = "Cannot set pipeline_mode as 'github_actions' due to the presence of custom post-deploy actions which are not currently supported by platform tooling in GitHub Actions"
+  }
 }
 
