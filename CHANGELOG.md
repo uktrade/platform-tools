@@ -1,5 +1,20 @@
 # Changelog
 
+## [15.32.0](https://github.com/uktrade/platform-tools/compare/15.31.2...15.32.0) (2026-06-18)
+
+
+### Features
+
+* Deprecate unused CDN-related options from platform config (DBTP-2702) ([#1493](https://github.com/uktrade/platform-tools/issues/1493)) ([0e485ae](https://github.com/uktrade/platform-tools/commit/0e485ae2b325814954069a424d73a746a404c9fb))
+* Switch the source of truth for cdn_domain_list (DBTP-2701) ([#1504](https://github.com/uktrade/platform-tools/issues/1504)) ([40f0237](https://github.com/uktrade/platform-tools/commit/40f02378c17003c5be176c03dd9ce85273e8532f))
+
+
+### Bug Fixes
+
+* Custom codebuild stage permissions for de-copilotted scheduled jobs (DBTP-2384) ([#1517](https://github.com/uktrade/platform-tools/issues/1517)) ([644d5f4](https://github.com/uktrade/platform-tools/commit/644d5f49f66f999d31bb48769ea1110fb9e9931f))
+* Handle multi-command entrypoints in migrate command (off-ticket) ([#1497](https://github.com/uktrade/platform-tools/issues/1497)) ([e3157e5](https://github.com/uktrade/platform-tools/commit/e3157e51b3f7b650d53db069ef4e524835603d7c))
+* Wait for new PH version to become available on PyPI (off-ticket) ([#1501](https://github.com/uktrade/platform-tools/issues/1501)) ([590341e](https://github.com/uktrade/platform-tools/commit/590341e5e4ac5eec32086ae6d225206f8d7d7de8))
+
 ## [15.31.2](https://github.com/uktrade/platform-tools/compare/15.31.1...15.31.2) (2026-06-05)
 
 
