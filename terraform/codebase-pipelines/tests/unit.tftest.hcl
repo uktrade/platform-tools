@@ -156,6 +156,14 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions
+  values = {
+    json = "{\"Sid\": \"AllowScheduledJobs\"}"
+  }
+}
+
+
 variables {
   env_config = {
     "*" = {

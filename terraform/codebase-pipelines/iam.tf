@@ -172,6 +172,44 @@ resource "aws_iam_role" "codebase_deploy_pipeline" {
   tags               = local.tags
 }
 
+
+data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:ListAccountAliases",
+    ]
+    resources = ["*"]
+  }
+  statement {
+    sid    = "ListDeployedServices"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParametersByPath",
+    ]
+    resources = ["arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.application}/environments/*/services/*"]
+  }
+
+  statement {
+    sid    = "ExecuteScheduledJobs"
+    effect = "Allow"
+    actions = [
+      "states:StartExecution",
+      "states:DescribeExecution"
+    ]
+    resources = [
+      "arn:aws:states:eu-west-2:816069161783:stateMachine:psd-*-sfn",
+      "arn:aws:states:eu-west-2:816069161783:execution:psd-*-sfn*"
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "custom_codebuild_scheduled_job_permissions" {
+  name   = "run-scheduled-jobs"
+  role   = aws_iam_role.codebase_deploy.name
+  policy = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions.json
+}
+
 data "aws_iam_policy_document" "assume_codepipeline_role" {
   statement {
     effect = "Allow"
