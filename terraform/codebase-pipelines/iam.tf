@@ -182,7 +182,7 @@ data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
     resources = ["*"]
   }
 
-    statement {
+  statement {
     sid    = "ListDeployedServices"
     effect = "Allow"
     actions = [
