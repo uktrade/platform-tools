@@ -76,63 +76,14 @@ class PlatformConfigSchema:
 
     @staticmethod
     def __alb_schema() -> dict:
-        _valid_alb_cache_policy = {
-            "min_ttl": int,
-            "max_ttl": int,
-            "default_ttl": int,
-            "cookies_config": Or("none", "whitelist", "allExcept", "all"),
-            "header": Or("none", "whitelist"),
-            "query_string_behavior": Or("none", "whitelist", "allExcept", "all"),
-            Optional("cookie_list"): list,
-            Optional("headers_list"): list,
-            Optional("cache_policy_query_strings"): list,
-        }
-
-        _valid_alb_paths_definition = {
-            Optional("default"): {
-                "cache": str,
-                "request": str,
-            },
-            Optional("additional"): [
-                {
-                    "path": str,
-                    "cache": str,
-                    "request": str,
-                }
-            ],
-        }
-
         return {
             "type": "alb",
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): Or(
                     {
                         Optional("additional_address_list"): [str],
-                        Optional("allowed_methods"): [str],
-                        Optional("cached_methods"): [str],
-                        Optional("cdn_compress"): bool,
-                        Optional("cdn_domains_list"): dict,
-                        Optional("cdn_geo_locations"): [str],
-                        Optional("cdn_geo_restriction_type"): str,
-                        Optional("cdn_logging_bucket"): str,
-                        Optional("cdn_logging_bucket_prefix"): str,
-                        Optional("cdn_timeout_seconds"): int,
-                        Optional("default_waf"): str,
                         Optional("domain_prefix"): str,
-                        Optional("enable_logging"): bool,
-                        Optional("forwarded_values_forward"): str,
-                        Optional("forwarded_values_headers"): [str],
-                        Optional("forwarded_values_query_string"): bool,
-                        Optional("origin_protocol_policy"): str,
-                        Optional("origin_ssl_protocols"): [str],
                         Optional("slack_alert_channel_alb_secret_rotation"): str,
-                        Optional("viewer_certificate_minimum_protocol_version"): str,
-                        Optional("viewer_certificate_ssl_support_method"): str,
-                        Optional("viewer_protocol_policy"): str,
-                        Optional("cache_policy"): dict({str: _valid_alb_cache_policy}),
-                        Optional("origin_request_policy"): dict({str: {}}),
-                        Optional("paths"): dict({str: _valid_alb_paths_definition}),
-                        Optional("managed_ingress"): bool,
                     },
                     None,
                 )
@@ -549,7 +500,6 @@ class PlatformConfigSchema:
                                 ),
                             }
                         },
-                        Optional("managed_ingress"): bool,
                     },
                 },
             }
