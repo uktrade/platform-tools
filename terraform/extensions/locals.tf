@@ -19,8 +19,8 @@ locals {
     extension_name => merge(
       extension_config,
       merge(
-        lookup(extension_config.environments, "*", {}),
-        lookup(extension_config.environments, var.environment, {})
+        lookup(lookup(extension_config, "environments", {}), "*", {}),
+        lookup(lookup(extension_config, "environments", {}), var.environment, {})
       )
     )
   }
