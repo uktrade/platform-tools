@@ -303,21 +303,24 @@ resource "aws_iam_role_policy" "artifact_store_access_for_codebase_pipeline" {
 data "aws_iam_policy_document" "access_artifact_store" {
   # checkov:skip=CKV_AWS_111:Permissions required to change ACLs on uploaded artifacts
   # checkov:skip=CKV_AWS_356:Permissions required to upload artifacts
-  statement {
-    effect = "Allow"
+  dynamic "statement" {
+    for_each = toset(local.artifact_bucket_required ? [""] : [])
 
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:GetBucketVersioning",
-      "s3:PutObjectAcl",
-      "s3:PutObject",
-    ]
+    content {
+      effect = "Allow"
 
-    resources = [
-      aws_s3_bucket.artifact_store.arn,
-      "${aws_s3_bucket.artifact_store.arn}/*"
-    ]
+      actions = [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketVersioning",
+        "s3:PutObjectAcl",
+        "s3:PutObject",
+      ]
+      resources = [
+        aws_s3_bucket.artifact_store[""].arn,
+        "${aws_s3_bucket.artifact_store[""].arn}/*"
+      ]
+    }
   }
 
   statement {
@@ -331,15 +334,19 @@ data "aws_iam_policy_document" "access_artifact_store" {
     resources = ["*"]
   }
 
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:GenerateDataKey",
-      "kms:Decrypt"
-    ]
-    resources = [
-      aws_kms_key.artifact_store_kms_key.arn
-    ]
+  dynamic "statement" {
+    for_each = toset(local.artifact_bucket_required ? [""] : [])
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:GenerateDataKey",
+        "kms:Decrypt"
+      ]
+      resources = [
+        aws_kms_key.artifact_store_kms_key[""].arn
+      ]
+    }
   }
 }
 
