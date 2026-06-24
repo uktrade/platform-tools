@@ -724,8 +724,8 @@ run "test_custom_pre_deploy" {
   }
 
   assert {
-    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
-    error_message = "Should be: 'run-scheduled-jobs'"
+    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "my-app-my-codebase-run-scheduled-jobs"
+    error_message = "Should be: 'my-app-my-codebase-run-scheduled-jobs'"
   }
 
   assert {
@@ -773,8 +773,8 @@ run "test_custom_post_deploy" {
   }
 
   assert {
-    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
-    error_message = "Should be: 'run-scheduled-jobs'"
+    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "my-app-my-codebase-run-scheduled-jobs"
+    error_message = "Should be: 'my-app-my-codebase-run-scheduled-jobs'"
   }
 
   assert {
