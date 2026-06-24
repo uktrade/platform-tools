@@ -20,8 +20,11 @@ from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECSExecException
 from dbt_platform_helper.providers.ecs import NoClusterException
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.application import Service
 
 
 @pytest.fixture
@@ -997,8 +1000,8 @@ image:
 @pytest.mark.parametrize(
     "test_input,expected",
     [
-        ("@hourly", "rate(1 hours)"),
-        ("@daily", "rate(1 days)"),
+        ("@hourly", "1 hours"),
+        ("@daily", "1 days"),
         ("@weekly", "0 0 * * 1 *"),
         ("@monthly", "0 0 1 * * *"),
         ("@yearly", "0 * * * ? *"),
@@ -1057,7 +1060,7 @@ def test_migrate_scheduled_job_handles_overrides(
             "environments": {
                 "dev": {"schedule": "0 23 * * ? *"},
                 "staging": {"schedule": "0 0 * * ? *"},
-                "uat": {"schedule": "rate(1 hours)"},
+                "uat": {"schedule": "1 hours"},
             },
         }
     )
@@ -1096,7 +1099,7 @@ environments:
     )
 
     expected_service_config = expected_scheduled_job_config(
-        {"schedule": "rate(1 days)", "environments": {"dev": {"schedule": "rate(1 hours)"}}}
+        {"schedule": "1 days", "environments": {"dev": {"schedule": "1 hours"}}}
     )
 
     os.chdir(tmp_path)
@@ -1104,6 +1107,34 @@ environments:
     service_manager.migrate_copilot_manifests()
 
     with open(tmp_path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_handles_multi_string_entrypoint(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest(
+        {"entrypoint": "launcher python manage.py some_management_command"}
+    )
+
+    expected_service_config = expected_scheduled_job_config(
+        {
+            "entrypoint": [
+                "launcher",
+                "python",
+                "manage.py",
+                "some_management_command",
+            ]
+        }
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
         service_config = yaml.safe_load(f)
 
     assert service_config == expected_service_config
@@ -1128,3 +1159,49 @@ def test_scheduled_jobs_converts_timeout_to_seconds(
         service_config = yaml.safe_load(f)
 
     assert service_config == expected_service_config
+
+
+def test_list_services():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_services.return_value = [Service("test-service", "test-type")]
+
+    manager = ServiceManager(
+        config_provider=None,
+        io=mock_io,
+        file_provider=None,
+        manifest_provider=None,
+        load_application=None,
+        installed_version_provider=None,
+        service_repository=mock_repository,
+    )
+
+    manager.list_services("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"Services currently deployed for test-app in the test-env environment:\ntest-service   (test-type)"
+    )
+
+
+def test_list_services_given_no_services():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_services.return_value = []
+
+    manager = ServiceManager(
+        config_provider=None,
+        io=mock_io,
+        file_provider=None,
+        manifest_provider=None,
+        load_application=None,
+        installed_version_provider=None,
+        service_repository=mock_repository,
+    )
+
+    manager.list_services("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"No Services currently deployed for test-app in the test-env environment."
+    )

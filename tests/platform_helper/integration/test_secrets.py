@@ -214,9 +214,14 @@ class AWSMocks:
                 "env": env,
             }
 
-            if self.create_existing_params == "exists":
+            if isinstance(self.create_existing_params, dict):
+                env_param_status = self.create_existing_params.get(env, "none")
+            else:
+                env_param_status = self.create_existing_params
+
+            if env_param_status == "exists":
                 mock_ssm_client.get_parameter.return_value = {"Parameter": {"Name": "doesntmatter"}}
-            elif self.create_existing_params == "unexpected":
+            elif env_param_status == "unexpected":
                 mock_ssm_client.get_parameter.side_effect = AWSTestFixtures.client_error_response(
                     "GetParameter"
                 )
@@ -674,3 +679,33 @@ def test_secrets_copy_exception_raised(mock_application, input_args, expected_me
         match=re.escape(expected_message),
     ):
         secrets.copy(**input_args)
+
+
+def test_secrets_copy_succeeds_when_application_has_no_prod_environment(
+    mock_application_without_prod,
+):
+    aws_mocks = AWSMocks()
+    inputs = aws_mocks.setup_copy(mock_application_without_prod, "dev", "staging")
+    secrets = Secrets(**inputs)
+
+    secrets.copy(app_name="test-application", source="dev", target="staging")
+
+
+def test_create_with_overwrite_uses_correct_overwrite_per_environment(
+    mock_application_without_prod,
+):
+    mock = AWSMocks(create_existing_params={"dev": "exists", "staging": "none"})
+    input_mocks = mock.setup_create(mock_application_without_prod)
+    secrets = Secrets(**input_mocks)
+
+    secrets.create(app_name="test-application", name="SECRET", overwrite=True)
+
+    dev_env = mock_application_without_prod.environments["dev"]
+    staging_env = mock_application_without_prod.environments["staging"]
+
+    dev_env.session.client("ssm").put_parameter.assert_called_with(
+        **AWSTestFixtures.put_parameter_called_with("dev", "1", overwrite=True)
+    )
+    staging_env.session.client("ssm").put_parameter.assert_called_with(
+        **AWSTestFixtures.put_parameter_called_with("staging", "2", overwrite=False)
+    )

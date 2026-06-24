@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
-      - uses: trufflesecurity/trufflehog@v3.94.3
+      - uses: trufflesecurity/trufflehog@v3.95.5
         with:
           base: ""
           head: ${{ github.ref_name }}

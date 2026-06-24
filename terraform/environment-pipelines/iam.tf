@@ -526,9 +526,9 @@ data "aws_iam_policy_document" "postgres" {
       "lambda:TagResource",
       "lambda:PutFunctionConcurrency"
     ]
-    resources = [for env in local.environment_config :
-      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
-    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*",
+    ]])
   }
 
   statement {

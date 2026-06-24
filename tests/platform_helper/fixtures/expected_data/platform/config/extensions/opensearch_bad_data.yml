@@ -1,0 +1,70 @@
+
+my-opensearch-bad-param: 
+    schema: "Wrong key 'nonsense' in"
+    pydantic: "Wrong key 'nonsense' in"
+my-opensearch-environments-should-be-list: 
+    schema: "environments.*False should be instance of 'dict'"
+    pydantic: "Input should be a valid dictionary"
+my-opensearch-bad-env-param:
+   schema: "environments.*Wrong key 'opensearch_plan'"
+   pydantic: "Wrong key 'opensearch_plan' in"
+my-opensearch-bad-plan:
+   schema: "environments.*dev.*plan.*does not match 'largish'"
+   pydantic: "environments.*dev.plan.* Plan must be one of "
+my-opensearch-no-plan:
+   schema: "Missing key: 'plan'"
+   pydantic: "Missing key: 'plan'"
+my-opensearch-volume-size-too-small:
+   schema: "environments.*dev.*volume_size.*should be an integer greater than 10"
+   pydantic: "environments.*dev.*volume_size.*should be an integer greater than 10"
+my-opensearch-invalid-size-for-small:
+   schema: "environments.*dev.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*"
+   pydantic: "environments.*dev.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*"
+my-opensearch-invalid-size-for-large:
+   schema: "environments.*production.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*"
+   pydantic: "environments.*production.*volume_size.*should be an integer between 10 and [0-9]{2,4}.* for plan.*"
+my-opensearch-invalid-deletion-policy:
+   schema: "environments.*dev.*deletion_policy.*does not match 'Snapshot'"
+   pydantic: "environments.*dev.*deletion_policy.*Input should be 'Delete' or 'Retain' "
+my-opensearch-instances-should-be-int:
+   schema: "environments.*instances.*should be instance of 'int'"
+   pydantic: "environments.*instances.*Input should be a valid integer, unable to parse string as an intege"
+my-opensearch-master-should-be-bool:
+   schema: "environments.*master.*should be instance of 'bool'"
+   pydantic: "'yes' should be instance of 'bool'"
+my-opensearch-es-app-log-retention-in-days-should-be-int:
+   schema: "environments.*es_app_log_retention_in_days.*should be instance of 'int'"
+   pydantic: "True should be instance of 'int'"
+my-opensearch-index-slow-log-retention-in-days-should-be-int:
+   schema: "environments.*index_slow_log_retention_in_days.*should be instance of 'int'"
+   pydantic: "True should be instance of 'int'"
+my-opensearch-audit-log-retention-in-days-should-be-int:
+   schema: "environments.*audit_log_retention_in_days.*should be instance of 'int'"
+   pydantic: "True should be instance of 'int'"
+my-opensearch-search-slow-log-retention-in-days-should-be-int:
+   schema: "environments.*search_slow_log_retention_in_days.*should be instance of 'int'"
+   pydantic: "True should be instance of 'int'"
+my-opensearch-password-special-characters:
+   schema: "environments.*password_special_characters.*should be instance of 'str'"
+   pydantic: "environments.*password_special_characters.*Input should be a valid string"
+my-opensearch-urlencode-password:
+   schema: "environments.*urlencode_password.*should be instance of 'bool'"
+   pydantic: "environments.*urlencode_password.*Input should be a valid boolean, unable to interpret input"
+my-opensearch-bad-user-name:
+   schema: "environments.*dev.*external_user_access.*Key.*is invalid: must start with lowercase letter,only alphanumeric, hyphen, underscore allowed"
+   pydantic: "environments.*dev.*external_user_access.*Key.*is invalid: must start with lowercase letter,only alphanumeric, hyphen, underscore allowed"
+my-opensearch-bad-user-read: 
+   schema: "environments.*dev.*external_user_access.*user-write-access.read.*Input should be a valid boolean"
+   pydantic: "environments.*dev.*external_user_access.*user-write-access.read.*Input should be a valid boolean"
+my-opensearch-bad-user-write: 
+   schema: "environments.*dev.*external_user_access.*user-write-access.write.*Input should be a valid boolean"
+   pydantic: "environments.*dev.*external_user_access.*user-write-access.write.*Input should be a valid boolean"
+my-opensearch-bad-user-cyber: 
+   schema: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must be a valid DBT email address"
+   pydantic: "environments.*dev.*external_user_access.*user-write-access.cyber_sign_off.*must be a valid DBT email address"
+my-opensearch-invalid-plan: 
+   schema: "environments.*dev.*plan.*does not match 'invalid'"
+   pydantic: "environments.*dev.*plan.*Plan must be one of"
+my-opensearch-bad-user-index:
+   schema: "environments.*dev.*external_user_access.*index.*should be a valid boolean"
+   pydantic: "environments.*dev.*external_user_access.*index.*should be a valid boolean"

@@ -156,7 +156,9 @@ data "aws_iam_policy_document" "codestar_connection_access" {
     effect = "Allow"
     actions = [
       "codestar-connections:GetConnectionToken",
-      "codestar-connections:UseConnection"
+      "codestar-connections:UseConnection",
+      "codeconnections:GetConnectionToken",
+      "codeconnections:GetConnection"
     ]
     resources = [
       data.external.codestar_connections.result["ConnectionArn"]
@@ -168,6 +170,51 @@ resource "aws_iam_role" "codebase_deploy_pipeline" {
   name               = "${var.application}-${var.codebase}-codebase-pipeline"
   assume_role_policy = data.aws_iam_policy_document.assume_codepipeline_role.json
   tags               = local.tags
+}
+
+
+data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:ListAccountAliases",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "ListDeployedServices"
+    effect = "Allow"
+    actions = [
+      "ssm:GetParametersByPath",
+    ]
+    resources = ["arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.application}/environments/*/services/*"]
+  }
+
+  statement {
+    sid    = "ExecuteScheduledJobs"
+    effect = "Allow"
+    actions = [
+      "states:StartExecution",
+      "states:DescribeExecution"
+    ]
+    resources = [
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.application}-*-sfn",
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.application}-*-sfn*"
+    ]
+  }
+}
+
+resource "aws_iam_policy" "custom_codebuild_scheduled_job_permissions" {
+  for_each = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
+  name     = "${var.application}-${var.codebase}-run-scheduled-jobs"
+  policy   = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions.json
+}
+
+resource "aws_iam_role_policy_attachment" "custom_codebuild_scheduled_job_permissions" {
+  for_each   = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
+  role       = aws_iam_role.codebase_deploy.name
+  policy_arn = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].arn
 }
 
 data "aws_iam_policy_document" "assume_codepipeline_role" {
@@ -256,21 +303,24 @@ resource "aws_iam_role_policy" "artifact_store_access_for_codebase_pipeline" {
 data "aws_iam_policy_document" "access_artifact_store" {
   # checkov:skip=CKV_AWS_111:Permissions required to change ACLs on uploaded artifacts
   # checkov:skip=CKV_AWS_356:Permissions required to upload artifacts
-  statement {
-    effect = "Allow"
+  dynamic "statement" {
+    for_each = toset(local.artifact_bucket_required ? [""] : [])
 
-    actions = [
-      "s3:GetObject",
-      "s3:GetObjectVersion",
-      "s3:GetBucketVersioning",
-      "s3:PutObjectAcl",
-      "s3:PutObject",
-    ]
+    content {
+      effect = "Allow"
 
-    resources = [
-      aws_s3_bucket.artifact_store.arn,
-      "${aws_s3_bucket.artifact_store.arn}/*"
-    ]
+      actions = [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:GetBucketVersioning",
+        "s3:PutObjectAcl",
+        "s3:PutObject",
+      ]
+      resources = [
+        aws_s3_bucket.artifact_store[""].arn,
+        "${aws_s3_bucket.artifact_store[""].arn}/*"
+      ]
+    }
   }
 
   statement {
@@ -284,15 +334,19 @@ data "aws_iam_policy_document" "access_artifact_store" {
     resources = ["*"]
   }
 
-  statement {
-    effect = "Allow"
-    actions = [
-      "kms:GenerateDataKey",
-      "kms:Decrypt"
-    ]
-    resources = [
-      aws_kms_key.artifact_store_kms_key.arn
-    ]
+  dynamic "statement" {
+    for_each = toset(local.artifact_bucket_required ? [""] : [])
+
+    content {
+      effect = "Allow"
+      actions = [
+        "kms:GenerateDataKey",
+        "kms:Decrypt"
+      ]
+      resources = [
+        aws_kms_key.artifact_store_kms_key[""].arn
+      ]
+    }
   }
 }
 

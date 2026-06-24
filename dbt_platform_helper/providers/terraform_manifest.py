@@ -49,6 +49,8 @@ class TerraformManifestProvider:
             f"tfstate/application/{application_name}/services/{environment}/{config_object.name}.tfstate",
         )
 
+        self._add_scheduled_job_variable(terraform)
+
         self._add_service_module(terraform, platform_helper_version, service_module_source_override)
 
         self._add_version_tracker_module(
@@ -96,6 +98,7 @@ class TerraformManifestProvider:
                 "env_config": "${local.env_config}",
                 "platform_extensions": '${local.platform_config["extensions"]}',
                 "custom_iam_policy_json": "${local.custom_iam_policy_json}",
+                "scheduled_job_image_tag": "${var.scheduled_job_image_tag}",
             }
         }
 
@@ -293,6 +296,17 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
+    def _add_scheduled_job_variable(terraform: dict):
+        terraform["variable"] = {"scheduled_job_image_tag": {"type": "string", "default": None}}
+
+    @staticmethod
+    def _add_github_required_provider(terraform: dict):
+        terraform["terraform"]["required_providers"]["github"] = {
+            "source": "integrations/github",
+            "version": SUPPORTED_GITHUB_PROVIDER_VERSION,
+        }
+
+    @staticmethod
     def _add_codebase_pipeline_module(
         terraform: dict,
         platform_helper_version: str,
@@ -315,7 +329,7 @@ class TerraformManifestProvider:
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
                 "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
-                "use_github_actions": '${lookup(each.value, "use_github_actions", false)}',
+                "pipeline_mode": '${lookup(each.value, "pipeline_mode", "aws_codepipeline")}',
                 "env_config": "${local.environments}",
                 "platform_tools_version": f"{platform_helper_version}",
             }

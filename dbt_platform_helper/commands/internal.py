@@ -1,5 +1,8 @@
 import click
 
+from dbt_platform_helper.domain.migrate_job import NewScheduleProvider
+from dbt_platform_helper.domain.migrate_job import OldScheduleProvider
+from dbt_platform_helper.domain.migrate_job import ScheduleMigrator
 from dbt_platform_helper.domain.service import ServiceManager
 from dbt_platform_helper.domain.update_alb_rules import UpdateALBRules
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
@@ -19,6 +22,50 @@ from dbt_platform_helper.utils.click import ClickDocOptGroup
 @click.group(cls=ClickDocOptGroup)
 def internal():
     """Internal commands for use within pipelines or by Platform Team."""
+
+
+@internal.command()
+@click.option(
+    "--name",
+    required=True,
+    help="The name of the job to migrate.",
+)
+@click.option(
+    "--env",
+    required=True,
+    help="The name of the environment to migrate the job for.",
+)
+@click.option(
+    "--revert",
+    required=False,
+    is_flag=True,
+    default=False,
+    help="To revert to the old copilot job.",
+)
+def migrate_job(name, env, revert):
+    """Migrate copilot manifests to service manifests."""
+    click_io = ClickIOProvider()
+
+    try:
+        config = ConfigProvider(ConfigValidator()).get_enriched_config()
+        application_name = config.get("application", "")
+        application = load_application(app=application_name, env=env)
+
+        event_client = application.environments[env].session.client("events")
+        scheduler_client = application.environments[env].session.client("scheduler")
+
+        migrator = ScheduleMigrator(
+            application_name,
+            OldScheduleProvider(event_client),
+            NewScheduleProvider(scheduler_client),
+            click_io,
+        )
+        if not revert:
+            migrator.migrate_schedule(name, env)
+        else:
+            migrator.undo_migrate_schedule(name, env)
+    except PlatformException as error:
+        click_io.abort_with_error(str(error))
 
 
 @internal.command()

@@ -16,7 +16,7 @@ jobs:
         python-version: ["3.13", "3.12", "3.11", "3.10"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
@@ -37,7 +37,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
       - name: Upload code coverage results to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: ${{ !cancelled() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
         python-version: ["3.12", "3.11"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.3
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
@@ -85,7 +85,7 @@ jobs:
           PYTHON_VERSION: ${{ matrix.python-version }}
 
       - name: Upload code coverage results to Codecov
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v7
         if: ${{ !cancelled() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

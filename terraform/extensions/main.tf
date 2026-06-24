@@ -67,7 +67,8 @@ module "alb" {
 
   for_each = local.alb
   providers = {
-    aws.domain = aws.domain
+    aws.domain     = aws.domain
+    aws.domain-cdn = aws.domain-cdn
   }
   application             = var.args.application
   environment             = var.environment
@@ -75,6 +76,7 @@ module "alb" {
   dns_account_id          = local.dns_account_id
   service_deployment_mode = local.service_deployment_mode
 
+  name   = each.key
   config = each.value
 }
 
@@ -165,25 +167,4 @@ resource "aws_ssm_parameter" "environment_data" {
 
 data "aws_ssm_parameter" "log_destination_arn" {
   name = "/copilot/tools/central_log_groups"
-}
-
-resource "null_resource" "check_extension_uses_managed_ingress" {
-  for_each = merge(
-    {
-      for ext_name, ext_cfg in local.alb :
-      ext_name => lookup(ext_cfg, "managed_ingress", false)
-      if can(ext_cfg.cdn_domains_list)
-    },
-    {
-      for ext_name, ext_cfg in local.s3 :
-      ext_name => lookup(ext_cfg, "managed_ingress", false)
-      if lookup(ext_cfg, "serve_static_content", false)
-    },
-  )
-  lifecycle {
-    precondition {
-      condition     = each.value
-      error_message = "Expected managed_ingress to be set to true for extension '${each.key}', environment '${var.environment}'"
-    }
-  }
 }
