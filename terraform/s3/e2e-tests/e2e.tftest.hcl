@@ -19,10 +19,6 @@ variables {
 }
 
 mock_provider "aws" {
-  alias = "domain-cdn"
-}
-
-mock_provider "aws" {
   alias = "domain"
 }
 
@@ -133,32 +129,3 @@ run "aws_s3_object_e2e_test" {
     error_message = "Invalid S3 object etag"
   }
 }
-
-# run "aws_cloudfront_distribution_e2e_test" {
-#   command = apply
-
-#   variables {
-#     vpc_name    = "s3-test-vpc-name"
-#     application = "s3-test-application"
-#     environment = "s3-test-environment"
-#     name        = "s3-test-name"
-#     config = {
-#       "bucket_name" = "test",
-#       "type"        = "string",
-#       "versioning"  = false,
-#       "objects"     = [],
-#       "serve_static_content" = true,
-#       "lifecycle_rules" = [{
-#           "filter_prefix" = "test-prefix",
-#           "expiration_days" = 99,
-#           "enabled"       = true
-#         }]
-#     }
-# }
-
-#   assert {
-#     condition     = aws_cloudfront_distribution.s3_distribution[0].viewer_certificate[0].acm_certificate_arn == aws_acm_certificate.certificate[0].arn
-#     error_message = "Should match the ACM certificate ARN"
-#   }
-
-# }

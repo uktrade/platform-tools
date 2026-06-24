@@ -20,8 +20,11 @@ from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.ecs import ECSExecException
 from dbt_platform_helper.providers.ecs import NoClusterException
+from dbt_platform_helper.providers.io import ClickIOProvider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.utils.application import Application
 from dbt_platform_helper.utils.application import Environment
+from dbt_platform_helper.utils.application import Service
 
 
 @pytest.fixture
@@ -786,8 +789,8 @@ def expected_scheduled_job_config():
             "name": "my-scheduled-service",
             "type": "Scheduled Job",
             "schedule": "none",
-            "retries": "1",
-            "timeout": "60m",
+            "retries": 1,
+            "timeout": 3600,
             "image": {
                 "location": "123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service"
             },
@@ -974,7 +977,7 @@ name: my-scheduled-service
 type: Scheduled Job
 schedule: none
 retries: 1
-timeout: 60m
+timeout: 3600
 image:
   location: 123456789012.dkr.ecr.eu-west-2.amazonaws.com/demodjango/my-scheduled-service
 """.lstrip()
@@ -993,17 +996,33 @@ image:
     assert expected_output in service_config
 
 
+# cron syntax: minutes, hours, day-of-month, month, day-of-week
 @pytest.mark.parametrize(
     "test_input,expected",
     [
-        ("@hourly", "rate(1 hours)"),
-        ("@daily", "rate(1 days)"),
-        ("@weekly", "0 0 * * 1"),
-        ("@monthly", "0 0 1 * *"),
-        ("@yearly", "0 * * * ?"),
-        ("5 * * * *", "5 * * * ?"),
+        ("@hourly", "1 hours"),
+        ("@daily", "1 days"),
+        ("@weekly", "0 0 * * 1 *"),
+        ("@monthly", "0 0 1 * * *"),
+        ("@yearly", "0 * * * ? *"),
+        ("5 * * * *", "5 * * * ? *"),
+        ("5 * * * 1-5", "5 * ? * 1-5 *"),
+        ("30 8-19/2 * * 1-5", "30 8-19/2 ? * 1-5 *"),
+        ("5 * 1-5 * *", "5 * 1-5 * ? *"),
+        ("30 * * * * *", "30 * * * ? *"),
     ],
-    ids=["hourly", "daily", "weekly", "monthly", "yearly", "five minutes past each hour"],
+    ids=[
+        "hourly",
+        "daily",
+        "weekly",
+        "monthly",
+        "yearly",
+        "five minutes past each hour",
+        "five minutes past each hour mon-fri",
+        "on thirtieth minute of each second hour from 8am-7pm mon-fri",
+        "five minutes past each hour for the first five days of the month",
+        "thirty minutes past each hour (explicitly every year)",
+    ],
 )
 def test_migrate_scheduled_job_converts_schedule_to_eventbridge_format(
     copilot_scheduled_job_manifest, expected_scheduled_job_config, test_input, expected
@@ -1031,6 +1050,7 @@ def test_migrate_scheduled_job_handles_overrides(
             "environments": {
                 "dev": {"on": {"schedule": "0 23 * * *"}},
                 "staging": {"on": {"schedule": "0 0 * * *"}},
+                "uat": {"on": {"schedule": "@hourly"}},
             },
         }
     )
@@ -1038,8 +1058,9 @@ def test_migrate_scheduled_job_handles_overrides(
         {
             "schedule": "none",
             "environments": {
-                "dev": {"schedule": "0 23 * * ?"},
-                "staging": {"schedule": "0 0 * * ?"},
+                "dev": {"schedule": "0 23 * * ? *"},
+                "staging": {"schedule": "0 0 * * ? *"},
+                "uat": {"schedule": "1 hours"},
             },
         }
     )
@@ -1078,7 +1099,7 @@ environments:
     )
 
     expected_service_config = expected_scheduled_job_config(
-        {"schedule": "rate(1 days)", "environments": {"dev": {"schedule": "rate(1 hours)"}}}
+        {"schedule": "1 days", "environments": {"dev": {"schedule": "1 hours"}}}
     )
 
     os.chdir(tmp_path)
@@ -1089,3 +1110,98 @@ environments:
         service_config = yaml.safe_load(f)
 
     assert service_config == expected_service_config
+
+
+def test_migrate_scheduled_job_handles_multi_string_entrypoint(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config
+):
+    path = copilot_scheduled_job_manifest(
+        {"entrypoint": "launcher python manage.py some_management_command"}
+    )
+
+    expected_service_config = expected_scheduled_job_config(
+        {
+            "entrypoint": [
+                "launcher",
+                "python",
+                "manage.py",
+                "some_management_command",
+            ]
+        }
+    )
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+@pytest.mark.parametrize(
+    "timeout_string,expected",
+    [("1h", 3600), ("60m", 3600)],
+    ids=["hours", "minutes"],
+)
+def test_scheduled_jobs_converts_timeout_to_seconds(
+    copilot_scheduled_job_manifest, expected_scheduled_job_config, timeout_string, expected
+):
+    path = copilot_scheduled_job_manifest({"timeout": timeout_string})
+    expected_service_config = expected_scheduled_job_config({"timeout": expected})
+
+    os.chdir(path)
+    service_manager = ServiceManager()
+    service_manager.migrate_copilot_manifests()
+
+    with open(path / "services/my-scheduled-service/service-config.yml") as f:
+        service_config = yaml.safe_load(f)
+
+    assert service_config == expected_service_config
+
+
+def test_list_services():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_services.return_value = [Service("test-service", "test-type")]
+
+    manager = ServiceManager(
+        config_provider=None,
+        io=mock_io,
+        file_provider=None,
+        manifest_provider=None,
+        load_application=None,
+        installed_version_provider=None,
+        service_repository=mock_repository,
+    )
+
+    manager.list_services("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"Services currently deployed for test-app in the test-env environment:\ntest-service   (test-type)"
+    )
+
+
+def test_list_services_given_no_services():
+    mock_io = Mock(spec=ClickIOProvider)
+
+    mock_repository = Mock(spec=ServiceRepository)
+    mock_repository.list_services.return_value = []
+
+    manager = ServiceManager(
+        config_provider=None,
+        io=mock_io,
+        file_provider=None,
+        manifest_provider=None,
+        load_application=None,
+        installed_version_provider=None,
+        service_repository=mock_repository,
+    )
+
+    manager.list_services("test-app", "test-env")
+
+    mock_io.info.assert_called_with(
+        f"No Services currently deployed for test-app in the test-env environment."
+    )

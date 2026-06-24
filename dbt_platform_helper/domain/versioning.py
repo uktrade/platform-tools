@@ -12,6 +12,10 @@ from dbt_platform_helper.constants import (
 from dbt_platform_helper.constants import (
     TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
+from dbt_platform_helper.constants import (
+    TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
+from dbt_platform_helper.constants import VERSION_TRACKER_MODULE_PATH
 from dbt_platform_helper.entities.semantic_version import (
     IncompatibleMajorVersionException,
 )
@@ -166,7 +170,7 @@ class PlatformHelperVersioning:
         platform_helper_env_override = self.environment_variable_provider.get(
             PLATFORM_HELPER_VERSION_OVERRIDE_KEY
         )
-        if platform_helper_env_override:
+        if platform_helper_env_override and platform_helper_env_override != "NONE":
             return platform_helper_env_override
 
         return self.get_default_version()
@@ -203,15 +207,40 @@ class PlatformHelperVersioning:
             TERRAFORM_ENVIRONMENT_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
         )
 
+    def get_version_tracker_module_source(self):
+        version_tracker_module_override = self.environment_variable_provider.get(
+            TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        )
+
+        if version_tracker_module_override:
+            return version_tracker_module_override
+
+        if self.platform_helper_version_override:
+            return f"{VERSION_TRACKER_MODULE_PATH}{self.platform_helper_version_override}"
+
+        platform_helper_env_override = self.environment_variable_provider.get(
+            PLATFORM_HELPER_VERSION_OVERRIDE_KEY
+        )
+
+        if platform_helper_env_override:
+            return f"{VERSION_TRACKER_MODULE_PATH}{platform_helper_env_override}"
+
+        return f"{VERSION_TRACKER_MODULE_PATH}{self.get_required_version()}"
+
     def get_codebase_pipeline_modules_source(self):
         return self._get_pipeline_modules_source(
             CODEBASE_PIPELINE_MODULE_PATH,
             TERRAFORM_CODEBASE_PIPELINES_MODULE_SOURCE_OVERRIDE_ENV_VAR,
         )
 
-    def get_extensions_module_source(self):
+    def get_extensions_module_source_override(self):
         return self.environment_variable_provider.get(
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
+        )
+
+    def get_version_tracker_module_source_override(self):
+        return self.environment_variable_provider.get(
+            TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
         )
 
 

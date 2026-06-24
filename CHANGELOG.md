@@ -1,5 +1,136 @@
 # Changelog
 
+## [15.32.0](https://github.com/uktrade/platform-tools/compare/15.31.2...15.32.0) (2026-06-18)
+
+
+### Features
+
+* Deprecate unused CDN-related options from platform config (DBTP-2702) ([#1493](https://github.com/uktrade/platform-tools/issues/1493)) ([0e485ae](https://github.com/uktrade/platform-tools/commit/0e485ae2b325814954069a424d73a746a404c9fb))
+* Switch the source of truth for cdn_domain_list (DBTP-2701) ([#1504](https://github.com/uktrade/platform-tools/issues/1504)) ([40f0237](https://github.com/uktrade/platform-tools/commit/40f02378c17003c5be176c03dd9ce85273e8532f))
+
+
+### Bug Fixes
+
+* Custom codebuild stage permissions for de-copilotted scheduled jobs (DBTP-2384) ([#1517](https://github.com/uktrade/platform-tools/issues/1517)) ([644d5f4](https://github.com/uktrade/platform-tools/commit/644d5f49f66f999d31bb48769ea1110fb9e9931f))
+* Handle multi-command entrypoints in migrate command (off-ticket) ([#1497](https://github.com/uktrade/platform-tools/issues/1497)) ([e3157e5](https://github.com/uktrade/platform-tools/commit/e3157e51b3f7b650d53db069ef4e524835603d7c))
+* Wait for new PH version to become available on PyPI (off-ticket) ([#1501](https://github.com/uktrade/platform-tools/issues/1501)) ([590341e](https://github.com/uktrade/platform-tools/commit/590341e5e4ac5eec32086ae6d225206f8d7d7de8))
+
+## [15.31.2](https://github.com/uktrade/platform-tools/compare/15.31.1...15.31.2) (2026-06-05)
+
+
+### Bug Fixes
+
+* Use random string for lambda name (DBTP-2960) ([#1495](https://github.com/uktrade/platform-tools/issues/1495)) ([ce1b5a0](https://github.com/uktrade/platform-tools/commit/ce1b5a0707f68f09fe9f2b36b504b86660d610f8))
+
+## [15.31.1](https://github.com/uktrade/platform-tools/compare/15.31.0...15.31.1) (2026-06-04)
+
+
+### Bug Fixes
+
+* Increase lambda timeout (DBTP-2960) ([#1491](https://github.com/uktrade/platform-tools/issues/1491)) ([46b16fa](https://github.com/uktrade/platform-tools/commit/46b16fa84eb47802ef18d5e56157112f9d97128d))
+
+## [15.31.0](https://github.com/uktrade/platform-tools/compare/15.30.1...15.31.0) (2026-06-04)
+
+
+### Features
+
+* Opensearch User creational and config (DBTP-2960) ([#1445](https://github.com/uktrade/platform-tools/issues/1445)) ([310a41b](https://github.com/uktrade/platform-tools/commit/310a41b9f5d74b3c37d0fa2f8a5be00ba13b9dd9))
+
+
+### Bug Fixes
+
+* Run PyPI release notification script with poetry (off-ticket) ([#1489](https://github.com/uktrade/platform-tools/issues/1489)) ([6b16367](https://github.com/uktrade/platform-tools/commit/6b1636722cfbf2d8e2cf94583880f6b9fdca6563))
+
+## [15.30.1](https://github.com/uktrade/platform-tools/compare/15.30.0...15.30.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* Disable image build notifications if using GitHub actions (DBTP-3071) ([#1487](https://github.com/uktrade/platform-tools/issues/1487)) ([820e8e9](https://github.com/uktrade/platform-tools/commit/820e8e9e752bd0cd82d06eebbae6d61a895af4dd))
+* Internal migrate-job command works without copilot tags (Off-ticket) ([#1483](https://github.com/uktrade/platform-tools/issues/1483)) ([54f77b2](https://github.com/uktrade/platform-tools/commit/54f77b2f1cb15493155cb9f73f8b238a25cbad99))
+* Pass the correct PH version when building the platform-deploy-tools image (off-ticket)  ([#1481](https://github.com/uktrade/platform-tools/issues/1481)) ([bc583b8](https://github.com/uktrade/platform-tools/commit/bc583b895b36f0feb40854060e3170408e1c89b1))
+* Prevent setting null values in the version tracker SSM parameter (off-ticket) ([#1486](https://github.com/uktrade/platform-tools/issues/1486)) ([9dd76c6](https://github.com/uktrade/platform-tools/commit/9dd76c61f2644e0d89e13472fc1adb49b642bcef))
+
+## [15.30.0](https://github.com/uktrade/platform-tools/compare/15.29.0...15.30.0) (2026-05-28)
+
+
+### Features
+
+* Build platform-deploy-tools image (DBTP-3051) ([#1475](https://github.com/uktrade/platform-tools/issues/1475)) ([94373c9](https://github.com/uktrade/platform-tools/commit/94373c99ca6ed5a052d2db6ad626e983f39801b1))
+* Switch Redis 7.1 to Valkey 7.2 in non-prod (DBTP-2873) ([#1464](https://github.com/uktrade/platform-tools/issues/1464)) ([273744f](https://github.com/uktrade/platform-tools/commit/273744f98fae1ddc96b4fc44901879544d5c868c))
+
+
+### Bug Fixes
+
+* Add OIDC trust policy for prod deployments (DBTP-3054) ([#1479](https://github.com/uktrade/platform-tools/issues/1479)) ([6582d16](https://github.com/uktrade/platform-tools/commit/6582d162b000041dab04dd6c42de4c7b1f152369))
+* CodeBase image builds failing to pull code in rare circumstances (DBTP-2763) ([#1476](https://github.com/uktrade/platform-tools/issues/1476)) ([956585c](https://github.com/uktrade/platform-tools/commit/956585c288228f159085a820f75523b63ccc6a58))
+* Prevent IAM role name from exceeding AWS 64-char limit (off-ticket) ([#1474](https://github.com/uktrade/platform-tools/issues/1474)) ([2966b99](https://github.com/uktrade/platform-tools/commit/2966b99bc8c2ee3f1702201cefc37ad23e714336))
+
+
+### Dependencies
+
+* Bump idna from 3.10 to 3.15 ([#1465](https://github.com/uktrade/platform-tools/issues/1465)) ([bb76a30](https://github.com/uktrade/platform-tools/commit/bb76a30d62726bd97f5ae8175cf95d86642ccae0))
+
+## [15.29.0](https://github.com/uktrade/platform-tools/compare/15.28.0...15.29.0) (2026-05-20)
+
+
+### Features
+
+* Changes to support scheduled job deployments (DBTP-2844) ([#1450](https://github.com/uktrade/platform-tools/issues/1450)) ([9d24c16](https://github.com/uktrade/platform-tools/commit/9d24c16bbf9c967f3f8f1cb3d6935076d27e4e64))
+* Codebase pipeline GitHub auth and vars (DBTP-2806) ([#1435](https://github.com/uktrade/platform-tools/issues/1435)) ([e6c1202](https://github.com/uktrade/platform-tools/commit/e6c12025570095265bc8e005f0fe164a84f78982))
+* Platform-helper command `service ls` (DBTP-3023) ([#1452](https://github.com/uktrade/platform-tools/issues/1452)) ([a2532c7](https://github.com/uktrade/platform-tools/commit/a2532c77f75127effae2327933c2854cd2d653a4))
+* Platform-helper command to list deployed Scheduled Jobs (DBTP-3023) ([#1449](https://github.com/uktrade/platform-tools/issues/1449)) ([0d7fda7](https://github.com/uktrade/platform-tools/commit/0d7fda7403e8f4ba7555a18aa79981c4f7b4c537))
+
+
+### Bug Fixes
+
+* CodeBase image builds failing to pull code in rare circumstances (DBTP-2763) ([#1446](https://github.com/uktrade/platform-tools/issues/1446)) ([36022e2](https://github.com/uktrade/platform-tools/commit/36022e23db94410b0a50b875eec0cbf165365206))
+* Remove deleted principal from origin-verify secret's IAM policy (DBTP-2268) ([#1462](https://github.com/uktrade/platform-tools/issues/1462)) ([39884ff](https://github.com/uktrade/platform-tools/commit/39884ff4067a550e2fd8339b47ca1b225153532a))
+
+
+### Dependencies
+
+* Bump urllib3 from 2.6.3 to 2.7.0 ([#1439](https://github.com/uktrade/platform-tools/issues/1439)) ([91805ca](https://github.com/uktrade/platform-tools/commit/91805cac556b4eb1e409f501164d711f8991e3b4))
+
+
+### Reverts
+
+* CodeBase image builds failing to pull code in rare circumstances (DBTP-2763) ([#1466](https://github.com/uktrade/platform-tools/issues/1466)) ([2ad0ec1](https://github.com/uktrade/platform-tools/commit/2ad0ec1cd8309377c76feb6e1645be1ad67c5c45))
+
+## [15.28.0](https://github.com/uktrade/platform-tools/compare/15.27.0...15.28.0) (2026-05-12)
+
+
+### Features
+
+* Add terraform module for Scheduled Job (DBTP-2843) ([#1385](https://github.com/uktrade/platform-tools/issues/1385)) ([bd1fe8e](https://github.com/uktrade/platform-tools/commit/bd1fe8ee430a38da41f7aa4bad47f64657cfbf5d))
+* Added new property use_github_actions to codebase-pipeline (DBTP-2807) ([#1387](https://github.com/uktrade/platform-tools/issues/1387)) ([3cae7aa](https://github.com/uktrade/platform-tools/commit/3cae7aae188de2b6d042e6900bd89444ea64e743))
+* Internal migrate job command (DBTP-2985) ([#1433](https://github.com/uktrade/platform-tools/issues/1433)) ([25d6da3](https://github.com/uktrade/platform-tools/commit/25d6da3e5d70b4dc02a46260da1dd097e4225faf))
+* New Terraform module for tracking the version of deployed infra (DBTP-2542) ([#1398](https://github.com/uktrade/platform-tools/issues/1398)) ([0535d1b](https://github.com/uktrade/platform-tools/commit/0535d1b4e46528b70e6f772f64c6735a8ad67c5d))
+* Remove dead code for managing CDNs (DBTP-2774) ([#1388](https://github.com/uktrade/platform-tools/issues/1388)) ([033f3cd](https://github.com/uktrade/platform-tools/commit/033f3cde6f53bb10c6bce1fb7798229dda9f4b01))
+* Replacement for copilot job run  (DBTP-2848) ([#1394](https://github.com/uktrade/platform-tools/issues/1394)) ([cb363aa](https://github.com/uktrade/platform-tools/commit/cb363aa537177c4f165f5e116aef92beed8d5ca5))
+* Use new restricted roles for ALB/CDN secret rotation (DBTP-2964) ([#1420](https://github.com/uktrade/platform-tools/issues/1420)) ([af72f48](https://github.com/uktrade/platform-tools/commit/af72f487830132510de1483bc5accce93f57caa2))
+* Use new restricted roles for managing ALB DNS records + invalidating caches (DBTP-2268) ([#1391](https://github.com/uktrade/platform-tools/issues/1391)) ([6d8ce6c](https://github.com/uktrade/platform-tools/commit/6d8ce6c95bec35801a63bed04fcc20381e612191))
+* Validate cdn_domains_list matches platform-public-ingress (DBTP-2936) ([#1393](https://github.com/uktrade/platform-tools/issues/1393)) ([a97c081](https://github.com/uktrade/platform-tools/commit/a97c0819cfbc611786329d44a5d2bdf0a7511698))
+
+
+### Bug Fixes
+
+* Add ability to handle rate() schedule expressions (DBTP-2843) ([#1434](https://github.com/uktrade/platform-tools/issues/1434)) ([cb6622c](https://github.com/uktrade/platform-tools/commit/cb6622c8f7292432e6a423d1a69dfadef23dc840))
+* Add missing IAM permission to allow update of IAM policy versions (off-ticket) ([#1438](https://github.com/uktrade/platform-tools/issues/1438)) ([de39eba](https://github.com/uktrade/platform-tools/commit/de39eba3c0ce7008120fcb67af97e4637646d1a3))
+* Bug in secrets copy & create commands for apps without prod environment (DBTP-3000) ([#1432](https://github.com/uktrade/platform-tools/issues/1432)) ([3d9d60b](https://github.com/uktrade/platform-tools/commit/3d9d60bc69cf2c6ce7a83d3eada9271eecc6e6ec))
+* Prevent type error if app has no codebase pipeline repos (off-ticket) ([#1397](https://github.com/uktrade/platform-tools/issues/1397)) ([8e15b16](https://github.com/uktrade/platform-tools/commit/8e15b1693d7521d26301b105e645b174cfe68bea))
+
+
+### Dependencies
+
+* Bump click from 8.3.2 to 8.3.3 ([#1422](https://github.com/uktrade/platform-tools/issues/1422)) ([7de24eb](https://github.com/uktrade/platform-tools/commit/7de24eb46e03fb0880c329762d6acb24e6907572))
+* Bump pydantic from 2.11.7 to 2.13.3 ([#1412](https://github.com/uktrade/platform-tools/issues/1412)) ([0a16f3f](https://github.com/uktrade/platform-tools/commit/0a16f3fb269bc39491834fc5bf59414d3d193834))
+
+
+### Documentation
+
+* Update release-pr-template.md (off-ticket) ([#1418](https://github.com/uktrade/platform-tools/issues/1418)) ([0ae58d5](https://github.com/uktrade/platform-tools/commit/0ae58d5f2b27f982ed4be575af9134c428624e90))
+
 ## [15.27.0](https://github.com/uktrade/platform-tools/compare/15.26.0...15.27.0) (2026-04-30)
 
 

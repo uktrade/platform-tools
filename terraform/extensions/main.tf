@@ -11,10 +11,6 @@ module "s3" {
 
   for_each = local.s3
 
-  providers = {
-    aws.domain-cdn = aws.domain-cdn
-  }
-
   application    = var.args.application
   environment    = var.environment
   name           = each.key
@@ -29,11 +25,11 @@ module "postgres" {
 
   for_each = local.postgres
 
-  application = var.args.application
-  environment = var.environment
-  name        = each.key
-  vpc_name    = local.vpc_name
-  env_config  = var.args.env_config
+  application       = var.args.application
+  environment       = var.environment
+  name              = each.key
+  vpc_name          = local.vpc_name
+  env_config        = var.args.env_config
   deploy_repository = var.deploy_repository
 
   config         = each.value
@@ -71,7 +67,8 @@ module "alb" {
 
   for_each = local.alb
   providers = {
-    aws.domain = aws.domain
+    aws.domain     = aws.domain
+    aws.domain-cdn = aws.domain-cdn
   }
   application             = var.args.application
   environment             = var.environment
@@ -79,21 +76,7 @@ module "alb" {
   dns_account_id          = local.dns_account_id
   service_deployment_mode = local.service_deployment_mode
 
-  config = each.value
-}
-
-module "cdn" {
-  source = "../cdn"
-
-  for_each = local.cdn
-  providers = {
-    aws.domain-cdn = aws.domain-cdn
-  }
-  application = var.args.application
-  environment = var.environment
-
-  origin_verify_secret_id = one(values(module.alb)).origin_verify_secret_id
-
+  name   = each.key
   config = each.value
 }
 

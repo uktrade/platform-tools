@@ -1,7 +1,6 @@
 import re
 from enum import Enum
 from typing import ClassVar
-from typing import Dict
 from typing import Optional
 from typing import Union
 
@@ -123,10 +122,10 @@ class Sidecar(BaseModel):
         description="Whether the ECS task should stop if this sidecar container exits.",
         default=True,
     )
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the sidecar container.", default=None
     )
-    secrets: Optional[Dict[str, str]] = Field(
+    secrets: Optional[dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the sidecar.", default=None
     )
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
@@ -136,8 +135,8 @@ class SidecarOverride(BaseModel):
     port: Optional[int] = Field(default=None)
     image: Optional[str] = Field(default=None)
     essential: Optional[bool] = Field(default=None)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(default=None)
+    secrets: Optional[dict[str, str]] = Field(default=None)
     healthcheck: Optional[ContainerHealthCheck] = Field(default=None)
 
 
@@ -324,7 +323,7 @@ class Count(BaseModel):
 
 class ServiceConfigEnvironmentOverride(BaseModel):
     http: Optional[HttpOverride] = Field(default=None)
-    sidecars: Optional[Dict[str, SidecarOverride]] = Field(default=None)
+    sidecars: Optional[dict[str, SidecarOverride]] = Field(default=None)
     image: Optional[Image] = Field(default=None)
 
     cpu: Optional[int] = Field(default=None)
@@ -336,13 +335,14 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 
     storage: Optional[Storage] = Field(default=None)
 
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(default=None)
-    secrets: Optional[Dict[str, str]] = Field(default=None)
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(default=None)
+    secrets: Optional[dict[str, str]] = Field(default=None)
 
 
 class ServiceType(str, Enum):
     BACKEND_SERVICE = "Backend Service"
     LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+    SCHEDULED_JOB = "Scheduled Job"
 
 
 class ServiceConfig(BaseModel):
@@ -360,7 +360,58 @@ class ServiceConfig(BaseModel):
             )
         return self
 
-    sidecars: Optional[Dict[str, Sidecar]] = Field(default=None)
+    @model_validator(mode="after")
+    def check_scheduled_job_conditional_fields(self):
+        if self.type == ServiceType.SCHEDULED_JOB:
+            if self.count is not None:
+                raise PlatformException(
+                    f"'count' is not allowed for service type == {self.type.value}"
+                )
+            if self.http is not None:
+                raise PlatformException(
+                    f"'http' is not allowed for service type == {self.type.value}"
+                )
+            if self.schedule is None:
+                raise PlatformException(
+                    f"'schedule' is required for service type == {self.type.value}"
+                )
+        else:
+            if self.count is None:
+                raise PlatformException(
+                    f"'count' is required for service type == {self.type.value}"
+                )
+            if self.schedule is not None:
+                raise PlatformException(
+                    f"'schedule' is not allowed for service type == {self.type.value}"
+                )
+            if self.retries is not None:
+                raise PlatformException(
+                    f"'retries' is not allowed for service type == {self.type.value}"
+                )
+            if self.timeout is not None:
+                raise PlatformException(
+                    f"'timeout' is not allowed for service type == {self.type.value}"
+                )
+            if self.platform is not None:
+                raise PlatformException(
+                    f"'platform' is not allowed for service type == {self.type.value}"
+                )
+        return self
+
+    schedule: Optional[str] = Field(
+        default=None,
+        description="Set schedule for Scheduled Job (e.g. 'none', 'rate(5 minutes)', '5 * * * ?').",
+    )
+    retries: Optional[int] = Field(
+        default=None, description="Set retries for Scheduled Job (e.g. 1)."
+    )
+    timeout: Optional[int] = Field(
+        default=None, description="Set timeout for Scheduled Job in seconds (e.g. 300)."
+    )
+    platform: Optional[str] = Field(
+        default=None, description="Set platform for Scheduled Job (e.g. 'x86_64' or 'arm64')."
+    )
+    sidecars: Optional[dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
     cpu: int = Field(
         description="vCPU units reserved for the ECS task (e.g. 256=0.25 vCPU, 512=0.5 vCPU, 1024=1 vCPU)."
@@ -368,8 +419,9 @@ class ServiceConfig(BaseModel):
     memory: int = Field(
         description="Memory in MiB reserved for the ECS task (e.g. 256, 512, 1024)."
     )
-    count: Union[int, Count] = Field(
-        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_minute' metrics."
+    count: Optional[Union[int, Count]] = Field(
+        default=None,
+        description="Desired task count — either a fixed integer or an autoscaling policy map with 'range', 'cooldown', and at least one of 'cpu_percentage', 'memory_percentage', or 'requests_per_minute' metrics.",
     )
     exec: Optional[bool] = Field(
         description="Enable ECS Exec (remote command execution) for running ECS tasks.",
@@ -383,19 +435,24 @@ class ServiceConfig(BaseModel):
         default=True,
     )
     storage: Storage = Field(default_factory=Storage)
-    variables: Optional[Dict[str, Union[str, int, bool]]] = Field(
+    variables: Optional[dict[str, Union[str, int, bool]]] = Field(
         description="Environment variables to inject into the main application container.",
         default=None,
     )
-    secrets: Optional[Dict[str, str]] = Field(
+    secrets: Optional[dict[str, str]] = Field(
         description="Parameter Store secrets to inject into the main application container.",
         default=None,
     )
     # Environment overrides can override almost the full config
-    environments: Optional[Dict[str, ServiceConfigEnvironmentOverride]] = Field(
+    environments: Optional[dict[str, ServiceConfigEnvironmentOverride]] = Field(
         description="Allows you to override most service config properties for specific environments.",
         default=None,
     )
 
     # Class based variable used when handling the object
-    local_terraform_source: ClassVar[str] = "../../../../../platform-tools/terraform/ecs-service"
+    local_ecs_service_terraform_source: ClassVar[str] = (
+        "../../../../../platform-tools/terraform/ecs-service"
+    )
+    local_version_tracker_terraform_source: ClassVar[str] = (
+        "../../../../../platform-tools/terraform/version-tracker"
+    )

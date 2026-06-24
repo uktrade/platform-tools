@@ -79,6 +79,15 @@ resource "aws_security_group" "opensearch-security-group" {
     ]
   }
 
+  # ingress {
+  #   description = "Ingress from Lambda Functions to Secrets Manager"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+
+  #   self = true
+  # }
+
   egress {
     description = "Allow traffic out on all ports"
     from_port   = 0
@@ -103,6 +112,52 @@ resource "random_password" "password" {
   min_lower        = 1
   min_numeric      = 1
   override_special = coalesce(var.config.password_special_characters, "-_!.~$&'()*+,;=")
+}
+
+data "aws_iam_policy_document" "opensearch-policy" {
+  statement {
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "es:*",
+    ]
+
+    effect = "Deny"
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+
+      values = [
+        "false",
+      ]
+    }
+
+    resources = [
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}",
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*",
+    ]
+  }
+  statement {
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "es:*",
+    ]
+
+    effect = "Allow"
+
+    resources = [
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}",
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*",
+    ]
+  }
 }
 
 resource "aws_opensearch_domain" "this" {
@@ -196,19 +251,7 @@ resource "aws_opensearch_domain" "this" {
     security_group_ids = [aws_security_group.opensearch-security-group.id]
   }
 
-  access_policies = <<CONFIG
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "es:*",
-            "Principal": "*",
-            "Effect": "Allow",
-            "Resource": "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*"
-        }
-    ]
-}
-CONFIG
+  access_policies = data.aws_iam_policy_document.opensearch-policy.json
 
   tags = local.tags
 }

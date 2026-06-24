@@ -1,8 +1,6 @@
 import os
-import re
 import webbrowser
 from pathlib import Path
-from typing import Dict
 
 from prettytable import PrettyTable
 
@@ -11,17 +9,12 @@ from dbt_platform_helper.constants import STANDARD_PLATFORM_SSO_ROLES
 from dbt_platform_helper.domain.versioning import AWSVersioning
 from dbt_platform_helper.domain.versioning import CopilotVersioning
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
-from dbt_platform_helper.entities.semantic_version import (
-    IncompatibleMajorVersionException,
-)
-from dbt_platform_helper.entities.semantic_version import SemanticVersion
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.sso_auth import SSOAuthProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.schema_migrator import ALL_MIGRATIONS
 from dbt_platform_helper.providers.schema_migrator import Migrator
-from dbt_platform_helper.providers.validation import ValidationException
 from dbt_platform_helper.providers.version_status import VersionStatus
 
 yes = "\033[92m✔\033[0m"
@@ -33,11 +26,7 @@ RECOMMENDATIONS = {
         "Upgrade dbt-platform-helper to version {version} `pip install "
         "--upgrade dbt-platform-helper=={version}`."
     ),
-    "dbt-platform-helper-upgrade-note": (
-        "Post upgrade, run `platform-helper copilot make-addons` to " "update your addon templates."
-    ),
     "generic-tool-upgrade": "Upgrade {tool} to version {version}.",
-    "install-copilot": "Install AWS Copilot https://aws.github.io/copilot-cli/",
     "install-aws": "Install AWS CLI https://aws.amazon.com/cli/",
 }
 
@@ -103,15 +92,8 @@ class Config:
         self.io.debug("\nDetected a deployment repository\n")
         platform_helper_version_status = self.platform_helper_versioning.get_version_status()
         aws_version_status = self.aws_versioning.get_version_status()
-        copilot_version_status = self.copilot_versioning.get_version_status()
 
-        self._check_tool_versions(
-            platform_helper_version_status, aws_version_status, copilot_version_status
-        )
-
-        compatible = self._check_addon_versions(platform_helper_version_status)
-
-        exit(0 if compatible else 1)
+        self._check_tool_versions(platform_helper_version_status, aws_version_status)
 
     def migrate(self):
         platform_config = self.config_provider.load_unvalidated_config_file()
@@ -223,14 +205,10 @@ class Config:
         self,
         platform_helper_version_status: VersionStatus,
         aws_version_status: VersionStatus,
-        copilot_version_status: VersionStatus,
     ):
         self.io.debug("Checking tooling versions...")
 
         recommendations = {}
-
-        if copilot_version_status.installed is None:
-            recommendations["install-copilot"] = RECOMMENDATIONS["install-copilot"]
 
         if aws_version_status.installed is None:
             recommendations["install-aws"] = RECOMMENDATIONS["install-aws"]
@@ -245,7 +223,6 @@ class Config:
         tool_versions_table.align["Tool"] = "l"
 
         self._add_version_status_row(tool_versions_table, "aws", aws_version_status)
-        self._add_version_status_row(tool_versions_table, "copilot", copilot_version_status)
         self._add_version_status_row(
             tool_versions_table, "dbt-platform-helper", platform_helper_version_status
         )
@@ -258,107 +235,14 @@ class Config:
                 version=str(aws_version_status.latest),
             )
 
-        if copilot_version_status.is_outdated() and "install-copilot" not in recommendations:
-            recommendations["copilot-upgrade"] = RECOMMENDATIONS["generic-tool-upgrade"].format(
-                tool="AWS Copilot",
-                version=str(copilot_version_status.latest),
-            )
-
         if platform_helper_version_status.is_outdated():
             recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
                 "dbt-platform-helper-upgrade"
             ].format(version=str(platform_helper_version_status.latest))
-            recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
-                "dbt-platform-helper-upgrade-note"
-            ]
 
         self._render_recommendations(recommendations)
 
-    def _check_addon_versions(self, platform_helper_versions: VersionStatus) -> bool:
-
-        self.io.debug("Checking addons templates versions...")
-
-        compatible = True
-        recommendations = {}
-
-        local_version = platform_helper_versions.installed
-        latest_release = platform_helper_versions.latest
-
-        addons_templates_table = PrettyTable()
-        addons_templates_table.field_names = [
-            "Addons Template File",
-            "Generated with",
-            "Compatible with local?",
-            "Compatible with latest?",
-        ]
-        addons_templates_table.align["Addons Template File"] = "l"
-
-        addons_templates = list(Path("./copilot").glob("**/addons/*"))
-        # Sort by template file path
-        addons_templates.sort(key=lambda e: str(e))
-        # Bring environment addons to the top
-        addons_templates.sort(key=lambda e: "environments/" not in str(e))
-
-        for template_file in addons_templates:
-            generated_with_version = maybe
-            local_compatible_symbol = yes
-            latest_compatible_symbol = yes
-
-            generated_with_version = None
-
-            try:
-                generated_with_version = self.__get_template_generated_with_version(
-                    str(template_file.resolve())
-                )
-            except ValidationException:
-                local_compatible_symbol = maybe
-                compatible = False
-                recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
-                    "dbt-platform-helper-upgrade"
-                ].format(version=latest_release)
-                recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
-                    "dbt-platform-helper-upgrade-note"
-                ]
-
-            try:
-                local_version.validate_compatibility_with(generated_with_version)
-            except IncompatibleMajorVersionException:
-                local_compatible_symbol = no
-                compatible = False
-                recommendations["dbt-platform-helper-upgrade"] = RECOMMENDATIONS[
-                    "dbt-platform-helper-upgrade"
-                ].format(version=latest_release)
-                recommendations["dbt-platform-helper-upgrade-note"] = RECOMMENDATIONS[
-                    "dbt-platform-helper-upgrade-note"
-                ]
-            except ValidationException:
-                local_compatible_symbol = maybe
-                compatible = False
-
-            try:
-                latest_release.validate_compatibility_with(generated_with_version)
-            except IncompatibleMajorVersionException:
-                latest_compatible_symbol = no
-                compatible = False
-            except ValidationException:
-                latest_compatible_symbol = maybe
-                compatible = False
-
-            addons_templates_table.add_row(
-                [
-                    template_file.relative_to("."),
-                    (maybe if latest_compatible_symbol is maybe else str(generated_with_version)),
-                    local_compatible_symbol,
-                    latest_compatible_symbol,
-                ]
-            )
-
-        self.io.info(addons_templates_table)
-        self._render_recommendations(recommendations)
-
-        return compatible
-
-    def _render_recommendations(self, recommendations: Dict[str, str]):
+    def _render_recommendations(self, recommendations: dict[str, str]):
         if recommendations:
             self.io.info("\nRecommendations:\n", bold=True)
 
@@ -370,13 +254,3 @@ class Config:
                     self.io.info(f"    {recommendations.get(f'{name}-note')}")
 
             self.io.info("")
-
-    def __get_template_generated_with_version(self, template_file_path: str) -> SemanticVersion:
-        try:
-            template_contents = Path(template_file_path).read_text()
-            template_version = re.search(
-                r"# Generated by platform-helper ([v.\-0-9]+)", template_contents
-            ).group(1)
-            return SemanticVersion.from_string(template_version)
-        except (IndexError, AttributeError):
-            raise ValidationException(f"Template {template_file_path} has no version information")

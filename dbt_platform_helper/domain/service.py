@@ -18,6 +18,9 @@ from dbt_platform_helper.constants import (
     TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.constants import TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR
+from dbt_platform_helper.constants import (
+    TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.domain.terraform_environment import (
     EnvironmentNotFoundException,
 )
@@ -35,6 +38,7 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.logs import LogsProvider
 from dbt_platform_helper.providers.s3 import S3Provider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
@@ -90,6 +94,7 @@ class ServiceManager:
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
         autoscaling_provider: AutoscalingProvider = None,
+        service_repository: ServiceRepository = None,
     ):
 
         self.file_provider = file_provider
@@ -106,6 +111,21 @@ class ServiceManager:
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
+        self.service_repository = service_repository
+
+    def list_services(self, app: str, env: str):
+        services = self.service_repository.list_services(app, env)
+
+        if services:
+            name_width = max(len(service.name) for service in services)
+            service_list = "\n".join(
+                [f"{service.name:<{name_width}}   ({service.kind})" for service in services]
+            )
+            self.io.info(
+                f"Services currently deployed for {app} in the {env} environment:\n{service_list}"
+            )
+        else:
+            self.io.info(f"No Services currently deployed for {app} in the {env} environment.")
 
     def generate(self, environment: str, services: list[str]):
 
@@ -118,21 +138,29 @@ class ServiceManager:
                 f"Cannot generate Terraform for environment '{environment}'. It does not exist in your configuration."
             )
 
-        platform_helper_version_for_template: str = (
-            self.platform_helper_version_override
-            or config.get("default_versions", {}).get("platform-helper")
-        )
+        platform_helper_version_for_template: (
+            str
+        ) = self.platform_helper_version_override or config.get("default_versions", {}).get(
+            "platform-helper"
+        )  # TODO: add ability to override "auto" platform-helper version
 
         source_type = EnvironmentVariableProvider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
         if source_type == "LOCAL":
-            module_source_override = ServiceConfig.local_terraform_source
+            service_module_source_override = ServiceConfig.local_ecs_service_terraform_source
+            version_tracker_module_source_override = (
+                ServiceConfig.local_version_tracker_terraform_source
+            )
         elif source_type == "OVERRIDE":
-            module_source_override = EnvironmentVariableProvider.get(
+            service_module_source_override = EnvironmentVariableProvider.get(
                 TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR
             )
+            version_tracker_module_source_override = EnvironmentVariableProvider.get(
+                TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
         else:
-            module_source_override = None
+            service_module_source_override = None
+            version_tracker_module_source_override = None
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -162,7 +190,8 @@ class ServiceManager:
                 environment,
                 platform_helper_version_for_template,
                 config,
-                module_source_override,
+                service_module_source_override,
+                version_tracker_module_source_override,
             )
 
     def get_service_models(self, application, environment, services=None) -> list[ServiceConfig]:
@@ -222,11 +251,33 @@ class ServiceManager:
                 return True
             return None
 
+        # Convert "@" schedule expressions to expressions understood by EventBridge
+        rate_conversion = {
+            "@hourly": "1 hours",
+            "@daily": "1 days",
+            "@weekly": "0 0 * * 1 *",
+            "@monthly": "0 0 1 * * *",
+            "@yearly": "0 * * * ? *",
+        }
+
         # Regenerate manifest with the *schedule* included after the *type* field
         # This is required to avoid sending the *schedule* field to the bottom of the service-config.yml file
         def set_schedule_order(d: dict, schedule: str) -> dict:
             items = list(d.items())
             return {**dict(items[:2]), "schedule": schedule, **dict(items[2:])}
+
+        def timeout_to_seconds(timeout: str) -> int:
+            if not isinstance(timeout, str):
+                raise ValueError("timeout value must be a string")
+
+            timeout = timeout.strip()
+
+            if timeout.endswith("m"):
+                return int(timeout.rstrip("m")) * 60
+            elif timeout.endswith("h"):
+                return int(timeout.rstrip("h")) * 3600
+
+            raise ValueError(f"Unsupported timeout format: {timeout}")
 
         for dirname, _, filenames in os.walk("copilot"):
             if "manifest.yml" in filenames and "environments" not in dirname:
@@ -301,20 +352,19 @@ class ServiceManager:
 
                         on_key = get_on_key(env_config)
                         if on_key is not None:
+                            split_cron = env_config[on_key]["schedule"].split()
+
+                            # Add in an extra "*" to the end of the schedule to ensure that EventBridge Scheduler shows future schedule trigger dates in the AWS Console
+                            if len(split_cron) == 5:
+                                split_cron.append("*")
+                                schedule = " ".join(split_cron)
+
                             if "@" in env_config[on_key]["schedule"]:
-                                rate_conversion = {
-                                    "@hourly": "rate(1 hours)",
-                                    "@daily": "rate(1 days)",
-                                    "@weekly": "0 0 * * 1",
-                                    "@monthly": "0 0 1 * *",
-                                    "@yearly": "0 * * * ?",
-                                }
                                 schedule = env_config[on_key]["schedule"]
                                 env_config["schedule"] = rate_conversion.get(schedule, schedule)
                                 del env_config[on_key]
 
                             elif "*" in env_config[on_key]["schedule"]:
-                                split_cron = env_config[on_key]["schedule"].split()
                                 if split_cron[2] == "*" and split_cron[4] == "*":
                                     split_cron[4] = "?"
                                 schedule = " ".join(split_cron)
@@ -382,14 +432,14 @@ class ServiceManager:
 
                 on_key = get_on_key(service_manifest)
                 if on_key is not None:
+                    split_cron = service_manifest[on_key]["schedule"].split()
+
+                    # Add in an extra "*" to the end of the schedule to ensure that EventBridge Scheduler shows future schedule trigger dates in the AWS Console
+                    if len(split_cron) == 5:
+                        split_cron.append("*")
+                        schedule = " ".join(split_cron)
+
                     if "@" in service_manifest[on_key]["schedule"]:
-                        rate_conversion = {
-                            "@hourly": "rate(1 hours)",
-                            "@daily": "rate(1 days)",
-                            "@weekly": "0 0 * * 1",
-                            "@monthly": "0 0 1 * *",
-                            "@yearly": "0 * * * ?",
-                        }
                         schedule = service_manifest[on_key]["schedule"]
                         service_manifest = set_schedule_order(
                             service_manifest, rate_conversion.get(schedule, schedule)
@@ -397,9 +447,15 @@ class ServiceManager:
                         del service_manifest[on_key]
 
                     elif "*" in service_manifest[on_key]["schedule"]:
-                        split_cron = service_manifest[on_key]["schedule"].split()
                         if split_cron[2] == "*" and split_cron[4] == "*":
                             split_cron[4] = "?"
+
+                        elif split_cron[2] == "*" and split_cron[4] not in ["*", "?"]:
+                            split_cron[2] = "?"
+
+                        elif split_cron[2] not in ["*", "?"] and split_cron[4] == "*":
+                            split_cron[4] = "?"
+
                         schedule = " ".join(split_cron)
                         service_manifest = set_schedule_order(service_manifest, schedule)
                         del service_manifest[on_key]
@@ -430,6 +486,12 @@ class ServiceManager:
                                     scaling_out.rstrip("s")
                                 )
 
+                if "timeout" in service_manifest:
+                    service_manifest["timeout"] = timeout_to_seconds(service_manifest["timeout"])
+
+                if "retries" in service_manifest:
+                    service_manifest["retries"] = int(service_manifest["retries"])
+
                 if "network" in service_manifest:
                     del service_manifest["network"]
                 if "observability" in service_manifest:
@@ -437,7 +499,7 @@ class ServiceManager:
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
-                        service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+                        service_manifest["entrypoint"] = service_manifest["entrypoint"].split()
 
                 if "alias" in service_manifest.get("http", {}):
                     if isinstance(service_manifest["http"]["alias"], str):

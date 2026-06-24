@@ -5,7 +5,6 @@ import string
 import traceback
 from pathlib import Path
 from typing import Callable
-from typing import List
 from typing import Union
 
 import click
@@ -51,7 +50,7 @@ class FailedToActivateMaintenancePageException(MaintenancePageException):
 
 
 # TODO: DBTP-1958: should this be in its own provider, inside the VPC one, what logic is this sepcific too?
-def get_env_ips(vpc: str, application_environment: Environment) -> List[str]:
+def get_env_ips(vpc: str, application_environment: Environment) -> list[str]:
     account_name = f"{application_environment.session.profile_name}-vpc"
     vpc_name = vpc if vpc else account_name
     ssm_client = application_environment.session.client("ssm")
@@ -71,7 +70,7 @@ class MaintenancePage:
         application: Application,
         io: ClickIOProvider = ClickIOProvider(),
         load_balancer_provider: LoadBalancerProvider = LoadBalancerProvider,
-        get_env_ips: Callable[[str, Environment], List[str]] = get_env_ips,
+        get_env_ips: Callable[[str, Environment], list[str]] = get_env_ips,
     ):
         self.application = application
         self.io = io
@@ -79,7 +78,7 @@ class MaintenancePage:
         self.load_balancer: LoadBalancerProvider = None
         self.get_env_ips = get_env_ips
 
-    def _get_deployed_load_balanced_web_services(self, app: Application, svc: List[str]):
+    def _get_deployed_load_balanced_web_services(self, app: Application, svc: list[str]):
         if "*" in svc:
             services = [s for s in app.services.values() if s.kind == "Load Balanced Web Service"]
         else:
@@ -90,7 +89,7 @@ class MaintenancePage:
         return services
 
     # TODO: DBTP-1962: inject load balancer provider in activate method to avoid passing load balancer provider in init?
-    def activate(self, env: str, services: List[str], template: str, vpc: Union[str, None]):
+    def activate(self, env: str, services: list[str], template: str, vpc: Union[str, None]):
 
         services = self._get_deployed_load_balanced_web_services(self.application, services)
         application_environment = get_app_environment(self.application, env)
@@ -161,8 +160,8 @@ class MaintenancePage:
         listener_arn: str,
         app: str,
         env: str,
-        services: List[Service],
-        allowed_ips: List[str],
+        services: list[Service],
+        allowed_ips: list[str],
         template: str = "default",
     ):
 
