@@ -207,7 +207,7 @@ data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
 
 resource "aws_iam_policy" "custom_codebuild_scheduled_job_permissions" {
   for_each = toset(local.has_custom_pre_deploy || local.has_custom_post_deploy ? [""] : [])
-  name     = "run-scheduled-jobs"
+  name     = "${var.application}-${var.codebase}-run-scheduled-jobs"
   policy   = data.aws_iam_policy_document.custom_codebuild_scheduled_job_permissions.json
 }
 
