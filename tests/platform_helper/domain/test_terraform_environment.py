@@ -66,27 +66,40 @@ class TestGenerateTerraform:
             terraform_environment.generate("not-an-environment")
 
     @pytest.mark.parametrize(
-        "use_environment_variable_platform_helper_version, expected_platform_helper_version, module_source_override",
-        [(False, "14.0.0", None), (True, "test-branch", "../local/path/")],
+        "use_environment_variable_platform_helper_version, expected_platform_helper_version, extensions_module_source_override, version_tracker_module_source_override",
+        [
+            (False, "14.0.0", None, None),
+            (True, "test-branch", "../local/extensions/path/", "/local/version-tracker/path/"),
+        ],
     )
     def test_generate_success(
         self,
         use_environment_variable_platform_helper_version,
         expected_platform_helper_version,
-        module_source_override,
+        extensions_module_source_override,
+        version_tracker_module_source_override,
     ):
         mocks = GenerateTerraformMocks()
+        mocks.mock_platform_helper_versioning.get_pinned_version.return_value = None
         mocks.mock_platform_helper_versioning.get_template_version.return_value = (
             expected_platform_helper_version
         )
         environment_name = "test"
 
         if use_environment_variable_platform_helper_version:
-            mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = (
-                module_source_override
+            mocks.mock_platform_helper_versioning.get_extensions_module_source_override.return_value = (
+                extensions_module_source_override
+            )
+            mocks.mock_platform_helper_versioning.get_version_tracker_module_source_override.return_value = (
+                version_tracker_module_source_override
             )
         else:
-            mocks.mock_platform_helper_versioning.get_extensions_module_source.return_value = None
+            mocks.mock_platform_helper_versioning.get_extensions_module_source_override.return_value = (
+                None
+            )
+            mocks.mock_platform_helper_versioning.get_version_tracker_module_source_override.return_value = (
+                None
+            )
 
         terraform_environment = TerraformEnvironment(**mocks.params())
 
@@ -96,5 +109,59 @@ class TestGenerateTerraform:
             VALID_ENRICHED_CONFIG,
             environment_name,
             expected_platform_helper_version,
-            module_source_override,
+            extensions_module_source_override,
+            version_tracker_module_source_override,
+            None,
+        )
+
+    @pytest.mark.parametrize(
+        "use_module_source_override, expected_platform_helper_version, extensions_module_source_override, version_tracker_module_source_override",
+        [
+            (False, "14.0.0", None, None),
+            (True, "test-branch", "../local/extensions/path/", "/local/version-tracker/path/"),
+        ],
+    )
+    def test_generate_success_for_centralised_service(
+        self,
+        use_module_source_override,
+        expected_platform_helper_version,
+        extensions_module_source_override,
+        version_tracker_module_source_override,
+    ):
+
+        mocks = GenerateTerraformMocks()
+        mocks.mock_platform_helper_versioning.get_pinned_version.return_value = (
+            expected_platform_helper_version
+        )
+        mocks.mock_platform_helper_versioning.get_template_version.return_value = (
+            expected_platform_helper_version
+        )
+        environment_name = "test"
+
+        if use_module_source_override:
+            mocks.mock_platform_helper_versioning.get_extensions_module_source_override.return_value = (
+                extensions_module_source_override
+            )
+            mocks.mock_platform_helper_versioning.get_version_tracker_module_source_override.return_value = (
+                version_tracker_module_source_override
+            )
+        else:
+            mocks.mock_platform_helper_versioning.get_extensions_module_source_override.return_value = (
+                None
+            )
+            mocks.mock_platform_helper_versioning.get_version_tracker_module_source_override.return_value = (
+                None
+            )
+
+        terraform_environment = TerraformEnvironment(**mocks.params())
+
+        terraform_environment.generate(environment_name)
+
+        mocks.mock_manifest_provider.generate_environment_config.assert_called_once_with(
+            VALID_ENRICHED_CONFIG,
+            environment_name,
+            expected_platform_helper_version,
+            extensions_module_source_override,
+            version_tracker_module_source_override,
+            expected_platform_helper_version,
         )

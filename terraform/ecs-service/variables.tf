@@ -10,13 +10,28 @@ variable "env_config" {
   type = any
 }
 
+variable "scheduled_job_image_tag" {
+  type        = string
+  description = "Allow passing an image tag during terraform apply. Only for scheduled jobs."
+
+  validation {
+    condition = (
+      var.service_config.type == "Scheduled Job"
+      ? var.scheduled_job_image_tag != null
+      : var.scheduled_job_image_tag == null
+    )
+    error_message = "Passing an image tag is required when the service type is set to 'Scheduled Job'. For example: terraform apply -var='scheduled_job_image_tag=latest'"
+  }
+}
+
 variable "platform_extensions" {
   type = any
 }
 
 variable "custom_iam_policy_json" {
-  type    = string
-  default = null
+  type        = string
+  default     = null
+  description = "Optional custom IAM policy JSON to attach to the ECS task role"
 
   validation {
     condition     = var.custom_iam_policy_json == null ? true : length(var.custom_iam_policy_json) <= 6144
@@ -74,13 +89,17 @@ variable "service_config" {
         start_period = optional(number)
       }))
     })
-
+    platform   = optional(string)
     cpu        = number
     memory     = number
-    count      = any # Can be an integer or a map due to Copilot. See Copilot docs: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
+    count      = optional(any) # Can be an integer or a map due to Copilot. See Copilot docs: https://aws.github.io/copilot-cli/docs/manifest/lb-web-service/#count
     exec       = optional(bool)
     entrypoint = optional(list(string))
     essential  = optional(bool)
+
+    schedule = optional(string)
+    retries  = optional(number)
+    timeout  = optional(number)
 
     network = optional(object({
       connect = optional(bool)
@@ -92,6 +111,7 @@ variable "service_config" {
     storage = optional(object({
       readonly_fs          = optional(bool)
       writable_directories = optional(list(string))
+      ephemeral            = optional(number)
     }))
 
     variables = optional(map(any))

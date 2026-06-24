@@ -20,6 +20,10 @@ variable "vpc_name" {
   default = "not-used"
 }
 
+variable "cdn_account_id" {
+  type = string
+}
+
 variable "config" {
   type = object({
     bucket_name = string
@@ -39,6 +43,7 @@ variable "config" {
       role_arn          = string
       read              = bool
       write             = bool
+      encrypt           = optional(bool, false)
       cyber_sign_off_by = string
     })))
     # NOTE: allows access to S3 bucket from DBT Platform managed service roles, also generates Copilot addon for service access
@@ -78,7 +83,6 @@ variable "config" {
       })))
       })
     )
-    managed_ingress = optional(string, false)
   })
 
   validation {

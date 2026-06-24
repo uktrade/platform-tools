@@ -27,7 +27,6 @@
     - [platform-helper secrets](#platform-helper-secrets)
         - [platform-helper secrets create](#platform-helper-secrets-create)
         - [platform-helper secrets copy](#platform-helper-secrets-copy)
-        - [platform-helper secrets list](#platform-helper-secrets-list)
     - [platform-helper notify](#platform-helper-notify)
         - [platform-helper notify environment-progress](#platform-helper-notify-environment-progress)
         - [platform-helper notify post-message](#platform-helper-notify-post-message)
@@ -36,8 +35,12 @@
         - [platform-helper database dump](#platform-helper-database-dump)
         - [platform-helper database load](#platform-helper-database-load)
         - [platform-helper database copy](#platform-helper-database-copy)
-    - [platform-helper version](#platform-helper-version)
-        - [platform-helper version get-platform-helper-for-project](#platform-helper-version-get-platform-helper-for-project)
+    - [platform-helper service](#platform-helper-service)
+        - [platform-helper service exec](#platform-helper-service-exec)
+        - [platform-helper service ls](#platform-helper-service-ls)
+    - [platform-helper job](#platform-helper-job)
+        - [platform-helper job run](#platform-helper-job-run)
+        - [platform-helper job ls](#platform-helper-job-ls)
 
 # platform-helper
 
@@ -65,10 +68,11 @@ platform-helper <command> [--version]
 - [`environment` ↪](#platform-helper-environment)
 - [`generate` ↪](#platform-helper-generate)
 - [`internal` ↪](#platform-helper-internal)
+- [`job` ↪](#platform-helper-job)
 - [`notify` ↪](#platform-helper-notify)
 - [`pipeline` ↪](#platform-helper-pipeline)
 - [`secrets` ↪](#platform-helper-secrets)
-- [`version` ↪](#platform-helper-version)
+- [`service` ↪](#platform-helper-service)
 
 # platform-helper application
 
@@ -607,7 +611,7 @@ This will load it's own platform-config.<workspace>.yml file
 ## Usage
 
 ```
-platform-helper secrets (create|copy|list) 
+platform-helper secrets (create|copy) 
 ```
 
 ## Options
@@ -619,7 +623,6 @@ platform-helper secrets (create|copy|list)
 
 - [`copy` ↪](#platform-helper-secrets-copy)
 - [`create` ↪](#platform-helper-secrets-create)
-- [`list` ↪](#platform-helper-secrets-list)
 
 # platform-helper secrets create
 
@@ -665,28 +668,6 @@ platform-helper secrets copy --app <application> --source <source> --target <tar
   - Source environment where to copy secrets from.
 - `--target <text>`
   - Destination environment where to copy secrets to.
-- `--help <boolean>` _Defaults to False._
-  - Show this message and exit.
-
-# platform-helper secrets list
-
-[↩ Parent](#platform-helper-secrets)
-
-    [DELETED] List secret names and values for an environment.
-
-## Usage
-
-```
-platform-helper secrets list <application> <environment> 
-```
-
-## Arguments
-
-- `app <text>`
-- `env <text>`
-
-## Options
-
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
@@ -937,17 +918,16 @@ platform-helper database copy --from <from_env> --to <to_env> --database <databa
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.
 
-# platform-helper version
+# platform-helper service
 
 [↩ Parent](#platform-helper)
 
-    Contains subcommands for getting version information about the current
-    project.
+    Commands for managing a live service.
 
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project 
+platform-helper service (exec|ls) 
 ```
 
 ## Options
@@ -957,23 +937,137 @@ platform-helper version get-platform-helper-for-project
 
 ## Commands
 
-- [`get-platform-helper-for-project` ↪](#platform-helper-version-get-platform-helper-for-project)
+- [`exec` ↪](#platform-helper-service-exec)
+- [`ls` ↪](#platform-helper-service-ls)
 
-# platform-helper version get-platform-helper-for-project
+# platform-helper service exec
 
-[↩ Parent](#platform-helper-version)
+[↩ Parent](#platform-helper-service)
 
-    Print the version of platform-tools required by the current project
+    Opens a shell for a given container.
 
 ## Usage
 
 ```
-platform-helper version get-platform-helper-for-project [--pipeline <pipeline>] 
+platform-helper service exec --app <application> --env <environment> --name <name> 
+                             [--command <command>] [--container <container>] 
+                             [--task-id <task_id>] 
 ```
 
 ## Options
 
-- `--pipeline <text>`
-  - Take into account platform-tools version overrides in the specified pipeline
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
+- `--name
+-n <text>`
+  - Name of the service
+- `--command
+-c <text>`
+  - Optional. The command that is passed to a running container. (default 'launcher /bin/bash')
+- `--container <text>`
+  - Optional. [Note: This is an advanced feature and not yet fully supported.  In most cases only the essential container can be exec'd into.] The specific container you want to exec in. By default the first essential container will be used.
+- `--task-id <text>`
+  - Optional. ID of the task you want to exec into.
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper service ls
+
+[↩ Parent](#platform-helper-service)
+
+    Lists deployed services for the applicaiton and environment.
+
+## Usage
+
+```
+platform-helper service ls --app <application> --env <environment> 
+```
+
+## Options
+
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper job
+
+[↩ Parent](#platform-helper)
+
+    Commands for managing a scheduled job.
+
+## Usage
+
+```
+platform-helper job (run|ls) 
+```
+
+## Options
+
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+## Commands
+
+- [`ls` ↪](#platform-helper-job-ls)
+- [`run` ↪](#platform-helper-job-run)
+
+# platform-helper job run
+
+[↩ Parent](#platform-helper-job)
+
+    Runs a scheduled job on demand.
+
+## Usage
+
+```
+platform-helper job run --app <application> --env <environment> --name <name> [--follow|-f] 
+```
+
+## Options
+
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
+- `--name
+-n <text>`
+  - Name of the scheduled job
+- `--follow
+-f <boolean>` _Defaults to False._
+  - Wait for the execution to finish and report it's final status
+- `--help <boolean>` _Defaults to False._
+  - Show this message and exit.
+
+# platform-helper job ls
+
+[↩ Parent](#platform-helper-job)
+
+    Lists deployed scheduled jobs.
+
+## Usage
+
+```
+platform-helper job ls --app <application> --env <environment> 
+```
+
+## Options
+
+- `--app
+-a <text>`
+  - Application name
+- `--env
+-e <text>`
+  - Environment name
 - `--help <boolean>` _Defaults to False._
   - Show this message and exit.

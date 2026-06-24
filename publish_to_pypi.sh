@@ -20,7 +20,7 @@ then
   python utils/check_pypi.py --max-attempts 20
   echo -e "\nSending slack notification"
   VERSION_NUMBER=($VERSION)
-  python utils/notify/publish_notification.py --publish-version ${VERSION_NUMBER[1]}
+  poetry run python utils/notify/publish_notification.py --publish-version ${VERSION_NUMBER[1]}
 else
   echo ${VERSION} of the package has already been published
 fi

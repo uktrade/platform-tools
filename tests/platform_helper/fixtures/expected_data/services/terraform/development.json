@@ -40,6 +40,12 @@
       }
     }
   },
+  "variable": {
+    "scheduled_job_image_tag": {
+      "type": "string",
+      "default": null
+    }
+  },
   "module": {
     "ecs-service": {
       "source": "git::git@github.com:uktrade/platform-tools.git//terraform/ecs-service?depth=1&ref=10.2.0",
@@ -49,7 +55,18 @@
       "service_config": "${local.service_config}",
       "env_config": "${local.env_config}",
       "platform_extensions": "${local.platform_config[\"extensions\"]}",
-      "custom_iam_policy_json": "${local.custom_iam_policy_json}"
+      "custom_iam_policy_json": "${local.custom_iam_policy_json}",
+      "scheduled_job_image_tag": "${var.scheduled_job_image_tag}"
+    },
+    "version-tracker": {
+      "source": "git::git@github.com:uktrade/platform-tools.git//terraform/version-tracker?depth=1&ref=10.2.0",
+      "platform_version": "10.2.0",
+      "application": "${local.application}",
+      "environment": "${local.environment}",
+      "service_name": "${local.service_config.name}",
+      "depends_on": [
+        "module.ecs-service"
+      ]
     }
   }
 }

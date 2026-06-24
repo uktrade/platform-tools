@@ -1,6 +1,8 @@
 version: 2
 updates:
   - package-ecosystem: "pip"
+    cooldown:
+      default-days: 7
     directory: "/"
     schedule:
       interval: "daily"
@@ -13,8 +15,13 @@ updates:
       prefix-development: "chore(deps-dev)"
 
   - package-ecosystem: "terraform"
+    cooldown:
+      default-days: 7
     directories:
       - "/terraform/*/"
+    groups:
+      per-dependency:
+        group-by: dependency-name
     schedule:
       interval: "daily"
     commit-message:
@@ -24,3 +31,10 @@ updates:
       # Don't include dev dependencies in release notes, they
       # are of no interest outside this repository's maintainers.
       prefix-development: "chore(deps-dev)"
+
+  - package-ecosystem: "github-actions"
+    cooldown:
+      default-days: 7
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -205,6 +205,7 @@ variables {
   vpc_name    = "sandbox-postgres"
   config = {
     version             = 14,
+    instance            = "db.t4g.miniscule",
     deletion_protection = true,
     multi_az            = false,
     database_copy = [
@@ -226,6 +227,7 @@ variables {
     "test-env"  = null,
     "other-env" = null
   }
+  deploy_repository = "uktrade/test-application-deploy"
 }
 
 
@@ -445,8 +447,8 @@ run "aws_db_instance_unit_test" {
   }
 
   assert {
-    condition     = aws_db_instance.default.maintenance_window == "Mon:00:00-Mon:03:00"
-    error_message = "Should be: Mon:00:00-Mon:03:00"
+    condition     = aws_db_instance.default.maintenance_window == "Wed:00:00-Wed:03:00"
+    error_message = "Should be: Wed:00:00-Wed:03:00"
   }
 
   assert {
@@ -472,7 +474,8 @@ run "aws_db_instance_unit_test_database_dump_created" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.petite",
       database_copy = [
         {
           from = "test-env"
@@ -498,7 +501,8 @@ run "aws_db_instance_unit_test_database_dump_multiple_source" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.fun-size",
       database_copy = [
         {
           from = "test-env"
@@ -553,7 +557,8 @@ run "aws_db_instance_unit_test_database_dump_not_created_if_to_env_is_prod" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.miniature",
       database_copy = [
         {
           from = "test-env"
@@ -579,7 +584,8 @@ run "aws_db_instance_unit_test_database_load_created" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.nanoscopic",
       database_copy = [
         {
           from = "other-env"
@@ -605,7 +611,8 @@ run "aws_db_instance_unit_test_database_load_not_created_if_to_env_is_prod" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.mini",
       database_copy = [
         {
           from = "other-env"
@@ -904,7 +911,8 @@ run "aws_db_instance_database_copy_pipeline" {
 
   variables {
     config = {
-      version = 14,
+      version  = 14,
+      instance = "db.t4g.teensy",
       database_copy = [
         {
           from = "test-env"
@@ -927,5 +935,44 @@ run "aws_db_instance_database_copy_pipeline" {
   assert {
     condition     = length(module.database-copy-pipeline) == 1
     error_message = "database-copy-pipeline module should be created"
+  }
+}
+
+run "aws_db_instance_unit_test_defaults" {
+  command = plan
+
+  assert {
+    condition     = aws_db_instance.default.apply_immediately == false
+    error_message = "Should be: false"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.engine_version == "14"
+    error_message = "Should be: 14"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.deletion_protection == true
+    error_message = "Should be: false"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.multi_az == false
+    error_message = "Should be: true"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.skip_final_snapshot == false
+    error_message = "Should be: true"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.allocated_storage == 100
+    error_message = "Should be: 100"
+  }
+
+  assert {
+    condition     = aws_db_instance.default.storage_type == "gp3"
+    error_message = "Should be: gp3"
   }
 }

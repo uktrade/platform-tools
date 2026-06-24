@@ -526,9 +526,9 @@ data "aws_iam_policy_document" "postgres" {
       "lambda:TagResource",
       "lambda:PutFunctionConcurrency"
     ]
-    resources = [for env in local.environment_config :
-      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*"
-    ]
+    resources = flatten([for env in local.environment_config : [
+      "arn:aws:lambda:${local.account_region}:function:${var.application}-${env.name}-*",
+    ]])
   }
 
   statement {
@@ -601,6 +601,44 @@ data "aws_iam_policy_document" "postgres" {
     resources = [
       "arn:aws:secretsmanager:${local.account_region}:secret:rds*"
     ]
+  }
+
+  statement {
+    sid    = "AllowCreateRDSServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during RDS DB instance creation
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/rds.amazonaws.com/AWSServiceRoleForRDS"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["rds.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+  }
+
+  statement {
+    sid    = "AllowCreateElastiCacheServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during ElastiCache Subnet Group creation
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/elasticache.amazonaws.com/AWSServiceRoleForElastiCache*"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["elasticache.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
   }
 }
 

@@ -38,24 +38,28 @@ resource "aws_cloudwatch_log_group" "opensearch_log_group_index_slow_logs" {
   name              = "/aws/opensearch/${local.domain_name}/index-slow"
   retention_in_days = coalesce(var.config.index_slow_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
+  tags              = local.tags
 }
 
 resource "aws_cloudwatch_log_group" "opensearch_log_group_search_slow_logs" {
   name              = "/aws/opensearch/${local.domain_name}/search-slow"
   retention_in_days = coalesce(var.config.search_slow_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
+  tags              = local.tags
 }
 
 resource "aws_cloudwatch_log_group" "opensearch_log_group_es_application_logs" {
   name              = "/aws/opensearch/${local.domain_name}/es-application"
   retention_in_days = coalesce(var.config.es_app_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
+  tags              = local.tags
 }
 
 resource "aws_cloudwatch_log_group" "opensearch_log_group_audit_logs" {
   name              = "/aws/opensearch/${local.domain_name}/audit"
   retention_in_days = coalesce(var.config.audit_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
+  tags              = local.tags
 }
 
 resource "aws_security_group" "opensearch-security-group" {
@@ -74,6 +78,15 @@ resource "aws_security_group" "opensearch-security-group" {
       data.aws_vpc.vpc.cidr_block,
     ]
   }
+
+  # ingress {
+  #   description = "Ingress from Lambda Functions to Secrets Manager"
+  #   from_port   = 443
+  #   to_port     = 443
+  #   protocol    = "tcp"
+
+  #   self = true
+  # }
 
   egress {
     description = "Allow traffic out on all ports"
@@ -99,6 +112,52 @@ resource "random_password" "password" {
   min_lower        = 1
   min_numeric      = 1
   override_special = coalesce(var.config.password_special_characters, "-_!.~$&'()*+,;=")
+}
+
+data "aws_iam_policy_document" "opensearch-policy" {
+  statement {
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "es:*",
+    ]
+
+    effect = "Deny"
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+
+      values = [
+        "false",
+      ]
+    }
+
+    resources = [
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}",
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*",
+    ]
+  }
+  statement {
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    actions = [
+      "es:*",
+    ]
+
+    effect = "Allow"
+
+    resources = [
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}",
+      "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*",
+    ]
+  }
 }
 
 resource "aws_opensearch_domain" "this" {
@@ -192,19 +251,7 @@ resource "aws_opensearch_domain" "this" {
     security_group_ids = [aws_security_group.opensearch-security-group.id]
   }
 
-  access_policies = <<CONFIG
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Action": "es:*",
-            "Principal": "*",
-            "Effect": "Allow",
-            "Resource": "arn:aws:es:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:domain/${local.domain_name}/*"
-        }
-    ]
-}
-CONFIG
+  access_policies = data.aws_iam_policy_document.opensearch-policy.json
 
   tags = local.tags
 }

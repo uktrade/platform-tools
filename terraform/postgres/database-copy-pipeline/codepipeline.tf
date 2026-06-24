@@ -46,7 +46,7 @@ resource "aws_codepipeline" "database_copy_pipeline" {
 
       configuration = {
         ConnectionArn    = data.external.codestar_connections.result["ConnectionArn"]
-        FullRepositoryId = "uktrade/${var.application}-deploy"
+        FullRepositoryId = var.deploy_repository
         BranchName       = "main"
         DetectChanges    = false
       }
@@ -78,6 +78,7 @@ resource "aws_codepipeline" "database_copy_pipeline" {
           { name : "AWS_REGION", value : data.aws_region.current.region },
           { name : "AWS_ACCOUNT_ID", value : data.aws_caller_identity.current.account_id },
           { name : "CODESTAR_CONNECTION_ARN", value : data.external.codestar_connections.result["ConnectionArn"] },
+          { name : "PINNED_VERSION", value : var.pinned_version != null ? var.pinned_version : "" },
         ])
       }
     }

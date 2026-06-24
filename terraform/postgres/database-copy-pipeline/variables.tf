@@ -10,6 +10,10 @@ variable "database_name" {
   type = string
 }
 
+variable "deploy_repository" {
+  type = string
+}
+
 variable "task" {
   type = object({
     from         = string
@@ -20,4 +24,9 @@ variable "task" {
       schedule = optional(string)
     }))
   })
+}
+
+variable "pinned_version" {
+  type    = string
+  default = null
 }

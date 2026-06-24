@@ -415,8 +415,9 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
         result = PlatformHelperVersioning(**mocks.params()).get_template_version()
         assert result == "platform_helper_env_override"
 
-    def test_get_template_version_default_fallback_when_no_overrides(
-        self, platform_config_for_env_pipelines
+    @pytest.mark.parametrize("platform_helper_env_override", [None, "NONE"])
+    def test_get_template_version_default_fallback_when_no_valid_overrides(
+        self, platform_config_for_env_pipelines, platform_helper_env_override
     ):
         platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.1.1"}
 
@@ -425,7 +426,9 @@ class TestPlatformHelperVersioningCodebasePipelinesVersioning:
             platform_config_for_env_pipelines
         )
         mocks.mock_platform_helper_version_override = None
-        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            platform_helper_env_override
+        )
 
         result = PlatformHelperVersioning(**mocks.params()).get_template_version()
         assert result == "1.1.1"
@@ -435,7 +438,7 @@ class TestPlatformHelperVersioningEnvironmentVersioning:
     def test_get_extensions_module_source_precedence_with_env_override(self):
         mocks = PlatformHelperVersioningMocks()
 
-        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source_override()
         assert result == f"extensions_env_override"
 
     def test_get_extensions_module_source_is_none_with_no_env_var_override(self):
@@ -443,7 +446,7 @@ class TestPlatformHelperVersioningEnvironmentVersioning:
         mocks.mock_environment_variable_provider[
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = None
-        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source_override()
         assert result == None
 
 
@@ -498,7 +501,7 @@ class TestPlatformHelperVersioningAuto:
             TERRAFORM_EXTENSIONS_MODULE_SOURCE_OVERRIDE_ENV_VAR
         ] = "module_path_passed_in_from_platform_upgrade"
 
-        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source()
+        result = PlatformHelperVersioning(**mocks.params()).get_extensions_module_source_override()
         assert result == "module_path_passed_in_from_platform_upgrade"
 
     def test_get_template_version_returns_platform_helper_override_given_auto(
@@ -535,6 +538,40 @@ class TestPlatformHelperVersioningAuto:
         mocks.mock_platform_helper_version_override = None
         result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
         assert result == "version_passed_in_from_platform_upgrade"
+
+    def test_get_pinned_version_falls_back_to_installed_version_given_auto(
+        self, platform_config_for_env_pipelines
+    ):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "auto"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = None
+        mocks.mock_installed_version_provider.get_semantic_version.return_value = SemanticVersion(
+            1, 0, 1
+        )
+        result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
+        assert result == "1.0.1"
+
+    def test_get_pinned_version_returns_none_if_not_auto(self, platform_config_for_env_pipelines):
+
+        platform_config_for_env_pipelines["default_versions"] = {"platform-helper": "1.2.3"}
+
+        mocks = PlatformHelperVersioningMocks()
+        mocks.mock_config_provider.load_unvalidated_config_file.return_value = (
+            platform_config_for_env_pipelines
+        )
+        mocks.mock_environment_variable_provider[PLATFORM_HELPER_VERSION_OVERRIDE_KEY] = (
+            "version_passed_in_from_platform_upgrade"
+        )
+
+        mocks.mock_platform_helper_version_override = None
+        result = PlatformHelperVersioning(**mocks.params()).get_pinned_version()
+        assert result is None
 
 
 class TestAWSVersioning:

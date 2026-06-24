@@ -18,6 +18,9 @@ from dbt_platform_helper.constants import (
     TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR,
 )
 from dbt_platform_helper.constants import TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR
+from dbt_platform_helper.constants import (
+    TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR,
+)
 from dbt_platform_helper.domain.terraform_environment import (
     EnvironmentNotFoundException,
 )
@@ -27,6 +30,7 @@ from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
 from dbt_platform_helper.providers.ecs import ECS
+from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.environment_variable import (
     EnvironmentVariableProvider,
 )
@@ -34,17 +38,46 @@ from dbt_platform_helper.providers.files import FileProvider
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.logs import LogsProvider
 from dbt_platform_helper.providers.s3 import S3Provider
+from dbt_platform_helper.providers.service import ServiceRepository
 from dbt_platform_helper.providers.terraform_manifest import TerraformManifestProvider
 from dbt_platform_helper.providers.version import InstalledVersionProvider
 from dbt_platform_helper.providers.yaml_file import YamlFileProvider
 from dbt_platform_helper.utils.application import load_application
 from dbt_platform_helper.utils.deep_merge import deep_merge
 
-SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service"]
+SERVICE_TYPES = ["Load Balanced Web Service", "Backend Service", "Scheduled Job"]
 DEPLOYMENT_TIMEOUT_SECONDS = 1200
 POLL_INTERVAL_SECONDS = 5
 
 # TODO add schema version to service config
+
+
+class ServiceManagerException(PlatformException):
+    pass
+
+
+class ServiceExecException(ServiceManagerException):
+    pass
+
+
+class ServiceNotFoundException(ServiceExecException):
+    pass
+
+
+class ContainerNotFoundException(ServiceExecException):
+    pass
+
+
+class TaskNotFoundException(ServiceExecException):
+    pass
+
+
+class ExecNotAllowedForServiceException(ServiceExecException):
+    pass
+
+
+class ManagedPlatformClusterNotFoundException(ServiceExecException):
+    pass
 
 
 class ServiceManager:
@@ -61,6 +94,7 @@ class ServiceManager:
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
         autoscaling_provider: AutoscalingProvider = None,
+        service_repository: ServiceRepository = None,
     ):
 
         self.file_provider = file_provider
@@ -77,6 +111,21 @@ class ServiceManager:
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
+        self.service_repository = service_repository
+
+    def list_services(self, app: str, env: str):
+        services = self.service_repository.list_services(app, env)
+
+        if services:
+            name_width = max(len(service.name) for service in services)
+            service_list = "\n".join(
+                [f"{service.name:<{name_width}}   ({service.kind})" for service in services]
+            )
+            self.io.info(
+                f"Services currently deployed for {app} in the {env} environment:\n{service_list}"
+            )
+        else:
+            self.io.info(f"No Services currently deployed for {app} in the {env} environment.")
 
     def generate(self, environment: str, services: list[str]):
 
@@ -89,21 +138,29 @@ class ServiceManager:
                 f"Cannot generate Terraform for environment '{environment}'. It does not exist in your configuration."
             )
 
-        platform_helper_version_for_template: str = (
-            self.platform_helper_version_override
-            or config.get("default_versions", {}).get("platform-helper")
-        )
+        platform_helper_version_for_template: (
+            str
+        ) = self.platform_helper_version_override or config.get("default_versions", {}).get(
+            "platform-helper"
+        )  # TODO: add ability to override "auto" platform-helper version
 
         source_type = EnvironmentVariableProvider.get(TERRAFORM_MODULE_SOURCE_TYPE_ENV_VAR)
 
         if source_type == "LOCAL":
-            module_source_override = ServiceConfig.local_terraform_source
+            service_module_source_override = ServiceConfig.local_ecs_service_terraform_source
+            version_tracker_module_source_override = (
+                ServiceConfig.local_version_tracker_terraform_source
+            )
         elif source_type == "OVERRIDE":
-            module_source_override = EnvironmentVariableProvider.get(
+            service_module_source_override = EnvironmentVariableProvider.get(
                 TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE_ENV_VAR
             )
+            version_tracker_module_source_override = EnvironmentVariableProvider.get(
+                TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE_ENV_VAR
+            )
         else:
-            module_source_override = None
+            service_module_source_override = None
+            version_tracker_module_source_override = None
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -133,7 +190,8 @@ class ServiceManager:
                 environment,
                 platform_helper_version_for_template,
                 config,
-                module_source_override,
+                service_module_source_override,
+                version_tracker_module_source_override,
             )
 
     def get_service_models(self, application, environment, services=None) -> list[ServiceConfig]:
@@ -183,6 +241,43 @@ class ServiceManager:
     def migrate_copilot_manifests(self) -> None:
         service_directory = Path("services/")
         service_directory.mkdir(parents=True, exist_ok=True)
+
+        # TODO Remove this check on keywords as part of the copilot cleanup.
+        # Note - get_on_key() function handles how YAML parsing may convert the *on* key into a boolean True. This ensures migration works reliably regardless of whether the key is read as "on" or True. Without this, the schedule section could be skipped/produce incorrect output. https://yaml.org/type/bool.html
+        def get_on_key(d: dict) -> str | bool | None:
+            if "on" in d:
+                return "on"
+            if True in d:
+                return True
+            return None
+
+        # Convert "@" schedule expressions to expressions understood by EventBridge
+        rate_conversion = {
+            "@hourly": "1 hours",
+            "@daily": "1 days",
+            "@weekly": "0 0 * * 1 *",
+            "@monthly": "0 0 1 * * *",
+            "@yearly": "0 * * * ? *",
+        }
+
+        # Regenerate manifest with the *schedule* included after the *type* field
+        # This is required to avoid sending the *schedule* field to the bottom of the service-config.yml file
+        def set_schedule_order(d: dict, schedule: str) -> dict:
+            items = list(d.items())
+            return {**dict(items[:2]), "schedule": schedule, **dict(items[2:])}
+
+        def timeout_to_seconds(timeout: str) -> int:
+            if not isinstance(timeout, str):
+                raise ValueError("timeout value must be a string")
+
+            timeout = timeout.strip()
+
+            if timeout.endswith("m"):
+                return int(timeout.rstrip("m")) * 60
+            elif timeout.endswith("h"):
+                return int(timeout.rstrip("h")) * 3600
+
+            raise ValueError(f"Unsupported timeout format: {timeout}")
 
         for dirname, _, filenames in os.walk("copilot"):
             if "manifest.yml" in filenames and "environments" not in dirname:
@@ -255,6 +350,31 @@ class ServiceManager:
                         if "observability" in env_config:
                             del env_config["observability"]
 
+                        on_key = get_on_key(env_config)
+                        if on_key is not None:
+                            split_cron = env_config[on_key]["schedule"].split()
+
+                            # Add in an extra "*" to the end of the schedule to ensure that EventBridge Scheduler shows future schedule trigger dates in the AWS Console
+                            if len(split_cron) == 5:
+                                split_cron.append("*")
+                                schedule = " ".join(split_cron)
+
+                            if "@" in env_config[on_key]["schedule"]:
+                                schedule = env_config[on_key]["schedule"]
+                                env_config["schedule"] = rate_conversion.get(schedule, schedule)
+                                del env_config[on_key]
+
+                            elif "*" in env_config[on_key]["schedule"]:
+                                if split_cron[2] == "*" and split_cron[4] == "*":
+                                    split_cron[4] = "?"
+                                schedule = " ".join(split_cron)
+                                env_config["schedule"] = schedule
+                                del env_config[on_key]
+
+                            elif "none" in env_config[on_key]["schedule"]:
+                                env_config["schedule"] = "none"
+                                del env_config[on_key]
+
                 if "healthcheck" in service_manifest.get("http", {}):
                     if "interval" in service_manifest["http"]["healthcheck"]:
                         interval = service_manifest["http"]["healthcheck"]["interval"]
@@ -292,6 +412,65 @@ class ServiceManager:
                             service_manifest["image"]["healthcheck"]["start_period"] = int(
                                 start_period.rstrip("s")
                             )
+                    if "build" in service_manifest["image"]:
+                        del service_manifest["image"]["build"]
+
+                        config = self.config_provider.get_enriched_config()
+                        application_name = config.get("application", "")
+
+                        environments = config.get("environments", {})
+                        first_env = list(environments.values())[0] if environments else {}
+                        account_id = first_env["accounts"]["deploy"]["id"]
+
+                        name = service_manifest["name"]
+
+                        ecr_repo = f"{application_name}/{name}"
+
+                        service_manifest["image"][
+                            "location"
+                        ] = f"{account_id}.dkr.ecr.eu-west-2.amazonaws.com/{ecr_repo}"
+
+                on_key = get_on_key(service_manifest)
+                if on_key is not None:
+                    split_cron = service_manifest[on_key]["schedule"].split()
+
+                    # Add in an extra "*" to the end of the schedule to ensure that EventBridge Scheduler shows future schedule trigger dates in the AWS Console
+                    if len(split_cron) == 5:
+                        split_cron.append("*")
+                        schedule = " ".join(split_cron)
+
+                    if "@" in service_manifest[on_key]["schedule"]:
+                        schedule = service_manifest[on_key]["schedule"]
+                        service_manifest = set_schedule_order(
+                            service_manifest, rate_conversion.get(schedule, schedule)
+                        )
+                        del service_manifest[on_key]
+
+                    elif "*" in service_manifest[on_key]["schedule"]:
+                        if split_cron[2] == "*" and split_cron[4] == "*":
+                            split_cron[4] = "?"
+
+                        elif split_cron[2] == "*" and split_cron[4] not in ["*", "?"]:
+                            split_cron[2] = "?"
+
+                        elif split_cron[2] not in ["*", "?"] and split_cron[4] == "*":
+                            split_cron[4] = "?"
+
+                        schedule = " ".join(split_cron)
+                        service_manifest = set_schedule_order(service_manifest, schedule)
+                        del service_manifest[on_key]
+
+                    elif "none" in service_manifest[on_key]["schedule"]:
+                        service_manifest = set_schedule_order(service_manifest, "none")
+                        del service_manifest[on_key]
+
+                if "platform" in service_manifest:
+                    if service_manifest["platform"] == "linux/amd64":
+                        service_manifest["platform"] = "X86_64"
+                    else:
+                        service_manifest["platform"] = (
+                            service_manifest["platform"].split("/")[1].upper()
+                        )
 
                 if "count" in service_manifest:
                     if not isinstance(service_manifest.get("count"), int):
@@ -307,6 +486,12 @@ class ServiceManager:
                                     scaling_out.rstrip("s")
                                 )
 
+                if "timeout" in service_manifest:
+                    service_manifest["timeout"] = timeout_to_seconds(service_manifest["timeout"])
+
+                if "retries" in service_manifest:
+                    service_manifest["retries"] = int(service_manifest["retries"])
+
                 if "network" in service_manifest:
                     del service_manifest["network"]
                 if "observability" in service_manifest:
@@ -314,7 +499,7 @@ class ServiceManager:
 
                 if "entrypoint" in service_manifest:
                     if isinstance(service_manifest["entrypoint"], str):
-                        service_manifest["entrypoint"] = [service_manifest["entrypoint"]]
+                        service_manifest["entrypoint"] = service_manifest["entrypoint"].split()
 
                 if "alias" in service_manifest.get("http", {}):
                     if isinstance(service_manifest["http"]["alias"], str):
@@ -401,6 +586,8 @@ class ServiceManager:
         )
 
         task_def_arn = self.ecs_provider.register_task_definition(
+            application=application,
+            environment=environment,
             service=service,
             image_tag=image_tag,
             task_definition=task_definition,
@@ -432,6 +619,12 @@ class ServiceManager:
         self._output_with_timestamp(
             f"New deployment with ID '{primary_deployment_id}' has been triggered."
         )
+
+        if desired_count == 0:
+            self._output_with_timestamp(
+                "Detected 'count: 0' in service-config.yml. Scaling ECS service down to zero tasks."
+            )
+            return
 
         seen_events = set()
         deadline = time.monotonic() + DEPLOYMENT_TIMEOUT_SECONDS
@@ -579,3 +772,82 @@ class ServiceManager:
             self.io.deploy_error(f"[{timestamp}] {message}")
         else:
             self.io.info(f"[{timestamp}] {message}")
+
+    def _get_platform_cluster_for_app_and_env(self, app, env):
+        platform_cluster = f"{app}-{env}-cluster"
+        try:
+            self.ecs_provider.get_cluster_arn_by_name(platform_cluster)
+            return platform_cluster
+        except NoClusterException:
+            raise ManagedPlatformClusterNotFoundException(
+                f"Cluster not found.  This command is only available for services running on the platform cluster, {platform_cluster}. For services running on the copilot cluster, use the `copilot svc exec` command instead."
+            )
+
+    def _get_valid_task_arn_for_exec(self, cluster, task_id, service_name):
+        task_arn = None
+
+        if task_id:
+            tasks = self.ecs_provider.describe_tasks(cluster, [task_id])
+            if tasks:
+                task_arn = tasks[0]["taskArn"]
+        else:
+            task_arns = self.ecs_provider.get_ecs_task_arns(
+                cluster=cluster, service_name=service_name
+            )
+            if task_arns:
+                task_arn = task_arns[0]
+
+        if not task_arn:
+            if task_id:
+                message = f"Task with ID {task_id} not found in {cluster} cluster."
+            else:
+                message = f"Task not found for service {service_name} in {cluster} cluster."
+            raise TaskNotFoundException(message)
+
+        return task_arn
+
+    def _get_valid_container_for_exec(self, cluster, container, service, task_arn):
+        containers_for_task = self.ecs_provider.get_container_names_from_ecs_tasks(
+            cluster, task_ids=[task_arn]
+        )
+        if container:
+            if container in containers_for_task:
+                return container
+        elif service in containers_for_task:
+            return service
+
+        unmatching_container = container or service
+        raise ContainerNotFoundException(
+            f"Container {unmatching_container} not found. Options are {containers_for_task}"
+        )
+
+    def _service_exec_is_allowed(self, app, env, service):
+        service_details = self.ecs_provider.describe_service(service, env, app)
+
+        if not service_details:
+            raise ServiceNotFoundException(
+                f"Service {service} not found in the {app} application's {env} environment."
+            )
+
+        return service_details.get("enableExecuteCommand") == True
+
+    def service_exec(self, app, env, service, command=None, container=None, task_id=None):
+
+        command = command or "launcher /bin/bash"
+
+        if not self._service_exec_is_allowed(app, env, service):
+            raise ExecNotAllowedForServiceException(
+                f"Failed to execute command {command}. Is `exec: true` set in your manifest? The service must be redeployed to change this attribute."
+            )
+
+        cluster = self._get_platform_cluster_for_app_and_env(app, env)
+
+        task_arn = self._get_valid_task_arn_for_exec(cluster, task_id, f"{app}-{env}-{service}")
+
+        container = self._get_valid_container_for_exec(cluster, container, service, task_arn)
+
+        self.io.info(
+            f"Running command `{command}` in cluster {cluster}, container {container}, task {task_arn}"
+        )
+
+        self.ecs_provider.execute(cluster, task_arn, container, command)

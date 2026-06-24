@@ -436,7 +436,7 @@ def _client_error(operation="RegisterTaskDefinition"):
     )
 
 
-def test_register_task_definition_applies_image_tag():
+def test_register_task_definition_appends_image_tag():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.register_task_definition.return_value = {
@@ -457,22 +457,59 @@ def test_register_task_definition_applies_image_tag():
 
     ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
     arn = ecs.register_task_definition(
+        application="myapp",
+        environment="dev",
         service="web",
         task_definition=task_definition,
-        image_tag="new-image-tag",
+        image_tag="commit-abc123",
     )
 
     assert arn == "arn:taskdef:123"
-    # Image tag is rewritten only for the main container
+    # Image tag is appended for the main container but not for sidecars
     assert (
         task_definition["containerDefinitions"][0]["image"]
-        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:new-image-tag"
+        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:commit-abc123"
     )
-    assert task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
+    assert (
+        task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
+    )  # Sidecar image tag remains unchanged
 
     ecs_client.register_task_definition.assert_called_once()
     kwargs = ecs_client.register_task_definition.call_args.kwargs
     assert kwargs["containerDefinitions"] is task_definition["containerDefinitions"]
+
+
+def test_register_task_definition_adds_docker_labels():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+
+    task_definition = {
+        "family": "doesn't matter",
+        "other parameters...": "they also don't matter",
+        "containerDefinitions": [
+            {
+                "name": "web",
+                "image": "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web",
+            },
+            {"name": "sidecar", "image": "sidecar:v1.2.3"},
+        ],
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    ecs.register_task_definition(
+        application="myapp",
+        environment="dev",
+        service="web",
+        task_definition=task_definition,
+        image_tag="commit-abc123",
+    )
+
+    assert task_definition["containerDefinitions"][0]["dockerLabels"] == {
+        "com.datadoghq.tags.env": "dev",
+        "com.datadoghq.tags.service": "myapp-web",
+        "com.datadoghq.tags.version": "commit-abc123",
+    }
+    assert "dockerLabels" not in task_definition["containerDefinitions"][1]
 
 
 def test_register_task_definition_raises_exception():
@@ -493,6 +530,8 @@ def test_register_task_definition_raises_exception():
 
     with pytest.raises(PlatformException) as e:
         ecs.register_task_definition(
+            application="myapp",
+            environment="dev",
             service="web",
             task_definition=task_definition,
             image_tag="tag",
@@ -577,3 +616,37 @@ def test_describe_tasks_success():
 
     assert tasks == [{"taskArn": "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"}]
     ecs_client.describe_tasks.assert_called_once_with(cluster="myapp-dev-cluster", tasks=["abc123"])
+
+
+@patch("dbt_platform_helper.providers.ecs.subprocess.run")
+def test_execute_success(run):
+    mock_task_arn = "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/abc123"
+    mock_task_arn_2 = "arn:aws:ecs:eu-west-2:123456789:task/myapp-dev-cluster/def123"
+    ecs_client = MagicMock()
+    ecs_client.list_tasks.return_value = {"taskArns": [mock_task_arn, mock_task_arn_2]}
+    ecs_client.describe_tasks.return_value = {
+        "tasks": [{"taskArn": mock_task_arn, "containers": [{"name": "myservice"}]}]
+    }
+
+    ecs = ECS(ecs_client, None, "myapp", "dev")
+
+    ecs.execute(
+        cluster="myapp-dev-cluster", task=mock_task_arn, container="myservice", command="/bin/bash"
+    )
+
+    expected_cmd = [
+        "aws",
+        "ecs",
+        "execute-command",
+        "--cluster",
+        "myapp-dev-cluster",
+        "--task",
+        mock_task_arn,
+        "--container",
+        "myservice",
+        "--command",
+        "/bin/bash",
+        "--interactive",
+    ]
+
+    run.assert_called_once_with(expected_cmd, check=True)

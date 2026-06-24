@@ -33,11 +33,14 @@ locals {
 
   dns_account_ids = distinct([for env in local.base_env_config : env.dns_account])
 
-  cache_invalidation_assumed_roles = [for id in local.dns_account_ids : "arn:aws:iam::${id}:role/cloudfront-invalidation-assumed-role"]
+  cache_invalidation_assumed_roles = toset([
+    for env_name, env_config in local.base_env_config :
+    "arn:aws:iam::${env_config.dns_account}:role/${var.application}-${env_name}-pipeline-deployment-role"
+  ])
 
   environments_requiring_cache_invalidation = distinct([for d in try(values(var.cache_invalidation.domains), []) : d.environment])
 
-  cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
+  cache_invalidation_enabled = local.codepipeline_enabled && length(local.environments_requiring_cache_invalidation) > 0
 
   default_variables = [
     { name : "APPLICATION", value : var.application },
@@ -53,7 +56,9 @@ locals {
     for id, val in var.pipelines : id => {
       name : val.name,
       branch : val.branch,
-      image_tag : var.requires_image_build ? coalesce(val.tag, false) ? "tag-latest" : "branch-${replace(val.branch, "/", "-")}" : "latest",
+
+      image_tag : coalesce(val.tag, false) ? "tag-latest" : var.requires_image_build ? "branch-${replace(val.branch, "/", "-")}" : "latest"
+
       stages : flatten([for env in val.environments : concat(
         # Approval
         coalesce(env.requires_approval, false) ?
@@ -178,6 +183,7 @@ locals {
         }]
       )])
     }
+    if local.codepipeline_enabled
   }
 
   manual_pipeline_actions_map = concat(
@@ -293,12 +299,17 @@ locals {
   ])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
-  platform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
+  platform_deployment_enabled = local.codepipeline_enabled && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
-  copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
+  copilot_deployment_enabled = local.codepipeline_enabled && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
   # Determine if a custom pre-deploy and post-deploy steps are required
   has_custom_pre_deploy  = var.has_custom_pre_deploy ? true : fileexists("${path.root}/../../custom-build/pre-deploy.sh")
   has_custom_post_deploy = var.has_custom_post_deploy ? true : fileexists("${path.root}/../../custom-build/post-deploy.sh")
+
+  # TODO - https://uktrade.atlassian.net/browse/DBTP-3132 to look into disabling AWS CodePipeline when custom pre/post deploy actions are present
+  codepipeline_enabled     = contains(["aws_codepipeline", "dual_codepipeline_github"], var.pipeline_mode) || local.has_custom_pre_deploy || local.has_custom_post_deploy
+  github_actions_enabled   = contains(["dual_codepipeline_github", "github_actions"], var.pipeline_mode)
+  artifact_bucket_required = local.codepipeline_enabled || local.cache_invalidation_enabled || local.has_custom_pre_deploy || local.has_custom_post_deploy
 }

@@ -82,6 +82,11 @@ override_data {
   }
 }
 
+override_module {
+  target  = module.scheduling["enabled"]
+  outputs = {}
+}
+
 variables {
   application         = "demodjango"
   environment         = "dev"
@@ -133,7 +138,7 @@ variables {
     }
 
     image = {
-      location = "public.ecr.aws/example/app:latest"
+      location = "public.ecr.aws/example/app"
       port     = 8080
     }
 
@@ -164,6 +169,8 @@ variables {
       DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
     }
   }
+
+  scheduled_job_image_tag = null
 }
 
 
@@ -420,7 +427,7 @@ run "web_service_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -454,12 +461,12 @@ run "web_service_ecs_service_connect" {
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_connect_configuration[0].enabled == true
+    condition     = aws_ecs_service.service["enabled"].service_connect_configuration[0].enabled == true
     error_message = "Should be: true"
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_registries[0].port == 443
+    condition     = aws_ecs_service.service["enabled"].service_registries[0].port == 443
     error_message = "Should be: 8080"
   }
 }
@@ -481,7 +488,7 @@ run "backend_service_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
         port     = 8080
       }
 
@@ -515,12 +522,12 @@ run "backend_service_ecs_service_connect" {
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_connect_configuration[0].enabled == true
+    condition     = aws_ecs_service.service["enabled"].service_connect_configuration[0].enabled == true
     error_message = "Should be: true"
   }
 
   assert {
-    condition     = aws_ecs_service.service.service_registries[0].port == 8080
+    condition     = aws_ecs_service.service["enabled"].service_registries[0].port == 8080
     error_message = "Should be: 8080"
   }
 }
@@ -542,7 +549,7 @@ run "backend_service_no_ecs_service_connect" {
       }
 
       image = {
-        location = "public.ecr.aws/example/app:latest"
+        location = "public.ecr.aws/example/app"
       }
 
       cpu    = 256
@@ -575,12 +582,365 @@ run "backend_service_no_ecs_service_connect" {
   }
 
   assert {
-    condition     = length(aws_ecs_service.service.service_connect_configuration) == 0
+    condition     = length(aws_ecs_service.service["enabled"].service_connect_configuration) == 0
     error_message = "Should be: 0"
   }
 
   assert {
-    condition     = length(aws_ecs_service.service.service_registries) == 0
+    condition     = length(aws_ecs_service.service["enabled"].service_registries) == 0
     error_message = "Should be: 0"
   }
+}
+
+run "service_scheduled_auto_scaling" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Load Balanced Web Service"
+
+      http = {
+        alias            = ["web.dev.myapp.uktrade.digital"]
+        path             = "/"
+        target_container = "nginx"
+        healthcheck = {
+          path                = "/test"
+          port                = 8081
+          success_codes       = "200,302"
+          healthy_threshold   = 9
+          unhealthy_threshold = 9
+          interval            = "99"
+          timeout             = "99"
+          grace_period        = "99"
+        }
+      }
+
+      sidecars = {
+        nginx = {
+          port  = 443
+          image = "public.ecr.aws/example/nginx:latest"
+        }
+      }
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+      count = {
+        range = "2-8"
+        schedules = [
+          {
+            schedule = "0 06 ? * MON-FRI *"
+            range    = "2-4"
+          },
+          {
+            schedule = "0 18 ? * MON-FRI *"
+            range    = "0-0"
+          },
+        ]
+      }
+      exec = true
+
+      network = {
+        connect = true
+        vpc = {
+          placement = "private"
+        }
+      }
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+
+      variables = {
+        LOG_LEVEL = "DEBUG"
+        DEBUG     = false
+        PORT      = 8080
+      }
+
+      secrets = {
+        DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_scheduled_action.scheduled_autoscaling) == 2
+    error_message = "Should be: 2"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-0"].schedule == "cron(0 06 ? * MON-FRI *)"
+    error_message = "Should be: cron(0 06 ? * MON-FRI *)"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-0"].scalable_target_action[0].min_capacity == "2"
+    error_message = "Should be: 2"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-0"].scalable_target_action[0].max_capacity == "4"
+    error_message = "Should be: 4"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-1"].schedule == "cron(0 18 ? * MON-FRI *)"
+    error_message = "Should be: cron(0 18 ? * MON-FRI *)"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-1"].scalable_target_action[0].min_capacity == "0"
+    error_message = "Should be: 0"
+  }
+
+  assert {
+    condition     = aws_appautoscaling_scheduled_action.scheduled_autoscaling["demodjango-dev-web-schedule-1"].scalable_target_action[0].max_capacity == "0"
+    error_message = "Should be: 0"
+  }
+}
+
+run "test_scheduling_module_is_created_for_scheduled_job" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+
+    scheduled_job_image_tag = "some-tag"
+
+  }
+
+  assert {
+    condition     = length(module.scheduling) == 1
+    error_message = "Should create the scheduling module"
+  }
+}
+
+run "test_scheduling_module_is_not_created_for_load_balanced_web_service" {
+  command = plan
+
+  assert {
+    condition     = length(module.scheduling) == 0
+    error_message = "Should not create the scheduling module"
+  }
+}
+
+run "test_conditionally_creates_resources_for_a_scheduled_job" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu       = 256
+      memory    = 512
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+
+    scheduled_job_image_tag = "some-tag"
+  }
+
+  assert {
+    condition     = length(aws_ecs_service.service) == 0
+    error_message = "Should not create the ecs service for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_lambda_invocation.dummy_listener_rule) == 0
+    error_message = "Should not create a lambda invocation for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_ecs_task_definition.default_task_def) == 0
+    error_message = "Should not create a default task definition for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_s3_object.task_definition) == 0
+    error_message = "Should not create the s3 bucket for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_target.ecs_autoscaling) == 0
+    error_message = "Should not create the app autoscaling target for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_scheduled_action.scheduled_autoscaling) == 0
+    error_message = "Should not create the app autoscaling target for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_lb_target_group.target_group) == 0
+    error_message = "Should not create a load balancer target group for a scheduled job"
+  }
+
+  assert {
+    condition     = length(data.aws_service_discovery_dns_namespace.private_dns_namespace) == 0
+    error_message = "Should not create service discovery resources for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_service_discovery_service.service_discovery_service) == 0
+    error_message = "Should not create service discovery resources for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_policy.cpu_autoscaling_policy) == 0
+    error_message = "Should not create autoscaling policy for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_policy.memory_autoscaling_policy) == 0
+    error_message = "Should not create autoscaling memory policy for a scheduled job"
+  }
+
+  assert {
+    condition     = length(data.aws_lb.load_balancer) == 0
+    error_message = "Should not load load balancer data for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_appautoscaling_policy.requests_autoscaling_policy) == 0
+    error_message = "Should not create autoscaling requests policy for a scheduled job"
+  }
+
+  assert {
+    condition     = length(aws_ecs_task_definition.scheduled_job) == 1
+    error_message = "Should create task definition for a scheduled job"
+  }
+}
+
+
+# Write a test to check the default values for retries and timeout (already exists in the old module tests we think)
+
+run "test_ecs_task_default_platform_is_x86_64" {
+  command = plan
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+
+    scheduled_job_image_tag = "some-tag"
+  }
+
+  assert {
+    condition     = local.cpu_architecture == "X86_64"
+    error_message = "Should be 'X86_64'"
+  }
+}
+
+run "test_ecs_task_platform_is_arm64" {
+  command = plan
+
+  variables {
+    service_config = merge(var.service_config, { platform = "arm64" })
+  }
+
+  assert {
+    condition     = local.cpu_architecture == "ARM64"
+    error_message = "Should be 'ARM64'"
+  }
+}
+
+run "test_scheduled_job_requires_image_tag_variable" {
+  command = plan
+  variables {
+    service_config = {
+      name = "web"
+      type = "Scheduled Job"
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+
+      exec      = true
+      essential = true
+
+      schedule = "none"
+      timeout  = 300
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+    }
+  }
+
+  expect_failures = [var.scheduled_job_image_tag]
+}
+
+run "test_non_scheduled_job_service_does_not_require_image_tag_variable" {
+  command = plan
+  variables {
+    scheduled_job_image_tag = "some-tag"
+  }
+
+  expect_failures = [var.scheduled_job_image_tag]
 }

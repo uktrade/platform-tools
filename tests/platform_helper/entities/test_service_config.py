@@ -8,10 +8,12 @@ from pydantic import ValidationError
 from dbt_platform_helper.entities.service import Cooldown
 from dbt_platform_helper.entities.service import Count
 from dbt_platform_helper.entities.service import CpuPercentage
+from dbt_platform_helper.entities.service import CronSchedule
 from dbt_platform_helper.entities.service import Image
 from dbt_platform_helper.entities.service import MemoryPercentage
 from dbt_platform_helper.entities.service import RequestsPerMinute
 from dbt_platform_helper.entities.service import ServiceConfig
+from dbt_platform_helper.entities.service import Storage
 from dbt_platform_helper.platform_exception import PlatformException
 from tests.platform_helper.conftest import INPUT_DATA_DIR
 
@@ -108,12 +110,46 @@ def test_count_rejects_bad_range_format():
         Count.model_validate({"range": "1 to 3", "cpu_percentage": 50})
 
 
-@pytest.mark.parametrize("range_value", ["2-1", "5-5"])
+@pytest.mark.parametrize("range_value", ["2-1", "1-0"])
 def test_count_rejects_min_less_than_max(range_value):
     with pytest.raises(
-        PlatformException, match="Range minimum value must be less than the maximum value."
+        PlatformException,
+        match="Range minimum value must be less than or equal to the maximum value.",
     ):
         Count.model_validate({"range": range_value, "cpu_percentage": 50})
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"range": "1-2", "schedule": "0 06 ? * MON-FRI *"},
+        {"range": "0-0", "schedule": "0 06 ? * MON-FRI *"},
+    ],
+)
+def test_cron_schedule_valid(config):
+    CronSchedule.model_validate(config)
+
+
+@pytest.mark.parametrize(
+    "config, exception_message",
+    [
+        (
+            {"range": "2-1", "schedule": "0 06 ? * MON-FRI *"},
+            "Range minimum value must be less or equal to the maximum value.",
+        ),
+        (
+            {"range": "1 to 2", "schedule": "0 06 ? * MON-FRI *"},
+            "Range must be in the format 'int-int' e.g. '1-2'",
+        ),
+        (
+            {"range": "1-2", "schedule": "invalid"},
+            "Invalid cron expression: 'invalid'. Excepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'",
+        ),
+    ],
+)
+def test_cron_schedule_errors(config, exception_message):
+    with pytest.raises(PlatformException, match=re.escape(exception_message)):
+        CronSchedule.model_validate(config)
 
 
 def test_service_config_accepts_int_count():
@@ -176,3 +212,186 @@ def test_count_autoscaling_all_the_things():
 def test_tagged_image_raises_exception():
     with pytest.raises(PlatformException, match="Image location cannot contain a tag"):
         Image.model_validate({"location": "public.ecr.aws/docker/library/alpine:latest"})
+
+
+@pytest.mark.parametrize("storage_size", ["20", "201"])
+def test_ephemeral_storage_is_within_allowed_range(storage_size):
+    with pytest.raises(
+        PlatformException,
+        match=re.escape(
+            """The minimum supported ephemeral storage value is 21 (GiB) and the maximum supported value is 200 (GiB)."""
+        ),
+    ):
+        Storage.model_validate({"ephemeral": storage_size})
+
+
+def test_count_is_not_required_for_scheduled_job():
+    service_config = {
+        "name": "check",
+        "type": "Scheduled Job",
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "schedule": "rate(5 minutes)",
+    }
+    assert ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+def test_count_is_required_for_other_service_types(type):
+    service_config = {
+        "name": "web",
+        "type": type,
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "/",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+    }
+    with pytest.raises(PlatformException, match=f"'count' is required for service type == {type}"):
+        assert ServiceConfig.model_validate(service_config)
+
+
+def test_count_is_not_allowed_for_scheduled_job():
+    service_config = {
+        "name": "check",
+        "type": "Scheduled Job",
+        "image": {"location": "hub.docker.com/repo/app"},
+        "cpu": 256,
+        "memory": 512,
+        "count": 1,
+    }
+    with pytest.raises(
+        PlatformException, match=f"'count' is not allowed for service type == Scheduled Job"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+def test_http_is_not_allowed_for_scheduled_job():
+    service_config = {
+        "name": "check",
+        "type": "Scheduled Job",
+        "image": {"location": "hub.docker.com/repo/app"},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "x",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+    }
+    with pytest.raises(
+        PlatformException, match=f"'http' is not allowed for service type == Scheduled Job"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+def test_schedule_is_required_for_scheduled_job():
+    service_config = {
+        "name": "check",
+        "type": "Scheduled Job",
+        "image": {"location": "hub.docker.com/repo/app"},
+        "cpu": 256,
+        "memory": 512,
+    }
+    with pytest.raises(
+        PlatformException, match=f"'schedule' is required for service type == Scheduled Job"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+def test_schedule_is_not_allowed_for_other_services(type):
+    service_config = {
+        "name": "web",
+        "type": type,
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "/",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+        "count": 1,
+        "schedule": "none",
+    }
+    with pytest.raises(
+        PlatformException, match=f"'schedule' is not allowed for service type == {type}"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+def test_retries_is_not_allowed_for_other_services(type):
+    service_config = {
+        "name": "web",
+        "type": type,
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "/",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+        "count": 1,
+        "retries": 1,
+    }
+    with pytest.raises(
+        PlatformException, match=f"'retries' is not allowed for service type == {type}"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+def test_timeout_is_not_allowed_for_other_services(type):
+    service_config = {
+        "name": "web",
+        "type": type,
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "/",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+        "count": 1,
+        "timeout": 300,
+    }
+    with pytest.raises(
+        PlatformException, match=f"'timeout' is not allowed for service type == {type}"
+    ):
+        assert ServiceConfig.model_validate(service_config)
+
+
+@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+def test_platform_is_not_allowed_for_other_services(type):
+    service_config = {
+        "name": "web",
+        "type": type,
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "http": {
+            "target_container": "nginx",
+            "path": "/",
+            "alb": "alb-arn",
+            "alias": ["test.alias.com", "test2.alias.com"],
+        },
+        "count": 1,
+        "platform": "arm64",
+    }
+    with pytest.raises(
+        PlatformException, match=f"'platform' is not allowed for service type == {type}"
+    ):
+        assert ServiceConfig.model_validate(service_config)

@@ -21,7 +21,7 @@ phases:
         else
           export DOMAINS=$(echo $ENV_CACHE_INVALIDATION_CONFIG | jq -r 'keys[]')
           echo -e "\nAssume role in ${DNS_ACCOUNT_ID} account"
-          assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/cloudfront-invalidation-assumed-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
+          assumed_role=$(aws sts assume-role --role-arn "arn:aws:iam::${DNS_ACCOUNT_ID}:role/${APPLICATION}-${ENVIRONMENT}-pipeline-deployment-role" --role-session-name "${APPLICATION}-${ENVIRONMENT}-cdn-cache-invalidation")
           export AWS_ACCESS_KEY_ID=$(echo $assumed_role | jq -r .Credentials.AccessKeyId)
           export AWS_SECRET_ACCESS_KEY=$(echo $assumed_role | jq -r .Credentials.SecretAccessKey)
           export AWS_SESSION_TOKEN=$(echo $assumed_role | jq -r .Credentials.SessionToken)        
