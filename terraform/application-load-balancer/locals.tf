@@ -29,31 +29,26 @@ locals {
   # Create map of all items in address list with its base domain. eg { x.y.base.com: base.com }
   additional_address_fqdn = try({ for k in var.config.additional_address_list : "${k}.${local.additional_address_domain}" => "${var.application}.${local.domain_suffix}" }, {})
 
-  # A List of domains that can be used in the Subject Alternative Name (SAN) part of the certificate.
-  # Only select the domain from the value field of cdn_domains_list (drop "internal") 
-  culled_san_list = try({ for k, v in var.config.cdn_domains_list : k => v[1] }, {})
-  san_list        = merge(local.additional_address_fqdn, local.culled_san_list)
+  ingress_cdn_domains_list = tomap(
+    can(data.aws_ssm_parameters_by_path.cdn_domain_list.values[0])
+    ? jsondecode(nonsensitive(data.aws_ssm_parameters_by_path.cdn_domain_list.values[0]))
+    : {}
+  )
+  ingress_cdn_domains = { for k, v in local.ingress_cdn_domains_list : k => v.zone_name }
+
+  san_list = merge(local.additional_address_fqdn, local.ingress_cdn_domains)
 
   # Create a complete domain list, primary domain plus all CDN/SAN domains.
   full_list = merge({ (local.domain_name) = "${var.application}.${local.domain_suffix}" }, local.san_list)
 
   # Count total number of domains.
   number_of_domains = length(local.full_list)
-  domain_list       = lookup(var.config, "cdn_domains_list", null) != null ? join(",", keys(var.config.cdn_domains_list)) : ""
-  config_cdn_domains_list = tomap({
-    for cdn_domain, cdn_config in coalesce(lookup(var.config, "cdn_domains_list", {}), {}) :
-    cdn_domain => { zone_name = cdn_config[1] }
-  })
-  ingress_cdn_domains_list = tomap(
-    can(data.aws_ssm_parameters_by_path.cdn_domain_list.values[0])
-    ? jsondecode(nonsensitive(data.aws_ssm_parameters_by_path.cdn_domain_list.values[0]))
-    : {}
-  )
+  domain_list       = join(",", keys(local.ingress_cdn_domains))
 
   config_with_defaults = { slack_alert_channel_alb_secret_rotation = coalesce(try(var.config.slack_alert_channel_alb_secret_rotation, null), "C31KW7NLE") } # Slack ID for P2 alerts channel
 
   # Does the environment have a CDN configured
-  cdn_enabled = length(try({ for cdn_domain_name, cdn_config in var.config.cdn_domains_list : cdn_domain_name => cdn_config if !contains(cdn_config, "disable_cdn") }, {})) > 0
+  cdn_enabled = length(local.ingress_cdn_domains) > 0
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
   lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:9"

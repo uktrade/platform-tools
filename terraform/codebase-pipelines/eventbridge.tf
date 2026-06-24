@@ -2,7 +2,7 @@ resource "aws_cloudwatch_event_rule" "ecr_image_publish" {
   for_each    = local.pipeline_map
   name        = "${var.application}-${var.codebase}-publish-${each.value.name}"
   description = "Trigger ${each.value.name} deploy pipeline when an ECR image is published"
-  state       = var.use_github_actions ? "DISABLED" : "ENABLED"
+  state       = local.github_actions_enabled ? "DISABLED" : "ENABLED"
 
   event_pattern = jsonencode({
     source : ["aws.ecr"],
