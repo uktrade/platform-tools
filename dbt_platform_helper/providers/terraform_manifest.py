@@ -329,7 +329,7 @@ class TerraformManifestProvider:
                 "services": "${each.value.services}",
                 "requires_image_build": '${lookup(each.value, "requires_image_build", true)}',
                 "slack_channel": '${lookup(each.value, "slack_channel", "/codebuild/slack_oauth_channel")}',
-                "use_github_actions": '${lookup(each.value, "use_github_actions", false)}',
+                "pipeline_mode": '${lookup(each.value, "pipeline_mode", "aws_codepipeline")}',
                 "env_config": "${local.environments}",
                 "platform_tools_version": f"{platform_helper_version}",
             }
