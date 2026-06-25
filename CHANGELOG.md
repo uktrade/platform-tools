@@ -1,5 +1,24 @@
 # Changelog
 
+## [15.33.0](https://github.com/uktrade/platform-tools/compare/15.32.0...15.33.0) (2026-06-25)
+
+
+### Features
+
+* Add ability to disable AWS CodePipelines (DBTP-3072) ([#1500](https://github.com/uktrade/platform-tools/issues/1500)) ([ecf78e2](https://github.com/uktrade/platform-tools/commit/ecf78e279a7dfe46b74689fd09fa5f84dc67f110))
+* Switch Redis 7.1 to Valkey 7.2 in non-great prod (DBTP-3081) ([#1523](https://github.com/uktrade/platform-tools/issues/1523)) ([7817ca4](https://github.com/uktrade/platform-tools/commit/7817ca41640241cbf2c36193b984f3045cdb72be))
+
+
+### Bug Fixes
+
+* Duplicate resource error when multiple codebases with pre/post deploy stage (Off-ticket) ([#1521](https://github.com/uktrade/platform-tools/issues/1521)) ([78a599f](https://github.com/uktrade/platform-tools/commit/78a599fb83e49f24f6b560d09d320e60a7ea0b8a))
+
+
+### Dependencies
+
+* Bump datadog/datadog in /terraform/datadog ([#1513](https://github.com/uktrade/platform-tools/issues/1513)) ([304e21a](https://github.com/uktrade/platform-tools/commit/304e21ae68c27984294a34d6d1af83ae2200f284))
+* Bump pydantic from 2.13.3 to 2.13.4 ([#1455](https://github.com/uktrade/platform-tools/issues/1455)) ([af99e54](https://github.com/uktrade/platform-tools/commit/af99e54b67e41b8c0c959b44916bed3058f9a8d7))
+
 ## [15.32.0](https://github.com/uktrade/platform-tools/compare/15.31.2...15.32.0) (2026-06-18)
 
 
