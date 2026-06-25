@@ -324,7 +324,7 @@ run "aws_elasticache_replication_group_unit_7_1_dev_great" {
   }
 }
 
-# Great prod caches are should remain on redis 7.1
+# Great prod caches should remain on redis 7.1
 run "aws_elasticache_replication_group_unit_7_1_prod_great" {
   command = plan
 
