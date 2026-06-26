@@ -342,13 +342,14 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 class ServiceType(str, Enum):
     BACKEND_SERVICE = "Backend Service"
     LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+    LOAD_BALANCED_INTERNAL_SERVICE = "Load Balanced Internal Service"
     SCHEDULED_JOB = "Scheduled Job"
 
 
 class ServiceConfig(BaseModel):
     name: str = Field(description="Service name.")
     type: ServiceType = Field(
-        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
+        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}', '{ServiceType.LOAD_BALANCED_INTERNAL_SERVICE.value}'"
     )
     http: Optional[Http] = Field(default=None)
 
