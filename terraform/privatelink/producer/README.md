@@ -18,7 +18,7 @@ module "privatelink" {
     "a-to-b" = {
       domain                 = "something.uktrade.digital"
       producer_account_id    = "123456789012"
-      producer_vpc_name      = "matchbox"
+      producer_vpc_name      = "example"
       producer_application   = "application"
       producer_environment   = "dev"
       consumer_account_id      = "098765432109"
