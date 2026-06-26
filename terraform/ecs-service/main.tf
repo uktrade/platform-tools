@@ -190,7 +190,7 @@ data "aws_vpc" "vpc" {
 }
 
 resource "random_string" "tg_suffix" {
-  count = local.web_service_required
+  count = local.web_service_required + local.internal_service_required
 
   length    = 6
   min_lower = 6
@@ -523,7 +523,7 @@ resource "aws_acm_certificate_validation" "private-cert-validation" {
 resource "aws_lb_target_group" "nlb_to_ecs" {
   count = local.internal_service_required
 
-  name                 = "${var.application}-${var.environment}-nlb-to-ecs"
+  name                 = substr("${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}", 0, 32)
   port                 = 443
   protocol             = "TLS"
   target_type          = "ip"
