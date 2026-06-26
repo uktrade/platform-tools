@@ -172,6 +172,29 @@ run "aws_elasticache_replication_group_unit_test" {
   }
 }
 
+run "aws_elasticache_replication_group_unit_test_prod" {
+  command = plan
+
+  variables {
+    environment = "prod"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine_version == "6.2"
+    error_message = "Issue with code"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine == "redis"
+    error_message = "Issue with code"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.redis6.x"
+    error_message = "Issue with code"
+  }
+}
+
 run "aws_elasticache_replication_group_unit_7_1_dev" {
   command = plan
 
@@ -257,23 +280,78 @@ run "aws_elasticache_replication_group_unit_7_1_prod" {
     }
   }
 
-  ### Prod redis aren't being upgraded to valkey immediately
   assert {
-    condition     = aws_elasticache_replication_group.redis.engine == "redis"
+    condition     = aws_elasticache_replication_group.redis.engine == "valkey"
     error_message = "Invalid config for aws_elasticache_replication_group engine"
   }
 
   assert {
-    condition     = aws_elasticache_replication_group.redis.engine_version == "7.1"
+    condition     = aws_elasticache_replication_group.redis.engine_version == "7.2"
     error_message = "Invalid config for aws_elasticache_replication_group engine_version"
   }
 
   assert {
-    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.redis7"
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.valkey7"
     error_message = "Invalid config for aws_elasticache_replication_group parameter_group_name"
   }
 }
 
+run "aws_elasticache_replication_group_unit_7_1_dev_great" {
+  command = plan
+
+  variables {
+    application = "great"
+    environment = "dev"
+    config = {
+      "engine" = "7.1",
+      "plan"   = "small"
+    }
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine_version == "7.2"
+    error_message = "Issue with code"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine == "valkey"
+    error_message = "Issue with code"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.valkey7"
+    error_message = "Issue with code"
+  }
+}
+
+# Great prod caches should remain on redis 7.1
+run "aws_elasticache_replication_group_unit_7_1_prod_great" {
+  command = plan
+
+  variables {
+    application = "great"
+    environment = "prod"
+    config = {
+      "engine" = "7.1",
+      "plan"   = "small"
+    }
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine_version == "7.1"
+    error_message = "Issue with code"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.engine == "redis"
+    error_message = "Issue with code"
+  }
+
+  assert {
+    condition     = aws_elasticache_replication_group.redis.parameter_group_name == "default.redis7"
+    error_message = "Issue with code"
+  }
+}
 
 run "aws_security_group_unit_test" {
   command = plan
