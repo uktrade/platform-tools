@@ -391,6 +391,11 @@ resource "aws_appautoscaling_policy" "memory_autoscaling_policy" {
 data "aws_lb" "load_balancer" {
   count = local.enable_req ? 1 : 0
   arn   = one(aws_lb_target_group.target_group[0].load_balancer_arns)
+
+  # Ensure the listener-rule lambda runs first to attach the target group on the ALB
+  depends_on = [
+    aws_lambda_invocation.dummy_listener_rule
+  ]
 }
 
 # This policy is only for 'Load Balanced Web Service' type services
@@ -402,9 +407,6 @@ resource "aws_appautoscaling_policy" "requests_autoscaling_policy" {
   service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
   resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
   scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
-
-  # Ensure the listener-rule Lambda runs first to attach the TG on the ALB
-  depends_on = [aws_lambda_invocation.dummy_listener_rule]
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
