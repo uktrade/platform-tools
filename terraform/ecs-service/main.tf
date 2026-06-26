@@ -121,6 +121,16 @@ resource "aws_ecs_service" "service" {
     }
   }
 
+  dynamic "load_balancer" {
+    for_each = local.internal_service_required == 1 ? [""] : []
+    content {
+      target_group_arn = aws_lb_target_group.nlb_to_ecs[0].arn
+      container_name   = "nginx"
+      container_port   = 443
+    }
+  }
+
+
   # TODO - See if discovery service can be removed once de-copiloting is complete, because we already use Service Connect for the same purposes. Verify that no team uses Service Discovery before any removal.
   dynamic "service_registries" {
     for_each = local.ecs_service_connect_required == 1 ? [""] : []
@@ -143,7 +153,7 @@ resource "aws_ecs_service" "service" {
         port_name      = "target"
         client_alias {
           dns_name = var.service_config.name
-          port     = local.web_service_required == 1 ? 443 : try(var.service_config.image.port, 8080)
+          port     = local.web_service_required == 1 || local.internal_service_required == 1 ? 443 : try(var.service_config.image.port, 8080)
         }
       }
       log_configuration {
@@ -161,7 +171,10 @@ resource "aws_ecs_service" "service" {
     ignore_changes = [task_definition, desired_count] # See reasoning for this above
   }
 
-  depends_on = [aws_lambda_invocation.dummy_listener_rule]
+  depends_on = [
+    aws_lambda_invocation.dummy_listener_rule,
+    aws_lb_listener.nlb
+  ]
 }
 
 moved {
@@ -177,7 +190,7 @@ data "aws_vpc" "vpc" {
 }
 
 resource "random_string" "tg_suffix" {
-  count = local.web_service_required
+  count = local.web_service_required + local.internal_service_required
 
   length    = 6
   min_lower = 6
@@ -481,4 +494,70 @@ module "scheduling" {
   cluster_id          = data.aws_ecs_cluster.cluster.id
   tags                = local.tags
   log_group_arn       = aws_cloudwatch_log_group.ecs_service_logs.arn
+}
+
+data "aws_acm_certificate" "acm" {
+  count = local.internal_service_required == 1 ? length(var.service_config.http.alias) : 0
+
+  domain   = var.service_config.http.alias[count.index]
+  statuses = ["PENDING_VALIDATION", "ISSUED"]
+
+  most_recent = true
+}
+
+data "aws_lb" "nlb" {
+  count = local.internal_service_required
+
+  name = "${var.application}-${var.environment}-nlb"
+}
+resource "aws_acm_certificate_validation" "private-cert-validation" {
+  for_each = local.internal_service_required == 1 ? {
+    for idx, cert in data.aws_acm_certificate.acm :
+    cert.domain => cert
+    if cert.status == "PENDING_VALIDATION"
+  } : {}
+
+  certificate_arn = each.value.arn
+}
+
+resource "aws_lb_target_group" "nlb_to_ecs" {
+  count = local.internal_service_required
+
+  name                 = substr("${var.service_config.name}-tg-${random_string.tg_suffix[count.index].result}", 0, 32)
+  port                 = 443
+  protocol             = "TLS"
+  target_type          = "ip"
+  vpc_id               = data.aws_vpc.vpc.id
+  deregistration_delay = 30
+  tags                 = local.tags
+
+  health_check {
+    port                = var.service_config.http.healthcheck.port
+    path                = var.service_config.http.healthcheck.path
+    protocol            = "HTTP"
+    matcher             = var.service_config.http.healthcheck.success_codes
+    healthy_threshold   = var.service_config.http.healthcheck.healthy_threshold
+    unhealthy_threshold = var.service_config.http.healthcheck.unhealthy_threshold
+    interval            = var.service_config.http.healthcheck.interval
+    timeout             = var.service_config.http.healthcheck.timeout
+  }
+
+}
+
+resource "aws_lb_listener" "nlb" {
+  for_each = local.internal_service_required == 1 ? {
+    for idx, cert in data.aws_acm_certificate.acm : cert.domain => cert
+  } : {}
+
+  load_balancer_arn = data.aws_lb.nlb[0].arn
+  protocol          = "TLS"
+  port              = 443
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+  certificate_arn   = each.value.arn
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.nlb_to_ecs[0].arn
+  }
+
+  tags = local.tags
 }
