@@ -8,6 +8,7 @@ import hcl2
 import pytest
 import yaml
 from freezegun.api import freeze_time
+from hcl2 import SerializationOptions
 
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
@@ -475,7 +476,9 @@ def assert_terraform(
     assert re.search(r'repository += +"uktrade/test-app-weird-name-deploy"', content)
 
     with open(expected_files_dir, "r") as file:
-        parsed_terraform = hcl2.load(file)
+        parsed_terraform = hcl2.load(
+            file, serialization_options=SerializationOptions(strip_string_quotes=True)
+        )
 
         environment_pipeline_module = parsed_terraform["module"][0]["environment-pipelines"]
 

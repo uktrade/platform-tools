@@ -10,6 +10,7 @@ import hcl2
 import pytest
 import yaml
 from freezegun import freeze_time
+from hcl2 import SerializationOptions
 
 from dbt_platform_helper.domain.pipelines import Pipelines
 from dbt_platform_helper.domain.versioning import PlatformHelperVersioning
@@ -246,15 +247,21 @@ def test_pipelines_generate_workspaced(
             content = file_path.read_text()
             json_content = json.loads(content)
             local = json_content["locals"]
+            file_path = f'${{yamldecode(file("{plat_path}"))}}'
         else:
             with open(file_path, "r") as file:
-                json_content = hcl2.load(file)
+                json_content = hcl2.load(
+                    file,
+                    serialization_options=SerializationOptions(
+                        strip_string_quotes=True, explicit_blocks=False
+                    ),
+                )
                 local = json_content["locals"]
                 local = local[0]
+                file_path = f"${{yamldecode(file({plat_path}))}}"
 
-        assert local["platform_config"] == f'${{yamldecode(file("{plat_path}"))}}'
+        assert local["platform_config"] == file_path
 
-        print(json_content["resource"])
         if cb:
             assert json_content["resource"] == {
                 "terraform_data": {
@@ -277,7 +284,7 @@ def test_pipelines_generate_workspaced(
                                 {
                                     "precondition": [
                                         {
-                                            "condition": '${terraform.workspace == "workspace"}',
+                                            "condition": "${terraform.workspace == workspace}",
                                             "error_message": "Must be in workspace workspace",
                                         }
                                     ]
