@@ -80,23 +80,23 @@ resource "aws_ssm_parameter" "security_group_rules" {
       "port"           = 443
       "application"    = var.config.producer_application
       "environment"    = var.config.producer_environment
-      "security-group" = aws_security_group.nlb.id
+      "security-group" = data.aws_security_group.env.id
       "protocol"       = "tcp"
       "description"    = "NLB to ECS for: ${var.config.producer_environment}"
-      "source-sg"      = data.aws_security_group.env.id
+      "source-sg"      = aws_security_group.nlb.id
     },
     "ecs-allow-healthcheck-inbound-from-nlb" : {
       "port"           = var.healthcheck-port
       "application"    = var.config.producer_application
       "environment"    = var.config.producer_environment
-      "security-group" = aws_security_group.nlb.id
+      "security-group" = data.aws_security_group.env.id
       "protocol"       = "tcp"
       "description"    = "NLB to ECS healthcheck for: ${var.config.producer_environment}"
-      "source-sg"      = data.aws_security_group.env.id
+      "source-sg"      = aws_security_group.nlb.id
     },
 
   }
-  name = "/platform/security-groups/${each.value.application}/${each.value.environment}/rules/${each.key}"
+  name = "/platform/privatelink/${each.value.application}/${each.value.environment}/env-security-groups/rules/${each.key}"
   type = "String"
   value = jsonencode({
     "security-group-id" = each.value.security-group
