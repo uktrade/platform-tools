@@ -6,7 +6,7 @@ locals {
   }
 
   raw_domain_list = flatten([
-    for val in data.data.aws_ssm_parameters_by_path.cert-domains.values : [
+    for val in data.aws_ssm_parameters_by_path.cert-domains.values : [
       for domain, attributes in jsondecode(val) : {
         domain     = domain
         attributes = attributes
