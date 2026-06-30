@@ -32,6 +32,6 @@ locals {
 
   privatelink_rules = {
     for name, value in local.privatelink_by_name :
-    "${value.source-sg}/${value.security-group}" => value
+    "${value.source-sg}/${value.security-group-id}" => value
   }
 }
