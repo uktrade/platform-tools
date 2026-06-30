@@ -121,6 +121,19 @@ resource "aws_acm_certificate" "acm" {
   }
 }
 
+resource "aws_ssm_parameter" "cert_domain" {
+  name = "/platform/privatelink/${each.value.application}/${each.value.environment}/certificate-domain/${var.config.domain}"
+  type = "String"
+  value = jsonencode({
+    for opt in aws_acm_certificate.acm.domain_validation_options : opt.domain_name => {
+      name    = opt.resource_record_name
+      type    = opt.resource_record_type
+      records = [opt.resource_record_value]
+    }
+  })
+  description = "An SSM parameter used by the environment Terraform to activate pending domains."
+}
+
 
 resource "aws_vpc_endpoint_service" "private_service" {
   network_load_balancer_arns = [aws_lb.nlb.arn]
