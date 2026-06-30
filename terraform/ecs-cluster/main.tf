@@ -55,7 +55,7 @@ data "aws_ssm_parameters_by_path" "vpc_peering" {
 
 data "aws_ssm_parameters_by_path" "privatelink_nlb" {
   # Only keep the SG rules meant for this environment's security group
-  path      = "/platform/privatelink/${var.application}/${var.environment}/security-groups/rules"
+  path      = "/platform/privatelink/${var.application}/${var.environment}/env-security-groups/rules"
   recursive = true
 }
 
