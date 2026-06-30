@@ -7,7 +7,7 @@ data "aws_ssm_parameters_by_path" "cert-domains" {
 data "aws_acm_certificate" "acm" {
   for_each = nonsensitive(local.domain_map)
 
-  domain   = local.domain_map
+  domain   = each.key
   statuses = ["PENDING_VALIDATION", "ISSUED"]
 
   most_recent = true
