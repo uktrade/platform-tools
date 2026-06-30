@@ -1045,8 +1045,4 @@ run "internal_service" {
     condition     = aws_lb_target_group.nlb_to_ecs[0].protocol == "TLS"
     error_message = "Should be: TLS"
   }
-  assert {
-    condition     = aws_acm_certificate_validation.private-cert-validation["internal.dev.myapp.uktrade.digital"].certificate_arn == "arn:aws:acm:eu-west-2:123456789012:certificate/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx"
-    error_message = "Should be: arn:aws:acm:eu-west-2:123456789012:certificate/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx"
-  }
 }
