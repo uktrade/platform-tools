@@ -25,8 +25,8 @@ locals {
 
   privatelink_by_name = {
     for name, value in zipmap(
-      data.data.aws_ssm_parameters_by_path.privatelink_nlb.names,
-      data.data.aws_ssm_parameters_by_path.privatelink_nlb.values
+      data.aws_ssm_parameters_by_path.privatelink_nlb.names,
+      data.aws_ssm_parameters_by_path.privatelink_nlb.values
     ) : name => jsondecode(value)
   }
 
