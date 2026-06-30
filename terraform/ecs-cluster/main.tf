@@ -143,8 +143,8 @@ resource "aws_security_group" "environment_security_group" {
   dynamic "ingress" {
     for_each = nonsensitive(local.privatelink_rules)
     content {
-      description     = ingres.value.description
-      protocol        = ingres.value.protocol
+      description     = ingress.value.description
+      protocol        = ingress.value.protocol
       from_port       = ingress.value.port
       to_port         = ingress.value.port
       security_groups = [ingress.value.source-sg]
