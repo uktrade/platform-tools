@@ -5,7 +5,7 @@ data "aws_ssm_parameters_by_path" "cert-domains" {
 
 
 data "aws_acm_certificate" "acm" {
-  for_each = local.domain_map
+  for_each = nonsensitive(local.domain_map)
 
   domain   = local.domain_map
   statuses = ["PENDING_VALIDATION", "ISSUED"]
