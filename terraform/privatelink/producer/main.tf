@@ -122,7 +122,7 @@ resource "aws_acm_certificate" "acm" {
 }
 
 resource "aws_ssm_parameter" "cert_domain" {
-  name = "/platform/privatelink/${each.value.application}/${each.value.environment}/certificate-domains/${var.config.domain}"
+  name = "/platform/privatelink/${var.config.producer_application}/${var.config.producer_environment}/certificate-domains/${var.config.domain}"
   type = "String"
   value = jsonencode({
     for opt in aws_acm_certificate.acm.domain_validation_options : opt.domain_name => {
