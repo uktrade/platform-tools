@@ -43,7 +43,7 @@ resource "aws_security_group" "nlb" {
   }
 }
 
-resource "aws_security_group_rule" "source-access" {
+resource "aws_security_group_rule" "nlb-allow-inbound-from-consumer" {
   type              = "ingress"
   from_port         = 443
   to_port           = 443
@@ -53,7 +53,7 @@ resource "aws_security_group_rule" "source-access" {
   description       = "PrivateLink Source CIDR to NLB for: ${var.config.producer_environment}"
 }
 
-resource "aws_security_group_rule" "nlb-to-ecs-egress" {
+resource "aws_security_group_rule" "nlb-allow-outbound-to-ecs" {
   type                     = "egress"
   from_port                = 443
   to_port                  = 443
@@ -63,36 +63,52 @@ resource "aws_security_group_rule" "nlb-to-ecs-egress" {
   description              = "NLB to ECS for: ${var.config.producer_environment}"
 }
 
-resource "aws_security_group_rule" "nlb-to-ecs-ingress" {
-  type                     = "ingress"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.nlb.id
-  security_group_id        = data.aws_security_group.env.id
-  description              = "NLB to ECS for: ${var.config.producer_environment}"
-}
-
-resource "aws_security_group_rule" "healthcheck-env-egress" {
+resource "aws_security_group_rule" "nlb-allow-healthcheck-outbound-to-ecs" {
   type                     = "egress"
-  from_port                = 8080
-  to_port                  = 8080
+  from_port                = var.healthcheck-port
+  to_port                  = var.healthcheck-port
   protocol                 = "tcp"
   source_security_group_id = data.aws_security_group.env.id
   security_group_id        = aws_security_group.nlb.id
   description              = "NLB to ECS healthcheck for: ${var.config.producer_environment}"
 }
 
-resource "aws_security_group_rule" "healthcheck-env-ingress" {
-  type                     = "ingress"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.nlb.id
-  security_group_id        = data.aws_security_group.env.id
-  description              = "NLB to ECS healthcheck for: ${var.config.producer_environment}"
-}
 
+resource "aws_ssm_parameter" "security_group_rules" {
+  for_each = {
+    "ecs-allow-inbound-from-nlb" : {
+      "port"           = 443
+      "application"    = var.config.producer_application
+      "environment"    = var.config.producer_environment
+      "security-group" = aws_security_group.nlb.id
+      "protocol"       = "tcp"
+      "description"    = "NLB to ECS for: ${var.config.producer_environment}"
+      "source-sg"      = data.aws_security_group.env.id
+    },
+    "ecs-allow-healthcheck-inbound-from-nlb" : {
+      "port"           = var.healthcheck-port
+      "application"    = var.config.producer_application
+      "environment"    = var.config.producer_environment
+      "security-group" = aws_security_group.nlb.id
+      "protocol"       = "tcp"
+      "description"    = "NLB to ECS healthcheck for: ${var.config.producer_environment}"
+      "source-sg"      = data.aws_security_group.env.id
+    },
+
+  }
+  name = "/platform/security-groups/${each.value.application}/${each.value.environment}/rules/${each.key}"
+  type = "String"
+  value = jsonencode({
+    "security-group-id" = each.value.security-group
+    "source-sg"         = each.value.source-sg
+    "port"              = each.value.port
+    "application"       = each.value.application
+    "environment"       = each.value.environment
+    "protocol"          = each.value.protocol
+    "description"       = each.value.description
+  })
+  description = "An SSM parameter used by the environment Terraform to determine whether to add an ingress security group rule to the environment service SG."
+}
 
 resource "aws_acm_certificate" "acm" {
   domain_name       = var.config.domain
