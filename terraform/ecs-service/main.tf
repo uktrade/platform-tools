@@ -500,7 +500,7 @@ data "aws_acm_certificate" "acm" {
   count = local.internal_service_required == 1 ? length(var.service_config.http.alias) : 0
 
   domain   = var.service_config.http.alias[count.index]
-  statuses = ["PENDING_VALIDATION", "ISSUED"]
+  statuses = ["ISSUED"]
 
   most_recent = true
 }
@@ -509,15 +509,6 @@ data "aws_lb" "nlb" {
   count = local.internal_service_required
 
   name = "${var.application}-${var.environment}-nlb"
-}
-resource "aws_acm_certificate_validation" "private-cert-validation" {
-  for_each = local.internal_service_required == 1 ? {
-    for idx, cert in data.aws_acm_certificate.acm :
-    cert.domain => cert
-    if cert.status == "PENDING_VALIDATION"
-  } : {}
-
-  certificate_arn = each.value.arn
 }
 
 resource "aws_lb_target_group" "nlb_to_ecs" {
