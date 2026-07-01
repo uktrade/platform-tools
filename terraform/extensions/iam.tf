@@ -784,11 +784,46 @@ data "aws_iam_policy_document" "acm_access" {
   statement {
     effect = "Allow"
     actions = [
-      "acm:ListCertificates"
+      "acm:ListCertificates",
+      "acm:DescribeCertificate",
+      "acm:GetCertificate",
+      "acm:ListTagsForCertificate"
     ]
     resources = [
       "*"
     ]
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/environment"
+      values   = [var.environment]
+    }
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/application"
+      values   = [var.args.application]
+    }
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticloadbalancing:CreateListener"
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/environment"
+      values   = [var.environment]
+    }
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/application"
+      values   = [var.args.application]
+    }
   }
 
 }
