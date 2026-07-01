@@ -1,5 +1,26 @@
 # Changelog
 
+## [15.34.0](https://github.com/uktrade/platform-tools/compare/15.33.0...15.34.0) (2026-07-01)
+
+
+### Features
+
+* Privatelink Producer module (DBTP-2925) ([#1524](https://github.com/uktrade/platform-tools/issues/1524)) ([1570c46](https://github.com/uktrade/platform-tools/commit/1570c46f27e1124d9160b1a0e18eb350f5e4f75b))
+
+
+### Bug Fixes
+
+* Missing dependency when provisioning service with request scaling (off-ticket) ([#1289](https://github.com/uktrade/platform-tools/issues/1289)) ([5a46937](https://github.com/uktrade/platform-tools/commit/5a46937c4f18c47b551d51475bc1bccd069716c1))
+
+
+### Dependencies
+
+* Bump click from 8.3.3 to 8.4.1 ([#1531](https://github.com/uktrade/platform-tools/issues/1531)) ([cb433ed](https://github.com/uktrade/platform-tools/commit/cb433eddc9017a7b72a0b47fe46d788c0db4795f))
+* Bump datadog/datadog in /terraform/datadog ([#1522](https://github.com/uktrade/platform-tools/issues/1522)) ([9adc39d](https://github.com/uktrade/platform-tools/commit/9adc39d0aa13604a40f4b3d96f406d0182b53a8f))
+* Bump prettytable from 3.17.0 to 3.18.0 ([#1537](https://github.com/uktrade/platform-tools/issues/1537)) ([5227003](https://github.com/uktrade/platform-tools/commit/52270035ff927f864db3950843bbb3f3f5e25905))
+* Bump requests from 2.33.1 to 2.34.2 ([#1538](https://github.com/uktrade/platform-tools/issues/1538)) ([f3ea681](https://github.com/uktrade/platform-tools/commit/f3ea681742706b0f2751e6478d4fd0f19ee560b1))
+* Bump slack-sdk from 3.41.0 to 3.42.0 ([#1532](https://github.com/uktrade/platform-tools/issues/1532)) ([51b2441](https://github.com/uktrade/platform-tools/commit/51b2441de9b599b206511f31f8a02d784b7189dc))
+
 ## [15.33.0](https://github.com/uktrade/platform-tools/compare/15.32.0...15.33.0) (2026-06-25)
 
 
