@@ -944,3 +944,105 @@ run "test_non_scheduled_job_service_does_not_require_image_tag_variable" {
 
   expect_failures = [var.scheduled_job_image_tag]
 }
+
+
+override_data {
+  target = data.aws_acm_certificate.acm
+  values = {
+    status = "PENDING_VALIDATION"
+    arn    = "arn:aws:acm:eu-west-2:123456789012:certificate/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx"
+  }
+}
+
+override_data {
+  target = data.aws_lb.nlb
+  values = {
+    arn = "arn:aws:elasticloadbalancing:eu-west-2:123456789012:loadbalancer/net/demodjango-dev-nlb/xxxx"
+  }
+}
+
+run "internal_service" {
+  command = plan
+
+  variables {
+    service_config = {
+      name = "internal"
+      type = "Load Balanced Internal Service"
+
+      http = {
+        alias            = ["internal.dev.myapp.uktrade.digital"]
+        path             = "/"
+        target_container = "nginx"
+        healthcheck = {
+          path                = "/test"
+          port                = 8081
+          success_codes       = "200,302"
+          healthy_threshold   = 9
+          unhealthy_threshold = 9
+          interval            = "99"
+          timeout             = "99"
+          grace_period        = "99"
+        }
+      }
+
+      sidecars = {
+        nginx = {
+          port  = 443
+          image = "public.ecr.aws/example/nginx:latest"
+        }
+      }
+
+      image = {
+        location = "public.ecr.aws/example/app"
+        port     = 8080
+      }
+
+      cpu    = 256
+      memory = 512
+      count  = 1
+      exec   = true
+
+      network = {
+        connect = true
+        vpc = {
+          placement = "private"
+        }
+      }
+
+      storage = {
+        readonly_fs          = false
+        writable_directories = []
+      }
+
+      variables = {
+        LOG_LEVEL = "DEBUG"
+        DEBUG     = false
+        PORT      = 8080
+      }
+
+      secrets = {
+        DJANGO_SECRET_KEY = "/copilot/demodjango/dev/secrets/DJANGO_SECRET_KEY"
+      }
+    }
+  }
+
+  assert {
+    condition     = contains(aws_ecs_service.service["enabled"].load_balancer[*].container_port, 443)
+    error_message = "Should be: 443"
+  }
+
+  assert {
+    condition     = aws_lb_listener.nlb["internal.dev.myapp.uktrade.digital"].load_balancer_arn == "arn:aws:elasticloadbalancing:eu-west-2:123456789012:loadbalancer/net/demodjango-dev-nlb/xxxx"
+    error_message = "Should be: arn:aws:elasticloadbalancing:eu-west-2:123456789012:loadbalancer/net/demodjango-dev-nlb/xxxx"
+  }
+
+  assert {
+    condition     = aws_lb_listener.nlb["internal.dev.myapp.uktrade.digital"].certificate_arn == "arn:aws:acm:eu-west-2:123456789012:certificate/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx"
+    error_message = "Should be: arn:aws:acm:eu-west-2:123456789012:certificate/xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.nlb_to_ecs[0].protocol == "TLS"
+    error_message = "Should be: TLS"
+  }
+}

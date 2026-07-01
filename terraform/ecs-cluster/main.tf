@@ -53,6 +53,12 @@ data "aws_ssm_parameters_by_path" "vpc_peering" {
   recursive = true
 }
 
+data "aws_ssm_parameters_by_path" "privatelink_nlb" {
+  # Only keep the SG rules meant for this environment's security group
+  path      = "/platform/privatelink/${var.application}/${var.environment}/env-security-groups/rules"
+  recursive = true
+}
+
 resource "aws_security_group" "environment_security_group" {
   # checkov:skip=CKV_AWS_382: Required for general internet access
   # checkov:skip=CKV2_AWS_5: Not applicable
@@ -131,6 +137,17 @@ resource "aws_security_group" "environment_security_group" {
       from_port   = ingress.value.port
       to_port     = ingress.value.port
       cidr_blocks = [ingress.value.source-vpc-cidr]
+    }
+  }
+
+  dynamic "ingress" {
+    for_each = nonsensitive(local.privatelink_rules)
+    content {
+      description     = ingress.value.description
+      protocol        = ingress.value.protocol
+      from_port       = ingress.value.port
+      to_port         = ingress.value.port
+      security_groups = [ingress.value.source-sg]
     }
   }
 }

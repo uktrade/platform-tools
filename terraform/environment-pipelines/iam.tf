@@ -371,6 +371,15 @@ data "aws_iam_policy_document" "certificate" {
       "*"
     ]
   }
+
+  statement {
+    actions = [
+      "acm:GetCertificate"
+    ]
+    resources = [
+      "*"
+    ]
+  }
 }
 
 data "aws_iam_policy_document" "security_group" {
