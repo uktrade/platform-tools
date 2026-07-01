@@ -39,3 +39,8 @@ jobs:
 
       - name: docs
         run: poetry run pre-commit run docs --all-files --verbose
+
+      - name: diff
+        run: |
+          git status --short
+          git diff -- .
