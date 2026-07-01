@@ -41,6 +41,7 @@ jobs:
         run: poetry run pre-commit run docs --all-files --verbose
 
       - name: diff
+        if: always()
         run: |
           git status --short
           git diff -- .
