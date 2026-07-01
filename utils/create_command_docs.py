@@ -8,6 +8,7 @@ from typing import NamedTuple
 from typing import Optional
 
 import click
+from click.formatting import wrap_text
 
 from dbt_platform_helper.utils.template import setup_templates
 
@@ -87,7 +88,12 @@ def get_cmd_metadata(
 
     yield CommandMetadata(
         arguments=[param for param in params if param.param_type_name == "argument"],
-        description=cmd.help,
+        description=wrap_text(
+            cmd.help or "",
+            initial_indent="    ",
+            subsequent_indent="    ",
+            preserve_paragraphs=True,
+        ),
         help=cmd.get_help(context),
         name=command_name,
         options=[param for param in params if param.param_type_name == "option"],

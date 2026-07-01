@@ -574,14 +574,17 @@ platform-helper pipeline generate
     deployment pipelines.
 
     This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
-      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
-      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+    - Reads contents of `platform-config.yml/environment_pipelines`
+    configuration.   The `terraform/environment-
+    pipelines/<aws_account>/main.tf` file is generated using this
+    configuration.   The `main.tf` file is then used to generate Terraform for
+    creating an environment pipeline resource.
 
-    This command does the following in relation to the codebase pipelines:
-    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
-      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
-      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
+    This command does the following in relation to the codebase pipelines: -
+    Reads contents of `platform-config.yml/codebase_pipelines` configuration.
+    The `terraform/codebase-pipelines/main.tf.json` file is generated using
+    this configuration.   The `main.tf.json` file is then used to generate
+    Terraform for creating a codebase pipeline resource.
 
 ## Usage
 
@@ -628,8 +631,7 @@ platform-helper secrets (create|copy)
 
 [↩ Parent](#platform-helper-secrets)
 
-    Create a Parameter Store secret for all environments of an
-    application.
+    Create a Parameter Store secret for all environments of an application.
 
 ## Usage
 
@@ -698,7 +700,8 @@ platform-helper notify (environment-progress|post-message|add-comment)
 
 [↩ Parent](#platform-helper-notify)
 
-    Send environment progress notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.
+    Send environment progress notifications. This creates (or updates if
+    --slack-ref is provided) the top level message to the channel.
 
 ## Usage
 
@@ -734,7 +737,8 @@ platform-helper notify environment-progress <slack_channel_id> <slack_token>
 
 [↩ Parent](#platform-helper-notify)
 
-    Send Slack notifications. This creates (or updates if --slack-ref is provided) the top level message to the channel.
+    Send Slack notifications. This creates (or updates if --slack-ref is
+    provided) the top level message to the channel.
 
 ## Usage
 
