@@ -772,3 +772,23 @@ data "aws_iam_policy_document" "ec2_access" {
     ]
   }
 }
+
+resource "aws_iam_role_policy" "acm_access" {
+  name   = "acm-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.acm_access.json
+}
+
+data "aws_iam_policy_document" "acm_access" {
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "acm:ListCertificates"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+}
