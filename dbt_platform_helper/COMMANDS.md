@@ -269,8 +269,8 @@ platform-helper codebase deploy --app <application> --env <environment> --codeba
 
 [↩ Parent](#platform-helper)
 
-    Opens a shell for a given addon_name create a conduit connection to
-    interact with postgres, opensearch or redis.
+    Opens a shell for a given addon_name create a conduit connection to interact
+    with postgres, opensearch or redis.
 
 ## Usage
 
@@ -573,18 +573,17 @@ platform-helper pipeline generate
     Given a platform-config.yml file, generate environment and service
     deployment pipelines.
 
-    This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment_pipelines`
-    configuration.   The `terraform/environment-
-    pipelines/<aws_account>/main.tf` file is generated using this
-    configuration.   The `main.tf` file is then used to generate Terraform for
-    creating an environment pipeline resource.
+    This command does the following in relation to the environment pipelines: -
+    Reads contents of `platform-config.yml/environment_pipelines` configuration.
+    The `terraform/environment-pipelines/<aws_account>/main.tf` file is
+    generated using this configuration.   The `main.tf` file is then used to
+    generate Terraform for creating an environment pipeline resource.
 
     This command does the following in relation to the codebase pipelines: -
     Reads contents of `platform-config.yml/codebase_pipelines` configuration.
-    The `terraform/codebase-pipelines/main.tf.json` file is generated using
-    this configuration.   The `main.tf.json` file is then used to generate
-    Terraform for creating a codebase pipeline resource.
+    The `terraform/codebase-pipelines/main.tf.json` file is generated using this
+    configuration.   The `main.tf.json` file is then used to generate Terraform
+    for creating a codebase pipeline resource.
 
 ## Usage
 

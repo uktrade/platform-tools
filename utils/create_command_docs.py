@@ -90,6 +90,7 @@ def get_cmd_metadata(
         arguments=[param for param in params if param.param_type_name == "argument"],
         description=wrap_text(
             cmd.help or "",
+            width=80,
             initial_indent="    ",
             subsequent_indent="    ",
             preserve_paragraphs=True,
