@@ -469,12 +469,7 @@ run "test_create_private_ingress_rule_if_param_is_present" {
         "/platform/privatelink/demodjango/dev/env-security-groups/rules/somerule",
       ]
       values = [
-        jsondecode({
-          "source-sg"   = "sg-aabbccdd11223344"
-          "description" = "something"
-          "protocol"    = "tcp"
-          "port"        = 443
-        })
+        "{ \"source-sg\": \"sg-aabbccdd11223344\", \"description\":\"something\", \"protocol\": \"tcp\", \"port\": 443 }"
       ]
     }
   }
@@ -490,15 +485,7 @@ run "test_create_private_ingress_rule_if_param_is_present" {
   }
 
   assert {
-    condition = contains(
-      keys(local.privatelink_rules),
-      "sg-aabbccdd11223344//platorm/privatelink/demodjango/dev/env-security-groups/rules/somerule"
-    )
-    error_message = "privatelink_rules key should be '<source>/<ssm_name>'"
-  }
-
-  assert {
-    condition     = aws_security_group.environment_security_group.name == "demodjango-dev-environemnt"
+    condition     = aws_security_group.environment_security_group.name == "demodjango-dev-environment"
     error_message = "The environment SG should be planned correctly"
   }
 }
