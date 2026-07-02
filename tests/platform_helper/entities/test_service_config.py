@@ -374,7 +374,9 @@ def test_timeout_is_not_allowed_for_other_services(type):
         assert ServiceConfig.model_validate(service_config)
 
 
-@pytest.mark.parametrize("type", [("Load Balanced Web Service"), ("Backend Service")])
+@pytest.mark.parametrize(
+    "type", [("Load Balanced Web Service"), ("Backend Service"), ("Load Balanced Internal Service")]
+)
 def test_platform_is_not_allowed_for_other_services(type):
     service_config = {
         "name": "web",
@@ -395,3 +397,21 @@ def test_platform_is_not_allowed_for_other_services(type):
         PlatformException, match=f"'platform' is not allowed for service type == {type}"
     ):
         assert ServiceConfig.model_validate(service_config)
+
+
+def test_internal_service_requires_exactly_one_alias():
+    service_config = {
+        "name": "web",
+        "type": "Load Balanced Internal Service",
+        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
+        "cpu": 256,
+        "memory": 512,
+        "count": 1,
+        "http": {"target_container": "nginx", "path": "/", "alias": ["one", "two"]},
+    }
+
+    with pytest.raises(
+        PlatformException,
+        match="'http.alias' must contain exeactly 1 entry when service type == Load Balanced Internal Service",
+    ):
+        ServiceConfig.model_validate(service_config)

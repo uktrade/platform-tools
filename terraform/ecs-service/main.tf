@@ -499,6 +499,7 @@ module "scheduling" {
 }
 
 data "aws_acm_certificate" "acm" {
+  # This list should always be of length 1 due to the validation on the http alias 
   for_each = toset(local.internal_service_required == 1 ? var.service_config.http.alias : [])
 
   domain   = each.value

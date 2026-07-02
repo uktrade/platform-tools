@@ -399,6 +399,20 @@ class ServiceConfig(BaseModel):
                 )
         return self
 
+    @model_validator(mode="after")
+    def check_http_alias_for_internal_service(self):
+        if self.type == ServiceType.LOAD_BALANCED_INTERNAL_SERVICE:
+            if self.http is None:
+                raise PlatformException(
+                    f"A 'http' block must be provided when service type == {self.type.value}"
+                )
+            alias_count = len(self.http.alias or [])
+            if alias_count != 1:
+                raise PlatformException(
+                    f"'http.alias' must contain exeactly 1 entry when service type == {self.type.value}"
+                )
+        return self
+
     schedule: Optional[str] = Field(
         default=None,
         description="Set schedule for Scheduled Job (e.g. 'none', 'rate(5 minutes)', '5 * * * ?').",
