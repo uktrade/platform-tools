@@ -20,7 +20,7 @@ from tests.platform_helper.conftest import INPUT_DATA_DIR
 
 @pytest.mark.parametrize(
     "input_data",
-    ["minimal-service-config.yml"],
+    ["minimal-service-config.yml", "internal-minimal-service-config.yml"],
 )
 def test_service_config(fakefs, input_data):
 
