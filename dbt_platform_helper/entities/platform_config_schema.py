@@ -149,7 +149,7 @@ class PlatformConfigSchema:
                 Optional("pipeline_mode"): str,
                 Optional("additional_ecr_repository"): str,
                 Optional("deploy_repository_branch"): str,
-                "services": [{str: [str]}],
+                Optional("services"): [{str: [str]}],
                 Optional("pipelines"): [
                     Or(
                         {
