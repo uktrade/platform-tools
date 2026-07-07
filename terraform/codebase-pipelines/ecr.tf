@@ -25,11 +25,7 @@ data "aws_iam_policy_document" "ecr_policy" {
     actions = [
       "ecr:BatchCheckLayerAvailability",
       "ecr:BatchGetImage",
-      "ecr:CompleteLayerUpload",
       "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
     ]
 
     principals {
@@ -37,6 +33,65 @@ data "aws_iam_policy_document" "ecr_policy" {
       identifiers = [
         for id in local.deploy_account_ids :
         "arn:aws:iam::${id}:root"
+      ]
+    }
+  }
+
+  statement {
+    effect = "Allow"
+    sid    = "allowECRAuthentication"
+    actions = [
+      "ecr:GetAuthorizationToken"
+    ]
+    resources = "*"
+  }
+
+  statement {
+    sid    = "AllowImagePull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:GetDownloadUrlForLayer"
+    ]
+    resources = [
+      "arn:aws:ecr:eu-west-2:${id}:repository/${locals.ecr_name}",
+    ]
+  }
+
+  statement {
+    sid    = "AllowSignatureRevokeCheck"
+    effect = "Allow"
+    actions = [
+      "signer:GetRevocationStatus"
+    ]
+    resources = [
+      "*"
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+    sid    = "PushActions"
+
+    actions = [
+      "ecr:CompleteLayerUpload",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "StringLike"
+      variable = "aws:PrincipalArn"
+      values = [
+        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+        "arn:aws:iam::${id}:role/GithubActionsRole" #Replace me once you know the role it should be!
       ]
     }
   }
