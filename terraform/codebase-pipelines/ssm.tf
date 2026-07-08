@@ -10,6 +10,7 @@ resource "aws_ssm_parameter" "codebase_config" {
     "deploy_repository_branch" : var.deploy_repository_branch,
     "additional_ecr_repository" : var.additional_ecr_repository,
     "slack_channel" : var.slack_channel,
+    "pipeline_mode" : var.pipeline_mode,
     "requires_image_build" : var.requires_image_build,
     "services" : var.services,
     "pipelines" : var.pipelines
