@@ -183,11 +183,11 @@ locals {
         }]
       )])
     }
-    if local.codepipeline_enabled
+    if local.codepipeline_enabled && var.services != null
   }
 
   manual_pipeline_actions_map = concat(
-    local.has_custom_pre_deploy ? [{
+    local.codepipeline_enabled && var.services != null && local.has_custom_pre_deploy ? [{
       name : "custom-pre-deploy",
       order : 1,
       configuration = {
@@ -235,8 +235,9 @@ locals {
           ]))
         }
       }] : [],
-    )]),
-    local.platform_deployment_enabled ? [{
+      ) if local.codepipeline_enabled && var.services != null
+    ]),
+    local.codepipeline_enabled && var.services != null && local.platform_deployment_enabled ? [{
       name : "update-alb-rules",
       order : max([for svc in local.service_order_list : svc.order]...) + 3,
       input_artifacts : ["tools_output"],
@@ -251,7 +252,7 @@ locals {
         ])
       }
     }] : [],
-    local.cache_invalidation_enabled ? [{
+    local.codepipeline_enabled && var.services != null && local.cache_invalidation_enabled ? [{
       name : "invalidate-cache",
       order : max([for svc in local.service_order_list : svc.order]...) + 3,
       configuration = {
@@ -263,7 +264,7 @@ locals {
         ])
       }
     }] : [],
-    local.has_custom_post_deploy ? [{
+    local.codepipeline_enabled && var.services != null && local.has_custom_post_deploy ? [{
       name : "custom-post-deploy",
       order : max([for svc in local.service_order_list : svc.order]...) + 4,
       configuration = {
@@ -281,11 +282,13 @@ locals {
     }
   })
 
-  services = sort(flatten([
-    for run_group in var.services : [for service in flatten(values(run_group)) : service]
-  ]))
+  services = local.codepipeline_enabled && var.services != null ? sort(flatten([
+    for run_group in var.services : [
+      for service in flatten(values(run_group)) : service
+    ]
+  ])) : []
 
-  service_order_list = flatten([
+  service_order_list = local.codepipeline_enabled && var.services != null ? flatten([
     for index, group in var.services : [
       for key, services in group : [
         for sorted_service in local.services : [
@@ -296,7 +299,7 @@ locals {
         ]
       ]
     ]
-  ])
+  ]) : []
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
   platform_deployment_enabled = local.codepipeline_enabled && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
