@@ -5,7 +5,7 @@ mkdir -p /root/.opensearch-cli/
 
 function decode_url() { : "${*//+/ }"; echo "${_//%/\\x}"; }
 
-echo $(decode_url "$CONNECTION_SECRET") | gawk '{
+decode_url "$CONNECTION_SECRET" | gawk '{
   match($0, /^https:\/\/([A-Za-z0-9_]+):([^@]+)@(.+)$/, arr);
   print "profiles:"
   print "    - name: connection"
@@ -30,7 +30,7 @@ while [ $CHECK_COUNT -lt $CHECK_NUMBER ]; do
   TASKS_RUNNING="$(ps -e -o pid,comm,args | awk '{if ($4 != "/entrypoint.sh" && $2 == "bash" && $3 == "bash") {print $1}}' | wc -l | xargs)"
 
   if [[ $TASKS_RUNNING == 0 ]]; then
-     CHECK_COUNT=$(( $CHECK_COUNT + 1 ))
+     CHECK_COUNT=$(( CHECK_COUNT + 1 ))
      TIME_TO_SHUTDOWN="$(( (CHECK_NUMBER - CHECK_COUNT) * CHECK_INTERVAL ))"
      echo "No clients connected, will shutdown in approximately $TIME_TO_SHUTDOWN seconds"
   else
@@ -38,10 +38,5 @@ while [ $CHECK_COUNT -lt $CHECK_NUMBER ]; do
      echo "$TASKS_RUNNING clients are connected"
   fi
 done
-
-# Trigger CloudFormation stack delete before shutting down
-if [[ ! -z $ECS_CONTAINER_METADATA_URI_V4 ]]; then
-  aws cloudformation delete-stack --stack-name task-$(curl $ECS_CONTAINER_METADATA_URI_V4 -s | jq -r ".Name")
-fi
 
 echo "Shutting down"

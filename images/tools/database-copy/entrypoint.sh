@@ -4,52 +4,52 @@ clean_up(){
   echo "Cleaning up dump file"
   rm "${DUMP_FILE_NAME}.sql"
   echo "Removing dump file from S3"
-  aws s3 rm s3://${S3_BUCKET_NAME}/"${DUMP_FILE_NAME}.sql"
+  aws s3 rm s3://"${S3_BUCKET_NAME}"/"${DUMP_FILE_NAME}.sql"
   exit_code=$?
-  if [ ${exit_code} -ne 0 ]
+  if [ "${exit_code}" -ne 0 ]
   then
     echo "Aborting data load: Clean up failed"
-    exit $exit_code
+    exit "${exit_code}"
   fi
 }
 
 handle_errors(){
   exit_code=$1
   message=$2
-  if [ ${exit_code} -ne 0 ]
+  if [ "${exit_code}" -ne 0 ]
   then
     clean_up
     echo "Aborting data load: {$message}"
-    exit $exit_code    
+    exit "${exit_code}"
   fi
 }
 
 echo "Detecting postgres version"
-PG_VERSION="$(psql "$DB_CONNECTION_STRING" -c "SELECT version();" | grep "PostgreSQL" | awk '{print $2;}' | awk -F"." '{print $1}')"
-if [ -z "$PG_VERSION" ]; then
+PG_VERSION="$(psql "${DB_CONNECTION_STRING}" -c "SELECT version();" | grep "PostgreSQL" | awk '{print $2;}' | awk -F"." '{print $1}')"
+if [ -z "${PG_VERSION}" ]; then
   PG_VERSION="17"
 fi
-echo "Detected postgres version $PG_VERSION"
+echo "Detected postgres version ${}PG_VERSION}"
 
 if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
   echo "Starting data dump"
-  /usr/lib/postgresql/$PG_VERSION/bin/pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > "${DUMP_FILE_NAME}.sql"
+  /usr/lib/postgresql/"${PG_VERSION}"/bin/pg_dump --no-owner --no-acl --format c "${DB_CONNECTION_STRING}" > "${DUMP_FILE_NAME}.sql"
   exit_code=$?
 
-  if [ ${exit_code} -ne 0 ]
+  if [ "${exit_code}" -ne 0 ]
   then
     echo "Aborting data dump"
-    exit $exit_code
+    exit "${exit_code}"
   fi
 
-  aws s3 cp "${DUMP_FILE_NAME}.sql" s3://${S3_BUCKET_NAME}/
+  aws s3 cp "${DUMP_FILE_NAME}.sql" s3://"${S3_BUCKET_NAME}"/
   exit_code=$?
 
-  if [ ${exit_code} -ne 0 ]
+  if [ "${exit_code}" -ne 0 ]
   then
     echo "Aborting data dump"
-    exit $exit_code
+    exit "${exit_code}"
   fi
 
   echo "Stopping data dump"
@@ -57,7 +57,7 @@ else
   echo "Starting data load"
 
   echo "Copying data dump from S3"
-  aws s3 cp s3://${S3_BUCKET_NAME}/"${DUMP_FILE_NAME}.sql" "${DUMP_FILE_NAME}.sql"
+  aws s3 cp s3://"${S3_BUCKET_NAME}"/"${DUMP_FILE_NAME}.sql" "${DUMP_FILE_NAME}.sql"
   
   handle_errors $? "Copy failed"
 
@@ -76,7 +76,7 @@ else
     CONFIG_FILE="${SERVICE_NAME}.desired_count"
     echo "${COUNT}" > "${CONFIG_FILE}"
 
-    echo ${SERVICE_NAME}
+    echo "${SERVICE_NAME}"
     UPDATE_DATA=$(aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count 0)
     handle_errors $? "Failed to update service ${SERVICE_NAME}"
     echo "${UPDATE_DATA}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
@@ -84,12 +84,12 @@ else
   done
 
   echo "Clearing down the database prior to loading new data"
-  /usr/lib/postgresql/$PG_VERSION/bin/psql "${DB_CONNECTION_STRING}" -f /clear_db.sql
+  /usr/lib/postgresql/"${PG_VERSION}"/bin/psql "${DB_CONNECTION_STRING}" -f /clear_db.sql
 
   handle_errors $? "Clear down failed"
   
   echo "Restoring data from dump file"
-  /usr/lib/postgresql/$PG_VERSION/bin/pg_restore --format c --dbname "${DB_CONNECTION_STRING}" "${DUMP_FILE_NAME}.sql"
+  /usr/lib/postgresql/"${PG_VERSION}"/bin/pg_restore --format c --dbname "${DB_CONNECTION_STRING}" "${DUMP_FILE_NAME}.sql"
   
   handle_errors $? "Restore failed"
   for service in ${SERVICES}
@@ -98,7 +98,7 @@ else
     COUNT=$(cat "${CONFIG_FILE}")
     SERVICE_NAME=$(basename "${service}")
     echo "Scaling up services"
-    echo ${SERVICE_NAME}
+    echo "${SERVICE_NAME}"
     UPDATE_DATA=$(aws ecs update-service --cluster "${ECS_CLUSTER}" --service "${service}" --desired-count "${COUNT}")
     handle_errors $? "Failed to update service ${SERVICE_NAME}"
     echo "${UPDATE_DATA}" | jq -r '"  Desired Count: \(.service.desiredCount)\n  Running Count: \(.service.runningCount)"'
