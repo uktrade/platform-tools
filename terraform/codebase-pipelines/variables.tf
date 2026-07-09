@@ -74,7 +74,14 @@ variable "pipelines" {
 }
 
 variable "services" {
-  type = any
+  type     = any
+  nullable = true
+  default  = null
+
+  validation {
+    condition     = var.services != null || var.pipeline_mode == "github_actions"
+    error_message = "Unless pipeline_mode is set to 'github_actions', you must define either a list of services or a list of run groups, each containing a list of services."
+  }
 }
 
 variable "slack_channel" {
