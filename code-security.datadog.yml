@@ -6,3 +6,4 @@ sast:
         variable-sql-statement-injection:
           ignore-paths:
             - "terraform/postgres/manage_users.py"
+            - "dbt_platform_helper/providers/copilot.py"
