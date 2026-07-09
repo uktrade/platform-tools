@@ -91,7 +91,8 @@ data "aws_iam_policy_document" "ecr_policy" {
       variable = "aws:PrincipalArn"
       values = [
         "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        "arn:aws:iam::${id}:role/GithubActionsRole" #Replace me once you know the role it should be!
+        "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role",
+        "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
       ]
     }
   }
