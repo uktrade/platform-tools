@@ -29,7 +29,7 @@ PG_VERSION="$(psql "${DB_CONNECTION_STRING}" -c "SELECT version();" | grep "Post
 if [ -z "${PG_VERSION}" ]; then
   PG_VERSION="17"
 fi
-echo "Detected postgres version ${}PG_VERSION}"
+echo "Detected postgres version ${PG_VERSION}"
 
 if [ "${DATA_COPY_OPERATION:-DUMP}" != "LOAD" ]
 then
