@@ -392,10 +392,6 @@ class ServiceConfig(BaseModel):
                 raise PlatformException(
                     f"'timeout' is not allowed for service type == {self.type.value}"
                 )
-            if self.platform is not None:
-                raise PlatformException(
-                    f"'platform' is not allowed for service type == {self.type.value}"
-                )
         return self
 
     schedule: Optional[str] = Field(
@@ -409,7 +405,8 @@ class ServiceConfig(BaseModel):
         default=None, description="Set timeout for Scheduled Job in seconds (e.g. 300)."
     )
     platform: Optional[str] = Field(
-        default=None, description="Set platform for Scheduled Job (e.g. 'x86_64' or 'arm64')."
+        default="X86_64",
+        description="Set the CPU architecture that the container image was built for (e.g. 'X86_64' or 'ARM64').",
     )
     sidecars: Optional[dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()
