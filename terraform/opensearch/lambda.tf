@@ -120,6 +120,14 @@ resource "aws_lambda_function" "lambda" {
       name = local.name
     }
   )
+
+  depends_on = [
+    # When creating a Lambda function, AWS validates that the execution role
+    # has fundamental permissions like ec2:CreateNetworkInterface. So we need
+    # to ensure we've attached the policy to the role before trying to create
+    # the lambda.
+    aws_iam_role_policy.lambda-execution-role-policy,
+  ]
 }
 
 resource "aws_lambda_invocation" "create-users" {
