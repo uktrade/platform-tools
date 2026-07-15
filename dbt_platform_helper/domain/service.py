@@ -29,6 +29,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.autoscaling import AutoscalingProvider
 from dbt_platform_helper.providers.config import ConfigProvider
 from dbt_platform_helper.providers.config_validator import ConfigValidator
+from dbt_platform_helper.providers.ecr import ECRProvider
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.ecs import NoClusterException
 from dbt_platform_helper.providers.environment_variable import (
@@ -91,6 +92,7 @@ class ServiceManager:
         load_application=load_application,
         installed_version_provider: InstalledVersionProvider = InstalledVersionProvider(),
         ecs_provider: ECS = None,
+        ecr_provider: ECRProvider = ECRProvider(),
         s3_provider: S3Provider = None,
         logs_provider: LogsProvider = None,
         autoscaling_provider: AutoscalingProvider = None,
@@ -108,6 +110,7 @@ class ServiceManager:
         self.load_application = load_application
         self.installed_version_provider = installed_version_provider
         self.ecs_provider = ecs_provider
+        self.ecr_provider = ecr_provider
         self.s3_provider = s3_provider
         self.logs_provider = logs_provider
         self.autoscaling_provider = autoscaling_provider
@@ -581,6 +584,14 @@ class ServiceManager:
 
         task_definition = json.loads(s3_response)
 
+        # Resolve image digest from image uri, image_uri is pulled from the task definition.
+        image_digest = ""
+        for container in task_definition["containerDefinitions"]:
+            if container["name"] == service:
+                image_digest = self.ecr_provider.get_image_digest_for_uri(
+                    f"{container['image']}:{image_tag}"
+                )
+
         self.io.info(
             f"Deploying image tag '{image_tag}' to service '{ecs_service_name}' in environment '{environment}'.\n"
         )
@@ -590,6 +601,7 @@ class ServiceManager:
             environment=environment,
             service=service,
             image_tag=image_tag,
+            image_digest=image_digest,
             task_definition=task_definition,
         )
 
