@@ -436,7 +436,7 @@ def _client_error(operation="RegisterTaskDefinition"):
     )
 
 
-def test_register_task_definition_appends_image_tag():
+def test_register_task_definition_appends_image_digest():
     ecs_client = MagicMock()
     ssm_client = MagicMock()
     ecs_client.register_task_definition.return_value = {
@@ -462,13 +462,14 @@ def test_register_task_definition_appends_image_tag():
         service="web",
         task_definition=task_definition,
         image_tag="commit-abc123",
+        image_digest="sha256:123456",
     )
 
     assert arn == "arn:taskdef:123"
     # Image tag is appended for the main container but not for sidecars
     assert (
         task_definition["containerDefinitions"][0]["image"]
-        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web:commit-abc123"
+        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web@sha256:123456"
     )
     assert (
         task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
@@ -502,6 +503,7 @@ def test_register_task_definition_adds_docker_labels():
         service="web",
         task_definition=task_definition,
         image_tag="commit-abc123",
+        image_digest="sha256:123456",
     )
 
     assert task_definition["containerDefinitions"][0]["dockerLabels"] == {
@@ -535,6 +537,7 @@ def test_register_task_definition_raises_exception():
             service="web",
             task_definition=task_definition,
             image_tag="tag",
+            image_digest="sha256:123456",
         )
     assert "Error registering task definition" in str(e.value)
 
