@@ -13,11 +13,11 @@ resource "aws_codepipeline" "codebase_pipeline" {
   }
 
   artifact_store {
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
     type     = "S3"
 
     encryption_key {
-      id   = aws_kms_key.artifact_store_kms_key.arn
+      id   = aws_kms_key.artifact_store_kms_key[""].arn
       type = "KMS"
     }
   }
@@ -113,6 +113,7 @@ resource "aws_codepipeline" "codebase_pipeline" {
 
 
 resource "aws_codepipeline" "manual_release_pipeline" {
+  for_each       = toset(local.codepipeline_enabled ? [""] : [])
   name           = "${var.application}-${var.codebase}-manual-release"
   role_arn       = aws_iam_role.codebase_deploy_pipeline.arn
   pipeline_type  = "V2"
@@ -131,11 +132,11 @@ resource "aws_codepipeline" "manual_release_pipeline" {
   }
 
   artifact_store {
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
     type     = "S3"
 
     encryption_key {
-      id   = aws_kms_key.artifact_store_kms_key.arn
+      id   = aws_kms_key.artifact_store_kms_key[""].arn
       type = "KMS"
     }
   }
@@ -220,4 +221,9 @@ resource "aws_codepipeline" "manual_release_pipeline" {
       platform-version = var.platform_tools_version
     }
   )
+}
+
+moved {
+  from = aws_codepipeline.manual_release_pipeline
+  to   = aws_codepipeline.manual_release_pipeline[""]
 }

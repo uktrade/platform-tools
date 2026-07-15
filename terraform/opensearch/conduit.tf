@@ -148,7 +148,12 @@ resource "aws_cloudwatch_log_group" "conduit-logs" {
   retention_in_days = 7
   tags              = local.tags
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
-
+  depends_on = [
+    # When creating a log group, AWS validates that the referenced KMS key's
+    # IAM policy allows it to be used by CloudWatch. So we need to ensure we've
+    # attached the policy to the key before trying to create the log group.
+    aws_kms_key_policy.opensearch_to_cloudwatch,
+  ]
 }
 
 resource "aws_cloudwatch_log_subscription_filter" "conduit-logs-filter" {

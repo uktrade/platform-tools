@@ -62,7 +62,7 @@ resource "aws_codebuild_project" "codebase_image_build" {
 
     environment_variable {
       name  = "NOTIFICATIONS_ENABLED"
-      value = !var.use_github_actions
+      value = !local.github_actions_enabled
     }
   }
 
@@ -114,7 +114,7 @@ resource "aws_cloudwatch_log_stream" "codebase_image_build" {
 }
 
 resource "aws_codebuild_webhook" "codebuild_webhook" {
-  for_each     = toset(var.requires_image_build && !var.use_github_actions ? [""] : [])
+  for_each     = toset(var.requires_image_build && !local.github_actions_enabled ? [""] : [])
   project_name = aws_codebuild_project.codebase_image_build[""].name
   build_type   = "BUILD"
 
@@ -155,7 +155,7 @@ resource "aws_codebuild_project" "codebase_install_tools" {
   description    = "Installs shared build tools for reuse across stages"
   build_timeout  = 5
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -163,7 +163,7 @@ resource "aws_codebuild_project" "codebase_install_tools" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -214,7 +214,7 @@ resource "aws_codebuild_project" "codebase_service_terraform" {
   description    = "Apply Terraform infrastructure for services"
   build_timeout  = 30
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -222,7 +222,7 @@ resource "aws_codebuild_project" "codebase_service_terraform" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -273,7 +273,7 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
   description    = "Perform ALB traffic switch per environment"
   build_timeout  = 30
   service_role   = aws_iam_role.update_alb_rules.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -281,7 +281,7 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -299,8 +299,8 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 
   logs_config {
     cloudwatch_logs {
-      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules.name
-      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules.name
+      group_name  = aws_cloudwatch_log_group.codebase_update_alb_rules[""].name
+      stream_name = aws_cloudwatch_log_stream.codebase_update_alb_rules[""].name
     }
   }
 
@@ -315,13 +315,15 @@ resource "aws_codebuild_project" "codebase_update_alb_rules" {
 resource "aws_cloudwatch_log_group" "codebase_update_alb_rules" {
   # checkov:skip=CKV_AWS_338:Retains logs for 3 months instead of 1 year
   # checkov:skip=CKV_AWS_158:Log groups encrypted using default encryption key instead of KMS CMK
+  for_each          = toset(local.codepipeline_enabled ? [""] : [])
   name              = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-group"
   retention_in_days = 90
 }
 
 resource "aws_cloudwatch_log_stream" "codebase_update_alb_rules" {
+  for_each       = toset(local.codepipeline_enabled ? [""] : [])
   name           = "codebuild/${var.application}-${var.codebase}-codebase-update-alb-rules/log-stream"
-  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules.name
+  log_group_name = aws_cloudwatch_log_group.codebase_update_alb_rules[""].name
 }
 
 resource "aws_codebuild_project" "invalidate_cache" {
@@ -330,7 +332,7 @@ resource "aws_codebuild_project" "invalidate_cache" {
   description    = "Invalidate the CDN cached paths"
   build_timeout  = 10
   service_role   = aws_iam_role.invalidate_cache[each.key].arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -338,7 +340,7 @@ resource "aws_codebuild_project" "invalidate_cache" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -388,7 +390,7 @@ resource "aws_codebuild_project" "codebase_deploy" {
   description    = "Deploy specified image tag to specified environment"
   build_timeout  = 30
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -396,7 +398,7 @@ resource "aws_codebuild_project" "codebase_deploy" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -456,7 +458,7 @@ resource "aws_codebuild_project" "codebase_deploy_platform" {
   description    = "Deploy specified image tag to specified environment"
   build_timeout  = 30
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -464,7 +466,7 @@ resource "aws_codebuild_project" "codebase_deploy_platform" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -515,7 +517,7 @@ resource "aws_codebuild_project" "codebase_service_terraform_plan" {
   description    = "Plan service terraform changes for approval"
   build_timeout  = 30
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -523,7 +525,7 @@ resource "aws_codebuild_project" "codebase_service_terraform_plan" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -582,4 +584,14 @@ moved {
 moved {
   from = aws_cloudwatch_log_stream.codebase_deploy
   to   = aws_cloudwatch_log_stream.codebase_deploy[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_group.codebase_update_alb_rules
+  to   = aws_cloudwatch_log_group.codebase_update_alb_rules[""]
+}
+
+moved {
+  from = aws_cloudwatch_log_stream.codebase_update_alb_rules
+  to   = aws_cloudwatch_log_stream.codebase_update_alb_rules[""]
 }

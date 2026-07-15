@@ -19,4 +19,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-config.json
           manifest-file: release-manifest.json
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7.0.0

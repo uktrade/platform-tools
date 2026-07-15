@@ -40,7 +40,7 @@ locals {
 
   environments_requiring_cache_invalidation = distinct([for d in try(values(var.cache_invalidation.domains), []) : d.environment])
 
-  cache_invalidation_enabled = length(local.environments_requiring_cache_invalidation) > 0
+  cache_invalidation_enabled = local.codepipeline_enabled && length(local.environments_requiring_cache_invalidation) > 0
 
   default_variables = [
     { name : "APPLICATION", value : var.application },
@@ -183,10 +183,11 @@ locals {
         }]
       )])
     }
+    if local.codepipeline_enabled && var.services != null
   }
 
   manual_pipeline_actions_map = concat(
-    local.has_custom_pre_deploy ? [{
+    local.codepipeline_enabled && var.services != null && local.has_custom_pre_deploy ? [{
       name : "custom-pre-deploy",
       order : 1,
       configuration = {
@@ -234,8 +235,9 @@ locals {
           ]))
         }
       }] : [],
-    )]),
-    local.platform_deployment_enabled ? [{
+      ) if local.codepipeline_enabled && var.services != null
+    ]),
+    local.codepipeline_enabled && var.services != null && local.platform_deployment_enabled ? [{
       name : "update-alb-rules",
       order : max([for svc in local.service_order_list : svc.order]...) + 3,
       input_artifacts : ["tools_output"],
@@ -250,7 +252,7 @@ locals {
         ])
       }
     }] : [],
-    local.cache_invalidation_enabled ? [{
+    local.codepipeline_enabled && var.services != null && local.cache_invalidation_enabled ? [{
       name : "invalidate-cache",
       order : max([for svc in local.service_order_list : svc.order]...) + 3,
       configuration = {
@@ -262,7 +264,7 @@ locals {
         ])
       }
     }] : [],
-    local.has_custom_post_deploy ? [{
+    local.codepipeline_enabled && var.services != null && local.has_custom_post_deploy ? [{
       name : "custom-post-deploy",
       order : max([for svc in local.service_order_list : svc.order]...) + 4,
       configuration = {
@@ -280,11 +282,13 @@ locals {
     }
   })
 
-  services = sort(flatten([
-    for run_group in var.services : [for service in flatten(values(run_group)) : service]
-  ]))
+  services = local.codepipeline_enabled && var.services != null ? sort(flatten([
+    for run_group in var.services : [
+      for service in flatten(values(run_group)) : service
+    ]
+  ])) : []
 
-  service_order_list = flatten([
+  service_order_list = local.codepipeline_enabled && var.services != null ? flatten([
     for index, group in var.services : [
       for key, services in group : [
         for sorted_service in local.services : [
@@ -295,15 +299,20 @@ locals {
         ]
       ]
     ]
-  ])
+  ]) : []
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'copilot'
-  platform_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
+  platform_deployment_enabled = local.codepipeline_enabled && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "copilot"])
 
   # Set to true if any environment contains a service-deployment-mode whose value is not 'platform'
-  copilot_deployment_enabled = anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
+  copilot_deployment_enabled = local.codepipeline_enabled && anytrue([for env in local.base_env_config : true if env.service_deployment_mode != "platform"])
 
   # Determine if a custom pre-deploy and post-deploy steps are required
   has_custom_pre_deploy  = var.has_custom_pre_deploy ? true : fileexists("${path.root}/../../custom-build/pre-deploy.sh")
   has_custom_post_deploy = var.has_custom_post_deploy ? true : fileexists("${path.root}/../../custom-build/post-deploy.sh")
+
+  # TODO - https://uktrade.atlassian.net/browse/DBTP-3132 to look into disabling AWS CodePipeline when custom pre/post deploy actions are present
+  codepipeline_enabled     = contains(["aws_codepipeline", "dual_codepipeline_github"], var.pipeline_mode) || local.has_custom_pre_deploy || local.has_custom_post_deploy
+  github_actions_enabled   = contains(["dual_codepipeline_github", "github_actions"], var.pipeline_mode)
+  artifact_bucket_required = local.codepipeline_enabled || local.cache_invalidation_enabled || local.has_custom_pre_deploy || local.has_custom_post_deploy
 }

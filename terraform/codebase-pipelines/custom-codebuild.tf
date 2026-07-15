@@ -4,7 +4,7 @@ resource "aws_codebuild_project" "custom_pre_deploy" {
   description    = "Custom pre-deploy step for ${var.application} ${var.codebase}"
   build_timeout  = 10
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -12,7 +12,7 @@ resource "aws_codebuild_project" "custom_pre_deploy" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {
@@ -75,7 +75,7 @@ resource "aws_codebuild_project" "custom_post_deploy" {
   description    = "Custom post-deploy step for ${var.application} ${var.codebase}"
   build_timeout  = 10
   service_role   = aws_iam_role.codebase_deploy.arn
-  encryption_key = aws_kms_key.artifact_store_kms_key.arn
+  encryption_key = aws_kms_key.artifact_store_kms_key[""].arn
 
   artifacts {
     type = "CODEPIPELINE"
@@ -83,7 +83,7 @@ resource "aws_codebuild_project" "custom_post_deploy" {
 
   cache {
     type     = "S3"
-    location = aws_s3_bucket.artifact_store.bucket
+    location = aws_s3_bucket.artifact_store[""].bucket
   }
 
   environment {

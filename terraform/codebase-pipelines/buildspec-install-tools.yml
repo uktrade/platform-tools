@@ -4,7 +4,7 @@ env:
   parameter-store:
     SLACK_TOKEN: /codebuild/slack_oauth_token
   variables:
-    TERRAFORM_VERSION: 1.12.2
+    TERRAFORM_VERSION: 1.15.7
   exported-variables:
     - SLACK_REF
 

@@ -425,47 +425,47 @@ run "test_artifact_store" {
   command = plan
 
   assert {
-    condition     = aws_s3_bucket.artifact_store.bucket == "my-app-my-codebase-cb-arts"
+    condition     = aws_s3_bucket.artifact_store[""].bucket == "my-app-my-codebase-cb-arts"
     error_message = "Should be: my-app-my-codebase-cb-arts"
   }
   assert {
-    condition     = aws_kms_alias.artifact_store_kms_alias.name == "alias/my-app-my-codebase-cb-arts-key"
+    condition     = aws_kms_alias.artifact_store_kms_alias[""].name == "alias/my-app-my-codebase-cb-arts-key"
     error_message = "Should be: alias/my-app-my-codebase-cb-arts-key"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].condition : el.variable][0] == "aws:SecureTransport"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[0].condition : el.variable][0] == "aws:SecureTransport"
     error_message = "Should be: aws:SecureTransport"
   }
   assert {
-    condition     = data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].effect == "Deny"
+    condition     = data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[0].effect == "Deny"
     error_message = "Should be: Deny"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[0].actions : el][0] == "s3:*"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[0].actions : el][0] == "s3:*"
     error_message = "Should be: s3:*"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].principals : el.type][0] == "AWS"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].principals : el.type][0] == "AWS"
     error_message = "Should be: AWS"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
+    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
     error_message = "Bucket policy principals incorrect"
   }
   assert {
-    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.test]) == "ArnLike"
+    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].condition : el.test]) == "ArnLike"
     error_message = "Bucket policy condition incorrect"
   }
   assert {
-    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.variable]) == "aws:PrincipalArn"
+    condition     = one([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].condition : el.variable]) == "aws:PrincipalArn"
     error_message = "Bucket policy condition incorrect"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].condition : el.values]) == ["arn:aws:iam::000123456789:role/my-app-*-codebase-pipeline-deploy", "arn:aws:iam::123456789000:role/my-app-*-codebase-pipeline-deploy"]
+    condition     = flatten([for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].condition : el.values]) == ["arn:aws:iam::000123456789:role/my-app-*-codebase-pipeline-deploy", "arn:aws:iam::123456789000:role/my-app-*-codebase-pipeline-deploy"]
     error_message = "Bucket policy condition incorrect"
   }
   assert {
-    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy.statement[1].actions : el][0] == "s3:*"
+    condition     = [for el in data.aws_iam_policy_document.artifact_store_bucket_policy[""].statement[1].actions : el][0] == "s3:*"
     error_message = "Should be: s3:*"
   }
 }
@@ -658,7 +658,7 @@ run "test_additional_private_ecr_repository" {
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/repository-namespace/repository-name"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
@@ -709,23 +709,23 @@ run "test_custom_pre_deploy" {
   }
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-custom-pre-deploy"
     error_message = "Should be: my-app-my-codebase-custom-pre-deploy"
   }
 
   assert {
-    condition     = length(aws_codepipeline.manual_release_pipeline.stage[1].action) == 4
+    condition     = length(aws_codepipeline.manual_release_pipeline[""].stage[1].action) == 4
     error_message = "Should be: 4"
   }
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "custom-pre-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].name == "custom-pre-deploy"
     error_message = "Should be: custom-pre-deploy"
   }
 
   assert {
-    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
-    error_message = "Should be: 'run-scheduled-jobs'"
+    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "my-app-my-codebase-run-scheduled-jobs"
+    error_message = "Should be: 'my-app-my-codebase-run-scheduled-jobs'"
   }
 
   assert {
@@ -758,23 +758,23 @@ run "test_custom_post_deploy" {
   }
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[3].configuration.ProjectName == "my-app-my-codebase-custom-post-deploy"
     error_message = "Should be: my-app-my-codebase-custom-post-deploy"
   }
 
   assert {
-    condition     = length(aws_codepipeline.manual_release_pipeline.stage[1].action) == 4
+    condition     = length(aws_codepipeline.manual_release_pipeline[""].stage[1].action) == 4
     error_message = "Should be: 4"
   }
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[3].name == "custom-post-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[3].name == "custom-post-deploy"
     error_message = "Should be: custom-post-deploy"
   }
 
   assert {
-    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "run-scheduled-jobs"
-    error_message = "Should be: 'run-scheduled-jobs'"
+    condition     = aws_iam_policy.custom_codebuild_scheduled_job_permissions[""].name == "my-app-my-codebase-run-scheduled-jobs"
+    error_message = "Should be: 'my-app-my-codebase-run-scheduled-jobs'"
   }
 
   assert {
@@ -807,7 +807,7 @@ run "test_additional_ecr_repository_public" {
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "REPOSITORY_URL"]) == "public.ecr.aws/repository-namespace/repository-name"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
@@ -873,7 +873,7 @@ run "test_deploy_repository" {
   }
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.FullRepositoryId == "uktrade/application-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[0].action[0].configuration.FullRepositoryId == "uktrade/application-deploy"
     error_message = "Should be: uktrade/application-deploy"
   }
 }
@@ -891,7 +891,7 @@ run "test_deploy_repository_branch" {
   }
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.BranchName == "feature-branch"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[0].action[0].configuration.BranchName == "feature-branch"
     error_message = "Should be: feature-branch"
   }
 }
@@ -1847,143 +1847,143 @@ run "test_manual_release_pipeline" {
   command = plan
 
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.name == "my-app-my-codebase-manual-release"
+    condition     = aws_codepipeline.manual_release_pipeline[""].name == "my-app-my-codebase-manual-release"
     error_message = "Should be: 'my-app-my-codebase-manual-release'"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.variable[0].name == "IMAGE_TAG"
+    condition     = aws_codepipeline.manual_release_pipeline[""].variable[0].name == "IMAGE_TAG"
     error_message = "Should be: 'IMAGE_TAG'"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.variable[1].name == "ENVIRONMENT"
+    condition     = aws_codepipeline.manual_release_pipeline[""].variable[1].name == "ENVIRONMENT"
     error_message = "Should be: 'ENVIRONMENT'"
   }
   assert {
-    condition     = tolist(aws_codepipeline.manual_release_pipeline.artifact_store)[0].location == "my-app-my-codebase-cb-arts"
+    condition     = tolist(aws_codepipeline.manual_release_pipeline[""].artifact_store)[0].location == "my-app-my-codebase-cb-arts"
     error_message = "Should be: 'my-app-my-codebase-cb-arts'"
   }
   assert {
-    condition     = length(tolist(tolist(aws_codepipeline.manual_release_pipeline.artifact_store)[0].encryption_key)) == 1
+    condition     = length(tolist(tolist(aws_codepipeline.manual_release_pipeline[""].artifact_store)[0].encryption_key)) == 1
     error_message = "Should use encryption"
   }
   assert {
-    condition     = jsonencode(aws_codepipeline.manual_release_pipeline.tags) == jsonencode(var.expected_pipeline_tags)
+    condition     = jsonencode(aws_codepipeline.manual_release_pipeline[""].tags) == jsonencode(var.expected_pipeline_tags)
     error_message = "Should be: ${jsonencode(var.expected_pipeline_tags)}"
   }
   assert {
-    condition     = length(aws_codepipeline.manual_release_pipeline.stage) == 2
+    condition     = length(aws_codepipeline.manual_release_pipeline[""].stage) == 2
     error_message = "Should be: 2"
   }
 
   # Source stage
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].name == "Source"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[0].name == "Source"
     error_message = "Should be: Source"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.FullRepositoryId == "uktrade/my-app-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[0].action[0].configuration.FullRepositoryId == "uktrade/my-app-deploy"
     error_message = "Should be: uktrade/my-app-deploy"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.BranchName == "main"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[0].action[0].configuration.BranchName == "main"
     error_message = "Should be: main"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[0].action[0].configuration.ConnectionArn == "arn:aws:codeconnections:eu-west-2:aws:2"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[0].action[0].configuration.ConnectionArn == "arn:aws:codeconnections:eu-west-2:aws:2"
     error_message = "Should be: arn:aws:codeconnections:eu-west-2:aws:2"
   }
 
   # Deploy stage
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].name == "Deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].name == "Deploy"
     error_message = "Should be: Deploy"
   }
 
   # Deploy service-1 action
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].name == "copilot-deploy-service-1"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].name == "copilot-deploy-service-1"
     error_message = "Should be: copilot-deploy-service-1"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "APPLICATION"]) == "my-app"
     error_message = "APPLICATION environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "AWS_REGION"]) == "${data.aws_region.current.region}"
     error_message = "AWS_REGION environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "AWS_ACCOUNT_ID"]) == "${data.aws_caller_identity.current.account_id}"
     error_message = "AWS_ACCOUNT_ID environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "ENVIRONMENT"]) == "#{variables.ENVIRONMENT}"
     error_message = "ENVIRONMENT environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "IMAGE_TAG"]) == "#{variables.IMAGE_TAG}"
     error_message = "IMAGE_TAG environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "PIPELINE_EXECUTION_ID"]) == "#{codepipeline.PipelineExecutionId}"
     error_message = "PIPELINE_EXECUTION_ID environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "REPOSITORY_URL"]) == "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/my-app/my-codebase"
     error_message = "REPOSITORY_URL environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "SERVICE"]) == "service-1"
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.value if var.name == "SLACK_CHANNEL_ID"]) == "/fake/slack/channel"
     error_message = "SLACK_CHANNEL_ID environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[0].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].configuration.EnvironmentVariables) :
     var.type if var.name == "SLACK_CHANNEL_ID"]) == "PARAMETER_STORE"
     error_message = "SLACK_CHANNEL_ID environment variable type is incorrect"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[0].run_order == 3
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[0].run_order == 3
     error_message = "Run order incorrect"
   }
 
   # Deploy service-2 action
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].name == "copilot-deploy-service-2"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[1].name == "copilot-deploy-service-2"
     error_message = "Should be: copilot-deploy-service-2"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[1].configuration.ProjectName == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: my-app-my-codebase-codebase-deploy"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[1].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[1].configuration.EnvironmentVariables) :
     var.value if var.name == "ENVIRONMENT"]) == "#{variables.ENVIRONMENT}"
     error_message = "ENVIRONMENT environment variable incorrect"
   }
   assert {
-    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline.stage[1].action[1].configuration.EnvironmentVariables) :
+    condition = one([for var in jsondecode(aws_codepipeline.manual_release_pipeline[""].stage[1].action[1].configuration.EnvironmentVariables) :
     var.value if var.name == "SERVICE"]) == "service-2"
     error_message = "SERVICE environment variable incorrect"
   }
   assert {
-    condition     = aws_codepipeline.manual_release_pipeline.stage[1].action[1].run_order == 4
+    condition     = aws_codepipeline.manual_release_pipeline[""].stage[1].action[1].run_order == 4
     error_message = "Run order incorrect"
   }
 }
@@ -2625,7 +2625,7 @@ run "test_disable_codepipeline_triggers" {
   command = plan
 
   variables {
-    use_github_actions = true
+    pipeline_mode = "dual_codepipeline_github"
   }
 
   assert {
@@ -2642,5 +2642,185 @@ run "test_disable_codepipeline_triggers" {
   assert {
     condition     = aws_cloudwatch_event_rule.ecr_image_publish[0].state == "DISABLED"
     error_message = "Should be: 'DISABLED'"
+  }
+}
+
+run "test_disable_aws_codepipeline" {
+  command = plan
+
+  variables {
+    pipeline_mode = "github_actions"
+  }
+
+  override_data {
+    target = data.aws_iam_policy_document.access_artifact_store
+
+    values = {
+      json = <<-JSON
+      {
+        "Version": "2012-10-17",
+        "Statement": [
+          {
+            "Effect": "Allow",
+            "Action": [
+              "codebuild:BatchGetBuilds",
+              "codebuild:StartBuild"
+            ],
+            "Resource": "*"
+          }
+        ]
+      }
+      JSON
+    }
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.codebase_pipeline) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codepipeline.manual_release_pipeline) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.codebase_install_tools) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.codebase_install_tools) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_install_tools) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.codebase_service_terraform) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.codebase_service_terraform) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.codebase_update_alb_rules) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.codebase_update_alb_rules) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_update_alb_rules) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.invalidate_cache) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.invalidate_cache) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.invalidate_cache) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.codebase_deploy) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.codebase_deploy) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_deploy) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.codebase_deploy_platform) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.codebase_deploy_platform) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_deploy_platform) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_codebuild_project.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_group.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_event_target.codepipeline) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_iam_role.event_bridge_pipeline_trigger) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy.event_bridge_pipeline_trigger) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
+  }
+
+  assert {
+    condition     = length(aws_cloudwatch_log_stream.codebase_service_terraform_plan) == 0
+    error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 }
