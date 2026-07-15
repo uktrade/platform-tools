@@ -297,6 +297,10 @@ locals {
         cpu                     = tostring(var.service_config.cpu)
         memory                  = tostring(var.service_config.memory)
         pidMode                 = "task"
+        runtimePlatform = {
+          cpuArchitecture : local.cpu_architecture,
+          operatingSystemFamily : "LINUX"
+        }
         tags = [
           { "key" : "application", "value" : var.application },
           { "key" : "environment", "value" : var.environment },
