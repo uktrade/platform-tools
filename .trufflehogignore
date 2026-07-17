@@ -9,3 +9,4 @@ venv
 .env
 .zip
 CHANGELOG.md
+.tox
