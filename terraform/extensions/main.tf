@@ -169,9 +169,4 @@ data "aws_ssm_parameter" "log_destination_arn" {
   name = "/copilot/tools/central_log_groups"
 }
 
-module "privatelink-accept-certs" {
-  source = "../privatelink/accept-certificates"
 
-  application = var.args.application
-  environment = var.environment
-}
