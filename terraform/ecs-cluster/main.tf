@@ -164,7 +164,7 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
 # Loops through SSM params and accepts any pending certificates
 # Will apply nothing if nothing to issue
 module "privatelink-accept-certs" {
-  source = "../../privatelink/accept-certificates"
+  source = "../privatelink/accept-certificates"
 
   application = var.application
   environment = var.environment
