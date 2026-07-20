@@ -160,3 +160,13 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
   to_port                      = 443
   referenced_security_group_id = aws_security_group.environment_security_group.id
 }
+
+# Loops through SSM params and accepts any pending certificates
+# Will apply nothing if nothing to issue
+module "privatelink-accept-certs" {
+  source = "../../privatelink/accept-certificates"
+
+  application = var.application
+  environment = var.environment
+}
+
