@@ -522,7 +522,7 @@ resource "aws_lb_target_group" "nlb_to_ecs" {
   protocol             = "TLS"
   target_type          = "ip"
   vpc_id               = data.aws_vpc.vpc.id
-  deregistration_delay = 30
+  deregistration_delay = var.service_config.http.deregistration_delay
   tags                 = local.tags
 
   health_check {
