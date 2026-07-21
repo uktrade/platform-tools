@@ -21,6 +21,7 @@ resource "aws_scheduler_schedule" "this" {
 }
 
 resource "aws_security_group" "scheduled_job" {
+  # checkov:skip=CKV2_AWS_5: This security group is in fact referenced by the state machine definition, but checkov does not inspect it that deeply.
   name        = "${var.name}-scheduled-job"
   description = "SG for scheduled job ECS task"
   vpc_id      = var.vpc_id
