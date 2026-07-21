@@ -377,7 +377,7 @@ data "aws_iam_policy_document" "certificate" {
       "acm:GetCertificate"
     ]
     resources = [
-      "*"
+      "arn:aws:acm:${local.account_region}:certificate/*"
     ]
   }
 }
