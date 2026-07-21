@@ -74,7 +74,7 @@ phases:
       - local_version_tracker_path=../../../../platform-tools/terraform/version-tracker
       - TERRAFORM_MODULE_SOURCE_TYPE=OVERRIDE TERRAFORM_ECS_SERVICE_MODULE_SOURCE_OVERRIDE=${local_ecs_service_path} TERRAFORM_VERSION_TRACKER_MODULE_SOURCE_OVERRIDE=${local_version_tracker_path} platform-helper internal service generate --env "${ENVIRONMENT}" --name "${SERVICE}"
       - cd "${CODEBUILD_SRC_DIR}/terraform/services/${ENVIRONMENT}/${SERVICE}"
-      - terraform init
+      - terraform init --upgrade
       - terraform plan
 
       # Send notification for stage waiting approval

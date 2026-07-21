@@ -53,6 +53,12 @@ data "aws_ssm_parameters_by_path" "vpc_peering" {
   recursive = true
 }
 
+data "aws_ssm_parameters_by_path" "privatelink_nlb" {
+  # Only keep the SG rules meant for this environment's security group
+  path      = "/platform/privatelink/${var.application}/${var.environment}/env-security-groups/rules"
+  recursive = true
+}
+
 resource "aws_security_group" "environment_security_group" {
   # checkov:skip=CKV_AWS_382: Required for general internet access
   # checkov:skip=CKV2_AWS_5: Not applicable
@@ -133,6 +139,17 @@ resource "aws_security_group" "environment_security_group" {
       cidr_blocks = [ingress.value.source-vpc-cidr]
     }
   }
+
+  dynamic "ingress" {
+    for_each = nonsensitive(local.privatelink_rules)
+    content {
+      description     = ingress.value.description
+      protocol        = ingress.value.protocol
+      from_port       = ingress.value.port
+      to_port         = ingress.value.port
+      security_groups = [ingress.value.source-sg]
+    }
+  }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
@@ -143,3 +160,13 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
   to_port                      = 443
   referenced_security_group_id = aws_security_group.environment_security_group.id
 }
+
+# Loops through SSM params and accepts any pending certificates
+# Will apply nothing if nothing to issue
+module "privatelink-accept-certs" {
+  source = "../privatelink/accept-certificates"
+
+  application = var.application
+  environment = var.environment
+}
+
