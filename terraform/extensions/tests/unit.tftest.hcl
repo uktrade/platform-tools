@@ -377,6 +377,12 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.acm_access
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
 run "aws_ssm_parameter_unit_test" {
   command = plan
 
