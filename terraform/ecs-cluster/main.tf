@@ -142,5 +142,5 @@ resource "aws_vpc_security_group_ingress_rule" "vpc_endpoints" {
   from_port                    = 443
   to_port                      = 443
   referenced_security_group_id = aws_security_group.environment_security_group.id
-  description                  = "Allow HTTPS from ${var.application}-${var.environment}-environment SG"
+  description                  = "Allow HTTPS from ${aws_security_group.environment_security_group.name} SG"
 }
