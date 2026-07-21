@@ -124,7 +124,7 @@ resource "aws_acm_certificate" "acm" {
 }
 
 resource "aws_ssm_parameter" "cert_domain" {
-  # checkov:skip=CKV2_AWS_34: does not contain secret values
+  # checkov:skip=CKV2_AWS_34: Does not contain secret values
   name = "/platform/privatelink/${var.config.producer_application}/${var.config.producer_environment}/certificate-domains/${var.config.domain}"
   type = "String"
   value = jsonencode({
