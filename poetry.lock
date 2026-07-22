@@ -2258,23 +2258,19 @@ six = ">=1.5"
 
 [[package]]
 name = "python-discovery"
-version = "1.4.2"
+version = "1.5.0"
 description = "Python interpreter discovery"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "python_discovery-1.4.2-py3-none-any.whl", hash = "sha256:475803f53b7b2ed6e490e27373f9d8340f7d2eebf9acdaf645d7d714c97bb500"},
-    {file = "python_discovery-1.4.2.tar.gz", hash = "sha256:8f3746c4b4968d22afbb97d36e1a0e5b66e6c0f297290f2e95f05b9b8bf18690"},
+    {file = "python_discovery-1.5.0-py3-none-any.whl", hash = "sha256:70c4fc61b4e7404e44f01d6fc44a715c4d685ca6cea83d295922f05891877c98"},
+    {file = "python_discovery-1.5.0.tar.gz", hash = "sha256:3e014c6327154d3dda27939a9a0dc9c5c000439f1906d3f303b48f984bd2ecef"},
 ]
 
 [package.dependencies]
 filelock = ">=3.15.4"
 platformdirs = ">=4.3.6,<5"
-
-[package.extras]
-docs = ["furo (>=2025.12.19)", "sphinx (>=9.1)", "sphinx-autodoc-typehints (>=3.6.3)", "sphinxcontrib-mermaid (>=2)", "sphinxcontrib-towncrier (>=0.4)", "towncrier (>=25.8)"]
-testing = ["covdefaults (>=2.3)", "coverage (>=7.5.4)", "pytest (>=8.3.5)", "pytest-mock (>=3.14)", "setuptools (>=75.1)"]
 
 [[package]]
 name = "python-dotenv"
@@ -2910,14 +2906,14 @@ files = [
 
 [[package]]
 name = "tox"
-version = "4.56.1"
+version = "4.56.4"
 description = "tox is a generic virtualenv management and test command line tool"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "tox-4.56.1-py3-none-any.whl", hash = "sha256:4d06b925c4dd67872099b39c5a46fba79a2169c5f6e32060f95a8b1181f0ef55"},
-    {file = "tox-4.56.1.tar.gz", hash = "sha256:db1c2610802553189cf40de251661d066a635ee0ed9bf2a60093b5f1a7f36ef8"},
+    {file = "tox-4.56.4-py3-none-any.whl", hash = "sha256:53bac88382b9638a5ce40fbaddd6076e1c8f638751af7bf8e759392c953df2f0"},
+    {file = "tox-4.56.4.tar.gz", hash = "sha256:d49e371119ebfafb15054ad7ccff3d03027ccb65195fae3ac656b431b5524055"},
 ]
 
 [package.dependencies]
@@ -2928,7 +2924,7 @@ packaging = ">=26"
 platformdirs = ">=4.9.4"
 pluggy = ">=1.6"
 pyproject-api = ">=1.10"
-python-discovery = ">=1.2.2"
+python-discovery = ">=1.4.4"
 tomli = {version = ">=2.4", markers = "python_version < \"3.11\""}
 tomli-w = ">=1.2"
 typing-extensions = {version = ">=4.15", markers = "python_version < \"3.11\""}
