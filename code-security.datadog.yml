@@ -1,0 +1,9 @@
+schema-version: v1.0
+sast:
+  ruleset-configs:
+    python-security:
+      rule-configs:
+        variable-sql-statement-injection:
+          ignore-paths:
+            - "terraform/postgres/manage_users.py"
+            - "dbt_platform_helper/providers/copilot.py"

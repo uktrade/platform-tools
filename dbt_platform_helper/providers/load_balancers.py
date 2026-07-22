@@ -321,8 +321,11 @@ class LoadBalancerProvider:
         rule_name: str,
         priority: int,
         conditions: list,
-        additional_tags: list = [],
+        additional_tags=None,
     ):
+        if additional_tags is None:
+            additional_tags = []
+
         return self.create_rule(
             listener_arn=listener_arn,
             priority=priority,

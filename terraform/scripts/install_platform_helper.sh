@@ -4,7 +4,7 @@ echo -e "Installing dependencies"
 pip install poetry --quiet
 poetry install --quiet
 echo -e "\nBuild platform-helper\n"
-poetry build --no-interaction --format sdist --no-ansi --local-version ${PLATFORM_HELPER_VERSION} --quiet
+poetry build --no-interaction --format sdist --no-ansi --local-version "${PLATFORM_HELPER_VERSION}" --quiet
 echo -e "\nInstall platform-helper\n"
 most_recent_built_wheel_package=$(ls -t1 dist | grep ".whl" | head -1)
 pip install "dist/${most_recent_built_wheel_package}" --quiet
