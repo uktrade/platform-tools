@@ -62,7 +62,7 @@ resource "aws_codebuild_project" "codebase_image_build" {
 
     environment_variable {
       name  = "NOTIFICATIONS_ENABLED"
-      value = !local.github_actions_enabled
+      value = true
     }
   }
 

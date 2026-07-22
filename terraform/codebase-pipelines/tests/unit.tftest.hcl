@@ -2634,12 +2634,6 @@ run "test_disable_codepipeline_triggers" {
   }
 
   assert {
-    condition = one([for var in one(aws_codebuild_project.codebase_image_build[""].environment).environment_variable :
-    var.value if var.name == "NOTIFICATIONS_ENABLED"]) == "false"
-    error_message = "Should be: 'false'"
-  }
-
-  assert {
     condition     = aws_cloudwatch_event_rule.ecr_image_publish[0].state == "DISABLED"
     error_message = "Should be: 'DISABLED'"
   }
