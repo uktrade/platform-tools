@@ -17,6 +17,7 @@ data "aws_security_group" "env" {
 }
 
 resource "aws_lb" "nlb" {
+  # checkov:skip=CKV_AWS_91: work with SRE to set up logging for NLBs
   name                             = "${var.config.producer_application}-${var.config.producer_environment}-nlb"
   load_balancer_type               = "network"
   internal                         = true
@@ -75,6 +76,7 @@ resource "aws_security_group_rule" "nlb-allow-healthcheck-outbound-to-ecs" {
 
 
 resource "aws_ssm_parameter" "security_group_rules" {
+  # checkov:skip=CKV2_AWS_34: does not contain secret values
   for_each = {
     "ecs-allow-inbound-from-nlb" : {
       "port"           = 443
@@ -122,6 +124,7 @@ resource "aws_acm_certificate" "acm" {
 }
 
 resource "aws_ssm_parameter" "cert_domain" {
+  # checkov:skip=CKV2_AWS_34: Does not contain secret values
   name = "/platform/privatelink/${var.config.producer_application}/${var.config.producer_environment}/certificate-domains/${var.config.domain}"
   type = "String"
   value = jsonencode({
@@ -136,6 +139,7 @@ resource "aws_ssm_parameter" "cert_domain" {
 
 
 resource "aws_vpc_endpoint_service" "private_service" {
+  # checkov:skip=CKV_AWS_123: manual acceptance is done via SRE approving and applying terraform
   network_load_balancer_arns = [aws_lb.nlb.arn]
   acceptance_required        = false
 
