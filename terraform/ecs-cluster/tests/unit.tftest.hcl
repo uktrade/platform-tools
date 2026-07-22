@@ -423,3 +423,69 @@ run "test_create_vpc_peering_ingress_rule_if_param_is_present" {
     error_message = "Did not find the ingress rule properties expected."
   }
 }
+
+run "test_no_privatelink_params_empty_locals" {
+  command = plan
+
+  variables {
+    application = "demodjango"
+    environment = "dev"
+    vpc_name    = "terraform-tests-vpc"
+  }
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.privatelink_nlb
+
+    values = {
+      names  = []
+      values = []
+    }
+  }
+
+  assert {
+    condition     = length(local.privatelink_by_name) == 0
+    error_message = "privatelink_by_name should be empty when no SSM params are present"
+  }
+
+  assert {
+    condition     = length(local.privatelink_rules) == 0
+    error_message = "privatelink_rules should be empty when no SSM params are present"
+  }
+}
+run "test_create_private_ingress_rule_if_param_is_present" {
+  command = plan
+
+  variables {
+    application = "demodjango"
+    environment = "dev"
+    vpc_name    = "terraform-tests-vpc"
+  }
+
+  override_data {
+    target = data.aws_ssm_parameters_by_path.privatelink_nlb
+
+    values = {
+      names = [
+        "/platform/privatelink/demodjango/dev/env-security-groups/rules/somerule",
+      ]
+      values = [
+        "{ \"source-sg\": \"sg-aabbccdd11223344\", \"description\":\"something\", \"protocol\": \"tcp\", \"port\": 443 }"
+      ]
+    }
+  }
+
+  assert {
+    condition     = length(local.privatelink_by_name) == 1
+    error_message = "privatelink_by_name should have 1 entry"
+  }
+
+  assert {
+    condition     = length(local.privatelink_rules) == 1
+    error_message = "privatelink_rules should have 1 entry"
+  }
+
+  assert {
+    condition     = aws_security_group.environment_security_group.name == "demodjango-dev-environment"
+    error_message = "The environment SG should be planned correctly"
+  }
+}

@@ -342,13 +342,14 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 class ServiceType(str, Enum):
     BACKEND_SERVICE = "Backend Service"
     LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+    LOAD_BALANCED_INTERNAL_SERVICE = "Load Balanced Internal Service"
     SCHEDULED_JOB = "Scheduled Job"
 
 
 class ServiceConfig(BaseModel):
     name: str = Field(description="Service name.")
     type: ServiceType = Field(
-        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
+        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}', '{ServiceType.LOAD_BALANCED_INTERNAL_SERVICE.value}'"
     )
     http: Optional[Http] = Field(default=None)
 
@@ -395,6 +396,20 @@ class ServiceConfig(BaseModel):
             if self.platform is not None:
                 raise PlatformException(
                     f"'platform' is not allowed for service type == {self.type.value}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def check_http_alias_for_internal_service(self):
+        if self.type == ServiceType.LOAD_BALANCED_INTERNAL_SERVICE:
+            if self.http is None:
+                raise PlatformException(
+                    f"A 'http' block must be provided when service type == {self.type.value}"
+                )
+            alias_count = len(self.http.alias or [])
+            if alias_count != 1:
+                raise PlatformException(
+                    f"'http.alias' must contain exeactly 1 entry when service type == {self.type.value}"
                 )
         return self
 

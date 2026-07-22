@@ -94,15 +94,6 @@ resource "aws_security_group" "opensearch-security-group" {
     ]
   }
 
-  # ingress {
-  #   description = "Ingress from Lambda Functions to Secrets Manager"
-  #   from_port   = 443
-  #   to_port     = 443
-  #   protocol    = "tcp"
-
-  #   self = true
-  # }
-
   egress {
     description = "Allow traffic out on all ports"
     from_port   = 0
@@ -130,6 +121,7 @@ resource "random_password" "password" {
 }
 
 data "aws_iam_policy_document" "opensearch-policy" {
+  # checkov:skip=CKV_AWS_283: Without all opensearch integrations signing their requests we cannot restrict the calling principle
   statement {
     principals {
       type        = "*"
