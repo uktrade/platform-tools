@@ -77,6 +77,8 @@ resource "aws_iam_policy" "state_machine_policy" {
 }
 
 data "aws_iam_policy_document" "state_machine_permissions" {
+  # checkov:skip=CKV_AWS_111: Fix is tracked in DBTP-3234.
+  # checkov:skip=CKV_AWS_356: Fix is tracked in DBTP-3234.
 
   statement {
     effect = "Allow"
