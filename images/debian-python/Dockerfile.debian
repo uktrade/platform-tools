@@ -1,6 +1,6 @@
 FROM debian:bookworm-slim
 
-ARG PYTHON_VERSIONS="3.9 3.10 3.11 3.12 3.13"
+ARG PYTHON_VERSIONS="3.9 3.10 3.11 3.12 3.13 3.14"
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PYENV_ROOT="$HOME/.pyenv"
