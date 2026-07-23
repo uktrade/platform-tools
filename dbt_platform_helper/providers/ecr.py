@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 
 import botocore
@@ -72,6 +73,28 @@ class ECRProvider:
             else:
                 self.click_io.warn(NO_ASSOCIATED_COMMIT_TAG_WARNING.format(image_ref=image_ref))
                 return image_ref
+
+    def get_image_digest_for_uri(self, image_uri: str) -> str:
+        pattern = (
+            r"^(?P<account>\d+)\.dkr\.ecr\.(?P<region>[^.]+)\.amazonaws\.com/"
+            r"(?P<repository>.+):(?P<tag>[^:]+)$"
+        )
+
+        match = re.match(pattern, image_uri)
+
+        repository = match.group("repository")
+        tag = match.group("tag")
+
+        response = self._get_client().batch_get_image(
+            repositoryName=repository,
+            imageIds=[{"imageTag": tag}],
+        )
+
+        failures = response.get("failures", [])
+        if failures:
+            raise AWSException(f"Error for repo '{repository}' and image tag '{tag}': {failures}")
+
+        return response["images"][0]["imageId"]["imageDigest"]
 
     def _get_ecr_images(self, repository, image_ref, next_page_token):
         params = {"repositoryName": repository, "filter": {"tagStatus": "TAGGED"}}
