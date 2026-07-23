@@ -60,10 +60,10 @@ resource "aws_codebuild_project" "codebase_image_build" {
       }
     }
 
-    # Can be overridden as 'false' when an image build is triggered from GitHub Actions, since our GitHub workflows handle notifications differently
+    # Can be set to "false" for builds triggered by GitHub Actions, where notifications are handled by the GitHub workflow instead of CodeBuild
     environment_variable {
       name  = "NOTIFICATIONS_ENABLED"
-      value = true
+      value = "true"
     }
   }
 
