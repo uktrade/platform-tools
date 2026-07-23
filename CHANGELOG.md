@@ -1,5 +1,35 @@
 # Changelog
 
+## [15.34.0](https://github.com/uktrade/platform-tools/compare/15.33.0...15.34.0) (2026-07-23)
+
+
+### Features
+
+* Allow codebase pipelines without a list of services (DBTP-3184) ([#1547](https://github.com/uktrade/platform-tools/issues/1547)) ([96f2bba](https://github.com/uktrade/platform-tools/commit/96f2bba232fe8bb36608416a08a94e92eca1e18d))
+* Privatelink Producer module (DBTP-2925) ([#1524](https://github.com/uktrade/platform-tools/issues/1524)) ([1570c46](https://github.com/uktrade/platform-tools/commit/1570c46f27e1124d9160b1a0e18eb350f5e4f75b))
+* Privatelink Service Infra (DBTP-2925) ([#1525](https://github.com/uktrade/platform-tools/issues/1525)) ([d08539b](https://github.com/uktrade/platform-tools/commit/d08539b2ff5fd6cb6601fd97ae7197a3ede37fbd))
+* Support for custom autoscaling policies (DBTP-2907) ([#1572](https://github.com/uktrade/platform-tools/issues/1572)) ([57e8a0c](https://github.com/uktrade/platform-tools/commit/57e8a0c352c9b468268500ee26efc6794d168a5d))
+
+
+### Bug Fixes
+
+* Enable Paketo image build notifications by default (off-ticket) ([#1577](https://github.com/uktrade/platform-tools/issues/1577)) ([e543c0a](https://github.com/uktrade/platform-tools/commit/e543c0ad62c7ab6d4d1be155e56998e6ff42c9c5))
+* Fix CI failures (off-ticket) ([#1575](https://github.com/uktrade/platform-tools/issues/1575)) ([aa047e2](https://github.com/uktrade/platform-tools/commit/aa047e277c2565dd4c5c8c6e044d07bdcb07d97f))
+* Fix resource creation order when creating an opensearch extension (off-ticket) ([#1556](https://github.com/uktrade/platform-tools/issues/1556)) ([d92e90b](https://github.com/uktrade/platform-tools/commit/d92e90b5aff4f3f33ca130be3d1c012d36b3d0dc))
+* Missing dependency when provisioning service with request scaling (off-ticket) ([#1289](https://github.com/uktrade/platform-tools/issues/1289)) ([5a46937](https://github.com/uktrade/platform-tools/commit/5a46937c4f18c47b551d51475bc1bccd069716c1))
+
+
+### Dependencies
+
+* Bump click from 8.3.3 to 8.4.1 ([#1531](https://github.com/uktrade/platform-tools/issues/1531)) ([cb433ed](https://github.com/uktrade/platform-tools/commit/cb433eddc9017a7b72a0b47fe46d788c0db4795f))
+* Bump click from 8.4.1 to 8.4.2 ([#1543](https://github.com/uktrade/platform-tools/issues/1543)) ([d89077d](https://github.com/uktrade/platform-tools/commit/d89077db4536d2f6704e45651e2c549a0af4e0e3))
+* Bump datadog/datadog in /terraform/datadog ([#1522](https://github.com/uktrade/platform-tools/issues/1522)) ([9adc39d](https://github.com/uktrade/platform-tools/commit/9adc39d0aa13604a40f4b3d96f406d0182b53a8f))
+* Bump datadog/datadog in /terraform/datadog ([#1549](https://github.com/uktrade/platform-tools/issues/1549)) ([478c44c](https://github.com/uktrade/platform-tools/commit/478c44c05a38a7b006fec4c59d98af0b47822f69))
+* Bump prettytable from 3.17.0 to 3.18.0 ([#1537](https://github.com/uktrade/platform-tools/issues/1537)) ([5227003](https://github.com/uktrade/platform-tools/commit/52270035ff927f864db3950843bbb3f3f5e25905))
+* Bump requests from 2.33.1 to 2.34.2 ([#1538](https://github.com/uktrade/platform-tools/issues/1538)) ([f3ea681](https://github.com/uktrade/platform-tools/commit/f3ea681742706b0f2751e6478d4fd0f19ee560b1))
+* Bump slack-sdk from 3.41.0 to 3.42.0 ([#1532](https://github.com/uktrade/platform-tools/issues/1532)) ([51b2441](https://github.com/uktrade/platform-tools/commit/51b2441de9b599b206511f31f8a02d784b7189dc))
+* Bump slack-sdk from 3.42.0 to 3.43.0 ([#1550](https://github.com/uktrade/platform-tools/issues/1550)) ([853a27f](https://github.com/uktrade/platform-tools/commit/853a27ffac84d03704e547d0a73d637aceec9e98))
+
 ## [15.33.0](https://github.com/uktrade/platform-tools/compare/15.32.0...15.33.0) (2026-06-25)
 
 
