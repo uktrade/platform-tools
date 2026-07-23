@@ -173,6 +173,34 @@ def test_count_autoscaling_minimal(range_value):
     assert count.range == range_value
 
 
+def test_count_with_custom_autoscaling_policy():
+    count = Count.model_validate({"range": "2-5", "custom_policy": True})
+
+
+def test_setting_custom_policy_to_false_is_equivalent_to_not_setting_it_at_all():
+    with pytest.raises(
+        PlatformException, match="If autoscaling is enabled, you must define at least one metric"
+    ):
+        Count.model_validate({"range": "2-5", "custom_policy": False})
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        {"cpu_percentage": 60},
+        {"memory_percentage": 80},
+        {"requests_per_minute": 100},
+        {"schedules": [{"range": "2-5", "schedule": "0 06 ? * MON-FRI *"}]},
+    ],
+)
+def test_custom_policy_is_incompatible_with_platform_managed_policy(policy):
+    with pytest.raises(
+        PlatformException,
+        match="Custom autoscaling policies cannot be used together with platform-managed policies",
+    ):
+        Count.model_validate({"range": "2-5", "custom_policy": True, **policy})
+
+
 def test_count_autoscaling_all_the_things():
     count = Count.model_validate(
         {
