@@ -297,16 +297,29 @@ class Count(BaseModel):
         default=None,
         description="Scheduled scaling actions",
     )
+    custom_policy: Optional[bool] = Field(
+        default=False,
+        description="Set to true if autoscaling policy is not managed by the platform (i.e. it's defined in custom terraform).",
+    )
 
     @model_validator(mode="after")
     def at_least_one_autoscaling_metric(self):
-
-        if not any(
+        managed_policy = any(
             [self.cpu_percentage, self.memory_percentage, self.requests_per_minute, self.schedules]
-        ):
+        )
+
+        if managed_policy and self.custom_policy:
             raise PlatformException(
-                "If autoscaling is enabled, you must define at least one metric or a cron schedule: "
-                "cpu_percentage, memory_percentage, requests_per_minute, or cron."
+                "Custom autoscaling policies cannot be used together with "
+                "platform-managed policies (i.e. cpu_percentage, memory_percentage,"
+                "requests_per_minute or cron schedules)."
+            )
+
+        if not managed_policy and not self.custom_policy:
+            raise PlatformException(
+                "If autoscaling is enabled, you must define at least one metric "
+                "(cpu_percentage, memory_percentage, requests_per_minute), "
+                "or a cron schedule, or a custom policy."
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
@@ -342,13 +355,14 @@ class ServiceConfigEnvironmentOverride(BaseModel):
 class ServiceType(str, Enum):
     BACKEND_SERVICE = "Backend Service"
     LOAD_BALANCED_WEB_SERVICE = "Load Balanced Web Service"
+    LOAD_BALANCED_INTERNAL_SERVICE = "Load Balanced Internal Service"
     SCHEDULED_JOB = "Scheduled Job"
 
 
 class ServiceConfig(BaseModel):
     name: str = Field(description="Service name.")
     type: ServiceType = Field(
-        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}'"
+        description=f"Type of service. Must one one of: '{ServiceType.LOAD_BALANCED_WEB_SERVICE.value}', '{ServiceType.BACKEND_SERVICE.value}', '{ServiceType.LOAD_BALANCED_INTERNAL_SERVICE.value}'"
     )
     http: Optional[Http] = Field(default=None)
 
@@ -395,6 +409,20 @@ class ServiceConfig(BaseModel):
             if self.platform is not None:
                 raise PlatformException(
                     f"'platform' is not allowed for service type == {self.type.value}"
+                )
+        return self
+
+    @model_validator(mode="after")
+    def check_http_alias_for_internal_service(self):
+        if self.type == ServiceType.LOAD_BALANCED_INTERNAL_SERVICE:
+            if self.http is None:
+                raise PlatformException(
+                    f"A 'http' block must be provided when service type == {self.type.value}"
+                )
+            alias_count = len(self.http.alias or [])
+            if alias_count != 1:
+                raise PlatformException(
+                    f"'http.alias' must contain exeactly 1 entry when service type == {self.type.value}"
                 )
         return self
 

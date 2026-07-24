@@ -1,5 +1,6 @@
 ### Eventbridge
 resource "aws_scheduler_schedule" "this" {
+  # checkov:skip=CKV_AWS_297: Fix is tracked in DBTP-3234.
 
   schedule_expression = var.schedule == "none" ? "rate(5 minutes)" : local.schedule_expression
 
@@ -21,6 +22,7 @@ resource "aws_scheduler_schedule" "this" {
 }
 
 resource "aws_security_group" "scheduled_job" {
+  # checkov:skip=CKV2_AWS_5: This security group is in fact referenced by the state machine definition, but checkov does not inspect it that deeply.
   name        = "${var.name}-scheduled-job"
   description = "SG for scheduled job ECS task"
   vpc_id      = var.vpc_id
@@ -39,6 +41,7 @@ resource "aws_vpc_security_group_egress_rule" "scheduled_job_egress" {
 
 ### State Machine
 resource "aws_sfn_state_machine" "this" {
+  # checkov:skip=CKV_AWS_284: X-ray tracking not used on platform.
   name     = "${var.name}-sfn"
   role_arn = aws_iam_role.state_machine_role.arn
 
