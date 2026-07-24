@@ -22,4 +22,16 @@ locals {
     for name, value in local.vpc_peering_by_name :
     "${value.source-vpc-name}/${value.security-group-id}" => value
   }
+
+  privatelink_by_name = {
+    for name, value in zipmap(
+      data.aws_ssm_parameters_by_path.privatelink_nlb.names,
+      data.aws_ssm_parameters_by_path.privatelink_nlb.values
+    ) : name => jsondecode(value)
+  }
+
+  privatelink_rules = {
+    for name, value in local.privatelink_by_name :
+    "${value.source-sg}/${name}" => value
+  }
 }
