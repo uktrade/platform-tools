@@ -288,3 +288,18 @@ def test_get_commit_tag_for_reference_recasts_exceptions_as_more_specific_except
     expected_error = expected_message
 
     assert actual_error == expected_error
+
+
+def test_get_digest_success():
+
+    mocks = ECRProviderMocks()
+    mocks.client_mock.batch_get_image.return_value = {
+        "images": [{"imageId": {"imageDigest": "sha256:123456"}}]
+    }
+
+    ecr_provider = ECRProvider(**mocks.params())
+    digest = ecr_provider.get_image_digest_for_uri(
+        image_uri="563763463626.dkr.ecr.eu-west-2.amazonaws.com/some-app/web:latest"
+    )
+
+    assert digest == "sha256:123456"

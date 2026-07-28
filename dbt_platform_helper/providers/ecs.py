@@ -240,6 +240,7 @@ class ECS:
         environment: str,
         service: str,
         task_definition: dict,
+        image_digest: str,
         image_tag: Optional[str] = None,
     ) -> str:
         """Register a new task definition revision using provided model and
@@ -249,7 +250,7 @@ class ECS:
             if container["name"] == service:
 
                 # Append tag to the image URI
-                container["image"] = f"{container['image']}:{image_tag}"
+                container["image"] = f"{container['image']}@{image_digest}"
 
                 # Add DataDog Docker labels https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/?tab=ecs#partial-configuration
                 container["dockerLabels"] = {

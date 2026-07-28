@@ -207,6 +207,7 @@ def test_migrate_copilot_manifests_sets_depends_on_for_remaining_sidecars(copilo
 class ServiceManagerMocks:
     def __init__(self, app_name="myapp", env_name="dev", account_id="111122223333"):
         self.ecs_provider = Mock()
+        self.ecr_provider = Mock()
         self.s3_provider = Mock()
         self.logs_provider = Mock()
         self.autoscaling_provider = Mock()
@@ -222,6 +223,7 @@ class ServiceManagerMocks:
     def params(self):
         return dict(
             ecs_provider=self.ecs_provider,
+            ecr_provider=self.ecr_provider,
             load_application=self.load_application,
             s3_provider=self.s3_provider,
             logs_provider=self.logs_provider,
@@ -257,7 +259,10 @@ def test_service_deploy_success():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
+    mocks.ecr_provider.get_image_digest_for_uri.return_value = "sha256:123456"
+    mocks.s3_provider.get_object.return_value = json.dumps(
+        {"containerDefinitions": [{"name": "web", "image": "some-image"}]}
+    )
 
     mocks.ecs_provider.register_task_definition.return_value = (
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
@@ -298,7 +303,9 @@ def test_service_deploy_success():
     register_task_def_kwargs = mocks.ecs_provider.register_task_definition.call_args.kwargs
     assert register_task_def_kwargs["service"] == "web"
     assert register_task_def_kwargs["image_tag"] == "tag-123"
-    assert register_task_def_kwargs["task_definition"] == {"fakeTaskDefinition": "FAKE"}
+    assert register_task_def_kwargs["task_definition"] == {
+        "containerDefinitions": [{"name": "web", "image": "some-image"}]
+    }
 
     describe_autoscaling_target_kwargs = (
         mocks.autoscaling_provider.describe_autoscaling_target.call_args.kwargs
@@ -338,7 +345,9 @@ def test_service_deploy_exits_early_when_desired_count_zero():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
+    mocks.s3_provider.get_object.return_value = json.dumps(
+        {"containerDefinitions": [{"name": "web", "image": "some-image"}]}
+    )
     mocks.ecs_provider.register_task_definition.return_value = (
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
@@ -437,7 +446,9 @@ def test_service_deploy_failed(time_sleep):
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
 
-    mocks.s3_provider.get_object.return_value = json.dumps({"fakeTaskDefinition": "FAKE"})
+    mocks.s3_provider.get_object.return_value = json.dumps(
+        {"containerDefinitions": [{"name": "web", "image": "some-image"}]}
+    )
     mocks.ecs_provider.register_task_definition.return_value = (
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
