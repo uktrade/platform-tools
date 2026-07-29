@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.34.1](https://github.com/uktrade/platform-tools/compare/15.34.0...15.34.1) (2026-07-29)
+
+
+### Bug Fixes
+
+* Block v6.57.0 of terraform-provider-aws (off-ticket) ([#1589](https://github.com/uktrade/platform-tools/issues/1589)) ([c8883dd](https://github.com/uktrade/platform-tools/commit/c8883dddf50a24dcca2359e0afc43ae820575699))
+
 ## [15.34.0](https://github.com/uktrade/platform-tools/compare/15.33.0...15.34.0) (2026-07-28)
 
 
