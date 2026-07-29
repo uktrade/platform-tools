@@ -14,8 +14,8 @@ locals {
     copilot-environment = var.environment
   }
 
-  engine           = (var.config.engine == "7.1" || var.config.engine == "7.2") ? "valkey" : "redis"
-  engine_version   = (var.config.engine == "7.1" || var.config.engine == "7.2") ? "7.2" : var.config.engine
+  engine         = (var.config.engine == "7.1" || var.config.engine == "7.2") ? "valkey" : "redis"
+  engine_version = (var.config.engine == "7.1" || var.config.engine == "7.2") ? "7.2" : var.config.engine
 
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
