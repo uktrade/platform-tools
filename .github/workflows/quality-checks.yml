@@ -19,6 +19,8 @@ jobs:
           install: true
           cache: false
       - run: tflint --recursive -f compact
+        working-directory: terraform
+
 
   trufflehog:
     runs-on: ubuntu-latest
