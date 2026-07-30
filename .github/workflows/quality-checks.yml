@@ -28,8 +28,8 @@ jobs:
             exit 1
           elif [ "${EXIT_CODE}" -eq 2 ]; then
             echo "Terraform lint test was successful with warnings"
-          elif [ "${EXIT_CODE}" -eq 2 ]; then
-            echo "Terraform lint test was successful for the module $current_module"
+          elif [ "${EXIT_CODE}" -eq 0 ]; then
+            echo "Terraform lint test was successful"
           fi
           exit 0 
         working-directory: terraform
