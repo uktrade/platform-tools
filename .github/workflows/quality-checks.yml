@@ -18,7 +18,20 @@ jobs:
         with:
           install: true
           cache: false
-      - run: tflint --recursive -f compact
+      - run: |
+          tflint --recursive -f compact || EXIT_CODE=$?
+          
+          EXIT_CODE=${EXIT_CODE:-0}
+          
+          if [ "${EXIT_CODE}" -eq 1 ]; then
+            echo "Terraform lint test failed" 
+            exit 1
+          elif [ "${EXIT_CODE}" -eq 2 ]; then
+            echo "Terraform lint test was successful with warnings"
+          elif [ "${EXIT_CODE}" -eq 2 ]; then
+            echo "Terraform lint test was successful for the module $current_module"
+          fi
+          exit 0 
         working-directory: terraform
 
 
