@@ -52,7 +52,7 @@ resource "aws_lb" "this" {
     aws_security_group.alb-security-group["https"].id
   ]
   access_logs {
-    bucket  = var.environment == "prod" ? "dbt-access-logs-production" : "dbt-access-logs-non-production"
+    bucket  = var.environment == "prod" ? "dbt-access-logs-production" : "alb-access-logs-non-prod-812359060647-eu-west-2-an"
     prefix  = "${var.application}/${var.environment}"
     enabled = true
   }
