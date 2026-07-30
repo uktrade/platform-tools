@@ -4,4 +4,4 @@ terraform 1.15.8
 direnv 2.35.0
 checkov 3.2.257
 trufflehog 3.92.4
-tflint 0.52.0
+tflint 0.57.0
