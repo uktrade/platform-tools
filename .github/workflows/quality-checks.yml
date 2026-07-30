@@ -1,0 +1,89 @@
+name: quality-checks
+
+run-name: "@${{ github.actor }} is checking quality on ${{ github.ref_name }}"
+
+on:
+  push:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  tflint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d
+        with:
+          install: true
+          cache: false
+      - run: tflint --recursive -f compact
+
+  trufflehog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d
+        with:
+          install: true
+          cache: false
+      - run: trufflehog git --no-verification --exclude-paths=.trufflehogignore --only-verified file://.
+
+  terraform-fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d
+        with:
+          install: true
+          cache: false
+      - run: terraform fmt -recursive -check
+
+  enumerate-terraform-tests:
+    name: test/enumerate
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.find-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Find modules
+        id: find-modules
+        run: |
+          unit_test_files=$(find . -name "*tftest.hcl" | sort)
+          mods=""
+          IFS=$'\n'
+          for file in $unit_test_files
+          do
+            # Lose leading ./ and select the part before the tests directory
+            module=$(echo "${file#./}" | awk -F "/tests/" '{print $1}')
+            # In case we separate the test files, only include each module once
+            if [[ "\"${mods}\"" != *"\"${module}\""* ]]; then
+              echo "Found module ${module}"
+              mods+="\"${module}\","
+            fi
+          done
+          echo "modules=[${mods%,}]" >> "$GITHUB_OUTPUT"
+
+  terraform-tests:
+    name: test/${{ matrix.module }} tf-${{ matrix.terraform-version }}
+    runs-on: ubuntu-latest
+    needs: enumerate-terraform-tests
+    strategy:
+      matrix:
+        terraform-version:
+          - "1.14"
+          - "1.15"
+        module: ${{ fromJSON(needs.enumerate-terraform-tests.outputs.modules) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d
+        with:
+          install_args: terraform@${{ matrix.terraform-version }}
+      - run: terraform --version
+      - run: terraform init -backend=false
+        working-directory: ${{ matrix.module }}
+      - run: terraform test
+        working-directory: ${{ matrix.module }}
+
