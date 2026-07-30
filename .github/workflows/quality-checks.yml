@@ -41,6 +41,7 @@ jobs:
           install: true
           cache: false
       - run: terraform fmt -recursive -check
+        working-directory: terraform
 
   checkov:
     runs-on: ubuntu-latest
