@@ -43,6 +43,19 @@ jobs:
       - run: terraform fmt -recursive -check
         working-directory: terraform
 
+  terraform-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: jdx/mise-action@e6a8b3978addb5a52f2b4cd9d91eafa7f0ab959d
+        with:
+          install: true
+          cache: false
+      - run: terraform init -backend=false
+        working-directory: terraform/example
+      - run: terraform validate 
+        working-directory: terraform/example
+
   checkov:
     runs-on: ubuntu-latest
     steps:
@@ -52,6 +65,7 @@ jobs:
           install: true
           cache: false
       - run: checkov --directory terraform --baseline terraform/.checkov.baseline
+
   enumerate-terraform-tests:
     name: test/enumerate
     runs-on: ubuntu-latest
