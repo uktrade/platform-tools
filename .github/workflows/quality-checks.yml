@@ -62,7 +62,7 @@ jobs:
       - name: Find modules
         id: find-modules
         run: |
-          unit_test_files=$(find . -name "*tftest.hcl" | sort)
+          unit_test_files=$(find . -name "*tftest.hcl" | grep -v e2e-tests | sort)
           mods=""
           IFS=$'\n'
           for file in $unit_test_files
