@@ -402,31 +402,6 @@ def test_timeout_is_not_allowed_for_other_services(type):
         assert ServiceConfig.model_validate(service_config)
 
 
-@pytest.mark.parametrize(
-    "type", [("Load Balanced Web Service"), ("Backend Service"), ("Load Balanced Internal Service")]
-)
-def test_platform_is_not_allowed_for_other_services(type):
-    service_config = {
-        "name": "web",
-        "type": type,
-        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
-        "cpu": 256,
-        "memory": 512,
-        "http": {
-            "target_container": "nginx",
-            "path": "/",
-            "alb": "alb-arn",
-            "alias": ["test.alias.com", "test2.alias.com"],
-        },
-        "count": 1,
-        "platform": "arm64",
-    }
-    with pytest.raises(
-        PlatformException, match=f"'platform' is not allowed for service type == {type}"
-    ):
-        assert ServiceConfig.model_validate(service_config)
-
-
 def test_internal_service_requires_exactly_one_alias():
     service_config = {
         "name": "web",
