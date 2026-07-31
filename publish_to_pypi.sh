@@ -13,14 +13,13 @@ if ! python utils/check_pypi.py
 then
   echo Building Python package
   poetry build
-  echo Publishing Python package ${VERSION}
-  poetry config pypi-token.pypi ${PYPI_TOKEN}
+  echo Publishing Python package "${VERSION}"
+  poetry config pypi-token.pypi "${PYPI_TOKEN}"
   poetry publish
   echo Checking the package has reached PyPI
   python utils/check_pypi.py --max-attempts 20
   echo -e "\nSending slack notification"
-  VERSION_NUMBER=($VERSION)
-  poetry run python utils/notify/publish_notification.py --publish-version ${VERSION_NUMBER[1]}
+  poetry run python utils/notify/publish_notification.py --publish-version "${VERSION#* }"
 else
-  echo ${VERSION} of the package has already been published
+  echo "${VERSION}" of the package has already been published
 fi
