@@ -2,3 +2,6 @@ python 3.13.8 3.12.12 3.11.14 3.10.19
 nodejs 18.18.2
 terraform 1.15.8
 direnv 2.35.0
+checkov 3.2.257
+trufflehog 3.92.4
+tflint 0.57.0
