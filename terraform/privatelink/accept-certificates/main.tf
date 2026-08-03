@@ -15,11 +15,7 @@ data "aws_acm_certificate" "acm" {
 
 
 resource "aws_acm_certificate_validation" "private-cert-validation" {
-  for_each = {
-    for idx, cert in data.aws_acm_certificate.acm :
-    cert.domain => cert
-    if cert.status == "PENDING_VALIDATION"
-  }
+  for_each = nonsensitive(local.domain_map)
 
   certificate_arn = each.value.arn
 }
