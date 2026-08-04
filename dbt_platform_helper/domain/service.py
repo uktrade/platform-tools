@@ -600,7 +600,21 @@ class ServiceManager:
         autoscaling_response = self.autoscaling_provider.describe_autoscaling_target(
             cluster_name=cluster_name, ecs_service_name=ecs_service_name
         )
-        desired_count = autoscaling_response.get("MinCapacity", 1)
+        min_capacity = autoscaling_response.get("MinCapacity", 1)
+
+        response = client.describe_services(
+            cluster="string",
+            services=[
+                "string",
+            ],
+            include=[
+                "TAGS",
+            ],
+        )
+
+        current_desired_count = response.get["desiredCount"]
+
+        desired_count = max(current_desired_count, min_capacity)
 
         update_response = self.ecs_provider.update_service(
             service=service,
