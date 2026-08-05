@@ -42,7 +42,7 @@ Steps:
 1. Log into the `platform-sandbox` AWS account via the console
 2. Find the ECS task definition called `conduit-opensearch-read-demodjango-dev-demodjango-opensearch`. Could use an environment other than `dev` too
 3. Create a new revision and set the image tag in `containerDefinitions.image` as `opensearch-` follow by the output from `git rev-parse --short HEAD`
-4. Run `AWS_PROFILE=platform-sandbox platform-helper conduit demodjango-opensearch --app demodjango --env dev`
+4. Run `AWS_PROFILE=platform-sandbox platform-helper conduit demodjango-opensearch --app demodjango --env dev --access read`
 5. You will now be in a `opensearch-cli` session, run `curl get --path /_cat/health` to check current cluster health
 6. Enter `ctrl+c` to exit
 7. Once confirmed everything works, revert the task definition image tag back to `opensearch`

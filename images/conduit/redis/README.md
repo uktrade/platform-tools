@@ -42,7 +42,7 @@ Steps:
 1. Log into the `platform-sandbox` AWS account via the console
 2. Find the ECS task definition called `conduit-redis-read-demodjango-dev-demodjango-redis`. Could use an environment other than `dev` too
 3. Create a new revision and set the image tag in `containerDefinitions.image` as `redis-` follow by the output from `git rev-parse --short HEAD`
-4. Run `AWS_PROFILE=platform-sandbox platform-helper conduit demodjango-redis --app demodjango --env dev`
+4. Run `AWS_PROFILE=platform-sandbox platform-helper conduit demodjango-redis --app demodjango --env dev --access read`
 5. You will now be in a `redis-cli` session, run `CONFIG GET databases` to check available databases
 6. Enter `ctrl+d` or `QUIT` to exit
 7. Once confirmed everything works, revert the task definition image tag back to `redis`
