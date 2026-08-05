@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from dbt_platform_helper.ports.file_system import FileSystemPort
+
 
 class FileProvider:
 
@@ -25,3 +27,9 @@ class FileProvider:
         if file_path.exists():
             file_path.unlink()
             return f"{str(file_path)} has been deleted"
+
+
+class LocalFileSystem(FileSystemPort):
+
+    def get_current_directory(self):
+        return Path.cwd()

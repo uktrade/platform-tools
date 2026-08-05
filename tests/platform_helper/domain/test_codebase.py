@@ -1,6 +1,7 @@
 import filecmp
 import json
 import os
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -17,6 +18,7 @@ from dbt_platform_helper.domain.codebase import ApplicationDeploymentNotTriggere
 from dbt_platform_helper.domain.codebase import ApplicationEnvironmentNotFoundException
 from dbt_platform_helper.domain.codebase import Codebase
 from dbt_platform_helper.domain.codebase import NotInCodeBaseRepositoryException
+from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.exceptions import AWSException
 from dbt_platform_helper.providers.aws.exceptions import RepositoryNotFoundException
 from dbt_platform_helper.utils.application import ApplicationNotFoundException
@@ -682,3 +684,351 @@ def mock_run_suprocess_fixture():
     mock_stdout = MagicMock()
     mock_stdout.configure_mock(**{"stdout.decode.return_value": '{"A": 3}'})
     return mock_stdout
+
+
+@dataclass
+class MockService:
+    name: str
+    tag: str
+
+
+@dataclass
+class MockExecution:
+    status: Mock
+    is_complete: bool
+    is_successful: bool
+
+
+@dataclass
+class MockPipelineDetails:
+    name: str
+    image_tag: str
+    environment: str
+
+
+class TestCodebaseRedploy:
+
+    @pytest.fixture
+    def mock_ports(self):
+        return {
+            "parameter_provider": Mock(),
+            "io": Mock(),
+            "config": Mock(),
+            "deployment": Mock(),
+            "pipeline": Mock(),
+            "file_system": Mock(),
+        }
+
+    @pytest.fixture
+    def standard_mock_ports(self, mock_ports, valid_platform_config):
+        mock_ports["file_system"].get_current_directory.return_value = Path(
+            "/repo/test-application-deploy"
+        )
+        mock_ports["config"].load_and_validate_platform_config.return_value = valid_platform_config
+        return mock_ports
+
+    @pytest.fixture
+    def standard_full_mock_ports(self, standard_mock_ports):
+        standard_mock_ports["deployment"].get_deployed_services.return_value = [
+            MockService(name="web", tag="commit-123"),
+            MockService(name="celery-beat", tag="commit-123"),
+            MockService(name="celery-worker", tag="commit-123"),
+        ]
+        standard_mock_ports["pipeline"].pipeline_exists.return_value = True
+        standard_mock_ports["io"].confirm.return_value = True
+        standard_mock_ports["pipeline"].trigger_deployment.return_value = "exec-123"
+
+        return standard_mock_ports
+
+    @pytest.fixture
+    def codebase(self, mock_ports):
+        return Codebase(**mock_ports)
+
+    @pytest.fixture
+    def base_config(self):
+        return {
+            "codebase_pipeline": {
+                "application": {
+                    "services": [
+                        {"run_group_1": ["web"]},
+                        {"run_group_2": ["celery-beat", "celery-worker"]},
+                    ]
+                }
+            }
+        }
+
+    @pytest.fixture
+    def mock_time_generator(self):
+        def _create_time_mock(time_values):
+            """
+            To avoid out of bounds errors on time functions when mocked.
+
+            It will get the last value after exceeding the list.
+            """
+            time_call_count = [0]  # list otherwise we get assignment issues
+
+            def time_side_effect():
+                if time_call_count[0] < len(time_values):
+                    result = time_values[time_call_count[0]]
+                    time_call_count[0] += 1
+                    return result
+                return time_values[-1]
+
+            return time_side_effect
+
+        return _create_time_mock
+
+    def test_no_codebases_not_in_deploy(self, codebase: Codebase, mock_ports):
+
+        mock_ports["file_system"].get_current_directory.return_value = Path("/some/other/repo")
+
+        with pytest.raises(PlatformException, match="Not in deploy repo"):
+            codebase.redeploy(app="test-application", env="development", codebases=[])
+
+    def test_in_deploy_no_deployed_services(self, codebase: Codebase, standard_mock_ports):
+        standard_mock_ports["deployment"].get_deployed_services.return_value = []
+
+        results = codebase.redeploy(app="test-application", env="development", codebases=[])
+
+        assert results == []
+
+    def test_codebase_arg_no_deployed_services(self, codebase: Codebase, standard_mock_ports):
+        standard_mock_ports["deployment"].get_deployed_services.return_value = []
+
+        results = codebase.redeploy(app="test-application", env="development", codebases=[])
+
+        assert results == []
+
+    def test_no_codebase_mapped_service(self, codebase: Codebase, standard_mock_ports):
+        standard_mock_ports["deployment"].get_deployed_services.return_value = [
+            MockService(name="unknown-service", tag="commit-123")
+        ]
+
+        results = codebase.redeploy(app="test-application", env="development", codebases=[])
+
+        assert results == []
+
+    def test_tag_mismatch(self, codebase: Codebase, standard_mock_ports):
+        standard_mock_ports["deployment"].get_deployed_services.return_value = [
+            MockService(name="web", tag="commit-12"),
+            MockService(name="celery-beat", tag="commit-45"),
+            MockService(name="celery-worker", tag="commit-67"),
+        ]
+
+        with pytest.raises(PlatformException, match="Commit mismatch on deployed services"):
+            codebase.redeploy(app="test-application", env="development", codebases=["application"])
+
+    def test_user_declines_pipeline_trigger(self, codebase: Codebase, standard_full_mock_ports):
+        standard_full_mock_ports["io"].confirm.return_value = False
+
+        results = codebase.redeploy(
+            app="test-application", env="development", codebases=["application"]
+        )
+
+        assert results == []
+        standard_full_mock_ports["io"].confirm.assert_called_once()
+        standard_full_mock_ports["pipeline"].trigger_deployment.assert_not_called()
+
+    def test_trigger_deployment_exception(self, codebase: Codebase, standard_full_mock_ports):
+        standard_full_mock_ports["pipeline"].trigger_deployment.return_value = None
+
+        results = codebase.redeploy(
+            app="test-application", env="development", codebases=["application"]
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "not triggered"
+        assert results[0].error == "Pipeline trigger failed"
+        assert results[0].execution_id == None
+        assert results[0].tag == "commit-123"
+
+    @patch("time.time")
+    @patch("time.sleep")
+    def test_wait_timeout(
+        self,
+        mock_sleep,
+        mock_time,
+        mock_time_generator,
+        codebase: Codebase,
+        standard_full_mock_ports,
+    ):
+        mock_time.side_effect = mock_time_generator([0, 6])
+        standard_full_mock_ports["pipeline"].get_execution_status.return_value = None
+
+        results = codebase.redeploy(
+            app="test-application",
+            env="development",
+            codebases=["application"],
+            poll_interval=1,
+            wait_timeout=5,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "Unknown"
+        assert results[0].error == "Failed to get status"
+        assert results[0].execution_id == "exec-123"
+
+    @patch("time.time")
+    @patch("time.sleep")
+    def test_wait_timeout_incomplete(
+        self,
+        mock_sleep,
+        mock_time,
+        mock_time_generator,
+        codebase: Codebase,
+        standard_full_mock_ports,
+    ):
+        mock_time.side_effect = mock_time_generator([0, 6])
+        mock_status = Mock()
+        mock_status.value = "InProgress"
+        execution_incomplete = MockExecution(
+            status=mock_status, is_complete=False, is_successful=False
+        )
+
+        mock_status_finished = Mock()
+        mock_status_finished.value = "Succeeded"
+        execution = MockExecution(
+            status=mock_status_finished, is_complete=False, is_successful=False
+        )
+
+        standard_full_mock_ports["pipeline"].get_execution_status.side_effect = [
+            execution_incomplete,
+            execution,
+        ]
+
+        results = codebase.redeploy(
+            app="test-application",
+            env="development",
+            codebases=["application"],
+            poll_interval=1,
+            wait_timeout=5,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "inprogress"
+        assert results[0].error == "Timeout"
+        assert results[0].execution_id == "exec-123"
+
+    @patch("time.time")
+    @patch("time.sleep")
+    def test_wait_timeout_complete_timeout_first(
+        self,
+        mock_sleep,
+        mock_time,
+        mock_time_generator,
+        codebase: Codebase,
+        standard_full_mock_ports,
+    ):
+        mock_time.side_effect = mock_time_generator([0, 6])
+        mock_status = Mock()
+        mock_status.value = "Succeeded"
+        execution = MockExecution(status=mock_status, is_complete=True, is_successful=True)
+        standard_full_mock_ports["pipeline"].get_execution_status.return_value = execution
+
+        results = codebase.redeploy(
+            app="test-application",
+            env="development",
+            codebases=["application"],
+            poll_interval=1,
+            wait_timeout=5,
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "succeeded"
+        assert results[0].error is None
+        assert results[0].execution_id == "exec-123"
+
+    @patch("time.time")
+    @patch("time.sleep")
+    def test_execution_successful(
+        self,
+        mock_sleep,
+        mock_time,
+        mock_time_generator,
+        codebase: Codebase,
+        standard_full_mock_ports,
+    ):
+        mock_time.side_effect = mock_time_generator([0, 30, 60])
+        mock_status = Mock()
+        mock_status.value = "Succeeded"
+        execution = MockExecution(status=mock_status, is_complete=True, is_successful=True)
+        standard_full_mock_ports["pipeline"].get_execution_status.return_value = execution
+
+        results = codebase.redeploy(
+            app="test-application", env="development", codebases=["application"]
+        )
+
+        assert len(results) == 1
+        assert results[0].codebase == "application"
+        assert results[0].pipeline == "test-application-application-manual-release"
+        assert results[0].tag == "commit-123"
+        assert results[0].status == "succeeded"
+        assert results[0].error is None
+        assert results[0].execution_id == "exec-123"
+
+    @patch("time.time")
+    @patch("time.sleep")
+    def test_execution_failed(
+        self, mock_sleep, mock_time, codebase: Codebase, standard_full_mock_ports
+    ):
+        mock_time.side_effect = [0, 30, 60]
+        mock_status = Mock()
+        mock_status.value = "Failed"
+        execution = MockExecution(status=mock_status, is_complete=True, is_successful=False)
+        standard_full_mock_ports["pipeline"].get_execution_status.return_value = execution
+
+        results = codebase.redeploy(
+            app="test-application", env="development", codebases=["application"]
+        )
+
+        assert len(results) == 1
+        assert results[0].codebase == "application"
+        assert results[0].pipeline == "test-application-application-manual-release"
+        assert results[0].tag == "commit-123"
+        assert results[0].status == "failed"
+        assert results[0].error == "Pipeline failed"
+        assert results[0].execution_id == "exec-123"
+
+    def test_no_wait(self, codebase: Codebase, standard_full_mock_ports):
+        standard_full_mock_ports["pipeline"].get_pipeline_url.return_value = (
+            "a-really-real-url-to-visit"
+        )
+
+        results = codebase.redeploy(
+            app="test-application", env="development", codebases=["application"], wait=False
+        )
+
+        assert len(results) == 1
+        assert results[0].status == "triggered"
+        assert results[0].url == "a-really-real-url-to-visit"
+        assert results[0].execution_id == "exec-123"
+        standard_full_mock_ports["pipeline"].get_execution_status.assert_not_called()
+
+    def test_multiple_codebases_not_all_confirmed(
+        self, codebase, standard_full_mock_ports, valid_platform_config
+    ):
+        valid_platform_config["codebase_pipelines"] = {
+            "first-app": {"services": [{"run_group_1": ["celery-worker", "celery-beat", "web"]}]},
+            "second-app": {
+                "services": [{"run_group_1": ["celery-lifter", "celery-cheater", "heater"]}]
+            },
+        }
+
+        standard_full_mock_ports["config"].load_and_validate_platform_config.return_value = (
+            valid_platform_config
+        )
+        standard_full_mock_ports["pipeline"].get_pipeline_url.return_value = (
+            "a-really-real-url-to-visit"
+        )
+        standard_full_mock_ports["io"].confirm.side_effect = [True, False]
+
+        results = codebase.redeploy(
+            app="test-application",
+            env="development",
+            codebases=["first-app", "second-app"],
+            wait=False,
+        )
+
+        assert len(results) == 1
+        assert results[0].codebase == "first-app"
+        assert standard_full_mock_ports["pipeline"].trigger_deployment.call_count == 1
