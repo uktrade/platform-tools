@@ -1,28 +1,26 @@
 # Postgres Conduit
 
-## Publishing manually
+## Building locally
 
 Requires:
 
-- [`docker`](https://www.docker.com)
-- [`aws` CLI](https://aws.amazon.com/cli/)
+- [docker](https://www.docker.com)
+- [aws CLI](https://aws.amazon.com/cli/)
 
 From this image directory:
 
 1. `aws sso login`
-2. `aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade`
-3. `docker build -t public.ecr.aws/uktrade/tunnel:postgres .`
+2. `AWS_PROFILE=platform-tools aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade`
+3. `docker build -t public.ecr.aws/uktrade/tunnel:postgres --platform linux/arm64 .`
 4. `docker tag public.ecr.aws/uktrade/tunnel:postgres public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD)`
-5. `docker push public.ecr.aws/uktrade/tunnel:postgres`
-6. `docker push public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD)`
-7. `docker logout public.ecr.aws/uktrade`
+5. `docker push public.ecr.aws/uktrade/tunnel:postgres-$(git rev-parse --short HEAD)`
 
-## Testing locally
+## Testing locally (optional)
 
 Requires:
 
-- [`docker`](https://www.docker.com)
-- [`docker-compose`](https://docs.docker.com/compose/)
+- [docker](https://www.docker.com)
+- [docker-compose](https://docs.docker.com/compose/)
 
 Steps:
 
@@ -31,3 +29,30 @@ Steps:
 3. You will now be in a `psql` session, run `\list` to check available schemas
 4. Enter `ctrl+d` or `\q` to exit.
 5. Note that the client container will now show a shutdown countdown in `docker-compose` logs every 60 seconds.
+
+## Testing in AWS
+
+Requires:
+
+- [aws CLI](https://aws.amazon.com/cli/)
+- [platform-helper](https://pypi.org/project/dbt-platform-helper/)
+
+Steps:
+
+1. Log into the `platform-sandbox` AWS account via the console
+2. Find the ECS task definition called `conduit-postgres-read-demodjango-dev-demodjango-postgres`. Could use an environment other than `dev` too
+3. Create a new revision and set the image tag in `containerDefinitions.image` as `postgres-` follow by the output from `git rev-parse --short HEAD`
+4. Run `AWS_PROFILE=platform-sandbox platform-helper conduit demodjango-postgres --app demodjango --env dev --access read`
+5. You will now be in a `psql` session, run `\list` to check available schemas
+6. Enter `ctrl+d` or `\q` to exit.
+7. Once confirmed everything works, revert the task definition image tag back to `postgres`
+
+## Publish manually
+
+Requires:
+
+- [docker](https://www.docker.com)
+- [aws CLI](https://aws.amazon.com/cli/)
+
+1. `docker push public.ecr.aws/uktrade/tunnel:postgres`
+2. `docker logout public.ecr.aws/uktrade`
