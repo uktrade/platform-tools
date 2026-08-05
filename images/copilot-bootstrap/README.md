@@ -7,12 +7,19 @@ The image is published to [uktrade/copilot-bootstrap](https://gallery.ecr.aws/uk
 As it will almost never change, there is no automated build and publish at present, just these manual steps.
 
 ```shell
+# Build
 aws sso login
 AWS_PROFILE=platform-tools aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/uktrade
 docker build -t public.ecr.aws/uktrade/copilot-bootstrap:latest --platform linux/amd64 .
 docker tag public.ecr.aws/uktrade/copilot-bootstrap:latest public.ecr.aws/uktrade/copilot-bootstrap:<current_platform_tools_release_tag>
-docker run public.ecr.aws/uktrade/copilot-bootstrap:latest # Quick test locally before publishing
-docker push public.ecr.aws/uktrade/copilot-bootstrap:15.34.1
+
+# Test
+docker build -t copilot-bootstrap:local-test --platform linux/arm64 . # Rebuild required if on arm64
+docker run --rm copilot-bootstrap:local-test sh -c 'nginx && curl http://localhost:80/'
+docker image rm copilot-bootstrap:local-test
+
+# Publish
+docker push public.ecr.aws/uktrade/copilot-bootstrap:<current_platform_tools_release_tag>
 docker push public.ecr.aws/uktrade/copilot-bootstrap:latest
 docker logout public.ecr.aws/uktrade
 ```
