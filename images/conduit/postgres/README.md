@@ -47,7 +47,10 @@ Steps:
 6. Enter `ctrl+d` or `\q` to exit.
 7. Once confirmed everything works, revert the task definition image tag back to `postgres`
 
-## Publish manually
+## Publish
+
+> [!IMPORTANT]  
+> Please ensure you have tested before publishing!
 
 Requires:
 

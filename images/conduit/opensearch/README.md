@@ -15,7 +15,7 @@ From this image directory:
 4. `docker tag public.ecr.aws/uktrade/tunnel:opensearch public.ecr.aws/uktrade/tunnel:opensearch-$(git rev-parse --short HEAD)`
 5. `docker push public.ecr.aws/uktrade/tunnel:opensearch-$(git rev-parse --short HEAD)`
 
-## Testing locally
+## Testing locally (optional)
 
 Requires:
 
@@ -47,7 +47,10 @@ Steps:
 6. Enter `ctrl+c` to exit
 7. Once confirmed everything works, revert the task definition image tag back to `opensearch`
 
-## Publish manually
+## Publish
+
+> [!IMPORTANT]  
+> Please ensure you have tested before publishing!
 
 Requires:
 
