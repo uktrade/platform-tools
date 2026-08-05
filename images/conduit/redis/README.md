@@ -41,15 +41,18 @@ Steps:
 
 1. Log into the `platform-sandbox` AWS account via the console
 2. Find the ECS task definition called `conduit-redis-read-demodjango-dev-demodjango-redis`. Could use an environment other than `dev` too
-3. Create a new revision and set the image tag in `containerDefinitions.image` as the output from `git rev-parse --short HEAD`
-4. Run `platform-helper conduit demodjango-redis --app demodjango --env dev` and verify it works
-5. Once confirmed it works, revert the task definition image tag back to `redis`
+3. Create a new revision and set the image tag in `containerDefinitions.image` as `redis-` follow by the output from `git rev-parse --short HEAD`
+4. Run `AWS_PROFILE=platform-sandbox platform-helper conduit demodjango-redis --app demodjango --env dev`
+5. You will now be in a `redis-cli` session, run `CONFIG GET databases` to check available databases
+6. Enter `ctrl+d` or `QUIT` to exit
+7. Once confirmed everything works, revert the task definition image tag back to `redis`
 
 ## Publish manually
 
+Requires:
+
+- [docker](https://www.docker.com)
+- [aws CLI](https://aws.amazon.com/cli/)
+
 1. `docker push public.ecr.aws/uktrade/tunnel:redis`
 2. `docker logout public.ecr.aws/uktrade`
-
-## Publish automatically
-
-The image is automatically built and pushed to the public ECR repository [uktrade/tunnel](https://gallery.ecr.aws/uktrade/tunnel) when changes are merged to the main branch of this repository.
