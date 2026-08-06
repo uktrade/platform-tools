@@ -4,9 +4,8 @@ These images are designed to emulate most of the functionality from
 [alphagov/paas-cf-conduit](https://github.com/alphagov/paas-cf-conduit)
 working with the `platform-helper conduit` command.
 
-Each image is built and pushed to the public ECR repository
-[uktrade/tunnel](https://gallery.ecr.aws/uktrade/tunnel) when changes
-are merged to the main branch of this repository. They are given a
+Each image contains steps to build, test, and push to the public ECR repository
+[uktrade/tunnel](https://gallery.ecr.aws/uktrade/tunnel). They are given a
 Docker tag specific to the addon they allow access to.
 
 ## Supported addons
