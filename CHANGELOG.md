@@ -1,5 +1,23 @@
 # Changelog
 
+## [15.35.0](https://github.com/uktrade/platform-tools/compare/15.34.1...15.35.0) (2026-08-06)
+
+
+### Features
+
+* Allow overriding the default key policy for statefile-backend (SR-4918) ([#1608](https://github.com/uktrade/platform-tools/issues/1608)) ([09d7c14](https://github.com/uktrade/platform-tools/commit/09d7c142f0ac5bb3ae414843408f8d6dc494fb8d))
+* Use new bucket for non-production ALB logs (SR-2696) ([#1594](https://github.com/uktrade/platform-tools/issues/1594)) ([3edca75](https://github.com/uktrade/platform-tools/commit/3edca758ae7c0be96c21513555f37f1d8016c57f))
+
+
+### Bug Fixes
+
+* Fix for each in Privatelink Cert Validation (off-ticket) ([#1600](https://github.com/uktrade/platform-tools/issues/1600)) ([7076ce2](https://github.com/uktrade/platform-tools/commit/7076ce25aa6cd1605e19b2e37a21c788bb15b3d6))
+
+
+### Dependencies
+
+* Bump datadog/datadog in /terraform/datadog ([#1584](https://github.com/uktrade/platform-tools/issues/1584)) ([44e4f2a](https://github.com/uktrade/platform-tools/commit/44e4f2a2e27ddac5aac78fb85fab5658245c3c85))
+
 ## [15.34.1](https://github.com/uktrade/platform-tools/compare/15.34.0...15.34.1) (2026-07-29)
 
 
