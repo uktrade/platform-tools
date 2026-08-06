@@ -48,7 +48,7 @@ resource "aws_kms_key" "terraform-bucket-key" {
   # checkov:skip=CKV_AWS_7:We are not currently rotating the keys
   description = "This key is used to encrypt bucket objects"
 
-  policy = jsonencode({
+  policy = var.custom_key_policy != null ? var.custom_key_policy : jsonencode({
     Id = "key-default-1"
     Statement = [
       {

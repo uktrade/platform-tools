@@ -133,3 +133,15 @@ run "aws_dynamodb_table_unit_test" {
     error_message = "The 'LockID' key must be of type string ('S')"
   }
 }
+
+run "aws_custom_kms_key_policy" {
+  command = plan
+  variables {
+    custom_key_policy = "{ \"key\" : \"custom\" }"
+  }
+
+  assert {
+    condition     = aws_kms_key.terraform-bucket-key.policy == "{ \"key\" : \"custom\" }"
+    error_message = "Custom key policy should be set for kms key"
+  }
+}
