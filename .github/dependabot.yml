@@ -19,12 +19,12 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
-      allow:
-         - dependency-type: "production"
+        applies-to: "version-updates"
+        dependency-type: "production"
       dev-minor-and-patch:
         update-types: [minor, patch]
-        allow:
-         - dependency-type: "development"
+        applies-to: "version-updates"
+        dependency-type: "development"
 
   - package-ecosystem: "terraform"
     cooldown:
@@ -32,8 +32,14 @@ updates:
     directories:
       - "/terraform/*/"
     groups:
-      per-dependency:
-        group-by: dependency-name
+      minor-and-patch:
+        update-types: [minor, patch]
+        applies-to: "version-updates"
+        dependency-type: "production"
+      dev-minor-and-patch:
+        update-types: [minor, patch]
+        applies-to: "version-updates"
+        dependency-type: "development"
     schedule:
       interval: "weekly"
       day: "monday"
