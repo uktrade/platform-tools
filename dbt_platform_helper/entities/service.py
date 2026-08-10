@@ -297,16 +297,29 @@ class Count(BaseModel):
         default=None,
         description="Scheduled scaling actions",
     )
+    custom_policy: Optional[bool] = Field(
+        default=False,
+        description="Set to true if autoscaling policy is not managed by the platform (i.e. it's defined in custom terraform).",
+    )
 
     @model_validator(mode="after")
     def at_least_one_autoscaling_metric(self):
-
-        if not any(
+        managed_policy = any(
             [self.cpu_percentage, self.memory_percentage, self.requests_per_minute, self.schedules]
-        ):
+        )
+
+        if managed_policy and self.custom_policy:
             raise PlatformException(
-                "If autoscaling is enabled, you must define at least one metric or a cron schedule: "
-                "cpu_percentage, memory_percentage, requests_per_minute, or cron."
+                "Custom autoscaling policies cannot be used together with "
+                "platform-managed policies (i.e. cpu_percentage, memory_percentage,"
+                "requests_per_minute or cron schedules)."
+            )
+
+        if not managed_policy and not self.custom_policy:
+            raise PlatformException(
+                "If autoscaling is enabled, you must define at least one metric "
+                "(cpu_percentage, memory_percentage, requests_per_minute), "
+                "or a cron schedule, or a custom policy."
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
@@ -393,10 +406,6 @@ class ServiceConfig(BaseModel):
                 raise PlatformException(
                     f"'timeout' is not allowed for service type == {self.type.value}"
                 )
-            if self.platform is not None:
-                raise PlatformException(
-                    f"'platform' is not allowed for service type == {self.type.value}"
-                )
         return self
 
     @model_validator(mode="after")
@@ -424,7 +433,8 @@ class ServiceConfig(BaseModel):
         default=None, description="Set timeout for Scheduled Job in seconds (e.g. 300)."
     )
     platform: Optional[str] = Field(
-        default=None, description="Set platform for Scheduled Job (e.g. 'x86_64' or 'arm64')."
+        default="X86_64",
+        description="Set the CPU architecture that the container image was built for (e.g. 'X86_64' or 'ARM64').",
     )
     sidecars: Optional[dict[str, Sidecar]] = Field(default=None)
     image: Image = Field()

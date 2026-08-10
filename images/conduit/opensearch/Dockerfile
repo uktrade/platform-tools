@@ -10,10 +10,4 @@ COPY entrypoint.sh /entrypoint.sh
 ADD https://artifacts.opensearch.org/opensearch-clients/opensearch-cli/opensearch-cli-${OPENSEARCH_CLI_VERSION}-linux-arm64.zip /opensearch-cli.zip
 RUN cd /root && unzip /opensearch-cli.zip
 
-# AWS CLI
-ADD https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip /awscliv2.zip
-RUN unzip awscliv2.zip && \
-    ./aws/install && \
-    rm -rf aws && rm awscliv2.zip
-
 ENTRYPOINT ["bash", "/entrypoint.sh"]

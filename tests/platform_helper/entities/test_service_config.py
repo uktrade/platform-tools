@@ -173,6 +173,34 @@ def test_count_autoscaling_minimal(range_value):
     assert count.range == range_value
 
 
+def test_count_with_custom_autoscaling_policy():
+    count = Count.model_validate({"range": "2-5", "custom_policy": True})
+
+
+def test_setting_custom_policy_to_false_is_equivalent_to_not_setting_it_at_all():
+    with pytest.raises(
+        PlatformException, match="If autoscaling is enabled, you must define at least one metric"
+    ):
+        Count.model_validate({"range": "2-5", "custom_policy": False})
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        {"cpu_percentage": 60},
+        {"memory_percentage": 80},
+        {"requests_per_minute": 100},
+        {"schedules": [{"range": "2-5", "schedule": "0 06 ? * MON-FRI *"}]},
+    ],
+)
+def test_custom_policy_is_incompatible_with_platform_managed_policy(policy):
+    with pytest.raises(
+        PlatformException,
+        match="Custom autoscaling policies cannot be used together with platform-managed policies",
+    ):
+        Count.model_validate({"range": "2-5", "custom_policy": True, **policy})
+
+
 def test_count_autoscaling_all_the_things():
     count = Count.model_validate(
         {
@@ -370,31 +398,6 @@ def test_timeout_is_not_allowed_for_other_services(type):
     }
     with pytest.raises(
         PlatformException, match=f"'timeout' is not allowed for service type == {type}"
-    ):
-        assert ServiceConfig.model_validate(service_config)
-
-
-@pytest.mark.parametrize(
-    "type", [("Load Balanced Web Service"), ("Backend Service"), ("Load Balanced Internal Service")]
-)
-def test_platform_is_not_allowed_for_other_services(type):
-    service_config = {
-        "name": "web",
-        "type": type,
-        "image": {"location": "hub.docker.com/repo/app", "port": 8080},
-        "cpu": 256,
-        "memory": 512,
-        "http": {
-            "target_container": "nginx",
-            "path": "/",
-            "alb": "alb-arn",
-            "alias": ["test.alias.com", "test2.alias.com"],
-        },
-        "count": 1,
-        "platform": "arm64",
-    }
-    with pytest.raises(
-        PlatformException, match=f"'platform' is not allowed for service type == {type}"
     ):
         assert ServiceConfig.model_validate(service_config)
 

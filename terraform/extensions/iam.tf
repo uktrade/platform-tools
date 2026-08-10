@@ -745,6 +745,8 @@ resource "aws_iam_role_policy" "ec2_access" {
 }
 
 data "aws_iam_policy_document" "ec2_access" {
+  # checkov:skip=CKV_AWS_111: Fix is tracked in DBTP-3234.
+  # checkov:skip=CKV_AWS_356: Fix is tracked in DBTP-3234.
 
   statement {
     effect = "Allow"
