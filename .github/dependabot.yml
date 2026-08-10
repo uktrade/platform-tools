@@ -5,7 +5,10 @@ updates:
       default-days: 7
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
     commit-message:
       # So the release-please-action includes production
       # dependencies in the release notes.
@@ -13,6 +16,15 @@ updates:
       # Don't include dev dependencies in release notes, they
       # are of no interest outside this repository's maintainers.
       prefix-development: "chore(deps-dev)"
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+        applies-to: "version-updates"
+        dependency-type: "production"
+      dev-minor-and-patch:
+        update-types: [minor, patch]
+        applies-to: "version-updates"
+        dependency-type: "development"
 
   - package-ecosystem: "terraform"
     cooldown:
@@ -20,10 +32,19 @@ updates:
     directories:
       - "/terraform/*/"
     groups:
-      per-dependency:
-        group-by: dependency-name
+      minor-and-patch:
+        update-types: [minor, patch]
+        applies-to: "version-updates"
+        dependency-type: "production"
+      dev-minor-and-patch:
+        update-types: [minor, patch]
+        applies-to: "version-updates"
+        dependency-type: "development"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
     commit-message:
       # So the release-please-action includes production
       # dependencies in the release notes.
@@ -38,3 +59,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
