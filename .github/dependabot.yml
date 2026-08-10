@@ -16,27 +16,15 @@ updates:
       # Don't include dev dependencies in release notes, they
       # are of no interest outside this repository's maintainers.
       prefix-development: "chore(deps-dev)"
-    allow:
-     - dependency-type: "production"
-
-  - package-ecosystem: "pip"
-    cooldown:
-      default-days: 7
-    directory: "/"
-    schedule:
-      interval: "monthly"
-      day: "monday"
-      time: "06:00"
-      timezone: "Etc/UTC"
-    commit-message:
-      # So the release-please-action includes production
-      # dependencies in the release notes.
-      prefix: "deps"
-      # Don't include dev dependencies in release notes, they
-      # are of no interest outside this repository's maintainers.
-      prefix-development: "chore(deps-dev)"
-    allow:
-       - dependency-type: "development"
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+      allow:
+         - dependency-type: "production"
+      dev-minor-and-patch:
+        update-types: [minor, patch]
+        allow:
+         - dependency-type: "development"
 
   - package-ecosystem: "terraform"
     cooldown:
