@@ -612,7 +612,7 @@ class ServiceManager:
 
             if not current_service:
                 self.io.warn(
-                    f"Could not determine the current running count for service: {ecs_service_name} - falling back to the configured minimum {min_capacity} tasks."
+                    f"Could not determine the current running count for service: '{ecs_service_name}' - falling back to the configured minimum {min_capacity} tasks."
                 )
             current_desired_count = (current_service or {}).get("desiredCount", 0)
             # Preserve whatever autoscaling has already scaled the service to, rather than resetting to the configured minimum on every deploy. Only raise up to the minimum if the service is currently running below it (e.g. after a crash, or on first deploy)
