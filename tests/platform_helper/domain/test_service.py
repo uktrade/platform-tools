@@ -231,10 +231,11 @@ class ServiceManagerMocks:
 
 
 def get_ecs_update_service_response(
-    service_name="myapp-dev-web", deployment_id="deployment-abc", events=None
+    service_name="myapp-dev-web", deployment_id="deployment-abc", events=None, desired_count=1
 ):
     return {
         "serviceName": service_name,
+        "desiredCount": desired_count,
         "deployments": [
             {"id": "old-deployment", "status": "ACTIVE"},
             {"id": deployment_id, "status": "PRIMARY"},
@@ -264,11 +265,16 @@ def test_service_deploy_success():
     )
 
     update_service_response = get_ecs_update_service_response(
-        service_name="myapp-dev-web", deployment_id="deployment-123"
+        service_name="myapp-dev-web",
+        deployment_id="deployment-123",
+        desired_count=1,
     )
     mocks.ecs_provider.update_service.return_value = update_service_response
     mocks.ecs_provider.describe_service.return_value = update_service_response
-    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {"MinCapacity": 1}
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {
+        "MinCapacity": 1,
+        "MaximumCapacity": 10,
+    }
 
     # Skip waiting for time loops in those methods to reach timeout
     with patch.object(
@@ -306,12 +312,17 @@ def test_service_deploy_success():
     assert describe_autoscaling_target_kwargs["cluster_name"] == "myapp-dev-cluster"
     assert describe_autoscaling_target_kwargs["ecs_service_name"] == "myapp-dev-web"
 
+    mocks.ecs_provider.describe_service.assert_any_call(
+        service="web", environment="dev", application="myapp"
+    )
+
     update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs
     assert update_service_kwargs["service"] == "web"
     assert (
         update_service_kwargs["task_def_arn"]
         == "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
+
     assert update_service_kwargs["environment"] == "dev"
     assert update_service_kwargs["application"] == "myapp"
     assert update_service_kwargs["desired_count"] == 1
@@ -349,7 +360,10 @@ def test_service_deploy_exits_early_when_desired_count_zero():
     )
     mocks.ecs_provider.update_service.return_value = update_service_response
 
-    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {"MinCapacity": 0}
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {
+        "MinCapacity": 0,
+        "MaximumCapacity": 0,
+    }
 
     with patch.object(service_manager, "_wait_for_new_tasks") as wait_for_new_tasks, patch.object(
         service_manager, "_monitor_task_events"
@@ -367,6 +381,13 @@ def test_service_deploy_exits_early_when_desired_count_zero():
         wait_for_new_tasks.assert_not_called()
         monitor_task_events.assert_not_called()
         monitor_service_events.assert_not_called()
+
+    # The explicit `count: 0` path must not bother checking the current running count -
+    # it always scales to zero regardless.
+    mocks.ecs_provider.describe_service.assert_not_called()
+
+    update_service_kwargs = mocks.ecs_provider.update_service.call_args.kwargs
+    assert update_service_kwargs["desired_count"] == 0
 
     mocks.io.info.assert_any_call(
         "[12:00:00] Detected 'count: 0' in service-config.yml. Scaling ECS service down to zero tasks."
@@ -447,6 +468,10 @@ def test_service_deploy_failed(time_sleep):
     )
     mocks.ecs_provider.update_service.return_value = update_service_response
     mocks.ecs_provider.describe_service.return_value = update_service_response
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {
+        "MinCapacity": 1,
+        "MaxCapacity": 10,
+    }
 
     # Skip waiting for time loops in those methods to reach timeout
     with patch.object(
