@@ -62,3 +62,6 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Etc/UTC"
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
