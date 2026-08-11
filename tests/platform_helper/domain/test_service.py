@@ -405,8 +405,7 @@ def test_service_deploy_preserves_current_desired_count_above_minimum():
         "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
     )
 
-    # Autoscaling has scaled the service up to 15 tasks, well above the configured minimum
-    # of 2.
+    # Scale the service up to 15 tasks, configured minimum is 2
     update_service_response = get_ecs_update_service_response(
         service_name="myapp-dev-web", deployment_id="deployment-123", desired_count=15
     )
