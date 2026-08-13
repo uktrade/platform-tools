@@ -2826,5 +2826,10 @@ run "test_creation_of_kms_key" {
     condition     = aws_kms_key.image_sign_and_verify_key != null
     error_message = "A single KMS Key should have been created"
   }
+
+  assert{
+    condition = length(jsondecode(aws_kms_key.image_sign_and_verify_key.policy)["Statement"][0]["Principal"]["AWS"]) == 2
+    error_message = "A KMS key verify permission should have exactly 2 principals"
+  }
 }
 
