@@ -2822,30 +2822,8 @@ run "test_disable_aws_codepipeline" {
 run "test_creation_of_kms_key" {
   command = plan
 
-  override_data {
-    target = data.aws_iam_policy_document.access_artifact_store
-
-    values = {
-      json = <<-JSON
-      {
-        "Version": "2012-10-17",
-        "Statement": [
-          {
-            "Effect": "Allow",
-            "Action": [
-              "codebuild:BatchGetBuilds",
-              "codebuild:StartBuild"
-            ],
-            "Resource": "*"
-          }
-        ]
-      }
-      JSON
-    }
-  }
-
   assert {
-    condition     = length(aws_kms.codebase_pipeline) == 0
+    condition     = aws_kms_key.image_sign_and_verify_key != null
     error_message = "A single KMS Key should have been created"
   }
 }
