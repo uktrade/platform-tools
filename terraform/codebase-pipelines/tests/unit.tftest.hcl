@@ -2858,8 +2858,8 @@ run "test_creation_of_kms_key" {
   }
 
   assert {
-    condition     = aws_kms_alias.image_sign_and_verify_key.name == "alias/image-signing-key"
-    error_message = "An alias for the KMS key must exist with immutable name 'alias/image-signing-key'.  Changing this name would break deployments"
+    condition     = aws_kms_alias.image_sign_and_verify_key.name == "alias/image-sign-and-verify-key"
+    error_message = "An alias for the KMS key must exist with immutable name 'alias/image-sign-and-verify-key'.  Changing this name would break deployments"
   }
 }
 
