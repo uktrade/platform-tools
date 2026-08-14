@@ -2,8 +2,7 @@ mock_provider "aws" {
   mock_data "aws_caller_identity" {
     defaults = {
       account_id = "000123456789" # mock deploy account
-      id         = "123456789012"
-    user_id = "XXXXXXXXXXXXXXXXXXXXX" }
+    }
   }
 
 }
