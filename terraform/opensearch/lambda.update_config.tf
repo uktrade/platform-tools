@@ -38,13 +38,13 @@ data "aws_iam_policy_document" "update-config-lambda-execution-policy" {
 }
 
 resource "aws_iam_role" "update-config-lambda-execution-role" {
-  name               = "${var.application}-${var.environment}-${local.name}-update-config-lambda-role"
+  name               = substr("${random_string.lambda_suffix[1].result}-${var.application}-${var.environment}-${local.name}-lambda-role", 0, 64)
   path               = "/"
   assume_role_policy = data.aws_iam_policy_document.lambda-assume-role-policy.json
 }
 
 resource "aws_iam_role_policy" "update-config-lambda-execution-role-policy" {
-  name   = "${var.application}-${var.environment}-${local.name}-update-config-execution-policy"
+  name   = substr("${random_string.lambda_suffix[1].result}-${var.application}-${var.environment}-${local.name}-execution-policy", 0, 64)
   role   = aws_iam_role.update-config-lambda-execution-role.name
   policy = data.aws_iam_policy_document.update-config-lambda-execution-policy.json
 }
