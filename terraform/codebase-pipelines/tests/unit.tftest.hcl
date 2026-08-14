@@ -1,4 +1,12 @@
-mock_provider "aws" {}
+mock_provider "aws" {
+  mock_data "aws_caller_identity" {
+    defaults = {
+      account_id = "000123456789" # mock deploy account
+      id         = "123456789012"
+    user_id = "XXXXXXXXXXXXXXXXXXXXX" }
+  }
+
+}
 
 override_data {
   target = data.external.codestar_connections
@@ -2827,9 +2835,24 @@ run "test_creation_of_kms_key" {
     error_message = "A single KMS Key should have been created"
   }
 
-  assert{
-    condition = length(jsondecode(aws_kms_key.image_sign_and_verify_key.policy)["Statement"][0]["Principal"]["AWS"]) == 2
-    error_message = "A KMS key verify permission should have exactly 2 principals"
+  assert {
+    condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[0].Sid == "Allow verifying with the key"
+    error_message = "First statement is expected to be the verify permissions"
+  }
+
+  assert {
+    condition     = !contains(jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[0].Principal.AWS, "*")
+    error_message = "A KMS key verify permission should not have wildcards"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[1].Sid == "Allow signing with the key"
+    error_message = "Second statement is expected to be the sign permissions"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
+    error_message = "A KMS key sign permission should have exactly 1 principal - the build oidc role"
   }
 }
 
