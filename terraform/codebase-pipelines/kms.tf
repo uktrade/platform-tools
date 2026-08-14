@@ -16,6 +16,7 @@ resource "aws_kms_key" "image_sign_and_verify_key" {
         },
         Action = [
           "kms:Verify",
+          "kms:GetPublicKey",
           "kms:DescribeKey"
         ],
         Resource = "*"
