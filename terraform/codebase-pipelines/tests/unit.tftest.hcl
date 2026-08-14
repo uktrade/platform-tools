@@ -2834,6 +2834,10 @@ run "test_creation_of_kms_key" {
   }
 
   assert {
+    condition     = length(jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement) == 2
+    error_message = "The KMS key policy should have only 2 policy statements"
+  }
+  assert {
     condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[0].Sid == "Allow verifying with the key"
     error_message = "First statement is expected to be the verify permissions"
   }
@@ -2850,7 +2854,7 @@ run "test_creation_of_kms_key" {
 
   assert {
     condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
-    error_message = "A KMS key sign permission should have exactly 1 principal - the build oidc role in the non-prod (build and deploy) account"
+    error_message = "A KMS key sign principal should be the build oidc role in the non-prod (build and deploy) account ONLY"
   }
 
   assert {
