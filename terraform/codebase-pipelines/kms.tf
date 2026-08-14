@@ -1,4 +1,4 @@
-resource "aws_kms_key" "image_sign_and_verify_key" {
+resource "aws_kms_key" "container_image_signer_key" {
   description              = "ECC_NIST_P256 Asymmetric KMS Key for image signing and verification"
   tags                     = local.tags
   customer_master_key_spec = "ECC_NIST_P256"
@@ -37,9 +37,9 @@ resource "aws_kms_key" "image_sign_and_verify_key" {
   })
 }
 
-resource "aws_kms_alias" "image_sign_and_verify_key" {
-  name          = "alias/image-sign-and-verify-key"
-  target_key_id = aws_kms_key.image_sign_and_verify_key.key_id
+resource "aws_kms_alias" "container_image_signer_key" {
+  name          = "alias/${var.application}-container-image-signer-key"
+  target_key_id = aws_kms_key.container_image_signer_key.key_id
 
   lifecycle {
     prevent_destroy = true
