@@ -675,6 +675,7 @@ resource "aws_iam_role_policy" "step_functions_access" {
 
 data "aws_iam_policy_document" "step_functions_access" {
   statement {
+    sid    = "CreateStateMachine"
     effect = "Allow"
     actions = [
       "states:CreateStateMachine",
@@ -689,6 +690,7 @@ data "aws_iam_policy_document" "step_functions_access" {
     ]
   }
   statement {
+    sid    = "ValidateStateMachine"
     effect = "Allow"
     actions = [
       "states:ValidateStateMachineDefinition"
@@ -698,12 +700,25 @@ data "aws_iam_policy_document" "step_functions_access" {
     ]
   }
   statement {
+    sid    = "ConfigureStateMachineIAM"
     effect = "Allow"
     actions = [
       "iam:PassRole"
     ]
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-sm"
+    ]
+  }
+  statement {
+    sid    = "ExecuteStateMachine"
+    effect = "Allow"
+    actions = [
+      "states:StartExecution",
+      "states:DescribeExecution"
+    ]
+    resources = [
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.application}-*-sfn",
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.application}-*-sfn*"
     ]
   }
 }
