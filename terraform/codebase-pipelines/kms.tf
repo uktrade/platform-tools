@@ -1,5 +1,5 @@
 resource "aws_kms_key" "image_sign_and_verify_key" {
-  description              = "KMS Key for image signing and verification"
+  description              = "ECC_NIST_P256 Asymmetric KMS Key for image signing and verification"
   tags                     = local.tags
   customer_master_key_spec = "ECC_NIST_P256"
   key_usage                = "SIGN_VERIFY"
