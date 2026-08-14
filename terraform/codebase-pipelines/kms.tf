@@ -35,3 +35,12 @@ resource "aws_kms_key" "image_sign_and_verify_key" {
     ]
   })
 }
+
+resource "aws_kms_alias" "image_sign_and_verify_key" {
+  name          = "alias/image-signing-key"
+  target_key_id = aws_kms_key.image_sign_and_verify_key.key_id
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}

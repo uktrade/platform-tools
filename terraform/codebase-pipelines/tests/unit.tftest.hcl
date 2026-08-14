@@ -2854,5 +2854,10 @@ run "test_creation_of_kms_key" {
     condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
     error_message = "A KMS key sign permission should have exactly 1 principal - the build oidc role"
   }
+
+  assert {
+    condition     = aws_kms_alias.image_sign_and_verify_key.name == "alias/image-signing-key"
+    error_message = "An alias for the KMS key must exist with immutable name 'alias/image-signing-key'.  Changing this name would break deployments"
+  }
 }
 
