@@ -1,10 +1,9 @@
 mock_provider "aws" {
   mock_data "aws_caller_identity" {
     defaults = {
-      account_id = "000123456789" # mock deploy account
+      account_id = "000123456789" # mock non-prod account
     }
   }
-
 }
 
 override_data {
@@ -2841,7 +2840,7 @@ run "test_creation_of_kms_key" {
 
   assert {
     condition     = !contains(jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[0].Principal.AWS, "*")
-    error_message = "A KMS key verify permission should not have wildcards"
+    error_message = "A KMS key verify principal should not have wildcards"
   }
 
   assert {
@@ -2851,7 +2850,7 @@ run "test_creation_of_kms_key" {
 
   assert {
     condition     = jsondecode(aws_kms_key.image_sign_and_verify_key.policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
-    error_message = "A KMS key sign permission should have exactly 1 principal - the build oidc role"
+    error_message = "A KMS key sign permission should have exactly 1 principal - the build oidc role in the non-prod (build and deploy) account"
   }
 
   assert {
