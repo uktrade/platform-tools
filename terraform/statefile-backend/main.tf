@@ -59,8 +59,21 @@ resource "aws_kms_key" "terraform-bucket-key" {
         },
         "Action" : "kms:*",
         "Resource" : "*"
+      },
+      {
+        "Sid" : "GHARolePermissions",
+        "Effect" : "Allow",
+        "Principal" : {
+          "AWS" : "arn:aws:sts::*:assumed-role/github-oidc-terraform-platform-repo-role-*/GitHubActions"
+        },
+        "Action" : [
+          "kms:Get*",
+          "kms:List*",
+          "kms:Describe"
+        ],
+        "Resource" : "*"
       }
-    ]
+    ],
     Version = "2012-10-17"
   })
 
