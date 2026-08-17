@@ -717,8 +717,8 @@ data "aws_iam_policy_document" "step_functions_access" {
       "states:DescribeExecution"
     ]
     resources = [
-      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.application}-*-sfn",
-      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.application}-*-sfn*"
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.args.application}-*-sfn",
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.args.application}-*-sfn*"
     ]
   }
 }
