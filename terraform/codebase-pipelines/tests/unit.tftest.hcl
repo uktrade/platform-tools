@@ -2834,12 +2834,12 @@ run "test_creation_of_single_kms_key" {
   }
   
   assert {
-    condition     = module.kms_signer_key != null
+    condition     = module.container_image_signer_key != null
     error_message = "Must be one image signer KMS key module"
   }
 
   assert {
-    condition     = length([for alias in values(module.kms_signer_key.active_aliases) : alias if alias == "alias/my-app-container-image-signer-key"]) == 1
+    condition     = length([for alias in values(module.container_image_signer_key.active_aliases) : alias if alias == "alias/my-app-container-image-signer-key"]) == 1
     error_message = "Exactly one of the keys must map to the static alias."
   }
 }

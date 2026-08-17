@@ -26,8 +26,8 @@ locals {
 }
 
 
-module "kms_signer_key" {
-  source             = "./kms-signer-key"
+module "container_image_signer_key" {
+  source             = "./container-image-signer-key"
   application        = var.application
   key_alias_mappings = local.key_alias_mappings
   deploy_account_ids = local.deploy_account_ids
