@@ -64,7 +64,7 @@ resource "aws_kms_key" "terraform-bucket-key" {
         "Sid" : "GHARolePermissions",
         "Effect" : "Allow",
         "Principal" : {
-          "AWS" : "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/github-oidc-terraform-platform-repo-role-${var.aws_account_name}/GitHubActions"
+          "AWS" : "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/github-oidc-terraform-platform-repo-role-*/GitHubActions"
         },
         "Action" : [
           "kms:Get*",
