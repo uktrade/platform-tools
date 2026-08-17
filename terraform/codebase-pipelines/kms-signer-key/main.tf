@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_kms_key" "container_image_signer_key" {
   for_each = var.key_alias_mappings
-  
+
   description              = each.value.description
   tags                     = var.tags
   customer_master_key_spec = "ECC_NIST_P256"
@@ -42,7 +42,7 @@ resource "aws_kms_key" "container_image_signer_key" {
 }
 
 resource "aws_kms_alias" "container_image_signer_key" {
-  for_each = var.key_alias_mappings
+  for_each      = var.key_alias_mappings
   name          = each.value.alias
   target_key_id = aws_kms_key.container_image_signer_key[each.key].key_id
 
