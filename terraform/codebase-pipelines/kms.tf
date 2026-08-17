@@ -1,47 +1,35 @@
-resource "aws_kms_key" "container_image_signer_key" {
-  description              = "ECC_NIST_P256 Asymmetric KMS Key for image signing and verification"
-  tags                     = local.tags
-  customer_master_key_spec = "ECC_NIST_P256"
-  key_usage                = "SIGN_VERIFY"
-  enable_key_rotation      = false
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Id      = "key-default-1"
-    Statement = [
-      {
-        Sid    = "Allow verifying with the key"
-        Effect = "Allow"
-        Principal = {
-          AWS = [for id in local.deploy_account_ids : "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role"]
-        },
-        Action = [
-          "kms:Verify",
-          "kms:GetPublicKey",
-          "kms:DescribeKey"
-        ],
-        Resource = "*"
-      },
-      {
-        Sid    = "Allow signing with the key"
-        Effect = "Allow"
-        Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-build-placeholder-role" //build oidc role
-        },
-        Action = [
-          "kms:Sign",
-          "kms:DescribeKey"
-        ],
-        Resource = "*"
-      }
-    ]
-  })
+
+
+locals {
+  # !! Do not change this as it will break GitHub Worfklow CI/CD deployments
+  static_signer_alias = "alias/${var.application}-container-image-signer-key"
+
+  #  For key rotation, update the key_alias_mappings local:
+  #
+  #  1. Duplicate the current key alias object v_xx_xx_xxxx
+  #  2. Update the key of the *duplicate* object to today's date
+  #  3. Update the alias on the *previous* object to "${local.static_signer_alias}-<previous object key>"
+  #  4. Update the description on the *previous* object to "Expired Asymmetric KMS Key for image signing and verification"
+  # 
+  #  e.g.
+  #  v_16_08_2026 = {
+  #    alias       = local.static_signer_alias
+  #    description = "ECC_NIST_P256 Asymmetric KMS Key for image signing and verification"
+  #  }
+
+  key_alias_mappings = {
+    v_15_08_2026 = {
+      alias       = local.static_signer_alias
+      description = "Asymmetric KMS Key for image signing and verification"
+    }
+  }
 }
 
-resource "aws_kms_alias" "container_image_signer_key" {
-  name          = "alias/${var.application}-container-image-signer-key"
-  target_key_id = aws_kms_key.container_image_signer_key.key_id
 
-  lifecycle {
-    prevent_destroy = true
-  }
+module "kms_signer_key" {
+  source             = "./kms-signer-key"
+  application        = var.application
+  key_alias_mappings = local.key_alias_mappings
+  deploy_account_ids = local.deploy_account_ids
+  tags               = local.tags
 }
