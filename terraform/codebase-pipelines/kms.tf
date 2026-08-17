@@ -20,7 +20,7 @@ locals {
   key_alias_mappings = {
     v_15_08_2026 = {
       alias       = local.static_signer_alias
-      description = "Asymmetric KMS Key for image signing and verification"
+      description = "ECC_NIST_P256 Asymmetric KMS Key for image signing and verification"
     }
   }
 }
