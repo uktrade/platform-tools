@@ -12,6 +12,13 @@ Add the Python version(s) to `Dockerfile.debian` and `tox.ini`.
 
 This is currently a manual process.
 
+1. If you're running these steps on a VDE, you'll need to ensure your VDE is set up for cross-platform emulation:
+
+   ```sh
+   sudo apt install -y qemu-user-static binfmt-support
+   ```
+
+   This is because the image is built for multiple architectures (x86_64 and ARM).
 1. Log into the `platform-tools` AWS account, navigate to Elastic Container Registry and then the debain/python repository.
 1. From the View push commands page, authenticate your local Docker client with ECR.
 1. Populate the repository URL into the REGISTRY environment variable using `export REGISTRY='...'`

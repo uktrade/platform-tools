@@ -39,6 +39,12 @@ resource "aws_cloudwatch_log_group" "opensearch_log_group_index_slow_logs" {
   retention_in_days = coalesce(var.config.index_slow_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
   tags              = local.tags
+  depends_on = [
+    # When creating a log group, AWS validates that the referenced KMS key's
+    # IAM policy allows it to be used by CloudWatch. So we need to ensure we've
+    # attached the policy to the key before trying to create the log group.
+    aws_kms_key_policy.opensearch_to_cloudwatch,
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "opensearch_log_group_search_slow_logs" {
@@ -46,6 +52,9 @@ resource "aws_cloudwatch_log_group" "opensearch_log_group_search_slow_logs" {
   retention_in_days = coalesce(var.config.search_slow_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
   tags              = local.tags
+  depends_on = [
+    aws_kms_key_policy.opensearch_to_cloudwatch,
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "opensearch_log_group_es_application_logs" {
@@ -53,6 +62,9 @@ resource "aws_cloudwatch_log_group" "opensearch_log_group_es_application_logs" {
   retention_in_days = coalesce(var.config.es_app_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
   tags              = local.tags
+  depends_on = [
+    aws_kms_key_policy.opensearch_to_cloudwatch,
+  ]
 }
 
 resource "aws_cloudwatch_log_group" "opensearch_log_group_audit_logs" {
@@ -60,6 +72,9 @@ resource "aws_cloudwatch_log_group" "opensearch_log_group_audit_logs" {
   retention_in_days = coalesce(var.config.audit_log_retention_in_days, 7)
   kms_key_id        = aws_kms_key.cloudwatch_log_group_kms_key.arn
   tags              = local.tags
+  depends_on = [
+    aws_kms_key_policy.opensearch_to_cloudwatch,
+  ]
 }
 
 resource "aws_security_group" "opensearch-security-group" {
@@ -78,15 +93,6 @@ resource "aws_security_group" "opensearch-security-group" {
       data.aws_vpc.vpc.cidr_block,
     ]
   }
-
-  # ingress {
-  #   description = "Ingress from Lambda Functions to Secrets Manager"
-  #   from_port   = 443
-  #   to_port     = 443
-  #   protocol    = "tcp"
-
-  #   self = true
-  # }
 
   egress {
     description = "Allow traffic out on all ports"
@@ -115,6 +121,7 @@ resource "random_password" "password" {
 }
 
 data "aws_iam_policy_document" "opensearch-policy" {
+  # checkov:skip=CKV_AWS_283: Without all opensearch integrations signing their requests we cannot restrict the calling principle
   statement {
     principals {
       type        = "*"

@@ -127,7 +127,10 @@ data "aws_iam_policy_document" "ecr_policy" {
     condition {
       test     = "ArnNotLike"
       variable = "aws:PrincipalArn"
-      values   = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role", "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"]
+      values = [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
+      ]
     }
   }
 }

@@ -745,6 +745,8 @@ resource "aws_iam_role_policy" "ec2_access" {
 }
 
 data "aws_iam_policy_document" "ec2_access" {
+  # checkov:skip=CKV_AWS_111: Fix is tracked in DBTP-3234.
+  # checkov:skip=CKV_AWS_356: Fix is tracked in DBTP-3234.
 
   statement {
     effect = "Allow"
@@ -771,4 +773,59 @@ data "aws_iam_policy_document" "ec2_access" {
       "*"
     ]
   }
+}
+
+resource "aws_iam_role_policy" "acm_access" {
+  name   = "acm-access"
+  role   = aws_iam_role.codebase_pipeline_deploy.name
+  policy = data.aws_iam_policy_document.acm_access.json
+}
+
+data "aws_iam_policy_document" "acm_access" {
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "acm:ListCertificates",
+      "acm:DescribeCertificate",
+      "acm:GetCertificate",
+      "acm:ListTagsForCertificate"
+    ]
+    resources = [
+      "*"
+    ]
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/environment"
+      values   = [var.environment]
+    }
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/application"
+      values   = [var.args.application]
+    }
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "elasticloadbalancing:CreateListener"
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/environment"
+      values   = [var.environment]
+    }
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "aws:ResourceTag/application"
+      values   = [var.args.application]
+    }
+  }
+
 }

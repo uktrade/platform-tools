@@ -98,6 +98,7 @@ resource "random_string" "lambda_suffix" {
 resource "aws_lambda_function" "lambda" {
   # checkov:skip=CKV_AWS_272:Code signing is not currently in use
   # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
+  # checkov:skip=CKV_AWS_50:X-ray not used on platform
   filename                       = data.archive_file.lambda.output_path
   function_name                  = substr("${var.application}-${var.environment}-opensearch-create-users-${random_string.lambda_suffix.result}", 0, 64)
   role                           = aws_iam_role.lambda-execution-role.arn
@@ -120,6 +121,14 @@ resource "aws_lambda_function" "lambda" {
       name = local.name
     }
   )
+
+  depends_on = [
+    # When creating a Lambda function, AWS validates that the execution role
+    # has fundamental permissions like ec2:CreateNetworkInterface. So we need
+    # to ensure we've attached the policy to the role before trying to create
+    # the lambda.
+    aws_iam_role_policy.lambda-execution-role-policy,
+  ]
 }
 
 resource "aws_lambda_invocation" "create-users" {
