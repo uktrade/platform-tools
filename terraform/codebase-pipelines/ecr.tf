@@ -13,7 +13,7 @@ resource "aws_ecr_repository" "this" {
   }
 }
 
-resource "aws_ecr_repository_policy" "ecr_repo_policy" {
+resource "aws_ecr_repository_policy" "ecr_policy" {
   repository = aws_ecr_repository.this.name
   policy     = data.aws_iam_policy_document.ecr_policy.json
 }
