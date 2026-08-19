@@ -33,20 +33,20 @@ data "aws_iam_policy_document" "ecr_policy" {
   }
 
   statement {
-      sid    = "RootPull"
-      effect = "Allow"
-      actions = [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:BatchGetImage",
-        "ecr:CompleteLayerUpload"
+    sid    = "RootPull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload"
+    ]
+    principals {
+      type = "AWS"
+      identifiers = [
+        for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
       ]
-      principals {
-        type = "AWS"
-        identifiers = [
-          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
-        ]
-      }
     }
+  }
 
   statement {
     sid    = "PreventImageDelete"
