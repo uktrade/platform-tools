@@ -461,7 +461,7 @@ run "test_ecr_pipeline_mode_dual" {
   }
   assert {
     condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values 
+      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
       ])) == toset([
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
     ])
