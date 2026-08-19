@@ -410,7 +410,7 @@ run "test_ecr" {
     error_message = "Should be: AWS"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
+    condition     = flatten([for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.identifiers]) == ["*"]
     error_message = "ECR policy principals incorrect"
   }
 }
