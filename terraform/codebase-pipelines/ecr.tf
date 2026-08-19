@@ -13,98 +13,19 @@ resource "aws_ecr_repository" "this" {
   }
 }
 
-resource "aws_ecr_repository_policy" "ecr_policy" {
+resource "aws_ecr_repository_policy" "ecr_repo_policy" {
   repository = aws_ecr_repository.this.name
   policy     = data.aws_iam_policy_document.ecr_policy.json
 }
 
 data "aws_iam_policy_document" "ecr_policy" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:GetDownloadUrlForLayer",
-    ]
-
-    principals {
-      type = "AWS"
-      identifiers = [
-        for id in local.deploy_account_ids :
-        "arn:aws:iam::${id}:root"
-      ]
-    }
-  }
-
-  statement {
-    effect = "Allow"
-    sid    = "allowECRAuthentication"
-    actions = [
-      "ecr:GetAuthorizationToken"
-    ]
-    resources = "*"
-  }
-
-  statement {
-    sid    = "AllowImagePull"
-    effect = "Allow"
-    actions = [
-      "ecr:BatchGetImage",
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:GetDownloadUrlForLayer"
-    ]
-    resources = [
-      "arn:aws:ecr:eu-west-2:${id}:repository/${locals.ecr_name}",
-    ]
-  }
-
-  statement {
-    sid    = "AllowSignatureRevokeCheck"
-    effect = "Allow"
-    actions = [
-      "signer:GetRevocationStatus"
-    ]
-    resources = [
-      "*"
-    ]
-  }
-
-  statement {
-    effect = "Allow"
-    sid    = "PushActions"
-
-    actions = [
-      "ecr:CompleteLayerUpload",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["*"]
-    }
-
-    condition {
-      test     = "StringLike"
-      variable = "aws:PrincipalArn"
-      values = [
-        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role",
-        "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
-      ]
-    }
-  }
 
   statement {
     sid    = "PreventRepoDelete"
     effect = "Deny"
-
     actions = [
       "ecr:DeleteRepository"
     ]
-
     principals {
       type        = "AWS"
       identifiers = ["*"]
@@ -114,23 +35,168 @@ data "aws_iam_policy_document" "ecr_policy" {
   statement {
     sid    = "PreventImageDelete"
     effect = "Deny"
-
     actions = [
       "ecr:BatchDeleteImage"
     ]
-
     principals {
       type        = "*"
       identifiers = ["*"]
     }
-
     condition {
       test     = "ArnNotLike"
       variable = "aws:PrincipalArn"
-      values = [
+
+      values = compact([
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
+        contains(["dual_codepipeline_github", "github_actions"], var.pipeline_mode)
+        ? "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
+        : ""
+      ])
+    }
+  }
+
+  # ==========================================
+  # CodePipeline / Dual mode policy
+  # ==========================================
+
+  dynamic "statement" {
+    for_each = contains(["aws_codepipeline", "dual_codepipeline_github"], var.pipeline_mode) ? [1] : []
+
+    content {
+      sid    = "BasicECRAccess"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
       ]
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
+        ]
+      }
+      condition {
+        test     = "StringLike"
+        variable = "aws:PrincipalArn"
+        values = flatten([
+          for id in local.deploy_account_ids : [
+            "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
+            "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
+          ]
+        ])
+      }
+    }
+  }
+
+  # ==========================================
+  #  Github actions policy
+  # ==========================================
+
+  dynamic "statement" {
+    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+
+    content {
+      sid    = "EnhancedRootPull"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer",
+      ]
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
+        ]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+
+    content {
+      sid       = "allowECRAuthentication"
+      effect    = "Allow"
+      actions   = ["ecr:GetAuthorizationToken"]
+      resources = ["*"]
+      principals {
+        type        = "AWS"
+        identifiers = ["*"]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+
+    content {
+      sid    = "AllowImagePull"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchGetImage",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer"
+      ]
+      resources = [
+        "arn:aws:ecr:eu-west-2:${data.aws_caller_identity.current.account_id}:repository/${local.ecr_name}",
+      ]
+      principals {
+        type        = "AWS"
+        identifiers = ["*"]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+
+    content {
+      sid    = "AllowSignatureRevokeCheck"
+      effect = "Allow"
+      actions = [
+        "signer:GetRevocationStatus"
+      ]
+      resources = ["*"]
+      principals {
+        type        = "AWS"
+        identifiers = ["*"]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+
+    content {
+      sid    = "PushActions"
+      effect = "Allow"
+      actions = [
+        "ecr:CompleteLayerUpload",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
+      ]
+      principals {
+        type        = "AWS"
+        identifiers = ["*"]
+      }
+      condition {
+        test     = "StringLike"
+        variable = "aws:PrincipalArn"
+        values = flatten([
+          for id in local.deploy_account_ids : [
+            "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role"
+          ]
+        ])
+      }
     }
   }
 }
