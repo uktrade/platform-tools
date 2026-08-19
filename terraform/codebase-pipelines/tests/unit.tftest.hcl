@@ -400,7 +400,10 @@ run "test_ecr" {
     error_message = "Should be: Deny"
   }
   assert {
-    condition = toset(data.aws_iam_policy_document.ecr_policy.statement[2].condition[0].values) == toset([
+    condition = toset(flatten([
+      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
+      if c.variable == "aws:PrincipalArn"
+      ])) == toset([
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
     ])
     error_message = "Unexpected actions"
@@ -462,6 +465,7 @@ run "test_ecr_pipeline_mode_dual" {
   assert {
     condition = toset(flatten([
       for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
+      if c.variable == "aws:PrincipalArn"
       ])) == toset([
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
     ])
