@@ -90,9 +90,6 @@ data "aws_iam_policy_document" "ecr_policy" {
       sid    = "BasicECRAccess"
       effect = "Deny"
       actions = [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:BatchGetImage",
-        "ecr:CompleteLayerUpload",
         "ecr:GetDownloadUrlForLayer",
         "ecr:InitiateLayerUpload",
         "ecr:PutImage",
@@ -114,6 +111,26 @@ data "aws_iam_policy_document" "ecr_policy" {
             "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
           ]
         ])
+      }
+    }
+  }
+
+    dynamic "statement" {
+    for_each = contains(["dual_codepipeline_github"], var.pipeline_mode) ? [1] : []
+
+    content {
+      sid    = "EnhancedRootPull"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload"
+      ]
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
+        ]
       }
     }
   }
