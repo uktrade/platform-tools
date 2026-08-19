@@ -59,23 +59,23 @@ data "aws_iam_policy_document" "ecr_policy" {
     for_each = var.pipeline_mode == "aws_codepipeline" ? [1] : []
 
     content {
-    effect = "Allow"
-    actions = [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-    principals {
-      type = "AWS"
-      identifiers = [
-        for id in local.deploy_account_ids :
-        "arn:aws:iam::${id}:root"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
       ]
-    }
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids :
+          "arn:aws:iam::${id}:root"
+        ]
+      }
     }
   }
 
