@@ -33,6 +33,22 @@ data "aws_iam_policy_document" "ecr_policy" {
   }
 
   statement {
+      sid    = "RootPull"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:BatchGetImage",
+        "ecr:CompleteLayerUpload"
+      ]
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
+        ]
+      }
+    }
+
+  statement {
     sid    = "PreventImageDelete"
     effect = "Deny"
     actions = [
@@ -61,9 +77,6 @@ data "aws_iam_policy_document" "ecr_policy" {
     content {
       effect = "Allow"
       actions = [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:BatchGetImage",
-        "ecr:CompleteLayerUpload",
         "ecr:GetDownloadUrlForLayer",
         "ecr:InitiateLayerUpload",
         "ecr:PutImage",
@@ -115,49 +128,10 @@ data "aws_iam_policy_document" "ecr_policy" {
     }
   }
 
-    dynamic "statement" {
-    for_each = contains(["dual_codepipeline_github"], var.pipeline_mode) ? [1] : []
-
-    content {
-      sid    = "EnhancedRootPull"
-      effect = "Allow"
-      actions = [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:BatchGetImage",
-        "ecr:CompleteLayerUpload"
-      ]
-      principals {
-        type = "AWS"
-        identifiers = [
-          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
-        ]
-      }
-    }
-  }
-
   # ==========================================
   #  Github Actions & BYOD policy
   # ==========================================
 
-  dynamic "statement" {
-    for_each = (var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
-
-    content {
-      sid    = "EnhancedRootPull"
-      effect = "Allow"
-      actions = [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:BatchGetImage",
-        "ecr:GetDownloadUrlForLayer",
-      ]
-      principals {
-        type = "AWS"
-        identifiers = [
-          for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
-        ]
-      }
-    }
-  }
 
   dynamic "statement" {
     for_each = (var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
