@@ -55,16 +55,40 @@ data "aws_iam_policy_document" "ecr_policy" {
     }
   }
 
+  dynamic "statement" {
+    for_each = var.pipeline_mode == "aws_codepipeline" ? [1] : []
+
+    content {
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
+    ]
+    principals {
+      type = "AWS"
+      identifiers = [
+        for id in local.deploy_account_ids :
+        "arn:aws:iam::${id}:root"
+      ]
+    }
+    }
+  }
+
   # ==========================================
-  # CodePipeline / Dual mode policy
+  # Github Actions & Paketo/BYOD policy
   # ==========================================
 
   dynamic "statement" {
-    for_each = contains(["aws_codepipeline", "dual_codepipeline_github"], var.pipeline_mode) ? [1] : []
+    for_each = contains(["dual_codepipeline_github"], var.pipeline_mode) ? [1] : []
 
     content {
       sid    = "BasicECRAccess"
-      effect = "Allow"
+      effect = "Deny"
       actions = [
         "ecr:BatchCheckLayerAvailability",
         "ecr:BatchGetImage",
@@ -81,7 +105,7 @@ data "aws_iam_policy_document" "ecr_policy" {
         ]
       }
       condition {
-        test     = "StringLike"
+        test     = "ArnNotLike"
         variable = "aws:PrincipalArn"
         values = flatten([
           for id in local.deploy_account_ids : [
@@ -95,11 +119,11 @@ data "aws_iam_policy_document" "ecr_policy" {
   }
 
   # ==========================================
-  #  Github actions policy
+  #  Github Actions & BYOD policy
   # ==========================================
 
   dynamic "statement" {
-    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+    for_each = (var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
 
     content {
       sid    = "EnhancedRootPull"
@@ -119,76 +143,24 @@ data "aws_iam_policy_document" "ecr_policy" {
   }
 
   dynamic "statement" {
-    for_each = var.pipeline_mode == "github_actions" ? [1] : []
-
-    content {
-      sid       = "allowECRAuthentication"
-      effect    = "Allow"
-      actions   = ["ecr:GetAuthorizationToken"]
-      resources = ["*"]
-      principals {
-        type        = "AWS"
-        identifiers = ["*"]
-      }
-    }
-  }
-
-  dynamic "statement" {
-    for_each = var.pipeline_mode == "github_actions" ? [1] : []
-
-    content {
-      sid    = "AllowImagePull"
-      effect = "Allow"
-      actions = [
-        "ecr:BatchGetImage",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer"
-      ]
-      resources = [
-        "arn:aws:ecr:eu-west-2:${data.aws_caller_identity.current.account_id}:repository/${local.ecr_name}",
-      ]
-      principals {
-        type        = "AWS"
-        identifiers = ["*"]
-      }
-    }
-  }
-
-  dynamic "statement" {
-    for_each = var.pipeline_mode == "github_actions" ? [1] : []
-
-    content {
-      sid    = "AllowSignatureRevokeCheck"
-      effect = "Allow"
-      actions = [
-        "signer:GetRevocationStatus"
-      ]
-      resources = ["*"]
-      principals {
-        type        = "AWS"
-        identifiers = ["*"]
-      }
-    }
-  }
-
-  dynamic "statement" {
-    for_each = var.pipeline_mode == "github_actions" ? [1] : []
+    for_each = (var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
 
     content {
       sid    = "PushActions"
-      effect = "Allow"
+      effect = "Deny"
       actions = [
         "ecr:CompleteLayerUpload",
         "ecr:InitiateLayerUpload",
         "ecr:PutImage",
-        "ecr:UploadLayerPart"
+        "ecr:UploadLayerPart",
+        "ecr:BatchCheckLayerAvailability"
       ]
       principals {
         type        = "AWS"
         identifiers = ["*"]
       }
       condition {
-        test     = "StringLike"
+        test     = "ArnNotLike"
         variable = "aws:PrincipalArn"
         values = flatten([
           for id in local.deploy_account_ids : [
