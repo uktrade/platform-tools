@@ -428,10 +428,12 @@ run "test_ecr_pipeline_mode_github" {
     condition = toset(flatten([
       for c in data.aws_iam_policy_document.ecr_policy.statement[5].condition : c.values
       if c.variable == "aws:PrincipalArn"
-      ])) == toset([
-      "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-      "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build"
-    ])
+      ])) == toset(flatten([
+      for id in ["000123456789", "111123456789"] : [
+        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+        "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build"
+      ]
+    ]))
     error_message = "Unexpected values"
   }
   assert {
@@ -455,11 +457,12 @@ run "test_ecr_pipeline_mode_dual" {
     condition = toset(flatten([
       for c in data.aws_iam_policy_document.ecr_policy.statement[4].condition : c.values
       if c.variable == "aws:PrincipalArn"
-      ])) == toset([
-      "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-      "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
-      "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
-    ])
+      ])) == toset(flatten([
+      for id in ["000123456789", "111123456789"] : [
+        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+        "arn:aws:iam::${id}:role/github-oidc-${var.application}-codebase-image-build"
+      ]
+    ]))
     error_message = "Unexpected values"
   }
   assert {
