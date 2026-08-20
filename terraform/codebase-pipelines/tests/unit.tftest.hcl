@@ -422,28 +422,40 @@ run "test_ecr_pipeline_mode_github" {
   command = plan
 
   variables {
-    pipeline_mode = "github_actions"
+    pipeline_mode        = "github_actions"
+    requires_image_build = false
+    application          = var.application
+    codebase             = var.codebase
   }
+
   assert {
     condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[5].condition : c.values
-      if c.variable == "aws:PrincipalArn"
+      for s in data.aws_iam_policy_document.ecr_policy.statement : [
+        for c in s.condition : c.values
+        if c.variable == "aws:PrincipalArn"
+      ]
+      if s.sid == "PushActions"
       ])) == toset(flatten([
-      for id in ["000123456789", "111123456789"] : [
+      for id in ["000123456789", "123456789000"] : [
         "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
         "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build"
       ]
     ]))
-    error_message = "Unexpected values"
+    error_message = "Unexpected values for PushActions"
   }
+
   assert {
     condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
-      if c.variable == "aws:PrincipalArn"
+      for s in data.aws_iam_policy_document.ecr_policy.statement : [
+        for c in s.condition : c.values
+        if c.variable == "aws:PrincipalArn"
+      ]
+      if s.sid == "PreventImageDelete"
       ])) == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role"
     ])
-    error_message = "Unexpected values"
+    error_message = "Unexpected values for PreventImageDelete"
   }
 }
 
@@ -452,27 +464,40 @@ run "test_ecr_pipeline_mode_dual" {
 
   variables {
     pipeline_mode = "dual_codepipeline_github"
+    application   = var.application
+    codebase      = var.codebase
   }
+
   assert {
     condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[4].condition : c.values
-      if c.variable == "aws:PrincipalArn"
+      for s in data.aws_iam_policy_document.ecr_policy.statement : [
+        for c in s.condition : c.values
+        if c.variable == "aws:PrincipalArn"
+      ]
+      if s.sid == "BasicECRAccess"
       ])) == toset(flatten([
-      for id in ["000123456789", "111123456789"] : [
+      for id in ["000123456789", "123456789000"] : [
         "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        "arn:aws:iam::${id}:role/github-oidc-${var.application}-codebase-image-build"
+        # FIX: Added the platform-image-build role and corrected the codebase-image-build string
+        "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
+        "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
       ]
     ]))
-    error_message = "Unexpected values"
+    error_message = "Unexpected values for BasicECRAccess"
   }
+
   assert {
     condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
-      if c.variable == "aws:PrincipalArn"
+      for s in data.aws_iam_policy_document.ecr_policy.statement : [
+        for c in s.condition : c.values
+        if c.variable == "aws:PrincipalArn"
+      ]
+      if s.sid == "PreventImageDelete"
       ])) == toset([
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
     ])
-    error_message = "Unexpected values"
+    error_message = "Unexpected values for PreventImageDelete"
   }
 }
 
@@ -1102,11 +1127,11 @@ run "test_iam" {
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy.name == "artifact-store-access"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy[0].name == "artifact-store-access"
     error_message = "Should be: 'artifact-store-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy.role == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy[0].role == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
   }
   assert {
@@ -1185,11 +1210,11 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-codebase-codebase-pipeline'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline.name == "artifact-store-access"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline[0].name == "artifact-store-access"
     error_message = "Should be: 'artifact-store-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline.role == "my-app-my-codebase-codebase-pipeline"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline[0].role == "my-app-my-codebase-codebase-pipeline"
     error_message = "Should be: 'my-app-my-codebase-codebase-pipeline'"
   }
   assert {
