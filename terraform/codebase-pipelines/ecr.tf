@@ -54,10 +54,12 @@ data "aws_iam_policy_document" "ecr_policy" {
     actions = [
       "ecr:BatchDeleteImage"
     ]
+
     principals {
       type        = "*"
       identifiers = ["*"]
     }
+
     condition {
       test     = "ArnNotLike"
       variable = "aws:PrincipalArn"
