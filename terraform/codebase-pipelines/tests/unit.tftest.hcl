@@ -9,6 +9,17 @@ override_data {
     }
   }
 }
+
+override_data {
+  target = data.aws_iam_policy_document.access_artifact_store
+  values = {
+    json = jsonencode({
+      Version   = "2012-10-17"
+      Statement = []
+    })
+  }
+}
+
 override_data {
   target = data.aws_iam_policy_document.assume_codebuild_role
   values = {
@@ -1127,11 +1138,11 @@ run "test_iam" {
     error_message = "Should be: ${jsonencode(var.expected_tags)}"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy[0].name == "artifact-store-access"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy.name == "artifact-store-access"
     error_message = "Should be: 'artifact-store-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy[0].role == "my-app-my-codebase-codebase-deploy"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebuild_deploy.role == "my-app-my-codebase-codebase-deploy"
     error_message = "Should be: 'my-app-my-codebase-codebase-deploy'"
   }
   assert {
@@ -1210,11 +1221,11 @@ run "test_iam" {
     error_message = "Should be: 'my-app-my-codebase-codebase-pipeline'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline[0].name == "artifact-store-access"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline.name == "artifact-store-access"
     error_message = "Should be: 'artifact-store-access'"
   }
   assert {
-    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline[0].role == "my-app-my-codebase-codebase-pipeline"
+    condition     = aws_iam_role_policy.artifact_store_access_for_codebase_pipeline.role == "my-app-my-codebase-codebase-pipeline"
     error_message = "Should be: 'my-app-my-codebase-codebase-pipeline'"
   }
   assert {
