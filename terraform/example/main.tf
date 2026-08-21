@@ -10,7 +10,8 @@ locals {
 }
 
 module "extensions-staging" {
-  source      = "../extensions"
-  args        = local.args
-  environment = "my-environment"
+  source            = "../extensions"
+  args              = local.args
+  environment       = "my-environment"
+  deploy_repository = "uktrade/my-application-deploy"
 }

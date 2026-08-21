@@ -146,9 +146,9 @@ run "aws_lb_unit_test" {
   assert {
     condition = (
       (var.environment == "prod" && aws_lb.this.access_logs[0].bucket == "dbt-access-logs-production") ||
-      (var.environment != "prod" && aws_lb.this.access_logs[0].bucket == "dbt-access-logs-non-production")
+      (var.environment != "prod" && aws_lb.this.access_logs[0].bucket == "alb-access-logs-non-prod-812359060647-eu-west-2-an")
     )
-    error_message = "ALB access_logs bucket must be dbt-access-logs-production or dbt-access-logs-non-production"
+    error_message = "ALB access_logs bucket must be dbt-access-logs-production or alb-access-logs-non-prod-812359060647-eu-west-2-an"
   }
 
   assert {

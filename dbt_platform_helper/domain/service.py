@@ -612,7 +612,23 @@ class ServiceManager:
         autoscaling_response = self.autoscaling_provider.describe_autoscaling_target(
             cluster_name=cluster_name, ecs_service_name=ecs_service_name
         )
-        desired_count = autoscaling_response.get("MinCapacity", 1)
+        min_capacity = autoscaling_response.get("MinCapacity", 1)
+        max_capacity = autoscaling_response.get("MaxCapacity", min_capacity)
+
+        if min_capacity == 0 and max_capacity == 0:
+            desired_count = 0
+        else:
+            current_service = self.ecs_provider.describe_service(
+                service=service, environment=environment, application=application
+            )
+
+            if not current_service:
+                self.io.warn(
+                    f"Could not determine the current running count for service: '{ecs_service_name}' - falling back to the configured minimum {min_capacity} tasks."
+                )
+            current_desired_count = (current_service or {}).get("desiredCount", 0)
+            # Preserve whatever autoscaling has already scaled the service to, rather than resetting to the configured minimum on every deploy. Only raise up to the minimum if the service is currently running below it (e.g. after a crash, or on first deploy)
+            desired_count = max(current_desired_count, min_capacity)
 
         update_response = self.ecs_provider.update_service(
             service=service,
