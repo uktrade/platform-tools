@@ -95,12 +95,12 @@ def service():
 @click.option(
     "--image-tag",
     required=False,
-    help="Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable. You must provide either an image-digest or an image-tag, but not both.",
+    help="Image tag to deploy for the service(s). You must provide either an image-digest or an image-tag, but not both.",
 )
 @click.option(
     "--image-digest",
     required=False,
-    help="Image digest to for the services(s). You must provide either an image-digest or an image-tag, but not both.",
+    help="Image digest to deploy for the services(s). You must provide either an image-digest or an image-tag, but not both.",
 )
 def deploy(name, env, image_tag, image_digest):
     """Register a new ECS task definition from an S3 JSON template, update the
