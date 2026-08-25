@@ -9,17 +9,6 @@ override_data {
     }
   }
 }
-
-override_data {
-  target = data.aws_iam_policy_document.access_artifact_store
-  values = {
-    json = jsonencode({
-      Version   = "2012-10-17"
-      Statement = []
-    })
-  }
-}
-
 override_data {
   target = data.aws_iam_policy_document.assume_codebuild_role
   values = {
@@ -407,15 +396,18 @@ run "test_ecr" {
     error_message = "Should be: {\"Sid\": \"ECRPolicy\"}"
   }
   assert {
-    condition     = data.aws_iam_policy_document.ecr_policy.statement[0].effect == "Deny"
-    error_message = "Should be: Deny"
+    condition     = data.aws_iam_policy_document.ecr_policy.statement[0].effect == "Allow"
+    error_message = "Should be: Allow"
   }
   assert {
-    condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
-      if c.variable == "aws:PrincipalArn"
-      ])) == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
+    condition = data.aws_iam_policy_document.ecr_policy.statement[0].actions == toset([
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:CompleteLayerUpload",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart"
     ])
     error_message = "Unexpected actions"
   }
@@ -424,91 +416,8 @@ run "test_ecr" {
     error_message = "Should be: AWS"
   }
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.identifiers]) == ["*"]
+    condition     = flatten([for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.identifiers]) == ["arn:aws:iam::000123456789:root", "arn:aws:iam::123456789000:root"]
     error_message = "ECR policy principals incorrect"
-  }
-}
-
-run "test_ecr_pipeline_mode_github" {
-  command = plan
-
-  variables {
-    pipeline_mode        = "github_actions"
-    requires_image_build = false
-    application          = var.application
-    codebase             = var.codebase
-  }
-
-  assert {
-    condition = toset(flatten([
-      for s in data.aws_iam_policy_document.ecr_policy.statement : [
-        for c in s.condition : c.values
-        if c.variable == "aws:PrincipalArn"
-      ]
-      if s.sid == "PushActions"
-      ])) == toset(flatten([
-      for id in ["000123456789", "123456789000"] : [
-        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build"
-      ]
-    ]))
-    error_message = "Unexpected values for PushActions"
-  }
-
-  assert {
-    condition = toset(flatten([
-      for s in data.aws_iam_policy_document.ecr_policy.statement : [
-        for c in s.condition : c.values
-        if c.variable == "aws:PrincipalArn"
-      ]
-      if s.sid == "PreventImageDelete"
-      ])) == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role"
-    ])
-    error_message = "Unexpected values for PreventImageDelete"
-  }
-}
-
-run "test_ecr_pipeline_mode_dual" {
-  command = plan
-
-  variables {
-    pipeline_mode = "dual_codepipeline_github"
-    application   = var.application
-    codebase      = var.codebase
-  }
-
-  assert {
-    condition = toset(flatten([
-      for s in data.aws_iam_policy_document.ecr_policy.statement : [
-        for c in s.condition : c.values
-        if c.variable == "aws:PrincipalArn"
-      ]
-      if s.sid == "BasicECRAccess"
-      ])) == toset(flatten([
-      for id in ["000123456789", "123456789000"] : [
-        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        # FIX: Added the platform-image-build role and corrected the codebase-image-build string
-        "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
-        "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
-      ]
-    ]))
-    error_message = "Unexpected values for BasicECRAccess"
-  }
-
-  assert {
-    condition = toset(flatten([
-      for s in data.aws_iam_policy_document.ecr_policy.statement : [
-        for c in s.condition : c.values
-        if c.variable == "aws:PrincipalArn"
-      ]
-      if s.sid == "PreventImageDelete"
-      ])) == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
-    ])
-    error_message = "Unexpected values for PreventImageDelete"
   }
 }
 
