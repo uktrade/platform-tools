@@ -295,6 +295,7 @@ data "aws_iam_policy_document" "ecr_access_for_codebase_pipeline" {
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_codebase_pipeline" {
+  count  = var.pipeline_mode != "github_actions" ? 1 : 0
   name   = "artifact-store-access"
   role   = aws_iam_role.codebase_deploy_pipeline.name
   policy = data.aws_iam_policy_document.access_artifact_store.json
@@ -357,6 +358,7 @@ resource "aws_iam_role" "codebase_deploy" {
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_codebuild_deploy" {
+  count  = var.pipeline_mode != "github_actions" ? 1 : 0
   name   = "artifact-store-access"
   role   = aws_iam_role.codebase_deploy.name
   policy = data.aws_iam_policy_document.access_artifact_store.json
@@ -699,6 +701,7 @@ resource "aws_iam_role_policy" "environment_deploy_role_access_for_update_alb_ru
 }
 
 resource "aws_iam_role_policy" "artifact_store_access_for_update_alb_rules" {
+  count  = var.pipeline_mode != "github_actions" ? 1 : 0
   name   = "artifact-store-access"
   role   = aws_iam_role.update_alb_rules.name
   policy = data.aws_iam_policy_document.access_artifact_store.json
