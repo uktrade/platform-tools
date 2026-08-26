@@ -585,8 +585,9 @@ class ServiceManager:
         task_definition = json.loads(s3_response)
 
         image_reference = image_digest or image_tag
+        reference_type = "digest" if image_digest else "tag"
         self.io.info(
-            f"Deploying image digest or tag '{image_reference}' to service '{ecs_service_name}' in environment '{environment}'.\n"
+            f"Deploying image {reference_type} '{image_reference}' to service '{ecs_service_name}' in environment '{environment}'.\n"
         )
 
         task_def_arn = self.ecs_provider.register_task_definition(
