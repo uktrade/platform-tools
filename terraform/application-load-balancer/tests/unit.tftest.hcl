@@ -195,8 +195,8 @@ run "aws_lb_listener_https_unit_test" {
   }
 
   assert {
-    condition     = aws_lb_listener.alb-listener["https"].ssl_policy == "ELBSecurityPolicy-2016-08"
-    error_message = "Should be:ELBSecurityPolicy-2016-08"
+    condition     = aws_lb_listener.alb-listener["https"].ssl_policy == "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+    error_message = "Should be: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
   }
 
   assert {
