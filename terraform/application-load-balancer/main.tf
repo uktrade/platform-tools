@@ -117,7 +117,7 @@ resource "aws_lb_target_group" "http-target-group" {
   tags        = local.tags
 }
 
-# Certificate will be referenced by its primary standard domain but we include all the CDN domains in the SAN field.
+# Certificate for the ALB primary domain and any additional domains that point directly to the ALB. CDN domains are no longer required in the SANs.
 resource "aws_acm_certificate" "certificate" {
   domain_name               = local.domain_name
   subject_alternative_names = coalesce(try((keys(local.san_list)), null), [])

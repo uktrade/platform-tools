@@ -277,18 +277,8 @@ run "aws_acm_certificate_unit_test" {
   }
 
   assert {
-    condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 2
-    error_message = "Should be: 2"
-  }
-
-  assert {
-    condition     = [for el in aws_acm_certificate.certificate.subject_alternative_names : true if el == "web.dev.my-application.uktrade.digital"][0] == true
-    error_message = "Should be: web.dev.my-application.uktrade.digital"
-  }
-
-  assert {
-    condition     = [for el in aws_acm_certificate.certificate.subject_alternative_names : true if el == "api.dev.my-application.uktrade.digital"][0] == true
-    error_message = "Should be: api.dev.my-application.uktrade.digital"
+    condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 0
+    error_message = "Should be: 0"
   }
 
   assert {
