@@ -22,7 +22,7 @@ terraform {
     region         = "eu-west-2"
     encrypt        = true
     kms_key_id     = "alias/terraform-platform-state-s3-key-{{ aws_account }}"
-    dynamodb_table = "terraform-platform-lockdb-{{ aws_account }}"
+    use_lockfile   = true
   }
   required_providers {
     aws = {
