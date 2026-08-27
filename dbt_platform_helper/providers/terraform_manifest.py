@@ -287,7 +287,7 @@ class TerraformManifestProvider:
                     "region": "eu-west-2",
                     "encrypt": True,
                     "kms_key_id": f"alias/terraform-platform-state-s3-key-{account}",
-                    "dynamodb_table": f"terraform-platform-lockdb-{account}",
+                    "use_lockfile": True,
                 }
             },
             "required_providers": {
