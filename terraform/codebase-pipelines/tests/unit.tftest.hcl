@@ -1,6 +1,14 @@
 mock_provider "aws" {}
 
 override_data {
+  target = data.aws_caller_identity.current
+
+  values = {
+    account_id = "000123456789"
+  }
+}
+
+override_data {
   target = data.external.codestar_connections
 
   values = {
@@ -12,11 +20,9 @@ override_data {
 
 override_data {
   target = data.aws_iam_policy_document.access_artifact_store
+
   values = {
-    json = jsonencode({
-      Version   = "2012-10-17"
-      Statement = []
-    })
+    json = "{\"Version\":\"2012-10-17\",\"Statement\":[]}"
   }
 }
 
@@ -394,38 +400,65 @@ run "test_ecr" {
     condition     = aws_ecr_repository.this.name == "my-app/my-codebase"
     error_message = "Should be: my-app/my-codebase"
   }
+
   assert {
     condition     = jsonencode(aws_ecr_repository.this.tags) == jsonencode(var.expected_ecr_tags)
     error_message = "Should be: ${jsonencode(var.expected_ecr_tags)}"
   }
+
   assert {
     condition     = aws_ecr_repository_policy.ecr_policy.repository == "my-app/my-codebase"
     error_message = "Should be: 'my-app/my-codebase'"
   }
+
   assert {
     condition     = aws_ecr_repository_policy.ecr_policy.policy == "{\"Sid\": \"ECRPolicy\"}"
     error_message = "Should be: {\"Sid\": \"ECRPolicy\"}"
   }
-  assert {
-    condition     = data.aws_iam_policy_document.ecr_policy.statement[0].effect == "Deny"
-    error_message = "Should be: Deny"
-  }
+
   assert {
     condition = toset(flatten([
-      for c in data.aws_iam_policy_document.ecr_policy.statement[2].condition : c.values
-      if c.variable == "aws:PrincipalArn"
+      for s in data.aws_iam_policy_document.ecr_policy.statement : [
+        for c in s.condition : c.values
+        if c.variable == "aws:PrincipalArn"
+      ]
+      if s.sid == "PreventImageDelete"
       ])) == toset([
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role",
     ])
-    error_message = "Unexpected actions"
+
+    error_message = "Unexpected values for PreventImageDelete"
   }
+
   assert {
-    condition     = [for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.type][0] == "AWS"
-    error_message = "Should be: AWS"
+    condition = one([
+      for s in data.aws_iam_policy_document.ecr_policy.statement :
+      s.actions
+      if s.sid == "ImagePull"
+      ]) == toset([
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+    ])
+
+    error_message = "Unexpected actions for ImagePull"
   }
+
   assert {
-    condition     = flatten([for el in data.aws_iam_policy_document.ecr_policy.statement[0].principals : el.identifiers]) == ["*"]
-    error_message = "ECR policy principals incorrect"
+    condition = one([
+      for s in data.aws_iam_policy_document.ecr_policy.statement :
+      s.actions
+      if s.sid == "DefaultImagePush"
+      ]) == toset([
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:CompleteLayerUpload",
+      "ecr:InitiateLayerUpload",
+      "ecr:PutImage",
+      "ecr:UploadLayerPart",
+    ])
+
+    error_message = "Unexpected actions for DefaultImagePush"
   }
 }
 
@@ -445,14 +478,20 @@ run "test_ecr_pipeline_mode_github" {
         for c in s.condition : c.values
         if c.variable == "aws:PrincipalArn"
       ]
-      if s.sid == "PushActions"
-      ])) == toset(flatten([
-      for id in ["000123456789", "123456789000"] : [
-        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build"
+      if s.sid == "RestrictedImagePushAllow"
+      ])) == toset(concat(
+      flatten([
+        for id in ["000123456789", "123456789000"] : [
+          "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+          "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
+        ]
+      ]),
+      [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role",
       ]
-    ]))
-    error_message = "Unexpected values for PushActions"
+    ))
+
+    error_message = "Unexpected values for RestrictedImagePushAllow"
   }
 
   assert {
@@ -461,54 +500,29 @@ run "test_ecr_pipeline_mode_github" {
         for c in s.condition : c.values
         if c.variable == "aws:PrincipalArn"
       ]
-      if s.sid == "PreventImageDelete"
-      ])) == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role"
-    ])
-    error_message = "Unexpected values for PreventImageDelete"
-  }
-}
+      if s.sid == "RestrictedImagePushDeny"
+      ])) == toset(concat(
+      flatten([
+        for id in ["000123456789", "123456789000"] : [
+          "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+          "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
+        ]
+      ]),
+      [
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role",
+      ]
+    ))
 
-run "test_ecr_pipeline_mode_dual" {
-  command = plan
-
-  variables {
-    pipeline_mode = "dual_codepipeline_github"
-    application   = var.application
-    codebase      = var.codebase
+    error_message = "Unexpected values for RestrictedImagePushDeny"
   }
 
   assert {
-    condition = toset(flatten([
-      for s in data.aws_iam_policy_document.ecr_policy.statement : [
-        for c in s.condition : c.values
-        if c.variable == "aws:PrincipalArn"
-      ]
-      if s.sid == "BasicECRAccess"
-      ])) == toset(flatten([
-      for id in ["000123456789", "123456789000"] : [
-        "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-        # FIX: Added the platform-image-build role and corrected the codebase-image-build string
-        "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
-        "arn:aws:iam::${id}:role/${var.application}-${var.codebase}-codebase-image-build"
-      ]
-    ]))
-    error_message = "Unexpected values for BasicECRAccess"
-  }
+    condition = !contains(
+      [for s in data.aws_iam_policy_document.ecr_policy.statement : s.sid],
+      "DefaultImagePush"
+    )
 
-  assert {
-    condition = toset(flatten([
-      for s in data.aws_iam_policy_document.ecr_policy.statement : [
-        for c in s.condition : c.values
-        if c.variable == "aws:PrincipalArn"
-      ]
-      if s.sid == "PreventImageDelete"
-      ])) == toset([
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
-    ])
-    error_message = "Unexpected values for PreventImageDelete"
+    error_message = "DefaultImagePush should not exist in tightened GitHub Actions mode"
   }
 }
 
