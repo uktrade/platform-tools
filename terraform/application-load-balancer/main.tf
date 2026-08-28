@@ -316,7 +316,7 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
       "elasticloadbalancing:AddTags",
     ]
     resources = [
-      "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
+      "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
     ]
   }
 }

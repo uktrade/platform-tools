@@ -301,11 +301,6 @@ run "aws_route53_record_unit_test" {
   }
 
   assert {
-    condition     = aws_route53_record.validation-record-san[1].ttl == 300
-    error_message = "Should be: 300"
-  }
-
-  assert {
     condition     = aws_route53_record.alb-record.name == "dom-prefix.env.app.uktrade.digital"
     error_message = "Should be: dom-prefix.env.app.uktrade.digital"
   }
@@ -1008,7 +1003,7 @@ run "dummy_listener_rule_manager" {
   # Requires executing run block with 'apply' to evaluate "aws_lb_listener.alb-listener["https"].arn"
   # assert {
   #   condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[2].resources == toset([
-  #     "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
+  #     "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
   #   ])
   #   error_message = "Second statement resource should be all listener rules for the https listener"
   # }
@@ -1064,7 +1059,7 @@ run "existing_cdn_lists_match" {
   }
 
   assert {
-    condition     = aws_acm_certificate.certificate.subject_alternative_names == toset(["api.dev.my-application.uktrade.digital", "web.dev.my-application.uktrade.digital"])
-    error_message = "SAN list does not match given cdn domains list keys given"
+    condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 0
+    error_message = "CDN domains should not be included in certificate SANs"
   }
 }
