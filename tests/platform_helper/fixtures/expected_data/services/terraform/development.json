@@ -30,7 +30,7 @@
         "region": "eu-west-2",
         "encrypt": true,
         "kms_key_id": "alias/terraform-platform-state-s3-key-non-prod-acc",
-        "use_lockfile": true
+        "dynamodb_table": "terraform-platform-lockdb-non-prod-acc"
       }
     },
     "required_providers": {
