@@ -254,7 +254,7 @@ def test_generate_environment_config_creates_file(
     assert (
         s3_backend["kms_key_id"] == f"alias/terraform-platform-state-s3-key-{expected_aws_account}"
     )
-    assert s3_backend["dynamodb_table"] == "terraform-platform-lockdb-non-prod-acc"
+    assert s3_backend["dynamodb_table"] == f"terraform-platform-lockdb-{expected_aws_account}"
 
     aws_req_provider = terraform["required_providers"]["aws"]
     assert aws_req_provider["source"] == "hashicorp/aws"
