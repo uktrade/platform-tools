@@ -10,10 +10,10 @@ CLIENT_TASK="psql"
 
 while [ $CHECK_COUNT -lt $CHECK_NUMBER ]; do
   sleep $CHECK_INTERVAL
-  TASKS_RUNNING="$(ps -e -o pid,comm | grep -c "$CLIENT_TASK")"
+  TASKS_RUNNING="$(pgrep -c "$CLIENT_TASK")"
 
   if [[ $TASKS_RUNNING == 0 ]]; then
-     CHECK_COUNT=$(( $CHECK_COUNT + 1 ))
+     CHECK_COUNT=$(( CHECK_COUNT + 1 ))
      TIME_TO_SHUTDOWN="$(( (CHECK_NUMBER - CHECK_COUNT) * CHECK_INTERVAL ))"
      echo "No clients connected, will shutdown in approximately $TIME_TO_SHUTDOWN seconds"
   else

@@ -95,8 +95,11 @@ class AWSTestFixtures:
         description="",
         secret="SECRET",
         platform="platform",
-        tags=[],
+        tags=None,
     ):
+        if tags is None:
+            tags = []
+
         called_with = dict(
             Name=f"/{platform}/test-application/{env}/secrets/{secret.upper()}",
             Value=str(value),
@@ -119,7 +122,10 @@ class AWSTestFixtures:
         return called_with
 
     @staticmethod
-    def put_parameter_copied_called_with(platform, source, target, secret, tags=[]):
+    def put_parameter_copied_called_with(platform, source, target, secret, tags=None):
+        if tags is None:
+            tags = []
+
         tags = [{"Key": "copied-from", "Value": source}] + tags
         description = f"Copied from {source} environment."
         return AWSTestFixtures.put_parameter_called_with(
@@ -132,7 +138,10 @@ class AWSTestFixtures:
         )
 
     @staticmethod
-    def simulate_principal_policy_called_with(account_id, role_name, actions=["ssm:PutParameter"]):
+    def simulate_principal_policy_called_with(account_id, role_name, actions=None):
+        if actions is None:
+            actions = ["ssm:PutParameter"]
+
         return dict(
             PolicySourceArn=f"arn:aws:iam::{account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/{role_name}",
             ActionNames=actions,
@@ -163,10 +172,13 @@ class AWSTestFixtures:
 class AWSMocks:
     def __init__(
         self,
-        has_access={"all": True},
+        has_access=None,
         put_parameter_unexpected=False,
         create_existing_params="none",
     ):
+        if has_access is None:
+            has_access = {"all": True}
+
         self.create_existing_params = create_existing_params
         self.has_access = has_access
         self.mocks = None
@@ -315,7 +327,10 @@ class AWSMocks:
                 ]
             if stage == "target":
 
-                def _create_ssm_mock_with_failing_put_parameter(ssm_client, calls_to_fail_on=[2]):
+                def _create_ssm_mock_with_failing_put_parameter(ssm_client, calls_to_fail_on=None):
+                    if calls_to_fail_on is None:
+                        calls_to_fail_on = [2]
+
                     return_value = ssm_client.put_parameter.return_value
 
                     def mock_put_parameter(*args, **kwargs):
