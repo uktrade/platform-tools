@@ -75,7 +75,7 @@ def _create_listener_with_cert(session, is_default=True, load_balancer_arn=None)
     return certificate_arn, listener_arn, load_balancer_arn
 
 
-def _create_target_group(session, service_name="web"):
+def _create_target_group(session, service_name="web", target_group_name="web-target-group"):
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
     vpc_id = vpc_response["Vpc"]["VpcId"]
@@ -87,7 +87,7 @@ def _create_target_group(session, service_name="web"):
     ]
 
     kwargs = {
-        "Name": f"{service_name}-target-group",
+        "Name": target_group_name,
         "Protocol": "HTTPS",
         "Port": 123,
         "VpcId": vpc_id,
@@ -308,17 +308,17 @@ def test_find_target_group_ignores_target_group_without_load_balancer(mock_appli
 
     _create_service_deployment_mode(session)
     load_balancer_arn = _create_load_balancer(session)
+    _create_target_group(session, "web", "orphaned-web-tg")
     target_group_arn = _create_target_group(session)
+    _create_target_group(session, "web", "another-orphaned-web-tg")
+
     _create_listener(session, load_balancer_arn, target_group_arn)
 
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
-    result = alb_provider.find_target_group("unfindable-application", "development", "web")
+    result = alb_provider.find_target_group("test-application", "development", "web")
 
-    assert result == None
-    mock_io.error.assert_called_once_with(
-        "No target group found for application: unfindable-application, environment: development, service: web"
-    )
+    assert result == target_group_arn
 
 
 @mock_aws
@@ -557,10 +557,15 @@ class TestLoadBalancerProviderPagination:
             },
         ]
 
+        mock_elb_client = Mock(name="elb")
+        mock_elb_client.describe_target_groups.return_value = {
+            "TargetGroups": [{"LoadBalancerArns": ["mock_tg_arn"]}]
+        }
         mock_resourcegroupstaggingapi_client = Mock(name="resourcegroupstaggingapi")
         mock_resourcegroupstaggingapi_client.get_paginator.return_value.paginate.return_value = tags
         mock_session.client.side_effect = lambda service: {
             "resourcegroupstaggingapi": mock_resourcegroupstaggingapi_client,
+            "elbv2": mock_elb_client,
         }.get(service)
 
         alb_provider = LoadBalancerProvider(mock_session, Mock())

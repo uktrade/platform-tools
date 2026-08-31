@@ -83,15 +83,17 @@ class LoadBalancerProvider:
                     and tags.get(application_key) == app
                 ):
                     target_group_arn = resource["ResourceARN"]
-                    print("Found a matching target group arn: ", target_group_arn)
-                    break
 
-        if not target_group_arn:
-            self.io.error(
-                f"No target group found for application: {app}, environment: {env}, service: {svc}",
-            )
+                    load_balancers = self.evlb_client.describe_target_groups(
+                        TargetGroupArns=[target_group_arn]
+                    )["TargetGroups"][0]["LoadBalancerArns"]
 
-        return target_group_arn
+                    if load_balancers:
+                        return target_group_arn
+
+        self.io.error(
+            f"No target group found for application: {app}, environment: {env}, service: {svc}",
+        )
 
     def get_target_groups(self, target_group_arns: list[str]) -> list[dict]:
         tgs = []
