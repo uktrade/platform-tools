@@ -358,7 +358,6 @@ class TestCommandHelperMethods:
                 ["1.2.3.4"],
                 template,
             )
-        print("ERROR: ", str(e))
         expected = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
