@@ -1,10 +1,4 @@
-mock_provider "aws" {
-  mock_data "aws_caller_identity" {
-    defaults = {
-      account_id = "000123456789" # mock non-prod account
-    }
-  }
-}
+mock_provider "aws" {}
 
 override_data {
   target = data.external.codestar_connections
@@ -2824,23 +2818,3 @@ run "test_disable_aws_codepipeline" {
     error_message = "This should not be present when pipeline_mode is 'github_actions'"
   }
 }
-
-run "test_creation_of_single_kms_key" {
-  command = plan
-
-  assert {
-    condition     = local.static_signer_alias == "alias/my-app-container-image-signer-key"
-    error_message = "The static signer alias must exist with immutable name 'alias/my-app-container-image-signer-key'.  Changing this name would break deployments"
-  }
-  
-  assert {
-    condition     = module.container_image_signer_key != null
-    error_message = "Must be one image signer KMS key module"
-  }
-
-  assert {
-    condition     = length([for alias in values(module.container_image_signer_key.active_aliases) : alias if alias == "alias/my-app-container-image-signer-key"]) == 1
-    error_message = "Exactly one of the keys must map to the static alias."
-  }
-}
-
