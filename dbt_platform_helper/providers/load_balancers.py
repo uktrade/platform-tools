@@ -1,9 +1,6 @@
-import json
-
 from boto3 import Session
 
 from dbt_platform_helper.constants import MANAGED_BY_PLATFORM_TERRAFORM
-from dbt_platform_helper.constants import ROUTED_TO_PLATFORM_MODES
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
@@ -44,24 +41,9 @@ class LoadBalancerProvider:
 
     def find_target_group(self, app: str, env: str, svc: str) -> str:
 
-        # TODO once copilot is gone this is no longer needed
-        try:
-            result = self.parameter_store_provider.get_ssm_parameter_by_name(
-                f"/platform/applications/{app}/environments/{env}"
-            )["Value"]
-            env_config = json.loads(result)
-            service_deployment_mode = env_config["service_deployment_mode"]
-        except Exception:
-            service_deployment_mode = "copilot"
-
-        if service_deployment_mode in ROUTED_TO_PLATFORM_MODES:
-            application_key = "application"
-            environment_key = "environment"
-            service_key = "service"
-        else:
-            application_key = "copilot-application"
-            environment_key = "copilot-environment"
-            service_key = "copilot-service"
+        application_key = "application"
+        environment_key = "environment"
+        service_key = "service"
         target_group_arn = None
 
         paginator = self.rg_tagging_client.get_paginator("get_resources")
@@ -101,6 +83,8 @@ class LoadBalancerProvider:
                     and tags.get(application_key) == app
                 ):
                     target_group_arn = resource["ResourceARN"]
+                    print("Found a matching target group arn: ", target_group_arn)
+                    break
 
         if not target_group_arn:
             self.io.error(
