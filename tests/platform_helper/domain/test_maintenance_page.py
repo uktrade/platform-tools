@@ -337,7 +337,6 @@ class TestCommandHelperMethods:
             Actions=[{"Type": "forward", "TargetGroupArn": target_group_arn}],
         )
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
-        print("Rules:", rules)
         assert len(rules) == 2
 
         mock_session, mock_create_rule = self._create_mock_session_with_failing_create_rule(
