@@ -205,10 +205,7 @@ class LoadBalancerProvider:
             for action in rule["Actions"]:
                 if "TargetGroupArn" in action:
                     if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
-                        conditions = rule["Conditions"]
-
-        if not conditions:
-            raise ListenerRuleConditionsNotFoundException(listener_arn)
+                        conditions.extend(rule["Conditions"])
 
         # filter to host-header conditions
         conditions = [
@@ -216,6 +213,9 @@ class LoadBalancerProvider:
             for condition in conditions
             if condition["Field"] == "host-header"
         ]
+
+        if not conditions:
+            raise ListenerRuleConditionsNotFoundException(listener_arn)
 
         # remove internal hosts
         conditions[0]["HostHeaderConfig"]["Values"] = [
