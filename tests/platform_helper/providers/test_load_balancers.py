@@ -39,14 +39,18 @@ def _create_load_balancer(session):
     )["LoadBalancers"][0]["LoadBalancerArn"]
 
 
-def _create_listener(session, load_balancer_arn=None):
+def _create_listener(session, load_balancer_arn=None, target_group_arn=None):
     elbv2_client = session.client("elbv2")
 
     load_balancer_arn = load_balancer_arn if load_balancer_arn else _create_load_balancer(session)
+    default_actions = {"Type": "forward"}
+
+    if target_group_arn:
+        default_actions["TargetGroupArn"] = target_group_arn
     return (
         elbv2_client.create_listener(
             LoadBalancerArn=load_balancer_arn,
-            DefaultActions=[{"Type": "forward"}],
+            DefaultActions=[default_actions],
             Protocol="HTTPS",
             Port=443,
         )["Listeners"][0]["ListenerArn"],
@@ -71,7 +75,7 @@ def _create_listener_with_cert(session, is_default=True, load_balancer_arn=None)
     return certificate_arn, listener_arn, load_balancer_arn
 
 
-def _create_target_group(session, service_name="web", load_balancer_arn=None):
+def _create_target_group(session, service_name="web"):
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
     vpc_id = vpc_response["Vpc"]["VpcId"]
@@ -89,8 +93,7 @@ def _create_target_group(session, service_name="web", load_balancer_arn=None):
         "VpcId": vpc_id,
         "Tags": tags,
     }
-    if load_balancer_arn:
-        kwargs["LoadBalancerArns"] = [load_balancer_arn]
+
     return session.client("elbv2").create_target_group(**kwargs)["TargetGroups"][0][
         "TargetGroupArn"
     ]
@@ -288,8 +291,9 @@ def test_find_target_group(mock_application):
     session = mock_application.environments["development"].session
 
     _create_service_deployment_mode(session)
-    _create_listener(session)
+    load_balancer_arn = _create_load_balancer(session)
     target_group_arn = _create_target_group(session)
+    _create_listener(session, load_balancer_arn, target_group_arn)
 
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
@@ -299,12 +303,13 @@ def test_find_target_group(mock_application):
 
 
 @mock_aws
-def test_find_target_group_ignores_target_groups_without_load_balancer(mock_application):
+def test_find_target_group_ignores_target_group_without_load_balancer(mock_application):
     session = mock_application.environments["development"].session
 
     _create_service_deployment_mode(session)
-    _create_listener(session)
-    _create_target_group(session)
+    load_balancer_arn = _create_load_balancer(session)
+    target_group_arn = _create_target_group(session)
+    _create_listener(session, load_balancer_arn, target_group_arn)
 
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
