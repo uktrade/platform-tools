@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.35.1](https://github.com/uktrade/platform-tools/compare/15.35.0...15.35.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* Ignore pre/post deploy depending on pipeline_mode (off-ticket) ([#1640](https://github.com/uktrade/platform-tools/issues/1640)) ([148e166](https://github.com/uktrade/platform-tools/commit/148e1668d437535a8ac9cb865268912b5a0b56d4))
+
 ## [15.35.0](https://github.com/uktrade/platform-tools/compare/15.34.1...15.35.0) (2026-08-28)
 
 
