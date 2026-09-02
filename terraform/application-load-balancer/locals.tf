@@ -15,7 +15,7 @@ locals {
     }
     https = {
       port            = 443
-      ssl_policy      = "ELBSecurityPolicy-2016-08"
+      ssl_policy      = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
       certificate_arn = aws_acm_certificate.certificate.arn
     }
   }
@@ -51,7 +51,7 @@ locals {
   cdn_enabled = length(local.ingress_cdn_domains) > 0
 
   # cross account access does not allow the ListLayers action to be called to retrieve layer version dynamically, so hardcoding
-  lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:9"
+  lambda_layer = "arn:aws:lambda:eu-west-2:763451185160:layer:python-requests:10"
 
   # calculate a few load balancer details
   # alb_details = {alb_name = "name", alb_id = "id", listener_id = "id"}

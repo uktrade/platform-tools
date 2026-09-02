@@ -1,5 +1,38 @@
 # Changelog
 
+## [15.35.1](https://github.com/uktrade/platform-tools/compare/15.35.0...15.35.1) (2026-09-01)
+
+
+### Bug Fixes
+
+* Ignore pre/post deploy depending on pipeline_mode (off-ticket) ([#1640](https://github.com/uktrade/platform-tools/issues/1640)) ([148e166](https://github.com/uktrade/platform-tools/commit/148e1668d437535a8ac9cb865268912b5a0b56d4))
+
+## [15.35.0](https://github.com/uktrade/platform-tools/compare/15.34.1...15.35.0) (2026-08-28)
+
+
+### Features
+
+* Allow overriding the default key policy for statefile-backend (SR-4918) ([#1608](https://github.com/uktrade/platform-tools/issues/1608)) ([09d7c14](https://github.com/uktrade/platform-tools/commit/09d7c142f0ac5bb3ae414843408f8d6dc494fb8d))
+* Grant permissions to GHA roles for KMS key management (SR-4918) ([#1620](https://github.com/uktrade/platform-tools/issues/1620)) ([61edaee](https://github.com/uktrade/platform-tools/commit/61edaee02629de3fdee685ff9198f3f9c3ff907b))
+* IAM permissions to run scheduled jobs (DBTP-3282) ([#1617](https://github.com/uktrade/platform-tools/issues/1617)) ([5981898](https://github.com/uktrade/platform-tools/commit/59818986b2dcee89a2cd7e78698f6170e7e0a5af))
+* Replace dynamodb with s3 for terraform state lock (DBTP-2268) ([#1632](https://github.com/uktrade/platform-tools/issues/1632)) ([48bf7f1](https://github.com/uktrade/platform-tools/commit/48bf7f1f5135ec902acf978d0bf61ef05d2db24d))
+* Restrict ECR repository resource-based policy based on pipeline mode (DBTP-3170) ([#1546](https://github.com/uktrade/platform-tools/issues/1546)) ([79cc60e](https://github.com/uktrade/platform-tools/commit/79cc60e089f331f6964d9ed9524d33d9769d7d2d))
+* Support inputting either an image digest or an image tag, but never both (DBTP-3150) ([#1623](https://github.com/uktrade/platform-tools/issues/1623)) ([5c2fe06](https://github.com/uktrade/platform-tools/commit/5c2fe06025e6baf4d06d31fac3e17f62a6cca812))
+* Update SSL policy for ALB HTTPS listener (DBTP-3171) ([#1626](https://github.com/uktrade/platform-tools/issues/1626)) ([5bfbcac](https://github.com/uktrade/platform-tools/commit/5bfbcacf5bd10f0501bc2395d6691b86ddc14909))
+* Use new bucket for non-production ALB logs (SR-2696) ([#1594](https://github.com/uktrade/platform-tools/issues/1594)) ([3edca75](https://github.com/uktrade/platform-tools/commit/3edca758ae7c0be96c21513555f37f1d8016c57f))
+
+
+### Bug Fixes
+
+* Fix for each in Privatelink Cert Validation (off-ticket) ([#1600](https://github.com/uktrade/platform-tools/issues/1600)) ([7076ce2](https://github.com/uktrade/platform-tools/commit/7076ce25aa6cd1605e19b2e37a21c788bb15b3d6))
+* Preserve current ECS desired count during deploy instead of resetting to autoscaling minimum (DBTP-3323) ([#1616](https://github.com/uktrade/platform-tools/issues/1616)) ([e8376fb](https://github.com/uktrade/platform-tools/commit/e8376fba38f42c7c09bb77fb64de6bdc7b29b54f))
+* Update lambda layer version to 10 (off-ticket) ([#1636](https://github.com/uktrade/platform-tools/issues/1636)) ([187f555](https://github.com/uktrade/platform-tools/commit/187f55512db57de13b29c8889e380df2b266f737))
+
+
+### Dependencies
+
+* Bump datadog/datadog in /terraform/datadog ([#1584](https://github.com/uktrade/platform-tools/issues/1584)) ([44e4f2a](https://github.com/uktrade/platform-tools/commit/44e4f2a2e27ddac5aac78fb85fab5658245c3c85))
+
 ## [15.34.1](https://github.com/uktrade/platform-tools/compare/15.34.0...15.34.1) (2026-07-29)
 
 
