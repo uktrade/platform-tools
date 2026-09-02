@@ -29,7 +29,7 @@ RUN --mount=type=bind,source=.,target=/tmp/platform-tools,readonly \
         python${PYTHON_VERSION} -m pip install --no-cache-dir /tmp/platform-tools; \
     elif [ -n "${PLATFORM_HELPER_VERSION}" ]; then \
         echo "Installing Platform Helper from PyPI: ${PLATFORM_HELPER_VERSION}"; \
-        python${PYTHON_VERSION} -m pip install --no-cache-dir "dbt-platform-helper==${PLATFORM_HELPER_VERSION}"; \
+        python${PYTHON_VERSION} -m pip install --no-cache-dir --refresh-package=dbt-platform-helper "dbt-platform-helper==${PLATFORM_HELPER_VERSION}"; \
     else \
         echo "Only one of PLATFORM_HELPER_VERSION or PLATFORM_HELPER_VERSION_OVERRIDE must be set"; \
         exit 1; \
