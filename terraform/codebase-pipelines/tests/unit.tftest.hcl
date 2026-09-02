@@ -482,12 +482,12 @@ run "test_ecr_pipeline_mode_github" {
       ])) == toset(concat(
       flatten([
         for id in ["000123456789", "123456789000"] : [
-          "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-          "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
+          "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role"
         ]
       ]),
       [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
       ]
     ))
 
@@ -504,12 +504,12 @@ run "test_ecr_pipeline_mode_github" {
       ])) == toset(concat(
       flatten([
         for id in ["000123456789", "123456789000"] : [
-          "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-          "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
+          "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role"
         ]
       ]),
       [
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
       ]
     ))
 

@@ -117,13 +117,17 @@ data "aws_iam_policy_document" "ecr_policy" {
       condition {
         test     = "ArnLike"
         variable = "aws:PrincipalArn"
-        values = flatten([
-          for id in local.deploy_account_ids : [
-            "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-            "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role" #TODO - Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
+        values = concat(
+          flatten([
+            for id in local.deploy_account_ids : [
+              "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role" # TODO: Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
+            ]
+          ]),
+          [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
           ]
-        ])
+        )
       }
     }
   }
@@ -148,13 +152,17 @@ data "aws_iam_policy_document" "ecr_policy" {
       condition {
         test     = "ArnNotLike"
         variable = "aws:PrincipalArn"
-        values = flatten([
-          for id in local.deploy_account_ids : [
-            "arn:aws:iam::${id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
-            "arn:aws:iam::${id}:role/github-oidc-${var.application}-platform-image-build",
-            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role" #TODO - Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
+        values = concat(
+          flatten([
+            for id in local.deploy_account_ids : [
+              "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role" # TODO: Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
+            ]
+          ]),
+          [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
           ]
-        ])
+        )
       }
     }
   }
