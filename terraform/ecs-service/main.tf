@@ -1,3 +1,15 @@
+resource "aws_ssm_parameter" "service_data" {
+  # checkov:skip=CKV2_AWS_34: This AWS SSM Parameter doesn't need to be encrypted
+  name = "/platform/applications/${var.application}/environments/${var.environment}/services/${var.service_config.name}"
+  tier = "Intelligent-Tiering"
+  type = "String"
+  value = jsonencode({
+    "name" : var.service_config.name,
+    "type" : var.service_config.type
+  })
+  tags = local.tags
+}
+
 resource "aws_s3_object" "task_definition" {
   for_each     = toset(local.is_scheduled_job ? [] : ["enabled"])
   bucket       = "ecs-task-definitions-${var.application}-${var.environment}"
@@ -257,196 +269,9 @@ resource "aws_service_discovery_service" "service_discovery_service" {
   }
 }
 
-resource "aws_kms_key" "ecs_service_log_group_kms_key" {
-  description         = "KMS Key for ECS service '${local.full_service_name}' log encryption"
-  enable_key_rotation = true
-  tags                = local.tags
-}
-
-resource "aws_kms_key_policy" "ecs_service_logs_key_policy" {
-  key_id = aws_kms_key.ecs_service_log_group_kms_key.key_id
-  policy = jsonencode({
-    Id = "EcsServiceToCloudWatch"
-    Statement = [
-      {
-        "Sid" : "Allow Root User Permissions",
-        "Effect" : "Allow",
-        "Principal" : {
-          "AWS" : "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
-        },
-        "Action" : "kms:*",
-        "Resource" : "*"
-      },
-      {
-        "Sid" : "AllowCloudWatchLogsUsage"
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "logs.${data.aws_region.current.region}.amazonaws.com"
-        },
-        "Action" : [
-          "kms:Encrypt",
-          "kms:Decrypt",
-          "kms:ReEncrypt*",
-          "kms:GenerateDataKey*",
-          "kms:DescribeKey"
-        ]
-        "Resource" : "*"
-      }
-    ]
-    Version = "2012-10-17"
-  })
-}
-
-resource "aws_cloudwatch_log_group" "ecs_service_logs" {
-  # checkov:skip=CKV_AWS_338:Retains logs for 30 days instead of 1 year
-  name              = "/platform/ecs/service/${var.application}/${var.environment}/${var.service_config.name}"
-  retention_in_days = 30
-  tags              = local.tags
-  kms_key_id        = aws_kms_key.ecs_service_log_group_kms_key.arn
-  depends_on = [
-    time_sleep.kms_delay
-  ]
-}
-
-resource "time_sleep" "kms_delay" {
-  depends_on      = [aws_kms_key.ecs_service_log_group_kms_key]
-  create_duration = "10s"
-}
-
-data "aws_ssm_parameter" "log-destination-arn" {
-  name = "/copilot/tools/central_log_groups"
-}
-
-resource "aws_cloudwatch_log_subscription_filter" "ecs_service_logs_filter" {
-  name            = "/platform/ecs/service/${var.application}/${var.environment}/${var.service_config.name}"
-  role_arn        = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/CWLtoSubscriptionFilterRole"
-  log_group_name  = aws_cloudwatch_log_group.ecs_service_logs.name
-  filter_pattern  = ""
-  destination_arn = local.central_log_group_destination
-}
-
-resource "aws_appautoscaling_target" "ecs_autoscaling" {
-  for_each           = toset(local.is_scheduled_job ? [] : ["enabled"])
-  service_namespace  = "ecs"
-  resource_id        = "service/${data.aws_ecs_cluster.cluster.cluster_name}/${local.full_service_name}"
-  scalable_dimension = "ecs:service:DesiredCount"
-
-  min_capacity = local.count_min
-  max_capacity = local.count_max
-
-  depends_on = [
-    aws_ecs_service.service["enabled"]
-  ]
-}
-
-moved {
-  from = aws_appautoscaling_target.ecs_autoscaling
-  to   = aws_appautoscaling_target.ecs_autoscaling["enabled"]
-}
-
-resource "aws_appautoscaling_scheduled_action" "scheduled_autoscaling" {
-  for_each = local.scheduled_actions
-
-  name               = each.key
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
-
-  schedule = "cron(${each.value.schedule})"
-  timezone = "Europe/London"
-
-
-  scalable_target_action {
-    min_capacity = each.value.min
-    max_capacity = each.value.max
-  }
-}
-
-resource "aws_appautoscaling_policy" "cpu_autoscaling_policy" {
-  count = local.enable_cpu ? 1 : 0
-
-  name               = "${local.full_service_name}-cpu-autoscaling"
-  policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-    target_value       = local.cpu_value
-    scale_in_cooldown  = local.cpu_cool_in
-    scale_out_cooldown = local.cpu_cool_out
-  }
-}
-
-resource "aws_appautoscaling_policy" "memory_autoscaling_policy" {
-  count = local.enable_mem ? 1 : 0
-
-  name               = "${local.full_service_name}-memory-autoscaling"
-  policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
-    }
-    target_value       = local.mem_value
-    scale_in_cooldown  = local.mem_cool_in
-    scale_out_cooldown = local.mem_cool_out
-  }
-}
-
-# Look up the ALB that is attached to the TG (after the listener-rule Lambda runs)
-data "aws_lb" "load_balancer" {
-  count = local.enable_req ? 1 : 0
-  arn   = one(aws_lb_target_group.target_group[0].load_balancer_arns)
-
-  # Ensure the listener-rule lambda runs first to attach the target group on the ALB
-  depends_on = [
-    aws_lambda_invocation.dummy_listener_rule
-  ]
-}
-
-# This policy is only for 'Load Balanced Web Service' type services
-resource "aws_appautoscaling_policy" "requests_autoscaling_policy" {
-  count = local.enable_req ? 1 : 0
-
-  name               = "${local.full_service_name}-req-100"
-  policy_type        = "TargetTrackingScaling"
-  service_namespace  = aws_appautoscaling_target.ecs_autoscaling["enabled"].service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_autoscaling["enabled"].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_autoscaling["enabled"].scalable_dimension
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ALBRequestCountPerTarget"
-      # Very specific format required: app/<load-balancer-name>/<load-balancer-id>/targetgroup/<target-group-name>/<target-group-id>
-      # See AWS docs: https://docs.aws.amazon.com/autoscaling/plans/APIReference/API_PredefinedScalingMetricSpecification.html
-      resource_label = "${data.aws_lb.load_balancer[0].arn_suffix}/${aws_lb_target_group.target_group[0].arn_suffix}"
-    }
-    target_value       = local.req_value
-    scale_in_cooldown  = local.req_cool_in
-    scale_out_cooldown = local.req_cool_out
-  }
-}
-
-resource "aws_ssm_parameter" "service_data" {
-  # checkov:skip=CKV2_AWS_34: This AWS SSM Parameter doesn't need to be encrypted
-  name = "/platform/applications/${var.application}/environments/${var.environment}/services/${var.service_config.name}"
-  tier = "Intelligent-Tiering"
-  type = "String"
-  value = jsonencode({
-    "name" : var.service_config.name,
-    "type" : var.service_config.type
-  })
-  tags = local.tags
-}
-
-# Scheduled Job only resources
+###############
+# SCHEDULED JOB
+###############
 
 resource "aws_ecs_task_definition" "scheduled_job" {
   for_each                 = toset(local.is_scheduled_job ? ["enabled"] : [])
@@ -497,6 +322,10 @@ module "scheduling" {
   tags                = local.tags
   log_group_arn       = aws_cloudwatch_log_group.ecs_service_logs.arn
 }
+
+################################
+# LOAD BALANCED INTERNAL SERVICE
+################################
 
 data "aws_acm_certificate" "acm" {
   # This list should always be of length 1 due to the validation on the http alias 
