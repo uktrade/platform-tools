@@ -731,6 +731,25 @@ data "aws_iam_policy_document" "ecs" {
       "*"
     ]
   }
+
+  statement {
+    sid    = "AllowCreateECSServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required for provisionning 'aws_ecs_cluster_capacity_providers' and other ECS resources
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["ecs.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+  }
 }
 
 resource "aws_iam_policy" "ecs" {
