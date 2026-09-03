@@ -1,3 +1,19 @@
+# reuse rds-endpoint for sm
+data "aws_security_group" "rds-endpoint" {
+  name = "${var.vpc_name}-rds-endpoint-sg"
+}
+
+data "aws_iam_policy_document" "lambda-assume-role-policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
 data "aws_iam_policy_document" "lambda-execution-policy" {
   # checkov:skip=CKV_AWS_108:Permissions required to perform Lambda role
   # checkov:skip=CKV_AWS_111:Permissions required to perform Lambda role
@@ -64,19 +80,27 @@ resource "aws_iam_role_policy" "lambda-execution-role-policy" {
 
 data "archive_file" "lambda" {
   type        = "zip"
-  source_file = "${path.module}/manage_users/manage_users.py"
-  output_path = "${path.module}/manage_users/manage_users.zip"
+  source_file = "${path.module}/manage_users.py"
+  output_path = "${path.module}/manage_users.zip"
   depends_on = [
     aws_iam_role.lambda-execution-role
   ]
 }
+
+resource "random_string" "lambda_suffix" {
+  length    = 6
+  min_lower = 6
+  special   = false
+  lower     = true
+}
+
 
 resource "aws_lambda_function" "lambda" {
   # checkov:skip=CKV_AWS_272:Code signing is not currently in use
   # checkov:skip=CKV_AWS_116:Dead letter queue not required due to the nature of this function
   # checkov:skip=CKV_AWS_50:X-ray not used on platform
   filename                       = data.archive_file.lambda.output_path
-  function_name                  = substr("${var.application}-${var.environment}-opensearch-create-users-${random_string.lambda_suffix[0].result}", 0, 64)
+  function_name                  = substr("${var.application}-${var.environment}-opensearch-create-users-${random_string.lambda_suffix.result}", 0, 64)
   role                           = aws_iam_role.lambda-execution-role.arn
   handler                        = "manage_users.handler"
   runtime                        = "python3.12"
@@ -94,8 +118,7 @@ resource "aws_lambda_function" "lambda" {
   tags = merge(
     local.tags,
     {
-      name   = local.name,
-      lambda = "manage-users"
+      name = local.name
     }
   )
 

@@ -170,41 +170,6 @@ EOT
   }
 }
 
-override_data {
-  target = data.aws_iam_policy_document.update-config-lambda-execution-policy
-  values = {
-    json = <<EOT
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "logs:CreateLogGroup",
-        "logs:CreateLogStream",
-        "logs:PutLogEvents"
-      ],
-      "Resource": "arn:aws:logs:*:*:*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateNetworkInterface",
-        "ec2:DescribeNetworkInterfaces",
-        "ec2:DeleteNetworkInterface",
-        "ssm:DeleteParameter",
-        "ssm:PutParameter",
-        "ssm:AddTagsToResource",
-        "kms:Decrypt",
-        "secretsmanager:GetRandomPassword"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
-EOT
-  }
-}
 
 run "test_create_opensearch" {
   command = plan
