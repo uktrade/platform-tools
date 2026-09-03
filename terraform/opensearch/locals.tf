@@ -28,29 +28,3 @@ locals {
   central_log_group_arns        = jsondecode(data.aws_ssm_parameter.log-destination-arn.value)
   central_log_group_destination = var.environment == "prod" ? local.central_log_group_arns["prod"] : local.central_log_group_arns["dev"]
 }
-
-resource "random_string" "lambda_suffix" {
-  count = 2
-
-  length    = 6
-  min_lower = 6
-  special   = false
-  lower     = true
-}
-
-# Reuse rds-endpoint for sm
-data "aws_security_group" "rds-endpoint" {
-  name = "${var.vpc_name}-rds-endpoint-sg"
-}
-
-# Used by all lambdas
-data "aws_iam_policy_document" "lambda-assume-role-policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
-}
