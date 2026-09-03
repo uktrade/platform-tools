@@ -5,6 +5,7 @@ from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
 from dbt_platform_helper.providers.service import ServiceRepository
+from dbt_platform_helper.providers.step_functions import JobRunner
 from dbt_platform_helper.providers.step_functions import StepFunctions
 from dbt_platform_helper.utils.application import (
     ApplicationEnvironmentNotFoundException,
@@ -40,7 +41,7 @@ def run(app: str, env: str, name: str, follow: bool):
         except KeyError:
             raise ApplicationEnvironmentNotFoundException(app, env)
 
-        job_runner: StepFunctions = StepFunctions(sfn_client, application.name, env, account_id)
+        job_runner: JobRunner = StepFunctions(sfn_client, application.name, env, account_id)
 
         JobManager(job_runner=job_runner).start_execution(app, env, name, follow)
     except PlatformException as err:

@@ -3,7 +3,15 @@ from botocore.exceptions import ClientError
 from dbt_platform_helper.providers.aws.exceptions import AWSException
 
 
-class StepFunctions:
+class JobRunner:
+    def run(self, job_name):
+        raise NotImplementedError("Must be implemented in subclasses")
+
+    def get_status(self, job_id):
+        raise NotImplementedError("Must be implemented in subclasses")
+
+
+class StepFunctions(JobRunner):
 
     def __init__(self, sfn_client, application_name: str, env: str, account_id: str):
         self.sfn_client = sfn_client

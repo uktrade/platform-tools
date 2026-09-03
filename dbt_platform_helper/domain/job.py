@@ -3,6 +3,7 @@ import time
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.service import ServiceRepository
+from dbt_platform_helper.providers.step_functions import JobRunner
 
 
 class ScheduledJobExecutionFailedException(PlatformException):
@@ -16,7 +17,7 @@ class JobManager:
 
     def __init__(
         self,
-        job_runner,
+        job_runner: JobRunner,
         service_repository: ServiceRepository = None,
         io: ClickIOProvider = ClickIOProvider(),
     ):
