@@ -31,7 +31,7 @@ phases:
       
       # Run plan
       - cd terraform/environments/${ENVIRONMENT}
-      - terraform init
+      - terraform init -reconfigure
       - terraform plan -out=plan.tfplan
   post_build:
     commands:
