@@ -257,7 +257,7 @@ class CronSchedule(BaseModel):
         if not CRON_REGEX.match(self.schedule):
             raise PlatformException(
                 f"Invalid cron expression: '{self.schedule}'. "
-                "Excepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'"
+                "Accepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'"
             )
 
         if not re.match(r"^(\d+)-(\d+)$", self.range):
@@ -424,7 +424,7 @@ class ServiceConfig(BaseModel):
 
     schedule: Optional[str] = Field(
         default=None,
-        description="Set schedule for Scheduled Job (e.g. 'none', 'rate(5 minutes)', '5 * * * ?').",
+        description="Set schedule for Scheduled Job (cron expression e.g. '5 * * * ?', or 'none').",
     )
     retries: Optional[int] = Field(
         default=None, description="Set retries for Scheduled Job (e.g. 1)."
@@ -481,3 +481,15 @@ class ServiceConfig(BaseModel):
     local_version_tracker_terraform_source: ClassVar[str] = (
         "../../../../../platform-tools/terraform/version-tracker"
     )
+
+    @field_validator("schedule", mode="after")
+    @classmethod
+    def is_job_schedule_valid(cls, value: str) -> str:
+        if value == "none":
+            return value
+        if not CRON_REGEX.match(value):
+            raise PlatformException(
+                f"Invalid cron expression: '{value}'. "
+                "Accepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'"
+            )
+        return value

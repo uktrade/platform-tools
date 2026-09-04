@@ -19,36 +19,13 @@ resource "aws_ecr_repository_policy" "ecr_policy" {
 }
 
 data "aws_iam_policy_document" "ecr_policy" {
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:CompleteLayerUpload",
-      "ecr:GetDownloadUrlForLayer",
-      "ecr:InitiateLayerUpload",
-      "ecr:PutImage",
-      "ecr:UploadLayerPart"
-    ]
-
-    principals {
-      type = "AWS"
-      identifiers = [
-        for id in local.deploy_account_ids :
-        "arn:aws:iam::${id}:root"
-      ]
-    }
-  }
 
   statement {
     sid    = "PreventRepoDelete"
     effect = "Deny"
-
     actions = [
       "ecr:DeleteRepository"
     ]
-
     principals {
       type        = "AWS"
       identifiers = ["*"]
@@ -58,7 +35,6 @@ data "aws_iam_policy_document" "ecr_policy" {
   statement {
     sid    = "PreventImageDelete"
     effect = "Deny"
-
     actions = [
       "ecr:BatchDeleteImage"
     ]
@@ -71,10 +47,123 @@ data "aws_iam_policy_document" "ecr_policy" {
     condition {
       test     = "ArnNotLike"
       variable = "aws:PrincipalArn"
+
       values = [
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
-        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role"
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
+        "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role" #TODO - Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
       ]
+    }
+  }
+
+  statement {
+    sid    = "ImagePull"
+    effect = "Allow"
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+    ]
+    principals {
+      type = "AWS"
+      identifiers = [
+        for id in local.deploy_account_ids : "arn:aws:iam::${id}:root"
+      ]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = !(var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
+
+    content {
+      sid    = "DefaultImagePush"
+      effect = "Allow"
+      actions = [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:CompleteLayerUpload",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart"
+      ]
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids :
+          "arn:aws:iam::${id}:root"
+        ]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = (var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
+
+    content {
+      sid    = "RestrictedImagePushAllow"
+      effect = "Allow"
+      actions = [
+        "ecr:CompleteLayerUpload",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart",
+        "ecr:BatchCheckLayerAvailability"
+      ]
+      principals {
+        type = "AWS"
+        identifiers = [
+          for id in local.deploy_account_ids :
+          "arn:aws:iam::${id}:root"
+        ]
+      }
+      condition {
+        test     = "ArnLike"
+        variable = "aws:PrincipalArn"
+        values = concat(
+          flatten([
+            for id in local.deploy_account_ids : [
+              "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role" # TODO: Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
+            ]
+          ]),
+          [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
+          ]
+        )
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = (var.pipeline_mode == "github_actions" && var.requires_image_build == false) ? [1] : []
+
+    content {
+      sid    = "RestrictedImagePushDeny"
+      effect = "Deny"
+      actions = [
+        "ecr:CompleteLayerUpload",
+        "ecr:InitiateLayerUpload",
+        "ecr:PutImage",
+        "ecr:UploadLayerPart",
+        "ecr:BatchCheckLayerAvailability"
+      ]
+      principals {
+        type        = "AWS"
+        identifiers = ["*"]
+      }
+      condition {
+        test     = "ArnNotLike"
+        variable = "aws:PrincipalArn"
+        values = concat(
+          flatten([
+            for id in local.deploy_account_ids : [
+              "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role" # TODO: Remove once all BYOD/scheduled job image build workflows no longer use this IAM role
+            ]
+          ]),
+          [
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
+            "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
+          ]
+        )
+      }
     }
   }
 }

@@ -565,10 +565,13 @@ class ServiceManager:
         environment: str,
         application: str,
         image_tag: str = None,
+        image_digest: str = None,
     ):
         """Register a new ECS task definition revision, update the ECS service
         with it, monitor service, task and container logs, and wait until
         deployment is complete."""
+
+        self._validate_image_inputs(image_digest=image_digest, image_tag=image_tag)
 
         start_time = datetime.now(timezone.utc)
         cluster_name = f"{application}-{environment}-cluster"
@@ -581,8 +584,10 @@ class ServiceManager:
 
         task_definition = json.loads(s3_response)
 
+        image_reference = image_digest or image_tag
+        reference_type = "digest" if image_digest else "tag"
         self.io.info(
-            f"Deploying image tag '{image_tag}' to service '{ecs_service_name}' in environment '{environment}'.\n"
+            f"Deploying image {reference_type} '{image_reference}' to service '{ecs_service_name}' in environment '{environment}'.\n"
         )
 
         task_def_arn = self.ecs_provider.register_task_definition(
@@ -590,6 +595,7 @@ class ServiceManager:
             environment=environment,
             service=service,
             image_tag=image_tag,
+            image_digest=image_digest,
             task_definition=task_definition,
         )
 
@@ -846,6 +852,12 @@ class ServiceManager:
             )
 
         return service_details.get("enableExecuteCommand") == True
+
+    def _validate_image_inputs(self, image_digest: str = "", image_tag: str = ""):
+        if bool(image_digest) == bool(image_tag):
+            raise ServiceManagerException(
+                "You must provide either an image digest or an image tag, but not both."
+            )
 
     def service_exec(self, app, env, service, command=None, container=None, task_id=None):
 
