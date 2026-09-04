@@ -1,5 +1,20 @@
 # Changelog
 
+## [15.36.0](https://github.com/uktrade/platform-tools/compare/15.35.1...15.36.0) (2026-09-03)
+
+
+### Features
+
+* Restrict ECR repository resource-based policy based on pipeline mode (DBTP-3170) ([#1625](https://github.com/uktrade/platform-tools/issues/1625)) ([1646f43](https://github.com/uktrade/platform-tools/commit/1646f439b929f3d751ba7a33856a2b0d17869f60))
+* Update Opensearch Config Lambda for Audit Logs (DBTP-2049) ([#1619](https://github.com/uktrade/platform-tools/issues/1619)) ([5b12a74](https://github.com/uktrade/platform-tools/commit/5b12a745f60006b42384deb99b64af84a7ef2caf))
+
+
+### Bug Fixes
+
+* Add GetParametersByPath needed for scheduled job codebuild permissions (Off-ticket) ([#1644](https://github.com/uktrade/platform-tools/issues/1644)) ([8b23a57](https://github.com/uktrade/platform-tools/commit/8b23a57e5d1980abf0d99d1e181b085482b0ea43))
+* Maintenance page target group lookup - ensure always selects the correct rules to update (Off-ticket) ([#1639](https://github.com/uktrade/platform-tools/issues/1639)) ([06fc9d5](https://github.com/uktrade/platform-tools/commit/06fc9d53b5b6687fdbbcfcf2fdca12f61d728b14))
+* Prevent deploy-image-tools build from failing (off-ticket) ([#1642](https://github.com/uktrade/platform-tools/issues/1642)) ([261e0b0](https://github.com/uktrade/platform-tools/commit/261e0b0796bbd01db5f497bc23ec196a9956d911))
+
 ## [15.35.1](https://github.com/uktrade/platform-tools/compare/15.35.0...15.35.1) (2026-09-01)
 
 
