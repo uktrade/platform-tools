@@ -1,5 +1,12 @@
 # Changelog
 
+## [15.37.0](https://github.com/uktrade/platform-tools/compare/15.36.0...15.37.0) (2026-09-04)
+
+
+### Features
+
+* Remove CDN SANs from ALB certificate (DBTP-3267) ([#1631](https://github.com/uktrade/platform-tools/issues/1631)) ([799e09a](https://github.com/uktrade/platform-tools/commit/799e09aecdb183497dff115b3a9e8f75bd67b458))
+
 ## [15.36.0](https://github.com/uktrade/platform-tools/compare/15.35.1...15.36.0) (2026-09-03)
 
 
