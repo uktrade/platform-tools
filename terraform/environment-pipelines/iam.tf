@@ -228,6 +228,8 @@ data "aws_iam_policy_document" "ec2_read_access" {
       "ec2:DescribeNetworkInterfaces",
       "ec2:DescribePrefixLists",
       "ec2:DescribeVpcEndpoints",
+      "ec2:DescribeAccountAttributes",
+      "ec2:DescribeInternetGateways"
     ]
     resources = [
       "*"
@@ -340,6 +342,25 @@ data "aws_iam_policy_document" "load_balancer" {
     resources = [
       "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:cache-policy/*"
     ]
+  }
+
+  statement {
+    sid    = "AllowCreateElasticLoadBalancingServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during ALB creation
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["elasticloadbalancing.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
   }
 }
 
@@ -730,6 +751,25 @@ data "aws_iam_policy_document" "ecs" {
     resources = [
       "*"
     ]
+  }
+
+  statement {
+    sid    = "AllowCreateECSServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required for provisionning 'aws_ecs_cluster_capacity_providers' and other ECS resources
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["ecs.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
   }
 }
 
