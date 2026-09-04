@@ -376,6 +376,7 @@ data "aws_iam_policy_document" "certificate" {
     actions = [
       "acm:RequestCertificate",
       "acm:AddTagsToCertificate",
+      "acm:DeleteCertificate",
       "acm:DescribeCertificate",
       "acm:ListTagsForCertificate",
     ]
