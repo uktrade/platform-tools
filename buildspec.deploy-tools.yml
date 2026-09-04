@@ -34,5 +34,10 @@ phases:
 
   post_build:
     commands:
-      - docker push "$REPOSITORY_URI:$PLATFORM_HELPER_VERSION"
-      - docker push "$REPOSITORY_URI:latest"
+      - |
+        if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]; then
+          docker push "$REPOSITORY_URI:$PLATFORM_HELPER_VERSION"
+          docker push "$REPOSITORY_URI:latest"
+        else
+          echo "Skipping image push because the build failed"
+        fi
