@@ -478,17 +478,12 @@ run "test_ecr_pipeline_mode_github" {
         if c.variable == "aws:PrincipalArn"
       ]
       if s.sid == "RestrictedImagePushAllow"
-      ])) == toset(concat(
-      flatten([
-        for id in ["000123456789", "123456789000"] : [
-          "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role"
-        ]
-      ]),
+      ])) == toset(
       [
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
       ]
-    ))
+    )
 
     error_message = "Unexpected values for RestrictedImagePushAllow"
   }
@@ -500,17 +495,12 @@ run "test_ecr_pipeline_mode_github" {
         if c.variable == "aws:PrincipalArn"
       ]
       if s.sid == "RestrictedImagePushDeny"
-      ])) == toset(concat(
-      flatten([
-        for id in ["000123456789", "123456789000"] : [
-          "arn:aws:iam::${id}:role/github-oidc-${var.application}-repo-role"
-        ]
-      ]),
+      ])) == toset(
       [
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-reserved/sso.amazonaws.com/eu-west-2/AWSReservedSSO_AdministratorAccess_*",
         "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
       ]
-    ))
+    )
 
     error_message = "Unexpected values for RestrictedImagePushDeny"
   }
