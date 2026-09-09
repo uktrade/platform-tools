@@ -425,8 +425,7 @@ run "test_ecr" {
       if s.sid == "PreventImageDelete"
       ])) == toset([
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/ecr-housekeeping-role",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-repo-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
     ])
 
     error_message = "Unexpected values for PreventImageDelete"
