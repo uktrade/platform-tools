@@ -471,7 +471,7 @@ data "aws_iam_policy_document" "state_bucket_access" {
 
   statement {
     actions = [
-      "s3:DeleteBucket"
+      "s3:DeleteObject"
     ]
     resources = [
       "${data.aws_s3_bucket.state_bucket.arn}/*.tflock"
