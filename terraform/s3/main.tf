@@ -94,7 +94,7 @@ data "aws_iam_policy_document" "bucket-policy" {
         type        = "AWS"
         identifiers = [
           aws_iam_role.guardduty[0].arn,
-          "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty.name}/GuardDutyMalwareProtection"
+          "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty[0].name}/GuardDutyMalwareProtection"
         ]
       }
 
@@ -128,7 +128,7 @@ data "aws_iam_policy_document" "bucket-policy" {
         type        = "AWS"
         identifiers = [
           aws_iam_role.guardduty[0].arn,
-          "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty.name}/GuardDutyMalwareProtection"
+          "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty[0].name}/GuardDutyMalwareProtection"
         ]
       }
 
@@ -556,6 +556,8 @@ resource "aws_iam_role" "guardduty" {
 }
 
 resource "aws_iam_role_policy_attachment" "guardduty" {
+  count = var.config.guardduty.enabled ? 1 : 0
+
   role       = aws_iam_role.guardduty[0].name
   policy_arn = aws_iam_policy.guardduty[0].arn
 }
