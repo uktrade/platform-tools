@@ -82,6 +82,73 @@ data "aws_iam_policy_document" "bucket-policy" {
       resources = [aws_s3_bucket.this.arn, "${aws_s3_bucket.this.arn}/*"]
     }
   }
+
+  dynamic "statement" {
+    for_each = var.config.guardduty.enabled ? [1] : []
+
+    content {
+      sid    = "NoReadUnlessClean"
+      effect = "Deny"
+
+      not_principals {
+        type        = "AWS"
+        identifiers = [
+          aws_iam_role.guardduty.arn,
+          "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty.name}/GuardDutyMalwareProtection"
+        ]
+      }
+
+      actions = [
+        "s3:GetObject",
+        "s3:GetObjectVersion"
+      ]
+
+      resources = [
+        "${aws_s3_bucket.this.arn}/*"
+      ]
+
+      condition {
+        test     = "StringNotEquals"
+        variable = "s3:ExistingObjectTag/GuardDutyMalwareScanStatus"
+        values   = [
+          "NO_THREATS_FOUND"
+        ]
+      }
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.config.guardduty.enabled ? [1] : []
+
+    content {
+      sid    = "OnlyGuardDutyCanTagScanStatus"
+      effect = "Deny"
+
+      not_principals {
+        type        = "AWS"
+        identifiers = [
+          aws_iam_role.guardduty.arn,
+          "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty.name}/GuardDutyMalwareProtection"
+        ]
+      }
+
+      actions = [
+        "s3:PutObjectTagging"
+      ]
+
+      resources = [
+        "${aws_s3_bucket.this.arn}/*"
+      ]
+
+      condition {
+        test     = "ForAnyValue:StringNotEquals"
+        variable = "s3:RequestObjectTagKeys"
+        values   = [
+          "GuardDutyMalwareScanStatus"
+        ]
+      }
+    }
+  }
 }
 
 resource "aws_s3_bucket_policy" "bucket-policy" {
@@ -377,4 +444,138 @@ module "data_migration" {
   destination_bucket_identifier = aws_s3_bucket.this.id
   destination_kms_key_arn       = aws_kms_key.kms-key[0].arn
   destination_bucket_arn        = aws_s3_bucket.this.arn
+}
+
+#################################
+# GuardDuty Config
+#################################
+data "aws_iam_policy_document" "guardduty_assume_role_policy" {
+  count = var.config.guardduty.enabled ? 1 : 0
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sts:AssumeRole"
+    ]
+
+    principals {
+      type = "Service"
+      identifiers = [
+        "malware-protection-plan.guardduty.amazonaws.com"
+      ]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "guardduty_policy" {
+  count = var.config.guardduty.enabled ? 1 : 0
+
+  statement {
+    sid    = "ObjectRead"
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+      "s3:GetObjectVersion"
+    ]
+
+    resources = [
+      "${aws_s3_bucket.this.arn}/*"
+    ]
+  }
+
+  statement {
+    sid    = "ObjectTagging"
+    effect = "Allow"
+
+    actions = [
+      "s3:PutObjectTagging",
+      "s3:GetObjectTagging"
+    ]
+
+    resources = [
+      "${aws_s3_bucket.this.arn}/*"
+    ]
+  }
+
+  statement {
+    sid    = "ManagedRule"
+    effect = "Allow"
+
+    actions = [
+      "events:PutRule",
+      "events:DeleteRule",
+      "events:PutTargets",
+      "events:RemoveTargets",
+      "events:DescribeRule",
+      "events:ListTargetsByRule"
+    ]
+
+    resources = [
+      "arn:aws:events:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*"
+    ]
+  }
+
+  dynamic "statement" {
+    for_each = var.config.serve_static_content ? [] : [1]
+
+    content {
+      sid    = "KMSDecrypt"
+      effect = "Allow"
+
+      actions = [
+        "kms:Decrypt",
+        "kms:GenerateDataKey"
+      ]
+
+      resources = [
+        aws_kms_key.kms-key[0].arn
+      ]
+    }
+  }
+}
+
+data "aws_iam_policy" "guardduty" {
+  count = var.config.guardduty.enabled ? 1 : 0
+
+  name        = "${var.application}-${var.environment}-guardduty-${substr(aws_s3_bucket.this.id, 0, 16)}-policy"
+  description = "Policy for GuardDuty to scan and tag objects within the ${aws_s3_bucket.this.id} bucket."
+  policy      = data.aws_iam_policy_document.guardduty_policy.json
+
+  tags = local.tags
+}
+
+resource "aws_iam_role" "guardduty" {
+  count = var.config.guardduty.enabled ? 1 : 0
+
+  name               = "${var.application}-${var.environment}-guardduty-${substr(aws_s3_bucket.this.id, 0, 16)}-role"
+  assume_role_policy = data.aws_iam_policy_document.guardduty_assume_role_policy.json
+
+  tags = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "guardduty" {
+  role       = aws_iam_role.guardduty.name
+  policy_arn = aws_iam_policy.guardduty.arn
+}
+
+resource "aws_guardduty_malware_protection_plan" "this" {
+  count = var.config.guardduty.enabled ? 1 : 0
+
+  role = aws_iam_role.guardduty.arn
+
+  protected_resource {
+    s3_bucket {
+      bucket_name = aws_s3_bucket.this.id
+    }
+  }
+
+  actions {
+    tagging {
+      status = "ENABLED"
+    }
+  }
+
+  tags = local.tags
 }

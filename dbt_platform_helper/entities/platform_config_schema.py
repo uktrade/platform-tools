@@ -498,6 +498,10 @@ class PlatformConfigSchema:
             "enabled": bool,
         }
 
+        _valid_s3_bucket_guardduty = {
+            Optional("enabled"): bool,
+        }
+
         _valid_s3_bucket_external_role_access = {
             "role_arn": PlatformConfigSchema.__valid_iam_role_arn("role_arn"),
             "read": bool,
@@ -530,6 +534,7 @@ class PlatformConfigSchema:
                         Optional("retention_policy"): _valid_s3_bucket_retention_policy,
                         Optional("versioning"): bool,
                         Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
+                        Optional("guardduty"): _valid_s3_bucket_guardduty,
                         Optional("data_migration"): _valid_s3_data_migration,
                         Optional("external_role_access"): {
                             PlatformConfigSchema.__valid_schema_key(): _valid_s3_bucket_external_role_access
