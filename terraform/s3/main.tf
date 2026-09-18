@@ -511,7 +511,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
     ]
 
     resources = [
-      "${aws_aws_s3_bucket.this.arn}"
+      aws_s3_bucket.this.arn
     ]
   }
 
@@ -575,7 +575,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
     ]
 
     resources = [
-      "${aws_s3_bucket.this.arn}"
+      aws_s3_bucket.this.arn
     ]
   }
 
