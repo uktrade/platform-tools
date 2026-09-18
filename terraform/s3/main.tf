@@ -91,7 +91,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       effect = "Deny"
 
       not_principals {
-        type        = "AWS"
+        type = "AWS"
         identifiers = [
           aws_iam_role.guardduty[0].arn,
           "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty[0].name}/GuardDutyMalwareProtection"
@@ -110,7 +110,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       condition {
         test     = "StringNotEquals"
         variable = "s3:ExistingObjectTag/GuardDutyMalwareScanStatus"
-        values   = [
+        values = [
           "NO_THREATS_FOUND"
         ]
       }
@@ -125,7 +125,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       effect = "Deny"
 
       not_principals {
-        type        = "AWS"
+        type = "AWS"
         identifiers = [
           aws_iam_role.guardduty[0].arn,
           "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty[0].name}/GuardDutyMalwareProtection"
@@ -143,7 +143,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       condition {
         test     = "ForAnyValue:StringNotEquals"
         variable = "s3:RequestObjectTagKeys"
-        values   = [
+        values = [
           "GuardDutyMalwareScanStatus"
         ]
       }
@@ -533,16 +533,16 @@ data "aws_iam_policy_document" "guardduty_policy" {
     condition {
       test     = "StringLike"
       variable = "events:ManagedBy"
-      values   = [
+      values = [
         "malware-protection-plan.guardduty.amazonaws.com"
       ]
     }
   }
 
   statement {
-    sid   = "AllowGuardDutyToMonitorEventBridgeManagedRule"
+    sid    = "AllowGuardDutyToMonitorEventBridgeManagedRule"
     effect = "Allow"
-    
+
     actions = [
       "events:DescribeRule",
       "events:ListTargetsByRule"
@@ -554,7 +554,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
   }
 
   statement {
-    sid = "AllowPutValidationObject"
+    sid    = "AllowPutValidationObject"
     effect = "Allow"
 
     actions = [
@@ -567,7 +567,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
   }
 
   statement {
-    sid = "AllowCheckBucketOwnership"
+    sid    = "AllowCheckBucketOwnership"
     effect = "Allow"
 
     actions = [
@@ -598,7 +598,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
       condition {
         test     = "StringLike"
         variable = "kms:ViaService"
-        values   = [
+        values = [
           "s3.${data.aws_region.current.region}.amazonaws.com"
         ]
       }
