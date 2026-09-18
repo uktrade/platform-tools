@@ -449,6 +449,11 @@ module "data_migration" {
 #################################
 # GuardDuty Config
 #################################
+data "aws_s3_objects" "existing" {
+  bucket   = aws_s3_bucket.this.id
+  max_keys = 1
+}
+
 data "aws_iam_policy_document" "guardduty_assume_role_policy" {
   count = var.config.guardduty.enabled ? 1 : 0
 
@@ -650,4 +655,16 @@ resource "aws_guardduty_malware_protection_plan" "this" {
   }
 
   tags = local.tags
+
+  lifecycle {
+    precondition {
+      condition = !local.bucket_contains_objects
+
+      error_message = <<EOT
+GuardDuty cannot be enabled because this bucket already contains objects.
+Existing objects are not automatically scanned and therefore will not
+receive the GuardDutyMalwareScanStatus tag required by the bucket policy.
+EOT
+    }
+  }
 }
