@@ -472,7 +472,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
   count = var.config.guardduty.enabled ? 1 : 0
 
   statement {
-    sid    = "ObjectRead"
+    sid    = "AllowMalwareScan"
     effect = "Allow"
 
     actions = [
@@ -486,12 +486,14 @@ data "aws_iam_policy_document" "guardduty_policy" {
   }
 
   statement {
-    sid    = "ObjectTagging"
+    sid    = "AllowPostScanTag"
     effect = "Allow"
 
     actions = [
       "s3:PutObjectTagging",
-      "s3:GetObjectTagging"
+      "s3:GetObjectTagging",
+      "s3:PutObjectVersionTagging",
+      "s3:GetObjectVersionTagging"
     ]
 
     resources = [
@@ -500,14 +502,48 @@ data "aws_iam_policy_document" "guardduty_policy" {
   }
 
   statement {
-    sid    = "ManagedRule"
+    sid    = "AllowEnableS3EventBridgeEvents"
+    effect = "Allow"
+
+    actions = [
+      "s3:PutBucketNotification",
+      "s3:GetBucketNotification"
+    ]
+
+    resources = [
+      "${aws_aws_s3_bucket.this.arn}"
+    ]
+  }
+
+  statement {
+    sid    = "AllowManagedRuleToSendS3EventsToGuardDuty"
     effect = "Allow"
 
     actions = [
       "events:PutRule",
       "events:DeleteRule",
       "events:PutTargets",
-      "events:RemoveTargets",
+      "events:RemoveTargets"
+    ]
+
+    resources = [
+      "arn:aws:events:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*"
+    ]
+
+    condition {
+      test     = "StringLike"
+      variable = "events:ManagedBy"
+      values   = [
+        "malware-protection-plan.guardduty.amazonaws.com"
+      ]
+    }
+  }
+
+  statement {
+    sid   = "AllowGuardDutyToMonitorEventBridgeManagedRule"
+    effect = "Allow"
+    
+    actions = [
       "events:DescribeRule",
       "events:ListTargetsByRule"
     ]
@@ -517,11 +553,37 @@ data "aws_iam_policy_document" "guardduty_policy" {
     ]
   }
 
+  statement {
+    sid = "AllowPutValidationObject"
+    effect = "Allow"
+
+    actions = [
+      "s3:PutObject"
+    ]
+
+    resources = [
+      "${aws_s3_bucket.this.arn}/malware-protection-resource-validation-object"
+    ]
+  }
+
+  statement {
+    sid = "AllowCheckBucketOwnership"
+    effect = "Allow"
+
+    actions = [
+      "s3:ListBucket"
+    ]
+
+    resources = [
+      "${aws_s3_bucket.this.arn}"
+    ]
+  }
+
   dynamic "statement" {
     for_each = var.config.serve_static_content ? [] : [1]
 
     content {
-      sid    = "KMSDecrypt"
+      sid    = "AllowDecryptForMalwareScan"
       effect = "Allow"
 
       actions = [
@@ -532,6 +594,14 @@ data "aws_iam_policy_document" "guardduty_policy" {
       resources = [
         aws_kms_key.kms-key[0].arn
       ]
+
+      condition {
+        test     = "StringLike"
+        variable = "kms:ViaService"
+        values   = [
+          "s3.${data.aws_region.current.region}.amazonaws.com"
+        ]
+      }
     }
   }
 }
