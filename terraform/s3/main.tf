@@ -93,7 +93,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       not_principals {
         type        = "AWS"
         identifiers = [
-          aws_iam_role.guardduty.arn,
+          aws_iam_role.guardduty[0].arn,
           "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty.name}/GuardDutyMalwareProtection"
         ]
       }
@@ -127,7 +127,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       not_principals {
         type        = "AWS"
         identifiers = [
-          aws_iam_role.guardduty.arn,
+          aws_iam_role.guardduty[0].arn,
           "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${aws_iam_role.guardduty.name}/GuardDutyMalwareProtection"
         ]
       }
@@ -541,7 +541,7 @@ data "aws_iam_policy" "guardduty" {
 
   name        = "${var.application}-${var.environment}-guardduty-${substr(aws_s3_bucket.this.id, 0, 16)}-policy"
   description = "Policy for GuardDuty to scan and tag objects within the ${aws_s3_bucket.this.id} bucket."
-  policy      = data.aws_iam_policy_document.guardduty_policy.json
+  policy      = data.aws_iam_policy_document.guardduty_policy[0].json
 
   tags = local.tags
 }
@@ -550,20 +550,20 @@ resource "aws_iam_role" "guardduty" {
   count = var.config.guardduty.enabled ? 1 : 0
 
   name               = "${var.application}-${var.environment}-guardduty-${substr(aws_s3_bucket.this.id, 0, 16)}-role"
-  assume_role_policy = data.aws_iam_policy_document.guardduty_assume_role_policy.json
+  assume_role_policy = data.aws_iam_policy_document.guardduty_assume_role_policy[0].json
 
   tags = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "guardduty" {
-  role       = aws_iam_role.guardduty.name
-  policy_arn = aws_iam_policy.guardduty.arn
+  role       = aws_iam_role.guardduty[0].name
+  policy_arn = aws_iam_policy.guardduty[0].arn
 }
 
 resource "aws_guardduty_malware_protection_plan" "this" {
   count = var.config.guardduty.enabled ? 1 : 0
 
-  role = aws_iam_role.guardduty.arn
+  role = aws_iam_role.guardduty[0].arn
 
   protected_resource {
     s3_bucket {
