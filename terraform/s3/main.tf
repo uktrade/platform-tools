@@ -536,7 +536,7 @@ data "aws_iam_policy_document" "guardduty_policy" {
   }
 }
 
-data "aws_iam_policy" "guardduty" {
+resource "aws_iam_policy" "guardduty" {
   count = var.config.guardduty.enabled ? 1 : 0
 
   name        = "${var.application}-${var.environment}-guardduty-${substr(aws_s3_bucket.this.id, 0, 16)}-policy"
