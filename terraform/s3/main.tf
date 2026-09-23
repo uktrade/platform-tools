@@ -167,7 +167,7 @@ resource "aws_s3_bucket_versioning" "this-versioning" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
-  count = var.config.lifecycle_rules != null ? 1 : 0
+  count = var.config.lifecycle_rules != null || var.config.guardduty.enabled ? 1 : 0
 
   bucket = aws_s3_bucket.this.id
 
@@ -186,6 +186,34 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
         days = rule.value.expiration_days
       }
       status = coalesce(rule.value.enabled, false) ? "Enabled" : "Disabled"
+    }
+  }
+
+  dynamic "rule" {
+    for_each = var.config.guardduty.enabled ? [1] : []
+
+    content {
+      id     = "delete-malicious-objects"
+      status = "Enabled"
+
+      filter {
+        tag {
+          key   = "GuardDutyMalwareScanStatus"
+          value = "THREATS_FOUND"
+        }
+      }
+
+      expiration {
+        days = 30
+      }
+
+      dynamic "noncurrent_version_expiration" {
+        for_each = var.config.versioning ? [1] : []
+
+        content {
+          noncurrent_days = 1
+        }
+      }
     }
   }
 }
