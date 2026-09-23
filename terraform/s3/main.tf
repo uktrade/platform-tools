@@ -141,7 +141,7 @@ data "aws_iam_policy_document" "bucket-policy" {
       ]
 
       condition {
-        test     = "ForAnyValue:StringNotEquals"
+        test     = "ForAnyValue:StringEquals"
         variable = "s3:RequestObjectTagKeys"
         values = [
           "GuardDutyMalwareScanStatus"
