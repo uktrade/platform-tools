@@ -173,7 +173,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
 
   # checkov:skip=CKV_AWS_300: Ensure S3 lifecycle configuration sets period for aborting failed uploads
   dynamic "rule" {
-    for_each = var.config.lifecycle_rules
+    for_each = var.config.lifecycle_rules != null ? var.config.lifecycle_rules : []
     content {
       id = "rule-${index(var.config.lifecycle_rules, rule.value) + 1}"
       abort_incomplete_multipart_upload {
@@ -340,6 +340,12 @@ resource "aws_s3_object" "object" {
 
   kms_key_id             = var.config.serve_static_content ? null : aws_kms_key.kms-key[0].arn
   server_side_encryption = var.config.serve_static_content ? null : "aws:kms"
+
+  lifecycle {
+    ignore_changes = [
+      tags_all
+    ]
+  }
 }
 
 
