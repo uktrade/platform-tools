@@ -343,6 +343,7 @@ resource "aws_s3_object" "object" {
 
   lifecycle {
     ignore_changes = [
+      tags,
       tags_all
     ]
   }
