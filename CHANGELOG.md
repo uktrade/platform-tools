@@ -1,5 +1,13 @@
 # Changelog
 
+## [15.37.1](https://github.com/uktrade/platform-tools/compare/15.37.0...15.37.1) (2026-09-25)
+
+
+### Dependencies
+
+* Bump psycopg2-binary from 2.9.12 to 2.9.13 in the minor-and-patch group across 1 directory ([#1660](https://github.com/uktrade/platform-tools/issues/1660)) ([e3ffaee](https://github.com/uktrade/platform-tools/commit/e3ffaee072e86d8b2052acea3e25cbc0c9291ae2))
+* Bump the minor-and-patch group across 3 directories with 1 update ([#1662](https://github.com/uktrade/platform-tools/issues/1662)) ([c6c3d68](https://github.com/uktrade/platform-tools/commit/c6c3d68e812f5a2d724360fcad2b264dc27af5f6))
+
 ## [15.37.0](https://github.com/uktrade/platform-tools/compare/15.36.0...15.37.0) (2026-09-14)
 
 
