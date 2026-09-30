@@ -343,8 +343,8 @@ resource "aws_s3_object" "object" {
 
   lifecycle {
     ignore_changes = [
-      tags,
-      tags_all
+      tags["GuardDutyMalwareScanStatus"],
+      tags_all["GuardDutyMalwareScanStatus"]
     ]
   }
 }
