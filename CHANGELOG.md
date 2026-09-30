@@ -1,5 +1,23 @@
 # Changelog
 
+## [15.38.0](https://github.com/uktrade/platform-tools/compare/15.37.0...15.38.0) (2026-09-30)
+
+
+### Features
+
+* Optional config to add GuardDuty protection to S3 (DBTP-3443) ([#1659](https://github.com/uktrade/platform-tools/issues/1659)) ([4188b15](https://github.com/uktrade/platform-tools/commit/4188b15738c77be6b3191fac9256139cf2a59c79))
+
+
+### Bug Fixes
+
+* Disable webhook PR approval (off-ticket) ([#1663](https://github.com/uktrade/platform-tools/issues/1663)) ([ab42198](https://github.com/uktrade/platform-tools/commit/ab42198a973958fc981a9ff4f0d2d92a4d18131b))
+
+
+### Dependencies
+
+* Bump psycopg2-binary from 2.9.12 to 2.9.13 in the minor-and-patch group across 1 directory ([#1660](https://github.com/uktrade/platform-tools/issues/1660)) ([e3ffaee](https://github.com/uktrade/platform-tools/commit/e3ffaee072e86d8b2052acea3e25cbc0c9291ae2))
+* Bump the minor-and-patch group across 3 directories with 1 update ([#1662](https://github.com/uktrade/platform-tools/issues/1662)) ([c6c3d68](https://github.com/uktrade/platform-tools/commit/c6c3d68e812f5a2d724360fcad2b264dc27af5f6))
+
 ## [15.37.0](https://github.com/uktrade/platform-tools/compare/15.36.0...15.37.0) (2026-09-14)
 
 
