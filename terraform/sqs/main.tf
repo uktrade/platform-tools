@@ -36,7 +36,7 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
     ]
 
     resources = [
-      aws_sqs_queue.this[each.key].arn
+      aws_sqs_queue.this.arn
     ]
 
     condition {
@@ -60,7 +60,7 @@ resource "aws_sqs_queue_policy" "this" {
   #   subscription.topic_name => subscription
   # }
   for_each = local.subscriptions
-  queue_url = aws_sqs_queue.this[each.key].id
+  queue_url = aws_sqs_queue.this.id
 
   policy = data.aws_iam_policy_document.allow_sns_to_sqs[
     each.key
@@ -85,7 +85,7 @@ resource "aws_sns_topic_subscription" "this" {
   )
 
   protocol = "sqs"
-  endpoint = aws_sqs_queue.this[each.key].arn
+  endpoint = aws_sqs_queue.this.arn
 }
 
 
