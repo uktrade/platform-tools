@@ -132,6 +132,72 @@ module "datadog" {
   config      = each.value
 }
 
+# module "sns-sqs" {
+#   source = "../sns-sqs"
+#   application = var.args.application
+#   environment = var.environment
+#   for_each    = local.sns-sqs
+#   config      = each.value
+#   #  topic_name  = "some-random-topic"
+#   #queue_name = "queuey-mcqueueface"
+#   #create_dlq = true
+# }
+
+#copy of seperate module testing
+module "sns" {
+  source = "../sns"
+
+  for_each    = local.sns
+
+  application = var.args.application
+  environment = var.environment
+  config      = each.value
+}
+
+# Add an SQS queue on it's own - what happens with the topic_arn bit if there's no SNS to sub to?
+# repleace the replace below to use application name 
+
+module "sqs" {
+  source = "../sqs"
+
+  for_each    = local.sqs
+
+  application = var.args.application
+  environment = var.environment
+  config      = each.value
+  topics = try(
+    module.sns[
+      replace(each.key, "-sqs", "-sns") #should replace this with application name
+    ].topics,
+    {}
+  )
+}
+
+  #topic_arn   = module.sns[replace(each.key, "-sqs", "-sns")].topic_arn
+  # topics = { #don't like this block - tidy it up somehow
+  #   for topic_name in each.value.subscribe_to:
+  #     topic_name => module.sns[
+  #       replace(each.key, "-sqs", "-sns")
+  #     ].topics[topic_name]
+  # }
+
+#   sns_topic_subscriptions = {
+#     daveg_subscription = {
+#       topic_arn = "arn:aws:sns:eu-west-2:563763463626:daveg-test-some-random-topic"
+#     }
+#   }
+
+#   # Optional tuning
+#   visibility_timeout_seconds = 60
+#   create_dlq                 = true
+#   max_receive_count          = 5
+
+#   tags = {
+#     Environment = "daveg"
+#     Service     = "test"
+#   }
+# }
+
 resource "aws_ssm_parameter" "addons" {
   # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
   # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217

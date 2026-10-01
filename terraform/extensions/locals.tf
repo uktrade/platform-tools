@@ -75,6 +75,32 @@ locals {
     for extension_name, extension_config in local.extensions :
     extension_name => extension_config if extension_config.type == "datadog"
   }
+  # sns-sqs = {
+  #   for extension_name, extension_config in local.extensions :
+  #   extension_name => extension_config if extension_config.type == "sns-sqs"
+  # }
+  # sns = {
+  #   for extension_name, extension_config in local.extensions :
+  #   extension_name => extension_config if extension_config.type == "sns"
+  # }
+
+  # changed this from the usual format above, as there may be instances where
+  # no SNS queue is wanted for the environment, just an SQS that subs to an existing one
+  sns = { 
+    for extension_name, extension_config in local.extensions :
+    extension_name => extension_config
+    if extension_config.type == "sns"
+    && can(extension_config.topic_name) 
+    #if there's no topic name given in platform config
+    #then don't run SNS module
+  }
+  # same as above
+  sqs = {
+    for extension_name, extension_config in local.extensions :
+    extension_name => extension_config
+    if extension_config.type == "sqs"
+    #&& can(extension_config.subscribe_to)
+  }
 
   tags = {
     application         = var.args.application
