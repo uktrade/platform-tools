@@ -21,7 +21,7 @@ variable "config" {
       queue_name = string
       subscribe_to = optional(list(object({
         topic_name         = string
-        source_environment = optional(string)
+        #source_environment = optional(string)
       })))
     }))
   })

@@ -102,10 +102,10 @@ locals {
       "${queue.queue_name}:${sub.topic_name}" => {
         queue_name         = queue.queue_name
         topic_name         = sub.topic_name
-        source_environment = coalesce(
-          sub.source_environment,
-          var.environment
-        )
+        # source_environment = coalesce(
+        #   sub.source_environment,
+        #   var.environment
+        # )
       }
     }
   ]...)
@@ -122,7 +122,7 @@ locals {
   remote_subscriptions = {
     for k, v in local.subscriptions :
     v.topic_name => v
-    if v.source_environment != var.environment
+    #if v.source_environment != var.environment
   }
 
 }

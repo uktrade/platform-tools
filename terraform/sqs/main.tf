@@ -51,9 +51,7 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
 
       values = [
         (
-          each.value.source_environment == var.environment
-            ? var.topics[each.value.topic_name].arn
-            : data.aws_sns_topic.remote[each.value.topic_name].arn
+          var.topics[each.value.topic_name].arn
         )
       ]
     }
@@ -73,22 +71,24 @@ resource "aws_sqs_queue_policy" "this" {
   ].json
 }
 
-# only look up 'remote' topics, i.e. in another environment (or one day a different account?)
-data "aws_sns_topic" "remote" {
-  for_each = local.remote_subscriptions
+## We're not doing cross-environment, but keep for use on cross-account
+    # only look up 'remote' topics, i.e. in another environment (or one day a different account?)
+    # data "aws_sns_topic" "remote" {
+    #   for_each = local.remote_subscriptions
 
-  name = "${var.application}-${each.value.source_environment}-${each.key}"
-}
+    #   name = "${var.application}-${each.value.source_environment}-${each.key}"
+    # }
 
 # 
 resource "aws_sns_topic_subscription" "this" {
   for_each = local.subscriptions
 
-  topic_arn = (
-    each.value.source_environment == var.environment
-      ? var.topics[each.value.topic_name].arn
-      : data.aws_sns_topic.remote[each.value.topic_name].arn
-  )
+  topic_arn = var.topics[each.value.topic_name].arn
+  # topic_arn = (
+  #   each.value.source_environment == var.environment
+  #     ? var.topics[each.value.topic_name].arn
+  #     : data.aws_sns_topic.remote[each.value.topic_name].arn
+  # )
 
   protocol = "sqs"
   endpoint = aws_sqs_queue.this[each.value.queue_name].arn
