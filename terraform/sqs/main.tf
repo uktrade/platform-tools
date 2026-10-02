@@ -14,10 +14,16 @@
 
 # }
 
-resource "aws_sqs_queue" "this" {
-  # for_each = var.config.queue_name
+# resource "aws_sqs_queue" "this" {
+#   for_each = toset(var.config.queue_name)
 
-  name = "${var.config.queue_name}"
+#   name = "${var.config.queue_name}-${each.value}"
+# }
+
+resource "aws_sqs_queue" "this" {
+  for_each = local.queues
+
+  name = each.value.queue_name
 }
 
 data "aws_iam_policy_document" "allow_sns_to_sqs" {
@@ -36,7 +42,7 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
     ]
 
     resources = [
-      aws_sqs_queue.this.arn
+      aws_sqs_queue.this[each.value.queue_name].arn
     ]
 
     condition {
@@ -46,8 +52,8 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
       values = [
         (
           each.value.source_environment == var.environment
-            ? var.topics[each.key].arn
-            : data.aws_sns_topic.remote[each.key].arn
+            ? var.topics[each.value.topic_name].arn
+            : data.aws_sns_topic.remote[each.value.topic_name].arn
         )
       ]
     }
@@ -60,7 +66,7 @@ resource "aws_sqs_queue_policy" "this" {
   #   subscription.topic_name => subscription
   # }
   for_each = local.subscriptions
-  queue_url = aws_sqs_queue.this.id
+  queue_url = aws_sqs_queue.this[each.value.queue_name].id
 
   policy = data.aws_iam_policy_document.allow_sns_to_sqs[
     each.key
@@ -80,12 +86,12 @@ resource "aws_sns_topic_subscription" "this" {
 
   topic_arn = (
     each.value.source_environment == var.environment
-      ? var.topics[each.key].arn
-      : data.aws_sns_topic.remote[each.key].arn
+      ? var.topics[each.value.topic_name].arn
+      : data.aws_sns_topic.remote[each.value.topic_name].arn
   )
 
   protocol = "sqs"
-  endpoint = aws_sqs_queue.this.arn
+  endpoint = aws_sqs_queue.this[each.value.queue_name].arn
 }
 
 

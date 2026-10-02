@@ -17,13 +17,16 @@ variable "application" {
 
 variable "config" {
   type = object({
-    queue_name           = string
-    subscribe_to         = optional(list(object({
-      topic_name         = string
-      source_environment = optional(string) #make this optional as in most cases it would be the same as the running environment, and use a local to set it as such
-    })))
+    queues = list(object({
+      queue_name = string
+      subscribe_to = optional(list(object({
+        topic_name         = string
+        source_environment = optional(string)
+      })))
+    }))
   })
 }
+
 
 variable "topics" {
   type = map(object({
