@@ -14,11 +14,6 @@ variable "config" {
   )
 }
 
-# variable "topic_name" {
-#   type        = string
-#   description = "SNS topic name"
-# }
-
 variable "tags" {
   type        = map(string)
   default     = {}
@@ -30,11 +25,6 @@ variable "allowed_sqs_subscriber_organization_id" {
   type        = string
   default     = "CHANGE ME!!"
 }
-
-# variable "queue_name" {
-#   type        = string
-#   description = "Queue name suffix."
-# }
 
 variable "delay_seconds" {
   description = "Seconds to delay delivery of new messages."
