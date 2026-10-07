@@ -20,9 +20,16 @@ variable "config" {
     queues = list(object({
       queue_name = string
       subscribe_to = optional(list(object({
-        topic_name         = string
+        topic_name = string
         #source_environment = optional(string)
       })))
+
+      visibility_timeout_seconds = optional(number, 30)
+
+      dead_letter_queue = optional(object({
+        enbaled           = optional(bool, true)
+        max_receive_count = optional(number, 5)
+      }))
     }))
   })
 }
@@ -70,12 +77,6 @@ variable "max_message_size" {
   default     = 262144
 }
 
-variable "visibility_timeout_seconds" {
-  type        = number
-  description = "Visibility timeout for messages."
-  default     = 30
-}
-
 variable "message_retention_seconds" {
   type        = number
   description = "How long messages are retained in the queue."
@@ -86,18 +87,6 @@ variable "receive_wait_time_seconds" {
   type        = number
   description = "Long polling wait time."
   default     = 10
-}
-
-variable "create_dlq" {
-  type        = bool
-  description = "Whether to create a dead-letter queue."
-  default     = true
-}
-
-variable "max_receive_count" {
-  type        = number
-  description = "Number of failed receives before moving message to DLQ."
-  default     = 5
 }
 
 variable "dlq_message_retention_seconds" {

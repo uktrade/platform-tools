@@ -1,42 +1,42 @@
 locals {
 
 
-    # This is the config in platform-config
-    # demodjango-sqs:
-    # type: sqs
-    # environments:
-    #   daveg:
-    #     subscribe_to: 
-    #     - topic_name: sns-topic-a
-    #       source_environment: daveg #- we could assume that if no env given, then use this one
-    #     - topic_name: sns-topic-c
-    #       source_environment: jayesh
+  # This is the config in platform-config
+  # demodjango-sqs:
+  # type: sqs
+  # environments:
+  #   daveg:
+  #     subscribe_to: 
+  #     - topic_name: sns-topic-a
+  #       source_environment: daveg #- we could assume that if no env given, then use this one
+  #     - topic_name: sns-topic-c
+  #       source_environment: jayesh
 
-    # This variable contains each topic_name and source_env that we want this SQS to subscribe to
-    # variable "config" {
-    #   type = object({
-    #     subscribe_to = list(object({
-    #       topic_name         = string
-    #       source_environment = optional(string) #make this optional as in most cases it would be the same as the running environment, and use a local to set it as such
-    #     }))
-    #   })
-    # }
+  # This variable contains each topic_name and source_env that we want this SQS to subscribe to
+  # variable "config" {
+  #   type = object({
+  #     subscribe_to = list(object({
+  #       topic_name         = string
+  #       source_environment = optional(string) #make this optional as in most cases it would be the same as the running environment, and use a local to set it as such
+  #     }))
+  #   })
+  # }
 
-    # like this:
-    # [
-    #   {
-    #     topic_name         = "sns-topic-a"
-    #     source_environment = "daveg"
-    #   }
-    # ]
+  # like this:
+  # [
+  #   {
+  #     topic_name         = "sns-topic-a"
+  #     source_environment = "daveg"
+  #   }
+  # ]
 
-    # or like this, if a source_environment isn't specified
-    # [
-    #   {
-    #     topic_name         = "sns-topic-b"
-    #     source_environment = null
-    #   }
-    # ]
+  # or like this, if a source_environment isn't specified
+  # [
+  #   {
+  #     topic_name         = "sns-topic-b"
+  #     source_environment = null
+  #   }
+  # ]
 
   # subscriptions = {                            #        
   #   for sub in var.config.subscribe_to :       # each subscribe_to object
@@ -77,22 +77,22 @@ locals {
 
   # To handle multiple SQS queues, platform-config has a key called 'queues'
   # so that we can store the subsequent key/vals in an iterable object
-    # demodjango-sqs:
-    # type: sqs
-    # environments:
-    #   daveg:
-    #     queues:
-    #       - queue_name: demodjango-daveg-sqs-queue-a
-    #         subscribe_to:
-    #           - topic_name: sns-topic-a
-    #       - queue_name: demodjango-daveg-sqs-queue-b
-    #         subscribe_to:
-    #           - topic_name: sns-topic-b
+  # demodjango-sqs:
+  # type: sqs
+  # environments:
+  #   daveg:
+  #     queues:
+  #       - queue_name: demodjango-daveg-sqs-queue-a
+  #         subscribe_to:
+  #           - topic_name: sns-topic-a
+  #       - queue_name: demodjango-daveg-sqs-queue-b
+  #         subscribe_to:
+  #           - topic_name: sns-topic-b
   queues = {
     for q in var.config.queues :
     q.queue_name => q
   }
-  
+
   # Take every subscription and set source_environment = current environment, which it will be in most cases,
   # unless platform-config explicitly states a different source_environment for the SNS topic
   subscriptions = merge([
@@ -100,8 +100,8 @@ locals {
       #for sub in coalesce(queue.subscribe_to, []) :
       for sub in coalesce(try(queue.subscribe_to, null), []) : #subscribe_to is now optional
       "${queue.queue_name}:${sub.topic_name}" => {
-        queue_name         = queue.queue_name
-        topic_name         = sub.topic_name
+        queue_name = queue.queue_name
+        topic_name = sub.topic_name
         # source_environment = coalesce(
         #   sub.source_environment,
         #   var.environment

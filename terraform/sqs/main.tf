@@ -23,8 +23,17 @@
 resource "aws_sqs_queue" "this" {
   for_each = local.queues
 
-  name = each.value.queue_name
+  name                       = each.value.queue_name
+  visibility_timeout_seconds = each.value.visibility_timeout_seconds
+
+  redrive_policy = (
+    each.value.dead_letter_queue.enabled
+    ) ? jsonencode({
+      deadLetterTargetArn = aws_sqs_queue.dlq[each.key].arn
+      maxReceiveCount     = each.value.dead_letter_queue.max_receive_count
+  }) : null
 }
+
 
 data "aws_iam_policy_document" "allow_sns_to_sqs" {
   for_each = local.subscriptions
@@ -63,7 +72,7 @@ resource "aws_sqs_queue_policy" "this" {
   #   for subscription in var.config.subscribe_to :
   #   subscription.topic_name => subscription
   # }
-  for_each = local.subscriptions
+  for_each  = local.subscriptions
   queue_url = aws_sqs_queue.this[each.value.queue_name].id
 
   policy = data.aws_iam_policy_document.allow_sns_to_sqs[
@@ -71,13 +80,36 @@ resource "aws_sqs_queue_policy" "this" {
   ].json
 }
 
-## We're not doing cross-environment, but keep for use on cross-account
-    # only look up 'remote' topics, i.e. in another environment (or one day a different account?)
-    # data "aws_sns_topic" "remote" {
-    #   for_each = local.remote_subscriptions
+resource "aws_sqs_queue" "dlq" {
+  for_each = {
+    for k, v in local.queues : k => v
+    if v.dead_letter_queue.enabled
+  }
 
-    #   name = "${var.application}-${each.value.source_environment}-${each.key}"
-    # }
+  name = "${each.key}-dlq"
+}
+
+resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
+  for_each = aws_sqs_queue.dlq
+
+  queue_url = each.value.id
+
+  redrive_allow_policy = jsonencode({
+    redrivePermission = "byQueue"
+
+    sourceQueueArns = [
+      aws_sqs_queue.queue[each.key].arn
+    ]
+  })
+}
+
+## We're not doing cross-environment, but keep for use on cross-account
+# only look up 'remote' topics, i.e. in another environment (or one day a different account?)
+# data "aws_sns_topic" "remote" {
+#   for_each = local.remote_subscriptions
+
+#   name = "${var.application}-${each.value.source_environment}-${each.key}"
+# }
 
 # 
 resource "aws_sns_topic_subscription" "this" {

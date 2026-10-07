@@ -147,7 +147,7 @@ module "datadog" {
 module "sns" {
   source = "../sns"
 
-  for_each    = local.sns
+  for_each = local.sns
 
   application = var.args.application
   environment = var.environment
@@ -160,7 +160,7 @@ module "sns" {
 module "sqs" {
   source = "../sqs"
 
-  for_each    = local.sqs
+  for_each = local.sqs
 
   application = var.args.application
   environment = var.environment
@@ -173,13 +173,13 @@ module "sqs" {
   )
 }
 
-  #topic_arn   = module.sns[replace(each.key, "-sqs", "-sns")].topic_arn
-  # topics = { #don't like this block - tidy it up somehow
-  #   for topic_name in each.value.subscribe_to:
-  #     topic_name => module.sns[
-  #       replace(each.key, "-sqs", "-sns")
-  #     ].topics[topic_name]
-  # }
+#topic_arn   = module.sns[replace(each.key, "-sqs", "-sns")].topic_arn
+# topics = { #don't like this block - tidy it up somehow
+#   for topic_name in each.value.subscribe_to:
+#     topic_name => module.sns[
+#       replace(each.key, "-sqs", "-sns")
+#     ].topics[topic_name]
+# }
 
 #   sns_topic_subscriptions = {
 #     daveg_subscription = {
