@@ -88,27 +88,17 @@ locals {
   #       - queue_name: demodjango-daveg-sqs-queue-b
   #         subscribe_to:
   #           - topic_name: sns-topic-b
-  queues = {
-    for q in var.config.queues :
-    q.queue_name => q
-  }
 
   # Take every subscription and set source_environment = current environment, which it will be in most cases,
   # unless platform-config explicitly states a different source_environment for the SNS topic
-  subscriptions = merge([
-    for queue in var.config.queues : {
-      #for sub in coalesce(queue.subscribe_to, []) :
-      for sub in coalesce(try(queue.subscribe_to, null), []) : #subscribe_to is now optional
-      "${queue.queue_name}:${sub.topic_name}" => {
-        queue_name = queue.queue_name
-        topic_name = sub.topic_name
-        # source_environment = coalesce(
-        #   sub.source_environment,
-        #   var.environment
-        # )
-      }
+  subscriptions = {
+    for sub in var.config.subscribe_to :
+    "${var.config.queue_name}:${sub.topic_name}" => {
+      queue_name = var.config.queue_name
+      topic_name = sub.topic_name
     }
-  ]...)
+  }
+
 
 
   # if the environment in platform-config where the SNS topics to subscribe to are defined,

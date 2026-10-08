@@ -21,16 +21,14 @@
 # }
 
 resource "aws_sqs_queue" "this" {
-  for_each = local.queues
-
-  name                       = each.value.queue_name
-  visibility_timeout_seconds = each.value.visibility_timeout_seconds
+  name                       = var.config.queue_name
+  visibility_timeout_seconds = var.config.visibility_timeout_seconds
 
   redrive_policy = (
-    each.value.dead_letter_queue.enabled
+    var.config.dead_letter_queue.enabled
     ) ? jsonencode({
-      deadLetterTargetArn = aws_sqs_queue.dlq[each.key].arn
-      maxReceiveCount     = each.value.dead_letter_queue.max_receive_count
+      deadLetterTargetArn = aws_sqs_queue.dlq[0].arn
+      maxReceiveCount     = var.config.dead_letter_queue.max_receive_count
   }) : null
 }
 
@@ -51,7 +49,7 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
     ]
 
     resources = [
-      aws_sqs_queue.this[each.value.queue_name].arn
+      aws_sqs_queue.this.arn
     ]
 
     condition {
@@ -73,7 +71,7 @@ resource "aws_sqs_queue_policy" "this" {
   #   subscription.topic_name => subscription
   # }
   for_each  = local.subscriptions
-  queue_url = aws_sqs_queue.this[each.value.queue_name].id
+  queue_url = aws_sqs_queue.this.id
 
   policy = data.aws_iam_policy_document.allow_sns_to_sqs[
     each.key
@@ -81,24 +79,21 @@ resource "aws_sqs_queue_policy" "this" {
 }
 
 resource "aws_sqs_queue" "dlq" {
-  for_each = {
-    for k, v in local.queues : k => v
-    if v.dead_letter_queue.enabled
-  }
+  count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  name = "${each.key}-dlq"
+  name = "${var.config.queue_name}-dlq"
 }
 
 resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
-  for_each = aws_sqs_queue.dlq
+  count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  queue_url = each.value.id
+  queue_url = aws_sqs_queue.dlq[0].id
 
   redrive_allow_policy = jsonencode({
     redrivePermission = "byQueue"
 
     sourceQueueArns = [
-      aws_sqs_queue.queue[each.key].arn
+      aws_sqs_queue.this.arn
     ]
   })
 }
@@ -123,7 +118,7 @@ resource "aws_sns_topic_subscription" "this" {
   # )
 
   protocol = "sqs"
-  endpoint = aws_sqs_queue.this[each.value.queue_name].arn
+  endpoint = aws_sqs_queue.this.arn
 }
 
 

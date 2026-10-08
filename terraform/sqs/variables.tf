@@ -17,23 +17,19 @@ variable "application" {
 
 variable "config" {
   type = object({
-    queues = list(object({
-      queue_name = string
-      subscribe_to = optional(list(object({
-        topic_name = string
-        #source_environment = optional(string)
-      })))
+    queue_name = string
+    subscribe_to = optional(list(object({
+      topic_name = string
+    })), [])
 
-      visibility_timeout_seconds = optional(number, 30)
+    visibility_timeout_seconds = optional(number, 30)
 
-      dead_letter_queue = optional(object({
-        enbaled           = optional(bool, true)
-        max_receive_count = optional(number, 5)
-      }))
+    dead_letter_queue = optional(object({
+      enbaled           = optional(bool, true)
+      max_receive_count = optional(number, 5)
     }))
   })
 }
-
 
 variable "topics" {
   type = map(object({
