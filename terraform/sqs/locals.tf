@@ -9,6 +9,6 @@ locals {
     }
   }
 
-  # Todo addd remote_subscriptions
+  # Todo addd remote_subscriptions i.e. ones not created by the SNS module
 
 }
