@@ -1,6 +1,5 @@
 mock_provider "aws" {}
 
-
 run "creates_sqs_queue_with_no_subscriptions" {
   command = plan
 
@@ -62,6 +61,12 @@ run "creates_sqs_queue_with_single_subscription" {
   assert {
     condition = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == var.topics["example-topic-a"].arn
     error_message = "Subscription should use the expected topic ARN"
+  }
+
+  # We currently generate one policy document per subscription
+  assert {
+    condition = length(data.aws_iam_policy_document.allow_sns_to_sqs) == 1
+    error_message = "Expected one queue policies to be generated"
   }
 }
 
@@ -129,5 +134,37 @@ run "creates_sqs_queue_with_three_subscription" {
     condition = aws_sns_topic_subscription.this["test-queue:example-topic-c"].topic_arn == var.topics["example-topic-c"].arn
     error_message = "Subscription to Topic C should use the Topic C ARN"
   }
+
+  assert {
+    condition = length(data.aws_iam_policy_document.allow_sns_to_sqs) == 3
+    error_message = "Expected three queue policies to be generated"
+  }
 }
+
+# Subscribe to the same SNS topic twice
+run "two_subscriptions_for_the_same_topic" {
+  command = plan
+
+  variables {
+    config = {
+      queue_name = "test-queue"
+      subscribe_to = [
+        {
+          topic_name = "example-topic-a"
+        }
+      ]
+    }
+    topics = {
+      "example-topic-a" = {
+        arn = "arn:aws:sns:eu-west-2:123456789012:topic-a"
+        id = "example-topic-a-id"
+        name = "example-topic-a-name"
+      }
+    }
+    application = "test-application"
+    environment = "test-environment"
+  }
+}
+
+
 
