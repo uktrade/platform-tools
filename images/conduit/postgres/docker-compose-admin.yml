@@ -1,0 +1,19 @@
+version: '3.8'
+services: 
+  db:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=password
+  client:
+    build:
+      context: .
+    platform: linux/arm64
+    environment:
+      - USERNAME=postgres
+      - PASSWORD=password
+      - IS_POSTGRES_ADMIN_TASK=True
+      - HOST=db
+      - PORT=5432
+      - DB_NAME=postgres
+    links:
+      - db
