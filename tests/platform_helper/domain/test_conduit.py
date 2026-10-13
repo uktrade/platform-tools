@@ -563,7 +563,6 @@ class TestTerraformConduitStrategy:
         self.ecs_provider = MagicMock()
         self.io = MagicMock()
         self.vpc_provider = MagicMock()
-        self.get_postgres_admin_connection_string = MagicMock()
 
         self.ssm_client = MagicMock()
 
@@ -594,6 +593,12 @@ class TestTerraformConduitStrategy:
                 "something/test-application-development",
             ),
             (
+                "postgres",
+                "custom-name-postgres",
+                "admin",
+                "something/test-application-development",
+            ),
+            (
                 "opensearch",
                 "custom-name-opensearch",
                 "read",
@@ -620,7 +625,6 @@ class TestTerraformConduitStrategy:
             "development",
             self.io,
             self.vpc_provider,
-            self.get_postgres_admin_connection_string,
         )
 
         self.ecs_provider.get_cluster_arn_by_name.return_value = cluster_arn
@@ -629,7 +633,6 @@ class TestTerraformConduitStrategy:
             "id", ["public-subnets"], ["private-subnets"], ["security-groups"]
         )
         self.vpc_provider.return_value = vpc_instance
-        # self.get_postgres_admin_connection_string.return_value = "connection-string"
 
         result = self.strategy.get_data()
 
@@ -654,61 +657,12 @@ class TestTerraformConduitStrategy:
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             f"conduit-{addon_type}-{access}-test-application-development-{addon_name}",
             Vpc("id", ["public-subnets"], ["private-subnets"], ["security-groups"]),
-            None,
         )
 
         result["task_arns"] = ["task-arn"]
         self.strategy.exec_task(result)
 
         self.ecs_provider.exec_task.assert_called_with(cluster_arn, "task-arn")
-
-    def test_strategy_postgres_admin(self):
-        self.setup()
-
-        self.strategy = TerraformConduitStrategy(
-            self.clients,
-            self.ecs_provider,
-            self.application,
-            "custom-name-postgres",
-            "postgres",
-            "admin",
-            "development",
-            self.io,
-            self.vpc_provider,
-            self.get_postgres_admin_connection_string,
-        )
-
-        self.ecs_provider.get_cluster_arn_by_name.return_value = "cluster-arn"
-
-        vpc_instance = MagicMock()
-        vpc_instance.get_vpc.return_value = Vpc(
-            "id", ["public-subnets"], ["private-subnets"], ["security-groups"]
-        )
-        self.vpc_provider.return_value = vpc_instance
-
-        # Postgres admin scenario
-        self.strategy.access = "admin"
-        self.strategy.addon_type = "postgres"
-
-        data_context = {
-            "cluster_arn": "cluster-arn",
-            "task_def_family": "conduit-postgres-admin-test-application-development-custom-name-postgres",
-            "vpc_name": "vpc-name",
-            "addon_type": "postgres",
-            "access": "admin",
-        }
-
-        # Execute
-        self.strategy.start_task(data_context)
-
-        # Validate
-        self.get_postgres_admin_connection_string.assert_called_once_with(
-            self.clients["ssm"],
-            "/copilot/test-application/development/secrets/CUSTOM_NAME_POSTGRES",
-            self.application,
-            "development",
-            "custom-name-postgres",
-        )
 
 
 @pytest.mark.parametrize(
