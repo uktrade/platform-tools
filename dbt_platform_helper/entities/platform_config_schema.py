@@ -450,7 +450,7 @@ class PlatformConfigSchema:
             "type": "sns",
             Optional("environments"): {
                 PlatformConfigSchema.__valid_environment_name(): {
-                    "topic_name": str,
+                    "topic_name": [str],
                 }
             },
         }
