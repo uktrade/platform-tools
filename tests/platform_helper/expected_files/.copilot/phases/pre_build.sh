@@ -5,8 +5,8 @@ set -e
 
 if [ -f "./.gitmodules" ]; then
   echo ".gitmodules file exists. Modifying URLs..."
-    account_id=$(echo $CODESTAR_CONNECTION_ARN | cut -d':' -f5)
-    connection_id=$(echo $CODESTAR_CONNECTION_ARN | cut -d'/' -f2)
+    account_id=$(echo "$CODESTAR_CONNECTION_ARN" | cut -d':' -f5)
+    connection_id=$(echo "$CODESTAR_CONNECTION_ARN" | cut -d'/' -f2)
     git_clone_base_url="https://codestar-connections.eu-west-2.amazonaws.com/git-http/$account_id/eu-west-2/$connection_id/uktrade"
 
     git config --global credential.helper '!aws codecommit credential-helper $@'

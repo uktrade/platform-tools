@@ -546,7 +546,7 @@ class SecretRotator:
                 f"Failed to update resources CloudFront Distro Id {distro['Id']} , WAF WebACL Id {self.waf_acl_id}"
             ) from e
 
-    def run_test_secret(self, service_client, arn, token, test_domains=[]):
+    def run_test_secret(self, service_client, arn, token, test_domains=None):
         """
         Test the secret This method validates that the AWSPENDING secret works
         in the service.
@@ -555,6 +555,9 @@ class SecretRotator:
         1. Attempts to send a Slack notification (notification failure won't stop the rotation process)
         2. If Lambda event contains key TestDomains and provided domains to test, then you can trigger a Slack notification to the configured Slack channel
         """
+        if test_domains is None:
+            test_domains = []
+
         test_failures = []
 
         # Check for TestDomains key in the Lambda event - currently only used in console to test Slack message is emitted
