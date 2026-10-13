@@ -48,7 +48,6 @@ class PlatformConfigSchema:
                         PlatformConfigSchema.__s3_bucket_policy_schema(),
                         PlatformConfigSchema.__sns_schema(),
                         PlatformConfigSchema.__sqs_schema(),
-
                     )
                 },
             }
