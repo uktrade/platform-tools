@@ -40,7 +40,7 @@ resource "aws_sqs_queue_policy" "this" {
   #   for subscription in var.config.subscribe_to :
   #   subscription.topic_name => subscription
   # }
-  for_each = local.subscriptions
+  for_each  = local.subscriptions
   queue_url = aws_sqs_queue.this.id
 
   policy = data.aws_iam_policy_document.allow_sns_to_sqs[
@@ -49,12 +49,12 @@ resource "aws_sqs_queue_policy" "this" {
 }
 
 ## We're not doing cross-environment, but keep for possible use on cross-account
-    # only look up 'remote' topics, i.e. in another environment (or one day a different account?)
-    # data "aws_sns_topic" "remote" {
-    #   for_each = local.remote_subscriptions
+# only look up 'remote' topics, i.e. in another environment (or one day a different account?)
+# data "aws_sns_topic" "remote" {
+#   for_each = local.remote_subscriptions
 
-    #   name = "${var.application}-${each.value.source_environment}-${each.key}"
-    # }
+#   name = "${var.application}-${each.value.source_environment}-${each.key}"
+# }
 
 # 
 resource "aws_sns_topic_subscription" "this" {
