@@ -174,7 +174,7 @@ module "privatelink-accept-certs" {
 
 # Routing to Secrets Manager is via an Interface Endpoint, therefore an additional ingress rule must be provided to establish access between ECS tasks and Secrets Manager Secrets (e.g. to access the Postgres admin credentials secret)
 data "aws_security_group" "rds_endpoint_sg" {
-  name = "${var.application}-rds-endpoint-sg"
+  name = "${var.vpc_name}-rds-endpoint-sg"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "rds_db_ingress_ecs_tasks_to_sm" {
