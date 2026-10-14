@@ -1,5 +1,6 @@
 resource "aws_sqs_queue" "this" {
-  name = var.config.queue_name
+  name                    = var.config.queue_name
+  sqs_managed_sse_enabled = true
 }
 
 data "aws_iam_policy_document" "allow_sns_to_sqs" {
