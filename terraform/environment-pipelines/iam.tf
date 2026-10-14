@@ -972,7 +972,7 @@ data "aws_iam_policy_document" "iam" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-task-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-exec-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-invalidate-cache",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-guardduty-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-guardduty-*-role",
       ]
     ])
   }
@@ -1021,9 +1021,11 @@ data "aws_iam_policy_document" "iam" {
       "iam:DeletePolicyVersion",
       "iam:ListPolicyVersions"
     ]
-    resources = [for environment in local.environment_config :
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions"
-    ]
+    resources = flatten([for environment in local.environment_config : [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}-${env.name}-guardduty-*-policy"
+      ]
+    ])
   }
 }
 
