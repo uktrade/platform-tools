@@ -1102,6 +1102,8 @@ resource "aws_iam_policy" "codepipeline" {
 }
 
 data "aws_iam_policy_document" "extensions" {
+  # checkov:skip=CKV_AWS_111:Permissions required to enable GuardDuty
+  # checkov:skip=CKV_AWS_356:Permissions required to enable GuardDuty
   # REDIS
   statement {
     actions = [
