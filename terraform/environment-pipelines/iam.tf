@@ -1221,6 +1221,7 @@ data "aws_iam_policy_document" "extensions" {
       "guardduty:DeleteMalwareProtectionPlan",
       "guardduty:GetMalwareProtectionPlan",
       "guardduty:ListMalwareProtectionPlans",
+      "guardduty:ListTagsForResource",
       "guardduty:TagResource",
       "guardduty:UntagResource"
     ]
