@@ -1207,6 +1207,23 @@ data "aws_iam_policy_document" "extensions" {
     ]
   }
 
+  statement {
+    sid    = "GuardDutyMalwareProtectionPlans"
+    effect = "Allow"
+
+    actions = [
+      "guardduty:CreateMalwareProtectionPlan",
+      "guardduty:UpdateMalwareProtectionPlan",
+      "guardduty:DeleteMalwareProtectionPlan",
+      "guardduty:GetMalwareProtectionPlan",
+      "guardduty:ListMalwareProtectionPlans",
+      "guardduty:TagResource",
+      "guardduty:UntagResource"
+    ]
+
+    resources = ["*"]
+  }
+
 }
 
 resource "aws_iam_policy" "extensions" {
