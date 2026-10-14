@@ -972,7 +972,7 @@ data "aws_iam_policy_document" "iam" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-task-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-exec-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-invalidate-cache",
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-guardduty-*-role",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-guardduty-*",
       ]
     ])
   }
