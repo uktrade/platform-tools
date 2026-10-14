@@ -7,6 +7,7 @@ services:
   client:
     build:
       context: .
+    platform: linux/arm64
     environment:
       - CONNECTION_SECRET={"host":"db","username":"postgres","password":"password","dbname":"postgres","port":"5432"}
     links:
