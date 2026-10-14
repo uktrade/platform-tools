@@ -136,7 +136,7 @@ module "datadog" {
 module "sns" {
   source = "../sns"
 
-  for_each    = local.sns
+  for_each = local.sns
 
   application = var.args.application
   environment = var.environment
@@ -146,7 +146,7 @@ module "sns" {
 module "sqs" {
   source = "../sqs"
 
-  for_each    = local.sqs
+  for_each = local.sqs
 
   application = var.args.application
   environment = var.environment

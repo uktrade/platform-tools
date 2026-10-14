@@ -17,7 +17,7 @@ run "creates_single_sns_topic" {
   }
 
   assert {
-    condition = output.topics["test-topic"].name == "test-application-test-environment-test-topic"
+    condition     = output.topics["test-topic"].name == "test-application-test-environment-test-topic"
     error_message = "Output should contain the expected topic name"
   }
 }
