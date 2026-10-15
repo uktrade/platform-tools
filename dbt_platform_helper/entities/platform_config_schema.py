@@ -67,6 +67,8 @@ class PlatformConfigSchema:
             "datadog": Schema(PlatformConfigSchema.__datadog_schema()),
             "s3": Schema(PlatformConfigSchema.__s3_bucket_schema()),
             "s3-policy": Schema(PlatformConfigSchema.__s3_bucket_policy_schema()),
+            "sns": Schema(PlatformConfigSchema.__sns_schema()),
+            "sqs": Schema(PlatformConfigSchema.__sqs_schema()),
             "subscription-filter": PlatformConfigSchema.__no_configuration_required_schema(
                 "subscription-filter"
             ),
@@ -443,6 +445,33 @@ class PlatformConfigSchema:
         return True
 
     @staticmethod
+    def __sns_schema() -> dict:
+        return {
+            "type": "sns",
+            Optional("environments"): {
+                PlatformConfigSchema.__valid_environment_name(): {
+                    "topic_name": [str],
+                }
+            },
+        }
+
+    @staticmethod
+    def __sqs_schema() -> dict:
+        return {
+            "type": "sqs",
+            Optional("environments"): {
+                PlatformConfigSchema.__valid_environment_name(): {
+                    "queue_name": str,
+                    Optional("subscribe_to"): [
+                        {
+                            "topic_name": str,
+                        }
+                    ],
+                }
+            },
+        }
+
+    @staticmethod
     def __datadog_schema() -> dict:
         return {
             "type": "datadog",
@@ -527,6 +556,10 @@ class PlatformConfigSchema:
             "enabled": bool,
         }
 
+        _valid_s3_bucket_guardduty = {
+            "enabled": bool,
+        }
+
         _valid_s3_bucket_external_role_access = {
             "role_arn": PlatformConfigSchema.__valid_iam_role_arn("role_arn"),
             "read": bool,
@@ -559,6 +592,7 @@ class PlatformConfigSchema:
                         Optional("retention_policy"): _valid_s3_bucket_retention_policy,
                         Optional("versioning"): bool,
                         Optional("lifecycle_rules"): [_valid_s3_bucket_lifecycle_rule],
+                        Optional("guardduty"): _valid_s3_bucket_guardduty,
                         Optional("data_migration"): _valid_s3_data_migration,
                         Optional("external_role_access"): {
                             PlatformConfigSchema.__valid_schema_key(): _valid_s3_bucket_external_role_access

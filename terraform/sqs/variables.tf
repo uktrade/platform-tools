@@ -6,15 +6,6 @@ variable "application" {
   type = string
 }
 
-# variable "config" {
-#   type = object(
-#     {
-#       #queue_name = string
-#       subscribe_to = set(string)
-#     }
-#   )
-# }
-
 variable "config" {
   type = object({
     queue_name = string
@@ -39,11 +30,6 @@ variable "topics" {
   }))
 }
 
-# variable "topic_arn" {
-#   type        = any
-#   description = "SNS topic arn"
-# }
-
 variable "tags" {
   type        = map(string)
   default     = {}
@@ -55,11 +41,6 @@ variable "allowed_sqs_subscriber_organization_id" {
   type        = string
   default     = null
 }
-
-# variable "queue_name" {
-#   type        = string
-#   description = "Queue name suffix."
-# }
 
 variable "delay_seconds" {
   description = "Seconds to delay delivery of new messages."

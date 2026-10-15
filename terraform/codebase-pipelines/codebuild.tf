@@ -148,6 +148,10 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
       }
     }
   }
+
+  pull_request_build_policy {
+    requires_comment_approval = "DISABLED"
+  }
 }
 
 resource "aws_codebuild_project" "codebase_install_tools" {

@@ -1,6 +1,7 @@
 resource "aws_sns_topic" "this" {
-  for_each = var.config.topic_name
-  name     = "${var.application}-${var.environment}-${each.value}" #${var.config.topic_name}"
+  for_each          = var.config.topic_name
+  name              = "${var.application}-${var.environment}-${each.value}" #${var.config.topic_name}"
+  kms_master_key_id = "alias/aws/sns"
 }
 
 data "aws_iam_policy_document" "sns_topic_policy" {
