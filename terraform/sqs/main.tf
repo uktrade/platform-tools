@@ -61,7 +61,8 @@ resource "aws_sqs_queue_policy" "this" {
 resource "aws_sqs_queue" "dlq" {
   count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  name = "${var.config.queue_name}-dlq"
+  name                    = "${var.config.queue_name}-dlq"
+  sqs_managed_sse_enabled = true
 }
 
 resource "aws_sqs_queue_redrive_allow_policy" "dlq" {

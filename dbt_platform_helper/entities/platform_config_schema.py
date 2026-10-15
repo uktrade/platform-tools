@@ -445,33 +445,6 @@ class PlatformConfigSchema:
         return True
 
     @staticmethod
-    def __sns_schema() -> dict:
-        return {
-            "type": "sns",
-            Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    "topic_name": [str],
-                }
-            },
-        }
-
-    @staticmethod
-    def __sqs_schema() -> dict:
-        return {
-            "type": "sqs",
-            Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    "queue_name": str,
-                    Optional("subscribe_to"): [
-                        {
-                            "topic_name": str,
-                        }
-                    ],
-                }
-            },
-        }
-
-    @staticmethod
     def __datadog_schema() -> dict:
         return {
             "type": "datadog",
