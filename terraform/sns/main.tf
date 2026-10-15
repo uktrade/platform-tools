@@ -1,12 +1,9 @@
 resource "aws_sns_topic" "this" {
-  for_each          = var.config.topic_name
-  name              = "${var.application}-${var.environment}-${each.value}" #${var.config.topic_name}"
+  name              = var.config.topic_name
   kms_master_key_id = "alias/aws/sns"
 }
 
 data "aws_iam_policy_document" "sns_topic_policy" {
-  for_each = aws_sns_topic.this
-
   statement {
     sid    = "AllowSqsQueuesToSubscribeFromOrganization"
     effect = "Allow"
@@ -41,6 +38,6 @@ data "aws_iam_policy_document" "sns_topic_policy" {
 resource "aws_sns_topic_policy" "this" {
   for_each = aws_sns_topic.this
 
-  arn    = each.value.arn
-  policy = data.aws_iam_policy_document.sns_topic_policy[each.key].json
+  arn    = aws_sns_topic.this.arn
+  policy = data.aws_iam_policy_document.sns_topic_policy.json
 }
