@@ -466,9 +466,9 @@ locals {
 # SNS and SQS EXTENSIONS 
 ###########################
 
-locals {  
+locals {
   extension_types = [
-    for key, ext in var.platform_extensions : ext.type 
+    for key, ext in var.platform_extensions : ext.type
     if try(ext.type, null) != null
   ]
   sns_iam_required = contains(local.extension_types, "sns")
@@ -477,11 +477,11 @@ locals {
 
 # If SNS extension type found in platform-config, create IAM policy and attach to ECS task role
 data "aws_iam_policy_document" "sns_publish_policy" {
-  count       = local.sns_iam_required ? 1 : 0
+  count = local.sns_iam_required ? 1 : 0
   statement {
-    sid    = "AllowEcsToPublishToSNSTopics"
-    effect = "Allow"
-    actions = ["sns:Publish"]
+    sid       = "AllowEcsToPublishToSNSTopics"
+    effect    = "Allow"
+    actions   = ["sns:Publish"]
     resources = ["arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
   }
 }
@@ -502,11 +502,11 @@ resource "aws_iam_role_policy_attachment" "sns_account_policy_attachment" {
 
 # If SQS extension type found in platform-config, create IAM policy and attach to ECS task role
 data "aws_iam_policy_document" "sqs_publish_policy" {
-  count       = local.sqs_iam_required ? 1 : 0
+  count = local.sqs_iam_required ? 1 : 0
   statement {
-    sid    = "AllowEcsToSendMessagesToSQSQueues"
-    effect = "Allow"
-    actions = ["sqs:SendMessage"]
+    sid       = "AllowEcsToSendMessagesToSQSQueues"
+    effect    = "Allow"
+    actions   = ["sqs:SendMessage"]
     resources = ["arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
   }
 }
