@@ -1,5 +1,14 @@
 # Changelog
 
+## [15.38.1](https://github.com/uktrade/platform-tools/compare/15.38.0...15.38.1) (2026-10-16)
+
+
+### Dependencies
+
+* Bump slack-sdk from 3.44.1 to 3.45.0 in the minor-and-patch group across 1 directory ([#1672](https://github.com/uktrade/platform-tools/issues/1672)) ([f5a0a96](https://github.com/uktrade/platform-tools/commit/f5a0a965904d1b74bf949fbd0df0a1e723eabee2))
+* Bump the minor-and-patch group across 2 directories with 1 update ([#1673](https://github.com/uktrade/platform-tools/issues/1673)) ([dfd0a59](https://github.com/uktrade/platform-tools/commit/dfd0a59cd34649081089a892713f9feaaa73bab7))
+* Bump urllib3 from 2.7.0 to 2.8.0 ([#1670](https://github.com/uktrade/platform-tools/issues/1670)) ([ddec42c](https://github.com/uktrade/platform-tools/commit/ddec42c6a9af8d0ed459bce271ff8681ea89451f))
+
 ## [15.38.0](https://github.com/uktrade/platform-tools/compare/15.37.0...15.38.0) (2026-10-14)
 
 
