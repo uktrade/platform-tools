@@ -9,11 +9,13 @@ variable "application" {
 variable "config" {
   type = object({
     queue_name = string
-    subscribe_to = optional(list(object({
-      topic_name = string
-    })), [])
 
     visibility_timeout_seconds = optional(number, 30)
+
+    subscribe_to = optional(list(object({
+      topic_name = string
+      account_id = optional(string)
+    })), [])
 
     dead_letter_queue = optional(object({
       enbaled           = optional(bool, true)
@@ -34,12 +36,6 @@ variable "tags" {
   type        = map(string)
   default     = {}
   description = "Tags to apply to the SNS topic."
-}
-
-variable "allowed_sqs_subscriber_organization_id" {
-  description = "AWS Organization ID allowed to subscribe SQS queues to this SNS topic (for example o-1234567890)."
-  type        = string
-  default     = null
 }
 
 variable "delay_seconds" {
