@@ -461,3 +461,66 @@ locals {
     }
   }
 }
+
+###########################
+# SNS and SQS EXTENSIONS 
+###########################
+
+locals {  
+  extension_types = [
+    for key, ext in var.platform_extensions : ext.type 
+    if try(ext.type, null) != null
+  ]
+  sns_iam_required = contains(local.extension_types, "sns")
+  sqs_iam_required = contains(local.extension_types, "sqs")
+}
+
+# If SNS extension type found in platform-config, create IAM policy and attach to ECS task role
+data "aws_iam_policy_document" "sns_publish_policy" {
+  count       = local.sns_iam_required ? 1 : 0
+  statement {
+    sid    = "AllowEcsToPublishToSNSTopics"
+    effect = "Allow"
+    actions = ["sns:Publish"]
+    resources = ["arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
+  }
+}
+
+resource "aws_iam_policy" "sns_account_policy" {
+  count       = local.sns_iam_required ? 1 : 0
+  name        = "${var.application}-${var.environment}-${var.service_config.name}-sns-policy"
+  description = "SNS permissions for ${var.service_config.name}"
+  policy      = data.aws_iam_policy_document.sns_publish_policy[count.index].json
+  tags        = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "sns_account_policy_attachment" {
+  count      = local.sns_iam_required ? 1 : 0
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.sns_account_policy[count.index].arn
+}
+
+# If SQS extension type found in platform-config, create IAM policy and attach to ECS task role
+data "aws_iam_policy_document" "sqs_publish_policy" {
+  count       = local.sqs_iam_required ? 1 : 0
+  statement {
+    sid    = "AllowEcsToSendMessagesToSQSQueues"
+    effect = "Allow"
+    actions = ["sqs:SendMessage"]
+    resources = ["arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:*"]
+  }
+}
+
+resource "aws_iam_policy" "sqs_account_policy" {
+  count       = local.sqs_iam_required ? 1 : 0
+  name        = "${var.application}-${var.environment}-${var.service_config.name}-sqs-policy"
+  description = "SQS permissions for ${var.service_config.name}"
+  policy      = data.aws_iam_policy_document.sqs_publish_policy[count.index].json
+  tags        = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "sqs_account_policy_attachment" {
+  count      = local.sqs_iam_required ? 1 : 0
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.sqs_account_policy[count.index].arn
+}
