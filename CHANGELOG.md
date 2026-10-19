@@ -1,5 +1,16 @@
 # Changelog
 
+## [15.38.1](https://github.com/uktrade/platform-tools/compare/15.38.0...15.38.1) (2026-10-19)
+
+
+### Dependencies
+
+* Bump pydantic from 2.13.5 to 2.14.1 in the minor-and-patch group across 1 directory ([#1682](https://github.com/uktrade/platform-tools/issues/1682)) ([7166a50](https://github.com/uktrade/platform-tools/commit/7166a50ffa0a9b202c0df3627d7ec1a04bbdda7f))
+* Bump slack-sdk from 3.44.1 to 3.45.0 in the minor-and-patch group across 1 directory ([#1672](https://github.com/uktrade/platform-tools/issues/1672)) ([f5a0a96](https://github.com/uktrade/platform-tools/commit/f5a0a965904d1b74bf949fbd0df0a1e723eabee2))
+* Bump the minor-and-patch group across 2 directories with 1 update ([#1673](https://github.com/uktrade/platform-tools/issues/1673)) ([dfd0a59](https://github.com/uktrade/platform-tools/commit/dfd0a59cd34649081089a892713f9feaaa73bab7))
+* Bump the minor-and-patch group across 3 directories with 1 update ([#1684](https://github.com/uktrade/platform-tools/issues/1684)) ([088a42b](https://github.com/uktrade/platform-tools/commit/088a42be6d9c4783f2544777bd563bc2cfc5ada7))
+* Bump urllib3 from 2.7.0 to 2.8.0 ([#1670](https://github.com/uktrade/platform-tools/issues/1670)) ([ddec42c](https://github.com/uktrade/platform-tools/commit/ddec42c6a9af8d0ed459bce271ff8681ea89451f))
+
 ## [15.38.0](https://github.com/uktrade/platform-tools/compare/15.37.0...15.38.0) (2026-10-14)
 
 
