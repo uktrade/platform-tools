@@ -1207,6 +1207,25 @@ data "aws_iam_policy_document" "extensions" {
     ]
   }
 
+  # SNS
+  statement {
+    actions = [
+      "sns:*"
+    ]
+    resources = [
+      "arn:aws:sns:${local.account_region}:${data.aws_caller_identity.current.account_id}:*"
+    ]
+  }
+  # SQS
+  statement {
+    actions = [
+      "sqs:*"
+    ]
+    resources = [
+      "arn:aws:sqs:${local.account_region}:${data.aws_caller_identity.current.account_id}:*"
+    ]
+  }
+
 }
 
 resource "aws_iam_policy" "extensions" {
