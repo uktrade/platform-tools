@@ -28,12 +28,11 @@ AUDIT_CONFIGURATION = {
 
 
 def get_audit_configuration(major_version):
-    if major_version == 1:
+    if major_version < 2:
         return {"config": AUDIT_CONFIGURATION}
-    if major_version == 2:
-        return AUDIT_CONFIGURATION
 
-    raise ValueError(f"Unsupported OpenSearch major version: {major_version}")
+    if major_version >= 2:
+        return AUDIT_CONFIGURATION
 
 
 def configure_audit_logging(host, admin_user, major_version):
