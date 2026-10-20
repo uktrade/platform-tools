@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_sns_topic" "this" {
-  name              = var.config.topic_name
+  name              = "${var.application}-${var.environment}-${var.config.topic_name}"
   kms_master_key_id = "alias/aws/sns"
 }
 
@@ -38,7 +38,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
   }
 
   statement {
-    sid    = "AllowSqsQueuesToSubscribeFromOrganization"
+    sid    = "AllowSqsQueuesToSubscribeFromAllowedAccountSameEnvironment"
     effect = "Allow"
 
     principals {
@@ -55,15 +55,11 @@ data "aws_iam_policy_document" "sns_topic_policy" {
     ]
 
     condition {
-      test     = "StringEquals"
-      variable = "sns:Protocol"
-      values   = ["sqs"]
-    }
-
-    condition {
       test     = "StringLike"
       variable = "sns:Endpoint"
-      values   = var.config.allow_list
+      values = [
+        for account_id in local.allowed_account_ids : "arn:aws:sqs:*:${account_id}:*-${var.environment}-*"
+      ]
     }
   }
 }

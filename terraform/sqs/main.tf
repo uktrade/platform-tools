@@ -1,5 +1,5 @@
 resource "aws_sqs_queue" "this" {
-  name                       = var.config.queue_name
+  name                       = "${var.application}-${var.environment}-${var.config.queue_name}"
   sqs_managed_sse_enabled    = true
   visibility_timeout_seconds = var.config.visibility_timeout_seconds
 
@@ -34,8 +34,10 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
       variable = "aws:SourceArn"
 
       values = [
-        for k, v in local.subscriptions :
-        v.is_cross_account ? v.topic_arn : var.topics[v.topic_name].arn
+        for _, subscription in local.subscriptions :
+        subscription.is_cross_account
+        ? subscription.topic_arn
+        : var.topics[subscription.topic_name].arn
       ]
     }
   }
