@@ -136,6 +136,7 @@ resource "aws_lambda_invocation" "create-users" {
 
   input = jsonencode({
     AdminUserEndpointParam = local.ssm_parameter_name
+    OpenSearchMajorVersion = tonumber(split(".", var.config.engine)[0])
 
     Application       = var.application
     Environment       = var.environment

@@ -130,6 +130,10 @@ my-opensearch:
       engine: '2.7' # Downgrade the engine.
 ```
 
+Audit logging is enabled automatically for OpenSearch 1.x and 2.x domains. REST and transport events are sent to the
+configured audit log group; high-volume `AUTHENTICATED` and `GRANTED_PRIVILEGES` events and request bodies are excluded.
+The audit configuration request format is selected from the configured engine major version.
+
 ## Application Load Balancer module
 
 This module will create a ALB that lets you specify multiple domain names for use in the HTTPS listener rule. In addition it will create the required certificates for all the domains specified.
