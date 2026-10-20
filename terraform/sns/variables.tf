@@ -9,8 +9,8 @@ variable "application" {
 variable "config" {
   type = object(
     {
-      topic_name = string
-      allow_list = optional(list(string), [])
+      topic_name          = string
+      allowed_account_ids = optional(list(string), [])
     }
   )
 }
