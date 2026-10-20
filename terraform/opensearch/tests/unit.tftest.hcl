@@ -202,6 +202,11 @@ run "test_create_opensearch" {
   }
 
   assert {
+    condition     = jsondecode(aws_lambda_invocation.create-users.input).OpenSearchMajorVersion == 2
+    error_message = "The Lambda invocation must receive OpenSearch major version 2"
+  }
+
+  assert {
     condition     = aws_opensearch_domain.this.cluster_config[0].dedicated_master_type == null
     error_message = "Should be: null"
   }
@@ -294,6 +299,30 @@ run "test_create_opensearch" {
   assert {
     condition     = aws_cloudwatch_log_group.opensearch_log_group_audit_logs.retention_in_days == 7
     error_message = "Should be: 7"
+  }
+}
+
+run "test_opensearch_v1_major_version" {
+  command = plan
+
+  variables {
+    application = "my_app"
+    environment = "my_env"
+    name        = "my_name"
+    vpc_name    = "terraform-tests-vpc"
+
+    config = {
+      engine      = "1.3"
+      instance    = "t3.small.search"
+      instances   = 1
+      volume_size = 80
+      enable_ha   = false
+    }
+  }
+
+  assert {
+    condition     = jsondecode(aws_lambda_invocation.create-users.input).OpenSearchMajorVersion == 1
+    error_message = "The Lambda invocation must receive OpenSearch major version 1"
   }
 }
 
@@ -618,4 +647,3 @@ run "aws_kms_key_unit_test" {
     error_message = "Should be: 'my_name-my_app-my_env-conduitEcsTask'"
   }
 }
-

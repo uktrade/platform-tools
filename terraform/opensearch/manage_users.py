@@ -13,6 +13,32 @@ READ_ROLE = "read_role"
 WRITE_ROLE = "write_role"
 INDEX_ROLE = "index_role"
 
+AUDIT_CONFIGURATION = {
+    "enabled": True,
+    "audit": {
+        "enable_rest": True,
+        "enable_transport": True,
+        "disabled_rest_categories": ["AUTHENTICATED", "GRANTED_PRIVILEGES"],
+        "disabled_transport_categories": ["AUTHENTICATED", "GRANTED_PRIVILEGES"],
+        "resolve_bulk_requests": False,
+        "log_request_body": False,
+        "resolve_indices": True,
+    },
+}
+
+
+def get_audit_configuration(major_version):
+    if major_version < 2:
+        return {"config": AUDIT_CONFIGURATION}
+
+    if major_version >= 2:
+        return AUDIT_CONFIGURATION
+
+
+def configure_audit_logging(host, admin_user, major_version):
+    audit_configuration = get_audit_configuration(major_version)
+    return request("PUT", host, "/audit/config", admin_user, audit_configuration)
+
 
 def get_admin_user_and_host(ssm, ssm_param_name):
     raw = ssm.get_parameter(Name=ssm_param_name, WithDecryption=True)["Parameter"]["Value"]
@@ -169,6 +195,7 @@ def handler(event, context):
     Expected Event:
     {
         "AdminUserEndpointParam": "/opensearch-endpoint",
+        "OpenSearchMajorVersion": 2,
         "Application" : "my-app",
         "Environment" : "production",
         "SecretDescription": "description"
@@ -187,6 +214,8 @@ def handler(event, context):
     ssm = boto3.client("ssm")
 
     admin_user, host = get_admin_user_and_host(ssm, event["AdminUserEndpointParam"])
+
+    configure_audit_logging(host, admin_user, event["OpenSearchMajorVersion"])
 
     application = event["Application"]
     environment = event["Environment"]
