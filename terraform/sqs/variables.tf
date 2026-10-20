@@ -18,18 +18,10 @@ variable "config" {
     })), [])
 
     dead_letter_queue = optional(object({
-      enbaled           = optional(bool, true)
+      enabled           = optional(bool, true)
       max_receive_count = optional(number, 5)
-    }))
+    }), { "enabled" : true, "max_receive_count" : 5 })
   })
-}
-
-variable "topics" {
-  type = map(object({
-    arn  = string
-    id   = string
-    name = string
-  }))
 }
 
 variable "tags" {

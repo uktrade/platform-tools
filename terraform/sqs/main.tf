@@ -1,3 +1,5 @@
+data "aws_caller_identity" "current" {}
+
 resource "aws_sqs_queue" "this" {
   name                       = "${var.application}-${var.environment}-${var.config.queue_name}"
   sqs_managed_sse_enabled    = true
@@ -35,9 +37,7 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
 
       values = [
         for _, subscription in local.subscriptions :
-        subscription.is_cross_account
-        ? subscription.topic_arn
-        : var.topics[subscription.topic_name].arn
+        subscription.topic_arn
       ]
     }
   }
@@ -52,7 +52,7 @@ resource "aws_sqs_queue_policy" "this" {
 resource "aws_sqs_queue" "dlq" {
   count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  name                    = "${var.config.queue_name}-dlq"
+  name                    = "${var.application}-${var.environment}-${var.config.queue_name}-dlq"
   sqs_managed_sse_enabled = true
 }
 
@@ -73,7 +73,7 @@ resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
 resource "aws_sns_topic_subscription" "this" {
   for_each = local.subscriptions
 
-  topic_arn = each.value.is_cross_account ? each.value.topic_arn : var.topics[each.value.topic_name].arn
+  topic_arn = each.value.topic_arn
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.this.arn
 }

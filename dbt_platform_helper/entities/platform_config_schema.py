@@ -474,7 +474,7 @@ class PlatformConfigSchema:
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
                     "topic_name": str,
-                    Optional("allow_list"): list(str),
+                    Optional("allow_list"): [str],
                 }
             },
         }

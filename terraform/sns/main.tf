@@ -65,8 +65,6 @@ data "aws_iam_policy_document" "sns_topic_policy" {
 }
 
 resource "aws_sns_topic_policy" "this" {
-  for_each = aws_sns_topic.this
-
   arn    = aws_sns_topic.this.arn
   policy = data.aws_iam_policy_document.sns_topic_policy.json
 }
