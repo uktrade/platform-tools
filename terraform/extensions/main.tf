@@ -151,12 +151,8 @@ module "sqs" {
   application = var.args.application
   environment = var.environment
   config      = each.value
-  topics = try(
-    module.sns[
-      replace(each.key, "-sqs", "-sns") #should replace this with application name
-    ].topics,
-    {}
-  )
+
+  depends_on = [module.sns]
 }
 
 resource "aws_ssm_parameter" "addons" {

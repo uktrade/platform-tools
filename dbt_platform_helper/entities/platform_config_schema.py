@@ -445,33 +445,6 @@ class PlatformConfigSchema:
         return True
 
     @staticmethod
-    def __sns_schema() -> dict:
-        return {
-            "type": "sns",
-            Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    "topic_name": [str],
-                }
-            },
-        }
-
-    @staticmethod
-    def __sqs_schema() -> dict:
-        return {
-            "type": "sqs",
-            Optional("environments"): {
-                PlatformConfigSchema.__valid_environment_name(): {
-                    "queue_name": str,
-                    Optional("subscribe_to"): [
-                        {
-                            "topic_name": str,
-                        }
-                    ],
-                }
-            },
-        }
-
-    @staticmethod
     def __datadog_schema() -> dict:
         return {
             "type": "datadog",
@@ -491,6 +464,36 @@ class PlatformConfigSchema:
                     "services_to_monitor": dict,
                     Optional("description"): str,
                 },
+            },
+        }
+
+    @staticmethod
+    def __sns_schema() -> dict:
+        return {
+            "type": "sns",
+            Optional("environments"): {
+                Optional(PlatformConfigSchema.__valid_environment_name()): {
+                    "topic_name": str,
+                    Optional("allowed_account_ids"): [str],
+                }
+            },
+        }
+
+    @staticmethod
+    def __sqs_schema() -> dict:
+        __valid_dead_letter_queue = {Optional("enabled"): bool, Optional("max_receive_count"): int}
+
+        __valid_subscribe_to = {"topic_name": str}
+
+        return {
+            "type": "sqs",
+            Optional("environments"): {
+                Optional(PlatformConfigSchema.__valid_environment_name()): {
+                    "queue_name": str,
+                    Optional("subscribe_to"): [__valid_subscribe_to],
+                    Optional("visibility_timeout_seconds"): int,
+                    Optional("dead_letter_queue"): __valid_dead_letter_queue,
+                }
             },
         }
 

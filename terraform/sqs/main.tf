@@ -1,11 +1,20 @@
+data "aws_caller_identity" "current" {}
+
 resource "aws_sqs_queue" "this" {
-  name                    = var.config.queue_name
-  sqs_managed_sse_enabled = true
+  name                       = "${var.application}-${var.environment}-${var.config.queue_name}"
+  sqs_managed_sse_enabled    = true
+  visibility_timeout_seconds = var.config.visibility_timeout_seconds
+
+  redrive_policy = (
+    var.config.dead_letter_queue.enabled
+    ) ? jsonencode({
+      deadLetterTargetArn = aws_sqs_queue.dlq[0].arn
+      maxReceiveCount     = var.config.dead_letter_queue.max_receive_count
+  }) : null
 }
 
-data "aws_iam_policy_document" "allow_sns_to_sqs" {
-  for_each = local.subscriptions
 
+data "aws_iam_policy_document" "allow_sns_to_sqs" {
   statement {
     effect = "Allow"
 
@@ -27,48 +36,44 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
       variable = "aws:SourceArn"
 
       values = [
-        (
-          var.topics[each.value.topic_name].arn
-        )
+        for _, subscription in local.subscriptions :
+        subscription.topic_arn
       ]
     }
   }
 }
 
 resource "aws_sqs_queue_policy" "this" {
-  ## We're not doing cross-environment, but keep for use on cross-account
-  # for_each = {
-  #   for subscription in var.config.subscribe_to :
-  #   subscription.topic_name => subscription
-  # }
-  for_each  = local.subscriptions
   queue_url = aws_sqs_queue.this.id
 
-  policy = data.aws_iam_policy_document.allow_sns_to_sqs[
-    each.key
-  ].json
+  policy = data.aws_iam_policy_document.allow_sns_to_sqs.json
 }
 
-## We're not doing cross-environment, but keep for possible use on cross-account
-# only look up 'remote' topics, i.e. in another environment (or one day a different account?)
-# data "aws_sns_topic" "remote" {
-#   for_each = local.remote_subscriptions
+resource "aws_sqs_queue" "dlq" {
+  count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-#   name = "${var.application}-${each.value.source_environment}-${each.key}"
-# }
+  name                    = "${var.application}-${var.environment}-${var.config.queue_name}-dlq"
+  sqs_managed_sse_enabled = true
+}
 
-# 
+resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
+  count = var.config.dead_letter_queue.enabled ? 1 : 0
+
+  queue_url = aws_sqs_queue.dlq[0].id
+
+  redrive_allow_policy = jsonencode({
+    redrivePermission = "byQueue"
+
+    sourceQueueArns = [
+      aws_sqs_queue.this.arn
+    ]
+  })
+}
+
 resource "aws_sns_topic_subscription" "this" {
   for_each = local.subscriptions
 
-  topic_arn = var.topics[each.value.topic_name].arn
-  ## We're not doing cross-environment, but keep for use on cross-account
-  # topic_arn = (
-  #   each.value.source_environment == var.environment
-  #     ? var.topics[each.value.topic_name].arn
-  #     : data.aws_sns_topic.remote[each.value.topic_name].arn
-  # )
-
-  protocol = "sqs"
-  endpoint = aws_sqs_queue.this.arn
+  topic_arn = each.value.topic_arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.this.arn
 }

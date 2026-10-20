@@ -9,30 +9,25 @@ variable "application" {
 variable "config" {
   type = object({
     queue_name = string
+
+    visibility_timeout_seconds = optional(number, 30)
+
     subscribe_to = optional(list(object({
       topic_name = string
+      account_id = optional(string)
     })), [])
-  })
-}
 
-variable "topics" {
-  type = map(object({
-    arn  = string
-    id   = string
-    name = string
-  }))
+    dead_letter_queue = optional(object({
+      enabled           = optional(bool, true)
+      max_receive_count = optional(number, 5)
+    }), { "enabled" : true, "max_receive_count" : 5 })
+  })
 }
 
 variable "tags" {
   type        = map(string)
   default     = {}
   description = "Tags to apply to the SNS topic."
-}
-
-variable "allowed_sqs_subscriber_organization_id" {
-  description = "AWS Organization ID allowed to subscribe SQS queues to this SNS topic (for example o-1234567890)."
-  type        = string
-  default     = null
 }
 
 variable "delay_seconds" {
@@ -47,12 +42,6 @@ variable "max_message_size" {
   default     = 262144
 }
 
-variable "visibility_timeout_seconds" {
-  type        = number
-  description = "Visibility timeout for messages."
-  default     = 30
-}
-
 variable "message_retention_seconds" {
   type        = number
   description = "How long messages are retained in the queue."
@@ -63,18 +52,6 @@ variable "receive_wait_time_seconds" {
   type        = number
   description = "Long polling wait time."
   default     = 10
-}
-
-variable "create_dlq" {
-  type        = bool
-  description = "Whether to create a dead-letter queue."
-  default     = true
-}
-
-variable "max_receive_count" {
-  type        = number
-  description = "Number of failed receives before moving message to DLQ."
-  default     = 5
 }
 
 variable "dlq_message_retention_seconds" {

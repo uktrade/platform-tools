@@ -75,7 +75,6 @@ locals {
     for extension_name, extension_config in local.extensions :
     extension_name => extension_config if extension_config.type == "datadog"
   }
-
   # There may be instances where no SNS topic is wanted for the environment, just an SQS that subs to an existing one
   sns = {
     for extension_name, extension_config in local.extensions :
@@ -90,8 +89,8 @@ locals {
     for extension_name, extension_config in local.extensions :
     extension_name => extension_config
     if extension_config.type == "sqs"
-    #&& can(extension_config.subscribe_to)
   }
+
 
   tags = {
     application         = var.args.application
