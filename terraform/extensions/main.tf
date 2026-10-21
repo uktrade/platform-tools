@@ -132,6 +132,29 @@ module "datadog" {
   config      = each.value
 }
 
+#copy of seperate module testing
+module "sns" {
+  source = "../sns"
+
+  for_each = local.sns
+
+  application = var.args.application
+  environment = var.environment
+  config      = each.value
+}
+
+module "sqs" {
+  source = "../sqs"
+
+  for_each = local.sqs
+
+  application = var.args.application
+  environment = var.environment
+  config      = each.value
+
+  depends_on = [module.sns]
+}
+
 resource "aws_ssm_parameter" "addons" {
   # checkov:skip=CKV_AWS_337: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
   # checkov:skip=CKV2_AWS_34: Used by copilot needs further analysis to ensure doesn't create similar issue to DBTP-1128 - raised as DBTP-1217
