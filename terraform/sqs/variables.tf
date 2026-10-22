@@ -15,6 +15,9 @@ variable "config" {
     subscribe_to = optional(list(object({
       topic_name = string
       account_id = optional(string)
+      filter_policy_scope  = optional(string)
+      filter_policy        = optional(any)
+      raw_message_delivery = optional(bool, false)
     })), [])
 
     dead_letter_queue = optional(object({
