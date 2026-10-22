@@ -13,8 +13,8 @@ variable "config" {
     visibility_timeout_seconds = optional(number, 30)
 
     subscribe_to = optional(list(object({
-      topic_name = string
-      account_id = optional(string)
+      topic_name           = string
+      account_id           = optional(string)
       filter_policy_scope  = optional(string)
       filter_policy        = optional(any)
       raw_message_delivery = optional(bool, false)
