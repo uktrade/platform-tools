@@ -31,6 +31,12 @@ mock_provider "aws" {
       ]
     }
   }
+
+  mock_data "aws_organizations_entity_path" {
+    defaults = {
+      path = "o-123456789h/r-ab12/ou-ghi0-awsccccc/"
+    }
+  }
 }
 
 run "creates_single_sns_topic" {

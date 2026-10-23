@@ -9,7 +9,7 @@ data "aws_organizations_organizational_units" "ou" {
 }
 
 data "aws_organizations_entity_path" "entity" {
-  entity_id = data.aws_organizations_organizational_unit.target_ou.id
+  entity_id = data.aws_organizations_organizational_units.ou.children[0].id
 }
 
 resource "aws_sns_topic" "this" {
@@ -84,7 +84,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
     condition {
       test     = "ForAnyValue:StringEquals"
       variable = "aws:PrincipalOrgPaths"
-      values   = [aws_organizations_entity_path.entity.entity_path]
+      values   = [data.aws_organizations_entity_path.entity.entity_path]
     }
   }
 }
