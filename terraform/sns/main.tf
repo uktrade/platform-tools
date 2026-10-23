@@ -1,5 +1,13 @@
 data "aws_caller_identity" "current" {}
 
+data "aws_region" "current" {}
+
+data "aws_organizations_organization" "org" {}
+
+data "aws_organizations_organizational_units" "ou" {
+  parent_id = data.aws_organizations_organization.org.roots[0].id
+}
+
 resource "aws_sns_topic" "this" {
   name              = "${var.application}-${var.environment}-${var.config.topic_name}"
   kms_master_key_id = "alias/aws/sns"
@@ -38,7 +46,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
   }
 
   statement {
-    sid    = "AllowSqsQueuesToSubscribeFromAllowedAccountSameEnvironment"
+    sid    = "AllowSqsQueuesToSubscribeFromAllowedAccountSameOU"
     effect = "Allow"
 
     principals {
@@ -54,12 +62,25 @@ data "aws_iam_policy_document" "sns_topic_policy" {
       aws_sns_topic.this.arn
     ]
 
+    # Restricts subscribers to only use SQS queues
+    condition {
+      test     = "StringEquals"
+      variable = "sns:Protocol"
+      values   = ["sqs"]
+    }
+
+    # Condition 1: Must be from your specific allowed accounts list
+    condition {
+      test     = "StringEquals"
+      variable = "aws:PrincipalAccount"
+      values   = local.allowed_account_ids
+    }
+
+    # Condition 2: Must sit within the correct Organizational Unit hierarchy
     condition {
       test     = "StringLike"
-      variable = "sns:Endpoint"
-      values = [
-        for account_id in local.allowed_account_ids : "arn:aws:sqs:*:${account_id}:*-${var.environment}-*"
-      ]
+      variable = "aws:PrincipalOrgPaths"
+      values   = ["${local.org_id}/${local.root_id}/${local.target_ou_id}/*"]
     }
   }
 }
