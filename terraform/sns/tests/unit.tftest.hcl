@@ -4,6 +4,33 @@ mock_provider "aws" {
       account_id = "123456789012"
     }
   }
+
+  # Mocks the AWS Organization Root ID and Organization ID
+  mock_data "aws_organizations_organization" {
+    defaults = {
+      id = "o-123456789h"
+      roots = [
+        {
+          id   = "r-ab12"
+          name = "Root"
+          arn  = "arn:aws:organizations::123456789012:root/o-123456789h/r-ab12"
+        }
+      ]
+    }
+  }
+
+  # Mocks the list of Child OUs sitting under the Root
+  mock_data "aws_organizations_organizational_units" {
+    defaults = {
+      children = [
+        {
+          id   = "ou-ab12-34567890"
+          name = "Production"
+          arn  = "arn:aws:organizations::123456789012:ou/o-123456789h/ou-ab12-34567890"
+        }
+      ]
+    }
+  }
 }
 
 run "creates_single_sns_topic" {
