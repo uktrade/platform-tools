@@ -8,6 +8,10 @@ data "aws_organizations_organizational_units" "ou" {
   parent_id = data.aws_organizations_organization.org.roots[0].id
 }
 
+data "aws_organizations_entity_path" "entity" {
+  entity_id = data.aws_organizations_organizational_unit.target_ou.id
+}
+
 resource "aws_sns_topic" "this" {
   name              = "${var.application}-${var.environment}-${var.config.topic_name}"
   kms_master_key_id = "alias/aws/sns"
@@ -78,9 +82,9 @@ data "aws_iam_policy_document" "sns_topic_policy" {
 
     # Condition 2: Must sit within the correct Organizational Unit hierarchy
     condition {
-      test     = "StringLike"
+      test     = "ForAnyValue:StringEquals"
       variable = "aws:PrincipalOrgPaths"
-      values   = ["${local.org_id}/${local.root_id}/${local.target_ou_id}/*"]
+      values   = [aws_organizations_entity_path.entity.entity_path]
     }
   }
 }
