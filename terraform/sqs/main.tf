@@ -73,7 +73,10 @@ resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
 resource "aws_sns_topic_subscription" "this" {
   for_each = local.subscriptions
 
-  topic_arn = each.value.topic_arn
-  protocol  = "sqs"
-  endpoint  = aws_sqs_queue.this.arn
+  topic_arn            = each.value.topic_arn
+  protocol             = "sqs"
+  endpoint             = aws_sqs_queue.this.arn
+  raw_message_delivery = each.value.raw_message_delivery
+  filter_policy        = jsonencode(each.value.filter_policy)
+  filter_policy_scope  = each.value.filter_policy_scope
 }
