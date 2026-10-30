@@ -62,10 +62,40 @@ locals {
 
   conduit_task_definitions = {
     admin = {
-      env_vars = [
+      secrets = [
         {
-          name  = "CONNECTION_SECRET"
-          value = "provided during task creation by platform-helper"
+          name      = "USERNAME"
+          valueFrom = "${aws_db_instance.default.master_user_secret[0].secret_arn}:username::"
+        },
+        {
+          name      = "PASSWORD"
+          valueFrom = "${aws_db_instance.default.master_user_secret[0].secret_arn}:password::"
+        }
+      ]
+      environment = [
+        {
+          name  = "IS_POSTGRES_ADMIN_TASK"
+          value = "True"
+        },
+        {
+          name  = "HOST"
+          value = "${aws_db_instance.default.address}"
+        },
+        {
+          name  = "PORT"
+          value = "${tostring(aws_db_instance.default.port)}"
+        },
+        {
+          name  = "ENGINE"
+          value = "${aws_db_instance.default.engine}"
+        },
+        {
+          name  = "DB_NAME"
+          value = "${aws_db_instance.default.db_name}"
+        },
+        {
+          name  = "DB_INSTANCE_IDENTIFIER"
+          value = "${aws_db_instance.default.resource_id}"
         }
       ]
     }
@@ -76,12 +106,24 @@ locals {
           valueFrom = "/copilot/${var.application}/${var.environment}/secrets/${local.read_only_secret_name}"
         }
       ]
+      environment = [
+        {
+          name  = "IS_POSTGRES_ADMIN_TASK"
+          value = "False"
+        }
+      ]
     }
     write = {
       secrets = [
         {
           name      = "CONNECTION_SECRET"
           valueFrom = "/copilot/${var.application}/${var.environment}/secrets/${local.application_user_secret_name}"
+        }
+      ]
+      environment = [
+        {
+          name  = "IS_POSTGRES_ADMIN_TASK"
+          value = "False"
         }
       ]
     }
