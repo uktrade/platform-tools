@@ -153,3 +153,53 @@ run "creates_sqs_queue_with_cross_account_subscription" {
     error_message = "Subscription to Topic B should use the Topic B ARN"
   }
 }
+
+run "creates_sqs_queue_with_single_subscription_and_filter_policy" {
+  command = plan
+
+  variables {
+    config = {
+      queue_name          = "test-queue"
+      filter_policy_scope = "MessageBody"
+
+      filter_policy = {
+        message = {
+          part1 = ["123"]
+          part2 = ["abc"]
+        }
+      }
+
+      raw_message_delivery = true
+      subscribe_to = [
+        {
+          topic_name = "example-topic-a"
+        }
+      ]
+    }
+
+    application = "test-application"
+    environment = "test-environment"
+  }
+
+  assert {
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].raw_message_delivery == true
+    error_message = "raw_message_delivery should be true"
+  }
+
+  assert {
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].filter_policy_scope == "MessageBody"
+    error_message = "filter_policy_scope should be MessageBody"
+  }
+
+  assert {
+    condition = aws_sns_topic_subscription.this["test-queue:example-topic-a"].filter_policy == jsonencode({
+      message = {
+        part1 = ["123"]
+        part2 = ["abc"]
+      }
+    })
+
+    error_message = "Filter policy was not configured correctly"
+  }
+
+}
