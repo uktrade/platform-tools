@@ -485,6 +485,8 @@ class PlatformConfigSchema:
 
         __valid_subscribe_to = {"topic_name": str}
 
+        __valid_filter_policy_scope = Or("MessageBody", "MessageAttributes")
+
         return {
             "type": "sqs",
             Optional("environments"): {
@@ -493,6 +495,9 @@ class PlatformConfigSchema:
                     Optional("subscribe_to"): [__valid_subscribe_to],
                     Optional("visibility_timeout_seconds"): int,
                     Optional("dead_letter_queue"): __valid_dead_letter_queue,
+                    Optional("raw_message_delivery"): bool,
+                    Optional("filter_policy_scope"): __valid_filter_policy_scope,
+                    Optional("filter_policy"): dict,
                 }
             },
         }
