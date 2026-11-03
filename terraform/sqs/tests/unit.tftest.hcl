@@ -156,8 +156,8 @@ run "creates_sqs_queue_with_cross_account_subscription" {
 
 run "creates_sqs_queue_with_dlq" {
   command = plan
-  
-    variables {
+
+  variables {
     config = {
       queue_name   = "test-queue"
       subscribe_to = []
@@ -169,7 +169,7 @@ run "creates_sqs_queue_with_dlq" {
     application = "test-application"
     environment = "test-environment"
   }
-  
+
   assert {
     condition     = aws_sqs_queue.this.name == "test-application-test-environment-test-queue"
     error_message = "Queue name should be test-application-test-environment-test-queue"
@@ -212,7 +212,7 @@ run "creates_sqs_queue_with_single_subscription_and_filter_policy" {
     condition     = aws_sqs_queue.this.name == "test-application-test-environment-test-queue"
     error_message = "Queue name should be test-application-test-environment-test-queue"
   }
-  
+
   assert {
     condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].raw_message_delivery == true
     error_message = "raw_message_delivery should be true"
