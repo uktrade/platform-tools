@@ -1219,7 +1219,7 @@ data "aws_iam_policy_document" "extensions" {
     ]
 
     resources = [
-      "arn:aws:sqs:${local.account_region}:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:sqs:${local.account_region}:*"
     ]
   }
 
@@ -1240,7 +1240,7 @@ data "aws_iam_policy_document" "extensions" {
     ]
 
     resources = [
-      "arn:aws:sns:${local.account_region}:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:sns:${local.account_region}:*"
     ]
   }
 
