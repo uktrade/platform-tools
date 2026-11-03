@@ -1207,6 +1207,43 @@ data "aws_iam_policy_document" "extensions" {
     ]
   }
 
+  # SQS
+  statement {
+    actions = [
+      "sqs:CreateQueue",
+      "sqs:GetQueueAttributes",
+      "sqs:SetQueueAttributes",
+      "sqs:DeleteQueue",
+      "sqs:TagQueue",
+      "sqs:ListQueueTags"
+    ]
+
+    resources = [
+      "arn:aws:sqs:${local.account_region}:${data.aws_caller_identity.current.account_id}:*"
+    ]
+  }
+
+  # SNS
+  statement {
+    actions = [
+      "sns:CreateTopic",
+      "sns:GetTopicAttributes",
+      "sns:SetTopicAttributes",
+      "sns:DeleteTopic",
+      "sns:TagResource",
+      "sns:UntagResource",
+      "sns:ListTagsForResource",
+      "sns:Subscribe",
+      "sns:Unsubscribe",
+      "sns:GetSubscriptionAttributes",
+      "sns:SetSubscriptionAttributes"
+    ]
+
+    resources = [
+      "arn:aws:sns:${local.account_region}:${data.aws_caller_identity.current.account_id}:*"
+    ]
+  }
+
 }
 
 resource "aws_iam_policy" "extensions" {
