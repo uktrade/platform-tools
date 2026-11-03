@@ -40,6 +40,38 @@ data "aws_security_group" "vpc_base_sg" {
   name = "${data.aws_vpc.vpc.tags["Name"]}-base-sg"
 }
 
+resource "aws_cloudfront_vpc_origin" "this" {
+  vpc_origin_endpoint_config {
+    name                   = aws_lb.this.name
+    arn                    = aws_lb.this.arn
+    http_port              = 80
+    https_port             = 443
+    origin_protocol_policy = "https-only"
+    origin_ssl_protocols {
+      items    = ["TLSv1.2"]
+      quantity = 1
+    }
+  }
+}
+
+resource "aws_ram_resource_share" "vpc_origin" {
+  provider                  = aws.us_east_1
+  name                      = "vpc-origin-${one(aws_cloudfront_vpc_origin.this.vpc_origin_endpoint_config).name}"
+  allow_external_principals = true
+}
+
+resource "aws_ram_resource_association" "vpc_origin" {
+  provider           = aws.us_east_1
+  resource_arn       = aws_cloudfront_vpc_origin.this.arn
+  resource_share_arn = aws_ram_resource_share.vpc_origin.arn
+}
+
+resource "aws_ram_principal_association" "vpc_origin" {
+  provider           = aws.us_east_1
+  principal          = "011755346992" # dev account ID
+  resource_share_arn = aws_ram_resource_share.vpc_origin.arn
+}
+
 resource "aws_lb" "this" {
   # checkov:skip=CKV2_AWS_20: Redirects for HTTP requests into HTTPS happens on the CDN
   # checkov:skip=CKV2_AWS_28: WAF is outside of platform-tools/terraform
