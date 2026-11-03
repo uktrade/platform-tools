@@ -11,7 +11,9 @@ variable "config" {
     queue_name = string
 
     visibility_timeout_seconds = optional(number, 30)
-
+    filter_policy_scope        = optional(string)
+    filter_policy              = optional(any)
+    raw_message_delivery       = optional(bool, false)
     subscribe_to = optional(list(object({
       topic_name = string
       account_id = optional(string)
