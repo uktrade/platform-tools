@@ -241,6 +241,7 @@ class ECS:
         service: str,
         task_definition: dict,
         image_tag: Optional[str] = None,
+        image_digest: Optional[str] = None,
     ) -> str:
         """Register a new task definition revision using provided model and
         containerDefinitions."""
@@ -248,14 +249,18 @@ class ECS:
         for container in task_definition["containerDefinitions"]:
             if container["name"] == service:
 
-                # Append tag to the image URI
-                container["image"] = f"{container['image']}:{image_tag}"
+                image_reference = (
+                    f"{container['image']}@{image_digest}"
+                    if image_digest
+                    else f"{container['image']}:{image_tag}"
+                )
+                container["image"] = image_reference
 
                 # Add DataDog Docker labels https://docs.datadoghq.com/getting_started/tagging/unified_service_tagging/?tab=ecs#partial-configuration
                 container["dockerLabels"] = {
                     "com.datadoghq.tags.env": environment,
                     "com.datadoghq.tags.service": f"{application}-{service}",
-                    "com.datadoghq.tags.version": image_tag,
+                    "com.datadoghq.tags.version": image_digest or image_tag,
                 }
                 break
 

@@ -73,14 +73,17 @@ class TestCommandHelperMethods:
             ec2.create_subnet(VpcId=vpc_id, CidrBlock="10.0.1.0/24")["Subnet"]["SubnetId"],
         )
 
-    def _create_listener(self, elbv2_client):
+    def _create_listener(self, elbv2_client, target_group_arn=None):
         _, subnet_id = self._create_subnet(boto3.Session())
         load_balancer_arn = elbv2_client.create_load_balancer(
             Name="test-load-balancer", Subnets=[subnet_id]
         )["LoadBalancers"][0]["LoadBalancerArn"]
+        default_actions = {"Type": "forward"}
+        if target_group_arn:
+            default_actions["TargetGroupArn"] = target_group_arn
         return elbv2_client.create_listener(
             LoadBalancerArn=load_balancer_arn,
-            DefaultActions=[{"Type": "forward"}],
+            DefaultActions=[default_actions],
             Port=443,
             Protocol="HTTPS",
         )["Listeners"][0]["ListenerArn"]
@@ -122,9 +125,9 @@ class TestCommandHelperMethods:
             Port=123,
             VpcId=vpc_id,
             Tags=[
-                {"Key": "copilot-application", "Value": "test-application"},
-                {"Key": "copilot-environment", "Value": "development"},
-                {"Key": "copilot-service", "Value": service_name},
+                {"Key": "application", "Value": "test-application"},
+                {"Key": "environment", "Value": "development"},
+                {"Key": "service", "Value": service_name},
             ],
         )["TargetGroups"][0]["TargetGroupArn"]
 
@@ -324,8 +327,8 @@ class TestCommandHelperMethods:
         get_maintenance_page_template.return_value = "default"
 
         elbv2_client = boto3.client("elbv2")
-        listener_arn = self._create_listener(elbv2_client)
         target_group_arn = self._create_target_group()
+        listener_arn = self._create_listener(elbv2_client, target_group_arn=target_group_arn)
         elbv2_client.create_rule(
             ListenerArn=listener_arn,
             Tags=[{"Key": "test-key", "Value": "test-value"}],
@@ -335,12 +338,14 @@ class TestCommandHelperMethods:
         )
         rules = elbv2_client.describe_rules(ListenerArn=listener_arn)["Rules"]
         assert len(rules) == 2
+
         mock_session, mock_create_rule = self._create_mock_session_with_failing_create_rule(
             elbv2_client, create_rule_count_to_error
         )
 
         maintenance_page = MaintenancePage(mock_application, io=Mock())
         maintenance_page.load_balancer = LoadBalancerProvider(mock_session)
+
         with pytest.raises(
             FailedToActivateMaintenancePageException,
         ) as e:
@@ -352,12 +357,11 @@ class TestCommandHelperMethods:
                 ["1.2.3.4"],
                 template,
             )
-
-        excepted = (
+        expected = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
-        assert str(e.value).startswith(excepted)
+        assert str(e.value).startswith(expected)
 
         maintenance_page.io.warn.assert_called_with(expected_roll_back_message)
 
@@ -463,11 +467,11 @@ class TestCommandHelperMethods:
                 template,
             )
 
-        excepted = (
+        expected = (
             "Maintenance page failed to activate for the test-application application in environment development.\n"
             "Original exception: An error occurred (ValidationError) when calling the CreateRule operation: Simulated failure"
         )
-        assert str(e.value).startswith(excepted)
+        assert str(e.value).startswith(expected)
 
         maintenance_page.io.warn.assert_called_with(
             "Rules deleted by type and grouped by service: {'MaintenancePage': 0, 'web': {'AllowedIps': 1, 'BypassIpFilter': 1, 'AllowedSourceIps': 1}, 'web2': {'AllowedIps': 1, 'BypassIpFilter': 0, 'AllowedSourceIps': 1}}"

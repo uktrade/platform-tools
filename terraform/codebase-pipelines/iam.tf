@@ -188,7 +188,10 @@ data "aws_iam_policy_document" "custom_codebuild_scheduled_job_permissions" {
     actions = [
       "ssm:GetParametersByPath",
     ]
-    resources = ["arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.application}/environments/*/services/*"]
+    resources = [
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.application}/environments",
+      "arn:aws:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter/platform/applications/${var.application}/environments/*/services/*"
+    ]
   }
 
   statement {

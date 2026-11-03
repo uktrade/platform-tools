@@ -479,6 +479,47 @@ def test_register_task_definition_appends_image_tag():
     assert kwargs["containerDefinitions"] is task_definition["containerDefinitions"]
 
 
+def test_register_task_definition_appends_image_digest():
+    ecs_client = MagicMock()
+    ssm_client = MagicMock()
+    ecs_client.register_task_definition.return_value = {
+        "taskDefinition": {"taskDefinitionArn": "arn:taskdef:123"}
+    }
+
+    task_definition = {
+        "family": "doesn't matter",
+        "other parameters...": "they also don't matter",
+        "containerDefinitions": [
+            {
+                "name": "web",
+                "image": "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web",
+            },
+            {"name": "sidecar", "image": "sidecar:v1.2.3"},
+        ],
+    }
+
+    ecs = ECS(ecs_client, ssm_client, "myapp", "dev")
+    arn = ecs.register_task_definition(
+        application="myapp",
+        environment="dev",
+        service="web",
+        task_definition=task_definition,
+        image_digest="sha256:abc123",
+    )
+
+    assert arn == "arn:taskdef:123"
+    assert (
+        task_definition["containerDefinitions"][0]["image"]
+        == "111122223333.dkr.ecr.eu-west-2.amazonaws.com/myapp/web@sha256:abc123"
+    )
+    assert task_definition["containerDefinitions"][1]["image"] == "sidecar:v1.2.3"
+    assert task_definition["containerDefinitions"][0]["dockerLabels"] == {
+        "com.datadoghq.tags.env": "dev",
+        "com.datadoghq.tags.service": "myapp-web",
+        "com.datadoghq.tags.version": "sha256:abc123",
+    }
+
+
 def test_register_task_definition_adds_docker_labels():
     ecs_client = MagicMock()
     ssm_client = MagicMock()

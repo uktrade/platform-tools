@@ -145,10 +145,10 @@ run "aws_lb_unit_test" {
 
   assert {
     condition = (
-      (var.environment == "prod" && aws_lb.this.access_logs[0].bucket == "dbt-access-logs-production") ||
+      (var.environment == "prod" && aws_lb.this.access_logs[0].bucket == "alb-access-logs-prod-812359060647-eu-west-2-an") ||
       (var.environment != "prod" && aws_lb.this.access_logs[0].bucket == "alb-access-logs-non-prod-812359060647-eu-west-2-an")
     )
-    error_message = "ALB access_logs bucket must be dbt-access-logs-production or alb-access-logs-non-prod-812359060647-eu-west-2-an"
+    error_message = "ALB access_logs bucket must be alb-access-logs-prod-812359060647-eu-west-2-an or alb-access-logs-non-prod-812359060647-eu-west-2-an"
   }
 
   assert {
@@ -195,8 +195,8 @@ run "aws_lb_listener_https_unit_test" {
   }
 
   assert {
-    condition     = aws_lb_listener.alb-listener["https"].ssl_policy == "ELBSecurityPolicy-2016-08"
-    error_message = "Should be:ELBSecurityPolicy-2016-08"
+    condition     = aws_lb_listener.alb-listener["https"].ssl_policy == "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
+    error_message = "Should be: ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
   }
 
   assert {
@@ -277,18 +277,8 @@ run "aws_acm_certificate_unit_test" {
   }
 
   assert {
-    condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 2
-    error_message = "Should be: 2"
-  }
-
-  assert {
-    condition     = [for el in aws_acm_certificate.certificate.subject_alternative_names : true if el == "web.dev.my-application.uktrade.digital"][0] == true
-    error_message = "Should be: web.dev.my-application.uktrade.digital"
-  }
-
-  assert {
-    condition     = [for el in aws_acm_certificate.certificate.subject_alternative_names : true if el == "api.dev.my-application.uktrade.digital"][0] == true
-    error_message = "Should be: api.dev.my-application.uktrade.digital"
+    condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 0
+    error_message = "Should be: 0"
   }
 
   assert {
@@ -307,11 +297,6 @@ run "aws_route53_record_unit_test" {
 
   assert {
     condition     = aws_route53_record.validation-record-san[0].ttl == 300
-    error_message = "Should be: 300"
-  }
-
-  assert {
-    condition     = aws_route53_record.validation-record-san[1].ttl == 300
     error_message = "Should be: 300"
   }
 
@@ -1018,7 +1003,7 @@ run "dummy_listener_rule_manager" {
   # Requires executing run block with 'apply' to evaluate "aws_lb_listener.alb-listener["https"].arn"
   # assert {
   #   condition     = data.aws_iam_policy_document.listener-rule-organiser-role-policy.statement[2].resources == toset([
-  #     "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
+  #     "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
   #   ])
   #   error_message = "Second statement resource should be all listener rules for the https listener"
   # }
@@ -1074,7 +1059,7 @@ run "existing_cdn_lists_match" {
   }
 
   assert {
-    condition     = aws_acm_certificate.certificate.subject_alternative_names == toset(["api.dev.my-application.uktrade.digital", "web.dev.my-application.uktrade.digital"])
-    error_message = "SAN list does not match given cdn domains list keys given"
+    condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 0
+    error_message = "CDN domains should not be included in certificate SANs"
   }
 }

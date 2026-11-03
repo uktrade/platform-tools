@@ -110,6 +110,7 @@ class TestInternal:
             environment="dev",
             application="myapp",
             image_tag="test123",
+            image_digest=None,
         )
 
     @patch("dbt_platform_helper.commands.internal.click.secho")

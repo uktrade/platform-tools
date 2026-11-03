@@ -52,7 +52,7 @@ resource "aws_lb" "this" {
     aws_security_group.alb-security-group["https"].id
   ]
   access_logs {
-    bucket  = var.environment == "prod" ? "dbt-access-logs-production" : "alb-access-logs-non-prod-812359060647-eu-west-2-an"
+    bucket  = var.environment == "prod" ? "alb-access-logs-prod-812359060647-eu-west-2-an" : "alb-access-logs-non-prod-812359060647-eu-west-2-an"
     prefix  = "${var.application}/${var.environment}"
     enabled = true
   }
@@ -117,7 +117,7 @@ resource "aws_lb_target_group" "http-target-group" {
   tags        = local.tags
 }
 
-# Certificate will be referenced by its primary standard domain but we include all the CDN domains in the SAN field.
+# Certificate for the ALB primary domain and any additional domains that point directly to the ALB. CDN domains are no longer required in the SANs.
 resource "aws_acm_certificate" "certificate" {
   domain_name               = local.domain_name
   subject_alternative_names = coalesce(try((keys(local.san_list)), null), [])
@@ -316,7 +316,7 @@ data "aws_iam_policy_document" "listener-rule-organiser-role-policy" {
       "elasticloadbalancing:AddTags",
     ]
     resources = [
-      "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.id}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
+      "arn:${data.aws_partition.current.partition}:elasticloadbalancing:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:listener-rule/app/${local.alb_details.alb_name}/${local.alb_details.alb_id}/${local.alb_details.listener_id}/*"
     ]
   }
 }

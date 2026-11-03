@@ -94,10 +94,15 @@ def service():
 )
 @click.option(
     "--image-tag",
-    required=True,
-    help="Image tag to deploy for the service(s). Takes precedence over the $IMAGE_TAG environment variable.",
+    required=False,
+    help="Image tag to deploy for the service(s). You must provide either an image-digest or an image-tag, but not both.",
 )
-def deploy(name, env, image_tag):
+@click.option(
+    "--image-digest",
+    required=False,
+    help="Image digest to deploy for the services(s). You must provide either an image-digest or an image-tag, but not both.",
+)
+def deploy(name, env, image_tag, image_digest):
     """Register a new ECS task definition from an S3 JSON template, update the
     ECS service, and tail CloudWatch logs until the ECS rollout is complete."""
     click_io = ClickIOProvider()
@@ -135,6 +140,7 @@ def deploy(name, env, image_tag):
             environment=env,
             application=application.name,
             image_tag=image_tag,
+            image_digest=image_digest,
         )
     except PlatformException as error:
         click_io.abort_with_error(str(error))

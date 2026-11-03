@@ -976,3 +976,22 @@ run "aws_db_instance_unit_test_defaults" {
     error_message = "Should be: gp3"
   }
 }
+run "conduit_postgres_task_definitions_unit_test" {
+  command = plan
+
+  assert {
+    condition = alltrue([
+      for access_type, expected in {
+        admin = "True"
+        read  = "False"
+        write = "False"
+      } :
+      values(local.conduit_task_definitions[access_type].environment[0]) == [
+        "IS_POSTGRES_ADMIN_TASK",
+        expected,
+      ]
+    ])
+
+    error_message = "One or more IS_POSTGRES_ADMIN_TASK variables are incorrectly configured."
+  }
+}

@@ -468,6 +468,15 @@ data "aws_iam_policy_document" "state_bucket_access" {
       "${data.aws_s3_bucket.state_bucket.arn}/*"
     ]
   }
+
+  statement {
+    actions = [
+      "s3:DeleteObject"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.state_bucket.arn}/*.tflock"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "state_dynamo_db_access_for_environment_codebuild" {
@@ -675,6 +684,7 @@ resource "aws_iam_role_policy" "step_functions_access" {
 
 data "aws_iam_policy_document" "step_functions_access" {
   statement {
+    sid    = "CreateStateMachine"
     effect = "Allow"
     actions = [
       "states:CreateStateMachine",
@@ -689,6 +699,7 @@ data "aws_iam_policy_document" "step_functions_access" {
     ]
   }
   statement {
+    sid    = "ValidateStateMachine"
     effect = "Allow"
     actions = [
       "states:ValidateStateMachineDefinition"
@@ -698,12 +709,25 @@ data "aws_iam_policy_document" "step_functions_access" {
     ]
   }
   statement {
+    sid    = "ConfigureStateMachineIAM"
     effect = "Allow"
     actions = [
       "iam:PassRole"
     ]
     resources = [
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.args.application}-${var.environment}-*-sm"
+    ]
+  }
+  statement {
+    sid    = "ExecuteStateMachine"
+    effect = "Allow"
+    actions = [
+      "states:StartExecution",
+      "states:DescribeExecution"
+    ]
+    resources = [
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:stateMachine:${var.args.application}-*-sfn",
+      "arn:aws:states:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:execution:${var.args.application}-*-sfn*"
     ]
   }
 }

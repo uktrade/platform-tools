@@ -15,6 +15,7 @@ from dbt_platform_helper.domain.service import ContainerNotFoundException
 from dbt_platform_helper.domain.service import ExecNotAllowedForServiceException
 from dbt_platform_helper.domain.service import ManagedPlatformClusterNotFoundException
 from dbt_platform_helper.domain.service import ServiceManager
+from dbt_platform_helper.domain.service import ServiceManagerException
 from dbt_platform_helper.domain.service import ServiceNotFoundException
 from dbt_platform_helper.domain.service import TaskNotFoundException
 from dbt_platform_helper.platform_exception import PlatformException
@@ -251,6 +252,24 @@ def get_ecs_task_response(exit_code: int = 0):
             "containers": [{"name": "web", "exitCode": exit_code}],
         }
     ]
+
+
+@pytest.mark.parametrize(
+    ("image_tag", "image_digest"),
+    [(None, None), ("tag-123", "sha256:abc123")],
+)
+def test_validate_image_inputs_requires_exactly_one_image_reference(image_tag, image_digest):
+    service_manager = ServiceManager()
+
+    with pytest.raises(ServiceManagerException):
+        service_manager._validate_image_inputs(image_tag=image_tag, image_digest=image_digest)
+
+
+@pytest.mark.parametrize(
+    ("image_tag", "image_digest"), [("tag-123", None), (None, "sha256:abc123")]
+)
+def test_validate_image_inputs_accepts_one_image_reference(image_tag, image_digest):
+    ServiceManager()._validate_image_inputs(image_tag=image_tag, image_digest=image_digest)
 
 
 @freeze_time("2025-01-16 13:00:00")

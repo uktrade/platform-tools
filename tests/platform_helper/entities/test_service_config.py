@@ -143,13 +143,40 @@ def test_cron_schedule_valid(config):
         ),
         (
             {"range": "1-2", "schedule": "invalid"},
-            "Invalid cron expression: 'invalid'. Excepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'",
+            "Invalid cron expression: 'invalid'. Accepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'",
         ),
     ],
 )
 def test_cron_schedule_errors(config, exception_message):
     with pytest.raises(PlatformException, match=re.escape(exception_message)):
         CronSchedule.model_validate(config)
+
+
+@pytest.mark.parametrize(
+    "invalid_schedules",
+    [
+        ("0 9 ? * 2-6 * *"),
+        ("rate(1 hours)"),
+        ("@hourly"),
+    ],
+)
+def test_schedule_job_cron_errors(invalid_schedules):
+    expected_message = f"Invalid cron expression: '{invalid_schedules}'. Accepted format: '[Minute (0-59)] [Hour (0-23)] [Day of Month (1-31)] [Month (1-12)] [Day of Week (0-6)] [Year (1970-2199)]' e.g. '0 06 * * MON-FRI *'"
+    with pytest.raises(PlatformException, match=re.escape(expected_message)):
+        ServiceConfig.is_job_schedule_valid(invalid_schedules)
+
+
+@pytest.mark.parametrize(
+    "valid_schedules",
+    [
+        ("0 9 ? * 2-6 *"),
+        ("0 10 ? * FRI *"),
+        ("*/20 * * * ? *"),
+        ("none"),
+    ],
+)
+def test_schedule_job_cron_success(valid_schedules):
+    ServiceConfig.is_job_schedule_valid(valid_schedules)
 
 
 def test_service_config_accepts_int_count():
@@ -260,7 +287,7 @@ def test_count_is_not_required_for_scheduled_job():
         "image": {"location": "hub.docker.com/repo/app", "port": 8080},
         "cpu": 256,
         "memory": 512,
-        "schedule": "rate(5 minutes)",
+        "schedule": "0 06 * * MON-FRI *",
     }
     assert ServiceConfig.model_validate(service_config)
 
