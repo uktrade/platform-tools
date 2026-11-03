@@ -72,13 +72,19 @@ resource "aws_ram_principal_association" "vpc_origin" {
   resource_share_arn = aws_ram_resource_share.vpc_origin.arn
 }
 
+data "aws_security_group" "vpc_origin" {
+  vpc_id = data.aws_vpc.vpc.id
+  name   = "CloudFront-VPCOrigins-Service-SG"
+}
+
 resource "aws_lb" "this" {
   # checkov:skip=CKV2_AWS_20: Redirects for HTTP requests into HTTPS happens on the CDN
   # checkov:skip=CKV2_AWS_28: WAF is outside of platform-tools/terraform
   # checkov:skip=CKV2_AWS_76: Ticket to address https://uktrade.atlassian.net/browse/DBTP-2103
   name               = "${var.application}-${var.environment}"
   load_balancer_type = "application"
-  subnets            = tolist(data.aws_subnets.public-subnets.ids)
+  internal           = true
+  subnets            = tolist(data.aws_subnets.private-subnets.ids)
   security_groups = [
     aws_security_group.alb-security-group["http"].id,
     aws_security_group.alb-security-group["https"].id
@@ -116,18 +122,17 @@ resource "aws_lb_listener" "alb-listener" {
 
 resource "aws_security_group" "alb-security-group" {
   # checkov:skip=CKV2_AWS_5: False Positive in Checkov - https://github.com/bridgecrewio/checkov/issues/3010
-  # checkov:skip=CKV_AWS_260: Ingress traffic from 0.0.0.0:0 is necessary to enable connecting to web services
   for_each    = local.protocols
   name        = "${var.application}-${var.environment}-alb-${each.key}"
   description = "Managed by Terraform"
   vpc_id      = data.aws_vpc.vpc.id
   tags        = local.tags
   ingress {
-    description = "Allow from anyone on port ${each.value.port}"
-    from_port   = each.value.port
-    to_port     = each.value.port
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "Allow from CloudFront via VPC origin"
+    from_port       = each.value.port
+    to_port         = each.value.port
+    protocol        = "tcp"
+    security_groups = [data.aws_security_group.vpc_origin.id]
   }
   egress {
     description = "Allow traffic out on port ${each.value.port}"
