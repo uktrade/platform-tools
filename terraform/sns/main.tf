@@ -2,16 +2,6 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
-data "aws_organizations_organization" "org" {}
-
-data "aws_organizations_organizational_units" "ou" {
-  parent_id = data.aws_organizations_organization.org.roots[0].id
-}
-
-data "aws_organizations_entity_path" "entity" {
-  entity_id = data.aws_organizations_organizational_units.ou.children[0].id
-}
-
 resource "aws_sns_topic" "this" {
   name              = "${var.application}-${var.environment}-${var.config.topic_name}"
   kms_master_key_id = "alias/aws/sns"
@@ -84,7 +74,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
     condition {
       test     = "ForAnyValue:StringEquals"
       variable = "aws:PrincipalOrgPaths"
-      values   = [data.aws_organizations_entity_path.entity.entity_path]
+      values   = contains(["prod", "hotfix"], var.environment) ? local.org_ids.prod : local.org_ids.non_prod
     }
   }
 }

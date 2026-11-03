@@ -153,3 +153,29 @@ run "creates_sqs_queue_with_cross_account_subscription" {
     error_message = "Subscription to Topic B should use the Topic B ARN"
   }
 }
+
+run "creates_sqs_queue_with_dlq" {
+  command = plan
+
+  variables {
+    config = {
+      queue_name   = "test-queue"
+      subscribe_to = []
+      dead_letter_queue = {
+        enabled = true
+      }
+    }
+    application = "test-application"
+    environment = "test-environment"
+  }
+
+  assert {
+    condition     = aws_sqs_queue.this.name == "test-application-test-environment-test-queue"
+    error_message = "Queue name should be test-application-test-environment-test-queue"
+  }
+
+  assert {
+    condition     = aws_sqs_queue.dlq[0].name == "test-application-test-environment-test-queue-dlq"
+    error_message = "Should create a DLQ named the same as source queue with -dlq suffix"
+  }
+}
