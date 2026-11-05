@@ -1,5 +1,42 @@
 # Changelog
 
+## [15.38.0](https://github.com/uktrade/platform-tools/compare/15.37.0...15.38.0) (2026-10-14)
+
+
+### Features
+
+* Optional config to add GuardDuty protection to S3 (DBTP-3443) ([#1659](https://github.com/uktrade/platform-tools/issues/1659)) ([4188b15](https://github.com/uktrade/platform-tools/commit/4188b15738c77be6b3191fac9256139cf2a59c79))
+
+
+### Bug Fixes
+
+* Disable webhook PR approval (off-ticket) ([#1663](https://github.com/uktrade/platform-tools/issues/1663)) ([ab42198](https://github.com/uktrade/platform-tools/commit/ab42198a973958fc981a9ff4f0d2d92a4d18131b))
+* Give env pipeline role permissions for GuardDuty (DBTP-3443) ([#1678](https://github.com/uktrade/platform-tools/issues/1678)) ([b8f361f](https://github.com/uktrade/platform-tools/commit/b8f361fcf4a510e18fb960051d0be90023972ceb))
+
+
+### Dependencies
+
+* Bump psycopg2-binary from 2.9.12 to 2.9.13 in the minor-and-patch group across 1 directory ([#1660](https://github.com/uktrade/platform-tools/issues/1660)) ([e3ffaee](https://github.com/uktrade/platform-tools/commit/e3ffaee072e86d8b2052acea3e25cbc0c9291ae2))
+* Bump the minor-and-patch group across 3 directories with 1 update ([#1662](https://github.com/uktrade/platform-tools/issues/1662)) ([c6c3d68](https://github.com/uktrade/platform-tools/commit/c6c3d68e812f5a2d724360fcad2b264dc27af5f6))
+
+## [15.37.0](https://github.com/uktrade/platform-tools/compare/15.36.0...15.37.0) (2026-09-14)
+
+
+### Features
+
+* Remove CDN SANs from ALB certificate (DBTP-3267) ([#1631](https://github.com/uktrade/platform-tools/issues/1631)) ([799e09a](https://github.com/uktrade/platform-tools/commit/799e09aecdb183497dff115b3a9e8f75bd67b458))
+* Remove old IAM role (DBTP-3408) ([#1655](https://github.com/uktrade/platform-tools/issues/1655)) ([cc2befa](https://github.com/uktrade/platform-tools/commit/cc2befad24b7c93d118f9b0c271f7a02bda044ea))
+* Swap terraform state lock location from dynamodb to s3 (DBTP-2286) ([#1650](https://github.com/uktrade/platform-tools/issues/1650)) ([7be197f](https://github.com/uktrade/platform-tools/commit/7be197fd06964e2bb839d7087fafdafebe10b3e9))
+* Use new bucket for production ALB logs (SR-2696) ([#1649](https://github.com/uktrade/platform-tools/issues/1649)) ([dc1f987](https://github.com/uktrade/platform-tools/commit/dc1f9872090c485456f89b662a6e48caebaaeb85))
+
+
+### Dependencies
+
+* Bump slack-sdk from 3.44.0 to 3.44.1 in the minor-and-patch group ([#1656](https://github.com/uktrade/platform-tools/issues/1656)) ([8e9f78d](https://github.com/uktrade/platform-tools/commit/8e9f78dbe28fcf3d65d85286eec277a686cc97dd))
+* Bump the minor-and-patch group across 3 directories with 1 update ([#1638](https://github.com/uktrade/platform-tools/issues/1638)) ([241b37e](https://github.com/uktrade/platform-tools/commit/241b37e4f571665451b75d07c69f52a327c64c22))
+* Bump the minor-and-patch group across 3 directories with 1 update ([#1658](https://github.com/uktrade/platform-tools/issues/1658)) ([2742d48](https://github.com/uktrade/platform-tools/commit/2742d4869905f7eaf6d0d5d953485f522f5e7d21))
+* Bump the minor-and-patch group with 3 updates ([#1652](https://github.com/uktrade/platform-tools/issues/1652)) ([e2bed8c](https://github.com/uktrade/platform-tools/commit/e2bed8c23f180468bd4586f2cc73eb2a2ae1f79e))
+
 ## [15.36.0](https://github.com/uktrade/platform-tools/compare/15.35.1...15.36.0) (2026-09-03)
 
 

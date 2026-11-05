@@ -468,6 +468,15 @@ data "aws_iam_policy_document" "state_bucket_access" {
       "${data.aws_s3_bucket.state_bucket.arn}/*"
     ]
   }
+
+  statement {
+    actions = [
+      "s3:DeleteObject"
+    ]
+    resources = [
+      "${data.aws_s3_bucket.state_bucket.arn}/*.tflock"
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "state_dynamo_db_access_for_environment_codebuild" {

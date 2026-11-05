@@ -258,7 +258,7 @@ def test_pipelines_generate_workspaced(
                 )
                 local = json_content["locals"]
                 local = local[0]
-                file_path = f"${{yamldecode(file({plat_path}))}}"
+                file_path = f'${{yamldecode(file("{plat_path}"))}}'
 
         assert local["platform_config"] == file_path
 
@@ -284,7 +284,7 @@ def test_pipelines_generate_workspaced(
                                 {
                                     "precondition": [
                                         {
-                                            "condition": "${terraform.workspace == workspace}",
+                                            "condition": '${terraform.workspace == "workspace"}',
                                             "error_message": "Must be in workspace workspace",
                                         }
                                     ]
