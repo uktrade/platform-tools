@@ -493,7 +493,6 @@ class PlatformConfigSchema:
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
                     "queue_name": str,
                     Optional("subscribe_to"): [__valid_subscribe_to],
-                    Optional("account_id"): str,
                     Optional("visibility_timeout_seconds"): int,
                     Optional("dead_letter_queue"): __valid_dead_letter_queue,
                     Optional("raw_message_delivery"): bool,
