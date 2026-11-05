@@ -566,6 +566,7 @@ class ServiceManager:
         application: str,
         image_tag: str = None,
         image_digest: str = None,
+        set_env: dict[str, str] | None = None,
     ):
         """Register a new ECS task definition revision, update the ECS service
         with it, monitor service, task and container logs, and wait until
@@ -583,6 +584,8 @@ class ServiceManager:
         )
 
         task_definition = json.loads(s3_response)
+
+        # Could inject env vars here
 
         image_reference = image_digest or image_tag
         reference_type = "digest" if image_digest else "tag"

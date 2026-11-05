@@ -755,6 +755,73 @@ def test_monitor_task_events_outputs_events():
     )
 
 
+def test_deploy_merges_environment_variables():
+    mocks = ServiceManagerMocks()
+    service_manager = ServiceManager(**mocks.params())
+    mock_task_definition = {}
+    mock_task_definition["containerDefinitions"] = [
+        {
+            "environment": [
+                {"name": "ENV_VAR_DEFINED_IN_PLATFORM_CONFIG", "value": "some-setting"},
+            ]
+        }
+    ]
+
+    mocks.s3_provider.get_object.return_value = json.dumps(mock_task_definition)
+
+    mocks.ecs_provider.register_task_definition.return_value = (
+        "arn:aws:ecs:eu-west-2:111122223333:task-definition/myapp-dev-web-task-def:999"
+    )
+
+    update_service_response = get_ecs_update_service_response(
+        service_name="myapp-dev-web",
+        deployment_id="deployment-123",
+        desired_count=1,
+    )
+    mocks.ecs_provider.update_service.return_value = update_service_response
+    mocks.ecs_provider.describe_service.return_value = update_service_response
+    mocks.autoscaling_provider.describe_autoscaling_target.return_value = {
+        "MinCapacity": 1,
+        "MaximumCapacity": 10,
+    }
+
+    # Skip waiting for time loops in those methods to reach timeout
+    with patch.object(
+        service_manager, "_wait_for_new_tasks", return_value=["task1", "task2"]
+    ) as wait_for_new_tasks, patch.object(
+        service_manager, "_monitor_task_events"
+    ) as monitor_task_events, patch.object(
+        service_manager, "_monitor_service_events"
+    ) as monitor_service_events:
+
+        ecs_task_response = get_ecs_task_response()
+        mocks.ecs_provider.describe_tasks.return_value = ecs_task_response
+        mocks.ecs_provider.get_service_deployment_state.return_value = ("SUCCESSFUL", None)
+
+        service_manager.deploy(
+            service="web",
+            environment="dev",
+            application="myapp",
+            image_tag="tag-123",
+            set_env=(
+                "GIT_COMMIT=abc1234",
+                "GIT_BRANCH=main",
+            ),
+        )
+
+    container_definition = mocks.ecs_provider.register_task_definition.call_args.kwargs[
+        "task_definition"
+    ]["containerDefinitions"][0]
+
+    env = {item["name"]: item["value"] for item in container_definition["environment"]}
+
+    assert env == {
+        "ENV_VAR_DEFINED_IN_PLATFORM_CONFIG": "some-setting",
+        "GIT_COMMIT": "abc1234",
+        "GIT_BRANCH": "main",
+    }
+
+
 class TestServiceExecSuccess:
     def test_service_exec_selects_running_task_and_executes_command(self):
         mocks = ServiceManagerMocks()
