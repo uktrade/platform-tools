@@ -37,7 +37,7 @@ def migrate():
     logged in user has access.
 
     If no `--file-path` is specified, defaults to `~/.aws/config`.
-    """
+    """,
 )
 @click.option("--file-path", "-fp", default="~/.aws/config")
 def aws(file_path):

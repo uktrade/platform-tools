@@ -62,8 +62,10 @@ def online(app, env):
 
 
 @environment.command(
-    help="""Gathers various IDs and ARNs from AWS and generates the AWS Copilot
-    environment manifest at copilot/environments/<environment>/manifest.yml."""
+    help="""
+    Gathers various IDs and ARNs from AWS and generates the AWS Copilot
+    environment manifest at copilot/environments/<environment>/manifest.yml.
+    """,
 )
 @click.option(
     "--name",

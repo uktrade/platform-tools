@@ -36,7 +36,7 @@ def pipeline():
     - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
       The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
       The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
-    """
+    """,
 )
 @click.option(
     "--deploy-branch",
