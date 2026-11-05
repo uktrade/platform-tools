@@ -595,8 +595,8 @@ class ServiceManager:
                 for name, value in [item.split("=", 1)]
             ]
 
-            env = task_definition.get("containerDefinitions", [])[0].get("environment")
-            
+            env = task_definition.get("containerDefinitions", [])[0].setdefault("environment", [])
+
             for env_item in additional_env:
                 for item in env:
                     if item["name"] == env_item["name"]:
