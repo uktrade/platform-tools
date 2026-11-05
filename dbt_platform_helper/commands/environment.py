@@ -61,7 +61,10 @@ def online(app, env):
         ClickIOProvider().abort_with_error(str(err))
 
 
-@environment.command()
+@environment.command(
+    help="""Gathers various IDs and ARNs from AWS and generates the AWS Copilot
+    environment manifest at copilot/environments/<environment>/manifest.yml."""
+)
 @click.option(
     "--name",
     "-n",
@@ -69,8 +72,6 @@ def online(app, env):
     help="The name of the environment to generate a copilot manifest for.",
 )
 def generate(name):
-    """Gathers various IDs and ARNs from AWS and generates the AWS Copilot
-    environment manifest at copilot/environments/<environment>/manifest.yml."""
 
     click_io = ClickIOProvider()
     try:

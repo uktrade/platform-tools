@@ -6,7 +6,15 @@ from dbt_platform_helper.commands.pipeline import generate as pipeline_generate
 from dbt_platform_helper.utils.click import ClickDocOptCommand
 
 
-@click.command(cls=ClickDocOptCommand)
+@click.command(
+    cls=ClickDocOptCommand,
+    help="""
+    Generate deployment pipeline configuration files and generate addons
+    CloudFormation template files for each environment.
+
+    Wraps pipeline generate and make-addons.
+    """,
+)
 @click.pass_context
 def generate(ctx: click.Context):
     """
