@@ -5,9 +5,9 @@ locals {
   )
 
   org_ids = {
-    prod = ["o-hzyhz93zuk/r-*/ou-vjka-gs0pbvkj/*"]
+    prod = ["o-hzyhz93zuk/r-*/ou-vjka-u5ykvrkw/*"]
     non_prod = [
-      "o-hzyhz93zuk/r-*/ou-vjka-u5ykvrkw/*", # non-prod
+      "o-hzyhz93zuk/r-*/ou-vjka-gs0pbvkj/*", # non-prod
       "o-hzyhz93zuk/r-*/ou-vjka-usz556y0/*"  # sandbox
     ]
   }
