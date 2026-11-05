@@ -102,7 +102,14 @@ def service():
     required=False,
     help="Image digest to deploy for the services(s). You must provide either an image-digest or an image-tag, but not both.",
 )
-def deploy(name, env, image_tag, image_digest):
+@click.option(
+    "--set-env",
+    multiple=True,
+    required=False,
+    metavar="NAME=VALUE",
+    help="Additional environment variables to inject into the task definition",
+)
+def deploy(name, env, image_tag, image_digest, set_env):
     """Register a new ECS task definition from an S3 JSON template, update the
     ECS service, and tail CloudWatch logs until the ECS rollout is complete."""
     click_io = ClickIOProvider()
@@ -141,6 +148,7 @@ def deploy(name, env, image_tag, image_digest):
             application=application.name,
             image_tag=image_tag,
             image_digest=image_digest,
+            set_env=set_env
         )
     except PlatformException as error:
         click_io.abort_with_error(str(error))
