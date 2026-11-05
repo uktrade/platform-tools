@@ -83,3 +83,42 @@ resource "aws_sns_topic_policy" "this" {
   arn    = aws_sns_topic.this.arn
   policy = data.aws_iam_policy_document.sns_topic_policy.json
 }
+
+resource "aws_sqs_queue" "dlq" {
+  name                    = "${var.application}-${var.environment}-${var.config.topic_name}-dlq"
+  sqs_managed_sse_enabled = true
+}
+
+data "aws_iam_policy_document" "dlq" {
+  statement {
+    sid    = "AllowTopicRedrive"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["sns.amazonaws.com"]
+    }
+
+    actions = [
+      "sqs:SendMessage"
+    ]
+
+    resources = [
+      aws_sqs_queue.dlq.arn
+    ]
+
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+
+      values = [
+        aws_sns_topic.this.arn
+      ]
+    }
+  }
+}
+
+resource "aws_sqs_queue_policy" "dlq" {
+  queue_url = aws_sqs_queue.dlq.id
+  policy    = data.aws_iam_policy_document.dlq
+}
