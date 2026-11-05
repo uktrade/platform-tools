@@ -132,7 +132,6 @@ module "datadog" {
   config      = each.value
 }
 
-#copy of seperate module testing
 module "sns" {
   source = "../sns"
 
