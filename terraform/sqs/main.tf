@@ -79,4 +79,8 @@ resource "aws_sns_topic_subscription" "this" {
   raw_message_delivery = each.value.raw_message_delivery
   filter_policy        = jsonencode(each.value.filter_policy)
   filter_policy_scope  = each.value.filter_policy_scope
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = each.value.topic_dlq_arn
+  })
 }

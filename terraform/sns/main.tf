@@ -120,5 +120,5 @@ data "aws_iam_policy_document" "dlq" {
 
 resource "aws_sqs_queue_policy" "dlq" {
   queue_url = aws_sqs_queue.dlq.id
-  policy    = data.aws_iam_policy_document.dlq
+  policy    = data.aws_iam_policy_document.dlq.json
 }
