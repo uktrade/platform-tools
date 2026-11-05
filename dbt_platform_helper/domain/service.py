@@ -559,9 +559,15 @@ class ServiceManager:
                     f"{service_path}/service-config.yml", dict(service_manifest), message
                 )
 
-    def _merge_task_definition_environment_for_service(self, service, task_definition, additional_env):
-        env = [definition for definition in task_definition.get("containerDefinitions", []) if definition.get("name", "")==service][0].setdefault("environment", [])
-        
+    def _merge_task_definition_environment_for_service(
+        self, service, task_definition, additional_env
+    ):
+        env = [
+            definition
+            for definition in task_definition.get("containerDefinitions", [])
+            if definition.get("name", "") == service
+        ][0].setdefault("environment", [])
+
         for env_item in additional_env:
             for item in env:
                 if item["name"] == env_item["name"]:
@@ -570,7 +576,6 @@ class ServiceManager:
             else:
                 env.append({"name": env_item["name"], "value": env_item["value"]})
 
-    
     def deploy(
         self,
         service: str,
@@ -606,7 +611,9 @@ class ServiceManager:
                 for item in set_env
                 for name, value in [item.split("=", 1)]
             ]
-            self._merge_task_definition_environment_for_service(service, task_definition, additional_env)
+            self._merge_task_definition_environment_for_service(
+                service, task_definition, additional_env
+            )
 
         image_reference = image_digest or image_tag
         reference_type = "digest" if image_digest else "tag"

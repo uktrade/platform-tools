@@ -148,7 +148,7 @@ def deploy(name, env, image_tag, image_digest, set_env):
             application=application.name,
             image_tag=image_tag,
             image_digest=image_digest,
-            set_env=set_env
+            set_env=set_env,
         )
     except PlatformException as error:
         click_io.abort_with_error(str(error))

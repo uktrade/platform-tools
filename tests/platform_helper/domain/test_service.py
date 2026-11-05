@@ -764,7 +764,7 @@ def test_deploy_merges_environment_variables():
             "name": "web",
             "environment": [
                 {"name": "ENV_VAR_DEFINED_IN_PLATFORM_CONFIG", "value": "some-setting"},
-            ]
+            ],
         }
     ]
 
@@ -832,7 +832,7 @@ def test_deploy_overrides_existing_environment_variables():
             "name": "web",
             "environment": [
                 {"name": "ENV_VAR", "value": "original-value"},
-            ]
+            ],
         }
     ]
 
@@ -941,6 +941,7 @@ def test_deploy_adds_environment_at_runtime_if_none_defined_is_task_definition()
         "ENV_VAR": "some-initial-env",
     }
 
+
 def test_deploy_merges_environment_variables_for_the_deployed_service_container_only():
     mocks = ServiceManagerMocks()
     service_manager = ServiceManager(**mocks.params())
@@ -950,19 +951,19 @@ def test_deploy_merges_environment_variables_for_the_deployed_service_container_
             "name": "some-agent",
             "environment": [
                 {"name": "ONLY_ONE_ENV_VAR", "value": "just-me"},
-            ]
+            ],
         },
         {
             "name": "web",
             "environment": [
                 {"name": "ENV_VAR_DEFINED_IN_PLATFORM_CONFIG", "value": "some-setting"},
-            ]
+            ],
         },
         {
             "name": "api",
             "environment": [
                 {"name": "ONLY_ONE_ENV_VAR", "value": "just-me"},
-            ]
+            ],
         },
     ]
 
@@ -1012,9 +1013,15 @@ def test_deploy_merges_environment_variables_for_the_deployed_service_container_
         "task_definition"
     ]["containerDefinitions"]
 
-    web_container_definition = [definition for definition in container_definitions if definition["name"]=="web"][0]
-    api_container_definition = [definition for definition in container_definitions if definition["name"]=="api"][0]
-    some_agent_container_definition = [definition for definition in container_definitions if definition["name"]=="some-agent"][0]
+    web_container_definition = [
+        definition for definition in container_definitions if definition["name"] == "web"
+    ][0]
+    api_container_definition = [
+        definition for definition in container_definitions if definition["name"] == "api"
+    ][0]
+    some_agent_container_definition = [
+        definition for definition in container_definitions if definition["name"] == "some-agent"
+    ][0]
 
     env = {item["name"]: item["value"] for item in web_container_definition["environment"]}
 
@@ -1025,13 +1032,15 @@ def test_deploy_merges_environment_variables_for_the_deployed_service_container_
     }
 
     api_env = {item["name"]: item["value"] for item in api_container_definition["environment"]}
-    
+
     assert api_env == {
         "ONLY_ONE_ENV_VAR": "just-me",
     }
 
-    some_agent_env = {item["name"]: item["value"] for item in some_agent_container_definition["environment"]}
-    
+    some_agent_env = {
+        item["name"]: item["value"] for item in some_agent_container_definition["environment"]
+    }
+
     assert some_agent_env == {
         "ONLY_ONE_ENV_VAR": "just-me",
     }

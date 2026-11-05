@@ -72,7 +72,7 @@ class TestInternal:
                 "--image-tag",
                 "test123",
                 "--set-env",
-                "TEST_ENV_VAR=test-value"
+                "TEST_ENV_VAR=test-value",
             ],
         )
 
@@ -113,7 +113,7 @@ class TestInternal:
             application="myapp",
             image_tag="test123",
             image_digest=None,
-            set_env=("TEST_ENV_VAR=test-value",)
+            set_env=("TEST_ENV_VAR=test-value",),
         )
 
     @patch("dbt_platform_helper.commands.internal.click.secho")
