@@ -72,7 +72,7 @@ data "aws_iam_policy_document" "sns_topic_policy" {
 
     # Condition 2: Must sit within the correct Organizational Unit hierarchy
     condition {
-      test     = "ForAnyValue:StringEquals"
+      test     = "ForAnyValue:StringLike"
       variable = "aws:PrincipalOrgPaths"
       values   = contains(["prod", "hotfix"], var.environment) ? local.org_ids.prod : local.org_ids.non_prod
     }

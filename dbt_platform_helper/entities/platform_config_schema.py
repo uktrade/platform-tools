@@ -483,7 +483,7 @@ class PlatformConfigSchema:
     def __sqs_schema() -> dict:
         __valid_dead_letter_queue = {Optional("enabled"): bool, Optional("max_receive_count"): int}
 
-        __valid_subscribe_to = {"topic_name": str}
+        __valid_subscribe_to = {"topic_name": str, Optional("account_id"): str}
 
         __valid_filter_policy_scope = Or("MessageBody", "MessageAttributes")
 
