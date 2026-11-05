@@ -585,7 +585,25 @@ class ServiceManager:
 
         task_definition = json.loads(s3_response)
 
-        # Could inject env vars here
+        if set_env:
+            additional_env = [
+                {
+                    "name": name,
+                    "value": value,
+                }
+                for item in set_env
+                for name, value in [item.split("=", 1)]
+            ]
+
+            env = task_definition.get("containerDefinitions", [])[0].get("environment")
+            
+            for env_item in additional_env:
+                for item in env:
+                    if item["name"] == env_item["name"]:
+                        item["value"] = env_item["value"]
+                        break
+                else:
+                    env.append({"name": env_item["name"], "value": env_item["value"]})
 
         image_reference = image_digest or image_tag
         reference_type = "digest" if image_digest else "tag"
