@@ -19,7 +19,12 @@ def secrets():
     PlatformHelperVersioning().check_if_needs_update()
 
 
-@secrets.command()
+@secrets.command(
+    help="""
+    Create a Parameter Store secret for all environments of an
+    application.
+    """,
+)
 @click.option("--app", help="Application name.", required=True)
 @click.option("--name", help="Secret name (automatically uppercased).", required=True)
 @click.option(
@@ -29,8 +34,6 @@ def secrets():
     help="Allows overwriting the value of secrets if they already exist.",
 )
 def create(app: str, name: str, overwrite: bool):
-    """Create a Parameter Store secret for all environments of an
-    application."""
 
     try:
         Secrets().create(app, name, overwrite)
