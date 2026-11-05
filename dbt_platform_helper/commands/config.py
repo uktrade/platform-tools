@@ -41,7 +41,6 @@ def migrate():
 )
 @click.option("--file-path", "-fp", default="~/.aws/config")
 def aws(file_path):
-
     try:
         session = get_aws_session_or_abort()
         Config(sso=SSOAuthProvider(session)).generate_aws(file_path)
