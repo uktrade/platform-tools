@@ -560,7 +560,7 @@ class ServiceManager:
                 )
 
     def _merge_task_definition_environment_for_service(
-        self, service, task_definition, additional_env
+        self, service: str, task_definition: dict[str, Any], additional_env: list[dict[str, str]]
     ):
         env = next(
             definition
@@ -568,13 +568,14 @@ class ServiceManager:
             if definition.get("name", "") == service
         ).setdefault("environment", [])
 
-        for env_item in additional_env:
-            for item in env:
-                if item["name"] == env_item["name"]:
-                    item["value"] = env_item["value"]
-                    break
+        for additional_env_item in additional_env:
+            override_env_item = [
+                item for item in env if item["name"] == additional_env_item["name"]
+            ]
+            if override_env_item:
+                override_env_item[0]["value"] = additional_env_item["value"]
             else:
-                env.append({"name": env_item["name"], "value": env_item["value"]})
+                env.append(additional_env_item)
 
     def deploy(
         self,
@@ -603,6 +604,7 @@ class ServiceManager:
         task_definition = json.loads(s3_response)
 
         if set_env:
+            print("set_env:", set_env)
             additional_env = [
                 {
                     "name": name,
@@ -611,6 +613,7 @@ class ServiceManager:
                 for item in set_env
                 for name, value in [item.split("=", 1)]
             ]
+            print("additional_env:", additional_env)
             self._merge_task_definition_environment_for_service(
                 service, task_definition, additional_env
             )
