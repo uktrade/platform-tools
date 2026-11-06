@@ -604,7 +604,6 @@ class ServiceManager:
         task_definition = json.loads(s3_response)
 
         if set_env:
-            print("set_env:", set_env)
             additional_env = [
                 {
                     "name": name,
@@ -613,7 +612,6 @@ class ServiceManager:
                 for item in set_env
                 for name, value in [item.split("=", 1)]
             ]
-            print("additional_env:", additional_env)
             self._merge_task_definition_environment_for_service(
                 service, task_definition, additional_env
             )
