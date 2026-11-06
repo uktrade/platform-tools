@@ -562,11 +562,11 @@ class ServiceManager:
     def _merge_task_definition_environment_for_service(
         self, service, task_definition, additional_env
     ):
-        env = [
+        env = next(
             definition
             for definition in task_definition.get("containerDefinitions", [])
             if definition.get("name", "") == service
-        ][0].setdefault("environment", [])
+        ).setdefault("environment", [])
 
         for env_item in additional_env:
             for item in env:
