@@ -39,14 +39,18 @@ def _create_load_balancer(session):
     )["LoadBalancers"][0]["LoadBalancerArn"]
 
 
-def _create_listener(session, load_balancer_arn=None):
+def _create_listener(session, load_balancer_arn=None, target_group_arn=None):
     elbv2_client = session.client("elbv2")
 
     load_balancer_arn = load_balancer_arn if load_balancer_arn else _create_load_balancer(session)
+    default_actions = {"Type": "forward"}
+
+    if target_group_arn:
+        default_actions["TargetGroupArn"] = target_group_arn
     return (
         elbv2_client.create_listener(
             LoadBalancerArn=load_balancer_arn,
-            DefaultActions=[{"Type": "forward"}],
+            DefaultActions=[default_actions],
             Protocol="HTTPS",
             Port=443,
         )["Listeners"][0]["ListenerArn"],
@@ -71,30 +75,28 @@ def _create_listener_with_cert(session, is_default=True, load_balancer_arn=None)
     return certificate_arn, listener_arn, load_balancer_arn
 
 
-def _create_target_group(session, service_name="web", copilot_tags=False):
+def _create_target_group(session, service_name="web", target_group_name="web-target-group"):
     ec2_client = session.client("ec2")
     vpc_response = ec2_client.create_vpc(CidrBlock="10.0.0.0/16")
     vpc_id = vpc_response["Vpc"]["VpcId"]
 
-    if copilot_tags:
-        tags = [
-            {"Key": "copilot-application", "Value": "test-application"},
-            {"Key": "copilot-environment", "Value": "development"},
-            {"Key": "copilot-service", "Value": service_name},
-        ]
-    else:
-        tags = [
-            {"Key": "application", "Value": "test-application"},
-            {"Key": "environment", "Value": "development"},
-            {"Key": "service", "Value": service_name},
-        ]
-    return session.client("elbv2").create_target_group(
-        Name=f"{service_name}-target-group",
-        Protocol="HTTPS",
-        Port=123,
-        VpcId=vpc_id,
-        Tags=tags,
-    )["TargetGroups"][0]["TargetGroupArn"]
+    tags = [
+        {"Key": "application", "Value": "test-application"},
+        {"Key": "environment", "Value": "development"},
+        {"Key": "service", "Value": service_name},
+    ]
+
+    kwargs = {
+        "Name": target_group_name,
+        "Protocol": "HTTPS",
+        "Port": 123,
+        "VpcId": vpc_id,
+        "Tags": tags,
+    }
+
+    return session.client("elbv2").create_target_group(**kwargs)["TargetGroups"][0][
+        "TargetGroupArn"
+    ]
 
 
 def _create_service_deployment_mode(session, value="platform"):
@@ -284,18 +286,33 @@ def test_create_source_ip_rule(allowed_ips, expected_rule_cidr, mock_application
     )
 
 
-@pytest.mark.parametrize(
-    "copilot_tags",
-    [True, False],
-)
 @mock_aws
-def test_find_target_group(copilot_tags, mock_application):
+def test_find_target_group(mock_application):
     session = mock_application.environments["development"].session
 
-    if not copilot_tags:
-        _create_service_deployment_mode(session)
-    _create_listener(session)
-    target_group_arn = _create_target_group(session, copilot_tags=copilot_tags)
+    _create_service_deployment_mode(session)
+    load_balancer_arn = _create_load_balancer(session)
+    target_group_arn = _create_target_group(session)
+    _create_listener(session, load_balancer_arn, target_group_arn)
+
+    mock_io = Mock()
+    alb_provider = LoadBalancerProvider(session, mock_io)
+    result = alb_provider.find_target_group("test-application", "development", "web")
+
+    assert result == target_group_arn
+
+
+@mock_aws
+def test_find_target_group_ignores_target_group_without_load_balancer(mock_application):
+    session = mock_application.environments["development"].session
+
+    _create_service_deployment_mode(session)
+    load_balancer_arn = _create_load_balancer(session)
+    _create_target_group(session, "web", "orphaned-web-tg")
+    target_group_arn = _create_target_group(session)
+    _create_target_group(session, "web", "another-orphaned-web-tg")
+
+    _create_listener(session, load_balancer_arn, target_group_arn)
 
     mock_io = Mock()
     alb_provider = LoadBalancerProvider(session, mock_io)
@@ -511,82 +528,44 @@ def test_normalise_to_cidr(ip, expected_cidr):
 
 class TestLoadBalancerProviderPagination:
 
-    @pytest.mark.parametrize(
-        "copilot_tags",
-        [True, False],
-    )
-    def test_find_target_group_given_multiple_pages(self, copilot_tags):
+    def test_find_target_group_given_multiple_pages(self):
         mock_session = Mock()
-        if copilot_tags:
-            tags = [
-                {
-                    "ResourceTagMappingList": [
-                        {
-                            "ResourceARN": "abc123",
-                            "Tags": [
-                                {"Key": "copilot-application", "Value": "my-app"},
-                                {"Key": "copilot-environment", "Value": "my-env"},
-                                {"Key": "copilot-service", "Value": "my-svc"},
-                            ],
-                        }
-                    ]
-                },
-                {
-                    "ResourceTagMappingList": [
-                        {
-                            "ResourceARN": "ghi123",
-                            "Tags": [
-                                {"Key": "copilot-application", "Value": "my-app2"},
-                                {"Key": "copilot-environment", "Value": "my-env2"},
-                                {"Key": "copilot-service", "Value": "my-svc2"},
-                            ],
-                        }
-                    ]
-                },
-            ]
-        else:
-            tags = [
-                {
-                    "ResourceTagMappingList": [
-                        {
-                            "ResourceARN": "abc123",
-                            "Tags": [
-                                {"Key": "application", "Value": "my-app"},
-                                {"Key": "environment", "Value": "my-env"},
-                                {"Key": "service", "Value": "my-svc"},
-                            ],
-                        }
-                    ]
-                },
-                {
-                    "ResourceTagMappingList": [
-                        {
-                            "ResourceARN": "ghi123",
-                            "Tags": [
-                                {"Key": "application", "Value": "my-app2"},
-                                {"Key": "environment", "Value": "my-env2"},
-                                {"Key": "service", "Value": "my-svc2"},
-                            ],
-                        }
-                    ]
-                },
-            ]
+        tags = [
+            {
+                "ResourceTagMappingList": [
+                    {
+                        "ResourceARN": "abc123",
+                        "Tags": [
+                            {"Key": "application", "Value": "my-app"},
+                            {"Key": "environment", "Value": "my-env"},
+                            {"Key": "service", "Value": "my-svc"},
+                        ],
+                    }
+                ]
+            },
+            {
+                "ResourceTagMappingList": [
+                    {
+                        "ResourceARN": "ghi123",
+                        "Tags": [
+                            {"Key": "application", "Value": "my-app2"},
+                            {"Key": "environment", "Value": "my-env2"},
+                            {"Key": "service", "Value": "my-svc2"},
+                        ],
+                    }
+                ]
+            },
+        ]
 
-        mock_ssm_client = Mock(name="ssm-client-mock")
-        if not copilot_tags:
-            mock_ssm_client.get_parameter.return_value = {
-                "Parameter": {
-                    "Name": "/platform/applications/my-app/environments/my-env",
-                    "Type": "String",
-                    "Value": '{"service_deployment_mode": "platform"}',
-                }
-            }
-
+        mock_elb_client = Mock(name="elb")
+        mock_elb_client.describe_target_groups.return_value = {
+            "TargetGroups": [{"LoadBalancerArns": ["mock_tg_arn"]}]
+        }
         mock_resourcegroupstaggingapi_client = Mock(name="resourcegroupstaggingapi")
         mock_resourcegroupstaggingapi_client.get_paginator.return_value.paginate.return_value = tags
         mock_session.client.side_effect = lambda service: {
-            "ssm": mock_ssm_client,
             "resourcegroupstaggingapi": mock_resourcegroupstaggingapi_client,
+            "elbv2": mock_elb_client,
         }.get(service)
 
         alb_provider = LoadBalancerProvider(mock_session, Mock())
@@ -599,10 +578,6 @@ class TestLoadBalancerProviderPagination:
         mock_session.client(
             "resourcegroupstaggingapi"
         ).get_paginator().paginate.assert_called_once()
-
-        mock_session.client("ssm").get_parameter.assert_called_once_with(
-            Name="/platform/applications/my-app/environments/my-env", WithDecryption=True
-        )
 
     def test_get_https_certificate_for_listener_given_multiple_pages(self):
         mock_session = Mock()

@@ -1,9 +1,6 @@
-import json
-
 from boto3 import Session
 
 from dbt_platform_helper.constants import MANAGED_BY_PLATFORM_TERRAFORM
-from dbt_platform_helper.constants import ROUTED_TO_PLATFORM_MODES
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.parameter_store import ParameterStore
@@ -44,24 +41,9 @@ class LoadBalancerProvider:
 
     def find_target_group(self, app: str, env: str, svc: str) -> str:
 
-        # TODO once copilot is gone this is no longer needed
-        try:
-            result = self.parameter_store_provider.get_ssm_parameter_by_name(
-                f"/platform/applications/{app}/environments/{env}"
-            )["Value"]
-            env_config = json.loads(result)
-            service_deployment_mode = env_config["service_deployment_mode"]
-        except Exception:
-            service_deployment_mode = "copilot"
-
-        if service_deployment_mode in ROUTED_TO_PLATFORM_MODES:
-            application_key = "application"
-            environment_key = "environment"
-            service_key = "service"
-        else:
-            application_key = "copilot-application"
-            environment_key = "copilot-environment"
-            service_key = "copilot-service"
+        application_key = "application"
+        environment_key = "environment"
+        service_key = "service"
         target_group_arn = None
 
         paginator = self.rg_tagging_client.get_paginator("get_resources")
@@ -102,12 +84,16 @@ class LoadBalancerProvider:
                 ):
                     target_group_arn = resource["ResourceARN"]
 
-        if not target_group_arn:
-            self.io.error(
-                f"No target group found for application: {app}, environment: {env}, service: {svc}",
-            )
+                    load_balancers = self.evlb_client.describe_target_groups(
+                        TargetGroupArns=[target_group_arn]
+                    )["TargetGroups"][0]["LoadBalancerArns"]
 
-        return target_group_arn
+                    if load_balancers:
+                        return target_group_arn
+
+        self.io.error(
+            f"No target group found for application: {app}, environment: {env}, service: {svc}",
+        )
 
     def get_target_groups(self, target_group_arns: list[str]) -> list[dict]:
         tgs = []
@@ -219,10 +205,7 @@ class LoadBalancerProvider:
             for action in rule["Actions"]:
                 if "TargetGroupArn" in action:
                     if action["Type"] == "forward" and action["TargetGroupArn"] == target_group_arn:
-                        conditions = rule["Conditions"]
-
-        if not conditions:
-            raise ListenerRuleConditionsNotFoundException(listener_arn)
+                        conditions.extend(rule["Conditions"])
 
         # filter to host-header conditions
         conditions = [
@@ -230,6 +213,9 @@ class LoadBalancerProvider:
             for condition in conditions
             if condition["Field"] == "host-header"
         ]
+
+        if not conditions:
+            raise ListenerRuleConditionsNotFoundException(listener_arn)
 
         # remove internal hosts
         conditions[0]["HostHeaderConfig"]["Values"] = [

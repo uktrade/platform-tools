@@ -228,6 +228,8 @@ data "aws_iam_policy_document" "ec2_read_access" {
       "ec2:DescribeNetworkInterfaces",
       "ec2:DescribePrefixLists",
       "ec2:DescribeVpcEndpoints",
+      "ec2:DescribeAccountAttributes",
+      "ec2:DescribeInternetGateways"
     ]
     resources = [
       "*"
@@ -341,6 +343,25 @@ data "aws_iam_policy_document" "load_balancer" {
       "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:cache-policy/*"
     ]
   }
+
+  statement {
+    sid    = "AllowCreateElasticLoadBalancingServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required during ALB creation
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["elasticloadbalancing.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+  }
 }
 
 resource "aws_iam_policy" "load_balancer" {
@@ -355,6 +376,7 @@ data "aws_iam_policy_document" "certificate" {
     actions = [
       "acm:RequestCertificate",
       "acm:AddTagsToCertificate",
+      "acm:DeleteCertificate",
       "acm:DescribeCertificate",
       "acm:ListTagsForCertificate",
     ]
@@ -731,6 +753,25 @@ data "aws_iam_policy_document" "ecs" {
       "*"
     ]
   }
+
+  statement {
+    sid    = "AllowCreateECSServiceLinkedRole"
+    effect = "Allow"
+
+    actions = [
+      "iam:CreateServiceLinkedRole" # Required for provisionning 'aws_ecs_cluster_capacity_providers' and other ECS resources
+    ]
+
+    resources = [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/ecs.amazonaws.com/AWSServiceRoleForECS"
+    ]
+
+    condition {
+      test     = "StringLike"
+      values   = ["ecs.amazonaws.com"]
+      variable = "iam:AWSServiceName"
+    }
+  }
 }
 
 resource "aws_iam_policy" "ecs" {
@@ -931,6 +972,7 @@ data "aws_iam_policy_document" "iam" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-task-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-exec-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-invalidate-cache",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-guardduty-*-role",
       ]
     ])
   }
@@ -977,11 +1019,14 @@ data "aws_iam_policy_document" "iam" {
       "iam:CreatePolicy",
       "iam:DeletePolicy",
       "iam:DeletePolicyVersion",
-      "iam:ListPolicyVersions"
+      "iam:ListPolicyVersions",
+      "iam:TagPolicy"
     ]
-    resources = [for environment in local.environment_config :
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions"
-    ]
+    resources = flatten([for environment in local.environment_config : [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}-${environment.name}-guardduty-*-policy"
+      ]
+    ])
   }
 }
 
@@ -1057,6 +1102,8 @@ resource "aws_iam_policy" "codepipeline" {
 }
 
 data "aws_iam_policy_document" "extensions" {
+  # checkov:skip=CKV_AWS_111:Permissions required to enable GuardDuty
+  # checkov:skip=CKV_AWS_356:Permissions required to enable GuardDuty
   # REDIS
   statement {
     actions = [
@@ -1164,6 +1211,24 @@ data "aws_iam_policy_document" "extensions" {
     resources = [
       "arn:aws:s3:::*"
     ]
+  }
+
+  statement {
+    sid    = "GuardDutyMalwareProtectionPlans"
+    effect = "Allow"
+
+    actions = [
+      "guardduty:CreateMalwareProtectionPlan",
+      "guardduty:UpdateMalwareProtectionPlan",
+      "guardduty:DeleteMalwareProtectionPlan",
+      "guardduty:GetMalwareProtectionPlan",
+      "guardduty:ListMalwareProtectionPlans",
+      "guardduty:ListTagsForResource",
+      "guardduty:TagResource",
+      "guardduty:UntagResource"
+    ]
+
+    resources = ["*"]
   }
 
 }
