@@ -1113,6 +1113,18 @@ data "aws_iam_policy_document" "extensions" {
     ]
   }
 
+
+  # SNS
+  statement {
+    actions = [
+      "sns:GetTopicAttributes",
+    ]
+
+    resources = [
+      "arn:aws:sns:${local.account_region}:*"
+    ]
+  }
+
   statement {
     actions = [
       "elasticache:AddTagsToResource",
