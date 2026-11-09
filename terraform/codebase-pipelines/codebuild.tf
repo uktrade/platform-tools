@@ -545,7 +545,7 @@ resource "aws_codebuild_project" "codebase_service_terraform_plan" {
       value = jsonencode(local.base_env_config)
     }
 
-      environment_variable {
+    environment_variable {
       name  = "PLATFORM_HELPER_VERSION_OVERRIDE"
       value = var.platform_tools_version
     }
