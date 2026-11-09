@@ -12,5 +12,12 @@ locals {
       filter_policy        = var.config.filter_policy
     }
   }
-  # Todo add remote_subscriptions i.e. ones not created by the SNS module
+
+  tags = {
+    application         = var.application
+    environment         = var.environment
+    managed-by          = "DBT Platform - Terraform"
+    copilot-application = var.application
+    copilot-environment = var.environment
+  }
 }

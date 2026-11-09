@@ -5,6 +5,8 @@ data "aws_region" "current" {}
 resource "aws_sns_topic" "this" {
   name              = "${var.application}-${var.environment}-${var.config.topic_name}"
   kms_master_key_id = "alias/aws/sns"
+
+  tags = local.tags
 }
 
 data "aws_iam_policy_document" "sns_topic_policy" {

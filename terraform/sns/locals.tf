@@ -15,4 +15,12 @@ locals {
       "o-hzyhz93zuk/r-*/ou-vjka-usz556y0/*"  # sandbox
     ]
   }
+
+  tags = {
+    application         = var.application
+    environment         = var.environment
+    managed-by          = "DBT Platform - Terraform"
+    copilot-application = var.application
+    copilot-environment = var.environment
+  }
 }
