@@ -237,6 +237,11 @@ resource "aws_codebuild_project" "codebase_service_terraform" {
       value = jsonencode(local.base_env_config)
     }
 
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION_OVERRIDE"
+      value = var.platform_tools_version
+    }
+
   }
 
   logs_config {
@@ -538,6 +543,11 @@ resource "aws_codebuild_project" "codebase_service_terraform_plan" {
     environment_variable {
       name  = "ENV_CONFIG"
       value = jsonencode(local.base_env_config)
+    }
+
+      environment_variable {
+      name  = "PLATFORM_HELPER_VERSION_OVERRIDE"
+      value = var.platform_tools_version
     }
 
   }
