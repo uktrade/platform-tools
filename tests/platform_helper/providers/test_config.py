@@ -717,6 +717,46 @@ class TestApplyEnvironmentDefaults:
 
 
 class TestCodebasePipelineValidations:
+    @pytest.mark.parametrize("create_image_signing_key", [True, False])
+    def test_create_image_signing_key_is_valid_codebase_pipeline_setting(
+        self, create_image_signing_key
+    ):
+        platform_config = {
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+            "default_versions": {"platform-helper": "14.0.0"},
+            "application": "test-app",
+            "codebase_pipelines": {
+                "create_image_signing_key": create_image_signing_key,
+                "application": {"repository": "organisation/repository"},
+            },
+        }
+
+        config_provider_mocks = ConfigProviderMocks(platform_config)
+        config_provider = ConfigProvider(**config_provider_mocks.params())
+
+        config = config_provider.load_and_validate_platform_config()
+
+        assert (
+            config["codebase_pipelines"]["create_image_signing_key"]
+            is create_image_signing_key
+        )
+
+    @pytest.mark.parametrize("value", [1, "true", [], {}])
+    def test_create_image_signing_key_must_be_a_bool(self, value, capsys):
+        platform_config = {
+            "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,
+            "application": "test-app",
+            "codebase_pipelines": {"create_image_signing_key": value},
+        }
+
+        config_provider_mocks = ConfigProviderMocks(platform_config)
+        config_provider = ConfigProvider(**config_provider_mocks.params())
+
+        with pytest.raises(SystemExit):
+            config_provider.load_and_validate_platform_config()
+
+        assert "create_image_signing_key" in capsys.readouterr().err
+
     def test_codebase_pipeline_run_groups_validate(self):
         platform_config = {
             "schema_version": PLATFORM_CONFIG_SCHEMA_VERSION,

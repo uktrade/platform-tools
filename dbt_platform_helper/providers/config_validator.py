@@ -2,6 +2,7 @@ from typing import Callable
 
 import boto3
 
+from dbt_platform_helper.constants import CREATE_IMAGE_SIGNING_KEY_KEY
 from dbt_platform_helper.platform_exception import PlatformException
 from dbt_platform_helper.providers.aws.opensearch import Opensearch
 from dbt_platform_helper.providers.aws.redis import Redis
@@ -250,7 +251,9 @@ class ConfigValidator:
 
         all_environments = [env for env in config.get("environments", {}).keys() if not env == "*"]
 
-        for codebase in codebase_pipelines.values():
+        for codebase_name, codebase in codebase_pipelines.items():
+            if codebase_name == CREATE_IMAGE_SIGNING_KEY_KEY:
+                continue
             cache_invalidation_config = codebase.get("cache_invalidation")
             if cache_invalidation_config:
                 for domain, config in cache_invalidation_config.get("domains").items():

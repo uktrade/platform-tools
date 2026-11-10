@@ -142,7 +142,8 @@ class PlatformConfigSchema:
     @staticmethod
     def __codebase_pipelines_schema() -> dict:
         return {
-            str: {
+            Optional("create_image_signing_key"): bool,
+            lambda key: isinstance(key, str) and key != "create_image_signing_key": {
                 "repository": str,
                 Optional("slack_channel"): str,
                 Optional("requires_image_build"): bool,

@@ -3,6 +3,8 @@ from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
+from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.constants import CREATE_IMAGE_SIGNING_KEY_KEY
 from dbt_platform_helper.constants import EXTENSIONS_MODULE_PATH
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_TOOLS_REPO_SSH_SOURCE
@@ -174,6 +176,7 @@ class TerraformManifestProvider:
         self._add_codebase_pipeline_module(
             terraform, platform_helper_version, deploy_repository, codebase_pipeline_module_source
         )
+        self._add_container_image_signer_key_module(terraform, codebase_pipeline_module_source)
         self._add_version_tracker_module(
             terraform=terraform,
             terraform_state_type="codebase-pipeline",
@@ -265,7 +268,10 @@ class TerraformManifestProvider:
         terraform["locals"] = {
             "platform_config": decode_statement,
             "application": '${local.platform_config["application"]}',
-            "all_codebases": '${local.platform_config["codebase_pipelines"]}',
+            "all_codebases": (
+                '${{for key, value in local.platform_config["codebase_pipelines"] : '
+                f'key => value if key != "{CREATE_IMAGE_SIGNING_KEY_KEY}"}}'
+            ),
             "environments": '${local.platform_config["environments"]}',
         }
 
@@ -336,6 +342,25 @@ class TerraformManifestProvider:
         }
 
     @staticmethod
+    def _add_container_image_signer_key_module(
+        terraform: dict, codebase_pipeline_module_source: str
+    ):
+        module_source, separator, query = codebase_pipeline_module_source.partition("?")
+        module_source = f"{module_source.rstrip('/')}/container-image-signer-key"
+        if separator:
+            module_source = f"{module_source}?{query}"
+
+        terraform["module"]["container-image-signer-key"] = {
+            "source": module_source,
+            "count": (
+                f'${{try(local.platform_config["{CODEBASE_PIPELINES_KEY}"]'
+                f'["{CREATE_IMAGE_SIGNING_KEY_KEY}"], false) ? 1 : 0}}'
+            ),
+            "application": "${local.application}",
+            "env_config": "${local.environments}",
+        }
+
+    @staticmethod
     def _add_extensions_module(
         terraform: dict,
         platform_helper_version: str,
@@ -393,7 +418,11 @@ class TerraformManifestProvider:
                 "services": '${local.config["extensions"]}',
                 "env_config": "${local.env_config}",
             },
-            "codebase_pipeline_repos": '${try({for k, v in local.config["codebase_pipelines"]: k => v.repository}, null)}',
+            "codebase_pipeline_repos": (
+                '${try({for k, v in local.config["codebase_pipelines"]: '
+                f'k => v.repository if k != "{CREATE_IMAGE_SIGNING_KEY_KEY}"'
+                '}, null)}'
+            ),
         }
 
     @staticmethod

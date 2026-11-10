@@ -42,6 +42,7 @@ SERVICE_CONFIG_SCHEMA_VERSION = 1
 
 # Keys
 CODEBASE_PIPELINES_KEY = "codebase_pipelines"
+CREATE_IMAGE_SIGNING_KEY_KEY = "create_image_signing_key"
 ENVIRONMENTS_KEY = "environments"
 ENVIRONMENT_PIPELINES_KEY = "environment_pipelines"
 

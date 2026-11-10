@@ -389,6 +389,9 @@ def test_pipeline_generate_calls_generate_codebase_pipeline_config_with_imports(
     codebase_pipeline_config_for_2_pipelines_and_1_run_group,
     fakefs,
 ):
+    codebase_pipeline_config_for_2_pipelines_and_1_run_group["codebase_pipelines"][
+        "create_image_signing_key"
+    ] = True
     app_name = "test-app"
     fakefs.create_file(
         PLATFORM_CONFIG_FILE,

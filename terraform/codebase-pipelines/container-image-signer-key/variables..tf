@@ -3,15 +3,24 @@ variable "application" {
 }
 
 variable "deploy_account_ids" {
-  type = list(string)
+  type     = list(string)
+  default  = null
+  nullable = true
+}
+
+variable "env_config" {
+  type = any
+  default = {}
 }
 
 variable "key_alias_mappings" {
-  type = any #map(object)
+  type     = any
+  default  = null
+  nullable = true
 }
 
 variable "tags" {
-  type = any #map(object)
+  type     = any
+  default  = null
+  nullable = true
 }
-
-

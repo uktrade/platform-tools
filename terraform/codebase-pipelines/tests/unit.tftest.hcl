@@ -2919,22 +2919,3 @@ run "test_disable_aws_codepipeline" {
   }
 }
 
-run "test_creation_of_single_kms_key" {
-  command = plan
-
-  assert {
-    condition     = local.static_signer_alias == "alias/my-app-container-image-signer-key"
-    error_message = "The static signer alias must exist with immutable name 'alias/my-app-container-image-signer-key'.  Changing this name would break deployments"
-  }
-  
-  assert {
-    condition     = module.container_image_signer_key != null
-    error_message = "Must be one image signer KMS key module"
-  }
-
-  assert {
-    condition     = length([for alias in values(module.container_image_signer_key.active_aliases) : alias if alias == "alias/my-app-container-image-signer-key"]) == 1
-    error_message = "Exactly one of the keys must map to the static alias."
-  }
-}
-

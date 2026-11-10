@@ -582,6 +582,16 @@ platform-helper pipeline generate
     - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
       The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
       The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
+    - An optional `create_image_signing_key` boolean under `codebase_pipelines` enables one shared image-signing key for all codebase pipelines. It defaults to `false`.
+
+      ```yaml
+      codebase_pipelines:
+        create_image_signing_key: true
+        deploy:
+          pipeline_mode: github_actions
+          repository: uktrade/paas-migration-docs
+          requires_image_build: false
+      ```
 
 ## Usage
 

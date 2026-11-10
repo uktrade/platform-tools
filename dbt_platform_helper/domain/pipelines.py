@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import rmtree
 
 from dbt_platform_helper.constants import CODEBASE_PIPELINES_KEY
+from dbt_platform_helper.constants import CREATE_IMAGE_SIGNING_KEY_KEY
 from dbt_platform_helper.constants import ENVIRONMENT_PIPELINES_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_FILE
 from dbt_platform_helper.constants import PLATFORM_HELPER_VERSION_OVERRIDE_KEY
@@ -117,7 +118,11 @@ class Pipelines:
                 )
 
         if has_codebase_pipelines:
-            codebase_pipelines = platform_config[CODEBASE_PIPELINES_KEY]
+            codebase_pipelines = {
+                name: config
+                for name, config in platform_config[CODEBASE_PIPELINES_KEY].items()
+                if name != CREATE_IMAGE_SIGNING_KEY_KEY
+            }
             ecrs_to_be_managed = {
                 codebase: f"{platform_config['application']}/{codebase}"
                 for codebase in codebase_pipelines.keys()

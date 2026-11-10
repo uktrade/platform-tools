@@ -403,6 +403,7 @@ def test_validate_platform_config_fails_if_cache_invalidation_environments_do_no
 ):
     config = ConfigProvider.apply_environment_defaults(platform_env_config)
     config["codebase_pipelines"] = {
+        "create_image_signing_key": True,
         "main": {
             "cache_invalidation": {
                 "domains": {

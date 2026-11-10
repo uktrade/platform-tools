@@ -22,6 +22,9 @@ from tests.platform_helper.conftest import (
 def test_generate_codebase_pipeline_config_creates_file(
     codebase_pipeline_config_for_1_pipeline_and_2_run_groups,
 ):
+    codebase_pipeline_config_for_1_pipeline_and_2_run_groups["codebase_pipelines"][
+        "create_image_signing_key"
+    ] = True
     mock_file_provider = Mock()
     mock_file_provider.mkfile.return_value = "File created"
     mock_io = Mock()
@@ -54,7 +57,10 @@ def test_generate_codebase_pipeline_config_creates_file(
     local = json_content["locals"]
     assert local["platform_config"] == '${yamldecode(file("../../platform-config.yml"))}'
     assert local["application"] == '${local.platform_config["application"]}'
-    assert local["all_codebases"] == '${local.platform_config["codebase_pipelines"]}'
+    assert local["all_codebases"] == (
+        '${{for key, value in local.platform_config["codebase_pipelines"] : '
+        'key => value if key != "create_image_signing_key"}}'
+    )
     assert local["environments"] == '${local.platform_config["environments"]}'
 
     aws_provider = json_content["provider"]["aws"]
@@ -108,6 +114,18 @@ def test_generate_codebase_pipeline_config_creates_file(
     )
     assert codebase_pipelines_module["env_config"] == "${local.environments}"
     assert codebase_pipelines_module["platform_tools_version"] == "14.0.0"
+
+    signing_key_module = json_content["module"]["container-image-signer-key"]
+    assert (
+        signing_key_module["source"]
+        == "git::git@github.com:uktrade/platform-tools.git//terraform/codebase-pipelines/container-image-signer-key?depth=1&ref=14.0.0"
+    )
+    assert signing_key_module["count"] == (
+        '${try(local.platform_config["codebase_pipelines"]'
+        '["create_image_signing_key"], false) ? 1 : 0}'
+    )
+    assert signing_key_module["application"] == "${local.application}"
+    assert signing_key_module["env_config"] == "${local.environments}"
 
     version_tracker_module = json_content["module"]["version-tracker"]
     assert (
@@ -240,7 +258,8 @@ def test_generate_environment_config_creates_file(
     }
     assert (
         local["codebase_pipeline_repos"]
-        == '${try({for k, v in local.config["codebase_pipelines"]: k => v.repository}, null)}'
+        == '${try({for k, v in local.config["codebase_pipelines"]: '
+        'k => v.repository if k != "create_image_signing_key"}, null)}'
     )
 
     terraform = json_content["terraform"]
