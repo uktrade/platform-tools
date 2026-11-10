@@ -1244,7 +1244,8 @@ data "aws_iam_policy_document" "extensions" {
     actions = [
       "sqs:GetQueueAttributes",
       "sqs:ListQueueTags",
-      "sqs:TagQueue"
+      "sqs:TagQueue",
+      "sqs:SetQueueAttributes"
     ]
 
     resources = [
