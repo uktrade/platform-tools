@@ -20,7 +20,7 @@ resource "aws_sqs_queue" "this" {
 }
 
 resource "aws_ssm_parameter" "sqs_queue_arn" {
-  name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sqs/${var.name}-arn"
+  name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sqs/${local.name}-arn"
   type  = "String"
   value = aws_sqs_queue.this.arn
 

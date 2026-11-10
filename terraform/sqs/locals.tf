@@ -1,5 +1,5 @@
 locals {
-  name = replace("${var.application}-${var.environment}-${var.name}", "_", "-")
+  name = "${var.application}-${var.environment}-${var.name}"
 
   # Build a map of all queue subscriptions as defined in platform-config.yml
   subscriptions = {

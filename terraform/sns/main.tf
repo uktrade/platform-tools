@@ -10,7 +10,7 @@ resource "aws_sns_topic" "this" {
 }
 
 resource "aws_ssm_parameter" "sns_topic_arn" {
-  name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sns/${var.name}-arn"
+  name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sns/${local.name}-arn"
   type  = "String"
   value = aws_sns_topic.this.arn
 
