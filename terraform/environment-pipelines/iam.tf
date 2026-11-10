@@ -1113,6 +1113,18 @@ data "aws_iam_policy_document" "extensions" {
     ]
   }
 
+
+  # SNS
+  statement {
+    actions = [
+      "sns:GetTopicAttributes",
+    ]
+
+    resources = [
+      "arn:aws:sns:${local.account_region}:*"
+    ]
+  }
+
   statement {
     actions = [
       "elasticache:AddTagsToResource",
@@ -1204,6 +1216,37 @@ data "aws_iam_policy_document" "extensions" {
     ]
     resources = [
       "arn:aws:s3:::*"
+    ]
+  }
+
+  # SNS
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sns:GetTopicAttributes",
+      "sns:ListTagsForResource",
+      "sns:GetSubscriptionAttributes",
+      "sns:Unsubscribe",
+      "sns:SetTopicAttributes",
+    ]
+
+    resources = [
+      "arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:*"
+    ]
+  }
+
+  # SQS
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sqs:GetQueueAttributes",
+      "sqs:ListQueueTags",
+    ]
+
+    resources = [
+      "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
 
