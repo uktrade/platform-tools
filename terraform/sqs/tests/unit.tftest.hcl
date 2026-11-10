@@ -58,7 +58,7 @@ run "creates_sqs_queue_with_single_subscription" {
 
   # Check that the subscription topic arn is the same as the topic arn as defined in the topic
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-a"
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-a"
     error_message = "Subscription should use the expected topic ARN"
   }
 }
@@ -97,17 +97,17 @@ run "creates_sqs_queue_with_three_subscription" {
 
   # Check that the subscription to topic A is using the same topic arn as defined in topics
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-a"
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-a"
     error_message = "Subscription to Topic A should use the Topic A ARN"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-b"
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-b"
     error_message = "Subscription to Topic B should use the Topic B ARN"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-c"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-c"
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-c"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-c"
     error_message = "Subscription to Topic C should use the Topic C ARN"
   }
 }
@@ -146,12 +146,12 @@ run "creates_sqs_queue_with_cross_account_subscription" {
 
   # Check that the subscription to topic A is using the same topic arn as defined in topics
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789013:way-over-yonder-example-topic-a"
+    condition     = aws_sns_topic_subscription.this["test-queue:way-over/yonder/example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789013:way-over-yonder-example-topic-a"
     error_message = "Subscription to Topic A should use the Topic A ARN and be a different account ID"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-b"
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-b"
     error_message = "Subscription to Topic B should use the Topic B ARN"
   }
 }
@@ -216,17 +216,17 @@ run "creates_sqs_queue_with_single_subscription_and_filter_policy" {
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].raw_message_delivery == true
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-a"].raw_message_delivery == true
     error_message = "raw_message_delivery should be true"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].filter_policy_scope == "MessageBody"
+    condition     = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-a"].filter_policy_scope == "MessageBody"
     error_message = "filter_policy_scope should be MessageBody"
   }
 
   assert {
-    condition = aws_sns_topic_subscription.this["test-queue:example-topic-a"].filter_policy == jsonencode({
+    condition = aws_sns_topic_subscription.this["test-queue:test-application/test-environment/example-topic-a"].filter_policy == jsonencode({
       message = {
         part1 = ["123"]
         part2 = ["abc"]
