@@ -60,7 +60,7 @@ resource "aws_lb" "this" {
   tags = local.tags
 
   drop_invalid_header_fields = true
-  enable_deletion_protection = true
+  enable_deletion_protection = false
 }
 
 resource "aws_lb_listener" "alb-listener" {
