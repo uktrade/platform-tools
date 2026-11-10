@@ -3,8 +3,16 @@ data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
 
 resource "aws_sns_topic" "this" {
-  name              = "${var.application}-${var.environment}-${var.config.topic_name}"
+  name              = local.name
   kms_master_key_id = "alias/aws/sns"
+
+  tags = local.tags
+}
+
+resource "aws_ssm_parameter" "sns_topic_arn" {
+  name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sns/${var.name}-arn"
+  type  = "String"
+  value = aws_sns_topic.this.arn
 
   tags = local.tags
 }

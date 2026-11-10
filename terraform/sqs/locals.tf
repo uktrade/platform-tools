@@ -1,4 +1,5 @@
 locals {
+  name = replace("${var.application}-${var.environment}-${var.name}", "_", "-")
 
   # Build a map of all queue subscriptions as defined in platform-config.yml
   subscriptions = {
@@ -14,10 +15,8 @@ locals {
   }
 
   tags = {
-    application         = var.application
-    environment         = var.environment
-    managed-by          = "DBT Platform - Terraform"
-    copilot-application = var.application
-    copilot-environment = var.environment
+    application = var.application
+    environment = var.environment
+    managed-by  = "DBT Platform - Terraform"
   }
 }

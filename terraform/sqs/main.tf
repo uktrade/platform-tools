@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_sqs_queue" "this" {
-  name                       = "${var.application}-${var.environment}-${var.config.queue_name}"
+  name                       = local.name
   sqs_managed_sse_enabled    = true
   visibility_timeout_seconds = var.config.visibility_timeout_seconds
   delay_seconds              = var.config.delay_seconds
@@ -19,6 +19,13 @@ resource "aws_sqs_queue" "this" {
   tags = local.tags
 }
 
+resource "aws_ssm_parameter" "sqs_queue_arn" {
+  name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sqs/${var.name}-arn"
+  type  = "String"
+  value = aws_sqs_queue.this.arn
+
+  tags = local.tags
+}
 
 data "aws_iam_policy_document" "allow_sns_to_sqs" {
   statement {
@@ -58,7 +65,7 @@ resource "aws_sqs_queue_policy" "this" {
 resource "aws_sqs_queue" "dlq" {
   count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  name                      = "${var.application}-${var.environment}-${var.config.queue_name}-dlq"
+  name                      = "${local.name}-dlq"
   sqs_managed_sse_enabled   = true
   message_retention_seconds = var.config.dead_letter_queue.message_retention_seconds
 

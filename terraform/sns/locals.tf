@@ -1,4 +1,6 @@
 locals {
+  name = replace("${var.application}-${var.environment}-${var.name}", "_", "-")
+
   allowed_account_ids = concat(
     [data.aws_caller_identity.current.account_id],
     var.config.allowed_account_ids
@@ -17,10 +19,8 @@ locals {
   }
 
   tags = {
-    application         = var.application
-    environment         = var.environment
-    managed-by          = "DBT Platform - Terraform"
-    copilot-application = var.application
-    copilot-environment = var.environment
+    application = var.application
+    environment = var.environment
+    managed-by  = "DBT Platform - Terraform"
   }
 }

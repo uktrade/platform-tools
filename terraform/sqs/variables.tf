@@ -6,6 +6,10 @@ variable "application" {
   type = string
 }
 
+variable "name" {
+  type = string
+}
+
 variable "config" {
   type = object({
     queue_name = string
