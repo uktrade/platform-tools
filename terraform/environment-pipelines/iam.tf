@@ -1229,6 +1229,7 @@ data "aws_iam_policy_document" "extensions" {
       "sns:GetSubscriptionAttributes",
       "sns:Unsubscribe",
       "sns:SetTopicAttributes",
+      "sns:TagResource"
     ]
 
     resources = [
@@ -1243,6 +1244,7 @@ data "aws_iam_policy_document" "extensions" {
     actions = [
       "sqs:GetQueueAttributes",
       "sqs:ListQueueTags",
+      "sqs:TagResource"
     ]
 
     resources = [
