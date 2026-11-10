@@ -487,7 +487,12 @@ class PlatformConfigSchema:
             Optional("message_retention_seconds"): int,
         }
 
-        __valid_subscribe_to = {"topic_name": str, Optional("account_id"): str}
+        __valid_subscribe_to = {
+            "topic_name": str,
+            Optional("account_id"): str,
+            Optional("application"): str,
+            Optional("environment"): str,
+        }
 
         __valid_filter_policy_scope = Or("MessageBody", "MessageAttributes")
 
