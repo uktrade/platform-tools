@@ -4,6 +4,10 @@ resource "aws_sqs_queue" "this" {
   name                       = "${var.application}-${var.environment}-${var.config.queue_name}"
   sqs_managed_sse_enabled    = true
   visibility_timeout_seconds = var.config.visibility_timeout_seconds
+  delay_seconds              = var.config.delay_seconds
+  max_message_size           = var.config.max_message_size
+  message_retention_seconds  = var.config.message_retention_seconds
+  receive_wait_time_seconds  = var.config.receive_wait_time_seconds
 
   redrive_policy = (
     var.config.dead_letter_queue.enabled
@@ -11,6 +15,8 @@ resource "aws_sqs_queue" "this" {
       deadLetterTargetArn = aws_sqs_queue.dlq[0].arn
       maxReceiveCount     = var.config.dead_letter_queue.max_receive_count
   }) : null
+
+  tags = local.tags
 }
 
 
@@ -52,8 +58,11 @@ resource "aws_sqs_queue_policy" "this" {
 resource "aws_sqs_queue" "dlq" {
   count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  name                    = "${var.application}-${var.environment}-${var.config.queue_name}-dlq"
-  sqs_managed_sse_enabled = true
+  name                      = "${var.application}-${var.environment}-${var.config.queue_name}-dlq"
+  sqs_managed_sse_enabled   = true
+  message_retention_seconds = var.config.dead_letter_queue.message_retention_seconds
+
+  tags = local.tags
 }
 
 resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
