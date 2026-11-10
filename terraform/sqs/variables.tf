@@ -12,8 +12,6 @@ variable "name" {
 
 variable "config" {
   type = object({
-    queue_name = string
-
     visibility_timeout_seconds = optional(number, 30)
     filter_policy_scope        = optional(string)
     filter_policy              = optional(any)

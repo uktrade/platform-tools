@@ -49,8 +49,8 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
       variable = "aws:SourceArn"
 
       values = [
-        for _, subscription in local.subscriptions :
-        subscription.topic_arn
+        for _, sub in local.subscriptions :
+        "arn:aws:sns:eu-west-2:${sub.account_id}:${sub.application}-${sub.environment}-${sub.topic_name}"
       ]
     }
   }

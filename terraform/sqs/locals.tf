@@ -4,7 +4,7 @@ locals {
   # Build a map of all queue subscriptions as defined in platform-config.yml
   subscriptions = {
     for sub in var.config.subscribe_to :
-    "${var.config.queue_name}:${sub.topic_name}" => {
+    "${var.name}:${sub.topic_name}" => {
       topic_name           = sub.topic_name
       application          = coalesce(sub.application, var.application)
       environment          = coalesce(sub.environment, var.environment)

@@ -11,11 +11,11 @@ run "creates_sqs_queue_with_no_subscriptions" {
 
   variables {
     config = {
-      queue_name   = "test-queue"
       subscribe_to = []
     }
     application = "test-application"
     environment = "test-environment"
+    name        = "test-queue"
   }
 
   assert {
@@ -34,7 +34,6 @@ run "creates_sqs_queue_with_single_subscription" {
 
   variables {
     config = {
-      queue_name = "test-queue"
       subscribe_to = [
         {
           topic_name = "example-topic-a"
@@ -44,6 +43,7 @@ run "creates_sqs_queue_with_single_subscription" {
 
     application = "test-application"
     environment = "test-environment"
+    name        = "test-queue"
   }
 
   assert {
@@ -58,7 +58,7 @@ run "creates_sqs_queue_with_single_subscription" {
 
   # Check that the subscription topic arn is the same as the topic arn as defined in the topic
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:example-topic-a"
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-a"
     error_message = "Subscription should use the expected topic ARN"
   }
 }
@@ -68,7 +68,6 @@ run "creates_sqs_queue_with_three_subscription" {
 
   variables {
     config = {
-      queue_name = "test-queue"
       subscribe_to = [
         {
           topic_name = "example-topic-a"
@@ -83,6 +82,7 @@ run "creates_sqs_queue_with_three_subscription" {
     }
     application = "test-application"
     environment = "test-environment"
+    name        = "test-queue"
   }
 
   assert {
@@ -97,17 +97,17 @@ run "creates_sqs_queue_with_three_subscription" {
 
   # Check that the subscription to topic A is using the same topic arn as defined in topics
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:example-topic-a"
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-a"
     error_message = "Subscription to Topic A should use the Topic A ARN"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:example-topic-b"
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-b"
     error_message = "Subscription to Topic B should use the Topic B ARN"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-c"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:example-topic-c"
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-c"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-c"
     error_message = "Subscription to Topic C should use the Topic C ARN"
   }
 }
@@ -117,11 +117,12 @@ run "creates_sqs_queue_with_cross_account_subscription" {
 
   variables {
     config = {
-      queue_name = "test-queue"
       subscribe_to = [
         {
-          topic_name = "example-topic-a"
-          account_id = "123456789013"
+          topic_name  = "example-topic-a"
+          account_id  = "123456789013"
+          application = "way-over"
+          environment = "yonder"
         },
         {
           topic_name = "example-topic-b"
@@ -130,6 +131,7 @@ run "creates_sqs_queue_with_cross_account_subscription" {
     }
     application = "test-application"
     environment = "test-environment"
+    name        = "test-queue"
   }
 
   assert {
@@ -144,12 +146,12 @@ run "creates_sqs_queue_with_cross_account_subscription" {
 
   # Check that the subscription to topic A is using the same topic arn as defined in topics
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789013:example-topic-a"
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-a"].topic_arn == "arn:aws:sns:eu-west-2:123456789013:way-over-yonder-example-topic-a"
     error_message = "Subscription to Topic A should use the Topic A ARN and be a different account ID"
   }
 
   assert {
-    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:example-topic-b"
+    condition     = aws_sns_topic_subscription.this["test-queue:example-topic-b"].topic_arn == "arn:aws:sns:eu-west-2:123456789012:test-application-test-environment-example-topic-b"
     error_message = "Subscription to Topic B should use the Topic B ARN"
   }
 }
@@ -159,7 +161,6 @@ run "creates_sqs_queue_with_dlq" {
 
   variables {
     config = {
-      queue_name   = "test-queue"
       subscribe_to = []
       dead_letter_queue = {
         enabled = true
@@ -168,6 +169,7 @@ run "creates_sqs_queue_with_dlq" {
 
     application = "test-application"
     environment = "test-environment"
+    name        = "test-queue"
   }
 
   assert {
@@ -186,7 +188,6 @@ run "creates_sqs_queue_with_single_subscription_and_filter_policy" {
 
   variables {
     config = {
-      queue_name          = "test-queue"
       filter_policy_scope = "MessageBody"
 
       filter_policy = {
@@ -206,6 +207,7 @@ run "creates_sqs_queue_with_single_subscription_and_filter_policy" {
 
     application = "test-application"
     environment = "test-environment"
+    name        = "test-queue"
   }
 
   assert {
