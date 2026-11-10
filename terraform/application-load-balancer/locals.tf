@@ -66,4 +66,7 @@ locals {
 
   # Validate if the 'service-deployment-mode' property from platform-config.yml is set to a non-copilot mode for the current environment
   non_copilot_service_deployment_mode = var.service_deployment_mode == "dual-deploy-copilot-traffic" || var.service_deployment_mode == "dual-deploy-platform-traffic" || var.service_deployment_mode == "platform" ? 1 : 0
+
+  access_logs_bucket = var.environment == "prod" ? "alb-access-logs-prod-812359060647-eu-west-2-an" : "alb-access-logs-non-prod-812359060647-eu-west-2-an"
+  access_logs_prefix = "${var.application}/${var.environment}"
 }

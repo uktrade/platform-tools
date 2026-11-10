@@ -10,8 +10,8 @@ resource "aws_lb" "internal" {
   subnets            = data.aws_subnets.private-subnets.ids
   security_groups    = [aws_security_group.internal_alb.id]
   access_logs {
-    bucket  = var.environment == "prod" ? "alb-access-logs-prod-812359060647-eu-west-2-an" : "alb-access-logs-non-prod-812359060647-eu-west-2-an"
-    prefix  = "${var.application}/${var.environment}"
+    bucket  = local.access_logs_bucket
+    prefix  = local.access_logs_prefix
     enabled = true
   }
 
