@@ -573,7 +573,7 @@ class ServiceManager:
                 item for item in env if item["name"] == additional_env_item["name"]
             ]
             if override_env_item:
-                override_env_item[0]["value"] = additional_env_item["value"]
+                override_env_item[-1]["value"] = additional_env_item["value"]
             else:
                 env.append(additional_env_item)
 
