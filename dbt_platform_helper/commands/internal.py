@@ -85,6 +85,15 @@ def service():
     """Subgroup for 'internal service' commands."""
 
 
+def validate_set_env(ctx, param, value):
+    for item in value:
+        try:
+            _, _ = item.split("=", 1)
+        except:
+            raise click.BadParameter("Must be in 'NAME=VALUE' format")
+    return value
+
+
 @service.command(help="Trigger an ECS deployment.")
 @click.option("--name", required=True, help="The name of the ECS service to create or update.")
 @click.option(
@@ -102,13 +111,20 @@ def service():
     required=False,
     help="Image digest to deploy for the services(s). You must provide either an image-digest or an image-tag, but not both.",
 )
-def deploy(name, env, image_tag, image_digest):
+@click.option(
+    "--set-env",
+    multiple=True,
+    required=False,
+    metavar="NAME=VALUE",
+    callback=validate_set_env,
+    help="Additional environment variables to inject into the task definition",
+)
+def deploy(name, env, image_tag, image_digest, set_env):
     """Register a new ECS task definition from an S3 JSON template, update the
     ECS service, and tail CloudWatch logs until the ECS rollout is complete."""
     click_io = ClickIOProvider()
 
     try:
-
         config = ConfigProvider(ConfigValidator()).get_enriched_config()
         application_name = config.get("application", "")
         application = load_application(app=application_name, env=env)
@@ -118,6 +134,14 @@ def deploy(name, env, image_tag, image_digest):
         s3_client = application.environments[env].session.client("s3")
         logs_client = application.environments[env].session.client("logs")
         autoscaling_client = application.environments[env].session.client("application-autoscaling")
+
+        additional_env = [
+            {
+                "name": name,
+                "value": value,
+            }
+            for name, value in (item.split("=", 1) for item in set_env)
+        ]
 
         ecs_provider = ECS(
             ecs_client=ecs_client,
@@ -141,6 +165,7 @@ def deploy(name, env, image_tag, image_digest):
             application=application.name,
             image_tag=image_tag,
             image_digest=image_digest,
+            set_env=additional_env,
         )
     except PlatformException as error:
         click_io.abort_with_error(str(error))
