@@ -8,6 +8,7 @@ from schema import Regex
 from schema import Schema
 from schema import SchemaError
 
+from dbt_platform_helper.constants import CREATE_IMAGE_SIGNING_KEY_KEY
 from dbt_platform_helper.constants import PLATFORM_CONFIG_SCHEMA_VERSION
 from dbt_platform_helper.domain.plans import PlanLoader
 from dbt_platform_helper.entities.platform.extensions.opensearch import (
@@ -142,8 +143,8 @@ class PlatformConfigSchema:
     @staticmethod
     def __codebase_pipelines_schema() -> dict:
         return {
-            Optional("create_image_signing_key"): bool,
-            lambda key: isinstance(key, str) and key != "create_image_signing_key": {
+            Optional(CREATE_IMAGE_SIGNING_KEY_KEY): bool,
+            lambda key: isinstance(key, str) and key != CREATE_IMAGE_SIGNING_KEY_KEY: {
                 "repository": str,
                 Optional("slack_channel"): str,
                 Optional("requires_image_build"): bool,
