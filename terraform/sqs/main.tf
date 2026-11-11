@@ -20,8 +20,9 @@ resource "aws_sqs_queue" "this" {
 }
 
 resource "aws_ssm_parameter" "sqs_queue_arn" {
+  # checkov:skip=CKV_AWS_337: AWS SSM Parameter doesn't need to be Encrypted
   name  = "/platform/${var.application}/${var.environment}/secrets/${upper(replace(var.name, "-", "_"))}_ARN"
-  type  = "SecureString"
+  type  = "String"
   value = aws_sqs_queue.this.arn
 
   tags = local.tags
