@@ -39,7 +39,7 @@ class CodebaseMocks:
     def __init__(self, **kwargs):
         self.parameter_provider = kwargs.get("parameter_provider", Mock())
 
-        # Legacy scenario when still using Paketo Buildpacks (image build), AWS CodePipeline (deployment), or both
+        # Legacy scenario when still using Paketo Buildpacks (image build) and AWS CodePipeline
         self.parameter_provider.get_ssm_parameters_by_path.return_value = [
             {
                 "Value": json.dumps(
