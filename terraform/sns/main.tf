@@ -10,6 +10,8 @@ resource "aws_sns_topic" "this" {
 }
 
 resource "aws_ssm_parameter" "sns_topic_arn" {
+  # checkov:skip=CKV2_AWS_34: AWS SSM Parameter doesn't need to be Encrypted
+  # checkov:skip=CKV_AWS_337: AWS SSM Parameter doesn't need to be Encrypted
   name  = "/platform/applications/${var.application}/environments/${var.environment}/extensions/sns/${local.name}-arn"
   type  = "String"
   value = aws_sns_topic.this.arn
