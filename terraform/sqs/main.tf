@@ -86,6 +86,10 @@ resource "aws_sns_topic_subscription" "this" {
   protocol             = "sqs"
   endpoint             = aws_sqs_queue.this.arn
   raw_message_delivery = each.value.raw_message_delivery
-  filter_policy        = jsonencode(each.value.filter_policy)
   filter_policy_scope  = each.value.filter_policy_scope
+  filter_policy = ( # check in case we set it to null in locals to handle invalid inputs
+    each.value.filter_policy == null
+    ? null
+    : jsonencode(each.value.filter_policy)
+  )
 }
