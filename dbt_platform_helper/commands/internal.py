@@ -140,8 +140,7 @@ def deploy(name, env, image_tag, image_digest, set_env):
                 "name": name,
                 "value": value,
             }
-            for item in set_env
-            for name, value in [item.split("=", 1)]
+            for name, value in (item.split("=", 1) for item in set_env)
         ]
 
         ecs_provider = ECS(
