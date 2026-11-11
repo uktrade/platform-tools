@@ -21,7 +21,7 @@ resource "aws_sqs_queue" "this" {
 
 resource "aws_ssm_parameter" "sqs_queue_arn" {
   name  = "/platform/${var.application}/${var.environment}/secrets/${upper(replace(var.name, "-", "_"))}_ARN"
-  type  = "SecretString"
+  type  = "SecureString"
   value = aws_sqs_queue.this.arn
 
   tags = local.tags

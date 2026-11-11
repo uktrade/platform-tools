@@ -11,7 +11,7 @@ resource "aws_sns_topic" "this" {
 
 resource "aws_ssm_parameter" "sns_topic_arn" {
   name  = "/platform/${var.application}/${var.environment}/secrets/${upper(replace(var.name, "-", "_"))}_ARN"
-  type  = "SecretString"
+  type  = "SecureString"
   value = aws_sns_topic.this.arn
 
   tags = local.tags
