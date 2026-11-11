@@ -6,10 +6,12 @@ variable "application" {
   type = string
 }
 
+variable "name" {
+  type = string
+}
+
 variable "config" {
   type = object({
-    queue_name = string
-
     visibility_timeout_seconds = optional(number, 30)
     filter_policy_scope        = optional(string)
     filter_policy              = optional(any)
@@ -19,8 +21,10 @@ variable "config" {
     message_retention_seconds  = optional(number, 345600)
     receive_wait_time_seconds  = optional(number, 10)
     subscribe_to = optional(list(object({
-      topic_name = string
-      account_id = optional(string)
+      topic_name  = string
+      account_id  = optional(string)
+      application = optional(string)
+      environment = optional(string)
     })), [])
 
     dead_letter_queue = optional(object({

@@ -473,7 +473,6 @@ class PlatformConfigSchema:
             "type": "sns",
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    "topic_name": str,
                     Optional("allowed_account_ids"): [str],
                 }
             },
@@ -487,7 +486,12 @@ class PlatformConfigSchema:
             Optional("message_retention_seconds"): int,
         }
 
-        __valid_subscribe_to = {"topic_name": str, Optional("account_id"): str}
+        __valid_subscribe_to = {
+            "topic_name": str,
+            Optional("account_id"): str,
+            Optional("application"): str,
+            Optional("environment"): str,
+        }
 
         __valid_filter_policy_scope = Or("MessageBody", "MessageAttributes")
 
@@ -495,7 +499,6 @@ class PlatformConfigSchema:
             "type": "sqs",
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    "queue_name": str,
                     Optional("subscribe_to"): [__valid_subscribe_to],
                     Optional("visibility_timeout_seconds"): int,
                     Optional("delay_seconds"): int,

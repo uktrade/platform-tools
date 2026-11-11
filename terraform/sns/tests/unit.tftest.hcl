@@ -11,10 +11,10 @@ run "creates_single_sns_topic" {
 
   variables {
     config = {
-      topic_name = "test-topic"
     }
     application = "test-application"
     environment = "test-environment"
+    name        = "test-topic"
   }
 
   assert {

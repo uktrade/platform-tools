@@ -1,7 +1,7 @@
 data "aws_caller_identity" "current" {}
 
 resource "aws_sqs_queue" "this" {
-  name                       = "${var.application}-${var.environment}-${var.config.queue_name}"
+  name                       = local.name
   sqs_managed_sse_enabled    = true
   visibility_timeout_seconds = var.config.visibility_timeout_seconds
   delay_seconds              = var.config.delay_seconds
@@ -19,6 +19,14 @@ resource "aws_sqs_queue" "this" {
   tags = local.tags
 }
 
+resource "aws_ssm_parameter" "sqs_queue_arn" {
+  # checkov:skip=CKV_AWS_337: AWS SSM Parameter doesn't need to be Encrypted
+  name  = "/platform/${var.application}/${var.environment}/secrets/${upper(replace(var.name, "-", "_"))}_ARN"
+  type  = "SecureString"
+  value = aws_sqs_queue.this.arn
+
+  tags = local.tags
+}
 
 data "aws_iam_policy_document" "allow_sns_to_sqs" {
   statement {
@@ -42,8 +50,8 @@ data "aws_iam_policy_document" "allow_sns_to_sqs" {
       variable = "aws:SourceArn"
 
       values = [
-        for _, subscription in local.subscriptions :
-        subscription.topic_arn
+        for _, sub in local.subscriptions :
+        "arn:aws:sns:eu-west-2:${sub.account_id}:${sub.application}-${sub.environment}-${sub.topic_name}"
       ]
     }
   }
@@ -58,7 +66,7 @@ resource "aws_sqs_queue_policy" "this" {
 resource "aws_sqs_queue" "dlq" {
   count = var.config.dead_letter_queue.enabled ? 1 : 0
 
-  name                      = "${var.application}-${var.environment}-${var.config.queue_name}-dlq"
+  name                      = "${local.name}-dlq"
   sqs_managed_sse_enabled   = true
   message_retention_seconds = var.config.dead_letter_queue.message_retention_seconds
 
@@ -82,7 +90,7 @@ resource "aws_sqs_queue_redrive_allow_policy" "dlq" {
 resource "aws_sns_topic_subscription" "this" {
   for_each = local.subscriptions
 
-  topic_arn            = each.value.topic_arn
+  topic_arn            = "arn:aws:sns:eu-west-2:${each.value.account_id}:${each.value.application}-${each.value.environment}-${each.value.topic_name}"
   protocol             = "sqs"
   endpoint             = aws_sqs_queue.this.arn
   raw_message_delivery = each.value.raw_message_delivery

@@ -137,6 +137,7 @@ module "sns" {
 
   for_each = local.sns
 
+  name        = each.key
   application = var.args.application
   environment = var.environment
   config      = each.value
@@ -147,6 +148,7 @@ module "sqs" {
 
   for_each = local.sqs
 
+  name        = each.key
   application = var.args.application
   environment = var.environment
   config      = each.value
