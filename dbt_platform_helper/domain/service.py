@@ -584,7 +584,7 @@ class ServiceManager:
         application: str,
         image_tag: str = None,
         image_digest: str = None,
-        set_env: dict[str, str] | None = None,
+        set_env: list[dict[str, str]] | None = None,
     ):
         """Register a new ECS task definition revision, update the ECS service
         with it, monitor service, task and container logs, and wait until
@@ -604,17 +604,7 @@ class ServiceManager:
         task_definition = json.loads(s3_response)
 
         if set_env:
-            additional_env = [
-                {
-                    "name": name,
-                    "value": value,
-                }
-                for item in set_env
-                for name, value in [item.split("=", 1)]
-            ]
-            self._merge_task_definition_environment_for_service(
-                service, task_definition, additional_env
-            )
+            self._merge_task_definition_environment_for_service(service, task_definition, set_env)
 
         image_reference = image_digest or image_tag
         reference_type = "digest" if image_digest else "tag"

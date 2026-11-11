@@ -804,10 +804,10 @@ def test_deploy_merges_environment_variables():
             environment="dev",
             application="myapp",
             image_tag="tag-123",
-            set_env=(
-                "GIT_COMMIT=abc1234",
-                "GIT_BRANCH=main",
-            ),
+            set_env=[
+                {"name": "GIT_COMMIT", "value": "abc1234"},
+                {"name": "GIT_BRANCH", "value": "main"},
+            ],
         )
 
     container_definition = mocks.ecs_provider.register_task_definition.call_args.kwargs[
@@ -872,7 +872,9 @@ def test_deploy_overrides_existing_environment_variables():
             environment="dev",
             application="myapp",
             image_tag="tag-123",
-            set_env=("ENV_VAR=some-override",),
+            set_env=[
+                {"name": "ENV_VAR", "value": "some-override"},
+            ],
         )
 
     container_definition = mocks.ecs_provider.register_task_definition.call_args.kwargs[
@@ -928,7 +930,9 @@ def test_deploy_adds_environment_at_runtime_if_none_defined_is_task_definition()
             environment="dev",
             application="myapp",
             image_tag="tag-123",
-            set_env=("ENV_VAR=some-initial-env",),
+            set_env=[
+                {"name": "ENV_VAR", "value": "some-initial-env"},
+            ],
         )
 
     container_definition = mocks.ecs_provider.register_task_definition.call_args.kwargs[
@@ -1003,10 +1007,10 @@ def test_deploy_merges_environment_variables_for_the_deployed_service_container_
             environment="dev",
             application="myapp",
             image_tag="tag-123",
-            set_env=(
-                "GIT_COMMIT=abc1234",
-                "GIT_BRANCH=main",
-            ),
+            set_env=[
+                {"name": "GIT_COMMIT", "value": "abc1234"},
+                {"name": "GIT_BRANCH", "value": "main"},
+            ],
         )
 
     container_definitions = mocks.ecs_provider.register_task_definition.call_args.kwargs[

@@ -135,6 +135,15 @@ def deploy(name, env, image_tag, image_digest, set_env):
         logs_client = application.environments[env].session.client("logs")
         autoscaling_client = application.environments[env].session.client("application-autoscaling")
 
+        additional_env = [
+            {
+                "name": name,
+                "value": value,
+            }
+            for item in set_env
+            for name, value in [item.split("=", 1)]
+        ]
+
         ecs_provider = ECS(
             ecs_client=ecs_client,
             ssm_client=ssm_client,
@@ -157,7 +166,7 @@ def deploy(name, env, image_tag, image_digest, set_env):
             application=application.name,
             image_tag=image_tag,
             image_digest=image_digest,
-            set_env=set_env,
+            set_env=additional_env,
         )
     except PlatformException as error:
         click_io.abort_with_error(str(error))
