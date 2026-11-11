@@ -73,6 +73,8 @@ class TestInternal:
                 "test123",
                 "--set-env",
                 "TEST_ENV_VAR=test-value",
+                "--set-env",
+                "TEST_ENV_VAR_2=test-value-2",
             ],
         )
 
@@ -113,8 +115,36 @@ class TestInternal:
             application="myapp",
             image_tag="test123",
             image_digest=None,
-            set_env=("TEST_ENV_VAR=test-value",),
+            set_env=("TEST_ENV_VAR=test-value", "TEST_ENV_VAR_2=test-value-2"),
         )
+
+    @patch("dbt_platform_helper.commands.internal.ServiceManager")
+    def test_service_deploy_exits_with_invalid_set_env_arg_format(
+        self,
+        mock_service_manager,
+    ):
+
+        result = CliRunner().invoke(
+            internal,
+            [
+                "service",
+                "deploy",
+                "--name",
+                "web",
+                "--env",
+                "dev",
+                "--image-tag",
+                "test123",
+                "--set-env",
+                "foobar",
+            ],
+        )
+
+        assert result.exit_code == 2
+        assert (
+            "Error: Invalid value for '--set-env': Must be in 'NAME=VALUE' format" in result.output
+        )
+        mock_service_manager.return_value.deploy.assert_not_called()
 
     @patch("dbt_platform_helper.commands.internal.click.secho")
     @patch("dbt_platform_helper.commands.internal.ServiceManager")

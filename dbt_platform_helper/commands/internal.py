@@ -85,6 +85,15 @@ def service():
     """Subgroup for 'internal service' commands."""
 
 
+def validate_set_env(ctx, param, value):
+    for item in value:
+        try:
+            _, _ = item.split("=", 1)
+        except:
+            raise click.BadParameter("Must be in 'NAME=VALUE' format")
+    return value
+
+
 @service.command(help="Trigger an ECS deployment.")
 @click.option("--name", required=True, help="The name of the ECS service to create or update.")
 @click.option(
@@ -107,6 +116,7 @@ def service():
     multiple=True,
     required=False,
     metavar="NAME=VALUE",
+    callback=validate_set_env,
     help="Additional environment variables to inject into the task definition",
 )
 def deploy(name, env, image_tag, image_digest, set_env):
@@ -115,7 +125,6 @@ def deploy(name, env, image_tag, image_digest, set_env):
     click_io = ClickIOProvider()
 
     try:
-
         config = ConfigProvider(ConfigValidator()).get_enriched_config()
         application_name = config.get("application", "")
         application = load_application(app=application_name, env=env)
