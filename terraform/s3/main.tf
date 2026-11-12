@@ -171,14 +171,28 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
 
   bucket = aws_s3_bucket.this.id
 
+  rule {
+    id     = "intelligent-tiering"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    transition {
+      days          = 0
+      storage_class = "INTELLIGENT_TIERING"
+    }
+  }
+
   # checkov:skip=CKV_AWS_300: Ensure S3 lifecycle configuration sets period for aborting failed uploads
   dynamic "rule" {
     for_each = var.config.lifecycle_rules != null ? var.config.lifecycle_rules : []
     content {
       id = "rule-${index(var.config.lifecycle_rules, rule.value) + 1}"
-      abort_incomplete_multipart_upload {
-        days_after_initiation = 7
-      }
+
       filter {
         prefix = rule.value.filter_prefix
       }
