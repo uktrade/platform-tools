@@ -473,7 +473,6 @@ class PlatformConfigSchema:
             "type": "sns",
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    "topic_name": str,
                     Optional("allowed_account_ids"): [str],
                 }
             },
