@@ -494,7 +494,6 @@ class PlatformConfigSchema:
             "type": "sqs",
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    "queue_name": str,
                     Optional("subscribe_to"): [__valid_subscribe_to],
                     Optional("visibility_timeout_seconds"): int,
                     Optional("delay_seconds"): int,
