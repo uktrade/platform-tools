@@ -191,6 +191,7 @@ class MaintenancePage:
 """,
                 )
 
+                # A rule can only have one 'host-header' condition so pass one service condition at a time
                 for condition in service_conditions:
                     for ip in allowed_ips:
                         self.load_balancer.create_header_rule(
