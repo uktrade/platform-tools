@@ -691,7 +691,7 @@ data "aws_iam_policy_document" "ecs" {
       "ecs:DeleteCluster",
       "ecs:PutClusterCapacityProviders",
       "ecs:UntagResource",
-      "ecs:ListTagsForResource
+      "ecs:ListTagsForResource"
     ]
     resources = [
       for env in local.environment_config :
