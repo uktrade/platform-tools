@@ -819,6 +819,34 @@ class MaintenancePageMocks:
 
 
 class TestActivateMethod:
+    @staticmethod
+    def _service_rule_tags(service):
+        return [
+            {"Key": "application", "Value": "test-application"},
+            {"Key": "environment", "Value": "development"},
+            {"Key": "reason", "Value": "MaintenancePage"},
+            {"Key": "managed-by", "Value": "DBT Platform"},
+            {"Key": "service", "Value": service},
+        ]
+
+    @staticmethod
+    def _maintenance_rule_tags(template="default"):
+        return [
+            {"Key": "application", "Value": "test-application"},
+            {"Key": "environment", "Value": "development"},
+            {"Key": "reason", "Value": "MaintenancePage"},
+            {"Key": "name", "Value": "MaintenancePage"},
+            {"Key": "type", "Value": template},
+            {"Key": "managed-by", "Value": "DBT Platform"},
+        ]
+
+    @staticmethod
+    def _host_header_condition(hosts):
+        return {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": hosts},
+        }
+
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )
@@ -1451,6 +1479,17 @@ class TestActivateMethod:
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )
     def test_successful_activate_multiple_conditions(self, random_mock):
+        """Test that multiple service aliases are handled correctly."""
+        web_host = ["web1.dev.demodjango.org.digital"]
+
+        additional_web_hosts = [
+            "web2.dev.demodjango.org.digital",
+            "web3.dev.demodjango.org.digital",
+            "web4.dev.demodjango.org.digital",
+            "web5.dev.demodjango.org.digital",
+        ]
+
+        api_host = ["api.dev.demodjango.org.digital"]
 
         get_env_ips = Mock(return_value=["0.1.2.3"])
         maintenance_mocks = MaintenancePageMocks(app, get_env_ips=get_env_ips)
@@ -1458,28 +1497,10 @@ class TestActivateMethod:
 
         maintenance_mocks.load_balancer.get_host_header_conditions.side_effect = [
             [
-                {
-                    "Field": "host-header",
-                    "HostHeaderConfig": {"Values": ["web1.dev.demodjango.org.digital"]},
-                },
-                {
-                    "Field": "host-header",
-                    "HostHeaderConfig": {
-                        "Values": [
-                            "web2.dev.demodjango.org.digital",
-                            "web3.dev.demodjango.org.digital",
-                            "web4.dev.demodjango.org.digital",
-                            "web5.dev.demodjango.org.digital",
-                        ]
-                    },
-                },
+                self._host_header_condition(web_host),
+                self._host_header_condition(additional_web_hosts),
             ],
-            [
-                {
-                    "Field": "host-header",
-                    "HostHeaderConfig": {"Values": ["api.dev.demodjango.org.digital"]},
-                },
-            ],
+            [self._host_header_condition(api_host)],
         ]
         services = "*"
         provider = MaintenancePage(**maintenance_mocks.params())
@@ -1500,19 +1521,8 @@ class TestActivateMethod:
                     ["0.1.2.3"],
                     "AllowedIps",
                     1,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {"Values": ["web1.dev.demodjango.org.digital"]},
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "web"},
-                    ],
+                    [self._host_header_condition(web_host)],
+                    self._service_rule_tags("web"),
                 ),
                 call(
                     "https_listener",
@@ -1521,19 +1531,8 @@ class TestActivateMethod:
                     ["abc"],
                     "BypassIpFilter",
                     3,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {"Values": ["web1.dev.demodjango.org.digital"]},
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "web"},
-                    ],
+                    [self._host_header_condition(web_host)],
+                    self._service_rule_tags("web"),
                 ),
                 call(
                     "https_listener",
@@ -1542,26 +1541,8 @@ class TestActivateMethod:
                     ["0.1.2.3"],
                     "AllowedIps",
                     4,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {
-                                "Values": [
-                                    "web2.dev.demodjango.org.digital",
-                                    "web3.dev.demodjango.org.digital",
-                                    "web4.dev.demodjango.org.digital",
-                                    "web5.dev.demodjango.org.digital",
-                                ]
-                            },
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "web"},
-                    ],
+                    [self._host_header_condition(additional_web_hosts)],
+                    self._service_rule_tags("web"),
                 ),
                 call(
                     "https_listener",
@@ -1570,26 +1551,8 @@ class TestActivateMethod:
                     ["abc"],
                     "BypassIpFilter",
                     6,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {
-                                "Values": [
-                                    "web2.dev.demodjango.org.digital",
-                                    "web3.dev.demodjango.org.digital",
-                                    "web4.dev.demodjango.org.digital",
-                                    "web5.dev.demodjango.org.digital",
-                                ]
-                            },
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "web"},
-                    ],
+                    [self._host_header_condition(additional_web_hosts)],
+                    self._service_rule_tags("web"),
                 ),
                 call(
                     "https_listener",
@@ -1598,19 +1561,8 @@ class TestActivateMethod:
                     ["0.1.2.3"],
                     "AllowedIps",
                     7,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {"Values": ["api.dev.demodjango.org.digital"]},
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "api"},
-                    ],
+                    [self._host_header_condition(api_host)],
+                    self._service_rule_tags("api"),
                 ),
                 call(
                     "https_listener",
@@ -1619,19 +1571,8 @@ class TestActivateMethod:
                     ["abc"],
                     "BypassIpFilter",
                     9,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {"Values": ["api.dev.demodjango.org.digital"]},
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "api"},
-                    ],
+                    [self._host_header_condition(api_host)],
+                    self._service_rule_tags("api"),
                 ),
             ]
         )
@@ -1644,19 +1585,8 @@ class TestActivateMethod:
                     ["0.1.2.3"],
                     "AllowedSourceIps",
                     2,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {"Values": ["web1.dev.demodjango.org.digital"]},
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "web"},
-                    ],
+                    [self._host_header_condition(web_host)],
+                    self._service_rule_tags("web"),
                 ),
                 call(
                     "https_listener",
@@ -1664,26 +1594,8 @@ class TestActivateMethod:
                     ["0.1.2.3"],
                     "AllowedSourceIps",
                     5,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {
-                                "Values": [
-                                    "web2.dev.demodjango.org.digital",
-                                    "web3.dev.demodjango.org.digital",
-                                    "web4.dev.demodjango.org.digital",
-                                    "web5.dev.demodjango.org.digital",
-                                ]
-                            },
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "web"},
-                    ],
+                    [self._host_header_condition(additional_web_hosts)],
+                    self._service_rule_tags("web"),
                 ),
                 call(
                     "https_listener",
@@ -1691,19 +1603,8 @@ class TestActivateMethod:
                     ["0.1.2.3"],
                     "AllowedSourceIps",
                     8,
-                    [
-                        {
-                            "Field": "host-header",
-                            "HostHeaderConfig": {"Values": ["api.dev.demodjango.org.digital"]},
-                        }
-                    ],
-                    [
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                        {"Key": "service", "Value": "api"},
-                    ],
+                    [self._host_header_condition(api_host)],
+                    self._service_rule_tags("api"),
                 ),
             ]
         )
@@ -1740,14 +1641,7 @@ class TestActivateMethod:
                             },
                         }
                     ],
-                    tags=[
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "name", "Value": "MaintenancePage"},
-                        {"Key": "type", "Value": "default"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ],
+                    tags=self._maintenance_rule_tags(template="default"),
                 ),
                 call(
                     listener_arn="https_listener",
@@ -1777,14 +1671,7 @@ class TestActivateMethod:
                             },
                         }
                     ],
-                    tags=[
-                        {"Key": "application", "Value": "test-application"},
-                        {"Key": "environment", "Value": "development"},
-                        {"Key": "reason", "Value": "MaintenancePage"},
-                        {"Key": "name", "Value": "MaintenancePage"},
-                        {"Key": "type", "Value": "default"},
-                        {"Key": "managed-by", "Value": "DBT Platform"},
-                    ],
+                    tags=self._maintenance_rule_tags(template="default"),
                 ),
             ]
         )
