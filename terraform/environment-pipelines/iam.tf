@@ -690,6 +690,8 @@ data "aws_iam_policy_document" "ecs" {
       "ecs:DescribeClusters",
       "ecs:DeleteCluster",
       "ecs:PutClusterCapacityProviders",
+      "ecs:UntagResource",
+      "ecs:ListTagsForResource"
     ]
     resources = [
       for env in local.environment_config :
@@ -1229,7 +1231,8 @@ data "aws_iam_policy_document" "extensions" {
       "sns:GetSubscriptionAttributes",
       "sns:Unsubscribe",
       "sns:SetTopicAttributes",
-      "sns:TagResource"
+      "sns:TagResource",
+      "sns:DeleteTopic"
     ]
 
     resources = [
@@ -1245,7 +1248,8 @@ data "aws_iam_policy_document" "extensions" {
       "sqs:GetQueueAttributes",
       "sqs:ListQueueTags",
       "sqs:TagQueue",
-      "sqs:SetQueueAttributes"
+      "sqs:SetQueueAttributes",
+      "sqs:DeleteQueue"
     ]
 
     resources = [
