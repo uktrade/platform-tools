@@ -191,15 +191,50 @@ class MaintenancePage:
 """,
                 )
 
-                for ip in allowed_ips:
+                # A rule can only have one 'host-header' condition so pass one service condition at a time
+                for condition in service_conditions:
+                    for ip in allowed_ips:
+                        self.load_balancer.create_header_rule(
+                            listener_arn,
+                            target_group_arn,
+                            "X-Forwarded-For",
+                            [ip],
+                            "AllowedIps",
+                            next(rule_priority),
+                            [condition],
+                            [
+                                {"Key": "application", "Value": app},
+                                {"Key": "environment", "Value": env},
+                                {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
+                                {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+                                {"Key": "service", "Value": svc.name},
+                            ],
+                        )
+
+                        self.load_balancer.create_source_ip_rule(
+                            listener_arn,
+                            target_group_arn,
+                            [ip],
+                            "AllowedSourceIps",
+                            next(rule_priority),
+                            [condition],
+                            [
+                                {"Key": "application", "Value": app},
+                                {"Key": "environment", "Value": env},
+                                {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
+                                {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
+                                {"Key": "service", "Value": svc.name},
+                            ],
+                        )
+
                     self.load_balancer.create_header_rule(
                         listener_arn,
                         target_group_arn,
-                        "X-Forwarded-For",
-                        [ip],
-                        "AllowedIps",
+                        "Bypass-Key",
+                        [bypass_value],
+                        "BypassIpFilter",
                         next(rule_priority),
-                        service_conditions,
+                        [condition],
                         [
                             {"Key": "application", "Value": app},
                             {"Key": "environment", "Value": env},
@@ -208,38 +243,6 @@ class MaintenancePage:
                             {"Key": "service", "Value": svc.name},
                         ],
                     )
-                    self.load_balancer.create_source_ip_rule(
-                        listener_arn,
-                        target_group_arn,
-                        [ip],
-                        "AllowedSourceIps",
-                        next(rule_priority),
-                        service_conditions,
-                        [
-                            {"Key": "application", "Value": app},
-                            {"Key": "environment", "Value": env},
-                            {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
-                            {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-                            {"Key": "service", "Value": svc.name},
-                        ],
-                    )
-
-                self.load_balancer.create_header_rule(
-                    listener_arn,
-                    target_group_arn,
-                    "Bypass-Key",
-                    [bypass_value],
-                    "BypassIpFilter",
-                    next(rule_priority),
-                    service_conditions,
-                    [
-                        {"Key": "application", "Value": app},
-                        {"Key": "environment", "Value": env},
-                        {"Key": "reason", "Value": MAINTENANCE_PAGE_REASON},
-                        {"Key": "managed-by", "Value": MANAGED_BY_PLATFORM},
-                        {"Key": "service", "Value": svc.name},
-                    ],
-                )
 
                 # add to accumilating list of conditions for maintenace page rule
                 maintenance_page_host_header_conditions.extend(service_conditions)
