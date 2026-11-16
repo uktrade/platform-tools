@@ -148,6 +148,10 @@ resource "aws_codebuild_webhook" "codebuild_webhook" {
       }
     }
   }
+
+  pull_request_build_policy {
+    requires_comment_approval = "DISABLED"
+  }
 }
 
 resource "aws_codebuild_project" "codebase_install_tools" {
@@ -235,6 +239,11 @@ resource "aws_codebuild_project" "codebase_service_terraform" {
     environment_variable {
       name  = "ENV_CONFIG"
       value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION_OVERRIDE"
+      value = var.platform_tools_version
     }
 
   }
@@ -538,6 +547,11 @@ resource "aws_codebuild_project" "codebase_service_terraform_plan" {
     environment_variable {
       name  = "ENV_CONFIG"
       value = jsonencode(local.base_env_config)
+    }
+
+    environment_variable {
+      name  = "PLATFORM_HELPER_VERSION_OVERRIDE"
+      value = var.platform_tools_version
     }
 
   }

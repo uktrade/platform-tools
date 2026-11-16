@@ -5,10 +5,8 @@ from typing import Callable
 from typing import Optional
 
 from dbt_platform_helper.providers.cloudformation import CloudFormation
-from dbt_platform_helper.providers.copilot import _normalise_secret_name
 from dbt_platform_helper.providers.copilot import connect_to_addon_client_task
 from dbt_platform_helper.providers.copilot import create_addon_client_task
-from dbt_platform_helper.providers.copilot import get_postgres_admin_connection_string
 from dbt_platform_helper.providers.ecs import ECS
 from dbt_platform_helper.providers.io import ClickIOProvider
 from dbt_platform_helper.providers.secrets import Secrets
@@ -42,7 +40,6 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         env: str,
         io: ClickIOProvider,
         vpc_provider: Callable,
-        get_postgres_admin_connection_string: Callable,
     ):
         self.clients = clients
         self.ecs_provider = ecs_provider
@@ -53,7 +50,6 @@ class TerraformConduitStrategy(ConduitECSStrategy):
         self.addon_type = addon_type
         self.application = application
         self.env = env
-        self.get_postgres_admin_connection_string = get_postgres_admin_connection_string
 
     def get_data(self):
         self.io.info("Starting conduit in Terraform mode.")
@@ -86,21 +82,6 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             data_context["vpc_name"],
         )
 
-        postgres_admin_env_vars = None
-        if data_context["addon_type"] == "postgres" and data_context["access"] == "admin":
-            postgres_admin_env_vars = [
-                {
-                    "name": "CONNECTION_SECRET",
-                    "value": self.get_postgres_admin_connection_string(
-                        self.clients.get("ssm"),
-                        f"/copilot/{self.application.name}/{self.env}/secrets/{_normalise_secret_name(self.addon_name)}",
-                        self.application,
-                        self.env,
-                        self.addon_name,
-                    ),
-                },
-            ]
-
         cluster_name = data_context["cluster_arn"].split("/")[-1]
 
         self.ecs_provider.start_ecs_task(
@@ -108,7 +89,6 @@ class TerraformConduitStrategy(ConduitECSStrategy):
             self._generate_container_name(),
             data_context["task_def_family"],
             vpc_config,
-            postgres_admin_env_vars,
         )
 
     def exec_task(self, data_context: dict):
@@ -267,7 +247,6 @@ class ConduitStrategyFactory:
                 env,
                 io,
                 vpc_provider=VpcProvider,
-                get_postgres_admin_connection_string=get_postgres_admin_connection_string,
             )
         else:
             return CopilotConduitStrategy(
