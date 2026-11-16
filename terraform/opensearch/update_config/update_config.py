@@ -33,8 +33,6 @@ def enable_audit_logging(host, admin_user):
         "audit": {
             "ignore_users": [],
             "ignore_requests": [],
-            "ignore_headers": [],
-            "ignore_url_params": [],
             "disabled_rest_categories": [],
             "disabled_transport_categories": [],
             "resolve_bulk_requests": False,
