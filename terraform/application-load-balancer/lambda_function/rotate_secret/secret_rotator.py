@@ -187,8 +187,8 @@ class SecretRotator:
         """
         Returns True if the origin is a CloudFront VPC origin.
 
-        VPC origins reach a private ALB that is not protected by the 
-        origin-verify WAF rule, so they must not be given the custom header.
+        VPC origins reach a private ALB that is not protected by the origin-
+        verify WAF rule, so they must not be given the custom header.
         """
         return bool(origin.get("VpcOriginConfig", {}).get("VpcOriginId"))
 
@@ -196,8 +196,8 @@ class SecretRotator:
         """
         Updates or creates given custom header in the distribution config.
 
-        VPC origins are skipped.
-        Returns True if any headers were updated or created.
+        VPC origins are skipped. Returns True if any headers were updated or
+        created.
         """
         header_count = 0
 
