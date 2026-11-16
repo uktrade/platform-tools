@@ -1228,8 +1228,3 @@ class TestVpcOrigins:
             call.update_cf_distro("with-header", "new"),
             call.update_cf_distro("vpc-only", "new"),
         ]
-
-    
-
-        
-
