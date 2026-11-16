@@ -109,4 +109,11 @@ resource "aws_lambda_invocation" "logging" {
   depends_on = [
     aws_opensearch_domain.this,
   ]
+
+  lifecycle {
+    replace_triggered_by = [
+      aws_opensearch_domain.this,
+      aws_lambda_function.update-config,
+    ]
+  }
 }
