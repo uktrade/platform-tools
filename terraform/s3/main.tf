@@ -162,13 +162,11 @@ resource "aws_s3_bucket_versioning" "this-versioning" {
   bucket = aws_s3_bucket.this.id
 
   versioning_configuration {
-    status = coalesce(var.config.versioning, false) ? "Enabled" : "Disabled"
+    status = var.config.versioning ? "Enabled" : "Disabled"
   }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
-  count = var.config.lifecycle_rules != null || var.config.guardduty.enabled ? 1 : 0
-
   bucket = aws_s3_bucket.this.id
 
   rule {
