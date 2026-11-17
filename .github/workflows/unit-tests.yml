@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         # If the matrix, you must also update after_n_builds in codecov.yml to match the number of times the test suite is run
-        python-version: ["3.15", "3.14", "3.13", "3.12", "3.11"]
+        python-version: ["3.14", "3.13", "3.12", "3.11"]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1
@@ -60,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         # If the matrix, you must also update after_n_builds in codecov.yml to match the number of times the test suite is run
-        python-version: ["3.15", "3.14", "3.13", "3.12", "3.11"]
+        python-version: ["3.14", "3.13", "3.12", "3.11"]
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 #v7.0.1

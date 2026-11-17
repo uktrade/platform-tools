@@ -8,7 +8,7 @@ If you are migrating a service to DBT PaaS, [GOV.UK PaaS to DBT PaaS Migration](
 
 ### Supported Python versions
 
-3.11, 3.12, 3.13, 3.14 and 3.15.
+3.11, 3.12, 3.13 and 3.14.
 
 ## Working on the dbt-platform-helper package
 
