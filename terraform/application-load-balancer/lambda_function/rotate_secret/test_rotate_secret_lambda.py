@@ -1077,3 +1077,159 @@ class TestLambdaHandler:
             environment=rotator.environment,
             application=rotator.application,
         )
+
+
+def _custom_origin(origin_id, headers=None):
+    origin = {
+        "Id": origin_id,
+        "CustomOriginConfig": {"HTTPPort": 80, "HTTPSPort": 443},
+        "CustomHeaders": {"Quantity": 0},
+    }
+    if headers:
+        origin["CustomHeaders"] = {"Quantity": len(headers), "Items": headers}
+    return origin
+
+
+def _vpc_origin(origin_id):
+    return {
+        "Id": origin_id,
+        "VpcOriginConfig": {"VpcOriginId": "vo_123", "OwnerAccountId": 123456789012},
+        "CustomHeaders": {"Quantity": 0},
+    }
+
+
+class TestVpcOrigins:
+    """VPC origins point at a private ALB which doesn't check the origin-verify
+    header, so rotation must leave them alone."""
+
+    @pytest.fixture
+    def vpc_rotator(self):
+        return SecretRotator(
+            logger=MagicMock(),
+            waf_acl_name="test-waf-id",
+            waf_acl_id="test-waf-acl",
+            waf_rule_priority="0",
+            header_name="x-origin-verify",
+            application="test-app",
+            environment="test",
+            role_arn="arn:aws:iam::123456789012:role/test-role",
+            distro_list="example.com",
+            waf_sleep_duration=0,
+        )
+
+    def test_is_vpc_origin(self, vpc_rotator):
+        assert vpc_rotator.is_vpc_origin(_vpc_origin("vpc"))
+        assert not vpc_rotator.is_vpc_origin(_custom_origin("custom"))
+        assert not vpc_rotator.is_vpc_origin({"Id": "x", "VpcOriginConfig": {"VpcOriginId": ""}})
+
+    def test_update_custom_headers_skips_vpc_origins(self, vpc_rotator):
+        dist_config = {
+            "DistributionConfig": {
+                "Origins": {
+                    "Items": [
+                        _custom_origin(
+                            "custom",
+                            [{"HeaderName": "x-origin-verify", "HeaderValue": "old-value"}],
+                        ),
+                        _vpc_origin("vpc"),
+                    ]
+                }
+            }
+        }
+
+        updated = vpc_rotator.update_custom_headers(dist_config, "new-value")
+
+        assert updated is True
+        custom, vpc = dist_config["DistributionConfig"]["Origins"]["Items"]
+        assert custom["CustomHeaders"]["Items"] == [
+            {"HeaderName": "x-origin-verify", "HeaderValue": "new-value"}
+        ]
+        assert vpc["CustomHeaders"] == {"Quantity": 0}
+
+    def test_update_custom_headers_returns_false_when_only_vpc_origins(self, vpc_rotator):
+        dist_config = {
+            "DistributionConfig": {"Origins": {"Items": [_vpc_origin("vpc1"), _vpc_origin("vpc2")]}}
+        }
+
+        assert vpc_rotator.update_custom_headers(dist_config, "new-value") is False
+        for origin in dist_config["DistributionConfig"]["Origins"]["Items"]:
+            assert origin["CustomHeaders"] == {"Quantity": 0}
+
+    def test_update_cf_distro_skips_update_when_only_vpc_origins(self, vpc_rotator):
+        mock_client = MagicMock()
+        vpc_rotator.get_cloudfront_client = MagicMock(return_value=mock_client)
+        vpc_rotator.get_cf_distro = MagicMock(return_value={"Distribution": {"Status": "Deployed"}})
+        vpc_rotator.get_cf_distro_config = MagicMock(
+            return_value={
+                "DistributionConfig": {"Origins": {"Items": [_vpc_origin("vpc")]}},
+                "ResponseMetadata": {"HTTPHeaders": {"etag": "test-etag"}},
+            }
+        )
+
+        result = vpc_rotator.update_cf_distro("DIST1", "new-value")
+
+        assert result is None
+        mock_client.update_distribution.assert_not_called()
+
+    def test_update_cf_distro_updates_mixed_distributions(self, vpc_rotator):
+        mock_client = MagicMock()
+        mock_client.update_distribution.return_value = {"ResponseMetadata": {"HTTPStatusCode": 200}}
+        vpc_rotator.get_cloudfront_client = MagicMock(return_value=mock_client)
+        vpc_rotator.get_cf_distro = MagicMock(return_value={"Distribution": {"Status": "Deployed"}})
+        vpc_rotator.get_cf_distro_config = MagicMock(
+            return_value={
+                "DistributionConfig": {
+                    "Origins": {"Items": [_custom_origin("custom"), _vpc_origin("vpc")]}
+                },
+                "ResponseMetadata": {"HTTPHeaders": {"etag": "test-etag"}},
+            }
+        )
+
+        vpc_rotator.update_cf_distro("DIST1", "new-value")
+
+        mock_client.update_distribution.assert_called_once()
+        origins = mock_client.update_distribution.call_args[1]["DistributionConfig"]["Origins"][
+            "Items"
+        ]
+        assert origins[0]["CustomHeaders"]["Items"] == [
+            {"HeaderName": "x-origin-verify", "HeaderValue": "new-value"}
+        ]
+        assert origins[1]["CustomHeaders"] == {"Quantity": 0}
+
+    def test_vpc_only_distribution_does_not_change_waf_order(self, vpc_rotator):
+        """A fully migrated distribution must not count as 'missing the
+        header'."""
+        configs = {
+            "with-header": {
+                "DistributionConfig": {
+                    "Origins": {
+                        "Items": [
+                            _custom_origin(
+                                "custom",
+                                [{"HeaderName": "x-origin-verify", "HeaderValue": "old"}],
+                            )
+                        ]
+                    }
+                }
+            },
+            "vpc-only": {"DistributionConfig": {"Origins": {"Items": [_vpc_origin("vpc")]}}},
+        }
+        vpc_rotator.get_cf_distro_config = MagicMock(side_effect=lambda d: configs[d])
+
+        manager = MagicMock()
+        vpc_rotator.update_waf_acl = manager.update_waf_acl
+        vpc_rotator.update_cf_distro = manager.update_cf_distro
+
+        with patch("secret_rotator.time.sleep"):
+            vpc_rotator.process_cf_distributions_and_WAF_rules(
+                [{"Id": "with-header"}, {"Id": "vpc-only"}],
+                {"HEADERVALUE": "new"},
+                {"HEADERVALUE": "old"},
+            )
+
+        # WAF is updated first as every distribution that needs the header already has it
+        assert manager.mock_calls == [
+            call.update_waf_acl("new", "old"),
+            call.update_cf_distro("with-header", "new"),
+            call.update_cf_distro("vpc-only", "new"),
+        ]
