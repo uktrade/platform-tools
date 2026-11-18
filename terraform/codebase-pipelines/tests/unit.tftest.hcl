@@ -2926,7 +2926,7 @@ run "test_creation_of_single_kms_key" {
     condition     = local.static_signer_alias == "alias/my-app-container-image-signer-key"
     error_message = "The static signer alias must exist with immutable name 'alias/my-app-container-image-signer-key'.  Changing this name would break deployments"
   }
-  
+
   assert {
     condition     = module.container_image_signer_key != null
     error_message = "Must be one image signer KMS key module"

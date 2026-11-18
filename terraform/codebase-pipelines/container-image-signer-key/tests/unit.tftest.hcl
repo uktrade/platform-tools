@@ -8,23 +8,23 @@ mock_provider "aws" {
 
 
 variables {
-    application = "test-app"
-    deploy_account_ids = ["000123456789", "111234567890"]
-    static_signer_alias = "test-alias"
-    key_alias_mappings = {
-      "v_test" = {
-        "alias" = "alias/test"
-        "description" = "test-description"
-      }
-    }
-    tags = {
-      Name = "test-tag"
+  application         = "test-app"
+  deploy_account_ids  = ["000123456789", "111234567890"]
+  static_signer_alias = "test-alias"
+  key_alias_mappings = {
+    "v_test" = {
+      "alias"       = "alias/test"
+      "description" = "test-description"
     }
   }
+  tags = {
+    Name = "test-tag"
+  }
+}
 
 run "test_creation_of_single_kms_key" {
   command = plan
-  
+
   assert {
     condition     = aws_kms_key.container_image_signer_key["v_test"] != null
     error_message = "A single KMS Key should have been created"
@@ -85,15 +85,15 @@ run "test_kms_key_rotation" {
   command = plan
 
   variables {
-    application = "test-app"
+    application        = "test-app"
     deploy_account_ids = ["000123456789", "111234567890"]
     key_alias_mappings = {
       "v_test_key" = {
-        "alias" = "alias/test-static-alias_v_test_key"
+        "alias"       = "alias/test-static-alias_v_test_key"
         "description" = "test-description-old-alias"
       }
       "v_test_new_key" = {
-        "alias" = "alias/test-static-alias"
+        "alias"       = "alias/test-static-alias"
         "description" = "test-description-static-alias"
       }
     }
@@ -106,8 +106,8 @@ run "test_kms_key_rotation" {
     condition     = length(aws_kms_key.container_image_signer_key) == 2
     error_message = "Two KMS Keys should have been created"
   }
-  
-  
+
+
   assert {
     condition     = aws_kms_key.container_image_signer_key["v_test_key"] != null
     error_message = "A single KMS Key should have been created"
