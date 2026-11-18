@@ -38,7 +38,7 @@ resource "aws_kms_key" "container_image_signer_key" {
         Sid    = "Allow signing with the key"
         Effect = "Allow"
         Principal = {
-          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-build-placeholder-role" //build oidc role
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-oidc-${var.application}-platform-image-build"
         },
         Action = [
           "kms:Sign",
