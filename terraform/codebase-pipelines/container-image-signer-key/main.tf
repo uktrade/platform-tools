@@ -13,6 +13,15 @@ resource "aws_kms_key" "container_image_signer_key" {
     Id      = "key-default-1"
     Statement = [
       {
+        Sid    = "Enable IAM policies in the owning account"
+        Effect = "Allow"
+        Principal = {
+          AWS = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"
+        }
+        Action   = "kms:*"
+        Resource = "*"
+      },
+      {
         Sid    = "Allow verifying with the key"
         Effect = "Allow"
         Principal = {

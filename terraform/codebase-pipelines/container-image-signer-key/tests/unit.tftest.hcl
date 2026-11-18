@@ -31,26 +31,41 @@ run "test_creation_of_single_kms_key" {
   }
 
   assert {
-    condition     = length(jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement) == 2
-    error_message = "The KMS key policy should have only 2 policy statements"
+    condition     = length(jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement) == 3
+    error_message = "The KMS key policy should have 3 policy statements"
   }
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[0].Sid == "Allow verifying with the key"
-    error_message = "First statement is expected to be the verify permissions"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[0].Sid == "Enable IAM policies in the owning account"
+    error_message = "First statement should enable IAM policies in the owning account"
   }
 
   assert {
-    condition     = !contains(jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[0].Principal.AWS, "*")
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[0].Principal.AWS == "arn:aws:iam::000123456789:root"
+    error_message = "The owning account root principal should manage the key"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[0].Action == "kms:*"
+    error_message = "The owning account root principal should have full key management permissions"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[1].Sid == "Allow verifying with the key"
+    error_message = "Second statement is expected to be the verify permissions"
+  }
+
+  assert {
+    condition     = !contains(jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[1].Principal.AWS, "*")
     error_message = "A KMS key verify principal should not have wildcards"
   }
 
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[1].Sid == "Allow signing with the key"
-    error_message = "Second statement is expected to be the sign permissions"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[2].Sid == "Allow signing with the key"
+    error_message = "Third statement is expected to be the sign permissions"
   }
 
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test"].policy).Statement[2].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
     error_message = "A KMS key sign principal should be the build oidc role in the non-prod (build and deploy) account ONLY"
   }
 
@@ -99,26 +114,41 @@ run "test_kms_key_rotation" {
   }
 
   assert {
-    condition     = length(jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement) == 2
-    error_message = "The KMS key policy should have only 2 policy statements"
+    condition     = length(jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement) == 3
+    error_message = "The KMS key policy should have 3 policy statements"
   }
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[0].Sid == "Allow verifying with the key"
-    error_message = "First statement is expected to be the verify permissions"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[0].Sid == "Enable IAM policies in the owning account"
+    error_message = "First statement should enable IAM policies in the owning account"
   }
 
   assert {
-    condition     = !contains(jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[0].Principal.AWS, "*")
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[0].Principal.AWS == "arn:aws:iam::000123456789:root"
+    error_message = "The owning account root principal should manage the key"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[0].Action == "kms:*"
+    error_message = "The owning account root principal should have full key management permissions"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[1].Sid == "Allow verifying with the key"
+    error_message = "Second statement is expected to be the verify permissions"
+  }
+
+  assert {
+    condition     = !contains(jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[1].Principal.AWS, "*")
     error_message = "A KMS key verify principal should not have wildcards"
   }
 
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[1].Sid == "Allow signing with the key"
-    error_message = "Second statement is expected to be the sign permissions"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[2].Sid == "Allow signing with the key"
+    error_message = "Third statement is expected to be the sign permissions"
   }
 
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_key"].policy).Statement[2].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
     error_message = "A KMS key sign principal should be the build oidc role in the non-prod (build and deploy) account ONLY"
   }
 
@@ -139,26 +169,41 @@ run "test_kms_key_rotation" {
   }
 
   assert {
-    condition     = length(jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement) == 2
-    error_message = "The KMS key policy should have only 2 policy statements"
+    condition     = length(jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement) == 3
+    error_message = "The KMS key policy should have 3 policy statements"
   }
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[0].Sid == "Allow verifying with the key"
-    error_message = "First statement is expected to be the verify permissions"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[0].Sid == "Enable IAM policies in the owning account"
+    error_message = "First statement should enable IAM policies in the owning account"
   }
 
   assert {
-    condition     = !contains(jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[0].Principal.AWS, "*")
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[0].Principal.AWS == "arn:aws:iam::000123456789:root"
+    error_message = "The owning account root principal should manage the key"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[0].Action == "kms:*"
+    error_message = "The owning account root principal should have full key management permissions"
+  }
+
+  assert {
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[1].Sid == "Allow verifying with the key"
+    error_message = "Second statement is expected to be the verify permissions"
+  }
+
+  assert {
+    condition     = !contains(jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[1].Principal.AWS, "*")
     error_message = "A KMS key verify principal should not have wildcards"
   }
 
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[1].Sid == "Allow signing with the key"
-    error_message = "Second statement is expected to be the sign permissions"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[2].Sid == "Allow signing with the key"
+    error_message = "Third statement is expected to be the sign permissions"
   }
 
   assert {
-    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[1].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
+    condition     = jsondecode(aws_kms_key.container_image_signer_key["v_test_new_key"].policy).Statement[2].Principal.AWS == "arn:aws:iam::000123456789:role/github-oidc-build-placeholder-role"
     error_message = "A KMS key sign principal should be the build oidc role in the non-prod (build and deploy) account ONLY"
   }
 
@@ -167,4 +212,3 @@ run "test_kms_key_rotation" {
     error_message = "An alias for the KMS key must exist with immutable name 'alias/test'.  Changing this name would break deployments"
   }
 }
-
