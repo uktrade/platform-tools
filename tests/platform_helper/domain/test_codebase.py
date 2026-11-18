@@ -38,6 +38,21 @@ def mock_aws_client(get_aws_session_or_abort):
 class CodebaseMocks:
     def __init__(self, **kwargs):
         self.parameter_provider = kwargs.get("parameter_provider", Mock())
+
+        # Legacy scenario when still using Paketo Buildpacks (image build) and AWS CodePipeline
+        self.parameter_provider.get_ssm_parameters_by_path.return_value = [
+            {
+                "Value": json.dumps(
+                    {
+                        "name": "application",
+                        "repository": "uktrade/example",
+                        "pipeline_mode": "aws_codepipeline",
+                        "requires_image_build": True,
+                    }
+                )
+            }
+        ]
+
         self.load_application = kwargs.get("load_application", Mock())
         self.get_aws_session_or_abort = kwargs.get("get_aws_session_or_abort", Mock())
         self.io = kwargs.get("io", Mock())
@@ -418,7 +433,7 @@ def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided():
 
 
 @pytest.mark.parametrize("reference", ["1", "123456"])
-def test_codebase_deploy_raises_error_when_no_commit_tag_or_branch_provided(reference):
+def test_codebase_deploy_raises_error_when_commit_is_too_short(reference):
     mocks = CodebaseMocks()
     mocks.io.abort_with_error.side_effect = SystemExit(1)
     codebase = Codebase(**mocks.params())
@@ -682,3 +697,144 @@ def mock_run_suprocess_fixture():
     mock_stdout = MagicMock()
     mock_stdout.configure_mock(**{"stdout.decode.return_value": '{"A": 3}'})
     return mock_stdout
+
+
+def configure_codebase_parameter(mocks, pipeline_mode, requires_image_build):
+    mocks.parameter_provider.get_ssm_parameters_by_path.return_value = [
+        {
+            "Value": json.dumps(
+                {
+                    "name": "application",
+                    "repository": "uktrade/example",
+                    "pipeline_mode": pipeline_mode,
+                    "requires_image_build": requires_image_build,
+                }
+            )
+        }
+    ]
+
+
+@pytest.mark.parametrize("operation", ["build", "deploy"])
+def test_rejects_build_and_deploy_for_fully_migrated_codebase(operation):
+    mocks = CodebaseMocks()
+    configure_codebase_parameter(
+        mocks,
+        pipeline_mode="github_actions",
+        requires_image_build=False,
+    )
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as error:
+        codebase._reject_migrated_codebase(
+            app="test-application",
+            codebase_name="application",
+            operation=operation,
+        )
+
+    assert error.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Codebase 'application' uses GitHub Actions for build and deployment operations. AWS CodePipeline and Paketo Buildpacks are no longer used. Please use the GitHub Actions workflows in the 'uktrade/example' codebase repository instead."
+    )
+
+
+def test_rejects_deploy_for_codebase_using_github_actions():
+    mocks = CodebaseMocks()
+    configure_codebase_parameter(
+        mocks,
+        pipeline_mode="github_actions",
+        requires_image_build=True,
+    )
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as error:
+        codebase._reject_migrated_codebase(
+            app="test-application",
+            codebase_name="application",
+            operation="deploy",
+        )
+
+    assert error.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Codebase 'application' uses GitHub Actions for ECS deployments. AWS CodePipeline is no longer used. Please use the GitHub Actions workflows in the 'uktrade/example' codebase repository instead."
+    )
+
+
+def test_allows_build_when_only_deployments_have_migrated():
+    mocks = CodebaseMocks()
+    configure_codebase_parameter(
+        mocks,
+        pipeline_mode="github_actions",
+        requires_image_build=True,
+    )
+
+    codebase = Codebase(**mocks.params())
+
+    codebase._reject_migrated_codebase(
+        app="test-application",
+        codebase_name="application",
+        operation="build",
+    )
+
+    mocks.io.abort_with_error.assert_not_called()
+
+
+def test_rejects_build_when_codebase_does_not_require_an_image_build():
+    mocks = CodebaseMocks()
+    configure_codebase_parameter(
+        mocks,
+        pipeline_mode="dual_codepipeline_github",
+        requires_image_build=False,
+    )
+    mocks.io.abort_with_error.side_effect = SystemExit(1)
+
+    codebase = Codebase(**mocks.params())
+
+    with pytest.raises(SystemExit) as error:
+        codebase._reject_migrated_codebase(
+            app="test-application",
+            codebase_name="application",
+            operation="build",
+        )
+
+    assert error.value.code == 1
+
+    mocks.io.abort_with_error.assert_called_once_with(
+        "Codebase 'application' does not use Paketo Buildpacks to build container images. If the application uses a Dockerfile, please use the GitHub Actions workflows in the 'uktrade/example' codebase repository instead."
+    )
+
+
+@pytest.mark.parametrize(
+    "pipeline_mode, operation",
+    [
+        ("aws_codepipeline", "build"),
+        ("aws_codepipeline", "deploy"),
+        ("dual_codepipeline_github", "build"),
+        ("dual_codepipeline_github", "deploy"),
+    ],
+)
+def test_allows_operations_for_non_migrated_codebase(
+    pipeline_mode,
+    operation,
+):
+    mocks = CodebaseMocks()
+    configure_codebase_parameter(
+        mocks,
+        pipeline_mode=pipeline_mode,
+        requires_image_build=True,
+    )
+
+    codebase = Codebase(**mocks.params())
+
+    codebase._reject_migrated_codebase(
+        app="test-application",
+        codebase_name="application",
+        operation=operation,
+    )
+
+    mocks.io.abort_with_error.assert_not_called()

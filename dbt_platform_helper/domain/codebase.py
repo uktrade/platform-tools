@@ -129,6 +129,8 @@ class Codebase:
         session = self.get_aws_session_or_abort()
         self.load_application(app, default_session=session)
 
+        self._reject_migrated_codebase(app, codebase_name=codebase, operation="build")
+
         codebuild_client = session.client("codebuild")
         project_name = self.get_image_build_project(codebuild_client, app, codebase)
         build_url = self.__start_build_with_confirmation(
@@ -159,6 +161,8 @@ class Codebase:
         branch: str = None,
     ):
         """Trigger a CodePipeline pipeline based deployment."""
+
+        self._reject_migrated_codebase(app=app, codebase_name=codebase, operation="deploy")
 
         self._validate_reference_flags(commit, tag, branch)
 
@@ -209,6 +213,36 @@ class Codebase:
             )
 
         raise ApplicationDeploymentNotTriggered(codebase)
+
+    def _reject_migrated_codebase(self, app: str, codebase_name: str, operation: str):
+        """Abort if the requested operation has migrated away from the legacy
+        CI/CD tooling."""
+        parameters = self.parameter_provider.get_ssm_parameters_by_path(
+            f"/copilot/applications/{app}/codebases"
+        )
+
+        codebases = [json.loads(p["Value"]) for p in parameters]
+
+        codebase = next(item for item in codebases if item["name"] == codebase_name)
+
+        pipeline_mode = codebase["pipeline_mode"]
+        requires_image_build = codebase["requires_image_build"]
+        repository = codebase["repository"]
+
+        if pipeline_mode == "github_actions" and requires_image_build is False:
+            self.io.abort_with_error(
+                f"Codebase '{codebase_name}' uses GitHub Actions for build and deployment operations. AWS CodePipeline and Paketo Buildpacks are no longer used. Please use the GitHub Actions workflows in the '{repository}' codebase repository instead."
+            )
+
+        elif operation == "deploy" and pipeline_mode == "github_actions":
+            self.io.abort_with_error(
+                f"Codebase '{codebase_name}' uses GitHub Actions for ECS deployments. AWS CodePipeline is no longer used. Please use the GitHub Actions workflows in the '{repository}' codebase repository instead."
+            )
+
+        elif operation == "build" and requires_image_build is False:
+            self.io.abort_with_error(
+                f"Codebase '{codebase_name}' does not use Paketo Buildpacks to build container images. If the application uses a Dockerfile, please use the GitHub Actions workflows in the '{repository}' codebase repository instead."
+            )
 
     def _validate_reference_flags(self, commit: str, tag: str, branch: str):
         provided = [ref for ref in [commit, tag, branch] if ref]
