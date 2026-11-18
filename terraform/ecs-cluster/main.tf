@@ -25,6 +25,12 @@ resource "aws_ecs_cluster" "cluster" {
   }
 
   tags = local.tags
+
+  lifecycle {
+    ignore_changes = [
+      tags["AWS.SSM.AppManager.ECS.Cluster.ARN"],
+    ]
+  }
 }
 
 resource "aws_ecs_cluster_capacity_providers" "capacity" {
