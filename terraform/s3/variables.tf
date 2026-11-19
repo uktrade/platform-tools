@@ -39,8 +39,9 @@ variable "config" {
       enabled         = bool
     })))
     guardduty = optional(object({
-      enabled = bool
-    }), { enabled = false })
+      enabled                      = bool
+      enforce_strict_bucket_policy = optional(bool, true)
+    }), { enabled = false, enforce_strict_bucket_policy = true })
     # NOTE: allows access to S3 bucket from non-DBT Platform managed roles
     external_role_access = optional(map(object({
       role_arn          = string

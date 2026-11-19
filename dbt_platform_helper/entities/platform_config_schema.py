@@ -500,6 +500,7 @@ class PlatformConfigSchema:
 
         _valid_s3_bucket_guardduty = {
             "enabled": bool,
+            Optional("enforce_strict_bucket_policy"): bool,
         }
 
         _valid_s3_bucket_external_role_access = {
