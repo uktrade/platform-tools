@@ -87,7 +87,7 @@ data "aws_iam_policy_document" "bucket-policy" {
     for_each = var.config.guardduty.enabled ? [1] : []
 
     content {
-      sid    = "NoReadUnlessClean"
+      sid    = var.config.guardduty.enforce_strict_bucket_policy ? "NoReadUnlessClean" : "NoReadIfThreatsFound"
       effect = "Deny"
 
       not_principals {
@@ -108,11 +108,9 @@ data "aws_iam_policy_document" "bucket-policy" {
       ]
 
       condition {
-        test     = "StringNotEquals"
+        test     = var.config.guardduty.enforce_strict_bucket_policy ? "StringNotEquals" : "StringEquals"
         variable = "s3:ExistingObjectTag/GuardDutyMalwareScanStatus"
-        values = [
-          "NO_THREATS_FOUND"
-        ]
+        values   = var.config.guardduty.enforce_strict_bucket_policy ? ["NO_THREATS_FOUND"] : ["THREATS_FOUND"]
       }
     }
   }
@@ -204,7 +202,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "lifecycle-configuration" {
       }
 
       expiration {
-        days = 30
+        days = 60
       }
 
       dynamic "noncurrent_version_expiration" {
