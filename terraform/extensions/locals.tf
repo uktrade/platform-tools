@@ -78,12 +78,10 @@ locals {
   sns = {
     for extension_name, extension_config in local.extensions :
     extension_name => extension_config if extension_config.type == "sns"
-    && can(extension_config.topic_name)
   }
   sqs = {
     for extension_name, extension_config in local.extensions :
     extension_name => extension_config if extension_config.type == "sqs"
-    && can(extension_config.queue_name)
   }
 
 

@@ -6,10 +6,13 @@ variable "application" {
   type = string
 }
 
+variable "name" {
+  type = string
+}
+
 variable "config" {
   type = object(
     {
-      topic_name          = string
       allowed_account_ids = optional(list(string), [])
     }
   )
