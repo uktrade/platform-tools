@@ -819,6 +819,34 @@ class MaintenancePageMocks:
 
 
 class TestActivateMethod:
+    @staticmethod
+    def _service_rule_tags(service):
+        return [
+            {"Key": "application", "Value": "test-application"},
+            {"Key": "environment", "Value": "development"},
+            {"Key": "reason", "Value": "MaintenancePage"},
+            {"Key": "managed-by", "Value": "DBT Platform"},
+            {"Key": "service", "Value": service},
+        ]
+
+    @staticmethod
+    def _maintenance_rule_tags(template="default"):
+        return [
+            {"Key": "application", "Value": "test-application"},
+            {"Key": "environment", "Value": "development"},
+            {"Key": "reason", "Value": "MaintenancePage"},
+            {"Key": "name", "Value": "MaintenancePage"},
+            {"Key": "type", "Value": template},
+            {"Key": "managed-by", "Value": "DBT Platform"},
+        ]
+
+    @staticmethod
+    def _host_header_condition(hosts):
+        return {
+            "Field": "host-header",
+            "HostHeaderConfig": {"Values": hosts},
+        }
+
     @patch(
         "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
     )
@@ -1443,6 +1471,207 @@ class TestActivateMethod:
                 call(
                     "Maintenance page 'default' added for environment development in "
                     "application test-application",
+                ),
+            ]
+        )
+
+    @patch(
+        "dbt_platform_helper.domain.maintenance_page.random.choices", return_value=["a", "b", "c"]
+    )
+    def test_successful_activate_multiple_conditions(self, random_mock):
+        """Test that multiple service aliases are handled correctly."""
+        web_host = ["web1.dev.demodjango.org.digital"]
+
+        additional_web_hosts = [
+            "web2.dev.demodjango.org.digital",
+            "web3.dev.demodjango.org.digital",
+            "web4.dev.demodjango.org.digital",
+            "web5.dev.demodjango.org.digital",
+        ]
+
+        api_host = ["api.dev.demodjango.org.digital"]
+
+        get_env_ips = Mock(return_value=["0.1.2.3"])
+        maintenance_mocks = MaintenancePageMocks(app, get_env_ips=get_env_ips)
+        maintenance_mocks.application.services["api"] = Service("api", "Load Balanced Web Service")
+
+        maintenance_mocks.load_balancer.get_host_header_conditions.side_effect = [
+            [
+                self._host_header_condition(web_host),
+                self._host_header_condition(additional_web_hosts),
+            ],
+            [self._host_header_condition(api_host)],
+        ]
+        services = "*"
+        provider = MaintenancePage(**maintenance_mocks.params())
+        provider.activate(env, services, template, vpc)
+        maintenance_mocks.load_balancer.find_target_group.assert_has_calls(
+            [
+                call("test-application", "development", "web"),
+                call("test-application", "development", "api"),
+            ]
+        )
+
+        maintenance_mocks.load_balancer.create_header_rule.assert_has_calls(
+            [
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "X-Forwarded-For",
+                    ["0.1.2.3"],
+                    "AllowedIps",
+                    1,
+                    [self._host_header_condition(web_host)],
+                    self._service_rule_tags("web"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "Bypass-Key",
+                    ["abc"],
+                    "BypassIpFilter",
+                    3,
+                    [self._host_header_condition(web_host)],
+                    self._service_rule_tags("web"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "X-Forwarded-For",
+                    ["0.1.2.3"],
+                    "AllowedIps",
+                    4,
+                    [self._host_header_condition(additional_web_hosts)],
+                    self._service_rule_tags("web"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "Bypass-Key",
+                    ["abc"],
+                    "BypassIpFilter",
+                    6,
+                    [self._host_header_condition(additional_web_hosts)],
+                    self._service_rule_tags("web"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "X-Forwarded-For",
+                    ["0.1.2.3"],
+                    "AllowedIps",
+                    7,
+                    [self._host_header_condition(api_host)],
+                    self._service_rule_tags("api"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    "Bypass-Key",
+                    ["abc"],
+                    "BypassIpFilter",
+                    9,
+                    [self._host_header_condition(api_host)],
+                    self._service_rule_tags("api"),
+                ),
+            ]
+        )
+
+        maintenance_mocks.load_balancer.create_source_ip_rule.assert_has_calls(
+            [
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    ["0.1.2.3"],
+                    "AllowedSourceIps",
+                    2,
+                    [self._host_header_condition(web_host)],
+                    self._service_rule_tags("web"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    ["0.1.2.3"],
+                    "AllowedSourceIps",
+                    5,
+                    [self._host_header_condition(additional_web_hosts)],
+                    self._service_rule_tags("web"),
+                ),
+                call(
+                    "https_listener",
+                    "target_group_arn",
+                    ["0.1.2.3"],
+                    "AllowedSourceIps",
+                    8,
+                    [self._host_header_condition(api_host)],
+                    self._service_rule_tags("api"),
+                ),
+            ]
+        )
+
+        maintenance_mocks.load_balancer.create_rule.assert_has_calls(
+            [
+                call(
+                    listener_arn="https_listener",
+                    priority=10,
+                    conditions=[
+                        {
+                            "Field": "path-pattern",
+                            "PathPatternConfig": {"Values": ["/*"]},
+                        },
+                        {
+                            "Field": "host-header",
+                            "HostHeaderConfig": {
+                                "Values": [
+                                    "api.dev.demodjango.org.digital",
+                                    "web1.dev.demodjango.org.digital",
+                                    "web2.dev.demodjango.org.digital",
+                                    "web3.dev.demodjango.org.digital",
+                                ]
+                            },
+                        },
+                    ],
+                    actions=[
+                        {
+                            "Type": "fixed-response",
+                            "FixedResponseConfig": {
+                                "StatusCode": "503",
+                                "ContentType": "text/html",
+                                "MessageBody": ANY,
+                            },
+                        }
+                    ],
+                    tags=self._maintenance_rule_tags(template="default"),
+                ),
+                call(
+                    listener_arn="https_listener",
+                    priority=11,
+                    conditions=[
+                        {
+                            "Field": "path-pattern",
+                            "PathPatternConfig": {"Values": ["/*"]},
+                        },
+                        {
+                            "Field": "host-header",
+                            "HostHeaderConfig": {
+                                "Values": [
+                                    "web4.dev.demodjango.org.digital",
+                                    "web5.dev.demodjango.org.digital",
+                                ]
+                            },
+                        },
+                    ],
+                    actions=[
+                        {
+                            "Type": "fixed-response",
+                            "FixedResponseConfig": {
+                                "StatusCode": "503",
+                                "ContentType": "text/html",
+                                "MessageBody": ANY,
+                            },
+                        }
+                    ],
+                    tags=self._maintenance_rule_tags(template="default"),
                 ),
             ]
         )

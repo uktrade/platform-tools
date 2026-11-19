@@ -160,7 +160,12 @@ class SecretRotator:
 
         dist_config = self.get_cf_distro_config(distro_id)
 
-        self.update_custom_headers(dist_config, header_value)
+        if not self.update_custom_headers(dist_config, header_value):
+            # Every origin is a VPC origin, so there is nothing to rotate on this distribution
+            self.logger.info(
+                f"No origins needing the custom header on distribution {distro_id}, skipping update."
+            )
+            return None
 
         # Update the distribution
         try:
@@ -177,15 +182,29 @@ class SecretRotator:
         dist_status = self.get_cf_distro(distro_id)
         return "Deployed" in dist_status["Distribution"]["Status"]
 
+    @staticmethod
+    def is_vpc_origin(origin: dict) -> bool:
+        """
+        Returns True if the origin is a CloudFront VPC origin.
+
+        VPC origins reach a private ALB that is not protected by the origin-
+        verify WAF rule, so they must not be given the custom header.
+        """
+        return bool(origin.get("VpcOriginConfig", {}).get("VpcOriginId"))
+
     def update_custom_headers(self, dist_config: dict, header_value: str) -> bool:
         """
         Updates or creates given custom header in the distribution config.
 
-        Returns True if any headers were updated or created.
+        VPC origins are skipped. Returns True if any headers were updated or
+        created.
         """
         header_count = 0
 
         for origin in dist_config["DistributionConfig"]["Origins"]["Items"]:
+            if self.is_vpc_origin(origin):
+                self.logger.info(f"Skipping VPC origin: {origin['Id']}")
+                continue
             if "CustomHeaders" not in origin or origin["CustomHeaders"]["Quantity"] == 0:
                 self.logger.info(
                     f"No custom headers exist. Creating new custom header for origin: {origin['Id']}"
@@ -266,8 +285,15 @@ class SecretRotator:
 
             # Track if the header was found or added in this distribution
             header_found = False
+            has_header_origin = False
 
             for origin in dist_config["DistributionConfig"]["Origins"]["Items"]:
+
+                if self.is_vpc_origin(origin):
+                    continue
+
+                has_header_origin = True
+
                 # Check if 'Items' exists inside 'CustomHeaders', if not, initialise it
                 if "Items" not in origin["CustomHeaders"]:
                     self.logger.info(
@@ -313,7 +339,7 @@ class SecretRotator:
                     break
 
             # If header was not found and added in any of the origins, we mark all_have_header as False
-            if not header_found:
+            if has_header_origin and not header_found:
                 all_have_header = False
 
         if all_have_header:

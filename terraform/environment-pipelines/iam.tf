@@ -537,7 +537,7 @@ data "aws_iam_policy_document" "postgres" {
     ]
 
     resources = flatten([for env in local.environment_config : [
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*${var.application}-${env.name}-*",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/rds-enhanced-monitoring-*"
       ]
     ])
@@ -974,6 +974,7 @@ data "aws_iam_policy_document" "iam" {
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-task-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-*-conduit-exec-role",
       "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-invalidate-cache",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.application}-${env.name}-guardduty-*-role",
       ]
     ])
   }
@@ -1020,11 +1021,14 @@ data "aws_iam_policy_document" "iam" {
       "iam:CreatePolicy",
       "iam:DeletePolicy",
       "iam:DeletePolicyVersion",
-      "iam:ListPolicyVersions"
+      "iam:ListPolicyVersions",
+      "iam:TagPolicy"
     ]
-    resources = [for environment in local.environment_config :
-      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions"
-    ]
+    resources = flatten([for environment in local.environment_config : [
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}/codebuild/${var.application}-${environment.name}-ecs-permissions",
+      "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.application}-${environment.name}-guardduty-*-policy"
+      ]
+    ])
   }
 }
 
@@ -1100,6 +1104,8 @@ resource "aws_iam_policy" "codepipeline" {
 }
 
 data "aws_iam_policy_document" "extensions" {
+  # checkov:skip=CKV_AWS_111:Permissions required to enable GuardDuty
+  # checkov:skip=CKV_AWS_356:Permissions required to enable GuardDuty
   # REDIS
   statement {
     actions = [
@@ -1257,6 +1263,23 @@ data "aws_iam_policy_document" "extensions" {
     ]
   }
 
+  statement {
+    sid    = "GuardDutyMalwareProtectionPlans"
+    effect = "Allow"
+
+    actions = [
+      "guardduty:CreateMalwareProtectionPlan",
+      "guardduty:UpdateMalwareProtectionPlan",
+      "guardduty:DeleteMalwareProtectionPlan",
+      "guardduty:GetMalwareProtectionPlan",
+      "guardduty:ListMalwareProtectionPlans",
+      "guardduty:ListTagsForResource",
+      "guardduty:TagResource",
+      "guardduty:UntagResource"
+    ]
+
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "extensions" {

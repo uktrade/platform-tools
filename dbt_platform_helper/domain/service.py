@@ -559,6 +559,24 @@ class ServiceManager:
                     f"{service_path}/service-config.yml", dict(service_manifest), message
                 )
 
+    def _merge_task_definition_environment_for_service(
+        self, service: str, task_definition: dict[str, Any], additional_env: list[dict[str, str]]
+    ):
+        env = next(
+            definition
+            for definition in task_definition.get("containerDefinitions", [])
+            if definition.get("name", "") == service
+        ).setdefault("environment", [])
+
+        for additional_env_item in additional_env:
+            override_env_item = [
+                item for item in env if item["name"] == additional_env_item["name"]
+            ]
+            if override_env_item:
+                override_env_item[-1]["value"] = additional_env_item["value"]
+            else:
+                env.append(additional_env_item)
+
     def deploy(
         self,
         service: str,
@@ -566,6 +584,7 @@ class ServiceManager:
         application: str,
         image_tag: str = None,
         image_digest: str = None,
+        set_env: list[dict[str, str]] | None = None,
     ):
         """Register a new ECS task definition revision, update the ECS service
         with it, monitor service, task and container logs, and wait until
@@ -583,6 +602,9 @@ class ServiceManager:
         )
 
         task_definition = json.loads(s3_response)
+
+        if set_env:
+            self._merge_task_definition_environment_for_service(service, task_definition, set_env)
 
         image_reference = image_digest or image_tag
         reference_type = "digest" if image_digest else "tag"
