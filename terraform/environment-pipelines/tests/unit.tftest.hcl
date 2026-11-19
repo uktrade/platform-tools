@@ -671,12 +671,12 @@ run "test_iam" {
 
   # Todo: Add further testing of data.aws_iam_policy_document.<object-name> contents
   assert {
-    condition     = contains(data.aws_iam_policy_document.extensions.statement[6].actions, "iam:CreateServiceLinkedRole")
+    condition     = contains(data.aws_iam_policy_document.extensions.statement[7].actions, "iam:CreateServiceLinkedRole")
     error_message = "The statement should allow iam:CreateServiceLinkedRole action"
   }
 
   assert {
-    condition     = contains(data.aws_iam_policy_document.extensions.statement[6].resources, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService")
+    condition     = contains(data.aws_iam_policy_document.extensions.statement[7].resources, "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService")
     error_message = "The statement the action on the following resource: arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/aws-service-role/opensearchservice.amazonaws.com/AWSServiceRoleForAmazonOpenSearchService"
   }
 
