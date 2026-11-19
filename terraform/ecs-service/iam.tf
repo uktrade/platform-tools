@@ -377,7 +377,7 @@ locals {
           {
             Sid      = "S3ObjectActions"
             Effect   = "Allow"
-            Action   = try(conf.readonly, false) ? ["s3:GetObject"] : ["s3:*Object*"]
+            Action   = try(conf.readonly, false) ? ["s3:GetObject*"] : ["s3:*Object*"]
             Resource = ["arn:aws:s3:::${local.s3_bucket_name[name]}/*"]
           },
           {
