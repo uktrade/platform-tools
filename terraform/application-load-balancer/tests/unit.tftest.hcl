@@ -9,6 +9,10 @@ mock_provider "aws" {
 }
 
 mock_provider "aws" {
+  alias = "us_east_1"
+}
+
+mock_provider "aws" {
   alias = "sandbox"
 }
 
@@ -109,6 +113,12 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_security_group.vpc_origins
+  values = {
+    id = "sg-00112233aabb"
+  }
+}
 
 variables {
   application    = "app"
@@ -1061,5 +1071,114 @@ run "existing_cdn_lists_match" {
   assert {
     condition     = length(aws_acm_certificate.certificate.subject_alternative_names) == 0
     error_message = "CDN domains should not be included in certificate SANs"
+  }
+}
+
+run "test_internal" {
+  command = plan
+
+  assert {
+    condition     = data.aws_security_group.vpc_origins.vpc_id == "vpc-00112233aabbccdef"
+    error_message = "data.aws_security_group.vpc_origins.vpc_id not as expected"
+  }
+
+  assert {
+    condition     = aws_lb.internal.name == "app-env-internal"
+    error_message = "aws_lb.internal.name not as expected"
+  }
+
+  assert {
+    condition     = aws_lb.internal.subnets == toset(["subnet-aaa111", "subnet-bbb222"])
+    error_message = "aws_lb.internal.subnets not as expected"
+  }
+
+  assert {
+    condition     = one(aws_lb.internal.access_logs).prefix == "app/env"
+    error_message = "aws_lb.internal.access_logs.prefix not as expected"
+  }
+
+  assert {
+    condition     = aws_security_group.internal_alb.name == "app-env-internal-alb"
+    error_message = "aws_security_group.internal_alb.name not as expected"
+  }
+
+  assert {
+    condition     = aws_security_group.internal_alb.vpc_id == "vpc-00112233aabbccdef"
+    error_message = "aws_security_group.internal_alb.vpc_id not as expected"
+  }
+
+  assert {
+    condition     = one(aws_security_group.internal_alb.ingress).security_groups == toset(["sg-00112233aabb"])
+    error_message = "aws_security_group.internal_alb.ingress.security_groups not as expected"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.default.name == "app-env-default"
+    error_message = "aws_lb_target_group.default.name not as expected"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.default.vpc_id == "vpc-00112233aabbccdef"
+    error_message = "aws_lb_target_group.default.vpc_id not as expected"
+  }
+
+  assert {
+    condition     = one(aws_cloudfront_vpc_origin.internal.vpc_origin_endpoint_config).name == "app-env"
+    error_message = "aws_cloudfront_vpc_origin.internal.vpc_origin_endpoint_config.name not as expected"
+  }
+
+  assert {
+    condition     = aws_ram_resource_share.vpc_origin.name == "app-env-vpc-origin"
+    error_message = "aws_ram_resource_share.vpc_origin.name not as expected"
+  }
+
+  assert {
+    condition     = aws_ram_principal_association.vpc_origin.principal == "123456789012"
+    error_message = "aws_ram_principal_association.vpc_origin.principal not as expected"
+  }
+}
+
+run "test_internal_with_alternate_values" {
+  command = plan
+
+  variables {
+    application    = "app2"
+    environment    = "env2"
+    dns_account_id = "987654321098"
+  }
+
+  assert {
+    condition     = aws_lb.internal.name == "app2-env2-internal"
+    error_message = "aws_lb.internal.name not as expected"
+  }
+
+  assert {
+    condition     = one(aws_lb.internal.access_logs).prefix == "app2/env2"
+    error_message = "aws_lb.internal.access_logs.prefix not as expected"
+  }
+
+  assert {
+    condition     = aws_security_group.internal_alb.name == "app2-env2-internal-alb"
+    error_message = "aws_security_group.internal_alb.name not as expected"
+  }
+
+  assert {
+    condition     = aws_lb_target_group.default.name == "app2-env2-default"
+    error_message = "aws_lb_target_group.default.name not as expected"
+  }
+
+  assert {
+    condition     = one(aws_cloudfront_vpc_origin.internal.vpc_origin_endpoint_config).name == "app2-env2"
+    error_message = "aws_cloudfront_vpc_origin.internal.vpc_origin_endpoint_config.name not as expected"
+  }
+
+  assert {
+    condition     = aws_ram_resource_share.vpc_origin.name == "app2-env2-vpc-origin"
+    error_message = "aws_ram_resource_share.vpc_origin.name not as expected"
+  }
+
+  assert {
+    condition     = aws_ram_principal_association.vpc_origin.principal == "987654321098"
+    error_message = "aws_ram_principal_association.vpc_origin.principal not as expected"
   }
 }

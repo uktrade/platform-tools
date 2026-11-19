@@ -5,7 +5,8 @@ terraform {
       version = "~> 6"
       configuration_aliases = [
         aws.domain,
-        aws.domain-cdn
+        aws.domain-cdn,
+        aws.us_east_1,
       ]
     }
     random = {
