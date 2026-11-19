@@ -87,7 +87,7 @@ data "aws_iam_policy_document" "bucket-policy" {
     for_each = var.config.guardduty.enabled ? [1] : []
 
     content {
-      sid    = "NoReadUnlessClean"
+      sid    = var.config.guardduty.enforce_strict_bucket_policy ? "NoReadUnlessClean" : "NoReadIfThreatsFound"
       effect = "Deny"
 
       not_principals {
