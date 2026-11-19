@@ -27,7 +27,7 @@ variable "cdn_account_id" {
 variable "config" {
   type = object({
     bucket_name = string
-    versioning  = optional(bool)
+    versioning  = optional(bool, false)
     retention_policy = optional(object({
       mode  = string
       days  = optional(number)
