@@ -1,5 +1,12 @@
 # Changelog
 
+## [16.0.1](https://github.com/uktrade/platform-tools/compare/16.0.0...16.0.1) (2026-11-23)
+
+
+### Dependencies
+
+* Bump slack-sdk from 3.46.0 to 3.47.0 in the minor-and-patch group ([#1732](https://github.com/uktrade/platform-tools/issues/1732)) ([a22ba7d](https://github.com/uktrade/platform-tools/commit/a22ba7d93e00cfa5ab8401ea41f19fa7a50b8f07))
+
 ## [16.0.0](https://github.com/uktrade/platform-tools/compare/15.38.0...16.0.0) (2026-11-18)
 
 
