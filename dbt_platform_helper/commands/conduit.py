@@ -13,7 +13,13 @@ from dbt_platform_helper.utils.click import ClickDocOptCommand
 CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
 
 
-@click.command(cls=ClickDocOptCommand)
+@click.command(
+    cls=ClickDocOptCommand,
+    help="""
+    Opens a shell for a given addon_name create a conduit connection to interact
+    with postgres, opensearch or redis.
+    """,
+)
 @click.argument("addon_name", type=str, required=True)
 @click.option("--app", help="Application name", required=True)
 @click.option("--env", help="Environment name", required=True)
@@ -24,8 +30,6 @@ CONDUIT_ACCESS_OPTIONS = ["read", "write", "admin"]
     help="Allow read, write or admin access to the database addons.",
 )
 def conduit(addon_name: str, app: str, env: str, access: str):
-    """Opens a shell for a given addon_name create a conduit connection to
-    interact with postgres, opensearch or redis."""
     PlatformHelperVersioning().check_if_needs_update()
     application = load_application(app=app, env=env)
 

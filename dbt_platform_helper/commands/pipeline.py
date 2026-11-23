@@ -22,7 +22,22 @@ def pipeline():
     PlatformHelperVersioning().check_if_needs_update()
 
 
-@pipeline.command()
+@pipeline.command(
+    help="""
+    Given a platform-config.yml file, generate environment and service
+    deployment pipelines.
+
+    This command does the following in relation to the environment pipelines:
+    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
+      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
+      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
+
+    This command does the following in relation to the codebase pipelines:
+    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
+      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
+      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
+    """,
+)
 @click.option(
     "--deploy-branch",
     help="""Specify the branch of <application>-deploy used to configure the source stage in the environment-pipeline resource. 
@@ -39,20 +54,6 @@ def pipeline():
     default=None,
 )
 def generate(deploy_branch: str, workspace: str):
-    """
-    Given a platform-config.yml file, generate environment and service
-    deployment pipelines.
-
-    This command does the following in relation to the environment pipelines:
-    - Reads contents of `platform-config.yml/environment_pipelines` configuration.
-      The `terraform/environment-pipelines/<aws_account>/main.tf` file is generated using this configuration.
-      The `main.tf` file is then used to generate Terraform for creating an environment pipeline resource.
-
-    This command does the following in relation to the codebase pipelines:
-    - Reads contents of `platform-config.yml/codebase_pipelines` configuration.
-      The `terraform/codebase-pipelines/main.tf.json` file is generated using this configuration.
-      The `main.tf.json` file is then used to generate Terraform for creating a codebase pipeline resource.
-    """
     config_provider = ConfigProvider(ConfigValidator())
     environment_variable_provider = EnvironmentVariableProvider()
     io = ClickIOProvider()
