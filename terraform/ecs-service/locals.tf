@@ -402,10 +402,13 @@ locals {
   }
 
   # 4) Resolve SQS queue ARNs
-  sqs_queue_arns = [
+  sqs_queue_arns = flatten([
     for name in keys(local.sqs_extensions_for_service_with_env_merged) :
-    "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
-  ]
+    [
+      "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}",
+      "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}-dlq"
+    ]
+  ])
 
   ##############################
   # SNS EXTENSIONS — SAME ACCOUNT

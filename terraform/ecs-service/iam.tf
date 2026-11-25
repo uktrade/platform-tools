@@ -321,9 +321,7 @@ data "aws_iam_policy_document" "sqs_consumer" {
       "sqs:ChangeMessageVisibility",
     ]
 
-    resources = [
-      "arn:aws:sqs:eu-west-2:123456789012:demodjango-dev-test-queue"
-    ]
+    resources = local.sqs_queue_arns
   }
 }
 
