@@ -309,6 +309,99 @@ data "aws_iam_policy_document" "appconfig" {
   }
 }
 
+data "aws_iam_policy_document" "sqs_consumer" {
+  count = local.sqs_queue_arns != {} ? 1 : 0
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility",
+    ]
+
+    resources = [
+      local.sqs_queue_arns
+    ]
+  }
+}
+
+resource "aws_iam_policy" "sqs_consumer" {
+  count       = local.sqs_queue_arns != {} ? 1 : 0
+  name        = "${local.full_service_name}-sqs-iam-policy"
+  description = "A policy to add permissions for the ECS service to integrate with SQS queues."
+  policy      = data.aws_iam_policy_document.sqs_consumer[0].json
+  tags        = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "sqs_consumer" {
+  count      = local.sqs_queue_arns != {} ? 1 : 0
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.sqs_consumer[0].arn
+}
+
+data "aws_iam_policy_document" "sqs_consumer" {
+  count = local.sqs_queue_arns != {} ? 1 : 0
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility",
+    ]
+
+    resources = [
+      local.sqs_queue_arns
+    ]
+  }
+}
+
+resource "aws_iam_policy" "sqs_consumer" {
+  count       = local.sqs_queue_arns != {} ? 1 : 0
+  name        = "${local.full_service_name}-sqs-iam-policy"
+  description = "A policy to add permissions for the ECS service to integrate with SQS queues."
+  policy      = data.aws_iam_policy_document.sqs_consumer[0].json
+  tags        = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "sqs_consumer" {
+  count      = local.sqs_queue_arns != {} ? 1 : 0
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.sqs_consumer[0].arn
+}
+
+data "aws_iam_policy_document" "sns_publish" {
+  count = local.sns_topic_arns != {} ? 1 : 0
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sns:Publish"
+    ]
+
+    resources = [
+      local.sns_topic_arns
+    ]
+  }
+}
+
+resource "aws_iam_policy" "sns_publish" {
+  count       = local.sns_topic_arns != {} ? 1 : 0
+  name        = "${local.full_service_name}-sns-iam-policy"
+  description = "A policy to add permissions for the ECS service to integrate with SNS topics."
+  policy      = data.aws_iam_policy_document.sns_publish[0].json
+  tags        = local.tags
+}
+
+resource "aws_iam_role_policy_attachment" "sns_publish" {
+  count      = local.sns_topic_arns != {} ? 1 : 0
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.sns_publish[0].arn
+}
+
 resource "aws_iam_policy" "custom_iam_policy" {
   count       = var.custom_iam_policy_json != null ? 1 : 0
   name        = "${local.full_service_name}-custom-iam-policy"

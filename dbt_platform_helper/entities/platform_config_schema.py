@@ -471,6 +471,7 @@ class PlatformConfigSchema:
     def __sns_schema() -> dict:
         return {
             "type": "sns",
+            Optional("services"): Or("__all__", [str]),
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
                     Optional("allowed_account_ids"): [str],
@@ -497,6 +498,7 @@ class PlatformConfigSchema:
 
         return {
             "type": "sqs",
+            Optional("services"): Or("__all__", [str]),
             Optional("environments"): {
                 Optional(PlatformConfigSchema.__valid_environment_name()): {
                     Optional("subscribe_to"): [__valid_subscribe_to],
