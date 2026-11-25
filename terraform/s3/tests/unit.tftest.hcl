@@ -59,8 +59,8 @@ run "aws_s3_bucket_unit_test" {
   }
 
   assert {
-    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration == []
-    error_message = "Should be: []"
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration != []
+    error_message = "Should not be empty"
   }
 
 }
@@ -154,7 +154,53 @@ run "aws_s3_bucket_versioning_enabled_unit_test" {
   }
 }
 
-run "aws_s3_bucket_lifecycle_configuration_unit_test" {
+run "aws_s3_bucket_lifecycle_configuration_base_unit_test" {
+  command = plan
+
+  variables {
+    config = {
+      "bucket_name" = "dbt-terraform-test-s3-module",
+      "type"        = "string",
+      "objects"     = [],
+    }
+  }
+
+  assert {
+    condition = contains(
+      [
+        for t in aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[0].transition :
+        t.storage_class
+      ],
+      "INTELLIGENT_TIERING"
+    )
+
+    error_message = "Storage class should be intelligent tiering"
+  }
+
+  assert {
+    condition = contains(
+      [
+        for t in aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[0].transition :
+        t.days
+      ],
+      0
+    )
+
+    error_message = "Storage class should be intelligent tiering"
+  }
+
+  assert {
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[0].abort_incomplete_multipart_upload[0].days_after_initiation == 7
+    error_message = "Abort incomplete multipart upload should be 7 days."
+  }
+
+  assert {
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[0].status == "Enabled"
+    error_message = "Status should Enabled"
+  }
+}
+
+run "aws_s3_bucket_lifecycle_configuration_custom_lifecycle_unit_test" {
   command = plan
 
   variables {
@@ -168,22 +214,17 @@ run "aws_s3_bucket_lifecycle_configuration_unit_test" {
 
   ### Test aws_s3_bucket_lifecycle_configuration resource ###
   assert {
-    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration[0].rule[0].filter[0].prefix == "/foo"
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[1].filter[0].prefix == "/foo"
     error_message = "Should be: /foo"
   }
 
   assert {
-    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration[0].rule[0].expiration[0].days == 90
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[1].expiration[0].days == 90
     error_message = "Should be: 90"
   }
 
   assert {
-    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration[0].rule[0].abort_incomplete_multipart_upload[0].days_after_initiation == 7
-    error_message = "Should be: 7"
-  }
-
-  assert {
-    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration[0].rule[0].status == "Enabled"
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[1].status == "Enabled"
     error_message = "Should be: Enabled"
   }
 }
@@ -202,7 +243,7 @@ run "aws_s3_bucket_lifecycle_configuration_no_prefix_unit_test" {
 
   ### Test aws_s3_bucket_lifecycle_configuration resource when no prefix is used ###
   assert {
-    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration[0].rule[0].filter[0] != null
+    condition     = aws_s3_bucket_lifecycle_configuration.lifecycle-configuration.rule[0].filter[0] != null
     error_message = "Should be: {}"
   }
 }
