@@ -401,7 +401,7 @@ locals {
     )
   }
 
-  # 4) Resolve sqs queue names
+  # 4) Resolve SQS queue ARNs
   sqs_queue_arns = {
     for name, ext in local.sqs_extensions_for_service_with_env_merged :
     name => "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
@@ -418,7 +418,7 @@ locals {
     if try(ext.type, "") == "sns"
   }
 
-  # 2) Keep only SQS extensions that apply to this service
+  # 2) Keep only SNS extensions that apply to this service
   sns_extensions_for_service = {
     for name, ext in local.sns_extensions_all :
     name => ext
@@ -434,7 +434,7 @@ locals {
     )
   }
 
-  # 4) Resolve sqs queue names
+  # 4) Resolve SNS topic ARNs
   sns_topic_arns = {
     for name, ext in local.sns_extensions_for_service_with_env_merged :
     name => "arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
