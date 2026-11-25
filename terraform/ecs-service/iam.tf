@@ -318,6 +318,7 @@ data "aws_iam_policy_document" "sqs_consumer" {
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
+      "sqs:ChangeMessageVisibility",
     ]
 
     resources = [
