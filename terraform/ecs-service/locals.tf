@@ -402,10 +402,10 @@ locals {
   }
 
   # 4) Resolve SQS queue ARNs
-  sqs_queue_arns = {
-    for name, ext in local.sqs_extensions_for_service_with_env_merged :
-    name => "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
-  }
+  sqs_queue_arns = [
+    for name in keys(local.sqs_extensions_for_service_with_env_merged) :
+    "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
+  ]
 
   ##############################
   # SNS EXTENSIONS — SAME ACCOUNT
@@ -435,8 +435,8 @@ locals {
   }
 
   # 4) Resolve SNS topic ARNs
-  sns_topic_arns = {
-    for name, ext in local.sns_extensions_for_service_with_env_merged :
-    name => "arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
-  }
+  sns_topic_arns = [
+    for name in keys(local.sns_extensions_for_service_with_env_merged) :
+    "arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
+  ]
 }

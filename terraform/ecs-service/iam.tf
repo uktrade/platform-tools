@@ -310,7 +310,7 @@ data "aws_iam_policy_document" "appconfig" {
 }
 
 data "aws_iam_policy_document" "sqs_consumer" {
-  count = local.sqs_queue_arns != {} ? 1 : 0
+  count = length(local.sqs_queue_arns) > 0 ? 1 : 0
   statement {
     effect = "Allow"
 
@@ -318,17 +318,16 @@ data "aws_iam_policy_document" "sqs_consumer" {
       "sqs:ReceiveMessage",
       "sqs:DeleteMessage",
       "sqs:GetQueueAttributes",
-      "sqs:ChangeMessageVisibility",
     ]
 
     resources = [
-      local.sqs_queue_arns
+      "arn:aws:sqs:eu-west-2:123456789012:demodjango-dev-test-queue"
     ]
   }
 }
 
 resource "aws_iam_policy" "sqs_consumer" {
-  count       = local.sqs_queue_arns != {} ? 1 : 0
+  count       = length(local.sqs_queue_arns) > 0 ? 1 : 0
   name        = "${local.full_service_name}-sqs-iam-policy"
   description = "A policy to add permissions for the ECS service to integrate with SQS queues."
   policy      = data.aws_iam_policy_document.sqs_consumer[0].json
@@ -336,13 +335,13 @@ resource "aws_iam_policy" "sqs_consumer" {
 }
 
 resource "aws_iam_role_policy_attachment" "sqs_consumer" {
-  count      = local.sqs_queue_arns != {} ? 1 : 0
+  count      = length(local.sqs_queue_arns) > 0 ? 1 : 0
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = aws_iam_policy.sqs_consumer[0].arn
 }
 
 data "aws_iam_policy_document" "sns_publish" {
-  count = local.sns_topic_arns != {} ? 1 : 0
+  count = length(local.sns_topic_arns) > 0 ? 1 : 0
   statement {
     effect = "Allow"
 
@@ -350,14 +349,12 @@ data "aws_iam_policy_document" "sns_publish" {
       "sns:Publish"
     ]
 
-    resources = [
-      local.sns_topic_arns
-    ]
+    resources = local.sns_topic_arns
   }
 }
 
 resource "aws_iam_policy" "sns_publish" {
-  count       = local.sns_topic_arns != {} ? 1 : 0
+  count       = length(local.sns_topic_arns) > 0 ? 1 : 0
   name        = "${local.full_service_name}-sns-iam-policy"
   description = "A policy to add permissions for the ECS service to integrate with SNS topics."
   policy      = data.aws_iam_policy_document.sns_publish[0].json
@@ -365,7 +362,7 @@ resource "aws_iam_policy" "sns_publish" {
 }
 
 resource "aws_iam_role_policy_attachment" "sns_publish" {
-  count      = local.sns_topic_arns != {} ? 1 : 0
+  count      = length(local.sns_topic_arns) > 0 ? 1 : 0
   role       = aws_iam_role.ecs_task_role.name
   policy_arn = aws_iam_policy.sns_publish[0].arn
 }
