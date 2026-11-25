@@ -341,38 +341,6 @@ resource "aws_iam_role_policy_attachment" "sqs_consumer" {
   policy_arn = aws_iam_policy.sqs_consumer[0].arn
 }
 
-data "aws_iam_policy_document" "sqs_consumer" {
-  count = local.sqs_queue_arns != {} ? 1 : 0
-  statement {
-    effect = "Allow"
-
-    actions = [
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes",
-      "sqs:ChangeMessageVisibility",
-    ]
-
-    resources = [
-      local.sqs_queue_arns
-    ]
-  }
-}
-
-resource "aws_iam_policy" "sqs_consumer" {
-  count       = local.sqs_queue_arns != {} ? 1 : 0
-  name        = "${local.full_service_name}-sqs-iam-policy"
-  description = "A policy to add permissions for the ECS service to integrate with SQS queues."
-  policy      = data.aws_iam_policy_document.sqs_consumer[0].json
-  tags        = local.tags
-}
-
-resource "aws_iam_role_policy_attachment" "sqs_consumer" {
-  count      = local.sqs_queue_arns != {} ? 1 : 0
-  role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.sqs_consumer[0].arn
-}
-
 data "aws_iam_policy_document" "sns_publish" {
   count = local.sns_topic_arns != {} ? 1 : 0
   statement {
