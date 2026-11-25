@@ -297,12 +297,12 @@ run "same_account_sqs" {
 
   assert {
     condition     = length(aws_iam_policy.sqs_consumer) == 1
-    error_message = "Expected 1 same-account S3 policies."
+    error_message = "Expected 1 SQS policy."
   }
 
   assert {
     condition     = length(aws_iam_role_policy_attachment.sqs_consumer) == 1
-    error_message = "Expected 1 same-account S3 policy attachments."
+    error_message = "Expected 1 SQS policy attachment."
   }
 }
 
@@ -323,12 +323,12 @@ run "same_account_sns" {
 
   assert {
     condition     = length(aws_iam_policy.sns_publish) == 1
-    error_message = "Expected 1 same-account S3 policies."
+    error_message = "Expected 1 SQS policy."
   }
 
   assert {
     condition     = length(aws_iam_role_policy_attachment.sns_publish) == 1
-    error_message = "Expected 1 same-account S3 policy attachments."
+    error_message = "Expected 1 SNS policy attachment."
   }
 }
 
