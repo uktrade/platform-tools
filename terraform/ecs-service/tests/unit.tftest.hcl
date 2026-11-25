@@ -323,7 +323,7 @@ run "same_account_sns" {
 
   assert {
     condition     = length(aws_iam_policy.sns_publish) == 1
-    error_message = "Expected 1 SQS policy."
+    error_message = "Expected 1 SNS policy."
   }
 
   assert {
