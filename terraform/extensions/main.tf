@@ -69,6 +69,7 @@ module "alb" {
   providers = {
     aws.domain     = aws.domain
     aws.domain-cdn = aws.domain-cdn
+    aws.us_east_1  = aws.us_east_1
   }
   application             = var.args.application
   environment             = var.environment

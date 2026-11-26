@@ -22,6 +22,12 @@ provider "aws" {
   allowed_account_ids = [local.deploy_account_id]
 }
 
+provider "aws" {
+  alias               = "us_east_1"
+  allowed_account_ids = [local.deploy_account_id]
+  region              = "us-east-1"
+}
+
 provider "datadog" {
   alias   = "ddog"
   api_key = data.aws_ssm_parameter.datadog_api_key.value
