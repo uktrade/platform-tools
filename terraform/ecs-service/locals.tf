@@ -373,4 +373,73 @@ locals {
   enable_req = local.req_value != null && local.web_service_required == 1
 
   service_deployment_mode = lookup(var.env_config[var.environment], "service-deployment-mode", "copilot")
+
+  ##############################
+  # SQS EXTENSIONS — SAME ACCOUNT
+  ##############################
+
+  # 1) Select SQS extensions
+  sqs_extensions_all = {
+    for name, ext in try(var.platform_extensions, {}) :
+    name => ext
+    if try(ext.type, "") == "sqs"
+  }
+
+  # 2) Keep only SQS extensions that apply to this service
+  sqs_extensions_for_service = {
+    for name, ext in local.sqs_extensions_all :
+    name => ext
+    if contains(try(ext.services, []), "__all__") || contains(try(ext.services, []), var.service_config.name)
+  }
+
+  # 3) Merge "*" defaults with env-specific overrides
+  sqs_extensions_for_service_with_env_merged = {
+    for name, ext in local.sqs_extensions_for_service :
+    name => merge(
+      lookup(try(ext.environments, {}), "*", {}),
+      lookup(try(ext.environments, {}), var.environment, {})
+    )
+  }
+
+  # 4) Resolve SQS queue ARNs
+  sqs_queue_arns = flatten([
+    for name in keys(local.sqs_extensions_for_service_with_env_merged) :
+    [
+      "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}",
+      "arn:aws:sqs:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}-dlq"
+    ]
+  ])
+
+  ##############################
+  # SNS EXTENSIONS — SAME ACCOUNT
+  ##############################
+
+  # 1) Select SNS extensions
+  sns_extensions_all = {
+    for name, ext in try(var.platform_extensions, {}) :
+    name => ext
+    if try(ext.type, "") == "sns"
+  }
+
+  # 2) Keep only SNS extensions that apply to this service
+  sns_extensions_for_service = {
+    for name, ext in local.sns_extensions_all :
+    name => ext
+    if contains(try(ext.services, []), "__all__") || contains(try(ext.services, []), var.service_config.name)
+  }
+
+  # 3) Merge "*" defaults with env-specific overrides
+  sns_extensions_for_service_with_env_merged = {
+    for name, ext in local.sns_extensions_for_service :
+    name => merge(
+      lookup(try(ext.environments, {}), "*", {}),
+      lookup(try(ext.environments, {}), var.environment, {})
+    )
+  }
+
+  # 4) Resolve SNS topic ARNs
+  sns_topic_arns = [
+    for name in keys(local.sns_extensions_for_service_with_env_merged) :
+    "arn:aws:sns:eu-west-2:${data.aws_caller_identity.current.account_id}:${var.application}-${var.environment}-${name}"
+  ]
 }

@@ -82,6 +82,20 @@ override_data {
   }
 }
 
+override_data {
+  target = data.aws_iam_policy_document.sqs_consumer
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
+override_data {
+  target = data.aws_iam_policy_document.sns_publish
+  values = {
+    json = "{\"Sid\": \"PlaceholderPolicyDoesNotMatter\"}"
+  }
+}
+
 override_module {
   target  = module.scheduling["enabled"]
   outputs = {}
@@ -266,7 +280,57 @@ run "without_custom_iam_policy" {
   }
 }
 
+run "same_account_sqs" {
+  command = plan
 
+  variables {
+    platform_extensions = {
+      test-queue = {
+        type     = "sqs"
+        services = ["web"]
+        environments = {
+          "*" = {}
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_iam_policy.sqs_consumer) == 1
+    error_message = "Expected 1 SQS policy."
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.sqs_consumer) == 1
+    error_message = "Expected 1 SQS policy attachment."
+  }
+}
+
+run "same_account_sns" {
+  command = plan
+
+  variables {
+    platform_extensions = {
+      test-queue = {
+        type     = "sns"
+        services = ["web"]
+        environments = {
+          "*" = {}
+        }
+      }
+    }
+  }
+
+  assert {
+    condition     = length(aws_iam_policy.sns_publish) == 1
+    error_message = "Expected 1 SNS policy."
+  }
+
+  assert {
+    condition     = length(aws_iam_role_policy_attachment.sns_publish) == 1
+    error_message = "Expected 1 SNS policy attachment."
+  }
+}
 
 run "same_account_s3_non-static" {
   command = plan
