@@ -368,9 +368,10 @@ resource "aws_lambda_function" "listener-rule-organiser-function" {
 
   environment {
     variables = {
-      APPLICATION  = var.application
-      ENVIRONMENT  = var.environment
-      LISTENER_ARN = try(aws_lb_listener.alb-listener["https"].arn, "")
+      APPLICATION           = var.application
+      ENVIRONMENT           = var.environment
+      LISTENER_ARN          = try(aws_lb_listener.alb-listener["https"].arn, "")
+      INTERNAL_LISTENER_ARN = try(aws_lb_listener.internal.arn, "")
     }
   }
 

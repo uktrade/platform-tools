@@ -15,7 +15,7 @@ resource "aws_lb" "internal" {
     enabled = true
   }
 
-  tags = local.tags
+  tags = merge(local.tags, { load-balancer-type = "internal" })
 
   drop_invalid_header_fields = true
   enable_deletion_protection = false # TODO: change to true once migration to internal ALBs is complete
