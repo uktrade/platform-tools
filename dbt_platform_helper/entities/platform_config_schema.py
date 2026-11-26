@@ -472,10 +472,13 @@ class PlatformConfigSchema:
         return {
             "type": "sns",
             Optional("environments"): {
-                Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    Optional("allowed_account_ids"): [str],
-                }
-            },
+                Optional(PlatformConfigSchema.__valid_environment_name()): Or(
+                    {
+                        Optional("allowed_account_ids"): [str],
+                    },
+                    None,
+                )
+            }
         }
 
     @staticmethod
@@ -498,19 +501,22 @@ class PlatformConfigSchema:
         return {
             "type": "sqs",
             Optional("environments"): {
-                Optional(PlatformConfigSchema.__valid_environment_name()): {
-                    Optional("subscribe_to"): [__valid_subscribe_to],
-                    Optional("visibility_timeout_seconds"): int,
-                    Optional("delay_seconds"): int,
-                    Optional("max_message_size"): int,
-                    Optional("message_retention_seconds"): int,
-                    Optional("receive_wait_time_seconds"): int,
-                    Optional("dead_letter_queue"): __valid_dead_letter_queue,
-                    Optional("raw_message_delivery"): bool,
-                    Optional("filter_policy_scope"): __valid_filter_policy_scope,
-                    Optional("filter_policy"): dict,
-                }
-            },
+                Optional(PlatformConfigSchema.__valid_environment_name()): Or(
+                    {
+                        Optional("subscribe_to"): [__valid_subscribe_to],
+                        Optional("visibility_timeout_seconds"): int,
+                        Optional("delay_seconds"): int,
+                        Optional("max_message_size"): int,
+                        Optional("message_retention_seconds"): int,
+                        Optional("receive_wait_time_seconds"): int,
+                        Optional("dead_letter_queue"): __valid_dead_letter_queue,
+                        Optional("raw_message_delivery"): bool,
+                        Optional("filter_policy_scope"): __valid_filter_policy_scope,
+                        Optional("filter_policy"): dict,
+                    },
+                    None,
+                )
+            }
         }
 
     @staticmethod
